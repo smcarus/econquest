@@ -463,6 +463,26 @@ export function findPillarForNavSection(navSectionId: string): {
   };
 }
 
+export function buildThreePillarHubsForCommandPalette(): Array<{
+  id: string;
+  label: string;
+  defaultSection: string;
+  subTabs: Array<{ id: string; label: string; description: string }>;
+}> {
+  return ACTIVITY_PILLARS.map((pillar) => ({
+    id: pillar.id,
+    label: pillar.shortTitle,
+    defaultSection: pillar.defaultSection,
+    subTabs: pillar.subGroups.flatMap((sg) =>
+      sg.modules.map((mod) => ({
+        id: mod.id,
+        label: `${mod.label} (${sg.groupTitle})`,
+        description: mod.description,
+      }))
+    ),
+  }));
+}
+
 interface PillarSubNavigationStripProps {
   activeNavSection: string;
   onSelectNavSection: (sectionId: string) => void;
@@ -724,7 +744,10 @@ export const CompactTopStatusAndDrawersBar: React.FC<
 
       {/* SLIDE-OVER DRAWER MODAL FOR MORNING RADAR, EXECUTIVE BLUF, OR DESK CLARITY GUIDE */}
       {openDrawer && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-[1px]">
+        <div
+          className="fixed inset-0 z-50 flex justify-end bg-slate-950/60 backdrop-blur-[1px]"
+          onClick={() => setOpenDrawer(null)}
+        >
           <div
             className="w-full max-w-4xl bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 h-full flex flex-col shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
@@ -911,110 +934,249 @@ interface ViewportScrollBudgetContainerProps {
 }
 
 /**
- * Enforces the 1–2 screen maximum vertical scroll budget across every workbench.
- * Provides a clean 1.5-screen viewport scroll container with quick Top / Mid / Bottom
- * section jump buttons so the user never experiences endless multi-page scrolling.
+ * Enforces the 1–2 screen maximum vertical scroll budget across every workbench
+ * by paginating tall multi-card desks into Page 1 (Primary Workbench & Controls)
+ * and Page 2 (Deep-Dive Matrices & Diagnostics) with ZERO nested scrollbars.
  */
 export const ViewportScrollBudgetContainer: React.FC<
   ViewportScrollBudgetContainerProps
 > = ({ activeNavSection, children }) => {
-  const [enforceCompactScrollCap, setEnforceCompactScrollCap] =
-    useState<boolean>(true);
-  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const [activePage, setActivePage] = useState<'page1' | 'page2' | 'all'>('page1');
+  const [totalDetectedCards, setTotalDetectedCards] = useState<number>(1);
+  const [page1CardCount, setPage1CardCount] = useState<number>(1);
+  const [page2CardCount, setPage2CardCount] = useState<number>(0);
+  const contentWrapperRef = useRef<HTMLDivElement | null>(null);
 
+  // Reset to Page 1 whenever the user navigates to a different module
   useEffect(() => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
-    }
+    setActivePage('page1');
   }, [activeNavSection]);
 
-  const handleJumpScroll = (fraction: number) => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const maxScroll = Math.max(0, el.scrollHeight - el.clientHeight);
-    el.scrollTo({
-      top: Math.round(maxScroll * fraction),
-      behavior: 'smooth',
-    });
-  };
+  useEffect(() => {
+    const wrapper = contentWrapperRef.current;
+    if (!wrapper) return;
+
+    const applyCardPagination = () => {
+      const rootDeskEl = wrapper.firstElementChild as HTMLElement | null;
+      if (!rootDeskEl) return;
+
+      // Identify the list of content cards inside the desk:
+      // Pattern A: Multi-tab desk wrapper -> [headerCard, subWorkspaceContainer] where subWorkspaceContainer has 3-6 cards
+      // Pattern B: Direct desk wrapper -> [card1, card2, card3, card4, ...]
+      const directChildren = Array.from(rootDeskEl.children).filter(
+        (el): el is HTMLElement =>
+          el instanceof HTMLElement &&
+          el.tagName !== 'SCRIPT' &&
+          el.tagName !== 'STYLE'
+      );
+
+      let headerElement: HTMLElement | null = null;
+      let sectionCards: HTMLElement[] = directChildren;
+
+      if (directChildren.length === 2) {
+        const secondChild = directChildren[1];
+        const nestedCards = Array.from(secondChild.children).filter(
+          (el): el is HTMLElement =>
+            el instanceof HTMLElement &&
+            el.tagName !== 'SCRIPT' &&
+            el.tagName !== 'STYLE' &&
+            !el.hasAttribute('data-econquest-provenance-bar')
+        );
+        if (nestedCards.length >= 2) {
+          headerElement = directChildren[0];
+          sectionCards = nestedCards;
+        }
+      } else if (directChildren.length === 1) {
+        const onlyChild = directChildren[0];
+        const nestedCards = Array.from(onlyChild.children).filter(
+          (el): el is HTMLElement =>
+            el instanceof HTMLElement &&
+            el.tagName !== 'SCRIPT' &&
+            el.tagName !== 'STYLE' &&
+            !el.hasAttribute('data-econquest-provenance-bar')
+        );
+        if (nestedCards.length >= 3) {
+          sectionCards = nestedCards;
+        }
+      }
+
+      // If no separate headerElement was detected and the first card is a compact banner/header (<240px) with >= 3 total cards,
+      // keep the compact header pinned on both Page 1 and Page 2 and paginate the remaining cards.
+      if (!headerElement && sectionCards.length >= 3) {
+        const firstCard = sectionCards[0];
+        const firstHeight = firstCard.offsetHeight;
+        if (firstHeight > 0 && firstHeight <= 240 && sectionCards.length >= 4) {
+          headerElement = firstCard;
+          sectionCards = sectionCards.slice(1);
+        }
+      }
+
+      const cardCount = sectionCards.length;
+      setTotalDetectedCards(cardCount);
+
+      // If this desk has 2 or fewer cards, it already fits within 1–2 screens without pagination
+      if (cardCount <= 2) {
+        setPage1CardCount(cardCount);
+        setPage2CardCount(0);
+        if (headerElement) headerElement.style.display = '';
+        sectionCards.forEach((c) => {
+          c.style.display = '';
+        });
+        return;
+      }
+
+      const splitIndex = Math.ceil(cardCount / 2);
+      setPage1CardCount(splitIndex);
+      setPage2CardCount(cardCount - splitIndex);
+
+      if (headerElement) {
+        headerElement.style.display = '';
+      }
+
+      sectionCards.forEach((card, idx) => {
+        if (activePage === 'all') {
+          card.style.display = '';
+        } else if (activePage === 'page1') {
+          card.style.display = idx < splitIndex ? '' : 'none';
+        } else {
+          card.style.display = idx >= splitIndex ? '' : 'none';
+        }
+      });
+    };
+
+    applyCardPagination();
+
+    // Trigger resize event after visibility change so Recharts ResponsiveContainer charts immediately render at full width
+    const resizeTimer = window.setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 40);
+
+    return () => {
+      window.clearTimeout(resizeTimer);
+    };
+  }, [activeNavSection, activePage, children]);
+
+  const hasMultiplePages = totalDetectedCards > 2 && page2CardCount > 0;
 
   return (
-    <div className="space-y-2">
-      {/* Compact 1-Line Viewport Scroll Budget Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 bg-slate-100/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 text-[11px] font-mono">
-        <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
-          <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-          <span className="font-semibold">Viewport Scroll Budget:</span>
-          <span className="text-emerald-700 dark:text-emerald-400 font-bold">
-            1–2 Screens Max
+    <div className="space-y-3" data-active-page={activePage}>
+      {/* Top 1-Line Desk Page Switcher Bar (Zero Nested Scrollbars) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400">
+            <Layers className="w-3.5 h-3.5" />
+            <span>Desk View:</span>
           </span>
-          <span className="hidden sm:inline text-slate-400">|</span>
-          <div className="hidden sm:flex items-center gap-1">
-            <span>Quick Section Jump:</span>
-            <button
-              type="button"
-              onClick={() => handleJumpScroll(0)}
-              className="px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200"
-            >
-              Screen 1 (Top Controls &amp; Primary Chart)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleJumpScroll(0.65)}
-              className="px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200"
-            >
-              Screen 2 (Deep-Dive Matrix &amp; Diagnostics)
-            </button>
-          </div>
+
+          {hasMultiplePages ? (
+            <div className="inline-flex flex-wrap items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setActivePage('page1')}
+                className={`px-3 py-1 text-xs font-semibold border transition-colors ${
+                  activePage === 'page1'
+                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-2xs'
+                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                Page 1: Primary Workbench &amp; Controls ({page1CardCount}{' '}
+                {page1CardCount === 1 ? 'panel' : 'panels'})
+              </button>
+              <button
+                type="button"
+                onClick={() => setActivePage('page2')}
+                className={`px-3 py-1 text-xs font-semibold border transition-colors ${
+                  activePage === 'page2'
+                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-2xs'
+                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                Page 2: Deep-Dive Matrix &amp; Diagnostics ({page2CardCount}{' '}
+                {page2CardCount === 1 ? 'panel' : 'panels'})
+              </button>
+            </div>
+          ) : (
+            <span className="px-2.5 py-0.5 text-[11px] font-mono font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+              Single-Page Compact Desk ({totalDetectedCards}{' '}
+              {totalDetectedCards === 1 ? 'panel' : 'panels'})
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => setEnforceCompactScrollCap((v) => !v)}
-            className="inline-flex items-center gap-1 px-2 py-0.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500"
-            title="Toggle between 1-2 Screen Viewport-Locked Container and Unbounded Page Flow"
-          >
-            {enforceCompactScrollCap ? (
-              <>
-                <Maximize2 className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                <span>1–2 Screen Lock: ON</span>
-              </>
-            ) : (
-              <>
-                <Minimize2 className="w-3 h-3" />
-                <span>1–2 Screen Lock: OFF</span>
-              </>
-            )}
-          </button>
+        <div className="flex items-center gap-2">
+          <span className="hidden md:inline text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
+            1–2 Screens Max · No Inner Scrollbars
+          </span>
+          {hasMultiplePages && (
+            <button
+              type="button"
+              onClick={() =>
+                setActivePage((prev) => (prev === 'all' ? 'page1' : 'all'))
+              }
+              className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-semibold border transition-colors ${
+                activePage === 'all'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-500'
+              }`}
+              title="Toggle between Paginated 1–2 Screen View and Full Stacked Desk View"
+            >
+              {activePage === 'all' ? (
+                <>
+                  <Minimize2 className="w-3 h-3" />
+                  <span>Return to Page 1 / 2 Tabs</span>
+                </>
+              ) : (
+                <>
+                  <Maximize2 className="w-3 h-3" />
+                  <span>Show All ({totalDetectedCards})</span>
+                </>
+              )}
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Scroll-Capped Workspace Viewport (Max ~1.6 screens of vertical scroll, with smooth internal navigation) */}
-      <div
-        ref={scrollContainerRef}
-        className={
-          enforceCompactScrollCap
-            ? 'max-h-[135vh] overflow-y-auto pr-1 scroll-smooth space-y-4'
-            : 'space-y-4'
-        }
-      >
+      {/* Main Desk Container — No inner overflow-y-auto, zero nested scrollbars */}
+      <div ref={contentWrapperRef} className="space-y-4">
         {children}
-
-        {enforceCompactScrollCap && (
-          <div className="flex items-center justify-between pt-2 pb-1 px-3 border-t border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-500 dark:text-slate-400">
-            <span>End of Active Desk (1–2 Screen Budget)</span>
-            <button
-              type="button"
-              onClick={() => handleJumpScroll(0)}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-blue-600 hover:text-white transition-colors"
-            >
-              <ArrowUp className="w-3 h-3" />
-              <span>Back to Top of Desk</span>
-            </button>
-          </div>
-        )}
       </div>
+
+      {/* Bottom Page Switcher Footer when Desk has 2 Pages */}
+      {hasMultiplePages && activePage !== 'all' && (
+        <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono">
+          <span className="text-slate-500 dark:text-slate-400">
+            Showing {activePage === 'page1' ? 'Page 1 of 2 (Primary Workbench)' : 'Page 2 of 2 (Deep-Dive Diagnostics)'}
+          </span>
+          <div className="flex items-center gap-2">
+            {activePage === 'page1' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePage('page2');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+              >
+                <span>Next: Page 2 (Deep-Dive Matrix &amp; Diagnostics)</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setActivePage('page1');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold transition-colors"
+              >
+                <ArrowUp className="w-3.5 h-3.5" />
+                <span>Back to Page 1 (Primary Workbench &amp; Controls)</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

@@ -286,72 +286,74 @@ export const DecisionCommandCenterDesk: React.FC<DecisionCommandCenterDeskProps>
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleTabChange('decision_dislocation_screener')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'decision_dislocation_screener'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Crosshair className="w-3.5 h-3.5" />
-            <span>7.1 Model vs. Market Screener</span>
-          </button>
+        {!onSelectSubTab && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleTabChange('decision_dislocation_screener')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'decision_dislocation_screener'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Crosshair className="w-3.5 h-3.5" />
+              <span>7.1 Model vs. Market Screener</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('decision_premortem_killswitch')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'decision_premortem_killswitch'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            <span>7.2 Pre-Mortem & Kill-Switches</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('decision_premortem_killswitch')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'decision_premortem_killswitch'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>7.2 Pre-Mortem & Kill-Switches</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('decision_ledger_brier')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'decision_ledger_brier'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <BookCheck className="w-3.5 h-3.5" />
-            <span>7.3 Decision Ledger & Brier Audit</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('decision_ledger_brier')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'decision_ledger_brier'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <BookCheck className="w-3.5 h-3.5" />
+              <span>7.3 Decision Ledger & Brier Audit</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('decision_quadrant_stress')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'decision_quadrant_stress'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Grid className="w-3.5 h-3.5" />
-            <span>7.4 4-Quadrant Stress Matrix</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('decision_quadrant_stress')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'decision_quadrant_stress'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Grid className="w-3.5 h-3.5" />
+              <span>7.4 4-Quadrant Stress Matrix</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('decision_prediction_markets')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'decision_prediction_markets'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Activity className="w-3.5 h-3.5" />
-            <span>7.5 Polymarket & Kalshi Event Arb</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange('decision_prediction_markets')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'decision_prediction_markets'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>7.5 Polymarket & Kalshi Event Arb</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ==========================================================================

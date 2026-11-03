@@ -13,6 +13,7 @@ import {
   ConditionalBayesianEventSimulation,
   CouncilAssessmentRun,
   CustomSovereignOnboardingDraft,
+  ExternalInternalConnectorMetricKey,
   ForecastingShockInputs,
   GeopoliticalWargameParams,
   LiquidityStressParams,
@@ -44,6 +45,8 @@ import {
   CustomSovereignOnboardingModal,
   GlobalCommandPaletteModal,
   ModelIntegrityAuditModal,
+  SelfHostAndOllamaRuntimeModal,
+  SovereignManualAndGithubModal,
   WorkspaceSessionModal,
 } from './components/TurnkeyCommandAndIntegrityModals';
 import { DEFAULT_WARGAME_PARAMS } from './utils/geopoliticalRiskEngine';
@@ -115,6 +118,7 @@ import {
   ACTIVITY_PILLARS,
   ActivityPillarId,
   findPillarForNavSection,
+  buildThreePillarHubsForCommandPalette,
   PillarSubNavigationStrip,
   CompactTopStatusAndDrawersBar,
   MacroOverviewTabbedWorkspace,
@@ -148,10 +152,13 @@ import {
   Database,
   ChevronDown,
   Briefcase,
+  BookOpen,
+  Cpu,
 } from 'lucide-react';
 
 const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
+const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 
 type NavSectionId =
   | 'charts_watchlists'
@@ -550,6 +557,8 @@ export default function App() {
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
     useState<boolean>(false);
   const [isSessionModalOpen, setIsSessionModalOpen] = useState<boolean>(false);
+  const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
+  const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
 
   // Persistent Custom Watchlists
   const [watchlists, setWatchlists] = useState<WatchlistGroup[]>(() => {
@@ -651,19 +660,72 @@ export default function App() {
     HistoricalCrisisEpisodeId | undefined
   >(undefined);
 
-  const [runtimeConfig, setRuntimeConfig] = useState<AIRuntimeConfig>({
-    providerMode: 'gemini',
-    geminiQuickModel: 'gemini-3.8-flash',
-    geminiDeepModel: 'gemini-3.8-flash',
-    ollamaBaseUrl: 'http://localhost:11434',
-    ollamaQuickModel: 'qwen2.5:32b',
-    ollamaDeepModel: 'deepseek-r1:32b',
-    openAiBaseUrl: 'http://localhost:8000/v1',
-    openAiModel: 'gpt-4o',
-    webhookTargetUrl: '',
-    enableSearchGrounding: true,
-    maxDebateRounds: 2,
+  const [runtimeConfig, setRuntimeConfig] = useState<AIRuntimeConfig>(() => {
+    try {
+      const saved = localStorage.getItem(AI_RUNTIME_STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && parsed.providerMode) {
+          return parsed as AIRuntimeConfig;
+        }
+      }
+    } catch {
+      // Ignore storage error
+    }
+    return {
+      providerMode: 'gemini',
+      geminiQuickModel: 'gemini-3.8-flash',
+      geminiDeepModel: 'gemini-3.8-flash',
+      ollamaBaseUrl: 'http://localhost:11434',
+      ollamaQuickModel: 'qwen2.5:7b',
+      ollamaDeepModel: 'deepseek-r1:8b',
+      openAiBaseUrl: 'http://localhost:8000/v1',
+      openAiModel: 'gpt-4o',
+      webhookTargetUrl: '',
+      enableSearchGrounding: true,
+      maxDebateRounds: 2,
+    };
   });
+
+  // Hydrate server environment defaults (e.g., when self-hosted inside Docker on Mac or Windows)
+  useEffect(() => {
+    const hasSavedLocalPref = (() => {
+      try {
+        return Boolean(localStorage.getItem(AI_RUNTIME_STORAGE_KEY));
+      } catch {
+        return false;
+      }
+    })();
+    fetch('/api/ai/runtime-defaults')
+      .then((r) => r.json())
+      .then((defaults) => {
+        if (!defaults) return;
+        if (!hasSavedLocalPref || defaults.isDockerContainer) {
+          setRuntimeConfig((prev) => ({
+            ...prev,
+            providerMode: defaults.providerMode || prev.providerMode,
+            ollamaBaseUrl: defaults.ollamaBaseUrl || prev.ollamaBaseUrl,
+            ollamaQuickModel: defaults.ollamaQuickModel || prev.ollamaQuickModel,
+            ollamaDeepModel: defaults.ollamaDeepModel || prev.ollamaDeepModel,
+            openAiBaseUrl: defaults.openAiBaseUrl || prev.openAiBaseUrl,
+            openAiModel: defaults.openAiModel || prev.openAiModel,
+            apiConnectors: defaults.apiConnectors || prev.apiConnectors,
+          }));
+        }
+      })
+      .catch(() => {
+        // Ignore network error
+      });
+  }, []);
+
+  // Persist AI Runtime config changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(AI_RUNTIME_STORAGE_KEY, JSON.stringify(runtimeConfig));
+    } catch {
+      // Ignore storage error
+    }
+  }, [runtimeConfig]);
 
   const [isFetchingOpenData, setIsFetchingOpenData] = useState<boolean>(false);
   const [isRunningPhase1And2, setIsRunningPhase1And2] = useState<boolean>(false);
@@ -1225,6 +1287,61 @@ export default function App() {
     });
   };
 
+  const handleApplyConnectorTelemetryToActiveSovereign = (
+    connectorName: string,
+    extracted: Partial<Record<ExternalInternalConnectorMetricKey, number>>
+  ) => {
+    const nextOpenData: OpenDataSnapshot = JSON.parse(JSON.stringify(run.openData));
+    const appliedFields: string[] = [];
+
+    if (typeof extracted.gdpGrowth === 'number') {
+      nextOpenData.imfIndicators.realGdpGrowthPct = extracted.gdpGrowth;
+      appliedFields.push(`GDP Growth=${extracted.gdpGrowth}%`);
+    }
+    if (typeof extracted.cpiInflation === 'number') {
+      nextOpenData.imfIndicators.cpiInflationPct = extracted.cpiInflation;
+      appliedFields.push(`CPI=${extracted.cpiInflation}%`);
+    }
+    if (typeof extracted.debtToGdp === 'number') {
+      nextOpenData.imfIndicators.debtToGdpPct = extracted.debtToGdp;
+      appliedFields.push(`Debt/GDP=${extracted.debtToGdp}%`);
+    }
+    if (typeof extracted.cds5yBps === 'number') {
+      nextOpenData.monetaryAndMarket.cds5YSpreadBps = Math.round(extracted.cds5yBps);
+      appliedFields.push(`5Y CDS=${Math.round(extracted.cds5yBps)} bps`);
+    }
+    if (typeof extracted.fxReservesMonths === 'number') {
+      nextOpenData.worldBankIndicators.fxReservesMonthsImport = extracted.fxReservesMonths;
+      appliedFields.push(`FX Cover=${extracted.fxReservesMonths} mos`);
+    }
+    if (typeof extracted.policyRate === 'number') {
+      nextOpenData.monetaryAndMarket.policyRatePct = extracted.policyRate;
+      appliedFields.push(`Policy Rate=${extracted.policyRate}%`);
+    }
+    if (typeof extracted.politicalStability === 'number') {
+      nextOpenData.worldBankIndicators.politicalStabilityPercentile = extracted.politicalStability;
+      appliedFields.push(`Pol Stability=${extracted.politicalStability} pctl`);
+    }
+
+    if (appliedFields.length === 0) return;
+
+    nextOpenData.liveApiSourcesActive = Array.from(
+      new Set([...(nextOpenData.liveApiSourcesActive || []), `${connectorName} (GUI Connector)`])
+    );
+    recomputeDerivedOpenDataAnalytics(nextOpenData);
+    const updatedCharts = buildAnnotatedChartsForSovereign(nextOpenData);
+
+    setRun((prev) => ({
+      ...prev,
+      openData: nextOpenData,
+      charts: updatedCharts,
+    }));
+    setStatusBanner({
+      type: 'success',
+      message: `Applied mapped JSON telemetry from "${connectorName}" to ${run.countryName} (${run.iso3}): ${appliedFields.join(' · ')}.`,
+    });
+  };
+
   const handleCreateWatchlist = (name: string, description: string) => {
     const newWl: WatchlistGroup = {
       id: `wl_custom_${Date.now()}`,
@@ -1399,7 +1516,11 @@ export default function App() {
   }, [watchlists, customOnboardedSovereigns]);
 
   const commandPaletteItems = useMemo(
-    () => buildCommandPaletteIndex(DOMAIN_HUBS, allRegisteredSovereigns),
+    () =>
+      buildCommandPaletteIndex(
+        buildThreePillarHubsForCommandPalette(),
+        allRegisteredSovereigns
+      ),
     [allRegisteredSovereigns]
   );
 
@@ -1489,8 +1610,6 @@ export default function App() {
     }
     if (item.targetPersona) {
       setActivePersona(item.targetPersona);
-      setLayoutMode('executive_brief');
-      setActiveNavSection('persona_cross_hub_signal_scanner');
       return;
     }
     if (item.targetIso3) {
@@ -1678,10 +1797,10 @@ export default function App() {
             </button>
           </div>
 
-          {/* Top Header 3-Persona Mode Switcher */}
+          {/* Top Header 3-Persona Mode Switcher (Updates Persona Lens In-Place Without Leaving Active Desk) */}
           <div
             className="hidden md:inline-flex items-center border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/30 p-0.5"
-            title="Switch Active Persona Lens (Individual Trader / Institutional PM & IC / Policy Researcher)"
+            title="Switch Active Persona Lens In-Place (Individual Trader / Institutional PM & IC / Policy Researcher)"
           >
             {(
               [
@@ -1697,15 +1816,6 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     setActivePersona(p.id);
-                    setLayoutMode('executive_brief');
-                    if (
-                      activeNavSection !== 'persona_cross_hub_signal_scanner' &&
-                      activeNavSection !== 'persona_guided_playbook_cockpit' &&
-                      activeNavSection !== 'persona_strategy_backtester_lab' &&
-                      activeNavSection !== 'persona_academic_latex_csv_exporter'
-                    ) {
-                      setActiveNavSection('persona_cross_hub_signal_scanner');
-                    }
                   }}
                   className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
                     isSel
@@ -1719,15 +1829,48 @@ export default function App() {
             })}
           </div>
 
-          {/* Pre-Flight Model Integrity Auditor Pill */}
+          {/* Pre-Flight Model Integrity & Full-Stack Sweep Auditor */}
           <button
             type="button"
             onClick={() => setIsIntegrityAuditOpen(true)}
-            title="Open Pre-Flight Model Integrity, Accounting Identity & API Provenance Auditor"
+            title="Open Full-Stack Backend, Quant Engine & Model Integrity Sweep Auditor"
             className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors whitespace-nowrap shrink-0"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
             <span>{liveIntegrityAuditReport.readinessScorePct}% QA</span>
+          </button>
+
+          {/* 1-Click Local Ollama, External/Internal API Hosts & Docker Self-Host Runtime Switcher */}
+          <button
+            type="button"
+            onClick={() => setIsRuntimeModalOpen(true)}
+            title="Open 4-Tab GUI Studio: Global AI Models, 12-Agent Matrix, Docker Self-Host Builder & External/Internal API Host Connectors"
+            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+              runtimeConfig.providerMode === 'ollama' ||
+              runtimeConfig.providerMode === 'hybrid'
+                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700'
+                : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700'
+            }`}
+          >
+            <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">
+              {runtimeConfig.providerMode === 'ollama'
+                ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
+                : runtimeConfig.providerMode === 'hybrid'
+                ? 'Hybrid Ollama'
+                : 'AI / APIs / Docker'}
+            </span>
+          </button>
+
+          {/* 1-Click User Manual & GitHub Docs Viewer */}
+          <button
+            type="button"
+            onClick={() => setIsManualModalOpen(true)}
+            title="Open Sovereign Council Orchestrator User Manual (docs/USER_MANUAL.md) & README.md"
+            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors whitespace-nowrap shrink-0"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Manual & Docs</span>
           </button>
 
           {/* Session Persistence Manager */}
@@ -1874,6 +2017,33 @@ export default function App() {
               </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
+                {/* Compact Layout Mode Switcher (Focused Desk | Split | Full Report) */}
+                <div
+                  className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700"
+                  title="Switch Workspace Layout Mode: Focused Desk (1-2 Screen Paginated View), Split Workbench, or Full Report"
+                >
+                  {(
+                    [
+                      { id: 'executive_brief', label: 'Focused Desk' },
+                      { id: 'split_workbench', label: 'Split' },
+                      { id: 'full_report', label: 'Report' },
+                    ] as const
+                  ).map((mode) => (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setLayoutMode(mode.id)}
+                      className={`px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
+                        layoutMode === mode.id
+                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-2xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {mode.label}
+                    </button>
+                  ))}
+                </div>
+
                 <button
                   type="button"
                   onClick={() => setIsComparatorDrawerOpen(true)}
@@ -2164,6 +2334,9 @@ export default function App() {
                   onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
                   isRunningPhase1And2={isRunningPhase1And2}
                   onReverifyPipeline={handleRunCouncilPhase1And2}
+                  runtimeConfig={runtimeConfig}
+                  onUpdateRuntimeConfig={setRuntimeConfig}
+                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
                 />
               )}
 
@@ -2417,6 +2590,9 @@ export default function App() {
                   }}
                   isRunningPhase1And2={isRunningPhase1And2}
                   onReverifyPipeline={handleRunCouncilPhase1And2}
+                  runtimeConfig={runtimeConfig}
+                  onUpdateRuntimeConfig={setRuntimeConfig}
+                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
                 />
                 <CROCheckpointAndReports
                   run={run}
@@ -2547,6 +2723,9 @@ export default function App() {
                 }}
                 isRunningPhase1And2={isRunningPhase1And2}
                 onReverifyPipeline={handleRunCouncilPhase1And2}
+                runtimeConfig={runtimeConfig}
+                onUpdateRuntimeConfig={setRuntimeConfig}
+                onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
               />
               <CROCheckpointAndReports
                 run={run}
@@ -2598,6 +2777,21 @@ export default function App() {
         currentSnapshot={currentWorkspaceSessionSnapshot}
         onRestoreSession={handleRestoreWorkspaceSession}
         onResetFactoryDefaults={handleResetFactoryDefaults}
+      />
+
+      <SovereignManualAndGithubModal
+        isOpen={isManualModalOpen}
+        onClose={() => setIsManualModalOpen(false)}
+      />
+
+      <SelfHostAndOllamaRuntimeModal
+        isOpen={isRuntimeModalOpen}
+        onClose={() => setIsRuntimeModalOpen(false)}
+        runtimeConfig={runtimeConfig}
+        onUpdateRuntimeConfig={setRuntimeConfig}
+        onTriggerReverifyCouncil={handleRunCouncilPhase1And2}
+        activeIso3={run.iso3}
+        onApplyConnectorTelemetryToActiveSovereign={handleApplyConnectorTelemetryToActiveSovereign}
       />
 
       {/* MULTI-SOVEREIGN HEAD-TO-HEAD COMPARATOR DRAWER (2-3 COUNTRIES SIDE-BY-SIDE) */}

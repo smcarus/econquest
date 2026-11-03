@@ -255,42 +255,44 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
           </div>
         </div>
 
-        {/* Sub-Tab Selector Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-800">
-          {subTabConfigs.map((tab) => {
-            const isActive = activeSubTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => handleSelectSubTab(tab.id)}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded text-left border transition-all ${
-                  isActive
-                    ? 'bg-slate-900 text-white border-slate-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-sm'
-                    : 'bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
-                }`}
-              >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span className={isActive ? 'text-emerald-300 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}>
-                    {tab.icon}
-                  </span>
-                  <div className="truncate">
-                    <span className="text-[10px] font-mono opacity-75 mr-1.5">{tab.code}</span>
-                    <span className="text-xs font-semibold">{tab.label}</span>
-                  </div>
-                </div>
-                <span
-                  className={`ml-2 px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 ${
+        {/* Sub-Tab Selector Bar (Shown only in standalone/split mode when not controlled by Top 3-Pillar Bar) */}
+        {!onSelectSubTab && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 mt-5 pt-4 border-t border-slate-200 dark:border-slate-800">
+            {subTabConfigs.map((tab) => {
+              const isActive = activeSubTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleSelectSubTab(tab.id)}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded text-left border transition-all ${
                     isActive
-                      ? 'bg-white/15 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-sm'
+                      : 'bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
                   }`}
                 >
-                  {tab.badge}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={isActive ? 'text-emerald-300 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}>
+                      {tab.icon}
+                    </span>
+                    <div className="truncate">
+                      <span className="text-[10px] font-mono opacity-75 mr-1.5">{tab.code}</span>
+                      <span className="text-xs font-semibold">{tab.label}</span>
+                    </div>
+                  </div>
+                  <span
+                    className={`ml-2 px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 ${
+                      isActive
+                        ? 'bg-white/15 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    {tab.badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* =====================================================================

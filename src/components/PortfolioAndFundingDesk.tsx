@@ -244,46 +244,48 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleTabChange('embi_portfolio_pair_book')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'embi_portfolio_pair_book'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Briefcase className="w-3.5 h-3.5" />
-            <span>6.1 EMBI Portfolio & Pair-Trade Book</span>
-          </button>
+        {!onSelectSubTab && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleTabChange('embi_portfolio_pair_book')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'embi_portfolio_pair_book'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              <span>6.1 EMBI Portfolio & Pair-Trade Book</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('dmo_treasury_auction_sim')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'dmo_treasury_auction_sim'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Landmark className="w-3.5 h-3.5" />
-            <span>6.2 24M DMO Treasury Auction Simulator</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('dmo_treasury_auction_sim')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'dmo_treasury_auction_sim'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Landmark className="w-3.5 h-3.5" />
+              <span>6.2 24M DMO Treasury Auction Simulator</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('mpc_imf_document_ai')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              activeTab === 'mpc_imf_document_ai'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <FileSearch className="w-3.5 h-3.5" />
-            <span>6.3 MPC & IMF Article IV Document AI</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange('mpc_imf_document_ai')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
+                activeTab === 'mpc_imf_document_ai'
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <FileSearch className="w-3.5 h-3.5" />
+              <span>6.3 MPC & IMF Article IV Document AI</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ==========================================================================

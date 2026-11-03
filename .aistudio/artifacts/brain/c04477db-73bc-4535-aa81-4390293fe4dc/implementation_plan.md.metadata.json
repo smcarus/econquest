@@ -1,6 +1,6 @@
 {
-  "summary": "Architecture and UX reorganization plan structuring the EconQuest Sovereign Council Terminal around three primary activity pillars (Market & Trading, Policy Research, Macroeconomic Research), a consolidated 1-line status bar with slide-over drawers, and inner card tabs that cap every workspace at 1–2 screens of vertical scrolling maximum.",
-  "updatedAt": "2026-11-03T14:33:04.452619534Z",
+  "summary": "Implementation plan to add a full External & Internal API / Host Connector GUI Hub (with server-side proxy ping tester, live JSON inspector, dot-path telemetry mapper, custom LLM host gateway overrides, and outbound webhook bus connectors) alongside synchronized updates to README.md, SOVEREIGN_COUNCIL_MANUAL.md, docs/USER_MANUAL.md, and the in-app Manual & GitHub Docs viewer.",
+  "updatedAt": "2026-11-03T16:30:10.706455227Z",
   "requestFeedback": true,
   "userFacing": true
 }

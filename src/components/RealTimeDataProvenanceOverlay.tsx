@@ -1025,7 +1025,12 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
     });
     const mainEl = document.querySelector('main');
     if (mainEl) {
-      observer.observe(mainEl, { childList: true, subtree: true });
+      observer.observe(mainEl, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['data-active-page'],
+      });
     }
     return () => {
       window.clearTimeout(timer);

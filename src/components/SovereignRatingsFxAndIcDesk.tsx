@@ -158,59 +158,61 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() => handleTabChange('ratings_shadow_fallen_angel')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              activeTab === 'ratings_shadow_fallen_angel'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Award className="w-3.5 h-3.5" />
-            <span>8.1 Shadow Rating & Fallen-Angel</span>
-          </button>
+        {!onSelectSubTab && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => handleTabChange('ratings_shadow_fallen_angel')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                activeTab === 'ratings_shadow_fallen_angel'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Award className="w-3.5 h-3.5" />
+              <span>8.1 Shadow Rating & Fallen-Angel</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('fx_beer_feer_equilibrium')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              activeTab === 'fx_beer_feer_equilibrium'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Globe className="w-3.5 h-3.5" />
-            <span>8.2 FX BEER / FEER Valuation Lab</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('fx_beer_feer_equilibrium')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                activeTab === 'fx_beer_feer_equilibrium'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>8.2 FX BEER / FEER Valuation Lab</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('debt_investor_base_doom_loop')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              activeTab === 'debt_investor_base_doom_loop'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Landmark className="w-3.5 h-3.5" />
-            <span>8.3 Investor Base & Doom-Loop</span>
-          </button>
+            <button
+              type="button"
+              onClick={() => handleTabChange('debt_investor_base_doom_loop')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                activeTab === 'debt_investor_base_doom_loop'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Landmark className="w-3.5 h-3.5" />
+              <span>8.3 Investor Base & Doom-Loop</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => handleTabChange('ic_pitchbook_dossier_exporter')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              activeTab === 'ic_pitchbook_dossier_exporter'
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>8.4 Boardroom IC Pitchbook</span>
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => handleTabChange('ic_pitchbook_dossier_exporter')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+                activeTab === 'ic_pitchbook_dossier_exporter'
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>8.4 Boardroom IC Pitchbook</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ==========================================================================

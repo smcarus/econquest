@@ -418,6 +418,44 @@ export interface WatchlistGroup {
   items: WatchlistItem[];
 }
 
+export type ExternalInternalConnectorMetricKey =
+  | 'gdpGrowth'
+  | 'cpiInflation'
+  | 'debtToGdp'
+  | 'cds5yBps'
+  | 'fxReservesMonths'
+  | 'policyRate'
+  | 'politicalStability';
+
+export interface ExternalInternalConnectorConfig {
+  id: string;
+  name: string;
+  category: 'macro_rest' | 'llm_gateway' | 'webhook_bus';
+  networkScope: 'external' | 'internal_host';
+  url: string;
+  method: 'GET' | 'POST';
+  headers: Record<string, string>;
+  bodyTemplate?: string;
+  enabled: boolean;
+  timeoutMs: number;
+  telemetryMappings?: Partial<Record<ExternalInternalConnectorMetricKey, string>>;
+  injectIntoCouncilPrompt?: boolean;
+  lastStatus?: 'untested' | 'ok' | 'error';
+  lastLatencyMs?: number;
+  lastTestedAt?: string;
+}
+
+export interface DockerSelfHostGuiConfig {
+  targetOs: 'mac_apple_silicon' | 'mac_intel' | 'windows_nvidia' | 'windows_cpu' | 'linux';
+  topology: 'host_ollama' | 'bundled_cpu' | 'bundled_gpu';
+  appPort: number;
+  ollamaPort: number;
+  containerName: string;
+  keepAlive: string;
+  corsOrigins: string;
+  autoPullOnBoot: boolean;
+}
+
 export interface AIRuntimeConfig {
   providerMode: 'gemini' | 'ollama' | 'hybrid' | 'openai_compatible';
   geminiQuickModel: string;
@@ -430,6 +468,19 @@ export interface AIRuntimeConfig {
   webhookTargetUrl: string;
   enableSearchGrounding: boolean;
   maxDebateRounds: number;
+  temperature?: number;
+  numCtx?: number;
+  timeoutSeconds?: number;
+  deskModelOverrides?: {
+    geopolitical?: string;
+    sovereign?: string;
+    macro?: string;
+    supremeCouncil?: string;
+  };
+  agentModelOverrides?: Partial<Record<SubAgentId, string>>;
+  agentPromptOverrides?: Partial<Record<SubAgentId, string>>;
+  dockerGuiConfig?: DockerSelfHostGuiConfig;
+  apiConnectors?: ExternalInternalConnectorConfig[];
 }
 
 export interface CouncilAssessmentRun {

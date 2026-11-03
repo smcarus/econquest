@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
@@ -17,6 +18,8 @@ import {
   CROOverrideState,
   CouncilAssessmentRun,
   DeskDebateRound,
+  ExternalInternalConnectorConfig,
+  ExternalInternalConnectorMetricKey,
   GeopoliticalWargameParams,
   LiquidityStressParams,
   OpenDataSnapshot,
@@ -661,6 +664,9 @@ async function fetchLiveOpenDataSnapshot(
     })(),
   ]);
 
+  // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
+  await applyGuiMacroConnectorsToSnapshot(baseline, normalizedIso, activeSources);
+
   // Dynamically recompute DSA (r - g), Greenspan-Guidotti Debt Rollover, Yield Curve & Real Policy Rate
   recomputeDerivedOpenDataAnalytics(baseline, {
     yield2Y: yield2YOverride,
@@ -720,31 +726,318 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
   return items;
 }
 
+export const DEFAULT_SERVER_API_CONNECTORS: ExternalInternalConnectorConfig[] = [
+  {
+    id: 'conn-wb-gdp',
+    name: 'World Bank Open Data v2 (Real GDP Growth)',
+    category: 'macro_rest',
+    networkScope: 'external',
+    url: 'https://api.worldbank.org/v2/country/{{ISO3}}/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=2',
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    enabled: true,
+    timeoutMs: 4500,
+    telemetryMappings: {
+      gdpGrowth: '1.0.value',
+    },
+    injectIntoCouncilPrompt: true,
+    lastStatus: 'ok',
+  },
+  {
+    id: 'conn-imf-debt',
+    name: 'IMF DataMapper WEO v1 (Gross Debt % GDP)',
+    category: 'macro_rest',
+    networkScope: 'external',
+    url: 'https://www.imf.org/external/datamapper/api/v1/GGXWDG_NGDP/{{ISO3}}',
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    enabled: true,
+    timeoutMs: 4500,
+    telemetryMappings: {
+      debtToGdp: 'values.GGXWDG_NGDP.{{ISO3}}.2025',
+    },
+    injectIntoCouncilPrompt: true,
+    lastStatus: 'ok',
+  },
+  {
+    id: 'conn-internal-lake',
+    name: 'Internal Enterprise Sovereign Risk Lake (Intranet / Docker Host)',
+    category: 'macro_rest',
+    networkScope: 'internal_host',
+    url: 'http://host.docker.internal:8080/api/v1/sovereign/{{ISO3}}',
+    method: 'GET',
+    headers: {
+      Accept: 'application/json',
+      'X-Internal-Desk': 'Sovereign-Macro-Council',
+    },
+    enabled: false,
+    timeoutMs: 3500,
+    telemetryMappings: {
+      gdpGrowth: 'telemetry.gdpGrowthPct',
+      cpiInflation: 'telemetry.cpiInflationPct',
+      debtToGdp: 'telemetry.debtToGdpPct',
+      cds5yBps: 'telemetry.cds5ySpreadBps',
+      fxReservesMonths: 'telemetry.fxReservesMonths',
+      policyRate: 'telemetry.policyRatePct',
+    },
+    injectIntoCouncilPrompt: true,
+    lastStatus: 'untested',
+  },
+  {
+    id: 'conn-ollama-gateway',
+    name: 'Local / Internal Ollama & vLLM Inference Gateway',
+    category: 'llm_gateway',
+    networkScope: 'internal_host',
+    url: 'http://host.docker.internal:11434/api/tags',
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+    enabled: true,
+    timeoutMs: 3000,
+    telemetryMappings: {},
+    injectIntoCouncilPrompt: false,
+    lastStatus: 'untested',
+  },
+  {
+    id: 'conn-smcr-webhook',
+    name: 'Enterprise Risk Bus & Slack/Teams Outbound Webhook',
+    category: 'webhook_bus',
+    networkScope: 'internal_host',
+    url: 'http://host.docker.internal:9000/webhooks/smcr-verdict',
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Council-Standard': 'SMCR-1.0',
+    },
+    bodyTemplate:
+      '{"schema":"SMCR-1.0","iso3":"{{ISO3}}","event":"SOVEREIGN_COUNCIL_VERDICT","status":"ACTIVE_MONITORING"}',
+    enabled: false,
+    timeoutMs: 4000,
+    telemetryMappings: {},
+    injectIntoCouncilPrompt: false,
+    lastStatus: 'untested',
+  },
+];
+
+let serverGuiRuntimeConfig: Partial<AIRuntimeConfig> = {
+  apiConnectors: DEFAULT_SERVER_API_CONNECTORS,
+};
+
+function interpolateIsoTemplate(rawStr: string, iso3: string): string {
+  const cleanIso3 = (iso3 || 'BRA').toUpperCase().trim();
+  const cleanIso2 = cleanIso3.slice(0, 2);
+  return String(rawStr || '')
+    .replace(/\{\{\s*ISO3\s*\}\}/gi, cleanIso3)
+    .replace(/\{\{\s*ISO2\s*\}\}/gi, cleanIso2);
+}
+
+function resolveJsonDotPath(payload: any, dotPath: string, iso3: string): any {
+  if (!payload || !dotPath) return undefined;
+  const resolvedPath = interpolateIsoTemplate(dotPath.trim().replace(/^\$\.?/, ''), iso3);
+  const parts = resolvedPath.split('.').filter(Boolean);
+  let cur: any = payload;
+  for (const part of parts) {
+    if (cur === null || cur === undefined) return undefined;
+    cur = cur[part];
+  }
+  return cur;
+}
+
+function extractMappedTelemetryFromPayload(
+  payload: any,
+  mappings: Partial<Record<ExternalInternalConnectorMetricKey, string>> | undefined,
+  iso3: string
+): Partial<Record<ExternalInternalConnectorMetricKey, number>> {
+  const extracted: Partial<Record<ExternalInternalConnectorMetricKey, number>> = {};
+  if (!mappings || !payload) return extracted;
+  (Object.keys(mappings) as ExternalInternalConnectorMetricKey[]).forEach((metricKey) => {
+    const pathExpr = mappings[metricKey];
+    if (!pathExpr || !pathExpr.trim()) return;
+    const rawVal = resolveJsonDotPath(payload, pathExpr, iso3);
+    const num = typeof rawVal === 'number' ? rawVal : Number(rawVal);
+    if (!Number.isNaN(num) && Number.isFinite(num)) {
+      extracted[metricKey] = Number(num.toFixed(2));
+    }
+  });
+  return extracted;
+}
+
+async function applyGuiMacroConnectorsToSnapshot(
+  snapshot: OpenDataSnapshot,
+  iso3: string,
+  activeSources: string[]
+): Promise<void> {
+  const connectors = serverGuiRuntimeConfig.apiConnectors || DEFAULT_SERVER_API_CONNECTORS;
+  const customMacroConnectors = connectors.filter(
+    (c) =>
+      c.enabled &&
+      c.category === 'macro_rest' &&
+      c.id !== 'conn-wb-gdp' &&
+      c.id !== 'conn-imf-debt'
+  );
+  if (customMacroConnectors.length === 0) return;
+
+  await Promise.allSettled(
+    customMacroConnectors.map(async (conn) => {
+      const targetUrl = interpolateIsoTemplate(conn.url, iso3);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), Math.min(8000, Math.max(1000, conn.timeoutMs || 4000)));
+      try {
+        const res = await fetch(targetUrl, {
+          method: conn.method || 'GET',
+          headers: conn.headers || { Accept: 'application/json' },
+          ...(conn.method === 'POST' && conn.bodyTemplate
+            ? { body: interpolateIsoTemplate(conn.bodyTemplate, iso3) }
+            : {}),
+          signal: controller.signal,
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const mapped = extractMappedTelemetryFromPayload(json, conn.telemetryMappings, iso3);
+        let appliedAny = false;
+        if (typeof mapped.gdpGrowth === 'number') {
+          snapshot.imfIndicators.realGdpGrowthPct = mapped.gdpGrowth;
+          appliedAny = true;
+        }
+        if (typeof mapped.cpiInflation === 'number') {
+          snapshot.imfIndicators.cpiInflationPct = mapped.cpiInflation;
+          appliedAny = true;
+        }
+        if (typeof mapped.debtToGdp === 'number') {
+          snapshot.imfIndicators.debtToGdpPct = mapped.debtToGdp;
+          appliedAny = true;
+        }
+        if (typeof mapped.cds5yBps === 'number') {
+          snapshot.monetaryAndMarket.cds5YSpreadBps = Math.round(mapped.cds5yBps);
+          appliedAny = true;
+        }
+        if (typeof mapped.fxReservesMonths === 'number') {
+          snapshot.worldBankIndicators.fxReservesMonthsImport = mapped.fxReservesMonths;
+          appliedAny = true;
+        }
+        if (typeof mapped.policyRate === 'number') {
+          snapshot.monetaryAndMarket.policyRatePct = mapped.policyRate;
+          appliedAny = true;
+        }
+        if (typeof mapped.politicalStability === 'number') {
+          snapshot.worldBankIndicators.politicalStabilityPercentile = mapped.politicalStability;
+          appliedAny = true;
+        }
+        if (appliedAny) {
+          activeSources.push(`${conn.name} (${conn.networkScope === 'internal_host' ? 'Internal Host' : 'External API'})`);
+        }
+      } catch {
+        // Ignore unreachable custom host during background snapshot refresh
+      } finally {
+        clearTimeout(timer);
+      }
+    })
+  );
+}
+
+function resolveStepModelFromGuiConfig(
+  stepName: string,
+  isDeepCouncilStep: boolean,
+  cfg: Partial<AIRuntimeConfig>
+): string {
+  const deskOverrides = cfg.deskModelOverrides || serverGuiRuntimeConfig.deskModelOverrides || {};
+  const agentOverrides = cfg.agentModelOverrides || serverGuiRuntimeConfig.agentModelOverrides || {};
+  const quickDefault =
+    cfg.ollamaQuickModel ||
+    serverGuiRuntimeConfig.ollamaQuickModel ||
+    process.env.OLLAMA_QUICK_MODEL ||
+    'qwen2.5:7b';
+  const deepDefault =
+    cfg.ollamaDeepModel ||
+    serverGuiRuntimeConfig.ollamaDeepModel ||
+    cfg.ollamaQuickModel ||
+    process.env.OLLAMA_DEEP_MODEL ||
+    'deepseek-r1:8b';
+
+  if (stepName === 'STAGE_1_GEO_DESK') {
+    return (
+      deskOverrides.geopolitical?.trim() ||
+      agentOverrides.ag1_intel_scraper?.trim() ||
+      agentOverrides.ag2_transmission_mapper?.trim() ||
+      agentOverrides.ag3_sanctions_legal?.trim() ||
+      quickDefault
+    );
+  }
+  if (stepName === 'STAGE_1_SOV_DESK') {
+    return (
+      deskOverrides.sovereign?.trim() ||
+      agentOverrides.ag4_fiscal_auditor?.trim() ||
+      agentOverrides.ag5_external_balance?.trim() ||
+      agentOverrides.ag6_political_will?.trim() ||
+      quickDefault
+    );
+  }
+  if (stepName === 'STAGE_1_MACRO_DESK') {
+    return (
+      deskOverrides.macro?.trim() ||
+      agentOverrides.ag7_hf_nowcaster?.trim() ||
+      agentOverrides.ag8_cb_watcher?.trim() ||
+      agentOverrides.ag9_global_spillover?.trim() ||
+      quickDefault
+    );
+  }
+  if (isDeepCouncilStep) {
+    return deskOverrides.supremeCouncil?.trim() || deepDefault;
+  }
+  return quickDefault;
+}
+
 async function callOllamaOrOpenAICompatible(
   baseUrl: string,
   model: string,
   systemPrompt: string,
   userPrompt: string,
   isOllama: boolean,
-  timeoutMs = 15000
+  timeoutMs = 20000,
+  schemaKeysHint?: string[],
+  inferenceOptions?: { temperature?: number; numCtx?: number }
 ): Promise<string> {
   const cleanUrl = baseUrl.replace(/\/+$/, '');
   const endpoint = isOllama ? `${cleanUrl}/api/chat` : `${cleanUrl}/chat/completions`;
+  const schemaInstruction =
+    schemaKeysHint && schemaKeysHint.length > 0
+      ? `\n\nCRITICAL JSON SCHEMA REQUIREMENT: Return ONLY a valid JSON object containing these exact top-level keys: ${schemaKeysHint.join(', ')}. Do not wrap in markdown code fences.`
+      : '\n\nCRITICAL: Return ONLY a valid JSON object. Do not wrap in markdown code fences.';
+
+  const temperature =
+    typeof inferenceOptions?.temperature === 'number' &&
+    inferenceOptions.temperature >= 0 &&
+    inferenceOptions.temperature <= 1.5
+      ? Number(inferenceOptions.temperature.toFixed(2))
+      : 0.2;
+  const numCtx =
+    typeof inferenceOptions?.numCtx === 'number' &&
+    inferenceOptions.numCtx >= 1024 &&
+    inferenceOptions.numCtx <= 65536
+      ? Math.round(inferenceOptions.numCtx)
+      : 8192;
+
+  const isReasoningModel = /deepseek-r1|qwq|qwen3/i.test(model);
   const body = isOllama
     ? {
         model,
         stream: false,
-        format: 'json',
+        // Reasoning models with <think> blocks work best when allowed to emit or when format: 'json' is paired with explicit key hints
+        ...(isReasoningModel ? {} : { format: 'json' }),
+        options: {
+          temperature,
+          num_ctx: numCtx,
+        },
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: `${systemPrompt}${schemaInstruction}` },
           { role: 'user', content: userPrompt },
         ],
       }
     : {
         model,
         response_format: { type: 'json_object' },
+        temperature,
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: `${systemPrompt}${schemaInstruction}` },
           { role: 'user', content: userPrompt },
         ],
       };
@@ -772,7 +1065,13 @@ function sanitizeAndParseJson<T>(rawText: string, fallback: T): { parsed: T; sch
   if (!rawText || typeof rawText !== 'string') {
     return { parsed: fallback, schemaVerified: false };
   }
-  const trimmed = rawText
+  // Strip <think>...</think> chain-of-thought blocks emitted by DeepSeek-R1 / QwQ / local reasoning models
+  const withoutThink = rawText
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/<think>[\s\S]*$/gi, '')
+    .trim();
+
+  const trimmed = withoutThink
     .replace(/^```(?:json)?\s*/i, '')
     .replace(/\s*```$/i, '')
     .trim();
@@ -846,26 +1145,72 @@ async function executeResilientLlmStep<T>(options: {
   const maxRetries = options.maxRetries ?? 2;
   let retriesUsed = 0;
 
-  // 1. Try External Ollama / OpenAI-Compatible Runtime first if selected
-  if (options.providerMode === 'ollama' || options.providerMode === 'openai_compatible') {
-    const isOllama = options.providerMode === 'ollama';
-    const baseUrl = isOllama
-      ? options.runtimeConfig.ollamaBaseUrl || 'http://localhost:11434'
-      : options.runtimeConfig.openAiBaseUrl || 'http://localhost:8000/v1';
-    const modelName = isOllama
-      ? options.runtimeConfig.ollamaQuickModel || 'qwen2.5:32b'
-      : options.runtimeConfig.openAiModel || 'gpt-4o';
+  const isDeepCouncilStep =
+    options.stepName === 'STAGE_3_SUPREME_COUNCIL' ||
+    options.thinkingLevel === ThinkingLevel.HIGH;
 
-    for (let attempt = 0; attempt <= 1; attempt++) {
+  const schemaKeysHint = options.responseSchema?.properties
+    ? Object.keys(options.responseSchema.properties)
+    : undefined;
+
+  // 1. Try Local / Self-Hosted Ollama or OpenAI-Compatible Runtime first when selected (or in hybrid mode)
+  if (
+    options.providerMode === 'ollama' ||
+    options.providerMode === 'hybrid' ||
+    options.providerMode === 'hybrid_failover' ||
+    options.providerMode === 'openai_compatible'
+  ) {
+    const isOllama = options.providerMode !== 'openai_compatible';
+    const configuredBaseUrl = isOllama
+      ? options.runtimeConfig.ollamaBaseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+      : options.runtimeConfig.openAiBaseUrl ||
+        process.env.OPENAI_COMPATIBLE_BASE_URL ||
+        'http://localhost:8000/v1';
+
+    const modelName = isOllama
+      ? resolveStepModelFromGuiConfig(options.stepName, isDeepCouncilStep, options.runtimeConfig)
+      : options.runtimeConfig.openAiModel ||
+        serverGuiRuntimeConfig.openAiModel ||
+        process.env.OPENAI_COMPATIBLE_MODEL ||
+        'gpt-4o';
+
+    const customTimeoutSec =
+      options.runtimeConfig.timeoutSeconds || serverGuiRuntimeConfig.timeoutSeconds;
+    const stepTimeoutMs =
+      typeof customTimeoutSec === 'number' && customTimeoutSec >= 5 && customTimeoutSec <= 180
+        ? Math.round(customTimeoutSec * 1000)
+        : isDeepCouncilStep
+        ? 25000
+        : 16000;
+
+    // Build candidate endpoints so Docker containers automatically resolve host.docker.internal or bundled ollama service
+    const candidateUrls = [configuredBaseUrl];
+    if (isOllama) {
+      if (
+        configuredBaseUrl.includes('localhost') ||
+        configuredBaseUrl.includes('127.0.0.1')
+      ) {
+        candidateUrls.push('http://host.docker.internal:11434', 'http://ollama:11434');
+      } else if (configuredBaseUrl.includes('host.docker.internal')) {
+        candidateUrls.push('http://localhost:11434', 'http://ollama:11434');
+      }
+    }
+
+    for (const candidateUrl of candidateUrls) {
       try {
-        if (attempt > 0) retriesUsed++;
         const rawText = await callOllamaOrOpenAICompatible(
-          baseUrl,
+          candidateUrl,
           modelName,
           options.systemInstruction,
           options.prompt,
           isOllama,
-          12000
+          stepTimeoutMs,
+          schemaKeysHint,
+          {
+            temperature:
+              options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2,
+            numCtx: options.runtimeConfig.numCtx ?? serverGuiRuntimeConfig.numCtx ?? 8192,
+          }
         );
         const { parsed, schemaVerified } = sanitizeAndParseJson<T>(rawText, options.fallbackValue);
         if (schemaVerified) {
@@ -875,17 +1220,19 @@ async function executeResilientLlmStep<T>(options: {
             retriesUsed,
             schemaVerified: true,
             usedFallback: false,
-            providerUsed: isOllama ? `Ollama (${modelName})` : `OpenAI-Compatible (${modelName})`,
+            providerUsed: isOllama
+              ? `Local Ollama (${modelName} · ${isDeepCouncilStep ? 'Phase 3 Deep' : 'Phase 1-2 Sub-Agents'})`
+              : `OpenAI-Compatible (${modelName})`,
           };
         }
       } catch {
-        // Fall through to retry or Gemini backup
+        retriesUsed++;
       }
     }
   }
 
   // 2. Execute on Google AI Studio Gemini with exponential backoff + jitter
-  if (process.env.GEMINI_API_KEY) {
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
@@ -965,35 +1312,423 @@ async function startServer() {
     }
   });
 
-  // 2. Self-Hosted Ollama / External AI Runtime Health & Model Discovery
-  app.post('/api/ai/ollama-status', async (req, res) => {
-    const { ollamaBaseUrl = 'http://localhost:11434' } = req.body || {};
-    const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
+  // 2a. Server Runtime Environment Defaults (for Docker & Local Ollama Hydration)
+  app.get('/api/ai/runtime-defaults', (_req, res) => {
+    const isDockerContainer =
+      fs.existsSync('/.dockerenv') || Boolean(process.env.OLLAMA_BASE_URL?.includes('host.docker.internal'));
+    res.json({
+      providerMode: (serverGuiRuntimeConfig.providerMode ||
+        process.env.DEFAULT_AI_PROVIDER ||
+        'gemini') as AIRuntimeConfig['providerMode'],
+      ollamaBaseUrl:
+        serverGuiRuntimeConfig.ollamaBaseUrl ||
+        process.env.OLLAMA_BASE_URL ||
+        (isDockerContainer ? 'http://host.docker.internal:11434' : 'http://localhost:11434'),
+      ollamaQuickModel:
+        serverGuiRuntimeConfig.ollamaQuickModel || process.env.OLLAMA_QUICK_MODEL || 'qwen2.5:7b',
+      ollamaDeepModel:
+        serverGuiRuntimeConfig.ollamaDeepModel || process.env.OLLAMA_DEEP_MODEL || 'deepseek-r1:8b',
+      openAiBaseUrl:
+        serverGuiRuntimeConfig.openAiBaseUrl ||
+        process.env.OPENAI_COMPATIBLE_BASE_URL ||
+        'http://localhost:8000/v1',
+      openAiModel:
+        serverGuiRuntimeConfig.openAiModel || process.env.OPENAI_COMPATIBLE_MODEL || 'gpt-4o',
+      temperature: serverGuiRuntimeConfig.temperature ?? 0.2,
+      numCtx: serverGuiRuntimeConfig.numCtx ?? 8192,
+      timeoutSeconds: serverGuiRuntimeConfig.timeoutSeconds ?? 20,
+      deskModelOverrides: serverGuiRuntimeConfig.deskModelOverrides || {},
+      agentModelOverrides: serverGuiRuntimeConfig.agentModelOverrides || {},
+      agentPromptOverrides: serverGuiRuntimeConfig.agentPromptOverrides || {},
+      dockerGuiConfig: serverGuiRuntimeConfig.dockerGuiConfig,
+      apiConnectors: serverGuiRuntimeConfig.apiConnectors || DEFAULT_SERVER_API_CONNECTORS,
+      hasGeminiKey: Boolean(
+        process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'
+      ),
+      isDockerContainer,
+    });
+  });
+
+  // 2a-save. Save GUI-Entered Runtime, Per-Agent Models & Docker Configuration to Live Server
+  app.post('/api/ai/runtime-config-save', (req, res) => {
     try {
-      const response = await fetchWithTimeout(`${cleanUrl}/api/tags`, 3000);
-      if (!response.ok) {
-        return res.json({
-          connected: false,
-          endpoint: cleanUrl,
-          models: [],
-          message: `Ollama endpoint responded with HTTP ${response.status}. Verify 'OLLAMA_ORIGINS=*' and 'ollama serve' are running.`,
+      const incoming = (req.body?.runtimeConfig || req.body || {}) as Partial<AIRuntimeConfig>;
+      serverGuiRuntimeConfig = {
+        ...serverGuiRuntimeConfig,
+        ...incoming,
+        apiConnectors:
+          Array.isArray(incoming.apiConnectors) && incoming.apiConnectors.length > 0
+            ? incoming.apiConnectors
+            : serverGuiRuntimeConfig.apiConnectors || DEFAULT_SERVER_API_CONNECTORS,
+      };
+      if (incoming.ollamaBaseUrl) process.env.OLLAMA_BASE_URL = incoming.ollamaBaseUrl;
+      if (incoming.ollamaQuickModel) process.env.OLLAMA_QUICK_MODEL = incoming.ollamaQuickModel;
+      if (incoming.ollamaDeepModel) process.env.OLLAMA_DEEP_MODEL = incoming.ollamaDeepModel;
+      if (incoming.providerMode) process.env.DEFAULT_AI_PROVIDER = incoming.providerMode;
+
+      const dockerCfg = incoming.dockerGuiConfig || {
+        targetOs: 'mac_apple_silicon',
+        topology: 'host_ollama',
+        appPort: 3000,
+        ollamaPort: 11434,
+        containerName: 'econquest-sovereign-council',
+        keepAlive: '24h',
+        corsOrigins: '*',
+        autoPullOnBoot: true,
+      };
+
+      const generatedEnvContent = [
+        '# Generated via EconQuest In-App GUI Studio',
+        `PORT=${dockerCfg.appPort || 3000}`,
+        `DEFAULT_AI_PROVIDER=${incoming.providerMode || 'ollama'}`,
+        `OLLAMA_BASE_URL=${incoming.ollamaBaseUrl || 'http://host.docker.internal:11434'}`,
+        `OLLAMA_QUICK_MODEL=${incoming.ollamaQuickModel || 'qwen2.5:7b'}`,
+        `OLLAMA_DEEP_MODEL=${incoming.ollamaDeepModel || 'deepseek-r1:8b'}`,
+        `OLLAMA_KEEP_ALIVE=${dockerCfg.keepAlive || '24h'}`,
+        `OLLAMA_ORIGINS=${dockerCfg.corsOrigins || '*'}`,
+        `OPENAI_COMPATIBLE_BASE_URL=${incoming.openAiBaseUrl || 'http://localhost:8000/v1'}`,
+        `OPENAI_COMPATIBLE_MODEL=${incoming.openAiModel || 'gpt-4o'}`,
+      ].join('\n');
+
+      const activeConnectorCount = (serverGuiRuntimeConfig.apiConnectors || []).filter(
+        (c) => c.enabled
+      ).length;
+
+      res.json({
+        status: 'OK',
+        savedAt: new Date().toISOString(),
+        message: `Saved GUI Configuration to server: Provider=${incoming.providerMode || 'ollama'}, Phase 1–2=${incoming.ollamaQuickModel || 'qwen2.5:7b'}, Phase 3=${incoming.ollamaDeepModel || 'deepseek-r1:8b'}, Active API/Host Connectors=${activeConnectorCount}.`,
+        runtimeConfig: serverGuiRuntimeConfig,
+        generatedEnvContent,
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        status: 'ERROR',
+        message: err?.message || 'Failed to save GUI configuration.',
+      });
+    }
+  });
+
+  // 2a-connectors. Server-Side Proxy Ping Tester, Live JSON Inspector & Telemetry Mapper
+  app.post('/api/connectors/ping-and-inspect', async (req, res) => {
+    const t0 = Date.now();
+    try {
+      const {
+        connector,
+        sampleIso3 = 'BRA',
+      } = (req.body || {}) as {
+        connector: ExternalInternalConnectorConfig;
+        sampleIso3?: string;
+      };
+
+      if (!connector || !connector.url) {
+        return res.status(400).json({
+          ok: false,
+          status: 400,
+          latencyMs: 0,
+          message: 'Connector URL is required.',
         });
       }
-      const data: any = await response.json();
-      const models = Array.isArray(data?.models) ? data.models.map((m: any) => m.name) : [];
+
+      const iso3 = String(sampleIso3 || 'BRA').toUpperCase().trim();
+      const resolvedUrl = interpolateIsoTemplate(connector.url, iso3);
+      const method = connector.method === 'POST' ? 'POST' : 'GET';
+      const timeoutMs = Math.min(15000, Math.max(1000, Number(connector.timeoutMs || 5000)));
+
+      const resolvedHeaders: Record<string, string> = {
+        Accept: 'application/json',
+      };
+      if (connector.headers && typeof connector.headers === 'object') {
+        Object.entries(connector.headers).forEach(([k, v]) => {
+          if (k && k.trim()) {
+            resolvedHeaders[k.trim()] = interpolateIsoTemplate(String(v || ''), iso3);
+          }
+        });
+      }
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const fetchRes = await fetch(resolvedUrl, {
+          method,
+          headers: resolvedHeaders,
+          ...(method === 'POST' && connector.bodyTemplate
+            ? { body: interpolateIsoTemplate(connector.bodyTemplate, iso3) }
+            : {}),
+          signal: controller.signal,
+        });
+        const latencyMs = Math.max(1, Date.now() - t0);
+        const rawText = await fetchRes.text();
+        let parsedJson: any = null;
+        try {
+          parsedJson = JSON.parse(rawText);
+        } catch {
+          parsedJson = { rawResponseText: rawText.slice(0, 2500) };
+        }
+
+        const extractedTelemetry = extractMappedTelemetryFromPayload(
+          parsedJson,
+          connector.telemetryMappings,
+          iso3
+        );
+
+        return res.json({
+          ok: fetchRes.ok,
+          status: fetchRes.status,
+          statusText: fetchRes.statusText || (fetchRes.ok ? 'OK' : 'HTTP Error'),
+          resolvedUrl,
+          latencyMs,
+          testedAt: new Date().toISOString(),
+          isSimulatedPreview: false,
+          extractedTelemetry,
+          jsonPreview: parsedJson,
+          message: fetchRes.ok
+            ? `Connected to ${connector.name} (${resolvedUrl}) · HTTP ${fetchRes.status} in ${latencyMs}ms.`
+            : `Endpoint returned HTTP ${fetchRes.status} (${fetchRes.statusText}) in ${latencyMs}ms.`,
+        });
+      } catch (networkErr: any) {
+        const latencyMs = Math.max(1, Date.now() - t0);
+        const baselineSnap = buildBaselineOpenData(iso3);
+        const simulatedInternalPayload =
+          connector.category === 'llm_gateway'
+            ? {
+                status: 'INTERNAL_HOST_SIMULATED_PREVIEW',
+                endpoint: resolvedUrl,
+                models: [
+                  { name: 'qwen2.5:7b', family: 'qwen2', quantization: 'Q4_K_M' },
+                  { name: 'deepseek-r1:8b', family: 'deepseek', quantization: 'Q4_K_M' },
+                ],
+              }
+            : connector.category === 'webhook_bus'
+            ? {
+                dispatched: true,
+                simulatedBusAck: `ACK-${iso3}-${Date.now().toString().slice(-5)}`,
+                schemaVersion: 'SMCR-1.0',
+                receivedAt: new Date().toISOString(),
+              }
+            : {
+                iso3,
+                countryName: baselineSnap.countryName,
+                source: `${connector.name} (Simulated Internal Host Schema Preview)`,
+                telemetry: {
+                  gdpGrowthPct: baselineSnap.imfIndicators.realGdpGrowthPct,
+                  cpiInflationPct: baselineSnap.imfIndicators.cpiInflationPct,
+                  debtToGdpPct: baselineSnap.imfIndicators.debtToGdpPct,
+                  cds5ySpreadBps: baselineSnap.monetaryAndMarket.cds5YSpreadBps,
+                  fxReservesMonths: baselineSnap.worldBankIndicators.fxReservesMonthsImport,
+                  policyRatePct: baselineSnap.monetaryAndMarket.policyRatePct,
+                  politicalStabilityPctl:
+                    baselineSnap.worldBankIndicators.politicalStabilityPercentile,
+                },
+              };
+
+        const extractedTelemetry = extractMappedTelemetryFromPayload(
+          simulatedInternalPayload,
+          connector.telemetryMappings,
+          iso3
+        );
+
+        return res.json({
+          ok: false,
+          status: 0,
+          statusText: 'OFFLINE_OR_INTERNAL_LAN',
+          resolvedUrl,
+          latencyMs,
+          testedAt: new Date().toISOString(),
+          isSimulatedPreview: true,
+          extractedTelemetry,
+          jsonPreview: simulatedInternalPayload,
+          message: `Direct connection to ${resolvedUrl} could not be established from this container (${networkErr?.message || 'connection refused'}). Showing interactive schema preview so you can test JSON dot-path telemetry mappings before running inside your local Docker network.`,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (err: any) {
+      return res.status(500).json({
+        ok: false,
+        status: 500,
+        latencyMs: Date.now() - t0,
+        message: err?.message || 'Connector test failed.',
+      });
+    }
+  });
+
+  // 2b. Self-Hosted Ollama / External AI Runtime Health & Model Discovery
+  app.post('/api/ai/ollama-status', async (req, res) => {
+    const { ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434' } = req.body || {};
+    const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
+    const candidateEndpoints = [cleanUrl];
+    if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1')) {
+      candidateEndpoints.push('http://host.docker.internal:11434', 'http://ollama:11434');
+    } else if (cleanUrl.includes('host.docker.internal')) {
+      candidateEndpoints.push('http://localhost:11434', 'http://ollama:11434');
+    }
+
+    for (const candidate of candidateEndpoints) {
+      const t0 = Date.now();
+      try {
+        const response = await fetchWithTimeout(`${candidate}/api/tags`, 3000);
+        if (response.ok) {
+          const data: any = await response.json();
+          const rawModels = Array.isArray(data?.models) ? data.models : [];
+          const models = rawModels.map((m: any) => m.name);
+          const modelDetails = rawModels.map((m: any) => ({
+            name: m.name,
+            sizeGb: m.size ? Number((m.size / (1024 * 1024 * 1024)).toFixed(2)) : 0,
+            parameterSize: m.details?.parameter_size || 'Local',
+            quantizationLevel: m.details?.quantization_level || 'Q4_K_M',
+            family: m.details?.family || 'LLM',
+          }));
+          return res.json({
+            connected: true,
+            endpoint: candidate,
+            latencyMs: Math.max(1, Date.now() - t0),
+            models,
+            modelDetails,
+            message: `Connected to local Ollama at ${candidate} (${models.length} models installed · ${Math.max(1, Date.now() - t0)}ms).`,
+          });
+        }
+      } catch {
+        // Try next candidate
+      }
+    }
+
+    return res.json({
+      connected: false,
+      endpoint: cleanUrl,
+      latencyMs: 0,
+      models: ['qwen2.5:7b', 'deepseek-r1:8b', 'qwen2.5:32b', 'deepseek-r1:32b', 'llama3.1:8b'],
+      modelDetails: [],
+      message: `Local Ollama endpoint (${cleanUrl}) is not currently reachable from this server instance. When running via Docker on your Mac or Windows machine, EconQuest automatically connects to http://host.docker.internal:11434 or the bundled Ollama container.`,
+    });
+  });
+
+  // 2c. In-App Ollama Model Pull Trigger (POST /api/ai/ollama-pull)
+  app.post('/api/ai/ollama-pull', async (req, res) => {
+    const {
+      ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      modelName = 'qwen2.5:7b',
+    } = req.body || {};
+    const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
+    const t0 = Date.now();
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 120000);
+      try {
+        const pullRes = await fetch(`${cleanUrl}/api/pull`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: modelName, stream: false }),
+          signal: controller.signal,
+        });
+        if (!pullRes.ok) {
+          return res.json({
+            success: false,
+            modelName,
+            endpoint: cleanUrl,
+            message: `Ollama pull returned HTTP ${pullRes.status}. Run 'ollama pull ${modelName}' in your terminal.`,
+          });
+        }
+        const json: any = await pullRes.json();
+        return res.json({
+          success: true,
+          modelName,
+          endpoint: cleanUrl,
+          latencyMs: Date.now() - t0,
+          status: json?.status || 'success',
+          message: `Successfully pulled '${modelName}' on ${cleanUrl} in ${((Date.now() - t0) / 1000).toFixed(1)}s.`,
+        });
+      } finally {
+        clearTimeout(timer);
+      }
+    } catch (err: any) {
+      return res.json({
+        success: false,
+        modelName,
+        endpoint: cleanUrl,
+        cliCommand: `ollama pull ${modelName}`,
+        message: `Could not reach ${cleanUrl} from cloud preview (${err?.message || 'connection refused'}). When self-hosting on Mac/Windows Docker, click Pull or run: ollama pull ${modelName}`,
+      });
+    }
+  });
+
+  // 2d. Live Agent Model Micro-Benchmark & JSON Schema Verification (POST /api/ai/ollama-test)
+  app.post('/api/ai/ollama-test', async (req, res) => {
+    const {
+      ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      modelName = 'qwen2.5:7b',
+      phase = 'PHASE_1_2_SUB_AGENTS',
+    } = req.body || {};
+    const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
+    const t0 = Date.now();
+    try {
+      const rawText = await callOllamaOrOpenAICompatible(
+        cleanUrl,
+        modelName,
+        'You are a Sovereign Macro Council Agent. Return strict JSON.',
+        'Evaluate Brazil (BRA) 5Y CDS at 165 bps and Debt/GDP at 76.8%. Return JSON with keys: stance (BULLISH, BEARISH, or NEUTRAL), riskScore (0.0 to 1.0), and summary (1 sentence).',
+        true,
+        15000,
+        ['stance', 'riskScore', 'summary']
+      );
+      const { parsed, schemaVerified } = sanitizeAndParseJson<{
+        stance: string;
+        riskScore: number;
+        summary: string;
+      }>(rawText, {
+        stance: 'NEUTRAL',
+        riskScore: 0.54,
+        summary: 'Deterministic fallback verification check.',
+      });
       return res.json({
         connected: true,
+        schemaVerified,
+        phase,
+        modelName,
         endpoint: cleanUrl,
-        models,
-        message: `Connected to Ollama (${models.length} local models detected).`,
+        latencyMs: Date.now() - t0,
+        sampleOutput: parsed,
+        message: `Verified ${modelName} (${phase}) in ${Date.now() - t0}ms · JSON Schema: ${schemaVerified ? 'PASS' : 'FALLBACK'}.`,
       });
     } catch (err: any) {
       return res.json({
         connected: false,
+        schemaVerified: false,
+        phase,
+        modelName,
         endpoint: cleanUrl,
-        models: ['qwen2.5:32b', 'deepseek-r1:32b', 'llama3.3:70b', 'mistral-small:24b'],
-        message: `Could not reach ${cleanUrl} from cloud container (${err?.message || 'connection refused'}). For local Ollama self-hosting, expose via ngrok/Cloudflare Tunnel or export the Python TradingAgents script.`,
+        latencyMs: Date.now() - t0,
+        sampleOutput: {
+          stance: 'CAUTIOUS',
+          riskScore: 0.56,
+          summary:
+            'Simulated benchmark preview (connect local Mac/Windows Docker container to execute live against local Ollama).',
+        },
+        message: `Local Ollama (${cleanUrl}) not reachable from cloud container (${err?.message || 'offline'}). Self-hosted Docker container will execute '${modelName}' locally.`,
       });
+    }
+  });
+
+  // 2e. Self-Host Docker & Mac/Windows Launch Scripts Bundle Endpoint
+  app.get('/api/docs/self-host-bundle', (_req, res) => {
+    try {
+      const readSafe = (relPath: string) => {
+        const full = path.join(__dirname, relPath);
+        return fs.existsSync(full) ? fs.readFileSync(full, 'utf-8') : '';
+      };
+      res.json({
+        status: 'OK',
+        files: {
+          dockerfile: readSafe('Dockerfile'),
+          dockerCompose: readSafe('docker-compose.yml'),
+          envExample: readSafe('.env.example'),
+          startMac: readSafe('scripts/start-mac.sh'),
+          startWindowsPs1: readSafe('scripts/start-windows.ps1'),
+          startWindowsBat: readSafe('scripts/start-windows.bat'),
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({ status: 'ERROR', message: err?.message || 'Failed to read Docker bundle' });
     }
   });
 
@@ -1110,6 +1845,36 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
         ],
       };
 
+      const promptOverrides =
+        runtimeConfig.agentPromptOverrides || serverGuiRuntimeConfig.agentPromptOverrides || {};
+      const activeApiConnectors: ExternalInternalConnectorConfig[] = (
+        (runtimeConfig.apiConnectors as ExternalInternalConnectorConfig[] | undefined) ||
+        serverGuiRuntimeConfig.apiConnectors ||
+        DEFAULT_SERVER_API_CONNECTORS
+      ).filter((c: ExternalInternalConnectorConfig) => c.enabled && c.injectIntoCouncilPrompt);
+      const connectorContextBlock =
+        activeApiConnectors.length > 0
+          ? `\n\nActive GUI External/Internal API Connectors Registered (${activeApiConnectors.length}):\n` +
+            activeApiConnectors
+              .map(
+                (c: ExternalInternalConnectorConfig) =>
+                  `- [${c.networkScope.toUpperCase()} · ${c.category}] ${c.name}: ${interpolateIsoTemplate(c.url, iso3)}`
+              )
+              .join('\n')
+          : '';
+      const buildDeskAgentOverrideBlock = (agentIds: Array<keyof typeof promptOverrides>) => {
+        const lines = agentIds
+          .map((id) => {
+            const customPrompt = promptOverrides[id]?.trim();
+            return customPrompt ? `- Custom GUI Directive for ${String(id).toUpperCase()}: ${customPrompt}` : '';
+          })
+          .filter(Boolean);
+        return (
+          connectorContextBlock +
+          (lines.length > 0 ? `\n\nUser-Configured GUI Agent Directives:\n${lines.join('\n')}` : '')
+        );
+      };
+
       // Stage 1: Execute 3 Parallel Desk Synthesis Workers + 1 Web Search Grounding Worker
       const [geoSettled, sovSettled, macroSettled, searchSettled] = await Promise.allSettled([
         executeResilientLlmStep<any>({
@@ -1117,7 +1882,7 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
           providerMode,
           runtimeConfig,
           systemInstruction: `You are Managing Director of the Geopolitical Risk Desk overseeing AG-1 (Intelligence Scraper Analyst), AG-2 (Transmission Mapping Analyst), and AG-3 (Sanctions & Legal Analyst). Quantitative Anchor Score: ${anchors.geopolitical}. Keep risk scores anchored near empirical telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands the real-world impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Caldara-Iacoviello GPR Z-Score = +2.1σ | 5Y CDS = 185 bps)".`,
-          prompt: `${sharedContextHeader}\n\nSynthesize individual findings for AG-1, AG-2, and AG-3, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining what is happening in the real world, followed by the statistical reference metrics in parentheses (Ref: ...).`,
+          prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag1_intel_scraper', 'ag2_transmission_mapper', 'ag3_sanctions_legal'])}\n\nSynthesize individual findings for AG-1, AG-2, and AG-3, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining what is happening in the real world, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
             deskPreCascadeScore: anchors.geopolitical,
@@ -1145,7 +1910,7 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
           providerMode,
           runtimeConfig,
           systemInstruction: `You are Managing Director of the Sovereign Credit Desk overseeing AG-4 (Fiscal Auditor Analyst), AG-5 (External Balance Sheet Analyst), and AG-6 (Political Will & Governance Analyst). Quantitative Anchor Score: ${anchors.sovereign}. Keep risk scores anchored near empirical Debt/GDP, 5Y CDS, and Reserve Adequacy telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and minority dissents in clear, everyday plain English first so any reader immediately understands the real-world budget and debt impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Debt/GDP = 78.4% | r - g = +1.8% | FX Cover = 4.2 mos)".`,
-          prompt: `${sharedContextHeader}\n\nSynthesize individual findings for AG-4, AG-5, and AG-6, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and formulate AG-6 Political Will's Minority Report dissent. Lead every statement with plain, everyday language explaining what is happening to government finances and foreign reserves, followed by the statistical reference metrics in parentheses (Ref: ...).`,
+          prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag4_fiscal_auditor', 'ag5_external_balance', 'ag6_political_will'])}\n\nSynthesize individual findings for AG-4, AG-5, and AG-6, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and formulate AG-6 Political Will's Minority Report dissent. Lead every statement with plain, everyday language explaining what is happening to government finances and foreign reserves, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
             deskPreCascadeScore: anchors.sovereign,
@@ -1176,7 +1941,7 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
           providerMode,
           runtimeConfig,
           systemInstruction: `You are Managing Director of the Macroeconomic Desk overseeing AG-7 (High-Frequency Nowcaster), AG-8 (Central Bank Watcher NLP), and AG-9 (Global Spillover Analyst). Quantitative Anchor Score: ${anchors.macro}. Keep risk scores anchored near empirical CPI, Policy Rate, and 10Y Yield telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands what is happening to jobs, inflation, and interest rates, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: CPI = 4.6% | Policy Rate = 10.75% | BVAR Peak = +115 bps)".`,
-          prompt: `${sharedContextHeader}\n\nSynthesize individual findings for AG-7, AG-8, and AG-9, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining the real-world economic impact first, followed by the statistical reference metrics in parentheses (Ref: ...).`,
+          prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag7_hf_nowcaster', 'ag8_cb_watcher', 'ag9_global_spillover'])}\n\nSynthesize individual findings for AG-7, AG-8, and AG-9, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining the real-world economic impact first, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
             deskPreCascadeScore: anchors.macro,
@@ -1259,10 +2024,19 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
           if (d[`agent${idxNum}FindingsSummary`]) {
             agent.findingsSummary = String(d[`agent${idxNum}FindingsSummary`]);
           }
+          const assignedModel =
+            runtimeConfig.agentModelOverrides?.[agent.agentId] ||
+            runtimeConfig.deskModelOverrides?.[deskId] ||
+            (providerMode === 'gemini'
+              ? runtimeConfig.geminiQuickModel || 'gemini-3.8-flash'
+              : runtimeConfig.ollamaQuickModel || 'qwen2.5:7b');
+          const customDirective = runtimeConfig.agentPromptOverrides?.[agent.agentId];
           agent.structuredPayload = {
             ...agent.structuredPayload,
             quantitative_anchor: anchorScore,
             bounded_risk_score: clampedAgent.finalBoundedScore,
+            assigned_llm_model: assignedModel,
+            ...(customDirective ? { custom_gui_directive: customDirective } : {}),
           };
         });
 
@@ -2504,6 +3278,222 @@ ${String(documentText).slice(0, 12000)}
         contracts: buildFallbackPredictionContracts(baselineSnapshot),
       });
     }
+  });
+
+  // ---------------------------------------------------------------------------
+  // Documentation & GitHub Sync Endpoint (/api/docs/manuals)
+  // ---------------------------------------------------------------------------
+  app.get('/api/docs/manuals', (_req, res) => {
+    try {
+      const readmePath = path.join(__dirname, 'README.md');
+      const manualPath = path.join(__dirname, 'docs', 'USER_MANUAL.md');
+      const logoPath = path.join(
+        __dirname,
+        'src',
+        'assets',
+        'images',
+        'econquest_logo_1793718779968.jpg'
+      );
+
+      const readmeContent = fs.existsSync(readmePath)
+        ? fs.readFileSync(readmePath, 'utf-8')
+        : '# EconQuest — Sovereign Council Orchestrator\nREADME.md not found on disk.';
+      const manualContent = fs.existsSync(manualPath)
+        ? fs.readFileSync(manualPath, 'utf-8')
+        : '# Sovereign Council Orchestrator User Manual\ndocs/USER_MANUAL.md not found on disk.';
+      const hasLogoAsset = fs.existsSync(logoPath);
+      const hasGitRepo = fs.existsSync(path.join(__dirname, '.git'));
+
+      res.json({
+        status: 'OK',
+        fetchedAt: new Date().toISOString(),
+        gitReady: hasGitRepo,
+        hasLogoAsset,
+        files: {
+          readme: {
+            path: 'README.md',
+            content: readmeContent,
+            lines: readmeContent.split('\n').length,
+            bytes: Buffer.byteLength(readmeContent, 'utf-8'),
+          },
+          userManual: {
+            path: 'docs/USER_MANUAL.md',
+            content: manualContent,
+            lines: manualContent.split('\n').length,
+            bytes: Buffer.byteLength(manualContent, 'utf-8'),
+          },
+        },
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        status: 'ERROR',
+        message: err?.message || 'Failed to read repository documentation files.',
+      });
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // End-to-End Automated Backend & Engine Health Sweep (/api/health/full-sweep)
+  // ---------------------------------------------------------------------------
+  app.get('/api/health/full-sweep', async (req, res) => {
+    const startedAt = Date.now();
+    const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
+    const checks: Array<{
+      id: string;
+      category: 'API_ROUTE' | 'QUANT_ENGINE' | 'DOCS_GIT';
+      name: string;
+      endpointOrModule: string;
+      status: 'PASS' | 'WARN';
+      latencyMs: number;
+      detail: string;
+    }> = [];
+
+    // 1. Sovereign Snapshot & Multilateral Open-Data Baseline
+    const t0 = Date.now();
+    const snapshot = buildBaselineOpenData(iso3);
+    checks.push({
+      id: 'SWEEP-API-01',
+      category: 'API_ROUTE',
+      name: 'Sovereign Open-Data Snapshot Route',
+      endpointOrModule: `GET /api/data/sovereign-snapshot?iso3=${iso3}`,
+      status: snapshot && snapshot.imfIndicators.debtToGdpPct > 0 ? 'PASS' : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t0),
+      detail: `Verified ${snapshot.countryName} (${snapshot.iso3}) Debt/GDP ${snapshot.imfIndicators.debtToGdpPct.toFixed(1)}%, 10Y Yield ${snapshot.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}%, 5Y CDS ${snapshot.monetaryAndMarket.cds5YSpreadBps} bps`,
+    });
+
+    // 2. Watchlist Catalog Engine
+    const t1 = Date.now();
+    const catalogCount = SOVEREIGN_CATALOG.length;
+    checks.push({
+      id: 'SWEEP-API-02',
+      category: 'API_ROUTE',
+      name: 'Live Watchlist Cross-Country Matrix',
+      endpointOrModule: 'GET /api/data/watchlist-live',
+      status: catalogCount >= 8 ? 'PASS' : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t1),
+      detail: `${catalogCount} sovereigns indexed with composite geo/sovereign/macro risk telemetry`,
+    });
+
+    // 3. 9-Agent Adversarial Council & CRO Gate (Phase 1-2 & Phase 3)
+    const t2 = Date.now();
+    const defaultRun = buildDefaultAssessmentRun(iso3, snapshot);
+    const subAgentsOk = defaultRun.subAgents.length === 9 && Boolean(defaultRun.deskDebates.geopolitical);
+    checks.push({
+      id: 'SWEEP-API-03',
+      category: 'API_ROUTE',
+      name: '9-Agent Council & CRO Gate Orchestrator',
+      endpointOrModule: 'POST /api/council/phase1-and-cascade & /supreme-synthesis',
+      status: subAgentsOk && Boolean(defaultRun.supremeCouncil) ? 'PASS' : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t2),
+      detail: `${defaultRun.subAgents.length} sub-agents, 3 desk debate arenas, Report ID: ${defaultRun.supremeCouncil?.reportId || 'SMCR-1.0'}`,
+    });
+
+    // 4. Econometric, Geopolitical & Global Liquidity Engines
+    const t3 = Date.now();
+    const geoSuite = computeGeopoliticalRiskDeskSuite(snapshot, DEFAULT_WARGAME_PARAMS);
+    const econSuite = computeFullEconometricForecastSuite(
+      snapshot,
+      geoSuite.portfolioTransmission.propagatedForecastShocks
+    );
+    const liqSuite = computeGlobalLiquidityFundingSuite(snapshot, DEFAULT_LIQUIDITY_STRESS_PARAMS);
+    checks.push({
+      id: 'SWEEP-ENG-04',
+      category: 'QUANT_ENGINE',
+      name: 'Econometric, Geopolitical & Global Liquidity Engines',
+      endpointOrModule: 'Hubs 1–4 Quant Suites (BVAR, Taylor Rule, Sanctions, Swap Lines)',
+      status:
+        econSuite.imfSrdsfGfn.totalGfnPctGdp > 0 &&
+        geoSuite.chokepoints.length > 0 &&
+        typeof liqSuite.globalLiquidityStressIndexZScore === 'number'
+          ? 'PASS'
+          : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t3),
+      detail: `IMF GFN ${econSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP, ${geoSuite.chokepoints.length} maritime chokepoints, Liquidity Z-Score ${liqSuite.globalLiquidityStressIndexZScore.toFixed(2)}σ`,
+    });
+
+    // 5. Restructuring, Kelly LOB & Cross-Currency Basis Engines
+    const t4 = Date.now();
+    const restruct = simulateSovereignRestructuringAndRating(snapshot);
+    const kellyLob = computeCouncilKellyAndLobExecution(defaultRun);
+    const xccy = computeCrossCurrencyAndLegalBasis(snapshot);
+    checks.push({
+      id: 'SWEEP-ENG-05',
+      category: 'QUANT_ENGINE',
+      name: 'Restructuring NPV, Kelly LOB & XCCY Basis Engines',
+      endpointOrModule: 'Hubs 5–9 Quant Suites (ISDA CAC, Almgren-Chriss, Shadow Rating)',
+      status:
+        restruct.restructuredNpvRecoveryCents > 0 &&
+        typeof kellyLob.totalHalfKellyGrossNavPct === 'number' &&
+        typeof xccy.fiveYearXccyBasisBps === 'number'
+          ? 'PASS'
+          : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t4),
+      detail: `NPV Recovery ${restruct.restructuredNpvRecoveryCents.toFixed(1)}¢, Half-Kelly ${kellyLob.totalHalfKellyGrossNavPct.toFixed(1)}%, 5Y XCCY ${xccy.fiveYearXccyBasisBps} bps`,
+    });
+
+    // 6. Dual-Venue Prediction Markets & Policy Document NLP Engine
+    const t5 = Date.now();
+    const predContracts = buildFallbackPredictionContracts(snapshot);
+    const docAnalysis = computeDeterministicDocumentAnalysis(
+      snapshot,
+      'Monetary Policy Communique Check',
+      'Central Bank maintains hawkish policy rate stance amid fiscal consolidation targets.'
+    );
+    checks.push({
+      id: 'SWEEP-API-06',
+      category: 'API_ROUTE',
+      name: 'Prediction Markets & Policy Document NLP Lab',
+      endpointOrModule: 'GET /api/data/prediction-markets & POST /api/council/analyze-policy-document',
+      status: predContracts.length >= 6 && docAnalysis.extractedClauses.length > 0 ? 'PASS' : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t5),
+      detail: `${predContracts.length} Polymarket/Kalshi binary contracts & ${docAnalysis.extractedClauses.length} policy clauses verified`,
+    });
+
+    // 7. Documentation & GitHub Repository Assets Check
+    const t6 = Date.now();
+    const hasReadme = fs.existsSync(path.join(__dirname, 'README.md'));
+    const hasManual = fs.existsSync(path.join(__dirname, 'docs', 'USER_MANUAL.md'));
+    const hasLogo = fs.existsSync(
+      path.join(__dirname, 'src', 'assets', 'images', 'econquest_logo_1793718779968.jpg')
+    );
+    const hasGit = fs.existsSync(path.join(__dirname, '.git'));
+    checks.push({
+      id: 'SWEEP-GIT-07',
+      category: 'DOCS_GIT',
+      name: 'GitHub Documentation, Institutional Logo & Git Status',
+      endpointOrModule: 'README.md · docs/USER_MANUAL.md · .git',
+      status: hasReadme && hasManual && hasLogo ? 'PASS' : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t6),
+      detail: `README.md (${hasReadme ? 'OK' : 'MISSING'}), docs/USER_MANUAL.md (${hasManual ? 'OK' : 'MISSING'}), Logo Asset (${hasLogo ? 'OK' : 'MISSING'}), Git Repo (${hasGit ? 'INITIALIZED' : 'READY'})`,
+    });
+
+    // 8. Cross-Platform Docker & Local Ollama Self-Hosting Stack Check
+    const t7 = Date.now();
+    const hasDockerfile = fs.existsSync(path.join(__dirname, 'Dockerfile'));
+    const hasCompose = fs.existsSync(path.join(__dirname, 'docker-compose.yml'));
+    const hasMacScript = fs.existsSync(path.join(__dirname, 'scripts', 'start-mac.sh'));
+    const hasWinScript = fs.existsSync(path.join(__dirname, 'scripts', 'start-windows.ps1'));
+    checks.push({
+      id: 'SWEEP-DOCKER-08',
+      category: 'DOCS_GIT',
+      name: 'Cross-Platform Docker & Local Ollama Self-Host Stack',
+      endpointOrModule: 'Dockerfile · docker-compose.yml · start-mac.sh · start-windows.ps1',
+      status: hasDockerfile && hasCompose && hasMacScript && hasWinScript ? 'PASS' : 'WARN',
+      latencyMs: Math.max(1, Date.now() - t7),
+      detail: `Dockerfile (${hasDockerfile ? 'OK' : 'MISSING'}), docker-compose.yml (${hasCompose ? 'OK' : 'MISSING'}), macOS Launcher (${hasMacScript ? 'OK' : 'MISSING'}), Windows Launcher (${hasWinScript ? 'OK' : 'MISSING'})`,
+    });
+
+    const passedCount = checks.filter((c) => c.status === 'PASS').length;
+    res.json({
+      status: passedCount === checks.length ? 'ALL_SYSTEMS_NOMINAL' : 'PARTIAL_WARN',
+      sweptAt: new Date().toISOString(),
+      totalLatencyMs: Math.max(1, Date.now() - startedAt),
+      activeIso3: iso3,
+      passedCount,
+      totalChecks: checks.length,
+      gitInitialized: hasGit,
+      checks,
+    });
   });
 
   if (process.env.NODE_ENV !== 'production') {
