@@ -12,6 +12,7 @@ interface AnnotatedChartsDeckProps {
   onRefreshLiveOpenData: () => void;
   isFetchingData: boolean;
   onOpenForecastingLab?: () => void;
+  initialInnerTab?: 'horizon_charts' | 'maturity_contagion';
 }
 
 const TIMEFRAME_LABELS: Record<TimeframeKey, string> = {
@@ -34,7 +35,11 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
   onRefreshLiveOpenData,
   isFetchingData,
   onOpenForecastingLab,
+  initialInnerTab = 'horizon_charts',
 }) => {
+  const [innerTab, setInnerTab] = useState<'horizon_charts' | 'maturity_contagion'>(
+    initialInnerTab
+  );
   const [selectedTimeframes, setSelectedTimeframes] = useState<Record<string, TimeframeKey>>({
     chart_sovereign_debt_trajectory: '10Y_WEO',
     chart_external_reserve_adequacy: '5Y',
@@ -60,9 +65,9 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
     : 4.8;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Top Open-Data Provenance & Telemetry Strip */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-y-1">
@@ -197,287 +202,324 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
             </div>
           </div>
         </div>
+
+        {/* Inner Card Tab Bar to Cap Vertical Scroll at 1-1.5 Screens */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-4 mt-4 border-t border-slate-200 dark:border-slate-800">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setInnerTab('horizon_charts')}
+              className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors ${
+                innerTab === 'horizon_charts'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                  : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              1. 2×2 Sovereign &amp; Macro Horizon Charts (GDP, Debt, Yield, Reserves)
+            </button>
+            <button
+              type="button"
+              onClick={() => setInnerTab('maturity_contagion')}
+              className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors ${
+                innerTab === 'maturity_contagion'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                  : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              2. Debt Maturity Wall (Q1 2025–Q4 2026) &amp; Cross-Desk Contagion
+            </button>
+          </div>
+          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+            1–2 Page Scroll Budget Active · Switch inner tab to inspect rollover cliff
+          </span>
+        </div>
       </div>
 
-      {/* 2x2 Grid of Conclusion-First Multi-Timeframe Institutional Charts */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {run.charts.map((chart) => {
-          const activeTf: TimeframeKey = selectedTimeframes[chart.chartId] || '10Y_WEO';
-          const points = chart.seriesByTimeframe[activeTf] || chart.seriesByTimeframe['5Y'] || [];
+      {/* INNER TAB 1: 2x2 Grid of Conclusion-First Multi-Timeframe Institutional Charts */}
+      {innerTab === 'horizon_charts' && (
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          {run.charts.map((chart) => {
+            const activeTf: TimeframeKey = selectedTimeframes[chart.chartId] || '10Y_WEO';
+            const points = chart.seriesByTimeframe[activeTf] || chart.seriesByTimeframe['5Y'] || [];
 
-          return (
-            <ChartCard
-              key={chart.chartId}
-              chart={chart}
-              activeTf={activeTf}
-              points={points}
-              onSelectTimeframe={(tf) => handleTimeframeChange(chart.chartId, tf)}
-            />
-          );
-        })}
-      </div>
-
-      {/* EMBEDDED SOVEREIGN DEBT MATURITY WALL & GREENSPAN-GUIDOTTI ROLLOVER CLIFF (Q1 2025 – Q4 2026) */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
-          <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              <span className="font-semibold text-slate-700 dark:text-slate-300">
-                Sovereign Debt Maturity Wall &amp; Rollover Cliff Audit
-              </span>
-              <span className="mx-2" aria-hidden="true">·</span>
-              <span>8-Quarter Forward Amortization Schedule (Q1 2025 – Q4 2026)</span>
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1 text-balance">
-              <RichTextWithStatRefs
-                text={`${run.countryName}'s biggest debt repayment bill hits in ${peakBucket?.periodLabel || 'Q3 2025'} (${peakTotalPctGdp.toFixed(1)}% of GDP; $${(peakBucket?.totalUsdBn ?? 0).toFixed(1)}B), while central bank US dollar savings cover ${rollover.greenspanGuidottiRatioPct}% of foreign debt due in the next year (Ref: Peak Rollover = ${peakTotalPctGdp.toFixed(1)}% GDP · GG Cover = ${rollover.greenspanGuidottiRatioPct}%)`}
+            return (
+              <ChartCard
+                key={chart.chartId}
+                chart={chart}
+                activeTf={activeTf}
+                points={points}
+                onSelectTimeframe={(tf) => handleTimeframeChange(chart.chartId, tf)}
               />
-            </h3>
-          </div>
-          <div className="flex items-center gap-4 text-xs font-mono tabular-nums shrink-0">
-            <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 block text-[11px]">Greenspan-Guidotti Ratio</span>
-              <span
-                className={`font-bold text-sm ${
-                  rollover.greenspanGuidottiRatioPct < 100
-                    ? 'text-red-600 dark:text-red-400'
-                    : 'text-emerald-600 dark:text-emerald-400'
-                }`}
-              >
-                {rollover.greenspanGuidottiRatioPct}% (100% Floor)
-              </span>
-            </div>
-            <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 block text-[11px]">Liquid FX Reserves vs 12M Ext Debt</span>
-              <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
-                ${rollover.liquidFxReservesUsdBn}B vs ${rollover.shortTermExternalDebtUsdBn}B
-              </span>
-            </div>
-          </div>
+            );
+          })}
         </div>
+      )}
 
-        {/* Stacked Quarterly Maturity Wall Bar Chart + 3 Concise Bullets */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-          <div className="lg:col-span-8">
-            <div className="grid grid-cols-8 gap-2.5 pt-2 items-end h-48 border-b border-slate-200 dark:border-slate-800 pb-2 px-2 relative">
-              {/* 4.5% GDP Quarterly Rollover Stress Line */}
-              <div
-                className="absolute left-0 right-0 border-t border-dashed border-red-500/70 pointer-events-none flex justify-end pr-2"
-                style={{ bottom: '68%' }}
-              >
-                <span className="text-[10px] font-mono text-red-600 dark:text-red-400 bg-white/90 dark:bg-slate-900/90 px-1 -mt-2.5">
-                  4.5% GDP Quarterly Rollover Cliff Threshold
-                </span>
-              </div>
-
-              {rollover.buckets.map((b) => {
-                const totalPctGdp = b.domesticLocalPctGdp + b.externalHardCurrencyPctGdp;
-                const heightPct = Math.min(100, Math.max(18, (totalPctGdp / 6.5) * 100));
-                const extSharePct = totalPctGdp > 0 ? (b.externalHardCurrencyPctGdp / totalPctGdp) * 100 : 30;
-                const domSharePct = 100 - extSharePct;
-
-                return (
-                  <div key={b.periodLabel} className="flex flex-col items-center h-full justify-end group">
-                    <div className="text-[10px] font-mono tabular-nums text-slate-600 dark:text-slate-300 mb-1">
-                      {totalPctGdp.toFixed(1)}%
-                    </div>
-                    <div
-                      className={`w-full flex flex-col overflow-hidden border ${
-                        b.isPeakRollover
-                          ? 'border-amber-500 ring-1 ring-amber-500/40'
-                          : 'border-slate-300 dark:border-slate-700'
-                      }`}
-                      style={{ height: `${heightPct}%` }}
-                      title={`${b.periodLabel}: Total $${b.totalUsdBn}B (${totalPctGdp.toFixed(1)}% GDP | Avg Coupon ${b.avgCouponPct}%)`}
-                    >
-                      <div
-                        style={{ height: `${extSharePct}%` }}
-                        className="bg-amber-500 dark:bg-amber-500/90 w-full"
-                      />
-                      <div
-                        style={{ height: `${domSharePct}%` }}
-                        className="bg-blue-600 dark:bg-blue-500 w-full"
-                      />
-                    </div>
-                    <div
-                      className={`text-[11px] font-mono mt-1.5 ${
-                        b.isPeakRollover
-                          ? 'font-bold text-amber-600 dark:text-amber-400'
-                          : 'text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      {b.periodLabel}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-4">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 bg-blue-600 inline-block" />
-                  <span>Domestic Local-Currency Redemptions (% GDP)</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="w-2.5 h-2.5 bg-amber-500 inline-block" />
-                  <span>External Hard-Currency (USD/EUR) Maturities (% GDP)</span>
-                </span>
-              </div>
-              <span className="font-mono">
-                WAM: {rollover.weightedAvgMaturityYears} yrs · Floating-Rate Share: {rollover.floatingRateDebtSharePct}%
-              </span>
-            </div>
-          </div>
-
-          {/* Structured 3-Pillar Explainer for Debt Maturity Wall */}
-          <div className="lg:col-span-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 p-4 space-y-3 text-xs">
-            <div className="font-bold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              Plain-English Guide — Upcoming Debt Payments
-            </div>
-            <div className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
+      {/* INNER TAB 2: EMBEDDED SOVEREIGN DEBT MATURITY WALL & CROSS-DESK CONTAGION */}
+      {innerTab === 'maturity_contagion' && (
+        <div className="space-y-5">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
-                  1. What This Shows in Plain English
-                </span>
-                How much government debt comes due each quarter over the next two years, split between local-currency bonds (blue) and foreign US dollar/euro bonds (amber).
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
+                    Sovereign Debt Maturity Wall &amp; Rollover Cliff Audit
+                  </span>
+                  <span className="mx-2" aria-hidden="true">·</span>
+                  <span>8-Quarter Forward Amortization Schedule (Q1 2025 – Q4 2026)</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1 text-balance">
+                  <RichTextWithStatRefs
+                    text={`${run.countryName}'s biggest debt repayment bill hits in ${peakBucket?.periodLabel || 'Q3 2025'} (${peakTotalPctGdp.toFixed(1)}% of GDP; $${(peakBucket?.totalUsdBn ?? 0).toFixed(1)}B), while central bank US dollar savings cover ${rollover.greenspanGuidottiRatioPct}% of foreign debt due in the next year (Ref: Peak Rollover = ${peakTotalPctGdp.toFixed(1)}% GDP · GG Cover = ${rollover.greenspanGuidottiRatioPct}%)`}
+                  />
+                </h3>
               </div>
-              <div>
-                <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
-                  2. Why It Matters
-                </span>
-                Cash crunches happen when a big wave of US dollar debt comes due at a time when global investors refuse to lend, forcing the central bank to drain its dollar savings.
-              </div>
-              <div>
-                <span className="font-bold text-red-600 dark:text-red-400 block text-[11px] uppercase tracking-wider">
-                  3. Warning Sign &amp; Action
-                </span>
-                If quarterly debt payments top <span className="font-mono font-semibold">4.5% of GDP</span> or reserve coverage drops below <span className="font-mono font-semibold">100%</span>, buy 5-year default protection (CDS) ahead of {peakBucket?.periodLabel || 'Q3 2025'}.
-              </div>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                <StatRefBadge
-                  refText={`Ref: Greenspan-Guidotti = ${rollover.greenspanGuidottiRatioPct}% (100% Floor) · WAM = ${rollover.weightedAvgMaturityYears}Y · Floating Share = ${rollover.floatingRateDebtSharePct}%`}
-                />
+              <div className="flex items-center gap-4 text-xs font-mono tabular-nums shrink-0">
+                <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                  <span className="text-slate-500 block text-[11px]">Greenspan-Guidotti Ratio</span>
+                  <span
+                    className={`font-bold text-sm ${
+                      rollover.greenspanGuidottiRatioPct < 100
+                        ? 'text-red-600 dark:text-red-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}
+                  >
+                    {rollover.greenspanGuidottiRatioPct}% (100% Floor)
+                  </span>
+                </div>
+                <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                  <span className="text-slate-500 block text-[11px]">Liquid FX Reserves vs 12M Ext Debt</span>
+                  <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+                    ${rollover.liquidFxReservesUsdBn}B vs ${rollover.shortTermExternalDebtUsdBn}B
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Cross-Desk Contagion & Chief Risk Officer Adjustment Chart */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
-          <div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">
-              <span>Cross-Desk Risk Transmission</span>
-              <span className="mx-2" aria-hidden="true">·</span>
-              <span>Active Assessment Horizon (Initial Desk Consensus vs. Cascade Shock vs. CRO Gate)</span>
-            </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
-              Cross-Desk Contagion &amp; Chief Risk Officer Adjustment ({run.countryName})
-            </h3>
-          </div>
-          <div className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
-            Composite Risk: {(run.supremeCouncil?.compositeRiskScore ?? 0.62).toFixed(2)} / 1.00
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-5 items-center">
-          {/* Visual Horizontal Bar Comparison */}
-          <div className="lg:col-span-7 space-y-4">
-            {(['geopolitical', 'macro', 'sovereign'] as const).map((deskKey) => {
-              const debate = run.deskDebates[deskKey];
-              const pre = debate.preCascadeRiskScore;
-              const post = debate.postCascadeRiskScore;
-              const cro =
-                deskKey === 'geopolitical'
-                  ? run.croState.geopoliticalRiskScore
-                  : deskKey === 'sovereign'
-                  ? run.croState.sovereignRiskScore
-                  : run.croState.macroRiskScore;
-
-              return (
-                <div key={deskKey} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-slate-800 dark:text-slate-200">
-                      {debate.deskName}
-                    </span>
-                    <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
-                      Initial: {pre.toFixed(2)} → Post-Cascade: {post.toFixed(2)} → CRO Gate: {cro.toFixed(2)}
+            {/* Stacked Quarterly Maturity Wall Bar Chart + 3 Concise Bullets */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <div className="lg:col-span-8" data-chart-card="true">
+                <div className="grid grid-cols-8 gap-2.5 pt-2 items-end h-48 border-b border-slate-200 dark:border-slate-800 pb-2 px-2 relative">
+                  {/* 4.5% GDP Quarterly Rollover Stress Line */}
+                  <div
+                    className="absolute left-0 right-0 border-t border-dashed border-red-500/70 pointer-events-none flex justify-end pr-2"
+                    style={{ bottom: '68%' }}
+                  >
+                    <span className="text-[10px] font-mono text-red-600 dark:text-red-400 bg-white/90 dark:bg-slate-900/90 px-1 -mt-2.5">
+                      4.5% GDP Quarterly Rollover Cliff Threshold
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <div className="h-2.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+
+                  {rollover.buckets.map((b) => {
+                    const totalPctGdp = b.domesticLocalPctGdp + b.externalHardCurrencyPctGdp;
+                    const heightPct = Math.min(100, Math.max(18, (totalPctGdp / 6.5) * 100));
+                    const extSharePct = totalPctGdp > 0 ? (b.externalHardCurrencyPctGdp / totalPctGdp) * 100 : 30;
+                    const domSharePct = 100 - extSharePct;
+
+                    return (
+                      <div key={b.periodLabel} className="flex flex-col items-center h-full justify-end group">
+                        <div className="text-[10px] font-mono tabular-nums text-slate-600 dark:text-slate-300 mb-1">
+                          {totalPctGdp.toFixed(1)}%
+                        </div>
                         <div
-                          className="h-full bg-slate-400 dark:bg-slate-500"
-                          style={{ width: `${Math.min(100, Math.round(pre * 100))}%` }}
-                        />
-                      </div>
-                      <div className="text-[11px] font-mono tabular-nums text-slate-500 mt-0.5">
-                        Initial Desk ({Math.round(pre * 100)}%)
-                      </div>
-                    </div>
-                    <div>
-                      <div className="h-2.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                          className={`w-full flex flex-col overflow-hidden border ${
+                            b.isPeakRollover
+                              ? 'border-amber-500 ring-1 ring-amber-500/40'
+                              : 'border-slate-300 dark:border-slate-700'
+                          }`}
+                          style={{ height: `${heightPct}%` }}
+                          title={`${b.periodLabel}: Total $${b.totalUsdBn}B (${totalPctGdp.toFixed(1)}% GDP | Avg Coupon ${b.avgCouponPct}%)`}
+                        >
+                          <div
+                            style={{ height: `${extSharePct}%` }}
+                            className="bg-amber-500 dark:bg-amber-500/90 w-full"
+                          />
+                          <div
+                            style={{ height: `${domSharePct}%` }}
+                            className="bg-blue-600 dark:bg-blue-500 w-full"
+                          />
+                        </div>
                         <div
-                          className="h-full bg-amber-500"
-                          style={{ width: `${Math.min(100, Math.round(post * 100))}%` }}
-                        />
+                          className={`text-[11px] font-mono mt-1.5 ${
+                            b.isPeakRollover
+                              ? 'font-bold text-amber-600 dark:text-amber-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {b.periodLabel}
+                        </div>
                       </div>
-                      <div className="text-[11px] font-mono tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
-                        Cascade Shock ({Math.round(post * 100)}%)
-                      </div>
-                    </div>
-                    <div>
-                      <div className="h-2.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                        <div
-                          className="h-full bg-blue-600"
-                          style={{ width: `${Math.min(100, Math.round(cro * 100))}%` }}
-                        />
-                      </div>
-                      <div className="text-[11px] font-mono tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
-                        CRO Final ({Math.round(cro * 100)}%)
-                      </div>
-                    </div>
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-2 pt-2 text-xs text-slate-500 dark:text-slate-400">
+                  <div className="flex items-center gap-4">
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 bg-blue-600 inline-block" />
+                      <span>Domestic Local-Currency Redemptions (% GDP)</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 bg-amber-500 inline-block" />
+                      <span>External Hard-Currency (USD/EUR) Maturities (% GDP)</span>
+                    </span>
+                  </div>
+                  <span className="font-mono">
+                    WAM: {rollover.weightedAvgMaturityYears} yrs · Floating-Rate Share: {rollover.floatingRateDebtSharePct}%
+                  </span>
+                </div>
+              </div>
+
+              {/* Structured 3-Pillar Explainer for Debt Maturity Wall */}
+              <div className="lg:col-span-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 p-4 space-y-3 text-xs">
+                <div className="font-bold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                  Plain-English Guide — Upcoming Debt Payments
+                </div>
+                <div className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
+                      1. What This Shows in Plain English
+                    </span>
+                    How much government debt comes due each quarter over the next two years, split between local-currency bonds (blue) and foreign US dollar/euro bonds (amber).
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
+                      2. Why It Matters
+                    </span>
+                    Cash crunches happen when a big wave of US dollar debt comes due at a time when global investors refuse to lend, forcing the central bank to drain its dollar savings.
+                  </div>
+                  <div>
+                    <span className="font-bold text-red-600 dark:text-red-400 block text-[11px] uppercase tracking-wider">
+                      3. Warning Sign &amp; Action
+                    </span>
+                    If quarterly debt payments top <span className="font-mono font-semibold">4.5% of GDP</span> or reserve coverage drops below <span className="font-mono font-semibold">100%</span>, buy 5-year default protection (CDS) ahead of {peakBucket?.periodLabel || 'Q3 2025'}.
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <StatRefBadge
+                      refText={`Ref: Greenspan-Guidotti = ${rollover.greenspanGuidottiRatioPct}% (100% Floor) · WAM = ${rollover.weightedAvgMaturityYears}Y · Floating Share = ${rollover.floatingRateDebtSharePct}%`}
+                    />
                   </div>
                 </div>
-              );
-            })}
+              </div>
+            </div>
           </div>
 
-          {/* Structured 3-Pillar Explainer for Cross-Desk Contagion */}
-          <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 p-4 space-y-3 text-xs">
-            <div className="font-bold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1.5">
-              Plain-English Guide — How Risks Domino Across Desks
+          {/* Cross-Desk Contagion & Chief Risk Officer Adjustment Chart */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+              <div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">
+                  <span>Cross-Desk Risk Transmission</span>
+                  <span className="mx-2" aria-hidden="true">·</span>
+                  <span>Active Assessment Horizon (Initial Desk Consensus vs. Cascade Shock vs. CRO Gate)</span>
+                </div>
+                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                  Cross-Desk Contagion &amp; Chief Risk Officer Adjustment ({run.countryName})
+                </h3>
+              </div>
+              <div className="text-xs font-mono tabular-nums text-slate-500 dark:text-slate-400">
+                Composite Risk: {(run.supremeCouncil?.compositeRiskScore ?? 0.62).toFixed(2)} / 1.00
+              </div>
             </div>
-            <div className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
-              <div>
-                <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
-                  1. What This Shows in Plain English
-                </span>
-                Shows how each specialist team&apos;s initial risk score (gray) jumps higher once shipping, inflation, and interest-rate shocks spill over from one desk to the next (amber and blue).
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-5 items-center">
+              {/* Visual Horizontal Bar Comparison */}
+              <div className="lg:col-span-7 space-y-4">
+                {(['geopolitical', 'macro', 'sovereign'] as const).map((deskKey) => {
+                  const debate = run.deskDebates[deskKey];
+                  const pre = debate.preCascadeRiskScore;
+                  const post = debate.postCascadeRiskScore;
+                  const cro =
+                    deskKey === 'geopolitical'
+                      ? run.croState.geopoliticalRiskScore
+                      : deskKey === 'sovereign'
+                      ? run.croState.sovereignRiskScore
+                      : run.croState.macroRiskScore;
+
+                  return (
+                    <div key={deskKey} className="space-y-1.5">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          {debate.deskName}
+                        </span>
+                        <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                          Initial: {pre.toFixed(2)} → Post-Cascade: {post.toFixed(2)} → CRO Gate: {cro.toFixed(2)}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <div className="h-2.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full bg-slate-400 dark:bg-slate-500"
+                              style={{ width: `${Math.min(100, Math.round(pre * 100))}%` }}
+                            />
+                          </div>
+                          <div className="text-[11px] font-mono tabular-nums text-slate-500 mt-0.5">
+                            Initial Desk ({Math.round(pre * 100)}%)
+                          </div>
+                        </div>
+                        <div>
+                          <div className="h-2.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full bg-amber-500"
+                              style={{ width: `${Math.min(100, Math.round(post * 100))}%` }}
+                            />
+                          </div>
+                          <div className="text-[11px] font-mono tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
+                            Cascade Shock ({Math.round(post * 100)}%)
+                          </div>
+                        </div>
+                        <div>
+                          <div className="h-2.5 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                            <div
+                              className="h-full bg-blue-600"
+                              style={{ width: `${Math.min(100, Math.round(cro * 100))}%` }}
+                            />
+                          </div>
+                          <div className="text-[11px] font-mono tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
+                            CRO Final ({Math.round(cro * 100)}%)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
-                  2. Why It Matters
-                </span>
-                A +{run.croState.energyInflationShockPct}% shipping and fuel cost jump forces the Central Bank to keep interest rates high, which then adds +{run.croState.debtServicingSpreadBps} bps to the government&apos;s borrowing costs.
-              </div>
-              <div>
-                <span className="font-bold text-red-600 dark:text-red-400 block text-[11px] uppercase tracking-wider">
-                  3. Warning Sign &amp; Action
-                </span>
-                Whenever a desk&apos;s risk score reaches <span className="font-mono font-semibold">0.70</span> (70%) or higher after spillover effects, the portfolio automatically adds defensive hedges and cuts long-term bond exposure.
-              </div>
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                <StatRefBadge
-                  refText={`Ref: Geo→Macro Freight Impulse = +${run.croState.energyInflationShockPct}% · Macro→Sov Spread Delta = +${run.croState.debtServicingSpreadBps} bps · CRO Gate Threshold = 0.70`}
-                />
+
+              {/* Structured 3-Pillar Explainer for Cross-Desk Contagion */}
+              <div className="lg:col-span-5 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 p-4 space-y-3 text-xs">
+                <div className="font-bold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-1.5">
+                  Plain-English Guide — How Risks Domino Across Desks
+                </div>
+                <div className="space-y-2 text-slate-600 dark:text-slate-300 leading-relaxed">
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
+                      1. What This Shows in Plain English
+                    </span>
+                    Shows how each specialist team&apos;s initial risk score (gray) jumps higher once shipping, inflation, and interest-rate shocks spill over from one desk to the next (amber and blue).
+                  </div>
+                  <div>
+                    <span className="font-bold text-slate-900 dark:text-slate-100 block text-[11px] uppercase tracking-wider">
+                      2. Why It Matters
+                    </span>
+                    A +{run.croState.energyInflationShockPct}% shipping and fuel cost jump forces the Central Bank to keep interest rates high, which then adds +{run.croState.debtServicingSpreadBps} bps to the government&apos;s borrowing costs.
+                  </div>
+                  <div>
+                    <span className="font-bold text-red-600 dark:text-red-400 block text-[11px] uppercase tracking-wider">
+                      3. Warning Sign &amp; Action
+                    </span>
+                    Whenever a desk&apos;s risk score reaches <span className="font-mono font-semibold">0.70</span> (70%) or higher after spillover effects, the portfolio automatically adds defensive hedges and cuts long-term bond exposure.
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <StatRefBadge
+                      refText={`Ref: Geo→Macro Freight Impulse = +${run.croState.energyInflationShockPct}% · Macro→Sov Spread Delta = +${run.croState.debtServicingSpreadBps} bps · CRO Gate Threshold = 0.70`}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
@@ -602,7 +644,7 @@ const ChartCard: React.FC<ChartCardProps> = ({
       </div>
 
       {/* Interactive SVG Plot */}
-      <div className="px-5 py-3 bg-slate-50/50 dark:bg-slate-950/40">
+      <div className="px-5 py-3 bg-slate-50/50 dark:bg-slate-950/40 relative" data-chart-card="true">
         <svg
           viewBox={`0 0 ${svgWidth} ${svgHeight}`}
           className="w-full h-44 overflow-visible select-none"

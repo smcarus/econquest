@@ -1,6 +1,8 @@
 import React from 'react';
 import { CouncilAssessmentRun, UserPersonaId } from '../types/council';
 import { Sparkles, ArrowRight, Eye, Layers } from 'lucide-react';
+import { DataProvenanceBadge } from './RealTimeDataProvenanceOverlay';
+import { StatRefBadge } from './StatRefTooltip';
 
 export type WorkspaceDensityMode = 'SIMPLE_BRIEF' | 'PRO_QUANT';
 
@@ -214,6 +216,36 @@ function buildDeskSynthesisForSection(
           'Calculates pairwise rolling correlations of 5Y CDS and 10Y Eurobond spreads across your sovereign universe to maximize EMBI portfolio diversification.',
         liveSovereignSignal: `Decomposes ${run.iso3} (${cds} bps) spread variance into global risk-on/risk-off beta (PC1) vs. pure country-specific alpha and solves for optimal % portfolio weights.`,
         actionableEdge: `${personaPrefix} Click any low-correlation green cell (ρ ≤ +0.15) in the heatmap to inspect the pair’s 24-period cointegration Z-score and hedge ratio β.`,
+        nextStepLabel: 'Open NSS Yield Curve Lab (5.7)',
+        nextStepTargetSection: 'quant_nss_yield_curve',
+      };
+
+    case 'quant_nss_yield_curve':
+      return {
+        plainEnglishPurpose:
+          'Fits a 6-factor Nelson-Siegel-Svensson (NSS) parametric yield curve from 1Y to 30Y to pinpoint the exact tenor offering the highest 12M Carry + Roll-Down and Breakeven Cushion.',
+        liveSovereignSignal: `Models ${run.countryName} (${polRate.toFixed(2)}% policy rate vs. ${y10.toFixed(2)}% 10Y yield) across 8 benchmark tenors, decomposing total return into spot carry (bps) and curve roll-down (bps).`,
+        actionableEdge: `${personaPrefix} Shock β₀ (level), β₁ (slope), or β₂ (belly curvature) and stage the highest Carry+Roll tenor or 2s5s10s butterfly directly into your IC Trade Ticket Book.`,
+        nextStepLabel: 'Open Catalyst Event Vol Calendar (5.8)',
+        nextStepTargetSection: 'quant_macro_catalyst_calendar',
+      };
+
+    case 'quant_macro_catalyst_calendar':
+      return {
+        plainEnglishPurpose:
+          'Tracks upcoming 90-day Central Bank MPC decisions, CPI prints, and IMF/Rating Agency reviews across all watchlist sovereigns, pricing implied 1-day event volatility (±bps).',
+        liveSovereignSignal: `Compares EconQuest model nowcasts against consensus for ${run.countryName} (CPI ${cpi.toFixed(1)}%, Primary Balance ${pb.toFixed(1)}% vs. pb* ${pbStar.toFixed(1)}% GDP) to map post-release spread skew.`,
+        actionableEdge: `${personaPrefix} Click any scheduled catalyst row to inspect the 3-branch post-event scenario tree (Dovish Relief vs. Hawkish Shock bps) and stage pre-event protection.`,
+        nextStepLabel: 'Open Portfolio Stress-Test Lab (5.9)',
+        nextStepTargetSection: 'quant_portfolio_stress_lab',
+      };
+
+    case 'quant_portfolio_stress_lab':
+      return {
+        plainEnglishPurpose:
+          'Runs batch multi-factor stress tests (e.g., 20% currency devaluation + 200bps spread widening + US Treasury shifts) across the multi-sovereign EMBI book to quantify instantaneous NAV PnL impact.',
+        liveSovereignSignal: `Benchmarks ${run.countryName} (${cds} bps 5Y CDS, ${debt.toFixed(1)}% Debt/GDP, ${resMos.toFixed(1)}m reserves) within your multi-sovereign portfolio across Credit CS01+Convexity, Unhedged FX, UST Duration, and 30D Carry+Roll.`,
+        actionableEdge: `${personaPrefix} Select any of the 6 institutional crisis presets or adjust the 5 shock sliders to inspect sovereign PnL attribution and stage the auto-calibrated tail-risk hedge into your IC Trade Book.`,
         nextStepLabel: 'Open EMBI Portfolio Pair Book (6.1)',
         nextStepTargetSection: 'embi_portfolio_pair_book',
       };
@@ -252,6 +284,12 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
           <span className="text-slate-300 truncate">{spec.plainEnglishPurpose}</span>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          <DataProvenanceBadge
+            run={run}
+            contextTitle={`${activeHubLabel} · ${activeSubTabLabel}`}
+            containerKind="CHART"
+            compact
+          />
           <button
             type="button"
             onClick={() => onJumpToSection(spec.nextStepTargetSection)}
@@ -286,7 +324,12 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <DataProvenanceBadge
+            run={run}
+            contextTitle={`${activeHubLabel} · ${activeSubTabLabel}`}
+            containerKind="CHART"
+          />
           <button
             type="button"
             onClick={() => onJumpToSection(spec.nextStepTargetSection)}
@@ -334,6 +377,38 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
             {spec.actionableEdge}
           </p>
         </div>
+      </div>
+
+      {/* Interactive Statistical Reference Badges Ribbon (Hover for Formal Formula, Variable Glossary & Source) */}
+      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+        <div className="flex flex-wrap items-center gap-1">
+          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mr-1">
+            Hover Statistical References (Formula &amp; Glossary):
+          </span>
+          <StatRefBadge
+            variant="inline"
+            refText={`VaR / CVaR₉₉ · 5Y CDS = ${run.openData.monetaryAndMarket.cds5YSpreadBps} bps`}
+          />
+          <StatRefBadge
+            variant="inline"
+            refText={`DV01 / CS01 · 10Y = ${run.openData.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}%`}
+          />
+          <StatRefBadge
+            variant="inline"
+            refText={`pb* = ${run.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct.toFixed(2)}% GDP · r − g = ${run.openData.dsaAnalytics.rMinusGDifferentialPct.toFixed(2)}%`}
+          />
+          <StatRefBadge
+            variant="inline"
+            refText={`Greenspan-Guidotti = ${run.openData.debtRollover.greenspanGuidottiRatioPct}% · Reserves = ${run.openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)}m`}
+          />
+          <StatRefBadge
+            variant="inline"
+            refText={`5Y CDS Hazard & Basis · ${run.iso3} = ${run.openData.monetaryAndMarket.cds5YSpreadBps} bps`}
+          />
+        </div>
+        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+          Hover any underlined metric or click any Chart/Table Provenance Badge for live API audit
+        </span>
       </div>
     </div>
   );

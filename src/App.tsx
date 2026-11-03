@@ -105,6 +105,26 @@ import {
   DeskClaritySynthesisBanner,
   WorkspaceDensityMode,
 } from './components/DeskClaritySynthesisBanner';
+import { MorningAlphaAndCatalystRadar } from './components/MorningAlphaAndCatalystRadar';
+import {
+  MultiSovereignComparatorDrawer,
+  ExecutiveTearSheetAndTradeTicketDrawer,
+} from './components/MultiSovereignComparatorAndTicketDrawers';
+import { GlobalTerminalProvenanceAndStatRefController } from './components/RealTimeDataProvenanceOverlay';
+import {
+  ACTIVITY_PILLARS,
+  ActivityPillarId,
+  findPillarForNavSection,
+  PillarSubNavigationStrip,
+  CompactTopStatusAndDrawersBar,
+  MacroOverviewTabbedWorkspace,
+  ViewportScrollBudgetContainer,
+} from './components/ActivityPillarWorkspaceController';
+import {
+  computeSovereignNssYieldCurveSuite,
+  DEFAULT_NSS_SHOCK_INPUTS,
+  StagedTradeTicketSpec,
+} from './utils/nssYieldCurveAndCatalystEngine';
 import { exportSMCRPdfDossier } from './utils/smcrReportExporter';
 import {
   FileUp,
@@ -127,6 +147,7 @@ import {
   Plus,
   Database,
   ChevronDown,
+  Briefcase,
 } from 'lucide-react';
 
 const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
@@ -152,6 +173,9 @@ type NavSectionId =
   | 'quant_trade_blotter'
   | 'quant_macro_surprise'
   | 'quant_alpha_correlation'
+  | 'quant_nss_yield_curve'
+  | 'quant_macro_catalyst_calendar'
+  | 'quant_portfolio_stress_lab'
   | 'embi_portfolio_pair_book'
   | 'dmo_treasury_auction_sim'
   | 'mpc_imf_document_ai'
@@ -315,6 +339,21 @@ const DOMAIN_HUBS: DomainHubConfig[] = [
         id: 'quant_alpha_correlation',
         label: 'Alpha Correlation Matrix',
         description: 'Pairwise rolling correlations of 5Y CDS & 10Y Eurobond spreads, PCA beta vs. alpha & EMBI weight optimizer',
+      },
+      {
+        id: 'quant_nss_yield_curve',
+        label: 'NSS Yield Curve & Carry+Roll',
+        description: '6-factor Nelson-Siegel-Svensson (1Y–30Y) parametric yield curve, 12M Carry + Roll-Down (bps) & 2s5s10s butterfly lab',
+      },
+      {
+        id: 'quant_macro_catalyst_calendar',
+        label: 'Macro & MPC Catalyst Vol',
+        description: '90-day forward Central Bank MPC, CPI & IMF review catalyst calendar with implied 1-day event volatility (±bps)',
+      },
+      {
+        id: 'quant_portfolio_stress_lab',
+        label: 'Portfolio Stress-Test & Scenario Lab',
+        description: 'Batch EMBI portfolio stress testing (e.g., 20% FX devaluation + 200bps spread widening) & instantaneous multi-sovereign book PnL hit attribution',
       },
     ],
   },
@@ -481,7 +520,7 @@ export default function App() {
     return false;
   });
 
-  const [isWatchlistCollapsed, setIsWatchlistCollapsed] = useState<boolean>(false);
+  const [isWatchlistCollapsed, setIsWatchlistCollapsed] = useState<boolean>(true);
   const [densityMode, setDensityMode] = useState<WorkspaceDensityMode>('SIMPLE_BRIEF');
   const [showScenarioInput, setShowScenarioInput] = useState<boolean>(false);
 
@@ -490,20 +529,22 @@ export default function App() {
     () => savedSessionOnBoot?.layoutMode || 'executive_brief'
   );
   const [activeNavSection, setActiveNavSection] = useState<NavSectionId>(
-    () => (savedSessionOnBoot?.activeNavSection as NavSectionId) || 'charts_watchlists'
+    () => (savedSessionOnBoot?.activeNavSection as NavSectionId) || 'quant_nss_yield_curve'
   );
   const [activePersona, setActivePersona] = useState<UserPersonaId>(
     () => savedSessionOnBoot?.activePersona || 'INDIVIDUAL_TRADER'
   );
 
-  // Auto-collapse left Watchlist sidebar on wide analytical desks (Hubs 2-10 & 1.2) so tables/matrices get full 12-col width
+  // Collapse Watchlist sidebar by default to maximize 1-2 screen canvas density
   useEffect(() => {
-    setIsWatchlistCollapsed(activeNavSection !== 'charts_watchlists');
+    setIsWatchlistCollapsed(true);
   }, [activeNavSection]);
 
-  // Turnkey Modals & 4-Category Dropdown State
+  // Turnkey Modals & 3-Pillar Dropdown State
   const [openCategoryMenuId, setOpenCategoryMenuId] =
     useState<NavigationCategoryGroupId | null>(null);
+  const [openPillarMenuId, setOpenPillarMenuId] =
+    useState<ActivityPillarId | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isIntegrityAuditOpen, setIsIntegrityAuditOpen] = useState<boolean>(false);
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
@@ -573,6 +614,32 @@ export default function App() {
     )
   );
   const [isScenarioDrawerOpen, setIsScenarioDrawerOpen] = useState<boolean>(false);
+  const [isComparatorDrawerOpen, setIsComparatorDrawerOpen] = useState<boolean>(false);
+  const [isTradeTicketDrawerOpen, setIsTradeTicketDrawerOpen] = useState<boolean>(false);
+  const [stagedTradeTickets, setStagedTradeTickets] = useState<StagedTradeTicketSpec[]>(
+    () =>
+      computeSovereignNssYieldCurveSuite(
+        buildDefaultAssessmentRun(savedSessionOnBoot?.activeIso3 || 'BRA'),
+        DEFAULT_NSS_SHOCK_INPUTS
+      ).recommendedCurveTickets.slice(0, 2)
+  );
+
+  const handleStageTradeTicket = (ticket: StagedTradeTicketSpec) => {
+    setStagedTradeTickets((prev) => {
+      const exists = prev.some((t) => t.ticketId === ticket.ticketId);
+      if (exists) return prev;
+      return [ticket, ...prev];
+    });
+    setIsTradeTicketDrawerOpen(true);
+    setStatusBanner({
+      type: 'success',
+      message: `Staged IC Trade Ticket: "${ticket.strategyTitle}" (${ticket.iso3} · +${ticket.expected12MCarryRollBps} bps/yr Carry+Roll).`,
+    });
+  };
+
+  const handleRemoveTradeTicket = (ticketId: string) => {
+    setStagedTradeTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
+  };
   const [liveMacroSyncResult, setLiveMacroSyncResult] = useState<LiveMacroSyncResult | null>(
     null
   );
@@ -1468,103 +1535,96 @@ export default function App() {
               Sovereign Council Orchestrator
             </span>
             <span className="hidden 2xl:block text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              10 Institutional Hubs · 36 Quant Modules · Zero-Notional Ratio Engine
+              3 Activity Pillars · 1–2 Screen Scroll Cap · Live API Provenance
             </span>
           </div>
         </a>
 
-        {/* Zone 2: 4 Compact Category Pill Menus + Cmd+K Search & Jump Bar */}
-        <nav className="hidden lg:flex items-center gap-1.5 text-xs font-medium">
-          {COMPACT_NAV_CATEGORIES.map((cat) => {
-            const categoryHubs = DOMAIN_HUBS.filter((h) => cat.hubIds.includes(h.id));
-            const isCategoryActive =
-              layoutMode === 'executive_brief' && cat.hubIds.includes(activeDomainHub.id);
-            const isOpen = openCategoryMenuId === cat.categoryId;
+        {/* Zone 2: 3 Primary Activity Pillars (Market & Trading | Policy Research | Macroeconomic Research) + Cmd+K Search */}
+        <nav className="hidden lg:flex items-center gap-2 text-xs font-medium">
+          {ACTIVITY_PILLARS.map((pillar) => {
+            const activePillarInfo = findPillarForNavSection(activeNavSection);
+            const isPillarActive =
+              layoutMode === 'executive_brief' &&
+              activePillarInfo.pillar.id === pillar.id;
+            const isOpen = openPillarMenuId === pillar.id;
+
+            const activeBtnClass =
+              pillar.id === 'market_trading'
+                ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-2xs'
+                : pillar.id === 'policy_research'
+                ? 'bg-emerald-600 text-white border-emerald-600 font-semibold shadow-2xs'
+                : 'bg-indigo-600 text-white border-indigo-600 font-semibold shadow-2xs';
 
             return (
               <div
-                key={cat.categoryId}
+                key={pillar.id}
                 className="relative"
-                onMouseEnter={() => setOpenCategoryMenuId(cat.categoryId)}
-                onMouseLeave={() => setOpenCategoryMenuId(null)}
+                onMouseEnter={() => setOpenPillarMenuId(pillar.id)}
+                onMouseLeave={() => setOpenPillarMenuId(null)}
               >
                 <button
                   type="button"
                   onClick={() => {
-                    const firstHub = categoryHubs[0];
-                    if (firstHub) {
-                      setLayoutMode('executive_brief');
-                      setActiveNavSection(firstHub.defaultSection);
-                    }
-                    setOpenCategoryMenuId(isOpen ? null : cat.categoryId);
+                    setLayoutMode('executive_brief');
+                    setActiveNavSection(pillar.defaultSection as NavSectionId);
+                    setOpenPillarMenuId(isOpen ? null : pillar.id);
                   }}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 border transition-colors whitespace-nowrap ${
-                    isCategoryActive
-                      ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-2xs'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                    isPillarActive
+                      ? activeBtnClass
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
-                  <span>{cat.shortPillLabel}</span>
+                  <span>{pillar.shortTitle}</span>
                   <ChevronDown className="w-3.5 h-3.5 opacity-80" />
                 </button>
 
                 {isOpen && (
-                  <div className="absolute left-0 top-full pt-1 w-96 z-50">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-2 space-y-2">
-                      <div className="px-2 py-1 border-b border-slate-100 dark:border-slate-800 text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                        {cat.fullCategoryTitle}
+                  <div className="absolute left-0 top-full pt-1 w-[440px] z-50">
+                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-2.5">
+                      <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
+                        <div className="text-xs font-bold text-slate-900 dark:text-white">
+                          {pillar.shortTitle}
+                        </div>
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                          {pillar.subtitle}
+                        </div>
                       </div>
-                      {categoryHubs.map((hub) => {
-                        const isHubActive = activeDomainHub.id === hub.id;
-                        return (
-                          <div
-                            key={hub.id}
-                            className={`p-2 border ${
-                              isHubActive
-                                ? 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-200 dark:border-blue-800/70'
-                                : 'bg-slate-50/60 dark:bg-slate-950/50 border-slate-100 dark:border-slate-800/70'
-                            }`}
-                          >
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setLayoutMode('executive_brief');
-                                setActiveNavSection(hub.defaultSection);
-                                setOpenCategoryMenuId(null);
-                              }}
-                              className="w-full text-left font-bold text-xs text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 flex items-center justify-between"
-                            >
-                              <span>{hub.label}</span>
-                              <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">
-                                {hub.subTabs.length} modules
-                              </span>
-                            </button>
-                            <div className="mt-1.5 flex flex-wrap gap-1">
-                              {hub.subTabs.map((sub) => {
-                                const isSubSel = activeNavSection === sub.id;
-                                return (
-                                  <button
-                                    key={sub.id}
-                                    type="button"
-                                    onClick={() => {
-                                      setLayoutMode('executive_brief');
-                                      setActiveNavSection(sub.id);
-                                      setOpenCategoryMenuId(null);
-                                    }}
-                                    className={`px-2 py-0.5 text-[11px] border transition-colors ${
-                                      isSubSel
-                                        ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-                                    }`}
-                                  >
-                                    {sub.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                      {pillar.subGroups.map((sg) => (
+                        <div
+                          key={sg.groupId}
+                          className="p-2 border bg-slate-50/70 dark:bg-slate-950/60 border-slate-200/80 dark:border-slate-800"
+                        >
+                          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                            {sg.groupTitle}
                           </div>
-                        );
-                      })}
+                          <div className="flex flex-wrap gap-1.5">
+                            {sg.modules.map((mod) => {
+                              const isModSel = activeNavSection === mod.id;
+                              return (
+                                <button
+                                  key={mod.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setLayoutMode('executive_brief');
+                                    setActiveNavSection(mod.id as NavSectionId);
+                                    setOpenPillarMenuId(null);
+                                  }}
+                                  title={mod.description}
+                                  className={`px-2.5 py-1 text-[11px] border transition-colors text-left ${
+                                    isModSel
+                                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
+                                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                                  }`}
+                                >
+                                  {mod.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
@@ -1580,7 +1640,7 @@ export default function App() {
             className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
           >
             <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Search 37 Modules</span>
+            <span>Jump</span>
             <kbd className="px-1.5 py-0.5 text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
               ⌘K
             </kbd>
@@ -1738,121 +1798,40 @@ export default function App() {
         </div>
       </header>
 
-      {/* SECONDARY CONTEXTUAL BAR: ACTIVE HUB BADGE + SUB-TABS FOR ACTIVE HUB + CUSTOM ISO-3 WIZARD */}
-      <section className="bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-6 py-2.5">
-        <div className="max-w-[1600px] mx-auto space-y-2.5">
-          {/* Row 1: Contextual Sub-Tabs for Active Hub + Layout Mode Switcher */}
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-1.5">
-              {/* Toggle Watchlist Sidebar Button */}
-              <button
-                type="button"
-                onClick={() => setIsWatchlistCollapsed((v) => !v)}
-                title={isWatchlistCollapsed ? 'Show Sovereign Watchlist Sidebar' : 'Hide Sidebar to Expand Maps & Charts'}
-                className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
-              >
-                {isWatchlistCollapsed ? (
-                  <>
-                    <PanelLeftOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>Show Watchlist</span>
-                  </>
-                ) : (
-                  <>
-                    <PanelLeftClose className="w-3.5 h-3.5" />
-                    <span>Expand Canvas</span>
-                  </>
-                )}
-              </button>
+      {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
+      <section className="bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-6 py-2">
+        <div className="max-w-[1600px] mx-auto space-y-2">
+          {/* Row 1: Contextual Sub-Groups & Modules for Active Activity Pillar */}
+          <PillarSubNavigationStrip
+            activeNavSection={activeNavSection}
+            onSelectNavSection={(sec) => {
+              setLayoutMode('executive_brief');
+              setActiveNavSection(sec as NavSectionId);
+            }}
+          />
 
-              {/* Active Hub Pill Indicator */}
-              <span className="px-2.5 py-1 text-[11px] font-mono font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mr-1">
-                {activeDomainHub.label}
-              </span>
-
-              {activeDomainHub.subTabs.map((tab) => {
-                const isSelected = layoutMode === 'executive_brief' && activeNavSection === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => {
-                      setLayoutMode('executive_brief');
-                      setActiveNavSection(tab.id);
-                    }}
-                    className={`px-3 py-1.5 text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
-                      isSelected
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Right: 3-Mode Layout Switcher + Search Grounding Toggle */}
-            <div className="flex flex-wrap items-center gap-3 shrink-0">
-              <label className="inline-flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300 cursor-pointer select-none whitespace-nowrap shrink-0">
-                <input
-                  type="checkbox"
-                  checked={runtimeConfig.enableSearchGrounding}
-                  onChange={(e) =>
-                    setRuntimeConfig((prev) => ({
-                      ...prev,
-                      enableSearchGrounding: e.target.checked,
-                    }))
-                  }
-                  className="accent-blue-600"
-                />
-                <span>Live Search Grounding</span>
-              </label>
-
-              <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setLayoutMode('executive_brief')}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                    layoutMode === 'executive_brief'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Layout className="w-3.5 h-3.5" />
-                  <span>Focused Desk</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLayoutMode('split_workbench')}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                    layoutMode === 'split_workbench'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <Columns className="w-3.5 h-3.5" />
-                  <span>Split Workbench</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setLayoutMode('full_report')}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                    layoutMode === 'full_report'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5" />
-                  <span>Full Report</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Row 2: Pinned 1-Click Sovereign Switcher Pill Strip + Custom ISO-3 Onboarding + Live Sync + Collapsible Scenario Input */}
-          <div className="flex flex-col gap-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+          {/* Row 2: Pinned 1-Click Sovereign Switcher Pill Strip + Custom ISO-3 Onboarding + Live Sync + Compare/IC Drawers */}
+          <div className="flex flex-col gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsWatchlistCollapsed((v) => !v)}
+                  title={isWatchlistCollapsed ? 'Show Sovereign Watchlist Sidebar' : 'Hide Sidebar to Expand Maps & Charts'}
+                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
+                >
+                  {isWatchlistCollapsed ? (
+                    <>
+                      <PanelLeftOpen className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                      <span>Watchlist</span>
+                    </>
+                  ) : (
+                    <>
+                      <PanelLeftClose className="w-3 h-3" />
+                      <span>Hide Sidebar</span>
+                    </>
+                  )}
+                </button>
                 <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-0.5">
                   Sovereign:
                 </span>
@@ -1894,11 +1873,25 @@ export default function App() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 hidden xl:inline truncate max-w-md">
-                  <strong className="text-slate-800 dark:text-slate-200">{run.countryName}</strong> ·{' '}
-                  {activeSubTabObj.description}
-                </span>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setIsComparatorDrawerOpen(true)}
+                  title="Open Multi-Sovereign Head-to-Head Comparator (Compare any 2-3 countries side-by-side)"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors"
+                >
+                  <Columns className="w-3 h-3" />
+                  <span>Compare 2–3 Sovereigns</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsTradeTicketDrawerOpen(true)}
+                  title="Open 1-Click Executive Tear-Sheet & IC Trade Ticket Quick-Drawer"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition-colors"
+                >
+                  <Briefcase className="w-3 h-3" />
+                  <span>IC Ticket / Tear-Sheet ({stagedTradeTickets.length})</span>
+                </button>
                 <button
                   type="button"
                   onClick={() => setShowScenarioInput((v) => !v)}
@@ -1929,7 +1922,7 @@ export default function App() {
             )}
           </div>
 
-          {/* Mobile Hub Switcher + Cmd+K Trigger */}
+          {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
           <div className="flex lg:hidden items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800 overflow-x-auto">
             <button
               type="button"
@@ -1939,23 +1932,27 @@ export default function App() {
               <Search className="w-3 h-3" />
               <span>⌘K Jump</span>
             </button>
-            {DOMAIN_HUBS.map((hub) => (
-              <button
-                key={hub.id}
-                type="button"
-                onClick={() => {
-                  setLayoutMode('executive_brief');
-                  setActiveNavSection(hub.defaultSection);
-                }}
-                className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                  activeDomainHub.id === hub.id
-                    ? 'bg-blue-600 text-white font-semibold'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                }`}
-              >
-                {hub.label}
-              </button>
-            ))}
+            {ACTIVITY_PILLARS.map((pillar) => {
+              const isAct =
+                findPillarForNavSection(activeNavSection).pillar.id === pillar.id;
+              return (
+                <button
+                  key={pillar.id}
+                  type="button"
+                  onClick={() => {
+                    setLayoutMode('executive_brief');
+                    setActiveNavSection(pillar.defaultSection as NavSectionId);
+                  }}
+                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                    isAct
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  {pillar.shortTitle}
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -2028,58 +2025,52 @@ export default function App() {
         )}
 
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
-        <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-6`}>
-          {/* BOTTOM LINE UP FRONT (BLUF) EXECUTIVE RISK SCORECARD — COMPACT 1-LINE RIBBON ON HUBS 2-10 SO ACTIVE DESKS START ABOVE THE FOLD */}
-          <ExecutiveBriefScorecard
+        <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
+          {/* CONSOLIDATED 1-LINE STATUS BAR WITH SLIDE-OVER DRAWERS (MORNING RADAR, EXECUTIVE BLUF, DESK GUIDE) */}
+          <CompactTopStatusAndDrawersBar
             run={run}
-            isCompactByDefault={activeNavSection !== 'charts_watchlists'}
-            onSelectSection={(sec) => {
-              setLayoutMode('executive_brief');
-              setActiveNavSection(sec);
-            }}
-          />
-
-          {/* PLAIN-ENGLISH DESK CLARITY SYNTHESIS BANNER (SIMPLE BRIEF VS PRO QUANT MODE) */}
-          <DeskClaritySynthesisBanner
-            run={run}
+            watchlistItems={activeWatchlistItems}
             activeNavSection={activeNavSection}
-            activeHubLabel={activeDomainHub.label}
-            activeSubTabLabel={activeSubTabObj.label}
             activePersona={activePersona}
             densityMode={densityMode}
             onToggleDensityMode={setDensityMode}
-            onJumpToSection={(sec: string) => {
+            onSelectSovereign={handleSelectSovereign}
+            onSelectNavSection={(sec) => {
               setLayoutMode('executive_brief');
               setActiveNavSection(sec as NavSectionId);
             }}
+            onStageTradeTicket={handleStageTradeTicket}
           />
 
-          {/* MODE 1: CLEAN EXECUTIVE BRIEFING (DEFAULT) */}
+          {/* MODE 1: CLEAN EXECUTIVE BRIEFING (DEFAULT) WRAPPED IN 1-2 SCREEN SCROLL BUDGET CONTAINER */}
           {layoutMode === 'executive_brief' && (
-            <>
+            <ViewportScrollBudgetContainer activeNavSection={activeNavSection}>
               {activeNavSection === 'charts_watchlists' && (
-                <div className="space-y-6">
-                  {/* Flagship Interactive Geopolitical Chokepoint, Trade Corridor & GDELT Alert Map */}
-                  <HeroGeopoliticalMapCard
-                    run={run}
-                    watchlistItems={activeWatchlistItems}
-                    wargameParams={geopoliticalWargameParams}
-                    onChangeWargameParams={setGeopoliticalWargameParams}
-                    onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                    onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
-                    onSelectSovereign={handleSelectSovereign}
-                  />
-
-                  {/* Annotated 2x2 Sovereign Horizon Charts + Debt Maturity Wall + Contagion Chart */}
-                  <AnnotatedChartsDeck
-                    run={run}
-                    onRefreshLiveOpenData={() =>
-                      handlePullLiveOpenData(run.iso3, run.countryName, false)
-                    }
-                    isFetchingData={isFetchingOpenData}
-                    onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                  />
-                </div>
+                <MacroOverviewTabbedWorkspace
+                  countryName={run.countryName}
+                  iso3={run.iso3}
+                  mapCard={
+                    <HeroGeopoliticalMapCard
+                      run={run}
+                      watchlistItems={activeWatchlistItems}
+                      wargameParams={geopoliticalWargameParams}
+                      onChangeWargameParams={setGeopoliticalWargameParams}
+                      onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                      onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
+                      onSelectSovereign={handleSelectSovereign}
+                    />
+                  }
+                  chartsDeck={
+                    <AnnotatedChartsDeck
+                      run={run}
+                      onRefreshLiveOpenData={() =>
+                        handlePullLiveOpenData(run.iso3, run.countryName, false)
+                      }
+                      isFetchingData={isFetchingOpenData}
+                      onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
+                    />
+                  }
+                />
               )}
 
               {activeNavSection === 'forecasting_lab' && (
@@ -2210,7 +2201,10 @@ export default function App() {
                 activeNavSection === 'quant_matrix_econometrics' ||
                 activeNavSection === 'quant_trade_blotter' ||
                 activeNavSection === 'quant_macro_surprise' ||
-                activeNavSection === 'quant_alpha_correlation') && (
+                activeNavSection === 'quant_alpha_correlation' ||
+                activeNavSection === 'quant_nss_yield_curve' ||
+                activeNavSection === 'quant_macro_catalyst_calendar' ||
+                activeNavSection === 'quant_portfolio_stress_lab') && (
                 <InstitutionalQuantDesk
                   run={run}
                   watchlistItems={activeWatchlistItems}
@@ -2221,6 +2215,7 @@ export default function App() {
                       : (activeNavSection as QuantSubWorkspaceId)
                   }
                   onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onStageTradeTicket={handleStageTradeTicket}
                 />
               )}
 
@@ -2302,7 +2297,7 @@ export default function App() {
                   onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
                 />
               )}
-            </>
+            </ViewportScrollBudgetContainer>
           )}
 
           {/* MODE 2: SPLIT DESK WORKBENCH (SIDE-BY-SIDE QUANT/ECONOMETRICS/GEOPOLITICAL/PORTFOLIO RISK + LIVE COUNCIL DEBATES) */}
@@ -2569,6 +2564,14 @@ export default function App() {
         </section>
       </main>
 
+      {/* GLOBAL REAL-TIME DATA PROVENANCE OVERLAY & INTERACTIVE STATISTICAL REFERENCE TOOLTIP CONTROLLER */}
+      <GlobalTerminalProvenanceAndStatRefController
+        run={run}
+        activeNavSection={activeNavSection}
+        onRefreshLiveOpenData={() => handlePullLiveOpenData(run.iso3, run.countryName, false)}
+        isFetchingData={isFetchingOpenData}
+      />
+
       {/* GLOBAL COMMAND PALETTE (CMD+K), PRE-FLIGHT MODEL INTEGRITY AUDITOR, CUSTOM SOVEREIGN WIZARD & SESSION SNAPSHOT MODALS */}
       <GlobalCommandPaletteModal
         isOpen={isCommandPaletteOpen}
@@ -2595,6 +2598,33 @@ export default function App() {
         currentSnapshot={currentWorkspaceSessionSnapshot}
         onRestoreSession={handleRestoreWorkspaceSession}
         onResetFactoryDefaults={handleResetFactoryDefaults}
+      />
+
+      {/* MULTI-SOVEREIGN HEAD-TO-HEAD COMPARATOR DRAWER (2-3 COUNTRIES SIDE-BY-SIDE) */}
+      <MultiSovereignComparatorDrawer
+        isOpen={isComparatorDrawerOpen}
+        onClose={() => setIsComparatorDrawerOpen(false)}
+        activeRun={run}
+        watchlistItems={activeWatchlistItems}
+        onSelectSovereign={handleSelectSovereign}
+        onStageTradeTicket={(ticket) => {
+          setIsComparatorDrawerOpen(false);
+          handleStageTradeTicket(ticket);
+        }}
+      />
+
+      {/* 1-CLICK EXECUTIVE TEAR-SHEET & IC TRADE TICKET QUICK-DRAWER */}
+      <ExecutiveTearSheetAndTradeTicketDrawer
+        isOpen={isTradeTicketDrawerOpen}
+        onClose={() => setIsTradeTicketDrawerOpen(false)}
+        activeRun={run}
+        stagedTickets={stagedTradeTickets}
+        onAddTicket={handleStageTradeTicket}
+        onRemoveTicket={handleRemoveTradeTicket}
+        onNavigateToSection={(sec) => {
+          setLayoutMode('executive_brief');
+          setActiveNavSection(sec as NavSectionId);
+        }}
       />
     </div>
   );

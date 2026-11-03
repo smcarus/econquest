@@ -652,6 +652,158 @@ export const STATISTICAL_REFERENCE_CATALOG: Record<string, StatRefDefinition> = 
     methodologyNote:
       'Half-life decay weight λ = ln(2)/45 days ensures recent tier-1 prints (CPI, MPC decision, Primary Balance, FX Reserves) dominate the composite signal.',
   },
+
+  BEER_FEER_FX_EQUILIBRIUM: {
+    id: 'BEER_FEER_FX_EQUILIBRIUM',
+    title: 'Behavioral (BEER) & Fundamental (FEER) Equilibrium Exchange Rate & Balassa-Samuelson Misalignment',
+    category: 'FX_RESERVES',
+    categoryLabel: 'FX Equilibrium Valuation (BEER / FEER)',
+    formulaMono: 'q*_BEER = β_0 + β_ToT·ln(ToT_t) + β_BS·(Prod_Diff_t) + β_RIR·(r_dom − r_for) + β_NFA·(NFA/GDP_t)   |   Δe_FEER = (CA_norm − CA_actual) / η_CA',
+    plainEnglishSummary:
+      'Estimates a currency’s fair value using both economic fundamentals—Terms of Trade, productivity growth (Balassa-Samuelson), real interest rate differentials, and Net Foreign Assets (BEER)—and the exchange rate adjustment required to bring the Current Account back to a sustainable norm (FEER).',
+    variables: [
+      { symbol: 'q*_BEER', meaning: 'Behavioral Equilibrium Real Effective Exchange Rate fitted from long-run cointegrating vectors', unit: 'Index (100=Par)' },
+      { symbol: 'Δe_FEER', meaning: 'Fundamental Equilibrium Exchange Rate depreciation/appreciation required to close the Current Account gap', unit: '% Misalignment' },
+      { symbol: 'ToT_t', meaning: 'Commodity net barter terms-of-trade index (export price index divided by import price index)', unit: 'Index' },
+      { symbol: 'r_dom − r_for', meaning: 'Real interest rate differential versus US 10Y TIPS / G3 weighted real yield', unit: 'bps / %' },
+      { symbol: 'η_CA', meaning: 'Marshall-Lerner trade balance elasticity with respect to the real exchange rate', unit: 'Elasticity' },
+    ],
+    thresholds: [
+      { label: 'Fairly Valued / Undervalued Buffer', value: 'Composite Misalignment ≤ +5.0% · CA Gap > −1.5% GDP', severity: 'SAFE' },
+      { label: 'Moderate Real Overvaluation', value: '+5.0% < Misalignment ≤ +15.0%', severity: 'WATCH' },
+      { label: 'Acute Overvaluation / Devaluation Risk', value: 'Misalignment > +15.0% or FEER Gap < −3.5% GDP', severity: 'DISTRESS' },
+    ],
+    primarySourceCitation:
+      'Clark & MacDonald (1998), "Exchange Rates and Economic Fundamentals: A Methodological Comparison of BEERs and FEERs", IMF Working Paper 98/67; Williamson (1994), "Estimating Equilibrium Exchange Rates", Peterson Institute; IMF External Balance Assessment (EBA).',
+    methodologyNote:
+      'Blends cointegrating BEER structural drivers (55% weight) with IMF EBA-style FEER current-account elasticity norms (45% weight).',
+  },
+
+  SHADOW_RATING_ORDERED_LOGIT: {
+    id: 'SHADOW_RATING_ORDERED_LOGIT',
+    title: 'Ordered Probit/Logit Sovereign Shadow Credit Rating & Fallen-Angel Forced Selling Cliff',
+    category: 'CREDIT_DEFAULT',
+    categoryLabel: 'Sovereign Credit Ratings & Fallen-Angel Risk',
+    formulaMono: 'Y*_i = X_iᵀβ + ε_i,   Rating_i = k ⟺ μ_{k−1} < Y*_i ≤ μ_k   |   ΔSpread_Cliff = γ_IG→HY · Forced_Sale_Pct_Stock',
+    plainEnglishSummary:
+      'Uses quantitative macro-fiscal ratios to calculate the fundamental credit rating a country deserves right now (Shadow Rating) compared to S&P/Moody’s/Fitch, and models the spike in bond yields if a downgrade below BBB− forces Investment-Grade index funds to dump the bonds.',
+    variables: [
+      { symbol: 'Y*_i', meaning: 'Continuous latent sovereign creditworthiness score from 6 macro-fiscal and institutional pillars', unit: 'Score [0–100]' },
+      { symbol: 'Notch_Gap', meaning: 'Shadow fundamental rating minus official S&P/Moody’s/Fitch rating (negative = downgrade pressure)', unit: 'Notches' },
+      { symbol: 'P(Downgrade)', meaning: '12-month logistic probability of a 1+ notch sovereign rating downgrade', unit: '%' },
+      { symbol: 'BBB− Cliff', meaning: 'Distance in notches above the Investment Grade / High Yield (BBB− / BB+) boundary', unit: 'Notches' },
+    ],
+    thresholds: [
+      { label: 'Stable / Upgrade Momentum', value: 'Notch Gap ≥ 0 · Distance to HY ≥ +2 Notches', severity: 'SAFE' },
+      { label: 'Negative Outlook / 1-Notch Overrated', value: 'Notch Gap = −1 · P(Downgrade) 25–50%', severity: 'WATCH' },
+      { label: 'Fallen-Angel Cliff / Multi-Notch Lag', value: 'Notch Gap ≤ −2 or At BBB− With Negative Gap', severity: 'DISTRESS' },
+    ],
+    primarySourceCitation:
+      'Afonso, Gomes & Rother (2011), "Short- and Long-Run Determinants of Sovereign Debt Credit Ratings", International Journal of Finance & Economics 16(1); Cantor & Packer (1996), FRBNY Economic Policy Review; S&P Global Sovereign Rating Methodology.',
+    methodologyNote:
+      'Forced selling pressure at the BBB−/BB+ threshold reflects passive mandate exclusions from Bloomberg Global Aggregate and WGBI indices.',
+  },
+
+  DMO_AUCTION_BID_TO_COVER: {
+    id: 'DMO_AUCTION_BID_TO_COVER',
+    title: 'Treasury DMO Primary Auction Bid-to-Cover Ratio, Auction Tail & Primary Dealer Stop-Out Yield',
+    category: 'LIQUIDITY_MICROSTRUCTURE',
+    categoryLabel: 'Primary Issuance & Treasury Auction Microstructure',
+    formulaMono: 'BTC = Total_Tenders / Offered_Par   |   Tail_bps = (y_StopOut − y_WI_Mid) × 100   |   Δy_Supply = λ_DMO · (Offered / Avg_Depth)',
+    plainEnglishSummary:
+      'Simulates a live government bond auction to test whether investors bid aggressively (high Bid-to-Cover ratio) or demand a steep discount above the pre-auction market yield (Auction Tail in bps), forcing primary dealers to absorb unsold bonds.',
+    variables: [
+      { symbol: 'BTC', meaning: 'Bid-to-Cover ratio: total competitive + non-competitive bids divided by auction supply', unit: 'Ratio (x)' },
+      { symbol: 'Tail_bps', meaning: 'Auction tail: clearing stop-out yield minus When-Issued (WI) pre-auction mid-yield', unit: 'bps' },
+      { symbol: 'Dealer_Take', meaning: 'Residual share of auction supply devolved onto domestic primary dealer balance sheets', unit: '% of Issue' },
+      { symbol: 'y_StopOut', meaning: 'Uniform or Dutch auction marginal clearing yield where cumulative demand equals offered supply', unit: '% p.a.' },
+    ],
+    thresholds: [
+      { label: 'Strong Oversubscription (Stop-Through)', value: 'BTC ≥ 2.40x · Tail ≤ 0.5 bps · Dealer Take < 20%', severity: 'SAFE' },
+      { label: 'Soft Demand / Moderate Concession', value: '1.75x ≤ BTC < 2.40x · Tail 0.5–4.0 bps', severity: 'WATCH' },
+      { label: 'Tailing / Uncovered Auction Stress', value: 'BTC < 1.75x or Tail > 4.0 bps or Dealer Take > 40%', severity: 'DISTRESS' },
+    ],
+    primarySourceCitation:
+      'Lou, Yan & Zhang (2013), "Anticipated and Repeated Shocks in Liquid Markets", Review of Financial Studies 26(8) (Treasury Auction Cycles); Beetsma et al. (2016), "Price Effects of Sovereign Debt Auctions", Journal of International Money and Finance.',
+    methodologyNote:
+      'Models downward-sloping institutional demand schedules across Domestic Banks, Pension/Insurance, Foreign Real Money, and Primary Dealers.',
+  },
+
+  PCA_ALPHA_CORRELATION: {
+    id: 'PCA_ALPHA_CORRELATION',
+    title: 'Eigenvalue Principal Component Analysis (PC1 Global Beta vs. Idiosyncratic Alpha) & Minimum-Variance Portfolio',
+    category: 'PORTFOLIO_TAIL_RISK',
+    categoryLabel: 'Cross-Sovereign Correlation & PCA Decomposition',
+    formulaMono: 'R · v_k = λ_k · v_k   |   ΔS_{i,t} = β_{i,PC1}·F_{PC1,t} + ε_{i,t}   |   min_w wᵀΣw  s.t.  wᵀ1 = 1, w_i ≥ 0',
+    plainEnglishSummary:
+      'Separates global "Risk-On / Risk-Off" market waves that move all emerging markets together (First Principal Component PC1) from pure country-specific stories (Idiosyncratic Alpha ε_i), and solves for the portfolio weights that minimize total volatility.',
+    variables: [
+      { symbol: 'ρ_{i,j}', meaning: 'Pairwise rolling Pearson correlation of 5Y CDS / 10Y Eurobond spread changes between country i and j', unit: '[-1.0, +1.0]' },
+      { symbol: 'PC1_Var%', meaning: 'Share of total cross-sovereign spread variance explained by the 1st global eigenvalue (λ₁ / Σλ_k)', unit: '% Variance' },
+      { symbol: 'R²_Alpha', meaning: 'Idiosyncratic variance share (1 − β²_{i,PC1}) driven by domestic fiscal/political catalysts', unit: '% Idiosyncratic' },
+      { symbol: 'DR', meaning: 'Choueifaty Diversification Ratio = (Σ w_i σ_i) / √(wᵀ Σ w)', unit: 'Ratio (≥ 1.0x)' },
+    ],
+    thresholds: [
+      { label: 'High Idiosyncratic Dispersion (Alpha Rich)', value: 'PC1 Share < 55% · Avg Pairwise ρ < 0.35 · DR ≥ 1.45x', severity: 'SAFE' },
+      { label: 'Moderate Global Macro Beta Dominance', value: '55% ≤ PC1 Share < 72% · Avg Pairwise ρ 0.35–0.55', severity: 'WATCH' },
+      { label: 'Correlation-1 Contagion Lockstep', value: 'PC1 Share ≥ 72% or Avg Pairwise ρ > 0.55', severity: 'DISTRESS' },
+    ],
+    primarySourceCitation:
+      'Longstaff, Pan, Pedersen & Singleton (2011), "How Sovereign Is Sovereign Credit Risk?", American Economic Journal: Macroeconomics 3(2), 75–103; Choueifaty & Coignard (2008), "Toward Maximum Diversification", Journal of Portfolio Management.',
+    methodologyNote:
+      'Extracts the dominant eigenvector via power iteration on the N×N correlation matrix and solves for inverse-volatility / minimum-variance weights.',
+  },
+
+  PORTFOLIO_STRESS_CONVEXITY_PNL: {
+    id: 'PORTFOLIO_STRESS_CONVEXITY_PNL',
+    title: 'Multi-Sovereign EMBI Batch Stress-Test Attribution: Credit CS01 + Convexity, Unhedged FX & Carry Cushion',
+    category: 'PORTFOLIO_TAIL_RISK',
+    categoryLabel: 'EMBI Portfolio Batch Stress-Test & Attribution',
+    formulaMono: 'ΔNAV_i = w_i · [−CS01_i·(β_i·ΔS_shock) + ½·Cvx_i·(ΔS_i)² − D_UST,i·Δy_UST − θ_FX,i·ΔFX_shock + CarryRoll_30D,i]',
+    plainEnglishSummary:
+      'Runs simultaneous multi-factor stress shocks (e.g., 20% currency devaluation + 200bps spread widening + US Treasury rate jump) across the entire multi-sovereign EMBI portfolio and decomposes the instantaneous NAV hit into Credit Spread, FX Pass-Through, Duration, and 30D Carry+Roll buffer.',
+    variables: [
+      { symbol: 'w_i', meaning: 'Normalized portfolio allocation weight of sovereign i (summing to 100.0% of Book NAV)', unit: '% Weight' },
+      { symbol: 'β_i · ΔS_shock', meaning: 'Contagion-amplified sovereign spread widening shock scaled by country beta', unit: 'bps' },
+      { symbol: 'θ_FX,i · ΔFX', meaning: 'Unhedged local-currency bond valuation loss plus FX-denominated debt/GDP stock-flow shock', unit: 'bps of NAV' },
+      { symbol: '½·Cvx·(ΔS)²', meaning: 'Second-order bond convexity & credit hazard non-linearity under large (>150bps) spread shocks', unit: 'bps of NAV' },
+      { symbol: 'ΔNAV_Book', meaning: 'Instantaneous aggregate portfolio profit/loss across all sovereign positions', unit: 'bps / % NAV' },
+    ],
+    thresholds: [
+      { label: 'Resilient Portfolio / Carry Cushion Intact', value: 'Book Drawdown > −2.50% NAV (−250 bps)', severity: 'SAFE' },
+      { label: 'Moderate Multi-Factor Stress Drawdown', value: '−6.00% ≤ Book Drawdown ≤ −2.50% NAV', severity: 'WATCH' },
+      { label: 'Severe Tail Drawdown / Hedge Trigger', value: 'Book Drawdown < −6.00% NAV (< −600 bps)', severity: 'DISTRESS' },
+    ],
+    primarySourceCitation:
+      'J.P. Morgan EMBI Global Diversified Index Methodology; BCBS (2019), "Minimum Capital Requirements for Market Risk (FRTB)"; IMF Global Financial Stability Report Multi-Factor Sovereign Stress Testing.',
+    methodologyNote:
+      'Simultaneously evaluates custom 5-factor shock sliders against 6 canonical institutional crisis presets to size optimal CDX.EM / 5Y CDS tail protection.',
+  },
+
+  NGFS_CLIMATE_SLB_GREENIUM: {
+    id: 'NGFS_CLIMATE_SLB_GREENIUM',
+    title: 'NGFS Climate Physical/Transition Sovereign Risk & Sustainability-Linked Bond (SLB) Step-Up Option Pricing',
+    category: 'DEBT_DYNAMICS',
+    categoryLabel: 'NGFS Climate Stress & SLB Greenium Pricing',
+    formulaMono: 'Greenium_bps = y_SLB − y_Vanilla = −[P(Miss_SPT) · PV(ΔCoupon_StepUp) + θ_ESG_Demand]   |   Δd_NGFS = f(Flood_GDP, Carbon_Tax)',
+    plainEnglishSummary:
+      'Models how acute physical climate disasters (droughts, floods) and carbon border taxes impact sovereign debt-to-GDP under NGFS scenarios, and prices the yield discount (Greenium) and coupon penalty option on Sustainability-Linked Sovereign Bonds (SLBs).',
+    variables: [
+      { symbol: 'Greenium', meaning: 'Yield spread discount of a sovereign Green/SLB bond relative to an identical vanilla twin bond', unit: 'bps' },
+      { symbol: 'P(Miss_SPT)', meaning: 'Risk-neutral probability that the sovereign fails its Sustainability Performance Target (e.g., deforestation or GHG cap)', unit: '%' },
+      { symbol: 'ΔCoupon_StepUp', meaning: 'Contractual coupon penalty increase triggered if the sovereign misses its environmental KPI target', unit: 'bps (e.g. +25bp)' },
+      { symbol: 'Δd_NGFS', meaning: 'Cumulative 2030/2050 Debt/GDP increase under NGFS Disorderly Transition or Hot House World scenarios', unit: '% of GDP' },
+    ],
+    thresholds: [
+      { label: 'Credible SPT Trajectory & Positive Greenium', value: 'P(Miss SPT) < 25% · NGFS Debt Shock < +4% GDP', severity: 'SAFE' },
+      { label: 'Borderline KPI Verification Risk', value: '25% ≤ P(Miss SPT) < 55% · NGFS Debt Shock +4–8% GDP', severity: 'WATCH' },
+      { label: 'High Step-Up Trigger & Stranded Asset Shock', value: 'P(Miss SPT) ≥ 55% or NGFS Debt Shock > +8% GDP', severity: 'DISTRESS' },
+    ],
+    primarySourceCitation:
+      'Network for Greening the Financial System (NGFS, 2023), "NGFS Climate Scenarios for Central Banks and Supervisors"; Berrada, Engelhardt, Gibson & Krueger (2022), "The Economics of Sustainability-Linked Bonds", Swiss Finance Institute WP.',
+    methodologyNote:
+      'Treats the SLB coupon step-up as a digital binary option embedded in the sovereign cash-flow waterfall.',
+  },
 };
 
 /**
@@ -980,6 +1132,127 @@ export function resolveStatRefDefinition(rawRefText: string): ResolvedStatRef {
     return buildResolved(STATISTICAL_REFERENCE_CATALOG.MONETARY_TAYLOR_REAL_RATE);
   }
 
-  // 19. Default / Debt Snowball r - g & pb*
+  // 19. BEER / FEER FX Equilibrium
+  if (
+    lower.includes('beer') ||
+    lower.includes('feer') ||
+    lower.includes('balassa-samuelson') ||
+    lower.includes('equilibrium fx') ||
+    lower.includes('currency misalignment')
+  ) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.BEER_FEER_FX_EQUILIBRIUM);
+  }
+
+  // 20. Shadow Rating & Fallen-Angel Cliff
+  if (
+    lower.includes('shadow rating') ||
+    lower.includes('ordered logit') ||
+    lower.includes('fallen angel') ||
+    lower.includes('fallen-angel') ||
+    lower.includes('notch gap') ||
+    lower.includes('bbb-')
+  ) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.SHADOW_RATING_ORDERED_LOGIT);
+  }
+
+  // 21. Treasury DMO Primary Auction Bid-to-Cover & Tail
+  if (
+    lower.includes('bid-to-cover') ||
+    lower.includes('auction tail') ||
+    lower.includes('stop-out') ||
+    lower.includes('dmo auction') ||
+    lower.includes('primary dealer take')
+  ) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.DMO_AUCTION_BID_TO_COVER);
+  }
+
+  // 22. PCA Alpha Correlation & Minimum Variance
+  if (
+    lower.includes('pca') ||
+    lower.includes('pc1') ||
+    lower.includes('idiosyncratic alpha') ||
+    lower.includes('diversification ratio') ||
+    lower.includes('eigenvalue')
+  ) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.PCA_ALPHA_CORRELATION);
+  }
+
+  // 23. Portfolio Batch Stress-Test & Convexity Attribution
+  if (
+    lower.includes('batch stress') ||
+    lower.includes('stress-test') ||
+    lower.includes('convexity') ||
+    lower.includes('200bps') ||
+    lower.includes('devaluation') ||
+    lower.includes('book nav')
+  ) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.PORTFOLIO_STRESS_CONVEXITY_PNL);
+  }
+
+  // 24. NGFS Climate & SLB Greenium
+  if (
+    lower.includes('ngfs') ||
+    lower.includes('greenium') ||
+    lower.includes('slb') ||
+    lower.includes('sustainability-linked') ||
+    lower.includes('step-up coupon')
+  ) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.NGFS_CLIMATE_SLB_GREENIUM);
+  }
+
+  // 25. Standalone VaR match
+  if (/\bvar\b/i.test(rawRefText) || lower.includes('value-at-risk') || lower.includes('expected shortfall')) {
+    return buildResolved(STATISTICAL_REFERENCE_CATALOG.CORNISH_FISHER_VAR_CVAR_LVAR);
+  }
+
+  // 26. Default / Debt Snowball r - g & pb*
   return buildResolved(STATISTICAL_REFERENCE_CATALOG.DSA_SNOWBALL);
 }
+
+/**
+ * Detects whether a UI badge, header, or label contains an institutional statistical reference term
+ * (e.g., VaR, CVaR, DV01, CS01, MCTR, Z-Spread, NSS, BEER, FEER, CAC, HAC, AUROC, Brier, etc.)
+ * and returns the canonical reference key/text for tooltip resolution.
+ */
+export function detectStatisticalTermInText(text: string): string | null {
+  if (!text || text.length > 180) return null;
+  const trimmed = text.trim();
+  if (trimmed.length < 2) return null;
+
+  const patterns: Array<{ regex: RegExp; key: string }> = [
+    { regex: /\b(?:CVaR|VaR|LVaR|Cornish-Fisher|Expected Shortfall)\b/i, key: 'CORNISH_FISHER_VAR_CVAR_LVAR' },
+    { regex: /\b(?:DV01|CS01|Carry\s*\+\s*Roll|Roll-Down|Breakeven Cushion)\b/i, key: 'DV01_CS01_CARRY_ROLL' },
+    { regex: /\b(?:MCTR|Component CVaR|Contagion Matrix|Spillover)\b/i, key: 'CONTAGION_SPILLOVER_MCTR' },
+    { regex: /\b(?:Z-Spread|CDS-Bond Basis|Hazard Rate|Survival Curve|5Y CDS|Cum PD)\b/i, key: 'ISDA_CDS_HAZARD_BASIS' },
+    { regex: /\b(?:Newey-West|HAC|Matrix OLS|Bohn Test|Durbin-Watson)\b/i, key: 'NEWEY_WEST_HAC_OLS' },
+    { regex: /\b(?:Nelson-Siegel|Svensson|NSS|ACM Term Premium|2s5s10s|2s10s)\b/i, key: 'NELSON_SIEGEL_SVENSSON_ACM' },
+    { regex: /\b(?:Greenspan-Guidotti|IMF ARA|Import Cover|Reserve Adequacy)\b/i, key: 'GREENSPAN_GUIDOTTI_ARA' },
+    { regex: /\b(?:BEER|FEER|Balassa-Samuelson)\b/i, key: 'BEER_FEER_FX_EQUILIBRIUM' },
+    { regex: /\b(?:Shadow Rating|Fallen-Angel|Ordered Logit)\b/i, key: 'SHADOW_RATING_ORDERED_LOGIT' },
+    { regex: /\b(?:Bid-to-Cover|Auction Tail|Stop-Out Yield)\b/i, key: 'DMO_AUCTION_BID_TO_COVER' },
+    { regex: /\b(?:Single-Limb|Dual-Limb|CAC|Exit Yield|Haircut NPV)\b/i, key: 'CAC_RESTRUCTURING_NPV' },
+    { regex: /\b(?:Half-Kelly|Almgren-Chriss|LOB Slippage)\b/i, key: 'KELLY_ALMGREN_CHRISS_LOB' },
+    { regex: /\b(?:Avellaneda-Stoikov|Reservation Price)\b/i, key: 'AVELLANEDA_STOIKOV_MM' },
+    { regex: /\b(?:AUROC|Noise-to-Signal|Brier Skill|Brier Score)\b/i, key: 'EWS_AUROC_NSR_BACKTEST' },
+    { regex: /\b(?:Cholesky|BVAR|Impulse Response|IRF)\b/i, key: 'CHOLESKY_BVAR_IRF' },
+    { regex: /\b(?:Growth-at-Risk|Fiscal-at-Risk|GaR|FaR|Quantile Regression)\b/i, key: 'QUANTILE_GAR_FAR' },
+    { regex: /\b(?:Hamilton Markov|Kaminsky-Reinhart|Regime Switching)\b/i, key: 'HAMILTON_MARKOV_EWS' },
+    { regex: /\b(?:Fiscal Dominance|Reversal Rate|Blanchard-Leeper)\b/i, key: 'BLANCHARD_LEEPER_FISCAL_DOMINANCE' },
+    { regex: /\b(?:SRDSF|Gross Financing Needs|GFN|Doom Loop|CET1)\b/i, key: 'IMF_SRDSF_GFN_DOOM_LOOP' },
+    { regex: /\b(?:XCCY|CIP Basis|12M NDF|REER Z-Score)\b/i, key: 'CIP_XCCY_NDF_REER' },
+    { regex: /\b(?:Leontief|HHI|Herfindahl)\b/i, key: 'LEONTIEF_HHI_SUPPLY_CHAIN' },
+    { regex: /\b(?:Caldara-Iacoviello|GPR Z-Score|Goldstein|GDELT)\b/i, key: 'CALDARA_IACOVIELLO_GPR_GDELT' },
+    { regex: /\b(?:Taylor Rule|Real Policy Rate)\b/i, key: 'MONETARY_TAYLOR_REAL_RATE' },
+    { regex: /\b(?:PCA|PC1|Diversification Ratio)\b/i, key: 'PCA_ALPHA_CORRELATION' },
+    { regex: /\b(?:NGFS|Greenium|SLB)\b/i, key: 'NGFS_CLIMATE_SLB_GREENIUM' },
+    { regex: /\b(?:pb\*|r\s*[−-]\s*g|Snowball)\b/i, key: 'DSA_SNOWBALL' },
+  ];
+
+  for (const item of patterns) {
+    if (item.regex.test(trimmed)) {
+      return `${item.key} · ${trimmed}`;
+    }
+  }
+  return null;
+}
+

@@ -46,6 +46,20 @@ import {
   SpreadSeriesType,
   RollingCorrelationHorizon,
 } from '../utils/institutionalQuantEngine';
+import {
+  computeSovereignNssYieldCurveSuite,
+  computeMacroCatalystEventVolatilitySuite,
+  computeEmbiPortfolioBatchStressLabSuite,
+  DEFAULT_NSS_SHOCK_INPUTS,
+  DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS,
+  EMBI_BATCH_SCENARIO_PRESETS,
+  NssCurvePresetRegime,
+  CatalystCategory,
+  StagedTradeTicketSpec,
+  EmbiPortfolioStressParams,
+  EmbiStressPresetId,
+  EmbiPortfolioWeightScheme,
+} from '../utils/nssYieldCurveAndCatalystEngine';
 
 export type QuantSubWorkspaceId =
   | 'quant_cds_basis'
@@ -53,7 +67,10 @@ export type QuantSubWorkspaceId =
   | 'quant_matrix_econometrics'
   | 'quant_trade_blotter'
   | 'quant_macro_surprise'
-  | 'quant_alpha_correlation';
+  | 'quant_alpha_correlation'
+  | 'quant_nss_yield_curve'
+  | 'quant_macro_catalyst_calendar'
+  | 'quant_portfolio_stress_lab';
 
 interface InstitutionalQuantDeskProps {
   run: CouncilAssessmentRun;
@@ -61,6 +78,7 @@ interface InstitutionalQuantDeskProps {
   isDark?: boolean;
   activeSubTab?: QuantSubWorkspaceId;
   onSelectSubTab?: (tab: QuantSubWorkspaceId) => void;
+  onStageTradeTicket?: (ticket: StagedTradeTicketSpec) => void;
 }
 
 export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
@@ -69,6 +87,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
   isDark = true,
   activeSubTab,
   onSelectSubTab,
+  onStageTradeTicket,
 }) => {
   const [internalTab, setInternalTab] = useState<QuantSubWorkspaceId>('quant_cds_basis');
   const currentTab = activeSubTab ?? internalTab;
@@ -372,6 +391,142 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  // --------------------------------------------------------------------------
+  // STATE 7: SOVEREIGN YIELD CURVE & NSS TERM STRUCTURE LAB (5.7)
+  // --------------------------------------------------------------------------
+  const [nssPresetRegime, setNssPresetRegime] =
+    useState<NssCurvePresetRegime>(DEFAULT_NSS_SHOCK_INPUTS.presetRegime);
+  const [nssLevelShiftBps, setNssLevelShiftBps] = useState<number>(0);
+  const [nssSlopeShiftBps, setNssSlopeShiftBps] = useState<number>(0);
+  const [nssCurvatureShiftBps, setNssCurvatureShiftBps] = useState<number>(0);
+
+  const nssSuite = useMemo(
+    () =>
+      computeSovereignNssYieldCurveSuite(run, {
+        presetRegime: nssPresetRegime,
+        levelShiftBps: nssLevelShiftBps,
+        slopeShiftBps: nssSlopeShiftBps,
+        curvatureShiftBps: nssCurvatureShiftBps,
+      }),
+    [run, nssPresetRegime, nssLevelShiftBps, nssSlopeShiftBps, nssCurvatureShiftBps]
+  );
+
+  // --------------------------------------------------------------------------
+  // STATE 8: REAL-TIME MACRO & CENTRAL BANK CATALYST EVENT VOL CALENDAR (5.8)
+  // --------------------------------------------------------------------------
+  const [catalystScope, setCatalystScope] = useState<'ALL_WATCHLIST' | 'ACTIVE_SOVEREIGN'>(
+    'ALL_WATCHLIST'
+  );
+  const [catalystCategoryFilter, setCatalystCategoryFilter] = useState<
+    'ALL' | CatalystCategory
+  >('ALL');
+  const [selectedCatalystEventId, setSelectedCatalystEventId] = useState<string>('');
+
+  const catalystSuite = useMemo(
+    () => computeMacroCatalystEventVolatilitySuite(run, watchlistItems),
+    [run, watchlistItems]
+  );
+
+  const filteredCatalystEvents = useMemo(() => {
+    const base =
+      catalystScope === 'ACTIVE_SOVEREIGN'
+        ? catalystSuite.activeSovereignEvents
+        : catalystSuite.events;
+    if (catalystCategoryFilter === 'ALL') return base;
+    return base.filter((e) => e.category === catalystCategoryFilter);
+  }, [catalystSuite, catalystScope, catalystCategoryFilter]);
+
+  const activeInspectedCatalyst = useMemo(() => {
+    return (
+      filteredCatalystEvents.find((e) => e.eventId === selectedCatalystEventId) ||
+      filteredCatalystEvents[0] ||
+      catalystSuite.nextImminentCatalyst
+    );
+  }, [filteredCatalystEvents, selectedCatalystEventId, catalystSuite]);
+
+  // --------------------------------------------------------------------------
+  // STATE 9: PORTFOLIO STRESS-TEST & SCENARIO LAB (5.9 EMBI BATCH P&L HIT)
+  // --------------------------------------------------------------------------
+  const [portfolioStressParams, setPortfolioStressParams] =
+    useState<EmbiPortfolioStressParams>(DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS);
+
+  const portfolioStressSuite = useMemo(
+    () =>
+      computeEmbiPortfolioBatchStressLabSuite(
+        run,
+        watchlistItems,
+        portfolioStressParams
+      ),
+    [run, watchlistItems, portfolioStressParams]
+  );
+
+  const handleSelectStressPreset = (presetId: EmbiStressPresetId) => {
+    const found = EMBI_BATCH_SCENARIO_PRESETS.find((p) => p.id === presetId);
+    if (!found) return;
+    setPortfolioStressParams((prev) => ({
+      ...prev,
+      activePresetId: presetId,
+      fxDevaluationShockPct: found.fxDevaluationShockPct,
+      creditSpreadWideningBps: found.creditSpreadWideningBps,
+      usTreasuryShiftBps: found.usTreasuryShiftBps,
+      commodityShockPct: found.commodityShockPct,
+    }));
+  };
+
+  const handleExportPortfolioStressCsv = () => {
+    const headers = [
+      'ISO3',
+      'Country',
+      'Portfolio_Weight_Pct',
+      'Mod_Duration_Yrs',
+      'Credit_Beta',
+      'FX_Beta',
+      'Effective_FX_Deval_Pct',
+      'Effective_Spread_Shock_Bps',
+      'Weighted_Credit_Hit_Bps',
+      'Weighted_FX_Hit_Bps',
+      'Weighted_Rates_Hit_Bps',
+      'Weighted_Carry_Offset_Bps',
+      'Net_Book_PnL_Bps',
+      'Net_Book_PnL_Pct_NAV',
+      'Share_Of_Book_Loss_Pct',
+      'Post_Shock_Debt_GDP_Pct',
+      'Post_Shock_5Y_CDS_Bps',
+    ];
+    const rows = portfolioStressSuite.sovereignRows.map((r) => [
+      r.iso3,
+      `"${r.countryName.replace(/"/g, '""')}"`,
+      r.portfolioWeightPct.toFixed(1),
+      r.modifiedDurationYears.toFixed(2),
+      r.creditBeta.toFixed(2),
+      r.fxBeta.toFixed(2),
+      r.effectiveFxDevaluationPct.toFixed(1),
+      r.effectiveSpreadWideningBps,
+      r.bookWeightedCreditHitBps.toFixed(1),
+      r.bookWeightedFxHitBps.toFixed(1),
+      r.bookWeightedRatesHitBps.toFixed(1),
+      r.bookWeightedCarryOffsetBps.toFixed(1),
+      r.bookWeightedNetPnlBps.toFixed(1),
+      r.bookWeightedNetPnlPctNav.toFixed(2),
+      r.shareOfTotalBookLossPct.toFixed(1),
+      r.postShockDebtToGdpPct.toFixed(1),
+      r.postShock5YCdsBps,
+    ]);
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute(
+      'download',
+      `EMBI_Portfolio_Stress_Test_${portfolioStressParams.fxDevaluationShockPct}FX_${portfolioStressParams.creditSpreadWideningBps}bps.csv`
+    );
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const subTabs: Array<{
     id: QuantSubWorkspaceId;
     shortCode: string;
@@ -420,6 +575,27 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       label: 'Alpha Correlation Matrix',
       metricBadge: `ρ̄ ${alphaCorrSuite.averagePairwiseCorrelation.toFixed(2)} · DR ${alphaCorrSuite.choueifatyDiversificationRatio.toFixed(2)}x`,
       icon: <Network className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'quant_nss_yield_curve',
+      shortCode: '5.7',
+      label: 'NSS Yield Curve & Carry+Roll',
+      metricBadge: `2s10s ${nssSuite.slope2s10sBps > 0 ? '+' : ''}${nssSuite.slope2s10sBps}bp · ${nssSuite.optimalCarryRollTenor.tenorLabel} +${nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps}bp/yr`,
+      icon: <Sliders className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'quant_macro_catalyst_calendar',
+      shortCode: '5.8',
+      label: 'Macro & MPC Catalyst Vol',
+      metricBadge: `Next ${catalystSuite.nextImminentCatalyst.iso3} ${catalystSuite.nextImminentCatalyst.daysUntilEvent}d · ±${catalystSuite.averageImpliedEventVolBps.toFixed(0)}bp Vol`,
+      icon: <CalendarClock className="w-3.5 h-3.5" />,
+    },
+    {
+      id: 'quant_portfolio_stress_lab',
+      shortCode: '5.9',
+      label: 'Portfolio Stress-Test & Scenario Lab',
+      metricBadge: `Book PnL ${portfolioStressSuite.totalBookNetPnlPctNav > 0 ? '+' : ''}${portfolioStressSuite.totalBookNetPnlPctNav.toFixed(2)}% NAV (${portfolioStressSuite.totalBookNetPnlBps.toFixed(0)}bp)`,
+      icon: <ShieldAlert className="w-3.5 h-3.5" />,
     },
   ];
 
@@ -2985,6 +3161,1359 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
         </div>
       )}
+
+      {/* =====================================================================
+          SUB-WORKSPACE 5.7: SOVEREIGN YIELD CURVE & NSS TERM STRUCTURE LAB
+         ===================================================================== */}
+      {currentTab === 'quant_nss_yield_curve' && (
+        <div className="p-4 space-y-4">
+          {/* Headline Conclusion & NSS Formula Reference */}
+          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1 max-w-4xl">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
+                5.7 NELSON-SIEGEL-SVENSSON (NSS) PARAMETRIC TERM STRUCTURE, 12M CARRY+ROLL & BUTTERFLY LAB
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
+                {nssSuite.headlineConclusion}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <StatRefBadge
+                refText={`NSS 6-Factor Fit: β₀=${nssSuite.shockedParams.beta0LongRunLevelPct.toFixed(2)}% · β₁=${nssSuite.shockedParams.beta1ShortSlopePct.toFixed(2)}% · β₂=${nssSuite.shockedParams.beta2BellyCurvaturePct.toFixed(2)}% · β₃=${nssSuite.shockedParams.beta3LongConvexityPct.toFixed(2)}% · RMSE=${nssSuite.fittingRmseBps} bps`}
+              />
+              {onStageTradeTicket && (
+                <button
+                  type="button"
+                  onClick={() => onStageTradeTicket(nssSuite.recommendedCurveTickets[0])}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold bg-emerald-600 text-white hover:bg-emerald-500"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>
+                    Stage {nssSuite.optimalCarryRollTenor.tenorLabel} Carry+Roll Ticket
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Interactive NSS Regime Presets & Parameter Shock Sliders */}
+          <div className="p-3.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 mr-1">
+                  Curve Regime Preset:
+                </span>
+                {(
+                  [
+                    { id: 'BASELINE', label: 'Baseline NSS Fit' },
+                    { id: 'BEAR_STEEPENER', label: 'Bear Steepener (+Term Prem)' },
+                    { id: 'BULL_FLATTENER', label: 'Bull Flattener (Disinflation)' },
+                    { id: 'MONETARY_PIVOT_RALLY', label: 'Monetary Pivot (2Y Rally)' },
+                    {
+                      id: 'FISCAL_DOMINANCE_UNANCHORING',
+                      label: 'Fiscal Dominance (Long-End Unanchor)',
+                    },
+                  ] as const
+                ).map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() => setNssPresetRegime(preset.id)}
+                    className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+                      nssPresetRegime === preset.id
+                        ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
+                        : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setNssPresetRegime('BASELINE');
+                  setNssLevelShiftBps(0);
+                  setNssSlopeShiftBps(0);
+                  setNssCurvatureShiftBps(0);
+                }}
+                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Reset Curve Shocks</span>
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs font-mono">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">
+                    Parallel Level Shift (Δβ₀):
+                  </span>
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                    {nssLevelShiftBps > 0 ? '+' : ''}
+                    {nssLevelShiftBps} bps
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-150}
+                  max={150}
+                  step={5}
+                  value={nssLevelShiftBps}
+                  onChange={(e) => setNssLevelShiftBps(Number(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">
+                    Short-End Slope Shift (Δβ₁):
+                  </span>
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                    {nssSlopeShiftBps > 0 ? '+' : ''}
+                    {nssSlopeShiftBps} bps
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-150}
+                  max={150}
+                  step={5}
+                  value={nssSlopeShiftBps}
+                  onChange={(e) => setNssSlopeShiftBps(Number(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">
+                    Belly Hump Curvature (Δβ₂):
+                  </span>
+                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                    {nssCurvatureShiftBps > 0 ? '+' : ''}
+                    {nssCurvatureShiftBps} bps
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-150}
+                  max={150}
+                  step={5}
+                  value={nssCurvatureShiftBps}
+                  onChange={(e) => setNssCurvatureShiftBps(Number(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 4-Card Term-Structure Summary Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                PEAK 12M CARRY + ROLL-DOWN TENOR
+              </span>
+              <div className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                {nssSuite.optimalCarryRollTenor.tenorLabel} (+
+                {nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps/yr)
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Carry {nssSuite.optimalCarryRollTenor.carry12MBps > 0 ? '+' : ''}
+                {nssSuite.optimalCarryRollTenor.carry12MBps}bp · Roll{' '}
+                {nssSuite.optimalCarryRollTenor.rollDown12MBps > 0 ? '+' : ''}
+                {nssSuite.optimalCarryRollTenor.rollDown12MBps}bp
+              </span>
+            </div>
+
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                MAX BREAKEVEN SELL-OFF CUSHION
+              </span>
+              <div className="text-base font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                {nssSuite.optimalBreakevenTenor.tenorLabel} (+
+                {nssSuite.optimalBreakevenTenor.breakevenCushionBps} bps/yr)
+              </div>
+              <span className="text-[11px] text-slate-500">
+                ModDur {nssSuite.optimalBreakevenTenor.modifiedDurationYears.toFixed(2)}y
+              </span>
+            </div>
+
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                2s10s & 5s30s CURVE SLOPES
+              </span>
+              <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                2s10s: {nssSuite.slope2s10sBps > 0 ? '+' : ''}
+                {nssSuite.slope2s10sBps} bps
+              </div>
+              <span className="text-[11px] text-slate-500">
+                5s30s: {nssSuite.slope5s30sBps > 0 ? '+' : ''}
+                {nssSuite.slope5s30sBps} bps
+              </span>
+            </div>
+
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                2s5s10s BELLY BUTTERFLY SPREAD
+              </span>
+              <div className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                {nssSuite.butterfly2s5s10sBps > 0 ? '+' : ''}
+                {nssSuite.butterfly2s5s10sBps} bps
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Cheapest vs NSS: {nssSuite.cheapestVsModelTenor.tenorLabel} (+
+                {nssSuite.cheapestVsModelTenor.cheapRichResidualBps}bp)
+              </span>
+            </div>
+          </div>
+
+          {/* 2-Column Charts: Left = NSS Fitted Curve vs Market Spot (1Y-30Y) | Right = 12M Carry + Roll-Down Waterfall by Tenor */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  1Y–30Y Parametric NSS Fitted Curve vs. Market Spot Yields (%)
+                </h3>
+                <span className="text-[11px] font-mono text-slate-500">
+                  {nssSuite.curveRegimeClassification}
+                </span>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={nssSuite.tenorNodes}
+                    margin={{ top: 10, right: 16, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis dataKey="tenorLabel" tick={{ fill: chartAxisTick, fontSize: 11 }} />
+                    <YAxis
+                      tick={{ fill: chartAxisTick, fontSize: 11 }}
+                      domain={['auto', 'auto']}
+                      unit="%"
+                    />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <Line
+                      type="monotone"
+                      dataKey="baselineNssYieldPct"
+                      name="Baseline NSS Curve (%)"
+                      stroke="#94a3b8"
+                      strokeWidth={1.75}
+                      strokeDasharray="4 4"
+                      dot={{ r: 3 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="shockedNssYieldPct"
+                      name="Active Shocked NSS Curve (%)"
+                      stroke="#4f46e5"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="marketSpotYieldPct"
+                      name="Market Spot Benchmark (%)"
+                      stroke="#10b981"
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  12-Month Carry + Roll-Down & Breakeven Sell-Off Cushion by Tenor (bps)
+                </h3>
+                <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
+                  Sweet Spot: {nssSuite.optimalCarryRollTenor.tenorLabel} (+
+                  {nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps)
+                </span>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={nssSuite.tenorNodes}
+                    margin={{ top: 10, right: 16, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis dataKey="tenorLabel" tick={{ fill: chartAxisTick, fontSize: 11 }} />
+                    <YAxis tick={{ fill: chartAxisTick, fontSize: 11 }} unit="bp" />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <ReferenceLine y={0} stroke={chartAxisTick} />
+                    <Bar
+                      dataKey="carry12MBps"
+                      name="12M Spot Carry (bps)"
+                      stackId="cr"
+                      fill="#3b82f6"
+                      barSize={22}
+                    />
+                    <Bar
+                      dataKey="rollDown12MBps"
+                      name="12M Curve Roll-Down (bps)"
+                      stackId="cr"
+                      fill="#10b981"
+                      barSize={22}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="breakevenCushionBps"
+                      name="Breakeven Sell-Off Cushion (bps/yr)"
+                      stroke="#f59e0b"
+                      strokeWidth={2.25}
+                      dot={{ r: 3.5 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Full 8-Tenor NSS Term-Structure & Carry+Roll Decomposition Table */}
+          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+            <table className="w-full text-xs font-mono tabular-nums">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[10px] text-slate-500">
+                  <th className="py-2 px-3 text-left">TENOR</th>
+                  <th className="py-2 px-3 text-right">MARKET SPOT %</th>
+                  <th className="py-2 px-3 text-right">NSS FITTED %</th>
+                  <th className="py-2 px-3 text-right">CHEAP / RICH (bps)</th>
+                  <th className="py-2 px-3 text-right">MOD DURATION</th>
+                  <th className="py-2 px-3 text-right">12M CARRY (bps)</th>
+                  <th className="py-2 px-3 text-right">12M ROLL-DOWN (bps)</th>
+                  <th className="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400">
+                    TOTAL CARRY+ROLL
+                  </th>
+                  <th className="py-2 px-3 text-right">BREAKEVEN CUSHION</th>
+                  <th className="py-2 px-3 text-left">VALUATION SIGNAL</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
+                {nssSuite.tenorNodes.map((node) => {
+                  const isSweetSpot =
+                    node.tenorLabel === nssSuite.optimalCarryRollTenor.tenorLabel;
+                  return (
+                    <tr
+                      key={node.tenorLabel}
+                      className={
+                        isSweetSpot
+                          ? 'bg-emerald-50/40 dark:bg-emerald-950/20'
+                          : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
+                      }
+                    >
+                      <td className="py-2 px-3 font-bold text-slate-900 dark:text-white">
+                        {node.tenorLabel}{' '}
+                        {isSweetSpot && (
+                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                            ★ SWEET SPOT
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        {node.marketSpotYieldPct.toFixed(2)}%
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-indigo-600 dark:text-indigo-400">
+                        {node.shockedNssYieldPct.toFixed(2)}%
+                      </td>
+                      <td
+                        className={`py-2 px-3 text-right font-semibold ${
+                          node.cheapRichResidualBps > 0
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : node.cheapRichResidualBps < 0
+                            ? 'text-rose-600 dark:text-rose-400'
+                            : 'text-slate-500'
+                        }`}
+                      >
+                        {node.cheapRichResidualBps > 0 ? '+' : ''}
+                        {node.cheapRichResidualBps} bps
+                      </td>
+                      <td className="py-2 px-3 text-right text-slate-600 dark:text-slate-400">
+                        {node.modifiedDurationYears.toFixed(2)}y
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        {node.carry12MBps > 0 ? '+' : ''}
+                        {node.carry12MBps} bps
+                      </td>
+                      <td className="py-2 px-3 text-right">
+                        {node.rollDown12MBps > 0 ? '+' : ''}
+                        {node.rollDown12MBps} bps
+                      </td>
+                      <td className="py-2 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                        {node.totalCarryRoll12MBps > 0 ? '+' : ''}
+                        {node.totalCarryRoll12MBps} bps
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-blue-600 dark:text-blue-400">
+                        {node.breakevenCushionBps > 0 ? '+' : ''}
+                        {node.breakevenCushionBps} bps/yr
+                      </td>
+                      <td className="py-2 px-3 text-[10px] font-bold">
+                        <span
+                          className={
+                            node.valuationSignal === 'CHEAP_OVERWEIGHT'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : node.valuationSignal === 'RICH_UNDERWEIGHT'
+                              ? 'text-rose-600 dark:text-rose-400'
+                              : 'text-slate-500'
+                          }
+                        >
+                          {node.valuationSignal.replace(/_/g, ' ')}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* 3 Algorithmic Curve Trade Ideas (Belly Carry+Roll, 2s10s Slope, 2s5s10s Butterfly) */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            {nssSuite.recommendedCurveTickets.map((ticket) => (
+              <div
+                key={ticket.ticketId}
+                className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-2.5"
+              >
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                    <span>{ticket.direction}</span>
+                    <span>CONVICTION {ticket.convictionScore0To100}/100</span>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                    {ticket.strategyTitle}
+                  </h4>
+                  <p className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                    1: {ticket.leg1Summary}
+                  </p>
+                  <p className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                    2: {ticket.leg2Summary}
+                  </p>
+                  <p className="text-xs text-slate-600 dark:text-slate-300 pt-1">
+                    {ticket.thesisRationale}
+                  </p>
+                </div>
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    +{ticket.expected12MCarryRollBps} bps/yr Carry+Roll
+                  </span>
+                  {onStageTradeTicket && (
+                    <button
+                      type="button"
+                      onClick={() => onStageTradeTicket(ticket)}
+                      className="px-2.5 py-1 text-[11px] font-mono font-semibold text-white bg-indigo-600 hover:bg-indigo-500"
+                    >
+                      + Stage IC Ticket
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          SUB-WORKSPACE 5.8: REAL-TIME MACRO & CENTRAL BANK CATALYST VOL CALENDAR
+         ===================================================================== */}
+      {currentTab === 'quant_macro_catalyst_calendar' && (
+        <div className="p-4 space-y-4">
+          {/* Headline Conclusion */}
+          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1 max-w-4xl">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">
+                5.8 FORWARD 90-DAY SOVEREIGN MACRO, MPC & IMF CATALYST EVENT VOLATILITY CALENDAR (±BPS)
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
+                {catalystSuite.headlineConclusion}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {onStageTradeTicket && activeInspectedCatalyst && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onStageTradeTicket(activeInspectedCatalyst.stagedTicketSpec)
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold bg-amber-600 text-white hover:bg-amber-500"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>
+                    Stage {activeInspectedCatalyst.iso3}{' '}
+                    {activeInspectedCatalyst.categoryBadge} Ticket
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Filter Bar: Scope (All Watchlist vs Active Sovereign) + Category Filter */}
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-1.5">
+              <span className="text-slate-500">Scope:</span>
+              <button
+                type="button"
+                onClick={() => setCatalystScope('ALL_WATCHLIST')}
+                className={`px-2.5 py-1 border ${
+                  catalystScope === 'ALL_WATCHLIST'
+                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
+                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                All Watchlist Sovereigns ({catalystSuite.events.length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setCatalystScope('ACTIVE_SOVEREIGN')}
+                className={`px-2.5 py-1 border ${
+                  catalystScope === 'ACTIVE_SOVEREIGN'
+                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
+                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                }`}
+              >
+                Active Sovereign Only ({run.iso3} ·{' '}
+                {catalystSuite.activeSovereignEvents.length})
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              <span className="text-slate-500">Catalyst Type:</span>
+              {(
+                [
+                  { id: 'ALL', label: 'All Catalysts' },
+                  { id: 'MPC_DECISION', label: 'MPC Rate Decisions' },
+                  { id: 'CPI_RELEASE', label: 'CPI Prints' },
+                  { id: 'IMF_REVIEW', label: 'IMF EFF / DSA' },
+                  { id: 'RATING_REVIEW', label: 'Rating Agencies' },
+                ] as const
+              ).map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setCatalystCategoryFilter(cat.id)}
+                  className={`px-2.5 py-1 border ${
+                    catalystCategoryFilter === cat.id
+                      ? 'bg-indigo-600 text-white border-indigo-600 font-bold'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                  }`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 2-Column Split: Left 7 Cols = Catalyst Event Schedule Table | Right 5 Cols = Event Volatility & Scenario Tree Inspector */}
+          <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+            <div className="xl:col-span-7 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+              <table className="w-full text-xs font-mono tabular-nums">
+                <thead>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[10px] text-slate-500">
+                    <th className="py-2 px-2.5 text-left">COUNTDOWN</th>
+                    <th className="py-2 px-2.5 text-left">SOVEREIGN / EVENT</th>
+                    <th className="py-2 px-2.5 text-right">CONSENSUS</th>
+                    <th className="py-2 px-2.5 text-right">ECONQUEST MODEL</th>
+                    <th className="py-2 px-2.5 text-right">1D IMPLIED VOL</th>
+                    <th className="py-2 px-2.5 text-right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
+                  {filteredCatalystEvents.map((evt) => {
+                    const isSelected =
+                      activeInspectedCatalyst?.eventId === evt.eventId;
+                    return (
+                      <tr
+                        key={evt.eventId}
+                        onClick={() => setSelectedCatalystEventId(evt.eventId)}
+                        className={`cursor-pointer transition-colors ${
+                          isSelected
+                            ? 'bg-indigo-50/70 dark:bg-indigo-950/30'
+                            : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                        }`}
+                      >
+                        <td className="py-2.5 px-2.5 whitespace-nowrap">
+                          <span className="font-bold text-amber-600 dark:text-amber-400 block">
+                            T−{evt.daysUntilEvent}d
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            {evt.eventDateLabel}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-2.5 font-sans">
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                              {evt.iso3}
+                            </span>
+                            <span className="text-[10px] font-mono text-slate-500">
+                              {evt.categoryBadge}
+                            </span>
+                          </div>
+                          <div className="font-semibold text-slate-900 dark:text-white text-xs">
+                            {evt.eventTitle}
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right text-slate-600 dark:text-slate-400">
+                          {evt.consensusEstimateLabel}
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right font-semibold text-slate-900 dark:text-white">
+                          {evt.econQuestModelForecastLabel}
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right">
+                          <span className="font-bold text-amber-600 dark:text-amber-400 block">
+                            ±{evt.implied1DayYieldVolBps} bps Yield
+                          </span>
+                          <span className="text-[10px] text-slate-500">
+                            ±{evt.implied1DayCdsVolBps} bps CDS
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-2.5 text-right">
+                          {onStageTradeTicket && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStageTradeTicket(evt.stagedTicketSpec);
+                              }}
+                              className="px-2 py-1 text-[10px] font-semibold bg-indigo-600 text-white hover:bg-indigo-500"
+                            >
+                              + Stage
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Right 5 Cols: Active Catalyst Scenario Tree & Volatility Envelope Inspector */}
+            {activeInspectedCatalyst && (
+              <div className="xl:col-span-5 p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
+                <div>
+                  <div className="flex items-center justify-between text-[11px] font-mono text-amber-600 dark:text-amber-400 font-bold">
+                    <span>
+                      EVENT VOLATILITY & POST-RELEASE SCENARIO TREE INSPECTOR
+                    </span>
+                    <span>T−{activeInspectedCatalyst.daysUntilEvent} DAYS</span>
+                  </div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                    {activeInspectedCatalyst.eventTitle}
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Positioning Skew: {activeInspectedCatalyst.positioningSkewLabel} · Surprise Vector:{' '}
+                    {activeInspectedCatalyst.surpriseVectorLabel}
+                  </p>
+                </div>
+
+                {/* 3-Branch Post-Catalyst Spread Delta Matrix */}
+                <div className="grid grid-cols-3 gap-2.5 font-mono text-xs tabular-nums text-center">
+                  <div className="p-2.5 border border-emerald-500/30 bg-emerald-500/10">
+                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block">
+                      DOVISH / CONSOLIDATION
+                    </span>
+                    <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                      {activeInspectedCatalyst.dovishScenarioSpreadDeltaBps} bps
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Spread Compression
+                    </span>
+                  </div>
+                  <div className="p-2.5 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950">
+                    <span className="text-[10px] text-slate-500 block">
+                      ECONQUEST BASELINE
+                    </span>
+                    <span className="text-base font-bold text-slate-900 dark:text-white">
+                      {activeInspectedCatalyst.baselineScenarioSpreadDeltaBps > 0 ? '+' : ''}
+                      {activeInspectedCatalyst.baselineScenarioSpreadDeltaBps} bps
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Expected Drift
+                    </span>
+                  </div>
+                  <div className="p-2.5 border border-rose-500/30 bg-rose-500/10">
+                    <span className="text-[10px] text-rose-700 dark:text-rose-300 block">
+                      HAWKISH / SLIPPAGE SHOCK
+                    </span>
+                    <span className="text-base font-bold text-rose-600 dark:text-rose-400">
+                      +{activeInspectedCatalyst.hawkishScenarioSpreadDeltaBps} bps
+                    </span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Spread Widening
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
+                  <div className="font-mono text-[10px] uppercase text-indigo-600 dark:text-indigo-400 font-bold">
+                    PRE-EVENT TRADING PLAYBOOK & KILL-SWITCH
+                  </div>
+                  <p className="text-slate-700 dark:text-slate-300">
+                    {activeInspectedCatalyst.actionablePlaybookText}
+                  </p>
+                  <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 pt-1">
+                    Kill-Switch: {activeInspectedCatalyst.stagedTicketSpec.preMortemKillSwitchRule}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* =====================================================================
+          SUB-WORKSPACE 5.9: PORTFOLIO STRESS-TEST & SCENARIO LAB (EMBI BOOK P&L)
+         ===================================================================== */}
+      {currentTab === 'quant_portfolio_stress_lab' && (
+        <div className="p-4 space-y-4">
+          {/* Headline Conclusion & Action Buttons */}
+          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1 max-w-4xl">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-rose-600 dark:text-rose-400 font-semibold">
+                5.9 EMBI MULTI-SOVEREIGN PORTFOLIO BATCH STRESS-TEST & INSTANTANEOUS P&L HIT LAB
+              </div>
+              <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
+                {portfolioStressSuite.headlineConclusion}
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatRefBadge
+                refText={`Stress PnL Decomposition: ΔPnL_i = w_i · [−SD_i·β_c,i·Δs + ½Conv_i·(Δs)² − (1−h)·LCY_i·β_fx,i·ΔFX − MD_i·Δy_UST + CarryRoll_i]`}
+              />
+              {onStageTradeTicket && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onStageTradeTicket(
+                      portfolioStressSuite.recommendedTailHedgeTicket
+                    )
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold bg-rose-600 text-white hover:bg-rose-500"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>
+                    Stage {portfolioStressSuite.worstHitSovereign.iso3} Tail-Risk Hedge
+                  </span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={handleExportPortfolioStressCsv}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Export Stress CSV</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Batch Scenario Preset Bar & Portfolio Weight Scheme Selector */}
+          <div className="p-3.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 mr-1">
+                  Batch Stress Scenario Preset:
+                </span>
+                {EMBI_BATCH_SCENARIO_PRESETS.map((preset) => {
+                  const isActive =
+                    portfolioStressParams.activePresetId === preset.id &&
+                    portfolioStressParams.fxDevaluationShockPct ===
+                      preset.fxDevaluationShockPct &&
+                    portfolioStressParams.creditSpreadWideningBps ===
+                      preset.creditSpreadWideningBps;
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleSelectStressPreset(preset.id)}
+                      className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+                        isActive
+                          ? 'bg-rose-600 text-white border-rose-600 font-semibold'
+                          : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-rose-400'
+                      }`}
+                    >
+                      {preset.shortBadge}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span className="text-slate-500">Book Weights:</span>
+                {(
+                  [
+                    { id: 'EMBI_BENCHMARK', label: 'EMBI Benchmark %' },
+                    { id: 'MAX_DIVERSIFICATION', label: 'Max-Div %' },
+                    { id: 'EQUAL_WEIGHT', label: 'Equal Wt %' },
+                  ] as const
+                ).map((scheme) => (
+                  <button
+                    key={scheme.id}
+                    type="button"
+                    onClick={() =>
+                      setPortfolioStressParams((prev) => ({
+                        ...prev,
+                        weightScheme: scheme.id as EmbiPortfolioWeightScheme,
+                      }))
+                    }
+                    className={`px-2 py-1 border ${
+                      portfolioStressParams.weightScheme === scheme.id
+                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
+                        : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                    }`}
+                  >
+                    {scheme.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() =>
+                    setPortfolioStressParams(DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS)
+                  }
+                  className="inline-flex items-center gap-1 px-2.5 py-1 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Reset (20% FX + 200bp)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* 5 Interactive Joint Shock Vector Sliders */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs font-mono">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">FX Devaluation Shock:</span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                    {portfolioStressParams.fxDevaluationShockPct > 0 ? '−' : '+'}
+                    {Math.abs(portfolioStressParams.fxDevaluationShockPct)}% vs USD
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-15}
+                  max={50}
+                  step={1}
+                  value={portfolioStressParams.fxDevaluationShockPct}
+                  onChange={(e) =>
+                    setPortfolioStressParams((prev) => ({
+                      ...prev,
+                      fxDevaluationShockPct: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-rose-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">Credit Spread Shock:</span>
+                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                    {portfolioStressParams.creditSpreadWideningBps > 0 ? '+' : ''}
+                    {portfolioStressParams.creditSpreadWideningBps} bps
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-120}
+                  max={600}
+                  step={10}
+                  value={portfolioStressParams.creditSpreadWideningBps}
+                  onChange={(e) =>
+                    setPortfolioStressParams((prev) => ({
+                      ...prev,
+                      creditSpreadWideningBps: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-rose-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">US Treasury Shift:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {portfolioStressParams.usTreasuryShiftBps > 0 ? '+' : ''}
+                    {portfolioStressParams.usTreasuryShiftBps} bps
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-150}
+                  max={250}
+                  step={5}
+                  value={portfolioStressParams.usTreasuryShiftBps}
+                  onChange={(e) =>
+                    setPortfolioStressParams((prev) => ({
+                      ...prev,
+                      usTreasuryShiftBps: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-amber-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">Commodity ToT Shock:</span>
+                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                    {portfolioStressParams.commodityShockPct > 0 ? '+' : ''}
+                    {portfolioStressParams.commodityShockPct}%
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={-40}
+                  max={30}
+                  step={5}
+                  value={portfolioStressParams.commodityShockPct}
+                  onChange={(e) =>
+                    setPortfolioStressParams((prev) => ({
+                      ...prev,
+                      commodityShockPct: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-amber-600"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span className="text-slate-500">FX Forward Hedge Ratio:</span>
+                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                    {portfolioStressParams.fxHedgeRatioPct}% Hedged
+                  </span>
+                </div>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={portfolioStressParams.fxHedgeRatioPct}
+                  onChange={(e) =>
+                    setPortfolioStressParams((prev) => ({
+                      ...prev,
+                      fxHedgeRatioPct: Number(e.target.value),
+                    }))
+                  }
+                  className="w-full accent-emerald-600"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* 4-Card Instantaneous Multi-Sovereign Book P&L Hit KPI Strip */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                INSTANTANEOUS NET BOOK P&L HIT
+              </span>
+              <div
+                className={`text-base font-bold mt-0.5 ${
+                  portfolioStressSuite.totalBookNetPnlPctNav < 0
+                    ? 'text-rose-600 dark:text-rose-400'
+                    : 'text-emerald-600 dark:text-emerald-400'
+                }`}
+              >
+                {portfolioStressSuite.totalBookNetPnlPctNav > 0 ? '+' : ''}
+                {portfolioStressSuite.totalBookNetPnlPctNav.toFixed(2)}% of NAV (
+                {portfolioStressSuite.totalBookNetPnlBps > 0 ? '+' : ''}
+                {portfolioStressSuite.totalBookNetPnlBps.toFixed(0)} bps)
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Unhedged (0% FX Hedge): {portfolioStressSuite.unhedgedBookNetPnlPctNav.toFixed(2)}% NAV
+              </span>
+            </div>
+
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                CREDIT SPREAD VS. FX DEVALUATION SPLIT
+              </span>
+              <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+                Credit: {portfolioStressSuite.totalBookCreditHitBps.toFixed(0)}bp · FX:{' '}
+                {portfolioStressSuite.totalBookFxHitBps.toFixed(0)}bp
+              </div>
+              <span className="text-[11px] text-slate-500">
+                UST Duration Hit: {portfolioStressSuite.totalBookRatesHitBps.toFixed(0)} bps of NAV
+              </span>
+            </div>
+
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                CARRY+ROLL CUSHION & FX HEDGE SAVINGS
+              </span>
+              <div className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                +{portfolioStressSuite.totalBookCarryOffsetBps.toFixed(0)} bps Carry Offset
+              </div>
+              <span className="text-[11px] text-slate-500">
+                Absorbs {portfolioStressSuite.carryBufferCoveragePct.toFixed(1)}% of shock · FX Hedge saved +{portfolioStressSuite.fxHedgeSavedBps}bp
+              </span>
+            </div>
+
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+              <span className="text-[10px] text-slate-500 block">
+                TOP DRAWDOWN CONTRIBUTOR IN BOOK
+              </span>
+              <div className="text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                {portfolioStressSuite.worstHitSovereign.iso3} (
+                {portfolioStressSuite.worstHitSovereign.bookWeightedNetPnlPctNav.toFixed(2)}% NAV)
+              </div>
+              <span className="text-[11px] text-slate-500">
+                {portfolioStressSuite.worstHitSovereign.shareOfTotalBookLossPct.toFixed(1)}% of book loss · Wt{' '}
+                {portfolioStressSuite.worstHitSovereign.portfolioWeightPct.toFixed(1)}%
+              </span>
+            </div>
+          </div>
+
+          {/* 2-Column Charts: Left = Sovereign-by-Sovereign Instantaneous P&L Hit Attribution (bps of Book NAV) | Right = Simultaneous 6-Scenario Batch Comparison (% NAV) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Instantaneous P&L Hit by Sovereign Sleeve (bps of Total Book NAV)
+                </h3>
+                <span className="text-[11px] font-mono text-rose-600 dark:text-rose-400">
+                  Net Book Hit: {portfolioStressSuite.totalBookNetPnlBps.toFixed(0)} bps
+                </span>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={portfolioStressSuite.sovereignRows}
+                    margin={{ top: 10, right: 16, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis dataKey="iso3" tick={{ fill: chartAxisTick, fontSize: 11 }} />
+                    <YAxis tick={{ fill: chartAxisTick, fontSize: 11 }} unit="bp" />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <ReferenceLine y={0} stroke={chartAxisTick} />
+                    <Bar
+                      dataKey="bookWeightedCreditHitBps"
+                      name="Credit Spread Hit (bps NAV)"
+                      stackId="stress"
+                      fill="#e11d48"
+                      barSize={20}
+                    />
+                    <Bar
+                      dataKey="bookWeightedFxHitBps"
+                      name="FX Devaluation Hit (bps NAV)"
+                      stackId="stress"
+                      fill="#f59e0b"
+                      barSize={20}
+                    />
+                    <Bar
+                      dataKey="bookWeightedRatesHitBps"
+                      name="UST Rates Hit (bps NAV)"
+                      stackId="stress"
+                      fill="#6366f1"
+                      barSize={20}
+                    />
+                    <Bar
+                      dataKey="bookWeightedCarryOffsetBps"
+                      name="Carry+Roll Cushion (+bps NAV)"
+                      fill="#10b981"
+                      barSize={14}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="bookWeightedNetPnlBps"
+                      name="Net Sleeve P&L Contribution (bps NAV)"
+                      stroke="#0f172a"
+                      strokeWidth={2}
+                      dot={{ r: 3.5 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  Batch Stress-Test Comparison Across 6 Macro/FX Regimes (% Book NAV)
+                </h3>
+                <span className="text-[11px] font-mono text-slate-500">
+                  Click any preset row below to load sliders
+                </span>
+              </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart
+                    data={portfolioStressSuite.batchScenarioRows}
+                    margin={{ top: 10, right: 16, left: 0, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
+                    <XAxis
+                      dataKey="shockFormulaBadge"
+                      tick={{ fill: chartAxisTick, fontSize: 10 }}
+                    />
+                    <YAxis tick={{ fill: chartAxisTick, fontSize: 11 }} unit="%" />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                    <ReferenceLine y={0} stroke={chartAxisTick} />
+                    <Bar
+                      dataKey="bookCreditHitPctNav"
+                      name="Credit Spread Hit (% NAV)"
+                      stackId="batch"
+                      fill="#e11d48"
+                      barSize={22}
+                    />
+                    <Bar
+                      dataKey="bookFxHitPctNav"
+                      name="FX Deval Hit (% NAV)"
+                      stackId="batch"
+                      fill="#f59e0b"
+                      barSize={22}
+                    />
+                    <Bar
+                      dataKey="bookRatesHitPctNav"
+                      name="UST Rates Hit (% NAV)"
+                      stackId="batch"
+                      fill="#6366f1"
+                      barSize={22}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="netPortfolioPnlPctNav"
+                      name="Net Portfolio P&L (% NAV)"
+                      stroke="#10b981"
+                      strokeWidth={2.5}
+                      dot={{ r: 4 }}
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+
+          {/* Full Multi-Sovereign EMBI Book Instantaneous P&L Hit Attribution Table */}
+          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+            <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Multi-Sovereign EMBI Book Instantaneous P&L Hit & Post-Shock Solvency Attribution Table
+              </span>
+              <span className="text-[11px] font-mono text-slate-500">
+                Weights sum to 100.0% · All P&L contributions in bps & % of Total Book NAV
+              </span>
+            </div>
+            <table className="w-full text-xs font-mono tabular-nums">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-[10px] text-slate-500">
+                  <th className="py-2 px-2.5 text-left">SOVEREIGN</th>
+                  <th className="py-2 px-2 text-right">BOOK WT %</th>
+                  <th className="py-2 px-2 text-right">MOD DUR</th>
+                  <th className="py-2 px-2 text-right">β_CRED / β_FX</th>
+                  <th className="py-2 px-2 text-right">EFF SHOCK (FX / Δs)</th>
+                  <th className="py-2 px-2 text-right">CREDIT HIT (bp)</th>
+                  <th className="py-2 px-2 text-right">FX HIT (bp)</th>
+                  <th className="py-2 px-2 text-right">RATES HIT (bp)</th>
+                  <th className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
+                    CARRY OFFSET
+                  </th>
+                  <th className="py-2 px-2 text-right">NET BOOK P&L</th>
+                  <th className="py-2 px-2 text-right">LOSS SHARE %</th>
+                  <th className="py-2 px-2 text-right">STRESSED DEBT / CDS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
+                {portfolioStressSuite.sovereignRows.map((row) => (
+                  <tr
+                    key={row.iso3}
+                    className={
+                      row.iso3 === portfolioStressSuite.worstHitSovereign.iso3
+                        ? 'bg-rose-50/40 dark:bg-rose-950/20'
+                        : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
+                    }
+                  >
+                    <td className="py-2 px-2.5 font-sans font-semibold text-slate-900 dark:text-white whitespace-nowrap">
+                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 mr-1">
+                        {row.iso3}
+                      </span>
+                      <span>{row.countryName}</span>
+                    </td>
+                    <td className="py-2 px-2 text-right font-semibold">
+                      {row.portfolioWeightPct.toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-2 text-right text-slate-500">
+                      {row.modifiedDurationYears.toFixed(2)}y
+                    </td>
+                    <td className="py-2 px-2 text-right text-slate-500">
+                      {row.creditBeta.toFixed(2)}x / {row.fxBeta.toFixed(2)}x
+                    </td>
+                    <td className="py-2 px-2 text-right text-rose-600 dark:text-rose-400">
+                      {row.effectiveFxDevaluationPct > 0 ? '−' : '+'}
+                      {Math.abs(row.effectiveFxDevaluationPct).toFixed(1)}% /{' '}
+                      {row.effectiveSpreadWideningBps > 0 ? '+' : ''}
+                      {row.effectiveSpreadWideningBps}bp
+                    </td>
+                    <td className="py-2 px-2 text-right text-rose-600 dark:text-rose-400">
+                      {row.bookWeightedCreditHitBps > 0 ? '+' : ''}
+                      {row.bookWeightedCreditHitBps.toFixed(1)}bp
+                    </td>
+                    <td className="py-2 px-2 text-right text-amber-600 dark:text-amber-400">
+                      {row.bookWeightedFxHitBps > 0 ? '+' : ''}
+                      {row.bookWeightedFxHitBps.toFixed(1)}bp
+                    </td>
+                    <td className="py-2 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                      {row.bookWeightedRatesHitBps > 0 ? '+' : ''}
+                      {row.bookWeightedRatesHitBps.toFixed(1)}bp
+                    </td>
+                    <td className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400 font-semibold">
+                      +{row.bookWeightedCarryOffsetBps.toFixed(1)}bp
+                    </td>
+                    <td
+                      className={`py-2 px-2 text-right font-bold ${
+                        row.bookWeightedNetPnlBps < 0
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      {row.bookWeightedNetPnlPctNav > 0 ? '+' : ''}
+                      {row.bookWeightedNetPnlPctNav.toFixed(2)}% (
+                      {row.bookWeightedNetPnlBps > 0 ? '+' : ''}
+                      {row.bookWeightedNetPnlBps.toFixed(0)}bp)
+                    </td>
+                    <td className="py-2 px-2 text-right font-semibold text-slate-700 dark:text-slate-300">
+                      {row.shareOfTotalBookLossPct.toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-2 text-right text-slate-600 dark:text-slate-400">
+                      {row.postShockDebtToGdpPct.toFixed(1)}% / {row.postShock5YCdsBps}bp
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 border-slate-300 dark:border-slate-700 font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900">
+                  <td className="py-2 px-2.5">EMBI PORTFOLIO TOTAL</td>
+                  <td className="py-2 px-2 text-right">100.0%</td>
+                  <td className="py-2 px-2 text-right">—</td>
+                  <td className="py-2 px-2 text-right">—</td>
+                  <td className="py-2 px-2 text-right">
+                    {portfolioStressParams.fxDevaluationShockPct > 0 ? '−' : '+'}
+                    {Math.abs(portfolioStressParams.fxDevaluationShockPct)}% /{' '}
+                    {portfolioStressParams.creditSpreadWideningBps > 0 ? '+' : ''}
+                    {portfolioStressParams.creditSpreadWideningBps}bp
+                  </td>
+                  <td className="py-2 px-2 text-right text-rose-600 dark:text-rose-400">
+                    {portfolioStressSuite.totalBookCreditHitBps.toFixed(1)}bp
+                  </td>
+                  <td className="py-2 px-2 text-right text-amber-600 dark:text-amber-400">
+                    {portfolioStressSuite.totalBookFxHitBps.toFixed(1)}bp
+                  </td>
+                  <td className="py-2 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                    {portfolioStressSuite.totalBookRatesHitBps.toFixed(1)}bp
+                  </td>
+                  <td className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
+                    +{portfolioStressSuite.totalBookCarryOffsetBps.toFixed(1)}bp
+                  </td>
+                  <td
+                    className={`py-2 px-2 text-right ${
+                      portfolioStressSuite.totalBookNetPnlPctNav < 0
+                        ? 'text-rose-600 dark:text-rose-400'
+                        : 'text-emerald-600 dark:text-emerald-400'
+                    }`}
+                  >
+                    {portfolioStressSuite.totalBookNetPnlPctNav > 0 ? '+' : ''}
+                    {portfolioStressSuite.totalBookNetPnlPctNav.toFixed(2)}% (
+                    {portfolioStressSuite.totalBookNetPnlBps.toFixed(0)}bp)
+                  </td>
+                  <td className="py-2 px-2 text-right">100.0%</td>
+                  <td className="py-2 px-2 text-right">
+                    Worst: {portfolioStressSuite.worstHitSovereign.iso3}
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          {/* Simultaneous 6-Scenario Batch Stress Matrix Table */}
+          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
+            <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                Simultaneous 6-Regime Batch Stress-Test Summary Matrix
+              </span>
+              <span className="text-[11px] font-mono text-slate-500">
+                Click &quot;Load Scenario&quot; on any row to apply its joint shock vector to the active book
+              </span>
+            </div>
+            <table className="w-full text-xs font-mono tabular-nums">
+              <thead>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-[10px] text-slate-500">
+                  <th className="py-2 px-2.5 text-left">BATCH SCENARIO</th>
+                  <th className="py-2 px-2 text-left">SHOCK FORMULA</th>
+                  <th className="py-2 px-2 text-right">CREDIT HIT (% NAV)</th>
+                  <th className="py-2 px-2 text-right">FX HIT (% NAV)</th>
+                  <th className="py-2 px-2 text-right">RATES HIT (% NAV)</th>
+                  <th className="py-2 px-2 text-right">CARRY OFFSET</th>
+                  <th className="py-2 px-2 text-right">NET BOOK P&L (% NAV)</th>
+                  <th className="py-2 px-2 text-right">WORST SOVEREIGN</th>
+                  <th className="py-2 px-2 text-right">ACTION</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
+                {portfolioStressSuite.batchScenarioRows.map((bRow) => (
+                  <tr
+                    key={bRow.scenarioId}
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                  >
+                    <td className="py-2 px-2.5 font-sans font-semibold text-slate-900 dark:text-white">
+                      {bRow.scenarioLabel}
+                    </td>
+                    <td className="py-2 px-2 text-slate-600 dark:text-slate-400">
+                      {bRow.shockFormulaBadge}
+                    </td>
+                    <td className="py-2 px-2 text-right text-rose-600 dark:text-rose-400">
+                      {bRow.bookCreditHitPctNav > 0 ? '+' : ''}
+                      {bRow.bookCreditHitPctNav.toFixed(2)}%
+                    </td>
+                    <td className="py-2 px-2 text-right text-amber-600 dark:text-amber-400">
+                      {bRow.bookFxHitPctNav > 0 ? '+' : ''}
+                      {bRow.bookFxHitPctNav.toFixed(2)}%
+                    </td>
+                    <td className="py-2 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                      {bRow.bookRatesHitPctNav > 0 ? '+' : ''}
+                      {bRow.bookRatesHitPctNav.toFixed(2)}%
+                    </td>
+                    <td className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
+                      +{bRow.bookCarryOffsetPctNav.toFixed(2)}%
+                    </td>
+                    <td
+                      className={`py-2 px-2 text-right font-bold ${
+                        bRow.netPortfolioPnlPctNav < 0
+                          ? 'text-rose-600 dark:text-rose-400'
+                          : 'text-emerald-600 dark:text-emerald-400'
+                      }`}
+                    >
+                      {bRow.netPortfolioPnlPctNav > 0 ? '+' : ''}
+                      {bRow.netPortfolioPnlPctNav.toFixed(2)}% ({bRow.netPortfolioPnlBps.toFixed(0)}bp)
+                    </td>
+                    <td className="py-2 px-2 text-right font-semibold">
+                      {bRow.worstHitIso3} ({bRow.worstHitContributionPctNav.toFixed(2)}%)
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleSelectStressPreset(bRow.scenarioId as EmbiStressPresetId)
+                        }
+                        className="px-2 py-0.5 text-[10px] font-semibold bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:opacity-90"
+                      >
+                        Load Scenario
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </section>
   );
 };
+
