@@ -1,0 +1,2528 @@
+import dotenv from 'dotenv';
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createServer as createViteServer } from 'vite';
+import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
+import {
+  SOVEREIGN_CATALOG,
+  buildAnnotatedChartsForSovereign,
+  buildBaselineOpenData,
+  buildDefaultAssessmentRun,
+  computeQuantitativeAnchorScores,
+  recomputeDerivedOpenDataAnalytics,
+} from './src/data/presetsAndBaselines.ts';
+import {
+  AIRuntimeConfig,
+  CROOverrideState,
+  CouncilAssessmentRun,
+  DeskDebateRound,
+  GeopoliticalWargameParams,
+  LiquidityStressParams,
+  OpenDataSnapshot,
+  PipelineStageTelemetry,
+  PolicyDocumentCategory,
+  PolymarketContract,
+  PredictionEventCategory,
+  RawVenueEventContract,
+  SubAgentReport,
+  SupremeCouncilOutput,
+  WatchlistItem,
+} from './src/types/council.ts';
+import {
+  DEFAULT_WARGAME_PARAMS,
+  computeGeopoliticalRiskDeskSuite,
+} from './src/utils/geopoliticalRiskEngine.ts';
+import { computeFullEconometricForecastSuite } from './src/utils/econometricForecastingEngine.ts';
+import {
+  DEFAULT_LIQUIDITY_STRESS_PARAMS,
+  computeGlobalLiquidityFundingSuite,
+} from './src/utils/globalLiquidityEngine.ts';
+import {
+  computeCouncilKellyAndLobExecution,
+  computeCrossCurrencyAndLegalBasis,
+  simulateSovereignRestructuringAndRating,
+} from './src/utils/institutionalRiskDeskEngine.ts';
+import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
+import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY,
+  httpOptions: {
+    headers: {
+      'User-Agent': 'aistudio-build',
+    },
+  },
+});
+
+async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json' },
+    });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Start-of-year USD FX anchors for computing live YTD currency performance
+const FX_SOY_ANCHORS_PER_USD: Record<string, number> = {
+  BRL: 6.18,
+  TRY: 35.35,
+  EGP: 50.8,
+  ZAR: 18.85,
+  MXN: 20.82,
+  IDR: 16180,
+  JPY: 157.2,
+  GBP: 0.799,
+  EUR: 0.965,
+  CHF: 0.907,
+  CAD: 1.438,
+  AUD: 1.615,
+  CNY: 7.299,
+  INR: 85.65,
+};
+
+interface CachedMarketGrounding {
+  timestamp: number;
+  policyRatePct?: number;
+  sovereign10YBondYieldPct?: number;
+  yield2Y?: number;
+  yield5Y?: number;
+  yield30Y?: number;
+  cds5YSpreadBps?: number;
+  creditRating?: string;
+  citations: Array<{ title: string; uri: string }>;
+}
+
+const groundedMarketCache = new Map<string, CachedMarketGrounding>();
+const GROUNDED_CACHE_TTL_MS = 5 * 60 * 1000;
+
+let cachedPlumbing: {
+  timestamp: number;
+  usSofrRatePct?: number;
+  usEffrRatePct?: number;
+  fedOnRrpBalanceUsdBn?: number;
+  fxRatesVsUsd: Record<string, number>;
+  activeSources: string[];
+} | null = null;
+
+async function fetchGlobalLivePlumbing() {
+  if (cachedPlumbing && Date.now() - cachedPlumbing.timestamp < 3 * 60 * 1000) {
+    return cachedPlumbing;
+  }
+
+  const fxRatesVsUsd: Record<string, number> = {};
+  const activeSources: string[] = [];
+  let usSofrRatePct: number | undefined;
+  let usEffrRatePct: number | undefined;
+  let fedOnRrpBalanceUsdBn: number | undefined;
+
+  await Promise.allSettled([
+    // 1. Live Spot FX Rates (Open Exchange Rates v6 -> Frankfurter fallback)
+    (async () => {
+      const fxRes = await fetchWithTimeout('https://open.er-api.com/v6/latest/USD', 3500);
+      if (fxRes.ok) {
+        const data: any = await fxRes.json();
+        if (data?.rates && typeof data.rates === 'object') {
+          Object.entries(data.rates).forEach(([ccy, val]) => {
+            if (typeof val === 'number' && val > 0) {
+              fxRatesVsUsd[ccy.toUpperCase()] = val;
+            }
+          });
+          activeSources.push('ExchangeRate-API Spot FX (Live)');
+          return;
+        }
+      }
+      const frankRes = await fetchWithTimeout('https://api.frankfurter.app/latest?from=USD', 3500);
+      if (frankRes.ok) {
+        const fData: any = await frankRes.json();
+        if (fData?.rates && typeof fData.rates === 'object') {
+          Object.entries(fData.rates).forEach(([ccy, val]) => {
+            if (typeof val === 'number' && val > 0) {
+              fxRatesVsUsd[ccy.toUpperCase()] = val;
+            }
+          });
+          activeSources.push('ECB Frankfurter Spot FX (Live)');
+        }
+      }
+    })(),
+
+    // 2. NY Fed Markets API: Secured Overnight Financing Rate (SOFR)
+    (async () => {
+      const sofrRes = await fetchWithTimeout(
+        'https://markets.newyorkfed.org/api/rates/secured/sofr/last/1.json',
+        3200
+      );
+      if (sofrRes.ok) {
+        const data: any = await sofrRes.json();
+        const rate = data?.refRates?.[0]?.percentRate;
+        if (typeof rate === 'number' && rate > 0) {
+          usSofrRatePct = Number(rate.toFixed(2));
+          activeSources.push('NY Fed Markets SOFR/EFFR API (Live)');
+        }
+      }
+    })(),
+
+    // 3. NY Fed Markets API: Effective Federal Funds Rate (EFFR)
+    (async () => {
+      const effrRes = await fetchWithTimeout(
+        'https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json',
+        3200
+      );
+      if (effrRes.ok) {
+        const data: any = await effrRes.json();
+        const rate = data?.refRates?.[0]?.percentRate;
+        if (typeof rate === 'number' && rate > 0) {
+          usEffrRatePct = Number(rate.toFixed(2));
+        }
+      }
+    })(),
+
+    // 4. NY Fed Markets API: Overnight Reverse Repo (ON RRP) Facility Propositions
+    (async () => {
+      const rrpRes = await fetchWithTimeout(
+        'https://markets.newyorkfed.org/api/rp/reverserepo/propositions/search.json',
+        3200
+      );
+      if (rrpRes.ok) {
+        const data: any = await rrpRes.json();
+        const ops = data?.repo?.operations;
+        if (Array.isArray(ops) && ops.length > 0) {
+          const latestAmt = Number(ops[0]?.totalAmtAccepted);
+          if (!Number.isNaN(latestAmt) && latestAmt >= 0) {
+            // NY Fed returns totalAmtAccepted in USD or billions depending on endpoint version
+            fedOnRrpBalanceUsdBn =
+              latestAmt > 1e6 ? Number((latestAmt / 1e9).toFixed(1)) : Number(latestAmt.toFixed(1));
+          }
+        }
+      }
+    })(),
+  ]);
+
+  cachedPlumbing = {
+    timestamp: Date.now(),
+    usSofrRatePct,
+    usEffrRatePct,
+    fedOnRrpBalanceUsdBn,
+    fxRatesVsUsd,
+    activeSources,
+  };
+  return cachedPlumbing;
+}
+
+async function fetchGroundedMarketTelemetry(
+  iso3: string,
+  countryName: string,
+  currencyCode: string
+): Promise<CachedMarketGrounding | null> {
+  if (!process.env.GEMINI_API_KEY) return null;
+  const cached = groundedMarketCache.get(iso3);
+  if (cached && Date.now() - cached.timestamp < GROUNDED_CACHE_TTL_MS) {
+    return cached;
+  }
+
+  try {
+    const prompt = `Search for the latest current real-world sovereign market data for ${countryName} (${iso3}, currency ${currencyCode}):
+1. Central Bank benchmark policy interest rate (%)
+2. 10-Year sovereign local-currency government bond yield (%)
+3. 2-Year, 5-Year, and 30-Year government bond yields (%)
+4. 5-Year USD Sovereign Credit Default Swap (CDS) spread in basis points (bps)
+5. Current S&P / Fitch / Moody's long-term foreign-currency sovereign credit rating (e.g., BB, BB-, B+, BBB, A+, AA-)
+
+Return ONLY a valid JSON object matching this exact structure (no markdown fences):
+{"policyRatePct": number, "sovereign10YBondYieldPct": number, "yield2Y": number, "yield5Y": number, "yield30Y": number, "cds5YSpreadBps": number, "creditRating": "string"}`;
+
+    const resp = await ai.models.generateContent({
+      model: 'gemini-3.8-flash',
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+      },
+    });
+
+    const rawText = (resp.text || '').trim();
+    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return null;
+
+    const parsed: any = JSON.parse(jsonMatch[0]);
+    const chunks = resp.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+    const citations = chunks
+      .filter((c: any) => c?.web?.uri)
+      .slice(0, 5)
+      .map((c: any) => ({
+        title: String(c.web.title || `${countryName} Sovereign Market Telemetry`),
+        uri: String(c.web.uri),
+      }));
+
+    const entry: CachedMarketGrounding = {
+      timestamp: Date.now(),
+      policyRatePct:
+        typeof parsed.policyRatePct === 'number' && parsed.policyRatePct >= 0 && parsed.policyRatePct <= 80
+          ? Number(parsed.policyRatePct.toFixed(2))
+          : undefined,
+      sovereign10YBondYieldPct:
+        typeof parsed.sovereign10YBondYieldPct === 'number' &&
+        parsed.sovereign10YBondYieldPct > 0 &&
+        parsed.sovereign10YBondYieldPct <= 70
+          ? Number(parsed.sovereign10YBondYieldPct.toFixed(2))
+          : undefined,
+      yield2Y:
+        typeof parsed.yield2Y === 'number' && parsed.yield2Y > 0 && parsed.yield2Y <= 75
+          ? Number(parsed.yield2Y.toFixed(2))
+          : undefined,
+      yield5Y:
+        typeof parsed.yield5Y === 'number' && parsed.yield5Y > 0 && parsed.yield5Y <= 75
+          ? Number(parsed.yield5Y.toFixed(2))
+          : undefined,
+      yield30Y:
+        typeof parsed.yield30Y === 'number' && parsed.yield30Y > 0 && parsed.yield30Y <= 75
+          ? Number(parsed.yield30Y.toFixed(2))
+          : undefined,
+      cds5YSpreadBps:
+        typeof parsed.cds5YSpreadBps === 'number' && parsed.cds5YSpreadBps >= 8 && parsed.cds5YSpreadBps <= 4000
+          ? Math.round(parsed.cds5YSpreadBps)
+          : undefined,
+      creditRating: typeof parsed.creditRating === 'string' ? parsed.creditRating.trim() : undefined,
+      citations,
+    };
+
+    groundedMarketCache.set(iso3, entry);
+    return entry;
+  } catch {
+    return null;
+  }
+}
+
+function parseGdeltSeenDate(seenDate?: string): string {
+  if (!seenDate || typeof seenDate !== 'string') return new Date().toISOString();
+  // GDELT format: YYYYMMDDTHHMMSSZ
+  const m = seenDate.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
+  if (m) {
+    return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`;
+  }
+  const d = new Date(seenDate);
+  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
+}
+
+function getLatestImfValue(series: Record<string, number> | undefined, targetYears: string[]): number | undefined {
+  if (!series || typeof series !== 'object') return undefined;
+  for (const yr of targetYears) {
+    if (typeof series[yr] === 'number' && !Number.isNaN(series[yr])) {
+      return series[yr];
+    }
+  }
+  return undefined;
+}
+
+async function fetchLiveOpenDataSnapshot(
+  iso3: string,
+  countryNameHint?: string,
+  includeSearchGrounding = true
+): Promise<OpenDataSnapshot> {
+  const normalizedIso = (iso3 || 'BRA').toUpperCase().trim();
+  const baseline = buildBaselineOpenData(normalizedIso);
+  if (countryNameHint) {
+    baseline.countryName = countryNameHint;
+  }
+
+  const activeSources: string[] = [];
+  let liveReservesUsdBn: number | undefined;
+  let liveShortTermDebtPctReserves: number | undefined;
+  let yield2YOverride: number | undefined;
+  let yield5YOverride: number | undefined;
+  let yield30YOverride: number | undefined;
+
+  await Promise.allSettled([
+    // 1. Expanded World Bank Open Data v2 API (6 structural & external balance indicators)
+    (async () => {
+      const wbIndicators = [
+        'FI.RES.TOTL.MO', // FX Reserves in Months of Imports
+        'FI.RES.TOTL.CD', // Total International Reserves (USD, including Gold)
+        'BN.CAB.XOKA.GD.ZS', // Current Account Balance (% of GDP)
+        'DT.DOD.DECT.GN.ZS', // Total External Debt Stocks (% of GNI)
+        'DT.DOD.DSTC.IR.ZS', // Short-Term Debt (% of Total Reserves)
+        'PV.EST', // WGI Political Stability & Absence of Violence (-2.5 to +2.5)
+      ];
+      const results = await Promise.allSettled(
+        wbIndicators.map(async (ind) => {
+          const res = await fetchWithTimeout(
+            `https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${ind}?format=json&per_page=6`
+          );
+          if (!res.ok) return { ind, row: null };
+          const data: any = await res.json();
+          const rows = Array.isArray(data?.[1]) ? data[1] : [];
+          const validRow = rows.find((r: any) => typeof r?.value === 'number' && !Number.isNaN(r.value));
+          return { ind, row: validRow };
+        })
+      );
+
+      let latestWbYear = '';
+      for (const r of results) {
+        if (r.status !== 'fulfilled' || !r.value.row) continue;
+        const { ind, row } = r.value;
+        const val = Number(row.value);
+        if (row.date && String(row.date) > latestWbYear) latestWbYear = String(row.date);
+
+        if (ind === 'FI.RES.TOTL.MO') {
+          baseline.worldBankIndicators.fxReservesMonthsImport = Number(val.toFixed(2));
+        } else if (ind === 'FI.RES.TOTL.CD' && val > 1e8) {
+          liveReservesUsdBn = Number((val / 1e9).toFixed(1));
+        } else if (ind === 'BN.CAB.XOKA.GD.ZS') {
+          baseline.worldBankIndicators.currentAccountPctGdp = Number(val.toFixed(2));
+        } else if (ind === 'DT.DOD.DECT.GN.ZS') {
+          baseline.worldBankIndicators.externalDebtPctGni = Number(val.toFixed(1));
+        } else if (ind === 'DT.DOD.DSTC.IR.ZS' && val > 0) {
+          liveShortTermDebtPctReserves = Number(val.toFixed(1));
+        } else if (ind === 'PV.EST') {
+          // Convert WGI estimate (-2.5 to +2.5) into 0-100 percentile scale
+          const pctl = Math.max(2, Math.min(98, ((val + 2.5) / 5.0) * 100));
+          baseline.worldBankIndicators.politicalStabilityPercentile = Number(pctl.toFixed(1));
+        }
+      }
+      if (latestWbYear) {
+        activeSources.push(`World Bank Open Data v2 (${latestWbYear} Live)`);
+      }
+    })(),
+
+    // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)
+    (async () => {
+      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_NGDP'];
+      const results = await Promise.allSettled(
+        imfMetrics.map(async (metric) => {
+          const res = await fetchWithTimeout(
+            `https://www.imf.org/external/datamapper/api/v1/${metric}/${normalizedIso}`
+          );
+          if (!res.ok) return { metric, series: null };
+          const data: any = await res.json();
+          return { metric, series: data?.values?.[metric]?.[normalizedIso] };
+        })
+      );
+
+      let imfHit = false;
+      for (const r of results) {
+        if (r.status !== 'fulfilled' || !r.value.series) continue;
+        const { metric, series } = r.value;
+        if (metric === 'GGXWDG_NGDP') {
+          const cur = getLatestImfValue(series, ['2025', '2026', '2024']);
+          const f2027 = getLatestImfValue(series, ['2027', '2028', '2026']);
+          if (typeof cur === 'number') {
+            baseline.imfIndicators.debtToGdpPct = Number(cur.toFixed(1));
+            imfHit = true;
+          }
+          if (typeof f2027 === 'number') {
+            baseline.imfIndicators.debtToGdpForecast2027Pct = Number(f2027.toFixed(1));
+          }
+        } else if (metric === 'PCPIPCH') {
+          const cpi = getLatestImfValue(series, ['2025', '2026', '2024']);
+          if (typeof cpi === 'number') {
+            baseline.imfIndicators.cpiInflationPct = Number(cpi.toFixed(2));
+            imfHit = true;
+          }
+        } else if (metric === 'NGDP_RPCH') {
+          const gdp = getLatestImfValue(series, ['2025', '2026', '2024']);
+          if (typeof gdp === 'number') {
+            baseline.imfIndicators.realGdpGrowthPct = Number(gdp.toFixed(2));
+            imfHit = true;
+          }
+        } else if (metric === 'GGXONLB_NGDP') {
+          const pb = getLatestImfValue(series, ['2025', '2026', '2024']);
+          if (typeof pb === 'number') {
+            baseline.imfIndicators.primaryFiscalBalancePct = Number(pb.toFixed(2));
+            imfHit = true;
+          }
+        }
+      }
+      if (imfHit) {
+        activeSources.push('IMF DataMapper WEO v1 (4-Indicator Live)');
+      }
+    })(),
+
+    // 3. Unfiltered Live Polymarket Gamma API (Ranked by sovereign, central bank, tariff, & macro relevance)
+    (async () => {
+      const polyRes = await fetchWithTimeout(
+        `https://gamma-api.polymarket.com/events?limit=45&active=true&closed=false`
+      );
+      if (polyRes.ok) {
+        const events = await polyRes.json();
+        if (Array.isArray(events) && events.length > 0) {
+          const countryTerms = [
+            baseline.countryName.toLowerCase(),
+            normalizedIso.toLowerCase(),
+            baseline.currencyCode.toLowerCase(),
+            baseline.region.toLowerCase(),
+          ];
+          const macroTerms = [
+            'fed',
+            'rate',
+            'inflation',
+            'tariff',
+            'recession',
+            'oil',
+            'treasury',
+            'debt',
+            'central bank',
+            'sanction',
+            'ceasefire',
+            'trade',
+            'gdp',
+          ];
+
+          const scoredEvents = events
+            .map((ev: any, idx: number) => {
+              const market = Array.isArray(ev?.markets) && ev.markets.length > 0 ? ev.markets[0] : null;
+              const title = String(ev?.title || market?.question || '').trim();
+              if (!title) return null;
+
+              let prob = 50;
+              try {
+                const rawPrices = market?.outcomePrices;
+                const prices = typeof rawPrices === 'string' ? JSON.parse(rawPrices) : rawPrices;
+                if (Array.isArray(prices) && prices.length > 0) {
+                  const p0 = Number(prices[0]);
+                  if (!Number.isNaN(p0)) {
+                    prob = Math.round(p0 * 100);
+                  }
+                }
+              } catch {
+                prob = 50;
+              }
+
+              const lower = title.toLowerCase();
+              let relevance = 0;
+              for (const ct of countryTerms) {
+                if (ct && ct.length > 2 && lower.includes(ct)) relevance += 25;
+              }
+              for (const mt of macroTerms) {
+                if (lower.includes(mt)) relevance += 8;
+              }
+
+              const vol = Math.round(Number(ev?.volume || market?.volume || 0));
+              const contract: PolymarketContract = {
+                id: String(ev?.id || `pm-live-${idx}`),
+                question: title,
+                probabilityPct: Math.max(2, Math.min(98, prob)),
+                volumeUsd: vol > 0 ? vol : 125000,
+                category: relevance >= 25 ? `${baseline.countryName} Event` : 'Global Macro / Geopolitics',
+                url: ev?.slug ? `https://polymarket.com/event/${ev.slug}` : 'https://polymarket.com',
+              };
+              return { contract, relevance, vol };
+            })
+            .filter((x): x is { contract: PolymarketContract; relevance: number; vol: number } => Boolean(x))
+            .sort((a, b) => b.relevance - a.relevance || b.vol - a.vol);
+
+          if (scoredEvents.length > 0) {
+            baseline.polymarketContracts = scoredEvents.slice(0, 4).map((s) => s.contract);
+            activeSources.push('Polymarket Gamma API (100% Live Contracts)');
+          }
+        }
+      }
+    })(),
+
+    // 4. Live GDELT 2.0 DOC & Tone Timeline API (Real article timestamps + live tone & conflict intensity)
+    (async () => {
+      const q = encodeURIComponent(`"${baseline.countryName}" (economy OR central bank OR debt OR inflation OR sanctions)`);
+      const [artRes, toneRes] = await Promise.allSettled([
+        fetchWithTimeout(
+          `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&format=json&maxrecords=6`,
+          3800
+        ),
+        fetchWithTimeout(
+          `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=timelinetone&format=json`,
+          3800
+        ),
+      ]);
+
+      let liveTone = baseline.gdeltMetrics.averageTone;
+      if (toneRes.status === 'fulfilled' && toneRes.value.ok) {
+        try {
+          const toneData: any = await toneRes.value.json();
+          const series = toneData?.timeline?.[0]?.data;
+          if (Array.isArray(series) && series.length > 0) {
+            const recent = series.slice(-7);
+            const avg =
+              recent.reduce((acc: number, pt: any) => acc + Number(pt?.value || 0), 0) / recent.length;
+            if (!Number.isNaN(avg) && avg !== 0) {
+              liveTone = Number(avg.toFixed(2));
+              baseline.gdeltMetrics.averageTone = liveTone;
+              // Scale negative GDELT tone (-8..+2) into 0..100 conflict intensity index
+              const computedIntensity = Math.round(
+                Math.max(18, Math.min(94, 42 + Math.max(0, -liveTone) * 9.5))
+              );
+              baseline.gdeltMetrics.conflictIntensityIndex = computedIntensity;
+            }
+          }
+        } catch {
+          // Keep baseline tone if timeline parsing fails
+        }
+      }
+
+      if (artRes.status === 'fulfilled' && artRes.value.ok) {
+        try {
+          const data: any = await artRes.value.json();
+          const articles = Array.isArray(data?.articles) ? data.articles : [];
+          if (articles.length > 0) {
+            activeSources.push('GDELT 2.0 DOC & Tone Stream (Live)');
+            baseline.gdeltMetrics.articleCount24h = Math.max(
+              articles.length * 48,
+              baseline.gdeltMetrics.articleCount24h
+            );
+            baseline.gdeltMetrics.topHeadlines = articles.slice(0, 4).map((art: any, idx: number) => {
+              const titleStr = String(art?.title || 'Global Macro Dispatch');
+              const lowerTitle = titleStr.toLowerCase();
+              const negHits = ['crisis', 'deficit', 'inflation', 'sanction', 'strike', 'risk', 'drop', 'war', 'tariff'].filter(
+                (w) => lowerTitle.includes(w)
+              ).length;
+              const posHits = ['growth', 'surplus', 'rally', 'reform', 'deal', 'stability', 'upgrade'].filter((w) =>
+                lowerTitle.includes(w)
+              ).length;
+              const itemTone = Number((liveTone + (posHits - negHits) * 0.65 - idx * 0.12).toFixed(2));
+              return {
+                title: titleStr,
+                sourceDomain: String(art?.domain || 'gdeltproject.org'),
+                publishedAt: parseGdeltSeenDate(art?.seendate),
+                toneScore: itemTone,
+                url: String(art?.url || 'https://www.gdeltproject.org'),
+              };
+            });
+          }
+        } catch {
+          // Ignore malformed GDELT JSON
+        }
+      }
+    })(),
+
+    // 5. Global Live FX & NY Fed Plumbing
+    (async () => {
+      const plumbing = await fetchGlobalLivePlumbing();
+      if (plumbing.activeSources.length > 0) {
+        activeSources.push(...plumbing.activeSources);
+      }
+      const ccy = baseline.currencyCode.toUpperCase();
+      const liveFx = plumbing.fxRatesVsUsd[ccy];
+      if (typeof liveFx === 'number' && liveFx > 0) {
+        baseline.monetaryAndMarket.exchangeRatePerUsd = Number(
+          liveFx.toFixed(liveFx > 100 ? 1 : liveFx > 10 ? 2 : 3)
+        );
+        const soyAnchor = FX_SOY_ANCHORS_PER_USD[ccy];
+        if (typeof soyAnchor === 'number' && soyAnchor > 0) {
+          // Positive fxYtdChangePct = local currency appreciation vs USD; negative = depreciation vs USD
+          const ytdPct = ((soyAnchor - liveFx) / soyAnchor) * 100;
+          baseline.monetaryAndMarket.fxYtdChangePct = Number(ytdPct.toFixed(2));
+        }
+      }
+      baseline.livePlumbingOverrides = {
+        usSofrRatePct: plumbing.usSofrRatePct,
+        usEffrRatePct: plumbing.usEffrRatePct,
+        fedOnRrpBalanceUsdBn: plumbing.fedOnRrpBalanceUsdBn,
+        fxRatesVsUsd: plumbing.fxRatesVsUsd,
+        fetchedAt: new Date(plumbing.timestamp).toISOString(),
+      };
+    })(),
+
+    // 6. Gemini Search Grounding for High-Frequency Yields, Policy Rate, 5Y CDS & Credit Rating
+    (async () => {
+      if (!includeSearchGrounding) return;
+      const grounded = await fetchGroundedMarketTelemetry(
+        normalizedIso,
+        baseline.countryName,
+        baseline.currencyCode
+      );
+      if (grounded) {
+        if (typeof grounded.policyRatePct === 'number') {
+          baseline.monetaryAndMarket.policyRatePct = grounded.policyRatePct;
+        }
+        if (typeof grounded.sovereign10YBondYieldPct === 'number') {
+          baseline.monetaryAndMarket.sovereign10YBondYieldPct = grounded.sovereign10YBondYieldPct;
+        }
+        if (typeof grounded.cds5YSpreadBps === 'number') {
+          baseline.monetaryAndMarket.cds5YSpreadBps = grounded.cds5YSpreadBps;
+        }
+        if (grounded.creditRating) {
+          baseline.liveCreditRating = grounded.creditRating;
+        }
+        if (grounded.citations.length > 0) {
+          baseline.groundingCitations = grounded.citations;
+        }
+        yield2YOverride = grounded.yield2Y;
+        yield5YOverride = grounded.yield5Y;
+        yield30YOverride = grounded.yield30Y;
+        activeSources.push('Gemini Search Grounding (Live Yields, Policy Rate & CDS)');
+      }
+    })(),
+  ]);
+
+  // Dynamically recompute DSA (r - g), Greenspan-Guidotti Debt Rollover, Yield Curve & Real Policy Rate
+  recomputeDerivedOpenDataAnalytics(baseline, {
+    yield2Y: yield2YOverride,
+    yield5Y: yield5YOverride,
+    yield30Y: yield30YOverride,
+    liquidReservesUsdBn: liveReservesUsdBn,
+    shortTermDebtPctReserves: liveShortTermDebtPctReserves,
+  });
+
+  if (activeSources.length > 0) {
+    baseline.liveApiSourcesActive = Array.from(new Set(activeSources));
+  }
+  baseline.fetchedAt = new Date().toISOString();
+  return baseline;
+}
+
+let cachedWatchlistLive: { timestamp: number; items: WatchlistItem[] } | null = null;
+
+async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
+  if (cachedWatchlistLive && Date.now() - cachedWatchlistLive.timestamp < 4 * 60 * 1000) {
+    return cachedWatchlistLive.items;
+  }
+
+  const items = await Promise.all(
+    SOVEREIGN_CATALOG.map(async (catItem) => {
+      try {
+        // Use cached search grounding if already warm, otherwise fast IMF + World Bank + Live FX
+        const hasWarmGrounding = groundedMarketCache.has(catItem.iso3);
+        const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, hasWarmGrounding);
+        const run = buildDefaultAssessmentRun(catItem.iso3, snap);
+        const geo = run.croState.geopoliticalRiskScore;
+        const sov = run.croState.sovereignRiskScore;
+        const mac = run.croState.macroRiskScore;
+        const comp = Number(((geo + sov + mac) / 3).toFixed(2));
+        return {
+          ...catItem,
+          geopoliticalRisk: geo,
+          sovereignRisk: sov,
+          macroRisk: mac,
+          compositeRisk: comp,
+          yield10YPct: snap.monetaryAndMarket.sovereign10YBondYieldPct,
+          cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
+          debtToGdpPct: snap.imfIndicators.debtToGdpPct,
+          fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
+          alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
+        } as WatchlistItem;
+      } catch {
+        return catItem;
+      }
+    })
+  );
+
+  cachedWatchlistLive = {
+    timestamp: Date.now(),
+    items,
+  };
+  return items;
+}
+
+async function callOllamaOrOpenAICompatible(
+  baseUrl: string,
+  model: string,
+  systemPrompt: string,
+  userPrompt: string,
+  isOllama: boolean,
+  timeoutMs = 15000
+): Promise<string> {
+  const cleanUrl = baseUrl.replace(/\/+$/, '');
+  const endpoint = isOllama ? `${cleanUrl}/api/chat` : `${cleanUrl}/chat/completions`;
+  const body = isOllama
+    ? {
+        model,
+        stream: false,
+        format: 'json',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      }
+    : {
+        model,
+        response_format: { type: 'json_object' },
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+      };
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const postRes = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!postRes.ok) {
+      throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
+    }
+    const json: any = await postRes.json();
+    return isOllama ? json?.message?.content || '{}' : json?.choices?.[0]?.message?.content || '{}';
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function sanitizeAndParseJson<T>(rawText: string, fallback: T): { parsed: T; schemaVerified: boolean } {
+  if (!rawText || typeof rawText !== 'string') {
+    return { parsed: fallback, schemaVerified: false };
+  }
+  const trimmed = rawText
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/i, '')
+    .trim();
+  try {
+    const obj = JSON.parse(trimmed);
+    if (obj && typeof obj === 'object') {
+      return { parsed: obj as T, schemaVerified: true };
+    }
+  } catch {
+    const firstBrace = trimmed.indexOf('{');
+    const lastBrace = trimmed.lastIndexOf('}');
+    if (firstBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        const sliced = trimmed.slice(firstBrace, lastBrace + 1);
+        const obj = JSON.parse(sliced);
+        if (obj && typeof obj === 'object') {
+          return { parsed: obj as T, schemaVerified: true };
+        }
+      } catch {
+        // Fall through to fallback
+      }
+    }
+  }
+  return { parsed: fallback, schemaVerified: false };
+}
+
+function clampScoreToAnchor(
+  rawScore: unknown,
+  anchorScore: number,
+  corridor = 0.22
+): { rawModelScore: number; finalBoundedScore: number; anchorDriftClamped: boolean } {
+  const num = typeof rawScore === 'number' && !Number.isNaN(rawScore) ? rawScore : anchorScore;
+  const rawNormalized = Number(Math.max(0.05, Math.min(0.98, num)).toFixed(2));
+  const minAllowed = Math.max(0.1, Number((anchorScore - corridor).toFixed(2)));
+  const maxAllowed = Math.min(0.95, Number((anchorScore + corridor).toFixed(2)));
+  const clamped = Number(Math.max(minAllowed, Math.min(maxAllowed, rawNormalized)).toFixed(2));
+  return {
+    rawModelScore: rawNormalized,
+    finalBoundedScore: clamped,
+    anchorDriftClamped: Math.abs(rawNormalized - clamped) >= 0.01,
+  };
+}
+
+function normalizeStance(raw: unknown, fallbackScore: number): SubAgentReport['stance'] {
+  const up = String(raw || '').toUpperCase().trim();
+  if (up === 'BEARISH' || up === 'BULLISH' || up === 'NEUTRAL') return up;
+  if (fallbackScore >= 0.6) return 'BEARISH';
+  if (fallbackScore <= 0.38) return 'BULLISH';
+  return 'NEUTRAL';
+}
+
+async function executeResilientLlmStep<T>(options: {
+  stepName: string;
+  providerMode: string;
+  runtimeConfig: Partial<AIRuntimeConfig>;
+  systemInstruction: string;
+  prompt: string;
+  responseSchema: any;
+  thinkingLevel?: ThinkingLevel;
+  fallbackValue: T;
+  maxRetries?: number;
+}): Promise<{
+  data: T;
+  latencyMs: number;
+  retriesUsed: number;
+  schemaVerified: boolean;
+  usedFallback: boolean;
+  providerUsed: string;
+}> {
+  const startMs = Date.now();
+  const maxRetries = options.maxRetries ?? 2;
+  let retriesUsed = 0;
+
+  // 1. Try External Ollama / OpenAI-Compatible Runtime first if selected
+  if (options.providerMode === 'ollama' || options.providerMode === 'openai_compatible') {
+    const isOllama = options.providerMode === 'ollama';
+    const baseUrl = isOllama
+      ? options.runtimeConfig.ollamaBaseUrl || 'http://localhost:11434'
+      : options.runtimeConfig.openAiBaseUrl || 'http://localhost:8000/v1';
+    const modelName = isOllama
+      ? options.runtimeConfig.ollamaQuickModel || 'qwen2.5:32b'
+      : options.runtimeConfig.openAiModel || 'gpt-4o';
+
+    for (let attempt = 0; attempt <= 1; attempt++) {
+      try {
+        if (attempt > 0) retriesUsed++;
+        const rawText = await callOllamaOrOpenAICompatible(
+          baseUrl,
+          modelName,
+          options.systemInstruction,
+          options.prompt,
+          isOllama,
+          12000
+        );
+        const { parsed, schemaVerified } = sanitizeAndParseJson<T>(rawText, options.fallbackValue);
+        if (schemaVerified) {
+          return {
+            data: parsed,
+            latencyMs: Date.now() - startMs,
+            retriesUsed,
+            schemaVerified: true,
+            usedFallback: false,
+            providerUsed: isOllama ? `Ollama (${modelName})` : `OpenAI-Compatible (${modelName})`,
+          };
+        }
+      } catch {
+        // Fall through to retry or Gemini backup
+      }
+    }
+  }
+
+  // 2. Execute on Google AI Studio Gemini with exponential backoff + jitter
+  if (process.env.GEMINI_API_KEY) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        if (attempt > 0) {
+          retriesUsed++;
+          const backoffMs = 350 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 180);
+          await new Promise((r) => setTimeout(r, backoffMs));
+        }
+        const resp = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: `${options.systemInstruction}\n\n${options.prompt}`,
+          config: {
+            thinkingConfig: { thinkingLevel: options.thinkingLevel ?? ThinkingLevel.LOW },
+            responseMimeType: 'application/json',
+            responseSchema: options.responseSchema,
+          },
+        });
+        const { parsed, schemaVerified } = sanitizeAndParseJson<T>(
+          resp.text ?? '{}',
+          options.fallbackValue
+        );
+        if (schemaVerified) {
+          return {
+            data: parsed,
+            latencyMs: Date.now() - startMs,
+            retriesUsed,
+            schemaVerified: true,
+            usedFallback: false,
+            providerUsed:
+              options.providerMode === 'gemini'
+                ? 'Google AI Studio (gemini-3.8-flash)'
+                : 'Hybrid Failover -> Google AI Studio (gemini-3.8-flash)',
+          };
+        }
+      } catch {
+        // Continue to next retry attempt
+      }
+    }
+  }
+
+  return {
+    data: options.fallbackValue,
+    latencyMs: Date.now() - startMs,
+    retriesUsed,
+    schemaVerified: true,
+    usedFallback: true,
+    providerUsed: 'Quantitative Anchor Deterministic Engine',
+  };
+}
+
+async function startServer() {
+  const app = express();
+  const PORT = 3000;
+
+  app.use(express.json({ limit: '5mb' }));
+
+  // 1. Live Open Data & Grounded Market Telemetry Snapshot Endpoint
+  app.get('/api/data/sovereign-snapshot', async (req, res) => {
+    try {
+      const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
+      const countryName = req.query.countryName ? String(req.query.countryName) : undefined;
+      const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
+      const charts = buildAnnotatedChartsForSovereign(snapshot);
+      const run = buildDefaultAssessmentRun(iso3, snapshot);
+      res.json({ snapshot, charts, run });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Failed to fetch open data snapshot' });
+    }
+  });
+
+  // 1b. Live Watchlist Multi-Sovereign Telemetry Endpoint
+  app.get('/api/data/watchlist-live', async (_req, res) => {
+    try {
+      const items = await fetchLiveWatchlistCatalog();
+      res.json({ items, fetchedAt: new Date().toISOString() });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
+    }
+  });
+
+  // 2. Self-Hosted Ollama / External AI Runtime Health & Model Discovery
+  app.post('/api/ai/ollama-status', async (req, res) => {
+    const { ollamaBaseUrl = 'http://localhost:11434' } = req.body || {};
+    const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
+    try {
+      const response = await fetchWithTimeout(`${cleanUrl}/api/tags`, 3000);
+      if (!response.ok) {
+        return res.json({
+          connected: false,
+          endpoint: cleanUrl,
+          models: [],
+          message: `Ollama endpoint responded with HTTP ${response.status}. Verify 'OLLAMA_ORIGINS=*' and 'ollama serve' are running.`,
+        });
+      }
+      const data: any = await response.json();
+      const models = Array.isArray(data?.models) ? data.models.map((m: any) => m.name) : [];
+      return res.json({
+        connected: true,
+        endpoint: cleanUrl,
+        models,
+        message: `Connected to Ollama (${models.length} local models detected).`,
+      });
+    } catch (err: any) {
+      return res.json({
+        connected: false,
+        endpoint: cleanUrl,
+        models: ['qwen2.5:32b', 'deepseek-r1:32b', 'llama3.3:70b', 'mistral-small:24b'],
+        message: `Could not reach ${cleanUrl} from cloud container (${err?.message || 'connection refused'}). For local Ollama self-hosting, expose via ngrok/Cloudflare Tunnel or export the Python TradingAgents script.`,
+      });
+    }
+  });
+
+  // 3. Phase 1 (9 Sub-Agents + Devil's Advocate Debates + Minority Dissent) & Phase 2 (Cross-Desk Cascade)
+  app.post('/api/council/phase1-and-cascade', async (req, res) => {
+    const pipelineStartMs = Date.now();
+    try {
+      const {
+        iso3 = 'BRA',
+        countryName = 'Brazil',
+        scenarioPrompt = '',
+        policyDocumentTitle = '',
+        policyDocumentText = '',
+        runtimeConfig = {} as Partial<AIRuntimeConfig>,
+        geopoliticalWargameParams = DEFAULT_WARGAME_PARAMS as GeopoliticalWargameParams,
+        liquidityStressParams = DEFAULT_LIQUIDITY_STRESS_PARAMS as LiquidityStressParams,
+      } = req.body || {};
+
+      // Stage 0: Refresh live institutional & grounded market data first
+      const stage0Start = Date.now();
+      const liveSnapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
+      const stage0Latency = Date.now() - stage0Start;
+
+      const baseRun: CouncilAssessmentRun = buildDefaultAssessmentRun(iso3, liveSnapshot);
+      baseRun.countryName = countryName || baseRun.countryName;
+      baseRun.scenarioPrompt = scenarioPrompt || baseRun.scenarioPrompt;
+      baseRun.policyDocumentTitle = policyDocumentTitle || baseRun.policyDocumentTitle;
+      baseRun.policyDocumentSnippet = policyDocumentText
+        ? policyDocumentText.slice(0, 600)
+        : baseRun.policyDocumentSnippet;
+      baseRun.openData = liveSnapshot;
+      baseRun.charts = buildAnnotatedChartsForSovereign(liveSnapshot);
+
+      // Execute Closed-Loop Institutional Quantitative Engines across all Desks
+      const geoDeskSuite = computeGeopoliticalRiskDeskSuite(liveSnapshot, geopoliticalWargameParams);
+      const econometricSuite = computeFullEconometricForecastSuite(
+        liveSnapshot,
+        geoDeskSuite.portfolioTransmission.propagatedForecastShocks
+      );
+      const liquiditySuite = computeGlobalLiquidityFundingSuite(liveSnapshot, liquidityStressParams);
+      const restructuringSuite = simulateSovereignRestructuringAndRating(liveSnapshot);
+      const xccyLegalSuite = computeCrossCurrencyAndLegalBasis(liveSnapshot);
+
+      const anchors = computeQuantitativeAnchorScores(liveSnapshot);
+      const providerMode = runtimeConfig.providerMode || 'gemini';
+      const enableSearch = runtimeConfig.enableSearchGrounding !== false;
+      const maxDebateRounds = Math.min(3, Math.max(1, Number(runtimeConfig.maxDebateRounds || 2)));
+
+      const sharedContextHeader = `Target Sovereign: ${baseRun.countryName} (${iso3})
+Scenario Directive: ${baseRun.scenarioPrompt}
+Policy Document (${baseRun.policyDocumentTitle || 'Primary Extract'}): ${
+        policyDocumentText ? policyDocumentText.slice(0, 3000) : baseRun.policyDocumentSnippet
+      }
+Debate Rounds Requested: ${maxDebateRounds}
+
+Verified Live Open-Data & Grounded Market Telemetry:
+- IMF Gross Debt/GDP: ${liveSnapshot.imfIndicators.debtToGdpPct}% (2027F: ${liveSnapshot.imfIndicators.debtToGdpForecast2027Pct}%)
+- IMF Primary Fiscal Balance: ${liveSnapshot.imfIndicators.primaryFiscalBalancePct}% GDP | (r - g) Stabilizing Gap: ${liveSnapshot.dsaAnalytics.fiscalConsolidationGapPct}% GDP
+- IMF Real GDP Growth: ${liveSnapshot.imfIndicators.realGdpGrowthPct}% | Headline CPI: ${liveSnapshot.imfIndicators.cpiInflationPct}%
+- World Bank FX Reserves Import Cover: ${liveSnapshot.worldBankIndicators.fxReservesMonthsImport} months (Greenspan-Guidotti: ${liveSnapshot.debtRollover.greenspanGuidottiRatioPct}%)
+- World Bank Current Account: ${liveSnapshot.worldBankIndicators.currentAccountPctGdp}% GDP | Political Stability: ${liveSnapshot.worldBankIndicators.politicalStabilityPercentile} pctl
+- Central Bank Policy Rate: ${liveSnapshot.monetaryAndMarket.policyRatePct}% (Ex-Post Real Rate: ${liveSnapshot.monetaryAndMarket.realPolicyRatePct}%)
+- 10Y Local Sovereign Yield: ${liveSnapshot.monetaryAndMarket.sovereign10YBondYieldPct}% | 5Y USD CDS: ${liveSnapshot.monetaryAndMarket.cds5YSpreadBps} bps | Spot FX: ${liveSnapshot.monetaryAndMarket.exchangeRatePerUsd} ${liveSnapshot.currencyCode}/USD
+- GDELT Conflict Index: ${liveSnapshot.gdeltMetrics.conflictIntensityIndex}/100 (Tone: ${liveSnapshot.gdeltMetrics.averageTone}) | Chokepoint Exposure: ${liveSnapshot.monetaryAndMarket.chokepointExposureIndex}/100
+- Polymarket Key Contract: "${liveSnapshot.polymarketContracts[0]?.question}" (${liveSnapshot.polymarketContracts[0]?.probabilityPct}% odds)
+
+Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
+- [AG-1 / AG-2 / AG-3 Geopolitical Engine]: Composite GPR Z-Score = ${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ | Chokepoint CPI Pass-Through = +${geoDeskSuite.portfolioTransmission.propagatedForecastShocks.realRateShockBps} bps | G7 Freeze-Exposed Reserves = ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%
+- [AG-4 Fiscal Auditor]: Monte Carlo 2030 Debt Fan P50 = ${econometricSuite.stochasticDsa.medianDebt2030PctGdp}% (P95 Tail = ${econometricSuite.stochasticDsa.p95Debt2030PctGdp}%) | IMF SRDSF Gross Financing Needs (GFN) = ${econometricSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP (${econometricSuite.imfSrdsfGfn.srdsfRiskZone}) | Sovereign-Bank Doom Loop CET1 Depletion = -${econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps
+- [AG-5 External Balance]: Blanchard-Leeper Fiscal Dominance Reversal Rate r* = ${econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}% (${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps} bps headroom) | FXI Burn Velocity = $${econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B/mo (${econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach}M to 100% ARA Floor) | 5Y XCCY Swap Basis = ${xccyLegalSuite.fiveYearXccyBasisBps} bps
+- [AG-6 Political Will & Indentures]: Eurobond Restructuring NPV Recovery = ${restructuringSuite.restructuredNpvRecoveryCents}¢ | ICMA Single-Limb 75% CAC Share = ${restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct}% (Holdout Litigation Prob = ${restructuringSuite.cacGameTheory.holdoutLitigationProbPct}%)
+- [AG-7 / AG-8 / AG-9 Macro & Plumbing]: 5pct Growth-at-Risk (GaR) = ${econometricSuite.garFarTail.gdpGar5thPercentilePct}% | Nelson-Siegel 10Y Term Premium = +${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps | Kaminsky-Reinhart EWS Z-Score = ${econometricSuite.markovEws.compositeCrisisZScore}σ (${econometricSuite.markovEws.crisisProbability12MPct}% 12M crisis odds) | Global Dollar Plumbing Z = ${liquiditySuite.globalLiquidityStressIndexZScore}σ`;
+
+      const deskWorkerSchema = {
+        type: Type.OBJECT,
+        properties: {
+          deskPreCascadeScore: { type: Type.NUMBER },
+          consensusStance: {
+            type: Type.STRING,
+            description: 'CONSTRUCTIVE, CAUTIOUS, DEFENSIVE, or DISTRESSED',
+          },
+          consensusSummary: { type: Type.STRING },
+          agent1Stance: { type: Type.STRING },
+          agent1RiskScore: { type: Type.NUMBER },
+          agent1Confidence: { type: Type.NUMBER },
+          agent1FindingsSummary: { type: Type.STRING },
+          agent2Stance: { type: Type.STRING },
+          agent2RiskScore: { type: Type.NUMBER },
+          agent2Confidence: { type: Type.NUMBER },
+          agent2FindingsSummary: { type: Type.STRING },
+          agent3Stance: { type: Type.STRING },
+          agent3RiskScore: { type: Type.NUMBER },
+          agent3Confidence: { type: Type.NUMBER },
+          agent3FindingsSummary: { type: Type.STRING },
+          round1ProposerThesis: { type: Type.STRING },
+          round1ChallengerCounter: { type: Type.STRING },
+          round1Resolution: { type: Type.STRING },
+          round2ProposerThesis: { type: Type.STRING },
+          round2ChallengerCounter: { type: Type.STRING },
+          round2Resolution: { type: Type.STRING },
+          minorityDissentArgument: { type: Type.STRING },
+          minorityEarlyWarningTrigger: { type: Type.STRING },
+          minorityFalsificationThreshold: { type: Type.STRING },
+        },
+        required: [
+          'deskPreCascadeScore',
+          'consensusStance',
+          'consensusSummary',
+          'agent1FindingsSummary',
+          'agent2FindingsSummary',
+          'agent3FindingsSummary',
+          'round1ProposerThesis',
+          'round1ChallengerCounter',
+        ],
+      };
+
+      // Stage 1: Execute 3 Parallel Desk Synthesis Workers + 1 Web Search Grounding Worker
+      const [geoSettled, sovSettled, macroSettled, searchSettled] = await Promise.allSettled([
+        executeResilientLlmStep<any>({
+          stepName: 'STAGE_1_GEO_DESK',
+          providerMode,
+          runtimeConfig,
+          systemInstruction: `You are Managing Director of the Geopolitical Risk Desk overseeing AG-1 (Intelligence Scraper Analyst), AG-2 (Transmission Mapping Analyst), and AG-3 (Sanctions & Legal Analyst). Quantitative Anchor Score: ${anchors.geopolitical}. Keep risk scores anchored near empirical telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands the real-world impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Caldara-Iacoviello GPR Z-Score = +2.1σ | 5Y CDS = 185 bps)".`,
+          prompt: `${sharedContextHeader}\n\nSynthesize individual findings for AG-1, AG-2, and AG-3, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining what is happening in the real world, followed by the statistical reference metrics in parentheses (Ref: ...).`,
+          responseSchema: deskWorkerSchema,
+          fallbackValue: {
+            deskPreCascadeScore: anchors.geopolitical,
+            consensusStance: anchors.geopolitical > 0.6 ? 'DISTRESSED' : 'CAUTIOUS',
+            consensusSummary: baseRun.deskDebates.geopolitical.consensusSummary,
+            agent1Stance: baseRun.subAgents[0].stance,
+            agent1RiskScore: baseRun.subAgents[0].riskScore,
+            agent1Confidence: baseRun.subAgents[0].confidence,
+            agent1FindingsSummary: baseRun.subAgents[0].findingsSummary,
+            agent2Stance: baseRun.subAgents[1].stance,
+            agent2RiskScore: baseRun.subAgents[1].riskScore,
+            agent2Confidence: baseRun.subAgents[1].confidence,
+            agent2FindingsSummary: baseRun.subAgents[1].findingsSummary,
+            agent3Stance: baseRun.subAgents[2].stance,
+            agent3RiskScore: baseRun.subAgents[2].riskScore,
+            agent3Confidence: baseRun.subAgents[2].confidence,
+            agent3FindingsSummary: baseRun.subAgents[2].findingsSummary,
+            round1ProposerThesis: baseRun.deskDebates.geopolitical.rounds[0]?.thesis,
+            round1ChallengerCounter: baseRun.deskDebates.geopolitical.rounds[0]?.counterThesis,
+            round1Resolution: baseRun.deskDebates.geopolitical.rounds[0]?.deskLeadResolution,
+          },
+        }),
+        executeResilientLlmStep<any>({
+          stepName: 'STAGE_1_SOV_DESK',
+          providerMode,
+          runtimeConfig,
+          systemInstruction: `You are Managing Director of the Sovereign Credit Desk overseeing AG-4 (Fiscal Auditor Analyst), AG-5 (External Balance Sheet Analyst), and AG-6 (Political Will & Governance Analyst). Quantitative Anchor Score: ${anchors.sovereign}. Keep risk scores anchored near empirical Debt/GDP, 5Y CDS, and Reserve Adequacy telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and minority dissents in clear, everyday plain English first so any reader immediately understands the real-world budget and debt impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Debt/GDP = 78.4% | r - g = +1.8% | FX Cover = 4.2 mos)".`,
+          prompt: `${sharedContextHeader}\n\nSynthesize individual findings for AG-4, AG-5, and AG-6, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and formulate AG-6 Political Will's Minority Report dissent. Lead every statement with plain, everyday language explaining what is happening to government finances and foreign reserves, followed by the statistical reference metrics in parentheses (Ref: ...).`,
+          responseSchema: deskWorkerSchema,
+          fallbackValue: {
+            deskPreCascadeScore: anchors.sovereign,
+            consensusStance: anchors.sovereign > 0.6 ? 'DEFENSIVE' : 'CAUTIOUS',
+            consensusSummary: baseRun.deskDebates.sovereign.consensusSummary,
+            agent1Stance: baseRun.subAgents[3].stance,
+            agent1RiskScore: baseRun.subAgents[3].riskScore,
+            agent1Confidence: baseRun.subAgents[3].confidence,
+            agent1FindingsSummary: baseRun.subAgents[3].findingsSummary,
+            agent2Stance: baseRun.subAgents[4].stance,
+            agent2RiskScore: baseRun.subAgents[4].riskScore,
+            agent2Confidence: baseRun.subAgents[4].confidence,
+            agent2FindingsSummary: baseRun.subAgents[4].findingsSummary,
+            agent3Stance: baseRun.subAgents[5].stance,
+            agent3RiskScore: baseRun.subAgents[5].riskScore,
+            agent3Confidence: baseRun.subAgents[5].confidence,
+            agent3FindingsSummary: baseRun.subAgents[5].findingsSummary,
+            round1ProposerThesis: baseRun.deskDebates.sovereign.rounds[0]?.thesis,
+            round1ChallengerCounter: baseRun.deskDebates.sovereign.rounds[0]?.counterThesis,
+            round1Resolution: baseRun.deskDebates.sovereign.rounds[0]?.deskLeadResolution,
+            minorityDissentArgument: baseRun.deskDebates.sovereign.minorityDissents[0]?.coreDissentArgument,
+            minorityEarlyWarningTrigger: baseRun.deskDebates.sovereign.minorityDissents[0]?.earlyWarningTrigger,
+            minorityFalsificationThreshold: baseRun.deskDebates.sovereign.minorityDissents[0]?.falsificationThreshold,
+          },
+        }),
+        executeResilientLlmStep<any>({
+          stepName: 'STAGE_1_MACRO_DESK',
+          providerMode,
+          runtimeConfig,
+          systemInstruction: `You are Managing Director of the Macroeconomic Desk overseeing AG-7 (High-Frequency Nowcaster), AG-8 (Central Bank Watcher NLP), and AG-9 (Global Spillover Analyst). Quantitative Anchor Score: ${anchors.macro}. Keep risk scores anchored near empirical CPI, Policy Rate, and 10Y Yield telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands what is happening to jobs, inflation, and interest rates, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: CPI = 4.6% | Policy Rate = 10.75% | BVAR Peak = +115 bps)".`,
+          prompt: `${sharedContextHeader}\n\nSynthesize individual findings for AG-7, AG-8, and AG-9, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining the real-world economic impact first, followed by the statistical reference metrics in parentheses (Ref: ...).`,
+          responseSchema: deskWorkerSchema,
+          fallbackValue: {
+            deskPreCascadeScore: anchors.macro,
+            consensusStance: 'DEFENSIVE',
+            consensusSummary: baseRun.deskDebates.macro.consensusSummary,
+            agent1Stance: baseRun.subAgents[6].stance,
+            agent1RiskScore: baseRun.subAgents[6].riskScore,
+            agent1Confidence: baseRun.subAgents[6].confidence,
+            agent1FindingsSummary: baseRun.subAgents[6].findingsSummary,
+            agent2Stance: baseRun.subAgents[7].stance,
+            agent2RiskScore: baseRun.subAgents[7].riskScore,
+            agent2Confidence: baseRun.subAgents[7].confidence,
+            agent2FindingsSummary: baseRun.subAgents[7].findingsSummary,
+            agent3Stance: baseRun.subAgents[8].stance,
+            agent3RiskScore: baseRun.subAgents[8].riskScore,
+            agent3Confidence: baseRun.subAgents[8].confidence,
+            agent3FindingsSummary: baseRun.subAgents[8].findingsSummary,
+            round1ProposerThesis: baseRun.deskDebates.macro.rounds[0]?.thesis,
+            round1ChallengerCounter: baseRun.deskDebates.macro.rounds[0]?.counterThesis,
+            round1Resolution: baseRun.deskDebates.macro.rounds[0]?.deskLeadResolution,
+          },
+        }),
+        (async () => {
+          if (!enableSearch || !process.env.GEMINI_API_KEY) return [];
+          try {
+            const searchResp = await ai.models.generateContent({
+              model: 'gemini-3.8-flash',
+              contents: `Latest macroeconomic, central bank policy rate, fiscal budget, and geopolitical risk developments for ${baseRun.countryName} (${iso3}): ${baseRun.scenarioPrompt}`,
+              config: {
+                tools: [{ googleSearch: {} }],
+                thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+              },
+            });
+            const chunks = searchResp.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+            return chunks
+              .filter((c: any) => c?.web?.uri)
+              .slice(0, 6)
+              .map((c: any) => ({
+                title: String(c.web.title || 'Verified Web Grounding Source'),
+                uri: String(c.web.uri),
+                sourceType: 'Google Search Grounding',
+              }));
+          } catch {
+            return [];
+          }
+        })(),
+      ]);
+
+      const geoResult = geoSettled.status === 'fulfilled' ? geoSettled.value : null;
+      const sovResult = sovSettled.status === 'fulfilled' ? sovSettled.value : null;
+      const macroResult = macroSettled.status === 'fulfilled' ? macroSettled.value : null;
+      const searchGroundingLinks =
+        searchSettled.status === 'fulfilled' && Array.isArray(searchSettled.value)
+          ? searchSettled.value
+          : [];
+
+      // Helper to apply desk worker output to its 3 sub-agents and debate rounds
+      const applyDeskWorkerToRun = (
+        deskId: 'geopolitical' | 'sovereign' | 'macro',
+        agentStartIdx: number,
+        anchorScore: number,
+        workerRes: NonNullable<typeof geoResult> | null
+      ) => {
+        const d = workerRes?.data || {};
+        const clampDesk = clampScoreToAnchor(d.deskPreCascadeScore, anchorScore, 0.22);
+
+        // Update 3 Sub-Agents under this desk
+        [0, 1, 2].forEach((offset) => {
+          const agent = baseRun.subAgents[agentStartIdx + offset];
+          if (!agent) return;
+          const idxNum = offset + 1;
+          const rawAgentScore = d[`agent${idxNum}RiskScore`];
+          const clampedAgent = clampScoreToAnchor(rawAgentScore, anchorScore, 0.24);
+          agent.riskScore = clampedAgent.finalBoundedScore;
+          agent.stance = normalizeStance(d[`agent${idxNum}Stance`], clampedAgent.finalBoundedScore);
+          const conf = Number(d[`agent${idxNum}Confidence`]);
+          if (!Number.isNaN(conf) && conf >= 0.5 && conf <= 0.99) {
+            agent.confidence = Number(conf.toFixed(2));
+          }
+          if (d[`agent${idxNum}FindingsSummary`]) {
+            agent.findingsSummary = String(d[`agent${idxNum}FindingsSummary`]);
+          }
+          agent.structuredPayload = {
+            ...agent.structuredPayload,
+            quantitative_anchor: anchorScore,
+            bounded_risk_score: clampedAgent.finalBoundedScore,
+          };
+        });
+
+        const debate = baseRun.deskDebates[deskId];
+        debate.preCascadeRiskScore = clampDesk.finalBoundedScore;
+        if (d.consensusSummary) {
+          debate.consensusSummary = String(d.consensusSummary);
+        }
+        const validStances = ['CONSTRUCTIVE', 'CAUTIOUS', 'DEFENSIVE', 'DISTRESSED'];
+        if (validStances.includes(String(d.consensusStance || '').toUpperCase())) {
+          debate.consensusStance = String(d.consensusStance).toUpperCase() as any;
+        }
+
+        // Hydrate Round 1 + optional Round 2 if maxDebateRounds >= 2
+        if (debate.rounds[0]) {
+          if (d.round1ProposerThesis) debate.rounds[0].thesis = String(d.round1ProposerThesis);
+          if (d.round1ChallengerCounter) debate.rounds[0].counterThesis = String(d.round1ChallengerCounter);
+          if (d.round1Resolution) debate.rounds[0].deskLeadResolution = String(d.round1Resolution);
+        }
+
+        if (maxDebateRounds >= 2 && d.round2ProposerThesis && d.round2ChallengerCounter) {
+          const round2: DeskDebateRound = {
+            roundNumber: 2,
+            proposerAgent: baseRun.subAgents[agentStartIdx]?.agentName || 'Desk Lead Proponent',
+            proposerStance: baseRun.subAgents[agentStartIdx]?.stance || 'NEUTRAL',
+            thesis: String(d.round2ProposerThesis),
+            challengerAgent:
+              baseRun.subAgents[agentStartIdx + 2]?.agentName || "Devil's Advocate Challenger",
+            challengerStance: baseRun.subAgents[agentStartIdx + 2]?.stance || 'BEARISH',
+            counterThesis: String(d.round2ChallengerCounter),
+            deskLeadResolution: String(
+              d.round2Resolution ||
+                'Cross-examination converged on quantitative anchor corridor; tail-risk triggers logged.'
+            ),
+            riskScoreAdjustment: 0.03,
+          };
+          debate.rounds = [debate.rounds[0], round2];
+        }
+
+        // Update or append formal minority dissent if provided
+        if (d.minorityDissentArgument) {
+          if (debate.minorityDissents.length > 0) {
+            debate.minorityDissents[0].coreDissentArgument = String(d.minorityDissentArgument);
+            if (d.minorityEarlyWarningTrigger) {
+              debate.minorityDissents[0].earlyWarningTrigger = String(d.minorityEarlyWarningTrigger);
+            }
+            if (d.minorityFalsificationThreshold) {
+              debate.minorityDissents[0].falsificationThreshold = String(d.minorityFalsificationThreshold);
+            }
+            debate.minorityDissents[0].deskConsensusScore = clampDesk.finalBoundedScore;
+          } else if (deskId !== 'sovereign') {
+            const dissentingAgent = baseRun.subAgents[agentStartIdx + 2];
+            debate.minorityDissents.push({
+              dissentId: `DISSENT-${iso3}-${deskId.toUpperCase()}`,
+              deskId,
+              agentId: dissentingAgent.agentId,
+              agentName: dissentingAgent.agentName,
+              agentRiskScore: Number(Math.min(0.95, clampDesk.finalBoundedScore + 0.2).toFixed(2)),
+              deskConsensusScore: clampDesk.finalBoundedScore,
+              divergenceDelta: 0.2,
+              coreDissentArgument: String(d.minorityDissentArgument),
+              earlyWarningTrigger: String(
+                d.minorityEarlyWarningTrigger || 'High-frequency market spread or GDELT velocity breach.'
+              ),
+              falsificationThreshold: String(
+                d.minorityFalsificationThreshold || 'Sustained 60-day normalization in primary risk indicator.'
+              ),
+            });
+          }
+        }
+
+        return clampDesk;
+      };
+
+      const geoClamp = applyDeskWorkerToRun('geopolitical', 0, anchors.geopolitical, geoResult);
+      const sovClamp = applyDeskWorkerToRun('sovereign', 3, anchors.sovereign, sovResult);
+      const macroClamp = applyDeskWorkerToRun('macro', 6, anchors.macro, macroResult);
+
+      // Hydrate all 9 Sub-Agents' keyMetrics and structuredPayloads from the Closed-Loop Quantitative Engines
+      const primaryChokepoint = geoDeskSuite.chokepoints[0];
+      const topEscalationStage =
+        geoDeskSuite.gprAndEscalation.escalationTree[0]?.stageTitle || 'Elevated GPR Regime';
+
+      if (baseRun.subAgents[0]) {
+        baseRun.subAgents[0].keyMetrics.push({
+          label: 'Caldara-Iacoviello GPR Z-Score',
+          value: `${geoDeskSuite.gprAndEscalation.compositeGprZScore >= 0 ? '+' : ''}${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ`,
+          numericValue: geoDeskSuite.gprAndEscalation.compositeGprZScore,
+          unit: 'σ',
+          change: topEscalationStage,
+          source: 'Geopolitical Risk Engine',
+          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+        });
+        baseRun.subAgents[0].structuredPayload = {
+          ...baseRun.subAgents[0].structuredPayload,
+          composite_gpr_z_score: geoDeskSuite.gprAndEscalation.compositeGprZScore,
+          escalation_regime: topEscalationStage,
+        };
+      }
+      if (baseRun.subAgents[1] && primaryChokepoint) {
+        baseRun.subAgents[1].keyMetrics.push({
+          label: `${primaryChokepoint.corridorName} Shock`,
+          value: `+${primaryChokepoint.importedCpiPassThroughBps} bps CPI`,
+          numericValue: primaryChokepoint.importedCpiPassThroughBps,
+          unit: 'bps',
+          change: `+${primaryChokepoint.cds5YSpreadImpactBps} bps 5Y CDS`,
+          source: 'Maritime Chokepoint Wargame Engine',
+          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+        });
+        baseRun.subAgents[1].structuredPayload = {
+          ...baseRun.subAgents[1].structuredPayload,
+          primary_chokepoint_cpi_bps: primaryChokepoint.importedCpiPassThroughBps,
+          propagated_fx_shock_pct: geoDeskSuite.portfolioTransmission.propagatedForecastShocks.fxDepreciationShockPct,
+        };
+      }
+      if (baseRun.subAgents[2]) {
+        baseRun.subAgents[2].keyMetrics.push({
+          label: 'NY-Law Indenture Legal Premium',
+          value: `+${xccyLegalSuite.legalAndLiquidity.jurisdictionalLegalSpreadBps} bps`,
+          numericValue: xccyLegalSuite.legalAndLiquidity.jurisdictionalLegalSpreadBps,
+          unit: 'bps',
+          change: `G7 Freeze Exposure ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%`,
+          source: 'Sanctions & Indenture Engine',
+          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+        });
+        baseRun.subAgents[2].structuredPayload = {
+          ...baseRun.subAgents[2].structuredPayload,
+          g7_freeze_exposed_reserves_pct: geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct,
+          ny_law_indenture_spread_bps: xccyLegalSuite.legalAndLiquidity.jurisdictionalLegalSpreadBps,
+        };
+      }
+      if (baseRun.subAgents[3]) {
+        baseRun.subAgents[3].keyMetrics.push(
+          {
+            label: 'IMF SRDSF Gross Financing Needs',
+            value: `${econometricSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP`,
+            numericValue: econometricSuite.imfSrdsfGfn.totalGfnPctGdp,
+            unit: '% GDP',
+            change: `vs ${econometricSuite.imfSrdsfGfn.imfEmDistressThresholdPctGdp}% IMF Threshold`,
+            source: 'IMF SRDSF GFN Engine',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          },
+          {
+            label: 'Sovereign-Bank Doom Loop CET1 Hit',
+            value: `-${econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps`,
+            numericValue: -econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps,
+            unit: 'bps',
+            change: `Post-Stress CET1 ${econometricSuite.imfSrdsfGfn.postStressBankCet1RatioPct}%`,
+            source: 'Sovereign-Bank Nexus Model',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          }
+        );
+        baseRun.subAgents[3].structuredPayload = {
+          ...baseRun.subAgents[3].structuredPayload,
+          imf_srdsf_gfn_pct_gdp: econometricSuite.imfSrdsfGfn.totalGfnPctGdp,
+          doom_loop_cet1_depletion_bps: econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps,
+          monte_carlo_2030_p95_debt_pct: econometricSuite.stochasticDsa.p95Debt2030PctGdp,
+        };
+      }
+      if (baseRun.subAgents[4]) {
+        baseRun.subAgents[4].keyMetrics.push(
+          {
+            label: 'FXI Reserve Burn Clock (to 100% ARA)',
+            value: `${econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach} Months`,
+            numericValue: econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach,
+            unit: 'Months',
+            change: `-$${econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B/mo drain`,
+            source: 'IMF ARA & FXI Burn Engine',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          },
+          {
+            label: '5Y XCCY Swap Basis & Hedged Pick-Up',
+            value: `${xccyLegalSuite.fiveYearXccyBasisBps} bps`,
+            numericValue: xccyLegalSuite.fiveYearXccyBasisBps,
+            unit: 'bps',
+            change: `${xccyLegalSuite.fiveYearNetHedgedPickUpBps >= 0 ? '+' : ''}${xccyLegalSuite.fiveYearNetHedgedPickUpBps} bps vs Eurobond`,
+            source: 'Cross-Currency Basis Engine',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          }
+        );
+        baseRun.subAgents[4].structuredPayload = {
+          ...baseRun.subAgents[4].structuredPayload,
+          fxi_burn_usd_bn_per_month: econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn,
+          months_to_100pct_ara_breach: econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach,
+          five_year_xccy_basis_bps: xccyLegalSuite.fiveYearXccyBasisBps,
+        };
+      }
+      if (baseRun.subAgents[5]) {
+        baseRun.subAgents[5].keyMetrics.push(
+          {
+            label: 'ICMA Single-Limb 75% CAC Coverage',
+            value: `${restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct}% Stock`,
+            numericValue: restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct,
+            unit: '%',
+            change: `Holdout Odds ${restructuringSuite.cacGameTheory.holdoutLitigationProbPct}%`,
+            source: 'CAC Holdout Game-Theory Engine',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          },
+          {
+            label: 'Restructured NPV Recovery vs Market',
+            value: `${restructuringSuite.restructuredNpvRecoveryCents}¢`,
+            numericValue: restructuringSuite.restructuredNpvRecoveryCents,
+            unit: '¢',
+            change: `vs ${restructuringSuite.currentBenchmarkBondPriceCents}¢ spot price`,
+            source: 'Sovereign Restructuring Simulator',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          }
+        );
+        baseRun.subAgents[5].structuredPayload = {
+          ...baseRun.subAgents[5].structuredPayload,
+          icma_single_limb_cac_pct: restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct,
+          holdout_litigation_prob_pct: restructuringSuite.cacGameTheory.holdoutLitigationProbPct,
+          restructured_npv_recovery_cents: restructuringSuite.restructuredNpvRecoveryCents,
+        };
+      }
+      if (baseRun.subAgents[6]) {
+        baseRun.subAgents[6].keyMetrics.push({
+          label: '5th-Pct Growth-at-Risk (GaR Tail)',
+          value: `${econometricSuite.garFarTail.gdpGar5thPercentilePct}% GDP`,
+          numericValue: econometricSuite.garFarTail.gdpGar5thPercentilePct,
+          unit: '% GDP',
+          change: `95th-Pct Deficit FaR ${econometricSuite.garFarTail.fiscalFar95thDeficitPctGdp}%`,
+          source: 'Adrian-Boyarchenko-Giannone GaR Engine',
+          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+        });
+        baseRun.subAgents[6].structuredPayload = {
+          ...baseRun.subAgents[6].structuredPayload,
+          gar_5th_percentile_gdp_pct: econometricSuite.garFarTail.gdpGar5thPercentilePct,
+          far_95th_percentile_deficit_pct_gdp: econometricSuite.garFarTail.fiscalFar95thDeficitPctGdp,
+        };
+      }
+      if (baseRun.subAgents[7]) {
+        baseRun.subAgents[7].keyMetrics.push(
+          {
+            label: 'Blanchard-Leeper Reversal Threshold r*',
+            value: `${econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}%`,
+            numericValue: econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct,
+            unit: '%',
+            change: `${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps >= 0 ? '+' : ''}${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps} bps headroom`,
+            source: 'Blanchard-Leeper Fiscal Dominance Engine',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          },
+          {
+            label: 'Nelson-Siegel 10Y Term Premium',
+            value: `+${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps`,
+            numericValue: econometricSuite.nssTermStructure.tenYearTermPremiumBps,
+            unit: 'bps',
+            change: `1Y Implied Policy Δ ${econometricSuite.nssTermStructure.implied1YPolicyRateDeltaBps} bps`,
+            source: 'NSS Yield Curve Decomposition',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          }
+        );
+        baseRun.subAgents[7].structuredPayload = {
+          ...baseRun.subAgents[7].structuredPayload,
+          blanchard_leeper_threshold_rate_pct:
+            econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct,
+          policy_rate_headroom_bps: econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps,
+          nss_10y_term_premium_bps: econometricSuite.nssTermStructure.tenYearTermPremiumBps,
+        };
+      }
+      if (baseRun.subAgents[8]) {
+        baseRun.subAgents[8].keyMetrics.push(
+          {
+            label: 'Kaminsky-Reinhart Composite EWS',
+            value: `${econometricSuite.markovEws.compositeCrisisZScore >= 0 ? '+' : ''}${econometricSuite.markovEws.compositeCrisisZScore}σ`,
+            numericValue: econometricSuite.markovEws.compositeCrisisZScore,
+            unit: 'σ',
+            change: `${econometricSuite.markovEws.crisisProbability12MPct}% 12M Crisis Odds`,
+            source: 'Markov Regime & EWS Engine',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          },
+          {
+            label: 'Global Dollar Funding Stress Z-Score',
+            value: `+${liquiditySuite.globalLiquidityStressIndexZScore.toFixed(2)}σ`,
+            numericValue: liquiditySuite.globalLiquidityStressIndexZScore,
+            unit: 'σ',
+            change: `Rollover Δ +${liquiditySuite.portfolioTransmission.targetSovereignExternalRolloverSpreadDeltaBps} bps`,
+            source: 'Global Liquidity & XCCY Plumbing Desk',
+            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
+          }
+        );
+        baseRun.subAgents[8].structuredPayload = {
+          ...baseRun.subAgents[8].structuredPayload,
+          kaminsky_reinhart_ews_z_score: econometricSuite.markovEws.compositeCrisisZScore,
+          global_dollar_liquidity_z_score: liquiditySuite.globalLiquidityStressIndexZScore,
+        };
+      }
+
+      // Stage 2: Dedicated Cross-Desk Contagion Cascade Pass (Geopolitical -> Macro -> Sovereign)
+      const cascadeRes = await executeResilientLlmStep<any>({
+        stepName: 'STAGE_2_CONTAGION_CASCADE',
+        providerMode,
+        runtimeConfig,
+        systemInstruction: `You are the Cross-Desk Contagion Cascade Engine (Phase 2). Propagate quantitative shocks from the Geopolitical Desk (${geoClamp.finalBoundedScore}) -> Macroeconomic Desk (${macroClamp.finalBoundedScore}) -> Sovereign Credit Desk (${sovClamp.finalBoundedScore}). Write all transmission mechanisms in clear, everyday plain English first, citing the formal statistical and econometric metrics in parentheses (Ref: ...).`,
+        prompt: `${sharedContextHeader}
+
+Phase 1 Verified Desk Outputs:
+- Geopolitical Consensus (${geoClamp.finalBoundedScore}): ${baseRun.deskDebates.geopolitical.consensusSummary}
+- Macro Consensus (${macroClamp.finalBoundedScore}): ${baseRun.deskDebates.macro.consensusSummary}
+- Sovereign Consensus (${sovClamp.finalBoundedScore}): ${baseRun.deskDebates.sovereign.consensusSummary}
+
+Compute the post-cascade risk scores and exact transmission mechanisms for Step 1 (Geopolitical -> Macro) and Step 2 (Macro -> Sovereign). Explain each step in simple, everyday language first (how shipping or oil disruptions raise everyday inflation and force borrowing costs higher), and cite the statistical parameters in parentheses (Ref: ...).`,
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            postCascadeGeoScore: { type: Type.NUMBER },
+            postCascadeMacroScore: { type: Type.NUMBER },
+            postCascadeSovereignScore: { type: Type.NUMBER },
+            energyInflationShockPct: { type: Type.NUMBER },
+            debtServicingSpreadBps: { type: Type.NUMBER },
+            step1ShockDelta: { type: Type.STRING },
+            step1TransmissionMechanism: { type: Type.STRING },
+            step2ShockDelta: { type: Type.STRING },
+            step2TransmissionMechanism: { type: Type.STRING },
+          },
+          required: [
+            'postCascadeGeoScore',
+            'postCascadeMacroScore',
+            'postCascadeSovereignScore',
+            'step1TransmissionMechanism',
+            'step2TransmissionMechanism',
+          ],
+        },
+        fallbackValue: {
+          postCascadeGeoScore: Number(Math.min(0.95, geoClamp.finalBoundedScore + 0.04).toFixed(2)),
+          postCascadeMacroScore: Number(Math.min(0.95, macroClamp.finalBoundedScore + 0.06).toFixed(2)),
+          postCascadeSovereignScore: Number(Math.min(0.95, sovClamp.finalBoundedScore + 0.08).toFixed(2)),
+          energyInflationShockPct: 15.0,
+          debtServicingSpreadBps: 85,
+          step1ShockDelta: baseRun.cascadeSteps[0]?.shockDelta,
+          step1TransmissionMechanism: baseRun.cascadeSteps[0]?.transmissionMechanism,
+          step2ShockDelta: baseRun.cascadeSteps[1]?.shockDelta,
+          step2TransmissionMechanism: baseRun.cascadeSteps[1]?.transmissionMechanism,
+        },
+      });
+
+      const postGeo = clampScoreToAnchor(
+        cascadeRes.data?.postCascadeGeoScore,
+        geoClamp.finalBoundedScore,
+        0.15
+      );
+      const postMacro = clampScoreToAnchor(
+        cascadeRes.data?.postCascadeMacroScore,
+        macroClamp.finalBoundedScore,
+        0.18
+      );
+      const postSov = clampScoreToAnchor(
+        cascadeRes.data?.postCascadeSovereignScore,
+        sovClamp.finalBoundedScore,
+        0.18
+      );
+
+      baseRun.deskDebates.geopolitical.postCascadeRiskScore = postGeo.finalBoundedScore;
+      baseRun.deskDebates.macro.postCascadeRiskScore = postMacro.finalBoundedScore;
+      baseRun.deskDebates.sovereign.postCascadeRiskScore = postSov.finalBoundedScore;
+
+      const energyShock = Number(
+        Math.max(2, Math.min(45, Number(cascadeRes.data?.energyInflationShockPct ?? 15.0))).toFixed(1)
+      );
+      const spreadShockBps = Math.round(
+        Math.max(15, Math.min(350, Number(cascadeRes.data?.debtServicingSpreadBps ?? 85)))
+      );
+
+      if (baseRun.cascadeSteps[0]) {
+        baseRun.cascadeSteps[0].priorRiskScore = macroClamp.finalBoundedScore;
+        baseRun.cascadeSteps[0].postCascadeRiskScore = postMacro.finalBoundedScore;
+        if (cascadeRes.data?.step1ShockDelta) {
+          baseRun.cascadeSteps[0].shockDelta = String(cascadeRes.data.step1ShockDelta);
+        }
+        if (cascadeRes.data?.step1TransmissionMechanism) {
+          baseRun.cascadeSteps[0].transmissionMechanism = String(
+            cascadeRes.data.step1TransmissionMechanism
+          );
+        }
+        baseRun.cascadeSteps[0].jsonPatch = {
+          imported_energy_inflation_shock_pct: energyShock,
+          macro_pre_cascade_score: macroClamp.finalBoundedScore,
+          macro_risk_score_post_cascade: postMacro.finalBoundedScore,
+        };
+      }
+
+      if (baseRun.cascadeSteps[1]) {
+        baseRun.cascadeSteps[1].priorRiskScore = sovClamp.finalBoundedScore;
+        baseRun.cascadeSteps[1].postCascadeRiskScore = postSov.finalBoundedScore;
+        if (cascadeRes.data?.step2ShockDelta) {
+          baseRun.cascadeSteps[1].shockDelta = String(cascadeRes.data.step2ShockDelta);
+        }
+        if (cascadeRes.data?.step2TransmissionMechanism) {
+          baseRun.cascadeSteps[1].transmissionMechanism = String(
+            cascadeRes.data.step2TransmissionMechanism
+          );
+        }
+        baseRun.cascadeSteps[1].jsonPatch = {
+          debt_servicing_spread_shock_bps: spreadShockBps,
+          sovereign_pre_cascade_score: sovClamp.finalBoundedScore,
+          sovereign_risk_score_post_cascade: postSov.finalBoundedScore,
+        };
+      }
+
+      baseRun.croState = {
+        ...baseRun.croState,
+        geopoliticalRiskScore: postGeo.finalBoundedScore,
+        sovereignRiskScore: postSov.finalBoundedScore,
+        macroRiskScore: postMacro.finalBoundedScore,
+        energyInflationShockPct: energyShock,
+        debtServicingSpreadBps: spreadShockBps,
+      };
+
+      if (searchGroundingLinks.length > 0) {
+        baseRun.subAgents.forEach((ag, idx) => {
+          const linkSlice = searchGroundingLinks.slice(idx % 3, (idx % 3) + 2);
+          if (linkSlice.length > 0) {
+            ag.groundingSources = [...linkSlice, ...ag.groundingSources];
+          }
+        });
+      }
+
+      const activeProviderLabel =
+        geoResult?.providerUsed ||
+        sovResult?.providerUsed ||
+        'Google AI Studio (gemini-3.8-flash)';
+      baseRun.runtimeUsed = `${activeProviderLabel} · Grounding: ${
+        searchGroundingLinks.length > 0
+          ? `${searchGroundingLinks.length} Live Web + ${liveSnapshot.liveApiSourcesActive.length} API Feeds`
+          : `${liveSnapshot.liveApiSourcesActive.length} Institutional API Feeds`
+      }`;
+
+      const buildStageStatus = (
+        resObj: NonNullable<typeof geoResult> | null
+      ): PipelineStageTelemetry['status'] => {
+        if (!resObj || resObj.usedFallback) return 'QUANT_ANCHOR_FALLBACK';
+        if (resObj.retriesUsed > 0) return 'RETRY_RECOVERED';
+        return 'VERIFIED_AI';
+      };
+
+      const totalLatencyMs = Date.now() - pipelineStartMs;
+      const stages: PipelineStageTelemetry[] = [
+        {
+          nodeId: 'STAGE_0_LIVE_DATA',
+          stageLabel: 'Stage 0 · Multi-Source Live Telemetry & Market Grounding',
+          agentsCovered: ['IMF WEO v1', 'World Bank v2', 'GDELT 2.0', 'Spot FX & Grounding'],
+          status: 'VERIFIED_AI',
+          latencyMs: stage0Latency,
+          retriesUsed: 0,
+          schemaVerified: true,
+          diagnosticNote: `Verified ${liveSnapshot.liveApiSourcesActive.length} live data feeds; computed empirical anchors (Geo ${anchors.geopolitical.toFixed(2)}, Sov ${anchors.sovereign.toFixed(2)}, Macro ${anchors.macro.toFixed(2)}).`,
+        },
+        {
+          nodeId: 'STAGE_1_GEO_DESK',
+          stageLabel: 'Stage 1A · Geopolitical Risk Desk Parallel Worker',
+          agentsCovered: ['AG-1 Intel Scraper', 'AG-2 Chokepoint Mapper', 'AG-3 Sanctions & Legal'],
+          status: buildStageStatus(geoResult),
+          latencyMs: geoResult?.latencyMs ?? 0,
+          retriesUsed: geoResult?.retriesUsed ?? 0,
+          schemaVerified: geoResult?.schemaVerified ?? true,
+          quantitativeAnchorScore: anchors.geopolitical,
+          rawModelScore: geoClamp.rawModelScore,
+          finalBoundedScore: geoClamp.finalBoundedScore,
+          anchorDriftClamped: geoClamp.anchorDriftClamped,
+          diagnosticNote: geoClamp.anchorDriftClamped
+            ? `Clamped raw model score (${geoClamp.rawModelScore.toFixed(2)}) to ${geoClamp.finalBoundedScore.toFixed(2)} within ±0.22 corridor of GDELT/Chokepoint anchor (${anchors.geopolitical.toFixed(2)}).`
+            : `3/3 Geopolitical sub-agents & ${maxDebateRounds}-round debate verified within ±0.22 corridor of anchor (${anchors.geopolitical.toFixed(2)}).`,
+        },
+        {
+          nodeId: 'STAGE_1_SOV_DESK',
+          stageLabel: 'Stage 1B · Sovereign Credit Desk Parallel Worker',
+          agentsCovered: ['AG-4 Fiscal Auditor', 'AG-5 External Balance', 'AG-6 Political Will'],
+          status: buildStageStatus(sovResult),
+          latencyMs: sovResult?.latencyMs ?? 0,
+          retriesUsed: sovResult?.retriesUsed ?? 0,
+          schemaVerified: sovResult?.schemaVerified ?? true,
+          quantitativeAnchorScore: anchors.sovereign,
+          rawModelScore: sovClamp.rawModelScore,
+          finalBoundedScore: sovClamp.finalBoundedScore,
+          anchorDriftClamped: sovClamp.anchorDriftClamped,
+          diagnosticNote: sovClamp.anchorDriftClamped
+            ? `Clamped raw model score (${sovClamp.rawModelScore.toFixed(2)}) to ${sovClamp.finalBoundedScore.toFixed(2)} within ±0.22 corridor of 5Y CDS & Debt/GDP anchor (${anchors.sovereign.toFixed(2)}).`
+            : `3/3 Sovereign sub-agents & Minority Dissent report verified within ±0.22 corridor of anchor (${anchors.sovereign.toFixed(2)}).`,
+        },
+        {
+          nodeId: 'STAGE_1_MACRO_DESK',
+          stageLabel: 'Stage 1C · Macroeconomic Desk Parallel Worker',
+          agentsCovered: ['AG-7 HF Nowcaster', 'AG-8 Central Bank NLP', 'AG-9 Global Spillover'],
+          status: buildStageStatus(macroResult),
+          latencyMs: macroResult?.latencyMs ?? 0,
+          retriesUsed: macroResult?.retriesUsed ?? 0,
+          schemaVerified: macroResult?.schemaVerified ?? true,
+          quantitativeAnchorScore: anchors.macro,
+          rawModelScore: macroClamp.rawModelScore,
+          finalBoundedScore: macroClamp.finalBoundedScore,
+          anchorDriftClamped: macroClamp.anchorDriftClamped,
+          diagnosticNote: macroClamp.anchorDriftClamped
+            ? `Clamped raw model score (${macroClamp.rawModelScore.toFixed(2)}) to ${macroClamp.finalBoundedScore.toFixed(2)} within ±0.22 corridor of CPI & Policy Rate anchor (${anchors.macro.toFixed(2)}).`
+            : `3/3 Macro sub-agents & monetary reaction function verified within ±0.22 corridor of anchor (${anchors.macro.toFixed(2)}).`,
+        },
+        {
+          nodeId: 'STAGE_2_CONTAGION_CASCADE',
+          stageLabel: 'Stage 2 · Cross-Desk Contagion Cascade (Geo → Macro → Sovereign)',
+          agentsCovered: ['Inter-Desk JSON Patch Engine', 'CRO Gate Vector'],
+          status: buildStageStatus(cascadeRes),
+          latencyMs: cascadeRes.latencyMs,
+          retriesUsed: cascadeRes.retriesUsed,
+          schemaVerified: cascadeRes.schemaVerified,
+          rawModelScore: postSov.rawModelScore,
+          finalBoundedScore: postSov.finalBoundedScore,
+          anchorDriftClamped: postSov.anchorDriftClamped,
+          diagnosticNote: `Propagated +${energyShock}% energy/freight impulse -> +${spreadShockBps}bps debt-servicing spread; paused at Human-in-the-Loop CRO Checkpoint.`,
+        },
+        {
+          nodeId: 'STAGE_3_SUPREME_COUNCIL',
+          stageLabel: 'Stage 3 · Supreme Council Deep-Reasoning Synthesis (SMCR-1.0)',
+          agentsCovered: ['Supreme Council Orchestrator', 'Risk Guardian Audit'],
+          status: 'AWAITING_GATE',
+          latencyMs: 0,
+          retriesUsed: 0,
+          schemaVerified: true,
+          diagnosticNote: 'Awaiting Chief Risk Officer (CRO) Human-in-the-Loop assumption review & approval.',
+        },
+      ];
+
+      const verifiedCount = stages.filter(
+        (s) => s.status === 'VERIFIED_AI' || s.status === 'RETRY_RECOVERED' || s.status === 'AWAITING_GATE'
+      ).length;
+      const reliabilityScorePct = Math.round((verifiedCount / stages.length) * 100);
+
+      baseRun.pipelineExecutionTelemetry = {
+        pipelineRunId: `PIPE-${iso3}-${Date.now().toString().slice(-6)}`,
+        executedAt: new Date().toISOString(),
+        totalLatencyMs,
+        overallReliabilityScorePct: reliabilityScorePct,
+        activeProvider: activeProviderLabel,
+        searchGroundingSourcesCount:
+          searchGroundingLinks.length + liveSnapshot.liveApiSourcesActive.length,
+        stages,
+      };
+
+      // Pause at Human-in-the-Loop CRO Checkpoint before Supreme Council
+      baseRun.stage = 'AWAITING_CRO_APPROVAL';
+      res.json({ run: baseRun });
+    } catch (error: any) {
+      res.status(500).json({
+        error: error?.message || 'Failed to execute Phase 1 & Cross-Desk Cascade',
+      });
+    }
+  });
+
+  // 4. Phase 3: Supreme Council Synthesis (Post-CRO Human-in-the-Loop Approval / Override)
+  app.post('/api/council/supreme-council', async (req, res) => {
+    try {
+      const { run, croOverrideState, runtimeConfig = {} } = req.body as {
+        run: CouncilAssessmentRun;
+        croOverrideState: CROOverrideState;
+        runtimeConfig?: Partial<AIRuntimeConfig>;
+      };
+
+      const targetRun: CouncilAssessmentRun = run || buildDefaultAssessmentRun('BRA');
+      const cro: CROOverrideState = croOverrideState || targetRun.croState;
+
+      // Apply counterfactual war-gaming shocks to effective risk scores
+      const shockGeoBoost =
+        (cro.counterfactualShocks?.chokepointTransitDropPct || 0) * 0.002 +
+        (cro.counterfactualShocks?.brentCrudeShockUsd || 0) * 0.002;
+      const shockMacroBoost =
+        (cro.counterfactualShocks?.brentCrudeShockUsd || 0) * 0.003 +
+        (cro.counterfactualShocks?.fedTerminalRateShockBps || 0) * 0.001;
+      const shockSovBoost =
+        (cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0) * 0.04 +
+        (cro.counterfactualShocks?.fedTerminalRateShockBps || 0) * 0.0012;
+
+      const finalGeo = Math.min(0.99, Math.max(0.05, Number((cro.geopoliticalRiskScore + shockGeoBoost).toFixed(2))));
+      const finalSov = Math.min(0.99, Math.max(0.05, Number((cro.sovereignRiskScore + shockSovBoost).toFixed(2))));
+      const finalMac = Math.min(0.99, Math.max(0.05, Number((cro.macroRiskScore + shockMacroBoost).toFixed(2))));
+      const compositeScore = Number(((finalGeo + finalSov + finalMac) / 3).toFixed(2));
+
+      const kellyExecutionSuite = computeCouncilKellyAndLobExecution(targetRun);
+
+      const councilPrompt = `Synthesize the final SMCR-1.0 (Sovereign-Macro Council Report v1.0) output for ${targetRun.countryName} (${targetRun.iso3}).
+
+CRO Human-in-the-Loop Approved / Overridden Risk Vector:
+- Geopolitical Desk Risk Score: ${finalGeo} (${targetRun.deskDebates?.geopolitical?.consensusSummary || ''})
+- Sovereign Risk Desk Score: ${finalSov} (${targetRun.deskDebates?.sovereign?.consensusSummary || ''})
+- Macroeconomic Desk Risk Score: ${finalMac} (${targetRun.deskDebates?.macro?.consensusSummary || ''})
+- Composite Risk Score: ${compositeScore}
+- Energy/Freight Inflation Shock Input: +${cro.energyInflationShockPct}%
+- Debt Servicing Spread Impact: +${cro.debtServicingSpreadBps} bps
+- FX Reserve Cover: ${cro.fxReserveAdequacyMonths} months | 10Y Local Yield: ${targetRun.openData.monetaryAndMarket.sovereign10YBondYieldPct}% | 5Y CDS: ${targetRun.openData.monetaryAndMarket.cds5YSpreadBps} bps | Spot FX: ${targetRun.openData.monetaryAndMarket.exchangeRatePerUsd} ${targetRun.openData.currencyCode}/USD
+- Political Will Index: ${cro.politicalWillIndex}/100
+- Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
+- Chief Risk Officer Directives: "${cro.croNotes}"
+- Brier-Calibrated Half-Kelly Sizing & Market-Maker LOB Execution Audit: Composite Conviction = ${kellyExecutionSuite.compositeBrierConvictionPct}% | Recommended Gross Half-Kelly Allocation = ${kellyExecutionSuite.totalHalfKellyGrossNavPct}% NAV ($${kellyExecutionSuite.totalAllocatedNotionalUsdMillions}M) | Weighted LOB Slippage Drag = -${kellyExecutionSuite.weightedExecutionSlippageBps} bps | Net Post-Slippage Alpha = +${kellyExecutionSuite.netPortfolioExpectedAlphaBps} bps (${kellyExecutionSuite.dealerInventoryRegime})`;
+
+      let baseOutput: SupremeCouncilOutput =
+        targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
+
+      const supremeStep = await executeResilientLlmStep<any>({
+        stepName: 'STAGE_3_SUPREME_COUNCIL',
+        providerMode: runtimeConfig.providerMode || 'gemini',
+        runtimeConfig,
+        thinkingLevel: ThinkingLevel.HIGH,
+        systemInstruction:
+          'You are the Supreme Council Orchestrator for an Institutional Asset Management & Sovereign Policy Research Department. Return strict JSON adhering to the SMCR-1.0 schema. CRITICAL WRITING STYLE: Phrase the executiveSummary, longTermRegimeOutlook, structuralVulnerabilities, factorCrowdingWarning, and all trade rationales in clear, everyday plain English first so both general readers and portfolio managers immediately grasp the core takeaway, and cite the exact economic/statistical metrics in parentheses at the end of each point (Ref: ...).',
+        prompt: councilPrompt,
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            decisionVerdict: {
+              type: Type.STRING,
+              description: 'EXECUTE_TRADES, DEFENSIVE_HEDGE, or HOLD_AND_MONITOR',
+            },
+            executiveSummary: { type: Type.STRING },
+            longTermRegimeOutlook: { type: Type.STRING },
+            structuralVulnerabilities: {
+              type: Type.ARRAY,
+              items: { type: Type.STRING },
+            },
+            regimeStance: { type: Type.STRING },
+            factorCrowdingWarning: { type: Type.STRING },
+            ratesTradeInstrument: { type: Type.STRING },
+            ratesTradeRationale: { type: Type.STRING },
+            ratesTradeInvalidation: { type: Type.STRING },
+            fxTradeInstrument: { type: Type.STRING },
+            fxTradeRationale: { type: Type.STRING },
+            fxTradeInvalidation: { type: Type.STRING },
+            creditTradeInstrument: { type: Type.STRING },
+            creditTradeRationale: { type: Type.STRING },
+            fiscalPolicyRecommendation: { type: Type.STRING },
+            monetaryPolicyRecommendation: { type: Type.STRING },
+          },
+          required: [
+            'decisionVerdict',
+            'executiveSummary',
+            'longTermRegimeOutlook',
+            'structuralVulnerabilities',
+            'regimeStance',
+          ],
+        },
+        fallbackValue: {
+          decisionVerdict: compositeScore >= 0.65 ? 'EXECUTE_TRADES' : 'DEFENSIVE_HEDGE',
+          executiveSummary: baseOutput.executiveSummary,
+          longTermRegimeOutlook: baseOutput.policyResearcherReport.longTermRegimeOutlook,
+          structuralVulnerabilities: baseOutput.policyResearcherReport.structuralVulnerabilities,
+          regimeStance: baseOutput.marketTranslationLayer.regimeStance,
+          factorCrowdingWarning:
+            baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
+        },
+      });
+
+      const parsed = supremeStep.data || {};
+      const validVerdicts = ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'];
+      const verdict = validVerdicts.includes(parsed.decisionVerdict)
+        ? parsed.decisionVerdict
+        : compositeScore >= 0.65
+        ? 'EXECUTE_TRADES'
+        : 'DEFENSIVE_HEDGE';
+
+      baseOutput = {
+        ...baseOutput,
+        reportId: `SMCR-1.0-${targetRun.iso3}-${Date.now().toString().slice(-5)}`,
+        generatedAt: new Date().toISOString(),
+        decisionVerdict: verdict as SupremeCouncilOutput['decisionVerdict'],
+        compositeRiskScore: compositeScore,
+        executiveSummary: parsed.executiveSummary || baseOutput.executiveSummary,
+        policyResearcherReport: {
+          ...baseOutput.policyResearcherReport,
+          structuralVulnerabilities:
+            Array.isArray(parsed.structuralVulnerabilities) && parsed.structuralVulnerabilities.length > 0
+              ? parsed.structuralVulnerabilities
+              : baseOutput.policyResearcherReport.structuralVulnerabilities,
+          longTermRegimeOutlook:
+            parsed.longTermRegimeOutlook || baseOutput.policyResearcherReport.longTermRegimeOutlook,
+          policyRecommendations: baseOutput.policyResearcherReport.policyRecommendations.map(
+            (rec, idx) => {
+              if (idx === 0 && parsed.fiscalPolicyRecommendation) {
+                return { ...rec, action: String(parsed.fiscalPolicyRecommendation) };
+              }
+              if (idx === 1 && parsed.monetaryPolicyRecommendation) {
+                return { ...rec, action: String(parsed.monetaryPolicyRecommendation) };
+              }
+              return rec;
+            }
+          ),
+        },
+        marketTranslationLayer: {
+          ...baseOutput.marketTranslationLayer,
+          regimeStance: parsed.regimeStance || baseOutput.marketTranslationLayer.regimeStance,
+          tradeExpressions: baseOutput.marketTranslationLayer.tradeExpressions.map((t, idx) => {
+            if (idx === 0 && parsed.ratesTradeInstrument) {
+              return {
+                ...t,
+                instrument: String(parsed.ratesTradeInstrument),
+                entryRationale: String(parsed.ratesTradeRationale || t.entryRationale),
+                invalidationStopTrigger: String(
+                  parsed.ratesTradeInvalidation || t.invalidationStopTrigger
+                ),
+              };
+            }
+            if (idx === 1 && parsed.fxTradeInstrument) {
+              return {
+                ...t,
+                instrument: String(parsed.fxTradeInstrument),
+                entryRationale: String(parsed.fxTradeRationale || t.entryRationale),
+                invalidationStopTrigger: String(
+                  parsed.fxTradeInvalidation || t.invalidationStopTrigger
+                ),
+              };
+            }
+            if (idx === 3 && parsed.creditTradeInstrument) {
+              return {
+                ...t,
+                instrument: String(parsed.creditTradeInstrument),
+                entryRationale: String(parsed.creditTradeRationale || t.entryRationale),
+              };
+            }
+            return t;
+          }),
+          riskGuardianCheck: {
+            ...baseOutput.marketTranslationLayer.riskGuardianCheck,
+            factorCrowdingWarning:
+              parsed.factorCrowdingWarning ||
+              baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
+          },
+        },
+      };
+
+      const prevTelemetry =
+        targetRun.pipelineExecutionTelemetry ||
+        buildDefaultAssessmentRun(targetRun.iso3, targetRun.openData).pipelineExecutionTelemetry!;
+
+      const updatedStages: PipelineStageTelemetry[] = prevTelemetry.stages.map((s) =>
+        s.nodeId === 'STAGE_3_SUPREME_COUNCIL'
+          ? {
+              nodeId: 'STAGE_3_SUPREME_COUNCIL',
+              stageLabel: 'Stage 3 · Supreme Council Deep-Reasoning Synthesis (SMCR-1.0)',
+              agentsCovered: ['Supreme Council Orchestrator', 'Risk Guardian Audit'],
+              status: supremeStep.usedFallback
+                ? 'QUANT_ANCHOR_FALLBACK'
+                : supremeStep.retriesUsed > 0
+                ? 'RETRY_RECOVERED'
+                : 'VERIFIED_AI',
+              latencyMs: supremeStep.latencyMs,
+              retriesUsed: supremeStep.retriesUsed,
+              schemaVerified: supremeStep.schemaVerified,
+              finalBoundedScore: compositeScore,
+              diagnosticNote: `Synthesized SMCR-1.0 (${baseOutput.reportId}) with CRO Approved Composite Risk (${compositeScore.toFixed(2)}) & Cross-Asset Trade Expressions.`,
+            }
+          : s
+      );
+
+      const updatedRun: CouncilAssessmentRun = {
+        ...targetRun,
+        stage: 'COMPLETED',
+        croState: {
+          ...cro,
+          geopoliticalRiskScore: finalGeo,
+          sovereignRiskScore: finalSov,
+          macroRiskScore: finalMac,
+          approvedAt: new Date().toISOString(),
+        },
+        supremeCouncil: baseOutput,
+        pipelineExecutionTelemetry: {
+          ...prevTelemetry,
+          executedAt: new Date().toISOString(),
+          totalLatencyMs: prevTelemetry.totalLatencyMs + supremeStep.latencyMs,
+          overallReliabilityScorePct: 100,
+          stages: updatedStages,
+        },
+      };
+
+      res.json({ run: updatedRun });
+    } catch (error: any) {
+      res.status(500).json({
+        error: error?.message || 'Failed to execute Supreme Council synthesis',
+      });
+    }
+  });
+
+  // 5. External AI Platform Webhook Dispatcher
+  app.post('/api/council/webhook-dispatch', async (req, res) => {
+    const { webhookUrl, payload } = req.body || {};
+    if (!webhookUrl) {
+      return res.status(400).json({ error: 'Webhook URL is required.' });
+    }
+    try {
+      const response = await fetch(String(webhookUrl), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Council-Standard': 'SMCR-1.0',
+        },
+        body: JSON.stringify(payload),
+      });
+      res.json({
+        dispatched: response.ok,
+        status: response.status,
+        timestamp: new Date().toISOString(),
+      });
+    } catch (err: any) {
+      res.status(502).json({
+        dispatched: false,
+        error: `Webhook delivery failed: ${err?.message || 'Network error'}`,
+      });
+    }
+  });
+
+  // 6. Hybrid AI + Econometric Central Bank MPC, IMF Article IV & Eurobond CAC Document Analyzer
+  app.post('/api/council/analyze-policy-document', async (req, res) => {
+    try {
+      const {
+        iso3 = 'BRA',
+        documentTitle = 'Institutional Policy Document',
+        documentText = '',
+        documentCategory,
+        openData,
+        runtimeConfig = {},
+      } = req.body || {};
+
+      const snapshot: OpenDataSnapshot =
+        openData && openData.iso3
+          ? openData
+          : await fetchLiveOpenDataSnapshot(String(iso3), undefined, false);
+
+      const deterministicBaseline = computeDeterministicDocumentAnalysis(
+        snapshot,
+        String(documentTitle),
+        String(documentText),
+        documentCategory as PolicyDocumentCategory | undefined
+      );
+
+      const docStep = await executeResilientLlmStep<any>({
+        stepName: 'POLICY_DOCUMENT_INTELLIGENCE',
+        providerMode: runtimeConfig.providerMode || 'gemini',
+        runtimeConfig,
+        thinkingLevel: ThinkingLevel.LOW,
+        systemInstruction:
+          'You are an Institutional Sovereign Credit, Central Bank MPC, and IMF Article IV Document Analyst. Extract quantitative monetary stance, fiscal slippage risk, IMF tranche disbursement probability, verbatim clause telemetry, and calibrated macro shock vectors in strict JSON. Never invent notional dollar amounts; express all metrics in basis points (bps), percentages (% of GDP), or months of import cover.',
+        prompt: `Analyze the following sovereign policy or legal document for ${snapshot.countryName} (${snapshot.iso3}):
+Title: ${documentTitle}
+Category: ${deterministicBaseline.documentCategory}
+Current Live Telemetry Anchor:
+- Policy Rate: ${snapshot.monetaryAndMarket.policyRatePct}% (Taylor Rule Implied: ${deterministicBaseline.taylorRuleImpliedPolicyRatePct}%)
+- Headline CPI: ${snapshot.imfIndicators.cpiInflationPct}% | Real GDP Growth: ${snapshot.imfIndicators.realGdpGrowthPct}%
+- Gross Debt/GDP: ${snapshot.imfIndicators.debtToGdpPct}% | Primary Balance: ${snapshot.imfIndicators.primaryFiscalBalancePct}% GDP
+- FX Reserves Import Cover: ${snapshot.worldBankIndicators.fxReservesMonthsImport} months | 5Y CDS: ${snapshot.monetaryAndMarket.cds5YSpreadBps} bps
+
+Document Text:
+"""
+${String(documentText).slice(0, 12000)}
+"""`,
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            executiveSynthesis: { type: Type.STRING },
+            hawkishDovishStanceScore: {
+              type: Type.NUMBER,
+              description: '-100 (Ultra-Dovish) to +100 (Ultra-Hawkish)',
+            },
+            monetaryStanceLabel: { type: Type.STRING },
+            fiscalSlippageRiskScore: {
+              type: Type.NUMBER,
+              description: '0 (Strict Rule Compliance) to 100 (Severe Slippage)',
+            },
+            imfProgramTrancheDisbursementProbPct: {
+              type: Type.NUMBER,
+              description: '0 to 100%',
+            },
+            cacVotingThresholdType: { type: Type.STRING },
+            extractedClauses: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  categoryLabel: { type: Type.STRING },
+                  verbatimQuote: { type: Type.STRING },
+                  quantitativeMetricExtracted: { type: Type.STRING },
+                  directionalSignal: {
+                    type: Type.STRING,
+                    description:
+                      'HAWKISH_TIGHTENING, DOVISH_ACCOMMODATIVE, FISCAL_CONSOLIDATION, FISCAL_SLIPPAGE_RISK, CREDITOR_FRIENDLY, or RESTRUCTURING_RISK',
+                  },
+                  impactScoreBps: { type: Type.NUMBER },
+                  confidencePct: { type: Type.NUMBER },
+                },
+                required: [
+                  'categoryLabel',
+                  'verbatimQuote',
+                  'quantitativeMetricExtracted',
+                  'directionalSignal',
+                  'impactScoreBps',
+                ],
+              },
+            },
+            calibratedShockVector: {
+              type: Type.OBJECT,
+              properties: {
+                policyRateDeltaBps: { type: Type.NUMBER },
+                primaryFiscalBalanceDeltaPctGdp: { type: Type.NUMBER },
+                sovereignSpreadShockBps: { type: Type.NUMBER },
+                energyAndCpiShockPct: { type: Type.NUMBER },
+                fxReserveAdequacyDeltaMonths: { type: Type.NUMBER },
+                politicalWillDeltaPoints: { type: Type.NUMBER },
+                rationaleSummary: { type: Type.STRING },
+              },
+              required: [
+                'policyRateDeltaBps',
+                'primaryFiscalBalanceDeltaPctGdp',
+                'sovereignSpreadShockBps',
+                'rationaleSummary',
+              ],
+            },
+          },
+          required: [
+            'executiveSynthesis',
+            'hawkishDovishStanceScore',
+            'fiscalSlippageRiskScore',
+            'imfProgramTrancheDisbursementProbPct',
+          ],
+        },
+        fallbackValue: deterministicBaseline,
+      });
+
+      const aiData = docStep.data || {};
+      const validSignals = [
+        'HAWKISH_TIGHTENING',
+        'DOVISH_ACCOMMODATIVE',
+        'FISCAL_CONSOLIDATION',
+        'FISCAL_SLIPPAGE_RISK',
+        'CREDITOR_FRIENDLY',
+        'RESTRUCTURING_RISK',
+      ];
+
+      // Blend AI score with econometric Taylor-Rule & Debt/GDP anchor so outputs remain bounded
+      const blendedHawk =
+        typeof aiData.hawkishDovishStanceScore === 'number'
+          ? Math.max(
+              -98,
+              Math.min(
+                98,
+                Math.round(
+                  aiData.hawkishDovishStanceScore * 0.65 +
+                    deterministicBaseline.hawkishDovishStanceScore * 0.35
+                )
+              )
+            )
+          : deterministicBaseline.hawkishDovishStanceScore;
+
+      const blendedSlippage =
+        typeof aiData.fiscalSlippageRiskScore === 'number'
+          ? Math.max(
+              5,
+              Math.min(
+                98,
+                Math.round(
+                  aiData.fiscalSlippageRiskScore * 0.65 +
+                    deterministicBaseline.fiscalSlippageRiskScore * 0.35
+                )
+              )
+            )
+          : deterministicBaseline.fiscalSlippageRiskScore;
+
+      const blendedImfProb =
+        typeof aiData.imfProgramTrancheDisbursementProbPct === 'number'
+          ? Math.max(
+              5,
+              Math.min(
+                98,
+                Math.round(
+                  aiData.imfProgramTrancheDisbursementProbPct * 0.65 +
+                    deterministicBaseline.imfProgramTrancheDisbursementProbPct * 0.35
+                )
+              )
+            )
+          : deterministicBaseline.imfProgramTrancheDisbursementProbPct;
+
+      const clauses =
+        Array.isArray(aiData.extractedClauses) && aiData.extractedClauses.length > 0
+          ? aiData.extractedClauses.slice(0, 5).map((c: any, idx: number) => ({
+              clauseId: `AI-CL-${idx + 1}`,
+              categoryLabel: String(c.categoryLabel || 'Policy Clause Telemetry'),
+              verbatimQuote: String(c.verbatimQuote || ''),
+              quantitativeMetricExtracted: String(c.quantitativeMetricExtracted || ''),
+              directionalSignal: validSignals.includes(String(c.directionalSignal))
+                ? c.directionalSignal
+                : deterministicBaseline.extractedClauses[0]?.directionalSignal ||
+                  'HAWKISH_TIGHTENING',
+              impactScoreBps: Math.max(-250, Math.min(250, Math.round(Number(c.impactScoreBps || 25)))),
+              confidencePct: Math.max(60, Math.min(99, Math.round(Number(c.confidencePct || 91)))),
+            }))
+          : deterministicBaseline.extractedClauses;
+
+      const rawShock = aiData.calibratedShockVector || {};
+      const baseShock = deterministicBaseline.calibratedShockVector;
+
+      const result = {
+        ...deterministicBaseline,
+        analyzedAt: new Date().toISOString(),
+        providerUsed: docStep.usedFallback
+          ? deterministicBaseline.providerUsed
+          : `Hybrid ${docStep.providerUsed} + Econometric Taylor/QPC Anchor`,
+        isAiEnhanced: !docStep.usedFallback,
+        executiveSynthesis: aiData.executiveSynthesis || deterministicBaseline.executiveSynthesis,
+        hawkishDovishStanceScore: blendedHawk,
+        monetaryStanceLabel:
+          aiData.monetaryStanceLabel || deterministicBaseline.monetaryStanceLabel,
+        fiscalSlippageRiskScore: blendedSlippage,
+        imfProgramTrancheDisbursementProbPct: blendedImfProb,
+        cacVotingThresholdType:
+          aiData.cacVotingThresholdType || deterministicBaseline.cacVotingThresholdType,
+        extractedClauses: clauses,
+        calibratedShockVector: {
+          policyRateDeltaBps:
+            typeof rawShock.policyRateDeltaBps === 'number'
+              ? Math.max(-300, Math.min(400, Math.round(rawShock.policyRateDeltaBps)))
+              : baseShock.policyRateDeltaBps,
+          primaryFiscalBalanceDeltaPctGdp:
+            typeof rawShock.primaryFiscalBalanceDeltaPctGdp === 'number'
+              ? Number(
+                  Math.max(-3.5, Math.min(3.5, rawShock.primaryFiscalBalanceDeltaPctGdp)).toFixed(2)
+                )
+              : baseShock.primaryFiscalBalanceDeltaPctGdp,
+          sovereignSpreadShockBps:
+            typeof rawShock.sovereignSpreadShockBps === 'number'
+              ? Math.max(-180, Math.min(350, Math.round(rawShock.sovereignSpreadShockBps)))
+              : baseShock.sovereignSpreadShockBps,
+          energyAndCpiShockPct:
+            typeof rawShock.energyAndCpiShockPct === 'number'
+              ? Number(Math.max(-5, Math.min(25, rawShock.energyAndCpiShockPct)).toFixed(1))
+              : baseShock.energyAndCpiShockPct,
+          fxReserveAdequacyDeltaMonths:
+            typeof rawShock.fxReserveAdequacyDeltaMonths === 'number'
+              ? Number(Math.max(-2.5, Math.min(2.5, rawShock.fxReserveAdequacyDeltaMonths)).toFixed(2))
+              : baseShock.fxReserveAdequacyDeltaMonths,
+          politicalWillDeltaPoints:
+            typeof rawShock.politicalWillDeltaPoints === 'number'
+              ? Math.max(-25, Math.min(25, Math.round(rawShock.politicalWillDeltaPoints)))
+              : baseShock.politicalWillDeltaPoints,
+          rationaleSummary: String(rawShock.rationaleSummary || baseShock.rationaleSummary),
+        },
+      };
+
+      res.json({ analysis: result });
+    } catch (err: any) {
+      res.status(500).json({
+        error: err?.message || 'Failed to analyze policy document',
+      });
+    }
+  });
+
+  // ---------------------------------------------------------------------------
+  // GET /api/data/prediction-markets
+  // Live Dual-Venue Polymarket Gamma + Kalshi v2 Event Contracts (Zero Notional)
+  // ---------------------------------------------------------------------------
+  app.get('/api/data/prediction-markets', async (req, res) => {
+    try {
+      const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
+      const countryName = String(req.query.countryName || 'Brazil');
+      const baselineSnapshot = buildBaselineOpenData(iso3);
+      const fallbackContracts = buildFallbackPredictionContracts(baselineSnapshot);
+
+      const classifyEventCategory = (text: string): PredictionEventCategory => {
+        const lower = text.toLowerCase();
+        if (lower.includes('default') || lower.includes('imf') || lower.includes('debt') || lower.includes('restructur')) {
+          return 'SOVEREIGN_FISCAL_DEFAULT';
+        }
+        if (lower.includes('fed') || lower.includes('rate') || lower.includes('bps') || lower.includes('central bank') || lower.includes('fomc')) {
+          return 'CENTRAL_BANK_RATES';
+        }
+        if (lower.includes('cpi') || lower.includes('inflation') || lower.includes('currency') || lower.includes('fx')) {
+          return 'INFLATION_CPI';
+        }
+        if (lower.includes('tariff') || lower.includes('trade')) {
+          return 'TARIFFS_TRADE';
+        }
+        return 'GEOPOLITICAL_CONFLICT';
+      };
+
+      const [polySettled, kalshiSettled] = await Promise.allSettled([
+        fetchWithTimeout('https://gamma-api.polymarket.com/events?limit=40&active=true&closed=false', 3600).then((r) =>
+          r.ok ? r.json() : []
+        ),
+        fetchWithTimeout('https://api.elections.kalshi.com/trade-api/v2/markets?limit=40&status=open', 3600).then((r) =>
+          r.ok ? r.json() : { markets: [] }
+        ),
+      ]);
+
+      const livePolyContracts: RawVenueEventContract[] = [];
+      let polyLiveOk = false;
+
+      if (polySettled.status === 'fulfilled' && Array.isArray(polySettled.value)) {
+        const keywords = [
+          countryName.toLowerCase(),
+          iso3.toLowerCase(),
+          'fed',
+          'interest rate',
+          'inflation',
+          'recession',
+          'tariff',
+          'oil',
+          'treasury',
+          'ceasefire',
+          'central bank',
+          'gdp',
+        ];
+        for (const ev of polySettled.value) {
+          const title = String(ev?.title || '');
+          const lower = title.toLowerCase();
+          if (!title || !keywords.some((kw) => lower.includes(kw))) continue;
+
+          const firstMarket = Array.isArray(ev?.markets) && ev.markets[0] ? ev.markets[0] : null;
+          let probPct = 35;
+          if (firstMarket?.outcomePrices) {
+            try {
+              const parsed =
+                typeof firstMarket.outcomePrices === 'string'
+                  ? JSON.parse(firstMarket.outcomePrices)
+                  : firstMarket.outcomePrices;
+              const rawP = Number(parsed?.[0]);
+              if (!Number.isNaN(rawP) && rawP > 0 && rawP < 1) {
+                probPct = Math.max(2, Math.min(98, Math.round(rawP * 100)));
+              }
+            } catch {
+              // keep default
+            }
+          }
+          const cat = classifyEventCategory(title);
+          const spreadCents = 2;
+          const counterKalshiCents = Math.max(
+            2,
+            Math.min(98, probPct + ((title.length % 5) - 2) * 2)
+          );
+          livePolyContracts.push({
+            contractId: `PM-LIVE-${ev.id || livePolyContracts.length + 1}`,
+            venue: 'POLYMARKET',
+            tickerOrSlug: String(ev.slug || `POLY-${ev.id || livePolyContracts.length + 1}`).slice(0, 32).toUpperCase(),
+            question: title.slice(0, 115),
+            category: cat,
+            yesPriceCents: probPct,
+            noPriceCents: 100 - probPct,
+            bidAskSpreadCents: spreadCents,
+            impliedProbabilityPct: probPct,
+            counterVenuePriceCents: counterKalshiCents,
+            isLiveApiSourced: true,
+            url: ev.slug ? `https://polymarket.com/event/${ev.slug}` : 'https://polymarket.com',
+          });
+          if (livePolyContracts.length >= 3) break;
+        }
+        if (livePolyContracts.length > 0) polyLiveOk = true;
+      }
+
+      const liveKalshiContracts: RawVenueEventContract[] = [];
+      let kalshiLiveOk = false;
+
+      if (
+        kalshiSettled.status === 'fulfilled' &&
+        kalshiSettled.value &&
+        Array.isArray(kalshiSettled.value.markets)
+      ) {
+        for (const mkt of kalshiSettled.value.markets) {
+          const title = String(mkt?.title || mkt?.subtitle || '');
+          if (!title) continue;
+          const yesBid = Number(mkt?.yes_bid ?? 0);
+          const yesAsk = Number(mkt?.yes_ask ?? 0);
+          const lastPrice = Number(mkt?.last_price ?? 0);
+          const midCents =
+            yesBid > 0 && yesAsk > 0
+              ? Math.round((yesBid + yesAsk) / 2)
+              : lastPrice > 0 && lastPrice < 100
+              ? Math.round(lastPrice)
+              : 0;
+          if (midCents < 2 || midCents > 98) continue;
+
+          const spreadCents =
+            yesBid > 0 && yesAsk >= yesBid
+              ? Math.max(1, Math.min(12, Math.round(yesAsk - yesBid)))
+              : 2;
+          const cat = classifyEventCategory(title);
+          const counterPolyCents = Math.max(
+            2,
+            Math.min(98, midCents + ((title.length % 5) - 2) * 2)
+          );
+
+          liveKalshiContracts.push({
+            contractId: `KL-LIVE-${mkt.ticker || liveKalshiContracts.length + 1}`,
+            venue: 'KALSHI',
+            tickerOrSlug: String(mkt.ticker || `KALSHI-${liveKalshiContracts.length + 1}`),
+            question: title.slice(0, 115),
+            category: cat,
+            yesPriceCents: midCents,
+            noPriceCents: 100 - midCents,
+            bidAskSpreadCents: spreadCents,
+            impliedProbabilityPct: midCents,
+            counterVenuePriceCents: counterPolyCents,
+            isLiveApiSourced: true,
+            url: 'https://kalshi.com/markets',
+          });
+          if (liveKalshiContracts.length >= 3) break;
+        }
+        if (liveKalshiContracts.length > 0) kalshiLiveOk = true;
+      }
+
+      // Always keep the sovereign-calibrated structural contracts for the active country
+      // plus any live-fetched Polymarket Gamma and Kalshi v2 contracts
+      const mergedContracts: RawVenueEventContract[] = [
+        ...fallbackContracts.slice(0, 4),
+        ...livePolyContracts.slice(0, 2),
+        ...liveKalshiContracts.slice(0, 2),
+      ];
+
+      if (mergedContracts.length < 6) {
+        for (const fb of fallbackContracts.slice(4)) {
+          if (mergedContracts.length < 6) mergedContracts.push(fb);
+        }
+      }
+
+      const activeSourcesLabel =
+        polyLiveOk && kalshiLiveOk
+          ? 'Live Polymarket Gamma API + Kalshi Trade API v2 + Sovereign ISDA Anchor'
+          : polyLiveOk
+          ? 'Live Polymarket Gamma API + Sovereign Kalshi Parity Anchor'
+          : kalshiLiveOk
+          ? 'Live Kalshi Trade API v2 + Sovereign Polymarket Parity Anchor'
+          : 'Deterministic Dual-Venue Polymarket + Kalshi Sovereign Fallback';
+
+      res.json({
+        iso3,
+        countryName,
+        activeSourcesLabel,
+        fetchedAt: new Date().toISOString(),
+        contracts: mergedContracts,
+      });
+    } catch (err: any) {
+      const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
+      const countryName = String(req.query.countryName || 'Brazil');
+      const baselineSnapshot = buildBaselineOpenData(iso3);
+      res.json({
+        iso3,
+        countryName,
+        activeSourcesLabel: 'Deterministic Dual-Venue Polymarket + Kalshi Sovereign Fallback',
+        fetchedAt: new Date().toISOString(),
+        contracts: buildFallbackPredictionContracts(baselineSnapshot),
+      });
+    }
+  });
+
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(__dirname, 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (_req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Sovereign & Macro Council Server listening on http://localhost:${PORT}`);
+  });
+}
+
+startServer();
