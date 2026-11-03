@@ -362,7 +362,7 @@ EconQuest supports two complementary Docker topologies so both **macOS Apple Sil
    ```bash
    OLLAMA_QUICK_MODEL=qwen2.5:7b OLLAMA_DEEP_MODEL=deepseek-r1:8b bash ./scripts/start-mac.sh
    ```
-3. The script automatically verifies Docker Desktop, detects or launches `OLLAMA_ORIGINS="*" ollama serve` on your Mac host (or falls back to `--profile bundled-ollama`), pulls the models, and opens `http://localhost:3000`.
+3. The script automatically verifies Docker Desktop, detects or launches `OLLAMA_ORIGINS="*" ollama serve` on your Mac host (or falls back to `--profile bundled-ollama`), pulls the models, and opens `http://localhost:3737`.
 
 ### 7.3 Step-by-Step Windows 10/11 Self-Hosting (`scripts/start-windows.ps1` & `scripts/start-windows.bat`)
 1. Ensure **Docker Desktop for Windows (WSL2 backend)** is running.
@@ -370,7 +370,7 @@ EconQuest supports two complementary Docker topologies so both **macOS Apple Sil
    ```powershell
    .\scripts\start-windows.ps1
    ```
-3. The script checks whether native Windows Ollama is active on `http://localhost:11434`. If not, it checks for `nvidia-smi` and launches either `--profile bundled-ollama-gpu` (NVIDIA GPU passthrough) or `--profile bundled-ollama` (CPU), then opens `http://localhost:3000`.
+3. The script checks whether native Windows Ollama is active on `http://localhost:11434`. If not, it checks for `nvidia-smi` and launches either `--profile bundled-ollama-gpu` (NVIDIA GPU passthrough) or `--profile bundled-ollama` (CPU), then opens `http://localhost:3737`.
 
 ### 7.4 Using the 5-Tab Interactive GUI Configuration Studio (`AI / APIs / Docker` Header Modal)
 Click the **`AI / APIs / Docker`** button in the top command header to open the **5-Tab Interactive GUI Configuration Studio**:
@@ -403,18 +403,18 @@ Downstream applications (such as portfolio management systems, automated executi
 - **Pull Individual Desk Outputs**:
   ```bash
   # Pull Geopolitical Risk Desk (Debate + Sub-Agents AG-1..AG-3 + Chokepoints/Sanctions Quant Suite)
-  curl -s "http://localhost:3000/api/v1/integration/desks/BRA?desk=geopolitical&includeSubAgents=true&includeQuant=true" \
+  curl -s "http://localhost:3737/api/v1/integration/desks/BRA?desk=geopolitical&includeSubAgents=true&includeQuant=true" \
     -H "X-SMCR-API-Key: smcr_live_9f8a7b6c5d4e3f2a1b"
 
   # Pull Sovereign Credit Desk (Debate + Sub-Agents AG-4..AG-6 + IMF SRDSF DSA & Restructuring NPV)
-  curl -s "http://localhost:3000/api/v1/integration/desks/BRA?desk=sovereign"
+  curl -s "http://localhost:3737/api/v1/integration/desks/BRA?desk=sovereign"
 
   # Pull Macroeconomic & FX Desk (Debate + Sub-Agents AG-7..AG-9 + BVAR, NSS Curve & Liquidity Z-Score)
-  curl -s "http://localhost:3000/api/v1/integration/desks/BRA?desk=macro"
+  curl -s "http://localhost:3737/api/v1/integration/desks/BRA?desk=macro"
   ```
 - **Pull Complete `SMCR-1.0` Sovereign Bundle**:
   ```bash
-  curl -s "http://localhost:3000/api/v1/integration/bundle/BRA" \
+  curl -s "http://localhost:3737/api/v1/integration/bundle/BRA" \
     -H "X-SMCR-API-Key: smcr_live_9f8a7b6c5d4e3f2a1b"
   ```
 

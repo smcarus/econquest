@@ -12,7 +12,7 @@ cd "${PROJECT_ROOT}"
 
 QUICK_MODEL="${OLLAMA_QUICK_MODEL:-qwen2.5:7b}"
 DEEP_MODEL="${OLLAMA_DEEP_MODEL:-deepseek-r1:8b}"
-PORT="${PORT:-3000}"
+PORT="${PORT:-3737}"
 
 echo "=============================================================================="
 echo "  EconQuest — Sovereign Council Orchestrator (macOS Self-Host Launcher)"

@@ -11,7 +11,7 @@ Set-Location $ProjectRoot
 
 $QuickModel = if ($env:OLLAMA_QUICK_MODEL) { $env:OLLAMA_QUICK_MODEL } else { "qwen2.5:7b" }
 $DeepModel  = if ($env:OLLAMA_DEEP_MODEL)  { $env:OLLAMA_DEEP_MODEL }  else { "deepseek-r1:8b" }
-$Port       = if ($env:PORT)               { $env:PORT }               else { "3000" }
+$Port       = if ($env:PORT)               { $env:PORT }               else { "3737" }
 
 Write-Host "==============================================================================" -ForegroundColor Cyan
 Write-Host "  EconQuest — Sovereign Council Orchestrator (Windows Self-Host Launcher)" -ForegroundColor Cyan

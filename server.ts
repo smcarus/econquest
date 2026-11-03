@@ -331,7 +331,7 @@ function getLatestImfValue(series: Record<string, number> | undefined, targetYea
   return undefined;
 }
 
-async function fetchLiveOpenDataSnapshot(
+async function fetchLiveOpenDataSnapshotNetwork(
   iso3: string,
   countryNameHint?: string,
   includeSearchGrounding = true
@@ -687,6 +687,100 @@ async function fetchLiveOpenDataSnapshot(
   return baseline;
 }
 
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
+const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+const snapshotStore = new Map<string, { snapshot: OpenDataSnapshot; pulledAt: number }>();
+const snapshotRefreshInFlight = new Map<string, Promise<OpenDataSnapshot | null>>();
+
+function snapshotFile(iso3: string): string {
+  return path.join(SNAPSHOT_DIR, `${iso3.replace(/[^A-Z0-9]/g, '')}.json`);
+}
+
+function loadStoredSnapshot(iso3: string) {
+  const mem = snapshotStore.get(iso3);
+  if (mem) return mem;
+  try {
+    const parsed = JSON.parse(fs.readFileSync(snapshotFile(iso3), 'utf8'));
+    if (parsed?.snapshot && typeof parsed.pulledAt === 'number') {
+      snapshotStore.set(iso3, parsed);
+      return parsed as { snapshot: OpenDataSnapshot; pulledAt: number };
+    }
+  } catch {
+    // No stored snapshot yet
+  }
+  return null;
+}
+
+function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<OpenDataSnapshot | null> {
+  const existing = snapshotRefreshInFlight.get(iso3);
+  if (existing) return existing;
+  const job = (async () => {
+    try {
+      const snapshot = await fetchLiveOpenDataSnapshotNetwork(iso3, countryName, true);
+      const entry = { snapshot, pulledAt: Date.now() };
+      snapshotStore.set(iso3, entry);
+      fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
+      const tmp = `${snapshotFile(iso3)}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(entry));
+      fs.renameSync(tmp, snapshotFile(iso3));
+      return snapshot;
+    } catch (err: any) {
+      console.warn(`[snapshot-store] refresh failed for ${iso3}: ${err?.message || err}`);
+      return null;
+    } finally {
+      snapshotRefreshInFlight.delete(iso3);
+    }
+  })();
+  snapshotRefreshInFlight.set(iso3, job);
+  return job;
+}
+
+/**
+ * Serves the last stored snapshot instantly and refreshes it in the background once it is
+ * older than a week. Without a stored copy it waits for one live pull (or, with
+ * cacheOnly, returns the static baseline and warms the store in the background).
+ */
+async function fetchLiveOpenDataSnapshot(
+  iso3: string,
+  countryNameHint?: string,
+  _includeSearchGrounding = true,
+  opts: { cacheOnly?: boolean; forceRefresh?: boolean } = {}
+): Promise<OpenDataSnapshot> {
+  const key = (iso3 || 'BRA').toUpperCase().trim();
+  if (opts.forceRefresh) {
+    const fresh = await refreshStoredSnapshot(key, countryNameHint);
+    if (fresh) return fresh;
+  }
+  const stored = loadStoredSnapshot(key);
+  if (stored) {
+    if (Date.now() - stored.pulledAt > SNAPSHOT_REFRESH_MS) {
+      void refreshStoredSnapshot(key, countryNameHint);
+    }
+    return countryNameHint ? { ...stored.snapshot, countryName: countryNameHint } : stored.snapshot;
+  }
+  if (opts.cacheOnly) {
+    void refreshStoredSnapshot(key, countryNameHint);
+    const baseline = buildBaselineOpenData(key);
+    if (countryNameHint) baseline.countryName = countryNameHint;
+    return baseline;
+  }
+  const fresh = await refreshStoredSnapshot(key, countryNameHint);
+  if (fresh) return fresh;
+  const baseline = buildBaselineOpenData(key);
+  if (countryNameHint) baseline.countryName = countryNameHint;
+  return baseline;
+}
+
+async function refreshStaleSnapshots(force = false): Promise<void> {
+  for (const item of SOVEREIGN_CATALOG) {
+    const stored = loadStoredSnapshot(item.iso3);
+    if (force || !stored || Date.now() - stored.pulledAt > SNAPSHOT_REFRESH_MS) {
+      await refreshStoredSnapshot(item.iso3, item.countryName);
+    }
+  }
+}
+
 let cachedWatchlistLive: { timestamp: number; items: WatchlistItem[] } | null = null;
 
 async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
@@ -699,7 +793,9 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
       try {
         // Use cached search grounding if already warm, otherwise fast IMF + World Bank + Live FX
         const hasWarmGrounding = groundedMarketCache.has(catItem.iso3);
-        const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, hasWarmGrounding);
+        const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, hasWarmGrounding, {
+          cacheOnly: true,
+        });
         const run = buildDefaultAssessmentRun(catItem.iso3, snap);
         const geo = run.croState.geopoliticalRiskScore;
         const sov = run.croState.sovereignRiskScore;
@@ -1632,7 +1728,7 @@ async function executeResilientLlmStep<T>(options: {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '5mb' }));
 
@@ -1641,7 +1737,9 @@ async function startServer() {
     try {
       const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
       const countryName = req.query.countryName ? String(req.query.countryName) : undefined;
-      const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
+      const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true, {
+        forceRefresh: req.query.refresh === '1',
+      });
       const charts = buildAnnotatedChartsForSovereign(snapshot);
       const run = buildDefaultAssessmentRun(iso3, snapshot);
       res.json({ snapshot, charts, run });
@@ -1661,6 +1759,12 @@ async function startServer() {
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to fetch open data snapshot' });
     }
+  });
+
+  // 1a-refresh. Manually trigger a live pull for all countries (runs in the background)
+  app.post('/api/data/refresh', (_req, res) => {
+    void refreshStaleSnapshots(true);
+    res.status(202).json({ status: 'refresh started', countries: SOVEREIGN_CATALOG.length });
   });
 
   // 1b. Live Watchlist Multi-Sovereign Telemetry Endpoint
@@ -3741,7 +3845,7 @@ ${String(documentText).slice(0, 12000)}
         'src',
         'assets',
         'images',
-        'econquest_logo_1793718779968.jpg'
+        'econquest_logo.png'
       );
 
       const readmeContent = fs.existsSync(readmePath)
@@ -3903,7 +4007,7 @@ ${String(documentText).slice(0, 12000)}
     const hasReadme = fs.existsSync(path.join(__dirname, 'README.md'));
     const hasManual = fs.existsSync(path.join(__dirname, 'docs', 'USER_MANUAL.md'));
     const hasLogo = fs.existsSync(
-      path.join(__dirname, 'src', 'assets', 'images', 'econquest_logo_1793718779968.jpg')
+      path.join(__dirname, 'src', 'assets', 'images', 'econquest_logo.png')
     );
     const hasGit = fs.existsSync(path.join(__dirname, '.git'));
     checks.push({
@@ -4297,6 +4401,8 @@ ${String(documentText).slice(0, 12000)}
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Sovereign & Macro Council Server listening on http://localhost:${PORT}`);
+    setTimeout(() => void refreshStaleSnapshots(), 5000);
+    setInterval(() => void refreshStaleSnapshots(), 6 * 60 * 60 * 1000).unref();
   });
 }
 

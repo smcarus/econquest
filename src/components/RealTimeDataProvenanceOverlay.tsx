@@ -900,8 +900,9 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       if (existingBadge) {
         existingBadge.setAttribute('data-prov-context', contextStr);
         const labelSpan = existingBadge.querySelector('[data-prov-label="true"]');
-        if (labelSpan) {
-          labelSpan.textContent = `PROVENANCE · ${spec.primarySourceAuthority.split('&')[0].trim()} · Handshake ${fetchedTime}`;
+        const nextLabel = `PROVENANCE · ${spec.primarySourceAuthority.split('&')[0].trim()} · Handshake ${fetchedTime}`;
+        if (labelSpan && labelSpan.textContent !== nextLabel) {
+          labelSpan.textContent = nextLabel;
         }
         return;
       }
@@ -955,8 +956,9 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       if (existingOverlay) {
         existingOverlay.setAttribute('data-prov-context', title);
         const span = existingOverlay.querySelector('[data-prov-label="true"]');
-        if (span) {
-          span.textContent = `API PROVENANCE · ${spec.primarySourceAuthority.split(' ')[0]} · ${fetchedTime}`;
+        const nextLabel = `API PROVENANCE · ${spec.primarySourceAuthority.split(' ')[0]} · ${fetchedTime}`;
+        if (span && span.textContent !== nextLabel) {
+          span.textContent = nextLabel;
         }
         return;
       }
@@ -1020,20 +1022,28 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
   useEffect(() => {
     const timer = window.setTimeout(scanAndInstrumentWorkspace, 60);
-    const observer = new MutationObserver(() => {
-      scanAndInstrumentWorkspace();
-    });
+    let debounce: number | undefined;
     const mainEl = document.querySelector('main');
-    if (mainEl) {
-      observer.observe(mainEl, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['data-active-page'],
-      });
-    }
+    const observeOptions: MutationObserverInit = {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['data-active-page'],
+    };
+    const observer = new MutationObserver(() => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => {
+        // Ignore the mutations caused by the scan itself so it cannot retrigger the observer
+        observer.disconnect();
+        scanAndInstrumentWorkspace();
+        observer.takeRecords();
+        if (mainEl) observer.observe(mainEl, observeOptions);
+      }, 150);
+    });
+    if (mainEl) observer.observe(mainEl, observeOptions);
     return () => {
       window.clearTimeout(timer);
+      window.clearTimeout(debounce);
       observer.disconnect();
     };
   }, [run.iso3, run.openData.fetchedAt, activeNavSection, localHandshakeIso, scanAndInstrumentWorkspace]);

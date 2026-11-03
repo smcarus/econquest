@@ -21,11 +21,12 @@ services:
     container_name: econquest-orchestrator
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "${PORT:-3737}:3000"
     environment:
       - NODE_ENV=production
       - SELF_HOSTED_DOCKER=true
       - PORT=3000
+      - DATA_DIR=/app/data
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-ollama}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
@@ -33,6 +34,8 @@ services:
       - OLLAMA_DEEP_MODEL=${OLLAMA_DEEP_MODEL:-deepseek-r1:8b}
       - OPENAI_COMPATIBLE_BASE_URL=${OPENAI_COMPATIBLE_BASE_URL:-http://host.docker.internal:8000/v1}
       - OPENAI_COMPATIBLE_MODEL=${OPENAI_COMPATIBLE_MODEL:-gpt-4o}
+    volumes:
+      - econquest_data:/app/data
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
@@ -102,6 +105,8 @@ services:
       - econquest-net
 
 volumes:
+  econquest_data:
+    name: econquest_data
   ollama_models:
     name: econquest_ollama_models
 

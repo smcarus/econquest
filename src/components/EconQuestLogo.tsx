@@ -5,8 +5,9 @@ interface EconQuestLogoProps {
   size?: number;
 }
 
-export const ECONQUEST_LOGO_ASSET_PATH =
-  '/src/assets/images/econquest_logo_1793718779968.jpg';
+import logoUrl from '../assets/images/econquest_logo.png';
+
+export const ECONQUEST_LOGO_ASSET_PATH = logoUrl;
 
 /**
  * Institutional Three-Pillar Sovereign Council Emblem for EconQuest.
