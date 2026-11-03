@@ -700,18 +700,20 @@ export default function App() {
       .then((r) => r.json())
       .then((defaults) => {
         if (!defaults) return;
-        if (!hasSavedLocalPref || defaults.isDockerContainer) {
-          setRuntimeConfig((prev) => ({
-            ...prev,
-            providerMode: defaults.providerMode || prev.providerMode,
-            ollamaBaseUrl: defaults.ollamaBaseUrl || prev.ollamaBaseUrl,
-            ollamaQuickModel: defaults.ollamaQuickModel || prev.ollamaQuickModel,
-            ollamaDeepModel: defaults.ollamaDeepModel || prev.ollamaDeepModel,
-            openAiBaseUrl: defaults.openAiBaseUrl || prev.openAiBaseUrl,
-            openAiModel: defaults.openAiModel || prev.openAiModel,
-            apiConnectors: defaults.apiConnectors || prev.apiConnectors,
-          }));
-        }
+        setRuntimeConfig((prev) => ({
+          ...prev,
+          providerMode: !hasSavedLocalPref ? defaults.providerMode || prev.providerMode : prev.providerMode,
+          ollamaBaseUrl: !hasSavedLocalPref ? defaults.ollamaBaseUrl || prev.ollamaBaseUrl : prev.ollamaBaseUrl,
+          ollamaQuickModel: !hasSavedLocalPref ? defaults.ollamaQuickModel || prev.ollamaQuickModel : prev.ollamaQuickModel,
+          ollamaDeepModel: !hasSavedLocalPref ? defaults.ollamaDeepModel || prev.ollamaDeepModel : prev.ollamaDeepModel,
+          openAiBaseUrl: !hasSavedLocalPref ? defaults.openAiBaseUrl || prev.openAiBaseUrl : prev.openAiBaseUrl,
+          openAiModel: !hasSavedLocalPref ? defaults.openAiModel || prev.openAiModel : prev.openAiModel,
+          apiConnectors:
+            prev.apiConnectors && prev.apiConnectors.length > 0
+              ? prev.apiConnectors
+              : defaults.apiConnectors,
+          integrationConfig: prev.integrationConfig || defaults.integrationConfig,
+        }));
       })
       .catch(() => {
         // Ignore network error

@@ -338,7 +338,7 @@ export function resolveDataProvenanceForContext(
       clickedDataPointLabel,
       clickedDataPointValue,
       primarySourceAuthority:
-        'US Treasury Fiscal Data v2 API + Grounded Sovereign Bond/CDS Telemetry (/api/open-data)',
+        'US Treasury Fiscal Data v2 API + Grounded Sovereign Bond/CDS Telemetry (/api/data/sovereign-snapshot)',
       primaryEndpointUri: endpoint,
       httpMethod: 'GET',
       httpStatus: '200 OK · Handshake Verified',
@@ -349,7 +349,7 @@ export function resolveDataProvenanceForContext(
       secondaryEndpoints: [
         {
           authority: 'EconQuest Sovereign Market Grounding Proxy',
-          endpointUri: `/api/open-data/${iso3}?grounding=1`,
+          endpointUri: `/api/data/sovereign-snapshot?iso3=${iso3}`,
           purpose: `Live ${run.countryName} 2Y/5Y/10Y/30Y bond yields, 5Y CDS par spread & S&P/Moody's/Fitch credit rating`,
         },
         {
@@ -393,7 +393,7 @@ export function resolveDataProvenanceForContext(
           tier: 'TIER_4_MODEL_ESTIMATE',
         },
       ],
-      curlSnippet: `curl -s "${window.location.origin}/api/open-data/${iso3}?grounding=1"`,
+      curlSnippet: `curl -s "${window.location.origin}/api/data/sovereign-snapshot?iso3=${iso3}"`,
     };
   }
 

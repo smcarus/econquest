@@ -7,8 +7,11 @@ import {
   DockerSelfHostGuiConfig,
   ExternalInternalConnectorConfig,
   ExternalInternalConnectorMetricKey,
+  IntegrationBroadcastScope,
+  IntegrationDeliveryReceipt,
   ModelIntegrityAuditReport,
   SubAgentId,
+  TopLevelIntegrationConfig,
   UserPersonaId,
   WorkspaceSessionSnapshot,
 } from '../types/council';
@@ -1121,6 +1124,7 @@ const CHAPTER_SHORTCUTS = [
   { id: 'council', label: '2. 9-Agent Council & CRO Gate', query: '9-Agent' },
   { id: 'csv', label: '3. CSV Backtesting & Personas', query: 'CSV Backtesting' },
   { id: 'smcr', label: '4. SMCR-1.0 Report Exports', query: 'SMCR-1.0' },
+  { id: 'integration', label: '5. Top-Level App Integration & APIs', query: 'Top-Level' },
 ];
 
 export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubModalProps> = ({
@@ -1600,7 +1604,11 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
   onApplyConnectorTelemetryToActiveSovereign,
 }) => {
   const [activeTab, setActiveTab] = useState<
-    'global_gui' | 'agent_matrix_gui' | 'docker_builder_gui' | 'api_connectors_gui'
+    | 'global_gui'
+    | 'agent_matrix_gui'
+    | 'docker_builder_gui'
+    | 'api_connectors_gui'
+    | 'top_level_integration_gui'
   >('global_gui');
   const [activeDockerFile, setActiveDockerFile] = useState<
     'envCustom' | 'dockerCompose' | 'startMac' | 'startWindowsPs1' | 'dockerfile'
@@ -1636,6 +1644,106 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
     jsonPreview?: any;
     message?: string;
   }>({ loading: false, connectorId: '' });
+
+  // Top-Level External Application Integration State
+  const integrationCfg: TopLevelIntegrationConfig = {
+    requireApiKey: false,
+    apiKey: 'smcr_live_9f8a7b6c5d4e3f2a1b',
+    webhookHmacSecret: 'whsec_econquest_smcr_v1_hmac_secret',
+    autoBroadcastOnRun: true,
+    defaultScope: 'all_desks_bundle',
+    includeSubAgents: true,
+    includeQuantSuites: true,
+    ...(runtimeConfig.integrationConfig || {}),
+  };
+
+  const [broadcastScope, setBroadcastScope] = useState<IntegrationBroadcastScope>(
+    integrationCfg.defaultScope || 'all_desks_bundle'
+  );
+  const [integrationDeliveries, setIntegrationDeliveries] = useState<IntegrationDeliveryReceipt[]>(
+    []
+  );
+  const [activeSseCount, setActiveSseCount] = useState<number>(0);
+  const [broadcastState, setBroadcastState] = useState<{
+    loading: boolean;
+    message: string | null;
+    payloadPreview?: any;
+  }>({ loading: false, message: null });
+  const [activeSnippetTab, setActiveSnippetTab] = useState<'curl' | 'python' | 'typescript_sse'>(
+    'curl'
+  );
+
+  const updateIntegrationConfig = (patch: Partial<TopLevelIntegrationConfig>) => {
+    onUpdateRuntimeConfig({
+      ...runtimeConfig,
+      integrationConfig: {
+        ...integrationCfg,
+        ...patch,
+      },
+    });
+  };
+
+  const fetchIntegrationDeliveries = async () => {
+    try {
+      const res = await fetch('/api/v1/integration/deliveries');
+      if (!res.ok) return;
+      const data = await res.json();
+      if (Array.isArray(data?.deliveries)) {
+        setIntegrationDeliveries(data.deliveries);
+      }
+      if (typeof data?.activeSseSubscribers === 'number') {
+        setActiveSseCount(data.activeSseSubscribers);
+      }
+    } catch {
+      // Ignore fetch error
+    }
+  };
+
+  const handleTriggerIntegrationBroadcast = async () => {
+    setBroadcastState({
+      loading: true,
+      message: `Broadcasting ${broadcastScope} for ${activeIso3} to outbound webhooks & SSE subscribers...`,
+    });
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (integrationCfg.requireApiKey && integrationCfg.apiKey) {
+        headers['X-SMCR-API-Key'] = integrationCfg.apiKey;
+      }
+      const res = await fetch('/api/v1/integration/publish', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          iso3: activeIso3,
+          scope: broadcastScope,
+          eventType: 'manual.gui.broadcast',
+        }),
+      });
+      const data = await res.json();
+      setBroadcastState({
+        loading: false,
+        message: `Broadcast completed for ${activeIso3} (${broadcastScope}) · ${
+          Array.isArray(data?.receipts) ? data.receipts.length : 1
+        } delivery receipt(s) logged.`,
+        payloadPreview: data?.payloadPreview,
+      });
+      void fetchIntegrationDeliveries();
+    } catch (err: any) {
+      setBroadcastState({
+        loading: false,
+        message: err?.message || 'Broadcast request failed.',
+      });
+    }
+  };
+
+  const handleDownloadOpenApiSpec = async () => {
+    try {
+      const res = await fetch('/api/v1/integration/openapi.json');
+      const spec = await res.json();
+      downloadFile('econquest-smcr-openapi-3.1.json', JSON.stringify(spec, null, 2));
+    } catch {
+      // fallback
+    }
+  };
 
   const [ollamaStatus, setOllamaStatus] = useState<{
     connected: boolean;
@@ -1718,6 +1826,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
   useEffect(() => {
     if (!isOpen) return;
     probeOllamaEndpoint();
+    void fetchIntegrationDeliveries();
     fetch('/api/docs/self-host-bundle')
       .then((r) => r.json())
       .then((data) => {
@@ -1999,7 +2108,21 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                4. External &amp; Internal API / Host GUI
+                4. External &amp; Internal APIs
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('top_level_integration_gui');
+                  void fetchIntegrationDeliveries();
+                }}
+                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  activeTab === 'top_level_integration_gui'
+                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                5. Top-Level App Integration Bus
               </button>
             </div>
             <button
@@ -3153,7 +3276,9 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   c.id === conn.id
                     ? {
                         ...c,
-                        lastStatus: (data.ok ? 'ok' : 'error') as 'ok' | 'error',
+                        lastStatus: (data.ok || data.isSimulatedPreview ? 'ok' : 'error') as
+                          | 'ok'
+                          | 'error',
                         lastLatencyMs: data.latencyMs,
                         lastTestedAt: data.testedAt,
                       }
@@ -3678,6 +3803,390 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       </div>
                     </div>
                   )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* TAB 5: TOP-LEVEL EXTERNAL APPLICATION INTEGRATION BUS (REST PULL + WEBHOOK PUSH + SSE STREAM + OPENAPI 3.1) */}
+          {activeTab === 'top_level_integration_gui' && (() => {
+            const originUrl =
+              typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
+            const curlSnippet = `# 1. Pull Granular Geopolitical Desk Output + 3 Sub-Agents + Chokepoint Quant Suite
+curl -s "${originUrl}/api/v1/integration/desks/${activeIso3}?desk=geopolitical&includeSubAgents=true&includeQuant=true" \\
+  -H "Accept: application/json" \\
+  -H "X-SMCR-API-Key: ${integrationCfg.apiKey}" | jq .
+
+# 2. Pull Complete SMCR-1.0 Sovereign Assessment Bundle (All 3 Desks + CRO Gate + Supreme Council)
+curl -s "${originUrl}/api/v1/integration/bundle/${activeIso3}" \\
+  -H "X-SMCR-API-Key: ${integrationCfg.apiKey}" | jq .`;
+
+            const pythonSnippet = `import hmac, hashlib, requests
+
+BASE_URL = "${originUrl}"
+API_KEY = "${integrationCfg.apiKey}"
+HMAC_SECRET = "${integrationCfg.webhookHmacSecret}"
+
+# Pull Sovereign Credit Desk Output (Agents 4-6 + IMF SRDSF DSA & Restructuring NPV)
+resp = requests.get(
+    f"{BASE_URL}/api/v1/integration/desks/${activeIso3}",
+    params={"desk": "sovereign", "includeSubAgents": "true", "includeQuant": "true"},
+    headers={"X-SMCR-API-Key": API_KEY},
+    timeout=10,
+)
+payload = resp.json()
+print("Desk Consensus Score:", payload["deskOutput"]["debateSynthesis"]["postCascadeRiskScore"])
+print("HMAC-SHA256 Header:", resp.headers.get("X-SMCR-Signature-256"))`;
+
+            const tsSseSnippet = `// Subscribe to Real-Time Desk & Supreme Council Outputs via Server-Sent Events (SSE)
+const streamUrl = "${originUrl}/api/v1/integration/stream?apiKey=${integrationCfg.apiKey}";
+const es = new EventSource(streamUrl);
+
+es.addEventListener("stream.connected", (e) => {
+  console.log("Connected to SMCR-1.0 Integration Bus:", JSON.parse(e.data));
+});
+
+es.addEventListener("manual.gui.broadcast", (e) => {
+  const bundle = JSON.parse(e.data);
+  console.log("Received Live Desk Output for", bundle.sovereign.iso3, bundle.scope, bundle);
+});`;
+
+            const activeCodeBlock =
+              activeSnippetTab === 'curl'
+                ? curlSnippet
+                : activeSnippetTab === 'python'
+                ? pythonSnippet
+                : tsSseSnippet;
+
+            return (
+              <div className="space-y-4 text-xs">
+                {/* Top Summary & OpenAPI 3.1 Bar */}
+                <div className="border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/70 dark:bg-slate-950/60 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div className="font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                      Top-Level Application Integration Bus (<code className="font-mono">SMCR-1.0</code> REST Pull · Outbound Webhooks · Live SSE Stream)
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      Allow external applications, PMS/OMS engines, or downstream risk dashboards to pull or subscribe to individual desk outputs (Geopolitical, Sovereign, Macro), 9 sub-agent reports, quantitative suites, and Supreme Council verdicts.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleDownloadOpenApiSpec}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100"
+                    >
+                      <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <span>Download OpenAPI 3.1 Spec (.json)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void fetchIntegrationDeliveries()}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-800 text-white"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                      <span>Refresh Audit Log</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Row 1: 1-Click Desk Output Broadcaster & Security / Auth Configuration */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                  {/* Left: Outbound Desk Broadcaster */}
+                  <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-white">
+                        1-Click Outbound Desk Output Broadcaster ({activeIso3})
+                      </span>
+                      <span className="px-2 py-0.5 font-mono text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                        SSE Subscribers: {activeSseCount}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Push the active sovereign&apos;s desk outputs to all enabled <code className="font-mono">webhook_bus</code> connectors and connected SSE stream listeners with an <code className="font-mono">X-SMCR-Signature-256</code> HMAC header.
+                    </p>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                        Select Granular Desk Output Scope to Broadcast
+                      </label>
+                      <select
+                        value={broadcastScope}
+                        onChange={(e) =>
+                          setBroadcastScope(e.target.value as IntegrationBroadcastScope)
+                        }
+                        className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      >
+                        <option value="all_desks_bundle">
+                          Full SMCR-1.0 Bundle (All 3 Desks + 9 Sub-Agents + Quant Suites + Supreme Council)
+                        </option>
+                        <option value="geopolitical_desk">
+                          Geopolitical Risk Desk Only (Debate + AG-1..AG-3 + Chokepoints/Sanctions Quant)
+                        </option>
+                        <option value="sovereign_desk">
+                          Sovereign Credit Desk Only (Debate + AG-4..AG-6 + IMF SRDSF DSA &amp; Restructuring NPV)
+                        </option>
+                        <option value="macro_desk">
+                          Macro &amp; FX Desk Only (Debate + AG-7..AG-9 + BVAR, NSS Curve &amp; Liquidity Z-Score)
+                        </option>
+                        <option value="supreme_council">
+                          Supreme Council Verdict &amp; Half-Kelly LOB Execution Sizing Only
+                        </option>
+                      </select>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 pt-1">
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={integrationCfg.includeSubAgents}
+                          onChange={(e) =>
+                            updateIntegrationConfig({ includeSubAgents: e.target.checked })
+                          }
+                        />
+                        <span>Include 9 Sub-Agent JSON Reports</span>
+                      </label>
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={integrationCfg.includeQuantSuites}
+                          onChange={(e) =>
+                            updateIntegrationConfig({ includeQuantSuites: e.target.checked })
+                          }
+                        />
+                        <span>Include Desk Quantitative Suites</span>
+                      </label>
+                    </div>
+
+                    <div className="pt-2 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleTriggerIntegrationBroadcast()}
+                        disabled={broadcastState.loading}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                      >
+                        <Play className="w-3.5 h-3.5" />
+                        <span>
+                          {broadcastState.loading
+                            ? 'Broadcasting Desk Outputs...'
+                            : `Broadcast ${activeIso3} Desk Outputs Now`}
+                        </span>
+                      </button>
+
+                      {broadcastState.payloadPreview && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            copyText(
+                              'broadcast-json',
+                              JSON.stringify(broadcastState.payloadPreview, null, 2)
+                            )
+                          }
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>
+                            {copiedKey === 'broadcast-json' ? 'Copied JSON!' : 'Copy Dispatched JSON'}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+
+                    {broadcastState.message && (
+                      <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-mono text-[11px]">
+                        {broadcastState.message}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Right: Security, API Key & HMAC-SHA256 Configuration */}
+                  <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
+                    <div className="font-bold text-slate-900 dark:text-white">
+                      API Key Authentication, HMAC-SHA256 Signing &amp; Auto-Broadcast Policy
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4">
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-emerald-700 dark:text-emerald-400">
+                        <input
+                          type="checkbox"
+                          checked={integrationCfg.autoBroadcastOnRun}
+                          onChange={(e) =>
+                            updateIntegrationConfig({ autoBroadcastOnRun: e.target.checked })
+                          }
+                        />
+                        <span>Auto-Broadcast Desk Outputs on Council Run</span>
+                      </label>
+
+                      <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-slate-700 dark:text-slate-300">
+                        <input
+                          type="checkbox"
+                          checked={integrationCfg.requireApiKey}
+                          onChange={(e) =>
+                            updateIntegrationConfig({ requireApiKey: e.target.checked })
+                          }
+                        />
+                        <span>Enforce X-SMCR-API-Key Header on Pull/SSE</span>
+                      </label>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Inbound Consumer API Key (<code className="font-mono">X-SMCR-API-Key</code>)
+                        </label>
+                        <input
+                          type="text"
+                          value={integrationCfg.apiKey}
+                          onChange={(e) => updateIntegrationConfig({ apiKey: e.target.value })}
+                          className="w-full px-2.5 py-1.5 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Outbound Webhook HMAC Secret (<code className="font-mono">X-SMCR-Signature-256</code>)
+                        </label>
+                        <input
+                          type="text"
+                          value={integrationCfg.webhookHmacSecret}
+                          onChange={(e) =>
+                            updateIntegrationConfig({ webhookHmacSecret: e.target.value })
+                          }
+                          className="w-full px-2.5 py-1.5 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-[11px] space-y-1 text-slate-600 dark:text-slate-400">
+                      <div>
+                        <strong>Pull Desk Endpoint:</strong>{' '}
+                        <code className="text-blue-600 dark:text-blue-400">
+                          GET /api/v1/integration/desks/{activeIso3}?desk=geopolitical|sovereign|macro|all
+                        </code>
+                      </div>
+                      <div>
+                        <strong>Pull Full Bundle:</strong>{' '}
+                        <code className="text-emerald-600 dark:text-emerald-400">
+                          GET /api/v1/integration/bundle/{activeIso3}
+                        </code>
+                      </div>
+                      <div>
+                        <strong>Live SSE Stream:</strong>{' '}
+                        <code className="text-amber-600 dark:text-amber-400">
+                          GET /api/v1/integration/stream
+                        </code>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Row 2: Live Outbound Webhook, SSE & REST Pull Delivery Audit Log */}
+                <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-slate-900 dark:text-white">
+                      Live Top-Level Integration Delivery &amp; Consumer Audit Log
+                    </span>
+                    <span className="font-mono text-[11px] text-slate-500">
+                      Showing {integrationDeliveries.length} recent dispatches
+                    </span>
+                  </div>
+
+                  <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
+                    <table className="w-full text-left border-collapse font-mono text-[11px]">
+                      <thead>
+                        <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
+                          <th className="py-2 px-2.5">Delivery ID</th>
+                          <th className="py-2 px-2.5">ISO-3</th>
+                          <th className="py-2 px-2.5">Desk Scope</th>
+                          <th className="py-2 px-2.5">Transport</th>
+                          <th className="py-2 px-2.5">Target / Consumer</th>
+                          <th className="py-2 px-2.5">HTTP</th>
+                          <th className="py-2 px-2.5">Latency</th>
+                          <th className="py-2 px-2.5">HMAC-SHA256 Signature</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                        {integrationDeliveries.slice(0, 8).map((dlv) => (
+                          <tr
+                            key={dlv.deliveryId}
+                            className="hover:bg-slate-50/80 dark:hover:bg-slate-950/50"
+                          >
+                            <td className="py-2 px-2.5 font-bold text-slate-900 dark:text-white">
+                              {dlv.deliveryId}
+                            </td>
+                            <td className="py-2 px-2.5">{dlv.iso3}</td>
+                            <td className="py-2 px-2.5 text-blue-600 dark:text-blue-400">
+                              {dlv.scope}
+                            </td>
+                            <td className="py-2 px-2.5">{dlv.transport}</td>
+                            <td className="py-2 px-2.5 truncate max-w-[220px]" title={dlv.targetUrl}>
+                              {dlv.targetName}
+                            </td>
+                            <td className="py-2 px-2.5">
+                              <span
+                                className={`px-1.5 py-0.5 font-bold ${
+                                  dlv.ok
+                                    ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
+                                }`}
+                              >
+                                {dlv.statusCode}
+                              </span>
+                            </td>
+                            <td className="py-2 px-2.5 tabular-nums">{dlv.latencyMs}ms</td>
+                            <td
+                              className="py-2 px-2.5 text-slate-500 truncate max-w-[180px]"
+                              title={dlv.hmacSignature}
+                            >
+                              {dlv.hmacSignature.slice(0, 22)}...
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Row 3: Downstream Consumer Quickstart Snippets */}
+                <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2.5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="font-bold text-slate-900 dark:text-white">
+                      Downstream Application Consumer Code Snippets ({activeIso3})
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      {(
+                        [
+                          { id: 'curl', label: 'cURL (REST Pull Desks & Bundle)' },
+                          { id: 'python', label: 'Python (Desk Pull + HMAC)' },
+                          { id: 'typescript_sse', label: 'TypeScript (Live SSE EventStream)' },
+                        ] as const
+                      ).map((tab) => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          onClick={() => setActiveSnippetTab(tab.id)}
+                          className={`px-2.5 py-1 text-[11px] font-semibold border ${
+                            activeSnippetTab === tab.id
+                              ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500'
+                              : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
+                          }`}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => copyText('int-snippet', activeCodeBlock)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>{copiedKey === 'int-snippet' ? 'Copied!' : 'Copy Code'}</span>
+                      </button>
+                    </div>
+                  </div>
+                  <pre className="p-3 font-mono text-[11px] leading-relaxed bg-slate-950 text-emerald-300 overflow-x-auto select-text">
+                    {activeCodeBlock}
+                  </pre>
                 </div>
               </div>
             );

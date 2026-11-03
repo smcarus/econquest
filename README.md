@@ -226,12 +226,12 @@ Navigate to **2. Policy Research** → **Policy Document AI, Council & Governanc
 
 ---
 
-## 6. Self-Hosting with Docker (macOS & Windows), Local Ollama Models & External/Internal API Host GUI Studio
+## 6. Self-Hosting with Docker (macOS & Windows), Local Ollama Models & 5-Tab GUI Configuration Studio
 
-**EconQuest** is 100% self-hostable via Docker and Docker Compose on both **macOS (Apple Silicon M1/M2/M3/M4 & Intel)** and **Windows 10/11 (WSL2 + NVIDIA GPU or CPU)**, and includes a built-in **4-Tab Interactive GUI Configuration Studio** accessible from the **`AI / APIs / Docker`** button in the top command bar.
+**EconQuest** is 100% self-hostable via Docker and Docker Compose on both **macOS (Apple Silicon M1/M2/M3/M4 & Intel)** and **Windows 10/11 (WSL2 + NVIDIA GPU or CPU)**, and includes a built-in **5-Tab Interactive GUI Configuration Studio** accessible from the **`AI / APIs / Docker`** button in the top command bar.
 
-### A. The 4-Tab In-App GUI Configuration Studio (`AI / APIs / Docker` Button)
-Click **`AI / APIs / Docker`** in the top header to configure models, agent prompts, Docker launchers, and external/internal API hosts without editing code or configuration files manually:
+### A. The 5-Tab In-App GUI Configuration Studio (`AI / APIs / Docker` Button)
+Click **`AI / APIs / Docker`** in the top header to configure models, agent prompts, Docker launchers, external/internal API hosts, and top-level application integrations without editing code or configuration files manually:
 
 1. **Tab 1 — Global Models & Parameters GUI**:
    - Switch between **Local Ollama Only**, **Hybrid Failover (Local Ollama → Cloud Gemini)**, **Cloud Google Gemini**, or **vLLM / LM Studio (`openai_compatible`)**.
@@ -248,8 +248,11 @@ Click **`AI / APIs / Docker`** in the top header to configure models, agent prom
      - **Macro & Market REST Feeds** (`World Bank Open Data v2`, `IMF DataMapper WEO v1`, or custom internal risk data lakes such as `http://host.docker.internal:8080/api/v1/sovereign/{{ISO3}}`).
      - **Internal / External LLM Gateways** (custom Ollama, vLLM, TGI, or LiteLLM proxy endpoints).
      - **Outbound Webhook & Enterprise Event Buses** (`SMCR-1.0` JSON verdict dispatch to internal risk buses, Slack, Teams, or Discord).
-   - **Live Server-Proxied Ping Tester & JSON Inspector**: Click **Ping & Inspect Live JSON** (`POST /api/connectors/ping-and-inspect`) with any sample ISO-3 code to inspect HTTP status, round-trip latency (ms), and formatted JSON payloads via the backend proxy (avoiding browser CORS issues and keeping custom headers server-side).
-   - **Visual JSON Dot-Path Telemetry Mapper**: Map JSON dot-paths (e.g., `1.0.value`, `values.GGXWDG_NGDP.{{ISO3}}.2025`, or `telemetry.gdpGrowthPct`) directly into live sovereign indicators (`gdpGrowth`, `cpiInflation`, `debtToGdp`, `cds5yBps`, `fxReservesMonths`, `policyRate`, `politicalStability`) and click **Apply Mapped Values to Active Sovereign** to update all 10 analytical hubs in 1 click.
+   - **Live Server-Proxied Ping Tester & JSON Inspector**: Click **Ping & Inspect Live JSON** (`POST /api/connectors/ping-and-inspect`) with any sample ISO-3 code to inspect HTTP status, round-trip latency (ms), and formatted JSON payloads via the backend proxy.
+   - **Visual JSON Dot-Path Telemetry Mapper**: Map JSON dot-paths (`1.0.value`, `values.GGXWDG_NGDP.{{ISO3}}.2025`, `telemetry.gdpGrowthPct`) directly into live sovereign indicators (`gdpGrowth`, `cpiInflation`, `debtToGdp`, `cds5yBps`, `fxReservesMonths`, `policyRate`, `politicalStability`) and click **Apply Mapped Values to Active Sovereign**.
+5. **Tab 5 — Top-Level Application Integration Bus (Outbound Desks, Webhooks, SSE & OpenAPI 3.1)**:
+   - Enables downstream applications, PMS/OMS engines, or enterprise risk dashboards to consume individual desk outputs (`geopolitical_desk`, `sovereign_desk`, `macro_desk`), the 9 sub-agent reports, quantitative suites, or the full `SMCR-1.0` bundle (`all_desks_bundle`).
+   - Includes a **1-Click Outbound Desk Broadcaster**, **API Key (`X-SMCR-API-Key`) & HMAC-SHA256 (`X-SMCR-Signature-256`) Security Controls**, a **Live Delivery & Consumer Audit Log**, copy-ready `cURL` / `Python` / `TypeScript SSE` consumer snippets, and **OpenAPI 3.1.0 Spec (`openapi.json`)** download.
 
 ### B. Quick-Start: macOS (Apple Silicon Metal Acceleration or Bundled Container)
 On macOS Apple Silicon, running native macOS Ollama on the host utilizes **Apple Metal GPU acceleration**, while the Dockerized EconQuest server connects seamlessly via `http://host.docker.internal:11434`:
@@ -280,5 +283,21 @@ OLLAMA_BASE_URL=http://ollama:11434 docker compose --profile bundled-ollama up -
 # Option 3: Bundled Ollama Container with NVIDIA GPU Passthrough (Windows WSL2 / Linux NVIDIA)
 OLLAMA_BASE_URL=http://ollama-gpu:11434 docker compose --profile bundled-ollama-gpu up -d --build
 ```
+
+---
+
+## 7. Top-Level External Application Integration API (`SMCR-1.0` Desk Output Bus)
+
+External applications can receive desk and council outputs via **REST Pull API**, **Outbound Push Webhooks**, or **Real-Time Server-Sent Events (SSE)**:
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/api/v1/integration/desks/:iso3` | `GET` | Pull granular desk output (`?desk=geopolitical\|sovereign\|macro\|all&includeSubAgents=true&includeQuant=true`) with `X-SMCR-Signature-256` HMAC header. |
+| `/api/v1/integration/bundle/:iso3` | `GET` | Pull the complete `SMCR-1.0` bundle (all 3 desks, 9 sub-agents, quant suites, CRO Gate, Supreme Council synthesis, and Half-Kelly LOB execution sizing). |
+| `/api/v1/integration/publish` | `POST` | Broadcast active sovereign desk outputs (`scope: 'all_desks_bundle' \| 'geopolitical_desk' \| 'sovereign_desk' \| 'macro_desk' \| 'supreme_council'`) to all enabled `webhook_bus` hosts and connected SSE stream subscribers. |
+| `/api/v1/integration/stream` | `GET` | Subscribe to a persistent `text/event-stream` (SSE) feed emitting real-time `SMCR-1.0` JSON events whenever council runs complete or manual broadcasts are triggered. |
+| `/api/v1/integration/openapi.json` | `GET` | Download the machine-readable **OpenAPI 3.1.0 Specification** for SDK generation and API gateway registration. |
+| `/api/v1/integration/deliveries` | `GET` | Inspect recent outbound webhook, SSE, and REST pull delivery receipts (`deliveryId`, `scope`, `statusCode`, `latencyMs`, `hmacSignature`). |
+
 
 

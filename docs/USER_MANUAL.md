@@ -372,8 +372,8 @@ EconQuest supports two complementary Docker topologies so both **macOS Apple Sil
    ```
 3. The script checks whether native Windows Ollama is active on `http://localhost:11434`. If not, it checks for `nvidia-smi` and launches either `--profile bundled-ollama-gpu` (NVIDIA GPU passthrough) or `--profile bundled-ollama` (CPU), then opens `http://localhost:3000`.
 
-### 7.4 Using the 4-Tab Interactive GUI Configuration Studio (`AI / APIs / Docker` Header Modal)
-Click the **`AI / APIs / Docker`** button in the top command header to open the **4-Tab Interactive GUI Configuration Studio**:
+### 7.4 Using the 5-Tab Interactive GUI Configuration Studio (`AI / APIs / Docker` Header Modal)
+Click the **`AI / APIs / Docker`** button in the top command header to open the **5-Tab Interactive GUI Configuration Studio**:
 1. **Tab 1 — Global Models & Parameters GUI**:
    - Switch between **Local Ollama Only**, **Hybrid (Ollama → Gemini)**, **Cloud Google Gemini**, or **vLLM / LM Studio (`openai_compatible`)**.
    - Configure `ollamaBaseUrl` and `openAiBaseUrl` via 1-click topology buttons (`http://localhost:11434`, `http://host.docker.internal:11434`, `http://ollama:11434`) or custom host/IP inputs.
@@ -389,6 +389,43 @@ Click the **`AI / APIs / Docker`** button in the top command header to open the 
    - Connect and manage **Macro & Market Data REST Feeds**, **Internal/External LLM Gateways**, and **Outbound Webhook / Risk Event Buses** (supporting both public external URLs and internal Docker/intranet hosts such as `http://host.docker.internal:8080/api/v1/sovereign/{{ISO3}}`).
    - Add custom HTTP headers (proxied server-side via `/api/connectors/ping-and-inspect` so credentials never leak to client code and browser CORS restrictions are bypassed).
    - Click **Ping & Inspect Live JSON** to measure round-trip latency (`ms`), inspect the formatted JSON response payload, map JSON dot-paths (`1.0.value`, `values.GGXWDG_NGDP.{{ISO3}}.2025`, `telemetry.gdpGrowthPct`, etc.) into live sovereign indicators (`gdpGrowth`, `cpiInflation`, `debtToGdp`, `cds5yBps`, `fxReservesMonths`, `policyRate`, `politicalStability`), and click **Apply Mapped Values to Active Sovereign** to immediately hydrate all 10 analytical hubs.
+5. **Tab 5 — Top-Level Application Integration Bus (Outbound Desks, Webhooks, SSE & OpenAPI 3.1)**:
+   - Configure how external applications receive desk and council outputs via **REST Pull API**, **Outbound HMAC-SHA256 Push Webhooks**, and **Real-Time Server-Sent Events (SSE)**.
    - Click **Save & Apply GUI Configuration** in the modal footer to persist all settings to both browser `localStorage` and the live Express server (`POST /api/ai/runtime-config-save`).
+
+---
+
+## 8. Top-Level External Application Integration Guide (`SMCR-1.0` Desk Output Bus)
+
+Downstream applications (such as portfolio management systems, automated execution engines, or enterprise risk lakes) can consume desk outputs from this application using three real-time transport mechanisms:
+
+### 8.1 REST Pull API (`/api/v1/integration/desks/:iso3` & `/api/v1/integration/bundle/:iso3`)
+- **Pull Individual Desk Outputs**:
+  ```bash
+  # Pull Geopolitical Risk Desk (Debate + Sub-Agents AG-1..AG-3 + Chokepoints/Sanctions Quant Suite)
+  curl -s "http://localhost:3000/api/v1/integration/desks/BRA?desk=geopolitical&includeSubAgents=true&includeQuant=true" \
+    -H "X-SMCR-API-Key: smcr_live_9f8a7b6c5d4e3f2a1b"
+
+  # Pull Sovereign Credit Desk (Debate + Sub-Agents AG-4..AG-6 + IMF SRDSF DSA & Restructuring NPV)
+  curl -s "http://localhost:3000/api/v1/integration/desks/BRA?desk=sovereign"
+
+  # Pull Macroeconomic & FX Desk (Debate + Sub-Agents AG-7..AG-9 + BVAR, NSS Curve & Liquidity Z-Score)
+  curl -s "http://localhost:3000/api/v1/integration/desks/BRA?desk=macro"
+  ```
+- **Pull Complete `SMCR-1.0` Sovereign Bundle**:
+  ```bash
+  curl -s "http://localhost:3000/api/v1/integration/bundle/BRA" \
+    -H "X-SMCR-API-Key: smcr_live_9f8a7b6c5d4e3f2a1b"
+  ```
+
+### 8.2 Outbound Push Webhooks & 1-Click Broadcaster (`POST /api/v1/integration/publish`)
+- Whenever a Phase 1–2 or Phase 3 Council run completes (and `Auto-Broadcast Desk Outputs on Council Run` is enabled in **Tab 5**), or when you click **`Broadcast Desk Outputs Now`**, the server signs the `SMCR-1.0` JSON envelope with your configured HMAC secret (`X-SMCR-Signature-256: sha256=...`) and `POST`s it to all enabled `webhook_bus` connectors.
+
+### 8.3 Real-Time Server-Sent Events (SSE) Stream (`GET /api/v1/integration/stream`)
+- External web or Node.js/Python services can subscribe to `/api/v1/integration/stream` to receive instant push notifications (`council.phase1_2.desks_ready`, `council.phase3.supreme_verdict_ready`, `manual.gui.broadcast`) without polling.
+
+### 8.4 OpenAPI 3.1.0 Specification (`GET /api/v1/integration/openapi.json`)
+- Download `/api/v1/integration/openapi.json` (or click **Download OpenAPI 3.1 Spec (.json)** in **Tab 5**) to import all routes and schemas into Postman, Insomnia, Swagger UI, or OpenAPI client generators.
+
 
 

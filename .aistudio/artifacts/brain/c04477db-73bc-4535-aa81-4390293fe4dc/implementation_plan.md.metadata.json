@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan to add a full External & Internal API / Host Connector GUI Hub (with server-side proxy ping tester, live JSON inspector, dot-path telemetry mapper, custom LLM host gateway overrides, and outbound webhook bus connectors) alongside synchronized updates to README.md, SOVEREIGN_COUNCIL_MANUAL.md, docs/USER_MANUAL.md, and the in-app Manual & GitHub Docs viewer.",
-  "updatedAt": "2026-11-03T16:30:10.706455227Z",
+  "summary": "Implementation plan for Top-Level External Application Integration: REST Pull API (/api/v1/integration/desks/:iso3 & /bundle/:iso3), Outbound Push Webhook Dispatcher with HMAC-SHA256 signing, Real-Time SSE Event Stream (/api/v1/integration/stream), OpenAPI 3.1 Specification (/api/v1/integration/openapi.json), In-App Integration & Broadcaster GUI (Tab 5), and updated README & User Manual documentation.",
+  "updatedAt": "2026-11-03T16:53:39.434171426Z",
   "requestFeedback": true,
   "userFacing": true
 }

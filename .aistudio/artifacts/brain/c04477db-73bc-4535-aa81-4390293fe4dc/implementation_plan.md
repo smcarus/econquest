@@ -1,91 +1,72 @@
-# Implementation Plan: GUI External/Internal API & Host Connector Hub + Documentation Sync
+# Top-Level External Application Integration Plan (`SMCR-1.0` Desk Output Bus)
 
-## 1. Executive Summary & Architectural Scope
-This plan refines the **EconQuest Sovereign Council Orchestrator** so users can seamlessly configure, test, map, and manage **external APIs** and **internal network hosts** entirely from the GUI, alongside updated documentation across `README.md`, `SOVEREIGN_COUNCIL_MANUAL.md`, `docs/USER_MANUAL.md`, and the in-app **Manual & GitHub Docs** viewer.
-
-Specifically, we will implement:
-1. **External & Internal API / Host Connector GUI Hub (Tab 4 in the AI Runtime & Self-Host Studio + Quick-Access Header Launch)**:
-   - Manage three classes of connectors from a single interactive GUI:
-     - **Macro & Market Data REST Feeds** (World Bank, IMF DataMapper, FRED, US Treasury FiscalData, GDELT, plus user-defined internal data lakes, intranet microservices, or external REST JSON APIs).
-     - **Internal & External LLM Host Gateways** (Ollama, vLLM, LocalAI, LM Studio, TGI, LiteLLM proxy, or internal enterprise OpenAI-compatible gateways with custom headers and health checks).
-     - **Outbound Webhook & Enterprise Event Bus Connectors** (Slack, Microsoft Teams, Discord, PagerDuty, or internal risk-bus HTTP endpoints with customizable JSON payload templates and 1-click test dispatch).
-2. **Server-Side Proxy Ping Tester, Live JSON Inspector & Telemetry Mapper**:
-   - All custom headers/auth tokens and HTTP requests are executed server-side via `/api/connectors/*` routes to avoid browser CORS blocks and keep credentials out of client code.
-   - Users can click **Ping & Inspect JSON** on any connector to view live HTTP status, round-trip latency (ms), response headers, and formatted JSON payload.
-   - Users can map JSON dot-paths (e.g., `data.0.gdp_growth`, `metrics.cpi_yoy`, `sovereign.cds_5y_bps`) directly into live sovereign indicators (`gdpGrowth`, `cpiInflation`, `debtToGdp`, `cds5yBps`, `fxReservesMonths`, `policyRate`, `politicalStability`) or inject custom JSON context into the 9-agent Council prompts.
-3. **Comprehensive Documentation & In-App Manual Synchronization**:
-   - Update `/README.md`, `/SOVEREIGN_COUNCIL_MANUAL.md`, and `/docs/USER_MANUAL.md` (and verify `/api/docs/manual-and-readme`) so both GitHub visitors and in-app **Manual & Docs** users have complete, step-by-step documentation for the 4-Tab GUI Studio, Per-Agent Model & Directive Matrix, Docker Mac/Windows Self-Hosting Builder, and External/Internal API Connectors.
+## 1. Overview & Architectural Goal
+Enable downstream applications, risk engines, portfolio management systems (PMS/OMS), and internal enterprise services to consume real-time and on-demand outputs from the **Sovereign & Macro Council Orchestrator** at any granularity:
+- **Individual Desk Outputs** (`Geopolitical Desk`, `Sovereign Credit Desk`, `Macro & FX Desk`)
+- **9 Specialized Sub-Agent Reports** (Agents 1–9 structured JSON theses, risk scores, and quantitative anchors)
+- **Quantitative Suites** (BVAR/Taylor Rule, Chokepoints/Sanctions, Global Liquidity Z-Score, Restructuring NPV, Half-Kelly LOB sizing, and XCCY Basis)
+- **Full `SMCR-1.0` Bundle** (All 3 Desks + CRO Gate + 3-Referee Supreme Council Synthesis)
 
 ---
 
-## 2. Backend & Type System Additions
+## 2. Backend Integration Endpoints (`server.ts`)
 
-### A. Type Definitions (`/src/types/council.ts`)
-- Add `ExternalInternalConnectorConfig`:
-  - `id`: string
-  - `name`: string
-  - `category`: `'macro_rest' | 'llm_gateway' | 'webhook_bus'`
-  - `networkScope`: `'external' | 'internal_host'`
-  - `url`: string (supports `{{ISO3}}` and `{{ISO2}}` template variables for sovereign-specific macro queries)
-  - `method`: `'GET' | 'POST'`
-  - `headers`: `Record<string, string>` (e.g., `Accept`, `X-Internal-Service`, custom auth header names handled via backend runtime store)
-  - `bodyTemplate`?: string
-  - `enabled`: boolean
-  - `timeoutMs`: number
-  - `telemetryMappings`?: `Partial<Record<'gdpGrowth' | 'cpiInflation' | 'debtToGdp' | 'cds5yBps' | 'fxReservesMonths' | 'policyRate' | 'politicalStability', string>>` (maps sovereign metric keys to JSON dot-paths in the response)
-  - `injectIntoCouncilPrompt`?: boolean
-  - `lastStatus`?: `'untested' | 'ok' | 'error'`
-  - `lastLatencyMs`?: number
-  - `lastTestedAt`?: string
-- Extend `AIRuntimeConfig` with `apiConnectors?: ExternalInternalConnectorConfig[]`.
+### A. REST Pull API (`/api/v1/integration/*`)
+1. **`GET /api/v1/integration/desks/:iso3`**
+   - **Query Parameters**:
+     - `desk` (optional): `'all' | 'geopolitical' | 'sovereign' | 'macro'` (defaults to `'all'`)
+     - `includeSubAgents` (optional): `'true' | 'false'` (defaults to `'true'`)
+     - `includeQuant` (optional): `'true' | 'false'` (defaults to `'true'`)
+   - **Response**: Standardized `SMCR-1.0` JSON envelope containing the requested desk's adversarial debate synthesis (`consensusScore`, `confidence`, `keyDrivers`, `round1ProposerThesis`, `round1ChallengerCounter`, `round2ProposerRebuttal`, `round2Synthesis`, `dissentingSummary`), its 3 assigned sub-agent reports, and its dedicated quantitative engine output.
+2. **`GET /api/v1/integration/bundle/:iso3`**
+   - Returns the complete top-level `SMCR-1.0` institutional payload combining:
+     - `metadata` (`schemaVersion: "SMCR-1.0"`, `iso3`, `countryName`, `reportId`, `generatedAt`, `hmacSha256`)
+     - `desks` (`geopolitical`, `sovereign`, `macro` — each with sub-agents, debate synthesis, and desk quant metrics)
+     - `croGate` (`geopoliticalRiskScore`, `sovereignRiskScore`, `macroRiskScore`, `compositeScore`, `isLocked`, `overrideJustification`)
+     - `supremeCouncil` (3-Referee synthesis, `convictionScore`, `executiveSummary`, `geopoliticalDirectives`, `sovereignCreditDirectives`, `macroTradePositioning`, and `executionSizing` via Half-Kelly LOB)
+     - `quantSuites` (Full outputs from Hubs 1–7)
+3. **`GET /api/v1/integration/openapi.json`**
+   - Serves a machine-readable **OpenAPI 3.1.0 Specification** documenting all `/api/v1/integration/*` and `/api/council/*` endpoints, request parameters, authentication headers (`X-SMCR-API-Key`), and response schemas so external teams can auto-generate TypeScript, Python, Go, or Java clients.
 
-### B. Server-Side API & Proxy Routes (`/server.ts`)
-- **Pre-Seeded Default Connectors**:
-  - Seed default editable connectors in `serverRuntimeGuiConfig.apiConnectors` covering:
-    1. **World Bank Macro Indicators API** (`macro_rest`, `external`, `https://api.worldbank.org/v2/country/{{ISO3}}/indicator/NY.GDP.MKTP.KD.ZG?format=json&per_page=2`)
-    2. **IMF DataMapper Sovereign Debt Feed** (`macro_rest`, `external`, `https://www.imf.org/external/datamapper/api/v1/GGXWDG_NGDP/{{ISO3}}`)
-    3. **Internal Enterprise Risk Lake / Custom Host** (`macro_rest`, `internal_host`, `http://host.docker.internal:8080/api/v1/sovereign/{{ISO3}}`)
-    4. **Local / Internal Ollama & vLLM Gateway** (`llm_gateway`, `internal_host`, `http://localhost:11434/api/tags`)
-    5. **Outbound SMCR-1.0 Risk Bus Webhook** (`webhook_bus`, `internal_host`, `http://host.docker.internal:9000/webhooks/smcr-verdict`)
-- **New Endpoints**:
-  - `POST /api/connectors/ping-and-inspect`:
-    - Accepts a connector configuration (`url`, `method`, `headers`, `bodyTemplate`, `timeoutMs`, `sampleIso3`, `telemetryMappings`).
-    - Substitutes `{{ISO3}}` / `{{ISO2}}` (defaulting to the active sovereign, e.g., `USA` / `US`), performs the HTTP request server-side with an `AbortSignal.timeout`, measures latency in `ms`, extracts a safe JSON preview, and evaluates all configured `telemetryMappings` dot-paths against the returned JSON so the user can immediately verify extracted numbers.
-  - **Live Integration into `GET /api/sovereign-live/:iso3` & `POST /api/council/phase1-and-cascade`**:
-    - When `GET /api/sovereign-live/:iso3` runs, any enabled custom `macro_rest` connectors with `telemetryMappings` are queried in parallel; resolved numeric values override or enrich the sovereign telemetry snapshot and append provenance source citations.
-    - When `POST /api/council/phase1-and-cascade` runs, any enabled connectors marked `injectIntoCouncilPrompt: true` provide a structured JSON snippet to the 9 sub-agents so internal host telemetry directly informs the Council debate.
+### B. Outbound Push Webhook Dispatcher & Test Broadcaster
+1. **`POST /api/v1/integration/publish`**
+   - Accepts `{ iso3, scope: 'all_desks_bundle' | 'geopolitical_desk' | 'sovereign_desk' | 'macro_desk' | 'supreme_council', runSnapshot? }`.
+   - Builds the corresponding `SMCR-1.0` desk or bundle payload, signs it using **HMAC-SHA256** (`X-SMCR-Signature-256: sha256=...`, `X-SMCR-Event`, `X-SMCR-Delivery-Id`, `X-SMCR-ISO3`), and dispatches it in parallel to all enabled `webhook_bus` connectors configured in the GUI.
+   - Also triggers automatically at the end of `POST /api/council/phase1-and-cascade` and `POST /api/council/supreme-synthesis` when `autoBroadcastOnRun` is enabled.
+2. **`GET /api/v1/integration/deliveries`**
+   - Returns the in-memory ring buffer (up to 50 recent dispatches) of outbound webhook deliveries and SSE broadcasts with `deliveryId`, `timestamp`, `iso3`, `scope`, `targetUrl`, `statusCode`, `latencyMs`, `hmacSigned`, and `responsePreview`.
+
+### C. Real-Time Server-Sent Events (SSE) Stream
+1. **`GET /api/v1/integration/stream`**
+   - Establishes a persistent `text/event-stream` connection (`Cache-Control: no-cache`, `Connection: keep-alive`).
+   - Emits initial `connected` handshake event and broadcasts live events (`desk.output.ready`, `cro.override.updated`, `supreme.synthesis.ready`, `manual.broadcast`) whenever desk outputs are generated or broadcast from the GUI.
+
+### D. Optional API Key & HMAC Security Middleware
+- Configurable via GUI (`integrationSecurity` in `AIRuntimeConfig`):
+  - `requireApiKey`: boolean (default `false` for zero-friction local dev; when `true`, validates `X-SMCR-API-Key` or `Authorization: Bearer <key>` on `/api/v1/integration/*`).
+  - `apiKey`: customizable token string (e.g., `smcr_live_9f8a7b6c5d4e3f2a1b`).
+  - `webhookHmacSecret`: customizable secret used to compute `X-SMCR-Signature-256` on all outbound webhook dispatches.
+  - `autoBroadcastOnRun`: boolean (default `true`) to automatically push desk outputs to registered webhooks & SSE listeners whenever a council run completes.
 
 ---
 
 ## 3. Frontend GUI Enhancements
 
-### A. 4th Tab in `SelfHostAndOllamaRuntimeModal` (`/src/components/TurnkeyCommandAndIntegrityModals.tsx`)
-- Expand the modal navigation to include **`4. External & Internal API / Host GUI`**:
-  - **Connector Directory & Filter Bar**:
-    - Filter by `All`, `Macro & Data Feeds`, `Internal/External LLM Hosts`, and `Webhook & Alert Buses`, plus a `+ New API / Host Connector` button.
-  - **Interactive Connector Editor**:
-    - Edit connector Name, Category (`Macro REST`, `LLM Gateway`, `Webhook Bus`), Network Scope (`External Public API` vs. `Internal Host / Docker LAN`), HTTP Method (`GET`/`POST`), Endpoint URL (with `{{ISO3}}` support), Timeout (ms), Custom HTTP Headers (key-value builder), and toggles for **Active** and **Inject into 9-Agent Council Context**.
-  - **Live Ping Tester & JSON Inspector**:
-    - 1-click **Ping & Inspect Live JSON** button with sample ISO3 selector (`USA`, `DEU`, `JPN`, `BRA`, `IND`, etc.).
-    - Displays HTTP Status code, round-trip latency (`tabular-nums` in ms), resolved URL, and an interactive JSON payload viewer.
-  - **Visual JSON Dot-Path to Telemetry Mapper**:
-    - For `Macro REST` connectors, provides a clean mapping grid linking Sovereign Telemetry fields (`GDP Growth %`, `CPI Inflation %`, `Debt-to-GDP %`, `5Y CDS Spread bps`, `FX Reserves Months`, `Policy Rate %`) to JSON dot-paths (e.g., `1.0.value` or `data.metrics.gdpGrowth`), showing the live extracted value next to each field upon ping.
-    - Includes a **Apply Mapped Values to Current Sovereign** button for instant testing on the active dashboard.
+### A. Tab 5 in `AI / APIs / Docker` Configuration Studio (`src/components/TurnkeyCommandAndIntegrityModals.tsx`)
+- Add **`5. Top-Level Integration Hub (Desks, Webhooks, SSE & OpenAPI)`** to `SelfHostAndOllamaRuntimeModal`:
+  1. **Outbound Desk Broadcaster Bar**:
+     - Select target payload scope (`Full SMCR-1.0 Bundle`, `Geopolitical Desk Only`, `Sovereign Credit Desk Only`, `Macro & FX Desk Only`, `Supreme Council Verdict`).
+     - **`Broadcast Active Desk Outputs Now`** button that pushes the active sovereign's live `CouncilAssessmentRun` to all enabled `webhook_bus` endpoints and active SSE stream subscribers.
+  2. **API Key, HMAC Signing & Auto-Broadcast Controls**:
+     - Toggle `Auto-Broadcast on Council Completion`.
+     - Toggle `Enforce X-SMCR-API-Key on Pull/SSE Endpoints`.
+     - Edit/regenerate `Inbound API Key` and `Outbound Webhook HMAC-SHA256 Secret`.
+  3. **Live Outbound Webhook & SSE Delivery Log**:
+     - Real-time table displaying recent dispatches (`Delivery ID`, `ISO3`, `Desk Scope`, `Target Endpoint`, `HTTP Status`, `Latency ms`, `Signature`).
+  4. **Downstream Consumer Quickstart & OpenAPI 3.1 Viewer**:
+     - Interactive code tabs (`cURL`, `Python`, `TypeScript / EventSource SSE`) pre-filled with the active sovereign (`iso3`) and configured API key.
+     - **`Download OpenAPI 3.1 Spec (openapi.json)`** button.
 
----
-
-## 4. Documentation & In-App Manual Updates
-
-### A. Synchronized Markdown Files (`/README.md`, `/SOVEREIGN_COUNCIL_MANUAL.md`, `/docs/USER_MANUAL.md`)
-- Add a comprehensive **GUI Configuration Studio & External/Internal API Host Integration** section covering:
-  1. **Tab 1 — Global Models & Parameters GUI**: Switching between Cloud Gemini, Local Ollama, and Internal vLLM/OpenAI-compatible hosts; tuning temperature, context window (`num_ctx`), and debate rounds.
-  2. **Tab 2 — Per-Desk & 12-Agent GUI Matrix**: Assigning distinct local/cloud models (`qwen2.5:14b`, `deepseek-r1:14b`, `llama3.2:3b`, etc.) and custom system prompt directives to individual agents (`AG-1` through `AG-9`) and Supreme Council referees.
-  3. **Tab 3 — Docker & OS Self-Host GUI Builder**: Generating `.env` files and one-line launch scripts for macOS Apple Silicon and Windows (NVIDIA GPU / CPU) using either Host Native Ollama (`host.docker.internal:11434`) or Bundled Docker Compose (`--profile local-ai`).
-  4. **Tab 4 — External & Internal API / Host Connector Hub**: Connecting internal enterprise hosts, custom REST macro feeds, LLM gateways, and outbound risk webhooks; using the Live Ping Tester, JSON Inspector, and Dot-Path Telemetry Mapper.
-
----
-
-## 5. Verification & Git Readiness
-1. Run `lint_applet` (`tsc --noEmit`) and `compile_applet` (`vite build`) to verify zero TypeScript or bundle errors.
-2. Verify `/api/connectors/ping-and-inspect`, `/api/ai/runtime-config-save`, and `/api/docs/manual-and-readme` against the live Express server.
-3. Stage and commit all updated code and documentation files to the local Git repository so the workspace remains clean and ready for GitHub Sync.
+### B. Full-Sweep Health Check & Documentation (`README.md` & `docs/USER_MANUAL.md`)
+- Add `SWEEP-INT-09` (`Top-Level Desk Integration Bus: REST + Webhooks + SSE + OpenAPI 3.1`) to `/api/health/full-sweep`.
+- Update `README.md` and `docs/USER_MANUAL.md` with a dedicated **Downstream Application Integration (`SMCR-1.0` Pull REST, Push Webhooks & SSE Stream)** section so the in-app **Manual & Docs** viewer reflects all integration schemas and endpoints.

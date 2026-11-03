@@ -29,6 +29,7 @@ WORKDIR /app
 RUN apk add --no-cache curl bash
 
 ENV NODE_ENV=production
+ENV SELF_HOSTED_DOCKER=true
 ENV PORT=3000
 ENV DEFAULT_AI_PROVIDER=ollama
 ENV OLLAMA_BASE_URL=http://host.docker.internal:11434

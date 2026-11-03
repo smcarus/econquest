@@ -456,6 +456,41 @@ export interface DockerSelfHostGuiConfig {
   autoPullOnBoot: boolean;
 }
 
+export type IntegrationBroadcastScope =
+  | 'all_desks_bundle'
+  | 'geopolitical_desk'
+  | 'sovereign_desk'
+  | 'macro_desk'
+  | 'supreme_council';
+
+export interface TopLevelIntegrationConfig {
+  requireApiKey: boolean;
+  apiKey: string;
+  webhookHmacSecret: string;
+  autoBroadcastOnRun: boolean;
+  defaultScope: IntegrationBroadcastScope;
+  includeSubAgents: boolean;
+  includeQuantSuites: boolean;
+}
+
+export interface IntegrationDeliveryReceipt {
+  deliveryId: string;
+  timestamp: string;
+  iso3: string;
+  countryName: string;
+  scope: IntegrationBroadcastScope;
+  eventType: string;
+  targetName: string;
+  targetUrl: string;
+  transport: 'WEBHOOK_POST' | 'SSE_STREAM' | 'REST_PULL';
+  statusCode: number;
+  ok: boolean;
+  latencyMs: number;
+  hmacSignature: string;
+  payloadBytes: number;
+  responsePreview: string;
+}
+
 export interface AIRuntimeConfig {
   providerMode: 'gemini' | 'ollama' | 'hybrid' | 'openai_compatible';
   geminiQuickModel: string;
@@ -481,6 +516,7 @@ export interface AIRuntimeConfig {
   agentPromptOverrides?: Partial<Record<SubAgentId, string>>;
   dockerGuiConfig?: DockerSelfHostGuiConfig;
   apiConnectors?: ExternalInternalConnectorConfig[];
+  integrationConfig?: TopLevelIntegrationConfig;
 }
 
 export interface CouncilAssessmentRun {
