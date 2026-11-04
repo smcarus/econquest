@@ -7,7 +7,7 @@ import type { UserPersonaId } from '../types/council';
 export type UserRoleId = 'PM' | 'ECONOMIST' | 'BANKER' | 'MULTILATERAL' | 'UHNW';
 export type WorkflowArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 /** Which report template opens first on Reports > Memos and notes. */
-export type ReportTemplate = 'ic' | 'client' | 'economist' | 'banker';
+export type ReportTemplate = 'ic' | 'client' | 'economist' | 'banker' | 'official';
 
 export interface UserRole {
   id: UserRoleId;
@@ -51,10 +51,10 @@ export const USER_ROLES: UserRole[] = [
   {
     id: 'MULTILATERAL',
     label: 'Multilateral or official sector',
-    description: 'Start with debt sustainability and policy, then the written assessment.',
+    description: 'Start with debt sustainability: the debt path, standard shocks and the adjustment needed, then the written assessment.',
     persona: 'POLICY_RESEARCHER',
     home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
-    report: 'economist',
+    report: 'official',
     nav: ['country', 'reports', 'today', 'desks', 'portfolio'],
   },
   {
