@@ -117,6 +117,9 @@ test('South Africa: when the FRED API refuses, the public CSV is used, skipping 
   assert.equal(s.official10YYield?.valuePct, 8.71);
   assert.equal(s.official10YYield?.period, '2026-08');
   assert.match(s.official10YYield?.source || '', /FRED/);
+  // US 10Y benchmark for the spread over Treasuries comes from the same FRED fallback.
+  assert.equal(s.us10YYield?.seriesId, 'IRLTLT01USM156N');
+  assert.equal(s.us10YYield?.valuePct, 8.71);
 });
 
 test('Brazil: Tesouro Direto NTN-F mid rate, dated by day', async () => {

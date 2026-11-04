@@ -11,8 +11,8 @@ test('core view: no Tools in the top bar for any role; all of it with the switch
   }
 });
 
-test('core view: Brief and Overview only on the Country page', () => {
-  assert.ok(isCoreCountryTab('brief') && isCoreCountryTab('overview'));
+test('core view: Brief, Markets & macro and Overview only on the Country page', () => {
+  assert.ok(isCoreCountryTab('brief') && isCoreCountryTab('macro') && isCoreCountryTab('overview'));
   for (const t of ['debt', 'markets', 'geo', 'scenarios', 'restructuring']) assert.equal(isCoreCountryTab(t), false);
 });
 

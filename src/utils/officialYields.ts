@@ -49,6 +49,9 @@ export const FRED_10Y_SERIES: Record<string, string> = {
   CHL: 'IRLTLT01CLM156N',
 };
 
+/** US 10Y Treasury, OECD monthly average on FRED: the benchmark for spreads over Treasuries. */
+export const US_10Y_SERIES = 'IRLTLT01USM156N';
+
 export const OFFICIAL_YIELD_SOURCE_LABEL = 'FRED / OECD 10Y government yield (monthly average)';
 
 export function fredSeriesUrl(seriesId: string): string {

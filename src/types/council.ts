@@ -379,6 +379,8 @@ export interface OpenDataSnapshot {
     instrument?: string;
   };
   groundingCitations?: Array<{ title: string; uri: string }>;
+  /** US 10Y Treasury yield (OECD monthly via FRED), the benchmark for the spread over Treasuries. */
+  us10YYield?: import('../utils/officialYields').OfficialYieldObservation;
   /** 5Y CDS from the user's own licensed data, when the own-account switch is on (utils/ownCds.ts). */
   ownCds5Y?: { bps: number; date: string; source: string };
   /** Government external debt falling due, when QEDS or IDS answered (see utils/debtSchedule.ts). */
