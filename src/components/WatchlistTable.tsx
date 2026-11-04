@@ -106,13 +106,15 @@ export const ColumnPicker: React.FC<{ view: WatchlistView; onChange: (v: Watchli
  * What is missing across the list and what would fill it: setup items first (the user can act on
  * them), then free feeds that did not answer.
  */
-export const MissingSources: React.FC<{ items: LiveWatchlistItem[] }> = ({ items }) => {
+export const MissingSources: React.FC<{ items: LiveWatchlistItem[]; compact?: boolean }> = ({ items, compact }) => {
   const rows = missingSummary(items).sort((a, b) => Number(b.reason.kind === 'setup') - Number(a.reason.kind === 'setup'));
   if (!rows.length || !items.length) return null;
   return (
-    <details className="mb-3 border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 px-3 py-2 text-sm" data-missing-sources="true">
+    <details className={`mb-3 border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 ${compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'}`} data-missing-sources="true">
       <summary className="cursor-pointer text-amber-900 dark:text-amber-200">
-        Some figures are missing: {rows.map((r) => FIGURE_LABEL[r.key]).join(', ')}. No built-in values are shown in their place. What to set up
+        {compact
+          ? `– means missing (${rows.length} ${rows.length === 1 ? 'figure' : 'figures'}). What to set up`
+          : `Some figures are missing: ${rows.map((r) => FIGURE_LABEL[r.key]).join(', ')}. No built-in values are shown in their place. What to set up`}
       </summary>
       <ul className="mt-2 space-y-1.5">
         {rows.map((r) => (
@@ -128,6 +130,9 @@ export const MissingSources: React.FC<{ items: LiveWatchlistItem[] }> = ({ items
     </details>
   );
 };
+
+/** How many of the chosen columns the Workspace corner card shows; the pop-out shows them all. */
+export const COMPACT_COLUMNS = 2;
 
 export const ColumnsButton: React.FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
   <button type="button" onClick={onClick} aria-expanded={open} className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap">
@@ -148,9 +153,12 @@ export const WatchlistTable: React.FC<{
   onOpen: (item: LiveWatchlistItem) => void;
   /** Pop-out only: a remove button on each row. */
   onRemove?: (iso3: string) => void;
-}> = ({ items, view, onChangeView, lastLook, highlightIso3, onOpen, onRemove }) => {
+  /** Small corner card on Workspace: the first COMPACT_COLUMNS chosen columns, tight rows, one layout. */
+  compact?: boolean;
+}> = ({ items, view, onChangeView, lastLook, highlightIso3, onOpen, onRemove, compact }) => {
   const rows = useMemo(() => sortRows(items, view, lastLook), [items, view, lastLook]);
-  const cols = view.columns.map((id) => COLUMN_BY_ID[id]);
+  const allCols = view.columns.map((id) => COLUMN_BY_ID[id]);
+  const cols = compact ? allCols.slice(0, COMPACT_COLUMNS) : allCols;
   const sortMark = (key: SortKey) => (view.sort.key === key ? (view.sort.dir === 'asc' ? ' ↑' : ' ↓') : '');
   const header = (key: SortKey, label: string, align: 'left' | 'right') => (
     <th key={key} className={`py-2 pr-3 font-medium ${align === 'right' ? 'text-right' : ''}`} aria-sort={view.sort.key === key ? (view.sort.dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
@@ -163,6 +171,45 @@ export const WatchlistTable: React.FC<{
   const [confirm, setConfirm] = useState<string | null>(null);
 
   if (items.length === 0) return <p className="text-sm text-slate-500 dark:text-slate-400">No countries on this list yet.</p>;
+
+  if (compact)
+    return (
+      <table className="w-full text-xs [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true" data-watchlist-table="compact">
+        <thead>
+          <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+            {header('country', 'Country', 'left')}
+            {cols.map((c) => header(c.id, c.label, c.align))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((it) => (
+            <tr
+              key={it.iso3}
+              onClick={() => onOpen(it)}
+              title={`Open ${it.countryName}`}
+              className={`border-b border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${it.iso3 === highlightIso3 ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}
+            >
+              <td className="py-1 pr-2 font-medium text-slate-900 dark:text-white">{it.countryName.replace(/\s*\(.*\)$/, '')}</td>
+              {cols.map((c) => (
+                <td key={c.id} className={`py-1 pr-2 ${c.align === 'right' ? 'text-right' : ''}`}>
+                  {(() => {
+                    // One line per row in the corner card: a missing figure is a dash, with the reason on hover.
+                    const miss = cellMissing(c, it);
+                    return miss ? (
+                      <span className="text-slate-400 dark:text-slate-500" title={`Missing: ${miss.short}. ${miss.help}`} aria-label={`Missing, ${miss.short}`}>
+                        –
+                      </span>
+                    ) : (
+                      <Cell col={c} it={it} last={lastLook} />
+                    );
+                  })()}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
 
   return (
     <>

@@ -10,7 +10,7 @@ import { DivergenceList } from './DivergenceList';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
-import { ColumnPicker, ColumnsButton, MissingSources, WatchlistTable } from './WatchlistTable';
+import { MissingSources, WatchlistTable } from './WatchlistTable';
 import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView } from '../utils/watchlistView';
 
 /**
@@ -124,7 +124,6 @@ export const TodayPage: React.FC<{
 
   // Columns and sort, shared with the pop-out window through this browser's storage.
   const [view, setView] = useState<WatchlistView>(() => loadView());
-  const [showColumns, setShowColumns] = useState(false);
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
       if (e.key === WATCHLIST_VIEW_KEY) setView(loadView());
@@ -192,57 +191,53 @@ export const TodayPage: React.FC<{
         </p>
       </div>
 
-      <AskCouncilPanel
-        items={edgeItems}
-        onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-        onSendToReports={() => onSendCouncilToReports?.()}
-        fullCouncil={fullCouncil}
-      />
+      {/* Watchlist as a small card in the top-left corner; the full table lives in the pop-out. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(16rem,22rem)_1fr] gap-4 items-start">
+        <Card
+          title="Watchlist"
+          icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
+          note={`${watchlistName} · ${watchlistItems.length} countries. Pop out for every column.`}
+          action={
+            <div className="flex flex-col items-end gap-1">
+              <button
+                type="button"
+                onClick={popOut}
+                title="Open the full watchlist in its own window, with your choice of columns"
+                className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
+              >
+                <ExternalLink className="w-3.5 h-3.5" /> Pop out
+              </button>
+              <button
+                type="button"
+                onClick={onOpenWatchlistManager}
+                className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
+              >
+                Edit
+              </button>
+            </div>
+          }
+        >
+          <MissingSources items={watchlistItems} compact />
+          <WatchlistTable
+            compact
+            items={watchlistItems}
+            view={view}
+            onChangeView={changeView}
+            lastLook={lastVisit?.rows}
+            highlightIso3={run.iso3}
+            onOpen={(it) => onOpenCountry(it)}
+          />
+        </Card>
 
-      <Card
-        title="Watchlist"
-        icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
-        note={
-          lastVisit
-            ? `Change since your last visit (${formatAsOf(lastVisit.savedAt)}). Click a heading to sort.`
-            : 'Click a heading to sort. Changes since your last visit will show from your next visit.'
-        }
-        action={
-          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
-            <ColumnsButton open={showColumns} onClick={() => setShowColumns((o) => !o)} />
-            <button
-              type="button"
-              onClick={popOut}
-              title="Open the watchlist in its own window, e.g. for a second screen"
-              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-            >
-              <ExternalLink className="w-3.5 h-3.5" /> Pop out
-            </button>
-            <button
-              type="button"
-              onClick={onOpenWatchlistManager}
-              className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-            >
-              Edit watchlist
-            </button>
-          </div>
-        }
-      >
-        {showColumns && (
-          <div className="mb-3">
-            <ColumnPicker view={view} onChange={changeView} onClose={() => setShowColumns(false)} />
-          </div>
-        )}
-        <MissingSources items={watchlistItems} />
-        <WatchlistTable
-          items={watchlistItems}
-          view={view}
-          onChangeView={changeView}
-          lastLook={lastVisit?.rows}
-          highlightIso3={run.iso3}
-          onOpen={(it) => onOpenCountry(it)}
+        <div className="min-w-0">
+        <AskCouncilPanel
+          items={edgeItems}
+          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+          onSendToReports={() => onSendCouncilToReports?.()}
+          fullCouncil={fullCouncil}
         />
-      </Card>
+        </div>
+      </div>
 
       <DivergenceList
         items={edgeItems}
