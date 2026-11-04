@@ -427,7 +427,15 @@ export function traces(written: string, allowed: number[]): boolean {
   return allowed.some((a) => Math.round(a * f) === Math.round(v * f));
 }
 
-/** Drop any sentence with an untraceable number. */
+/**
+ * Drop any sentence with an untraceable number.
+ *
+ * Known gap, for polishing (docs/UX_WORKFLOW_PLAN.md, "Polish backlog: Ask the council"): this
+ * catches invented figures, not wrong words about real ones. A summary that calls policy loose
+ * while the Central Bank Watcher Agent reads it as tight passes. Planned fix: each agent states a
+ * stance (tight / neutral / loose, cheap / rich, strong / weak) and sentences that contradict it
+ * are flagged.
+ */
 export function checkBrief(brief: CouncilBrief, question: string, answers: AgentAnswer[]): { brief: CouncilBrief; removed: string[] } {
   const allowed = allowedNumbers(question, answers);
   const removed: string[] = [];

@@ -270,6 +270,10 @@ A header indicator should also say "3 of 5 feeds live" honestly. This is Phase 0
 
 Out of scope for UI work but worth noting: wider country coverage, a licensed market-data feed in place of AI-sourced prices, and server-side saved workspaces for sharing. The first two are data decisions for Sam.
 
+### Polish backlog: Ask the council
+
+- **Summary can contradict an agent in words.** The number check (`checkBrief` in `src/utils/askCouncil.ts`) removes invented figures but cannot tell when the synthesis agent describes a figure the wrong way, for example calling policy loose when the Central Bank Watcher Agent reads it as tight. Today the agents' own readings sit under the summary, so a reader can see the clash. To polish: give each agent a stated stance (for example tight / neutral / loose for the Central Bank Watcher, cheap / in line / rich for Relative Value, strong / near average / weak for FX), check the summary's wording against those stances, and flag or remove a sentence that contradicts one. Logged by Sam, 2026-11-04.
+
 ## 7. Questions for Sam
 
 1. Which user comes first? The recommendation is **institutional investor**: their daily cadence exercises Today, Country and Portfolio, and the other roles are mostly subsets.
