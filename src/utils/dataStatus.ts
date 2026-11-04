@@ -25,7 +25,7 @@ const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   fx: /Spot FX|ExchangeRate|Frankfurter/i,
   polymarket: /Polymarket/i,
   gdelt: /GDELT/i,
-  treasury: /Treasury/i,
+  treasury: /US Treasury/i,
   ai_market: /Gemini/i,
   official_yield: /FRED|Tesouro Direto/i,
 };

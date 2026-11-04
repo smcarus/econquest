@@ -250,7 +250,9 @@ export async function syncLiveWorldBankAndTreasuryData(
   const summaryHeadline =
     syncStatus === 'DETERMINISTIC_FALLBACK'
       ? `Could not reach World Bank or US Treasury for ${currentSnapshot.countryName} (${iso3}); figures remain built-in sample values, not live data.`
-      : `Synchronized ${liveHitCount} live macroeconomic series from World Bank Open Data v2 & US Treasury APIs for ${currentSnapshot.countryName} (${iso3}); Debt-stabilizing primary balance pb* updated to ${pbStar >= 0 ? '+' : ''}${pbStar.toFixed(2)}% GDP (Ref: r - g = ${rMinusG >= 0 ? '+' : ''}${rMinusG.toFixed(2)}% · US 10Y = ${us10YBenchmark.toFixed(2)}%).`;
+      : `Updated ${liveHitCount} series for ${currentSnapshot.countryName} from World Bank and US Treasury${
+          syncStatus === 'HYBRID_PARTIAL_LIVE' ? ' (some series did not answer and keep their previous values)' : ''
+        }. The primary balance needed to stabilise debt is now ${pbStar >= 0 ? '+' : ''}${pbStar.toFixed(1)}% of GDP.`;
 
   return {
     iso3,

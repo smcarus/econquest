@@ -97,6 +97,7 @@ import type { RestructuringMonetaryGeoSubTabId } from './components/Restructurin
 import type { PersonaPlaybookSubTabId } from './components/PersonaPlaybooksAndSignalDesk';
 import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
+import { describeSnapshotSync } from './utils/syncMessages';
 import {
   DeskClaritySynthesisBanner,
   WorkspaceDensityMode,
@@ -965,7 +966,7 @@ export default function App() {
     if (!silent) {
       setStatusBanner({
         type: 'info',
-        message: `Querying live institutional feeds (IMF WEO, World Bank v2, Spot FX, NY Fed SOFR, Polymarket Gamma, GDELT 2.0 & Gemini Grounding) for ${countryNameTarget} (${iso3Target})...`,
+        message: `Fetching the latest public data for ${countryNameTarget}…`,
       });
     }
     try {
@@ -1024,10 +1025,7 @@ export default function App() {
             }))
           );
           if (!silent) {
-            setStatusBanner({
-              type: 'success',
-              message: `Live open-data & grounded market telemetry updated for ${countryNameTarget} (${iso3Target}) across ${data.snapshot.liveApiSourcesActive.length} institutional feeds.`,
-            });
+            setStatusBanner(describeSnapshotSync(data.snapshot, countryNameTarget));
           }
         }
       }
@@ -1035,7 +1033,7 @@ export default function App() {
       if (!silent) {
         setStatusBanner({
           type: 'warning',
-          message: 'Using cached institutional baseline series while external APIs reconnect.',
+          message: `Couldn't reach the data server. ${countryNameTarget} shows the last saved figures; check the data status badge for what is live.`,
         });
       }
     } finally {
@@ -1069,7 +1067,7 @@ export default function App() {
     setIsSyncingLiveMacro(true);
     setStatusBanner({
       type: 'info',
-      message: `Synchronizing live World Bank Open Data v2 & US Treasury APIs for ${run.countryName} (${run.iso3})...`,
+      message: `Checking World Bank and US Treasury for new ${run.countryName} figures…`,
     });
     try {
       const result = await syncLiveWorldBankAndTreasuryData(run.openData);
@@ -1096,13 +1094,13 @@ export default function App() {
         }))
       );
       setStatusBanner({
-        type: 'success',
+        type: result.syncStatus === 'DETERMINISTIC_FALLBACK' ? 'warning' : 'success',
         message: result.summaryHeadline,
       });
     } catch {
       setStatusBanner({
         type: 'warning',
-        message: 'Verified deterministic IMF/World Bank baseline telemetry (offline fallback active).',
+        message: `Couldn't reach World Bank or US Treasury. ${run.countryName}'s figures are unchanged.`,
       });
     } finally {
       setIsSyncingLiveMacro(false);
