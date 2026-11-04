@@ -67,6 +67,7 @@ import {
   syncLiveWorldBankAndTreasuryData,
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
+import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
 import { TodayPage } from './components/TodayPage';
 import { CouncilApprovalCard } from './components/CouncilApprovalCard';
 import {
@@ -185,7 +186,6 @@ const RestructuringMonetaryGeoDesk = lazyNamed(() => import('./components/Restru
 const PersonaPlaybooksAndSignalDesk = lazyNamed(() => import('./components/PersonaPlaybooksAndSignalDesk'), 'PersonaPlaybooksAndSignalDesk');
 
 
-const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 
@@ -895,6 +895,41 @@ export default function App() {
       // Ignore storage quota errors
     }
   }, [watchlists]);
+
+  // The popped-out watchlist (/?view=watchlist) shares the lists through storage: take its
+  // additions and removals, and open the country it asks for.
+  const openFromPopOut = useRef<(iso3: string) => void>(() => undefined);
+  openFromPopOut.current = (iso3: string) => {
+    const item = watchlists.flatMap((w) => w.items).find((i) => i.iso3 === iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3);
+    if (!item) return;
+    if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+    openCountryPage();
+  };
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== WATCHLIST_STORAGE_KEY || !e.newValue) return;
+      try {
+        const next = JSON.parse(e.newValue);
+        if (Array.isArray(next) && next.length) setWatchlists(next as WatchlistGroup[]);
+      } catch {
+        // ignore a half-written value
+      }
+    };
+    window.addEventListener('storage', onStorage);
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel(WATCHLIST_CHANNEL);
+      channel.onmessage = (e: MessageEvent<WatchlistMessage>) => {
+        if (e.data?.type === 'open-country' && typeof e.data.iso3 === 'string') openFromPopOut.current(e.data.iso3);
+      };
+    } catch {
+      // no channel support: clicks in the pop-out cannot reach this window
+    }
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      channel?.close();
+    };
+  }, []);
 
   // Build current WorkspaceSessionSnapshot and persist automatically
   const currentWorkspaceSessionSnapshot = useMemo<WorkspaceSessionSnapshot>(
@@ -2772,6 +2807,7 @@ export default function App() {
             <TodayPage
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
+              watchlistId={activeWatchlistId}
               watchlistItems={activeWatchlistItems}
               stagedTickets={stagedTradeTickets}
               onOpenCountry={(item, sectionId) => {
