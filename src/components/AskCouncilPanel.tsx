@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Copy, FileText } from 'lucide-react';
 import type { CouncilAssessmentRun, CROOverrideState, WatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
+import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
+import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
 import {
   councilBriefSections,
   planCouncil,
@@ -42,6 +44,8 @@ export interface FullCouncilStep {
   draft: CROOverrideState;
   /** Set only for a report written in this session, never for the built-in example run. */
   result?: { reportId: string; verdict: string; summary: string };
+  /** The run's id for live step progress; null until a run starts in this session. */
+  progressId: string | null;
   onRun: () => void;
   onApprove: () => void;
   onChangeDraft: (next: CROOverrideState) => void;
@@ -136,6 +140,19 @@ export const AskCouncilPanel: React.FC<{
   };
 
   const brief = synthesis?.brief;
+  const fc = fullCouncil;
+  const phase: FullCouncilPhase = !fc
+    ? 'idle'
+    : fc.isRunning
+      ? 'debating'
+      : fc.stage === 'AWAITING_CRO_APPROVAL'
+        ? 'awaiting_review'
+        : fc.isApproving
+          ? 'writing_report'
+          : fc.result
+            ? 'done'
+            : 'idle';
+  const steps = useCouncilProgress(fc?.progressId ?? null, Boolean(fc && (fc.isRunning || fc.isApproving)));
   return (
     <section className="ui-panel" data-ask-council="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
       <header className="ui-panel-header">
@@ -208,9 +225,10 @@ export const AskCouncilPanel: React.FC<{
 
       {asked && (
         <div className="px-4 py-3 space-y-3" data-council-result="true">
-          <p className="text-xs text-slate-500 dark:text-slate-400" data-council-plan="true">
-            Planner (stated rules, not AI): asked {asked.plan.agents.map((a) => `${asked.answers.find((x) => x.id === a.id)?.name} Agent`).join(', ')} about {asked.plan.scopeNote}.
-          </p>
+          <AgentNetwork
+            title={`Agents on your question, about ${asked.plan.scopeNote}`}
+            columns={askCouncilColumns(asked.answers, writing, synthesis)}
+          />
 
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-council-summary="true">
             <div className="ui-label">Synthesis agent</div>
@@ -304,7 +322,14 @@ export const AskCouncilPanel: React.FC<{
       )}
 
       {fullCouncil && (
-        <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 space-y-2" data-full-council={fullCouncil.stage}>
+        <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 space-y-3" data-full-council={fullCouncil.stage}>
+          {fullCouncil.progressId && phase !== 'idle' && (
+            <AgentNetwork
+              title={`Full council on ${fullCouncil.countryName}`}
+              columns={fullCouncilColumns(steps, phase)}
+              footnote="Each desk’s three analysts and its devil’s advocate debate run as one model call, so they finish together. Amber means no AI model answered and the desk used the app’s built-in figures."
+            />
+          )}
           {fullCouncil.stage === 'AWAITING_CRO_APPROVAL' ? (
             <CouncilApprovalCard
               countryName={fullCouncil.countryName}
@@ -316,9 +341,9 @@ export const AskCouncilPanel: React.FC<{
               onOpenFullReview={fullCouncil.onOpenFullReview}
             />
           ) : fullCouncil.isRunning ? (
-            <p className="text-sm text-slate-700 dark:text-slate-300">The nine desk agents are debating {fullCouncil.countryName}. They will pause here for your approval before the final report.</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">The desks are working. The council will pause here for your approval before the final report.</p>
           ) : fullCouncil.isApproving ? (
-            <p className="text-sm text-slate-700 dark:text-slate-300">Assumptions approved. Writing the final {fullCouncil.countryName} report…</p>
+            <p className="text-sm text-slate-700 dark:text-slate-300">Assumptions approved. The supreme council is writing the final {fullCouncil.countryName} report.</p>
           ) : (
             <>
               {fullCouncil.result && (
