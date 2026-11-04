@@ -289,8 +289,18 @@ export interface InstitutionalCatalystEvent {
   eventId: string;
   dateLabel: string;
   daysOut: number;
-  category: 'CENTRAL_BANK_MPC' | 'IMF_FISCAL_REVIEW' | 'CREDIT_RATING_WINDOW' | 'BOND_REDEMPTION_WALL' | 'GEOPOLITICAL_DEADLINE';
+  category:
+    | 'CENTRAL_BANK_MPC'
+    | 'CENTRAL_BANK_REPORT'
+    | 'DATA_RELEASE'
+    | 'IMF_FISCAL_REVIEW'
+    | 'CREDIT_RATING_WINDOW'
+    | 'BOND_REDEMPTION_WALL'
+    | 'GEOPOLITICAL_DEADLINE';
   title: string;
+  /** Official schedule this date was read from (src/data/officialCalendar.ts). */
+  sourceName?: string;
+  sourceUrl?: string;
   consensusExpectation: string;
   tailRiskScenario: string;
   impliedVolatilityImpact: string;
@@ -313,6 +323,14 @@ export interface OpenDataSnapshot {
   currencyCode: string;
   fetchedAt: string;
   liveApiSourcesActive: string[];
+  /**
+   * Set by the server: the feeds that actually answered on the last pull. Absent on
+   * snapshots saved by older versions (treated as unverified). See utils/dataStatus.ts.
+   */
+  dataStatus?: {
+    verifiedLiveSources: string[];
+    checkedAt: string;
+  };
   imfIndicators: {
     debtToGdpPct: number;
     debtToGdpForecast2027Pct: number;
@@ -408,6 +426,9 @@ export interface WatchlistItem {
   debtToGdpPct: number;
   fxReservesMonths: number;
   alertStatus: 'CRITICAL' | 'ELEVATED' | 'STABLE';
+  /** Whether this row's figures came from live feeds (see utils/dataStatus.ts). Absent = sample. */
+  dataMode?: 'live' | 'partial' | 'sample' | 'unverified';
+  dataAsOf?: string;
 }
 
 export interface WatchlistGroup {

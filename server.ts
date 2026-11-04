@@ -11,6 +11,7 @@ import {
   buildAnnotatedChartsForSovereign,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
+  buildOfficialCatalystCalendar,
   computeQuantitativeAnchorScores,
   recomputeDerivedOpenDataAnalytics,
 } from './src/data/presetsAndBaselines.ts';
@@ -52,6 +53,7 @@ import {
 } from './src/utils/institutionalRiskDeskEngine.ts';
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
+import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 
 dotenv.config();
 
@@ -663,7 +665,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
         yield2YOverride = grounded.yield2Y;
         yield5YOverride = grounded.yield5Y;
         yield30YOverride = grounded.yield30Y;
-        activeSources.push('Gemini Search Grounding (Live Yields, Policy Rate & CDS)');
+        activeSources.push('Gemini web search (AI-estimated yields, policy rate & CDS)');
       }
     })(),
   ]);
@@ -680,10 +682,11 @@ async function fetchLiveOpenDataSnapshotNetwork(
     shortTermDebtPctReserves: liveShortTermDebtPctReserves,
   });
 
-  if (activeSources.length > 0) {
-    baseline.liveApiSourcesActive = Array.from(new Set(activeSources));
-  }
+  // Only feeds that actually answered count as live; never inherit the sample list.
+  const verifiedLiveSources = Array.from(new Set(activeSources));
+  baseline.liveApiSourcesActive = verifiedLiveSources;
   baseline.fetchedAt = new Date().toISOString();
+  baseline.dataStatus = { verifiedLiveSources, checkedAt: baseline.fetchedAt };
   return baseline;
 }
 
@@ -757,7 +760,9 @@ async function fetchLiveOpenDataSnapshot(
     if (Date.now() - stored.pulledAt > SNAPSHOT_REFRESH_MS) {
       void refreshStoredSnapshot(key, countryNameHint);
     }
-    return countryNameHint ? { ...stored.snapshot, countryName: countryNameHint } : stored.snapshot;
+    // Saved snapshots may predate the official calendar; always rebuild it from today.
+    const snap = withOfficialCalendar(stored.snapshot);
+    return countryNameHint ? { ...snap, countryName: countryNameHint } : snap;
   }
   if (opts.cacheOnly) {
     void refreshStoredSnapshot(key, countryNameHint);
@@ -770,6 +775,16 @@ async function fetchLiveOpenDataSnapshot(
   const baseline = buildBaselineOpenData(key);
   if (countryNameHint) baseline.countryName = countryNameHint;
   return baseline;
+}
+
+function withOfficialCalendar(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  return {
+    ...snapshot,
+    catalystCalendar: buildOfficialCatalystCalendar(
+      snapshot.iso3,
+      snapshot.monetaryAndMarket.policyRatePct
+    ),
+  };
 }
 
 async function refreshStaleSnapshots(force = false): Promise<void> {
@@ -812,6 +827,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
+          dataMode: getSnapshotDataStatus(snap).mode,
+          dataAsOf: getSnapshotDataStatus(snap).asOf,
         } as WatchlistItem;
       } catch {
         return catItem;

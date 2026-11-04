@@ -120,28 +120,28 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Tier-1 Institutional Risk Desk · Multi-Sovereign Book Aggregation, Tail CVaR &amp; Mandate Governance
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Multi-Sovereign Portfolio VaR, Expected Shortfall (CVaR₉₉) &amp; DV01 Book Builder
             </h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
             <span
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono font-bold border ${
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs tabular-nums font-semibold border ${
                 portfolioRisk.hasMandateBreach
-                  ? 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
+                  ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                   : 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
               }`}
             >
               {portfolioRisk.hasMandateBreach ? (
                 <>
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  <span>CRO MANDATE LIMIT BREACH</span>
+                  <span>CRO mandate limit breach</span>
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>ALL CRO RISK MANDATES COMPLIANT</span>
+                  <span>All CRO risk mandates compliant</span>
                 </>
               )}
             </span>
@@ -164,16 +164,16 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>
                 <strong>Geopolitical Wargame Stress Transmission Active:</strong> Unhedged Book Geopolitical Stress Drawdown{' '}
-                <span className="font-mono font-bold text-red-600 dark:text-red-400">
+                <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                   -${Math.abs(geoSuite.portfolioTransmission.totalUnhedgedGeoStressPnlUsdThousands).toLocaleString()}k ({geoSuite.portfolioTransmission.totalUnhedgedGeoStressPctNav}% NAV)
                 </span>{' '}
                 · Safe-Haven Tail-Hedge Offset{' '}
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                   +$
                   {geoSuite.portfolioTransmission.tailHedgeOffsetPnlUsdThousands.toLocaleString()}k
                 </span>{' '}
                 · Geo-Stressed CVaR₉₉:{' '}
-                <span className="font-mono font-bold">
+                <span className="tabular-nums font-semibold">
                   {geoSuite.portfolioTransmission.geoStressedCvar99PctNav}% NAV
                 </span>
               </span>
@@ -182,7 +182,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={onOpenGeopoliticalDesk}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors whitespace-nowrap shrink-0"
+                className="ui-btn ui-btn-primary inline-flex shrink-0"
               >
                 <span>Adjust Geopolitical Wargame</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
@@ -198,7 +198,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Portfolio Capital (NAV)
               </span>
-              <span className="font-mono font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 ${mandateConfig.portfolioNavUsdMillions}M USD
               </span>
             </div>
@@ -216,7 +216,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               }
               className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>$100M</span>
               <span>Gross Book: {portfolioRisk.grossExposurePct}% NAV</span>
               <span>$1,000M</span>
@@ -228,7 +228,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 CRO Net Rate DV01 Limit
               </span>
-              <span className="font-mono font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                 ${mandateConfig.maxPortfolioDv01UsdThousands}k / bp
               </span>
             </div>
@@ -246,7 +246,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               }
               className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>Util: {portfolioRisk.dv01MandateUtilizationPct}%</span>
               <span>Curr: ${Math.abs(portfolioRisk.totalNetRateDv01UsdThousands).toFixed(1)}k/bp</span>
             </div>
@@ -257,7 +257,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Single-Country CS01 Cap
               </span>
-              <span className="font-mono font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+              <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                 ${mandateConfig.maxSingleCountryCs01UsdThousands}k / bp
               </span>
             </div>
@@ -275,7 +275,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               }
               className="w-full accent-amber-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>Max Country Util: {portfolioRisk.cs01MaxSingleUtilizationPct}%</span>
               <span>Cap: ${mandateConfig.maxSingleCountryCs01UsdThousands}k/bp</span>
             </div>
@@ -286,7 +286,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 10-Day 99% CVaR Limit
               </span>
-              <span className="font-mono font-bold text-red-600 dark:text-red-400 tabular-nums">
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                 {mandateConfig.maxCvar99PctNav.toFixed(1)}% NAV
               </span>
             </div>
@@ -302,9 +302,9 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   maxCvar99PctNav: Number(e.target.value),
                 }))
               }
-              className="w-full accent-red-600 cursor-pointer"
+              className="w-full accent-rose-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>Util: {portfolioRisk.cvarMandateUtilizationPct}%</span>
               <span>Curr: {portfolioRisk.expectedShortfallCvar99TenDayPct.toFixed(2)}% NAV</span>
             </div>
@@ -314,73 +314,73 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
         {/* 6-Metric Institutional Portfolio Tail Risk KPI Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">10-Day 95% Parametric VaR</span>
-            <span className="text-base font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+            <span className="text-xs text-slate-500 block">10-Day 95% Parametric VaR</span>
+            <span className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               {portfolioRisk.parametricVar95TenDayPct.toFixed(2)}% NAV
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono tabular-nums">
+            <span className="text-xs text-slate-400 block tabular-nums">
               ${((portfolioRisk.portfolioNavUsdMillions * portfolioRisk.parametricVar95TenDayPct) / 100).toFixed(2)}M
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">99% Cornish-Fisher Tail VaR</span>
-            <span className="text-base font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400">
+            <span className="text-xs text-slate-500 block">99% Cornish-Fisher Tail VaR</span>
+            <span className="text-base font-semibold tabular-nums text-amber-600 dark:text-amber-400">
               {portfolioRisk.cornishFisherVar99TenDayPct.toFixed(2)}% NAV
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               Skew / Kurtosis Adjusted
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">99% Expected Shortfall (CVaR)</span>
+            <span className="text-xs text-slate-500 block">99% Expected Shortfall (CVaR)</span>
             <span
-              className={`text-base font-bold font-mono tabular-nums ${
+              className={`text-base font-semibold tabular-nums tabular-nums ${
                 portfolioRisk.cvarMandateUtilizationPct > 100
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-slate-900 dark:text-slate-100'
               }`}
             >
               {portfolioRisk.expectedShortfallCvar99TenDayPct.toFixed(2)}% (${portfolioRisk.expectedShortfallCvar99UsdMillions.toFixed(1)}M)
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               Mandate Util: {portfolioRisk.cvarMandateUtilizationPct}%
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Liquidity-Adjusted LVaR₉₉</span>
-            <span className="text-base font-bold font-mono tabular-nums text-purple-600 dark:text-purple-400">
+            <span className="text-xs text-slate-500 block">Liquidity-Adjusted LVaR₉₉</span>
+            <span className="text-base font-semibold tabular-nums text-blue-600 dark:text-blue-400">
               {portfolioRisk.liquidityAdjustedLvar99TenDayPct.toFixed(2)}% NAV
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               Max Exit: {portfolioRisk.liquidityHorizonDays}d stressed
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Net Portfolio Rate DV01</span>
+            <span className="text-xs text-slate-500 block">Net Portfolio Rate DV01</span>
             <span
-              className={`text-base font-bold font-mono tabular-nums ${
+              className={`text-base font-semibold tabular-nums tabular-nums ${
                 portfolioRisk.dv01MandateUtilizationPct > 100
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-blue-600 dark:text-blue-400'
               }`}
             >
               ${portfolioRisk.totalNetRateDv01UsdThousands.toFixed(1)}k / bp
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               Limit: ${mandateConfig.maxPortfolioDv01UsdThousands}k/bp
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Diversification Benefit</span>
-            <span className="text-base font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs text-slate-500 block">Diversification Benefit</span>
+            <span className="text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
               -{portfolioRisk.diversificationBenefitPct.toFixed(1)}% Vol
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               Net CS01: ${portfolioRisk.totalNetCreditCs01UsdThousands.toFixed(1)}k/bp
             </span>
           </div>
@@ -397,7 +397,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                 <th className="py-2.5 px-3 text-right">Notional ($M)</th>
                 <th className="py-2.5 px-3 text-right">Rate DV01</th>
                 <th className="py-2.5 px-3 text-right">Credit CS01</th>
-                <th className="py-2.5 px-3 text-right">MCTR (% NAV)</th>
+                <th className="py-2.5 px-3 text-right">Mctr (% NAV)</th>
                 <th className="py-2.5 px-3 text-right">Component CVaR₉₉</th>
                 <th className="py-2.5 px-3 text-right">Risk Share</th>
                 <th className="py-2.5 px-3 text-right">Liq Horizon</th>
@@ -422,11 +422,11 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                           const match = watchlistItems.find((w) => w.iso3 === row.iso3);
                           if (match && onSelectSovereign) onSelectSovereign(match);
                         }}
-                        className="font-bold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 text-left"
+                        className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 text-left"
                       >
                         {row.countryName} ({row.iso3})
                       </button>
-                      <span className="block text-[11px] font-mono text-slate-400">
+                      <span className="block text-xs tabular-nums text-slate-400">
                         {row.currencyCode} · Vol {row.standaloneVolAnnualPct}%
                       </span>
                     </td>
@@ -463,48 +463,48 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                           }
                           className="w-24 accent-blue-600 cursor-pointer"
                         />
-                        <span className="font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100 w-10 text-right">
+                        <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100 w-10 text-right">
                           {row.weightNavPct}%
                         </span>
                       </div>
                     </td>
 
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-800 dark:text-slate-200">
                       ${row.notionalUsdMillions.toFixed(1)}M
                     </td>
 
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-blue-600 dark:text-blue-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-blue-600 dark:text-blue-400">
                       {row.rateDv01UsdThousands >= 0 ? '+' : ''}
                       ${row.rateDv01UsdThousands.toFixed(1)}k
                     </td>
 
                     <td
-                      className={`py-2.5 px-3 text-right font-mono font-semibold tabular-nums ${
+                      className={`py-2.5 px-3 text-right tabular-nums font-semibold tabular-nums ${
                         row.breachesSingleCountryCs01
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-rose-600 dark:text-rose-400'
                           : 'text-slate-800 dark:text-slate-200'
                       }`}
                     >
                       {row.creditCs01UsdThousands >= 0 ? '+' : ''}
                       ${row.creditCs01UsdThousands.toFixed(1)}k
                       {row.breachesSingleCountryCs01 && (
-                        <span className="block text-[10px] text-red-500">BREACH</span>
+                        <span className="block text-xs text-rose-500">Breach</span>
                       )}
                     </td>
 
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                       {row.mctrPctNav.toFixed(2)}%
                     </td>
 
-                    <td className="py-2.5 px-3 text-right font-mono font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {row.componentCvarPctNav.toFixed(2)}%
                     </td>
 
-                    <td className="py-2.5 px-3 text-right font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                       {row.componentRiskSharePct.toFixed(1)}%
                     </td>
 
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-slate-400">
                       {row.liquidityDaysToLiquidate}d ({row.stressedBidAskCostBps}bps)
                     </td>
                   </tr>
@@ -525,7 +525,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Curve Risk Decomposition · Key-Rate Duration (KRD) &amp; Credit Spread CS01 Ladder
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-1">
               {portfolioRisk.conclusionHeadline}
             </h3>
 
@@ -548,11 +548,11 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   y1={42}
                   x2={435}
                   y2={42}
-                  stroke="#ef4444"
+                  stroke="#f43f5e"
                   strokeWidth="1"
                   strokeDasharray="4 3"
                 />
-                <text x={52} y={36} className="fill-red-500 text-[9px] font-mono">
+                <text x={52} y={36} className="fill-rose-500 text-xs tabular-nums">
                   CRO Bucket Cap (${portfolioRisk.keyRateBuckets[0]?.mandateBucketLimitUsdThousands || 84}k/bp)
                 </text>
 
@@ -584,7 +584,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                         x={xBase + 12}
                         y={b.rateDv01UsdThousands >= 0 ? rY - 4 : rY + rHeight + 10}
                         textAnchor="middle"
-                        className="fill-blue-600 dark:fill-blue-400 text-[9px] font-mono font-bold"
+                        className="fill-blue-600 dark:fill-blue-400 text-xs tabular-nums font-semibold"
                       >
                         {b.rateDv01UsdThousands >= 0 ? '+' : ''}
                         {b.rateDv01UsdThousands.toFixed(0)}k
@@ -602,7 +602,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                         x={xBase + 40}
                         y={b.creditCs01UsdThousands >= 0 ? cY - 4 : cY + cHeight + 10}
                         textAnchor="middle"
-                        className="fill-amber-600 dark:fill-amber-400 text-[9px] font-mono font-bold"
+                        className="fill-amber-600 dark:fill-amber-400 text-xs tabular-nums font-semibold"
                       >
                         {b.creditCs01UsdThousands >= 0 ? '+' : ''}
                         {b.creditCs01UsdThousands.toFixed(0)}k
@@ -613,7 +613,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                         x={xBase + 26}
                         y={168}
                         textAnchor="middle"
-                        className="fill-slate-700 dark:fill-slate-300 text-[11px] font-mono font-bold"
+                        className="fill-slate-700 dark:fill-slate-300 text-xs tabular-nums font-semibold"
                       >
                         {b.tenorBucket} Bucket
                       </text>
@@ -621,7 +621,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                         x={xBase + 26}
                         y={182}
                         textAnchor="middle"
-                        className="fill-slate-400 text-[9px] font-mono"
+                        className="fill-slate-400 text-xs tabular-nums"
                       >
                         Carry +{b.netCarryBps}bps
                       </text>
@@ -629,7 +629,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   );
                 })}
               </svg>
-              <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 bg-blue-500 inline-block" />
                   <span>Interest-Rate Key-Rate DV01 ($k/bp)</span>
@@ -649,10 +649,10 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                 • <strong>Where the Interest-Rate Risk Sits</strong>: Most of the portfolio&apos;s sensitivity to credit spreads sits in 5-year and 10-year bonds, while curve-steepener trades protect the front end.
               </li>
               <li>
-                • <strong>Why Crash Risk Is Higher Than Normal Models Say</strong>: Because emerging-market bond sell-offs happen in sudden jumps, realistic 1-in-100 crash loss is <strong className="font-mono">{portfolioRisk.cornishFisherVar99TenDayPct.toFixed(2)}%</strong> compared to <strong className="font-mono">{portfolioRisk.parametricVar95TenDayPct.toFixed(2)}%</strong> in standard bell-curve models.
+                • <strong>Why Crash Risk Is Higher Than Normal Models Say</strong>: Because emerging-market bond sell-offs happen in sudden jumps, realistic 1-in-100 crash loss is <strong className="tabular-nums">{portfolioRisk.cornishFisherVar99TenDayPct.toFixed(2)}%</strong> compared to <strong className="tabular-nums">{portfolioRisk.parametricVar95TenDayPct.toFixed(2)}%</strong> in standard bell-curve models.
               </li>
               <li>
-                • <strong>Cost of Exiting During a Panic</strong>: Wider trading spreads during a market panic add another <strong className="font-mono">+{(portfolioRisk.liquidityAdjustedLvar99TenDayPct - portfolioRisk.expectedShortfallCvar99TenDayPct).toFixed(2)}% of NAV</strong> to potential losses if you have to sell quickly.
+                • <strong>Cost of Exiting During a Panic</strong>: Wider trading spreads during a market panic add another <strong className="tabular-nums">+{(portfolioRisk.liquidityAdjustedLvar99TenDayPct - portfolioRisk.expectedShortfallCvar99TenDayPct).toFixed(2)}% of NAV</strong> to potential losses if you have to sell quickly.
               </li>
             </ul>
             <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -669,7 +669,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Cross-Border Spillover &amp; Factor Beta Engine · Correlation (ρ) &amp; Global Shock Sensitivities
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Cross-Sovereign Contagion Matrix &amp; Global Macro Factor Betas (US 10Y Real, DXY, Brent, China PMI)
             </h3>
 
@@ -679,7 +679,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-950">
                     <th className="py-2 px-2.5">Sovereign</th>
                     {portfolioRisk.contagionMatrix.map((c) => (
-                      <th key={c.iso3} className="py-2 px-2 text-center font-mono">
+                      <th key={c.iso3} className="py-2 px-2 text-center tabular-nums">
                         ρ({c.iso3})
                       </th>
                     ))}
@@ -690,10 +690,10 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                     <th className="py-2 px-2.5 text-right">Stress PnL</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                   {portfolioRisk.contagionMatrix.map((row) => (
                     <tr key={row.iso3} className="hover:bg-slate-50/70 dark:hover:bg-slate-950/50">
-                      <td className="py-2.5 px-2.5 font-sans font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-2.5 font-sans font-semibold text-slate-900 dark:text-slate-100">
                         {row.countryName} ({row.iso3})
                       </td>
                       {row.correlations.map((cell) => {
@@ -702,9 +702,9 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                           cell.targetIso3 === row.iso3
                             ? 'bg-slate-100 dark:bg-slate-800 text-slate-500'
                             : val >= 0.55
-                            ? 'bg-red-500/15 text-red-700 dark:text-red-300 font-bold'
+                            ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold'
                             : val < 0
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold'
+                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold'
                             : 'text-slate-700 dark:text-slate-300';
                         return (
                           <td key={cell.targetIso3} className={`py-2.5 px-2 text-center ${bg}`}>
@@ -715,7 +715,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       <td
                         className={`py-2.5 px-2.5 text-right ${
                           row.betaUs10YReal50Bps > 0
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
@@ -725,7 +725,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       <td
                         className={`py-2.5 px-2.5 text-right ${
                           row.betaDxyPlus5Pct > 0
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
@@ -747,10 +747,10 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                         {row.betaChinaPmiMinus2Pts}bp
                       </td>
                       <td
-                        className={`py-2.5 px-2.5 text-right font-bold ${
+                        className={`py-2.5 px-2.5 text-right font-semibold ${
                           row.compositeShockPnlUsdThousands >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                            : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
                         {row.compositeShockPnlUsdThousands >= 0 ? '+' : ''}$
@@ -793,7 +793,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Distressed &amp; Crossover Sovereign Credit Lab · ISDA Hazard Default, CAC Seniority &amp; Fallen-Angel Flows
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {run.countryName} ({run.iso3}): <RichTextWithStatRefs text={restructuringResult.conclusionHeadline} />
             </h2>
           </div>
@@ -830,7 +830,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   couponReductionBps: 250,
                 })
               }
-              className="px-2.5 py-1 text-xs font-medium bg-red-50 dark:bg-red-950/50 hover:bg-red-100 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900 whitespace-nowrap shrink-0"
+              className="px-2.5 py-1 text-xs font-medium bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-900 whitespace-nowrap shrink-0"
             >
               Hard Default / Deep Haircut
             </button>
@@ -844,7 +844,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Exit Discount Yield
               </span>
-              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {restructuringParams.exitYieldPct.toFixed(1)}%
               </span>
             </div>
@@ -862,7 +862,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               }
               className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>8.0% (Normal)</span>
               <span>18.0% (Distressed)</span>
             </div>
@@ -873,7 +873,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Principal Face Haircut
               </span>
-              <span className="font-mono font-bold text-red-600 dark:text-red-400">
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                 -{restructuringParams.principalHaircutPct}%
               </span>
             </div>
@@ -889,9 +889,9 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   principalHaircutPct: Number(e.target.value),
                 }))
               }
-              className="w-full accent-red-600 cursor-pointer"
+              className="w-full accent-rose-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0% (Par)</span>
               <span>50% Write-Down</span>
             </div>
@@ -902,7 +902,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Maturity Extension
               </span>
-              <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                 +{restructuringParams.maturityExtensionYears} Years
               </span>
             </div>
@@ -920,7 +920,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               }
               className="w-full accent-amber-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0Y</span>
               <span>+10Y Re-Profiling</span>
             </div>
@@ -931,7 +931,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Coupon Step-Down
               </span>
-              <span className="font-mono font-bold text-purple-600 dark:text-purple-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 -{restructuringParams.couponReductionBps} bps
               </span>
             </div>
@@ -947,9 +947,9 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   couponReductionBps: Number(e.target.value),
                 }))
               }
-              className="w-full accent-purple-600 cursor-pointer"
+              className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0 bps</span>
               <span>-400 bps Relief</span>
             </div>
@@ -959,38 +959,38 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
         {/* Restructuring KPI Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Current Eurobond Price</span>
-            <span className="text-base font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+            <span className="text-xs text-slate-500 block">Current Eurobond Price</span>
+            <span className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               {restructuringResult.currentBenchmarkBondPriceCents.toFixed(1)}¢ / $100
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               Coupon {restructuringResult.currentContractualCouponPct}% · 8Y
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Restructured NPV Recovery</span>
-            <span className="text-base font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400">
+            <span className="text-xs text-slate-500 block">Restructured NPV Recovery</span>
+            <span className="text-base font-semibold tabular-nums text-blue-600 dark:text-blue-400">
               {restructuringResult.restructuredNpvRecoveryCents.toFixed(1)}¢ / $100
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               Implied Haircut: {restructuringResult.impliedNpvHaircutPct.toFixed(1)}%
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Recovery Margin of Safety</span>
+            <span className="text-xs text-slate-500 block">Recovery Margin of Safety</span>
             <span
-              className={`text-base font-bold font-mono tabular-nums ${
+              className={`text-base font-semibold tabular-nums tabular-nums ${
                 restructuringResult.marginOfSafetyVsMarketCents >= 0
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-red-600 dark:text-red-400'
+                  : 'text-rose-600 dark:text-rose-400'
               }`}
             >
               {restructuringResult.marginOfSafetyVsMarketCents >= 0 ? '+' : ''}
               {restructuringResult.marginOfSafetyVsMarketCents.toFixed(1)}¢ vs Market
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               {restructuringResult.marginOfSafetyVsMarketCents >= 0
                 ? 'Recovery > Market Price'
                 : 'Downside vs Workout'}
@@ -998,32 +998,32 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">ISDA 5Y Cumulative PD</span>
-            <span className="text-base font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400">
+            <span className="text-xs text-slate-500 block">ISDA 5Y Cumulative PD</span>
+            <span className="text-base font-semibold tabular-nums text-amber-600 dark:text-amber-400">
               {restructuringResult.cdsImplied5YCumulativeDefaultProbPct.toFixed(1)}%
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               1Y PD: {restructuringResult.cdsImplied1YDefaultProbPct.toFixed(2)}% (LGD {restructuringResult.lossGivenDefaultLgdPct}%)
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Composite Agency Rating</span>
-            <span className="text-base font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+            <span className="text-xs text-slate-500 block">Composite Agency Rating</span>
+            <span className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               {restructuringResult.ratingMigration.currentCompositeRating}
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               IG Cutoff Distance: {restructuringResult.ratingMigration.notchesToIgThreshold > 0 ? '+' : ''}
               {restructuringResult.ratingMigration.notchesToIgThreshold} notches
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Forced Index Outflow Risk</span>
-            <span className="text-base font-bold font-mono tabular-nums text-red-600 dark:text-red-400">
+            <span className="text-xs text-slate-500 block">Forced Index Outflow Risk</span>
+            <span className="text-base font-semibold tabular-nums text-rose-600 dark:text-rose-400">
               ${restructuringResult.ratingMigration.forcedIndexOutflowIfDowngradedUsdBn.toFixed(1)}Bn USD
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               12M Cliff Prob: {restructuringResult.ratingMigration.probFallenAngelOrDefaultCliff12MPct}%
             </span>
           </div>
@@ -1051,16 +1051,16 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                     <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                       {t.trancheName}
                     </td>
-                    <td className="py-2.5 px-2.5 text-right font-mono tabular-nums">
+                    <td className="py-2.5 px-2.5 text-right tabular-nums">
                       {t.shareOfTotalDebtPct.toFixed(1)}%
                     </td>
-                    <td className="py-2.5 px-2.5 text-right font-mono tabular-nums">
+                    <td className="py-2.5 px-2.5 text-right tabular-nums">
                       {t.cacVotingThresholdPct}%
                     </td>
                     <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">
                       {t.assumedHaircutSensitivity}
                     </td>
-                    <td className="py-2.5 px-2.5 text-right font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                    <td className="py-2.5 px-2.5 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {t.impliedRecoveryCents.toFixed(1)}¢
                     </td>
                   </tr>
@@ -1074,11 +1074,11 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 12-Month Markov Credit Rating Migration Probabilities
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Index Status: {restructuringResult.ratingMigration.indexMembershipStatus}
               </div>
 
-              <div className="space-y-2.5 mt-3 text-xs font-mono tabular-nums">
+              <div className="space-y-2.5 mt-3 text-xs tabular-nums">
                 <div>
                   <div className="flex justify-between mb-1">
                     <span className="font-sans text-emerald-700 dark:text-emerald-400 font-semibold">
@@ -1128,7 +1128,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
 
                 <div>
                   <div className="flex justify-between mb-1">
-                    <span className="font-sans text-red-700 dark:text-red-400 font-semibold">
+                    <span className="font-sans text-rose-700 dark:text-rose-400 font-semibold">
                       2+ Notch Fallen-Angel / Default Cliff
                     </span>
                     <span>
@@ -1137,7 +1137,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                   </div>
                   <div className="w-full h-2 bg-slate-200 dark:bg-slate-800">
                     <div
-                      className="h-full bg-red-600"
+                      className="h-full bg-rose-600"
                       style={{
                         width: `${restructuringResult.ratingMigration.probFallenAngelOrDefaultCliff12MPct}%`,
                       }}
@@ -1147,9 +1147,9 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               </div>
             </div>
 
-            <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400">
+            <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
               <strong>Passive Index Cliff Impact:</strong> A breach of the rating bucket triggers an estimated{' '}
-              <strong className="font-mono text-slate-900 dark:text-slate-100">
+              <strong className="tabular-nums text-slate-900 dark:text-slate-100">
                 ${restructuringResult.ratingMigration.forcedIndexOutflowIfDowngradedUsdBn.toFixed(1)}Bn
               </strong>{' '}
               in mechanical benchmark tracker rebalancing.
@@ -1161,52 +1161,52 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
         <div className="p-4 bg-slate-50 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
             <div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-xs text-slate-500 dark:text-slate-400">
                 Indenture Voting Mechanics · ICMA Single-Limb 75% Aggregation vs. Legacy Dual-Limb Holdout Game Theory
               </div>
-              <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Collective Action Clause (CAC) Holdout &amp; Restructuring Game-Theory Matrix
               </h4>
             </div>
-            <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400">
+            <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
               Nash Cooperative NPV: {restructuringResult.cacGameTheory.nashEquilibriumPayoffCents.toFixed(1)}¢ vs. Holdout Net: {restructuringResult.cacGameTheory.holdoutExpectedNetPayoffCents.toFixed(1)}¢
             </span>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 text-xs">
             <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-slate-500 block">ICMA Single-Limb (75%)</span>
-              <span className="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400 tabular-nums">
+              <span className="text-xs text-slate-500 block">ICMA Single-Limb (75%)</span>
+              <span className="tabular-nums font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                 {restructuringResult.cacGameTheory.icmaSingleLimb75SharePct}% Stock
               </span>
             </div>
             <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-slate-500 block">Legacy Dual-Limb CAC</span>
-              <span className="font-mono font-bold text-sm text-amber-600 dark:text-amber-400 tabular-nums">
+              <span className="text-xs text-slate-500 block">Legacy Dual-Limb CAC</span>
+              <span className="tabular-nums font-semibold text-sm text-amber-600 dark:text-amber-400">
                 {restructuringResult.cacGameTheory.legacyDualLimbSharePct}% Stock
               </span>
             </div>
             <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-slate-500 block">Single-Series Block (25.1%)</span>
-              <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100 tabular-nums">
+              <span className="text-xs text-slate-500 block">Single-Series Block (25.1%)</span>
+              <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                 ${restructuringResult.cacGameTheory.singleSeriesBlockingCostUsdMillions}M
               </span>
             </div>
             <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-slate-500 block">Aggregated Stock Block</span>
-              <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 tabular-nums">
+              <span className="text-xs text-slate-500 block">Aggregated Stock Block</span>
+              <span className="tabular-nums font-semibold text-sm text-blue-600 dark:text-blue-400">
                 ${restructuringResult.cacGameTheory.aggregatedSingleLimbBlockingCostUsdMillions.toLocaleString()}M
               </span>
             </div>
             <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-slate-500 block">Holdout Litigation Odds</span>
-              <span className="font-mono font-bold text-sm text-red-600 dark:text-red-400 tabular-nums">
+              <span className="text-xs text-slate-500 block">Holdout Litigation Odds</span>
+              <span className="tabular-nums font-semibold text-sm text-rose-600 dark:text-rose-400">
                 {restructuringResult.cacGameTheory.holdoutLitigationProbPct}%
               </span>
             </div>
             <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] text-slate-500 block">Official Creditor Delay</span>
-              <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100 tabular-nums">
+              <span className="text-xs text-slate-500 block">Official Creditor Delay</span>
+              <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                 {restructuringResult.cacGameTheory.officialCreditorCoordinationLagMonths} Months
               </span>
             </div>
@@ -1222,13 +1222,13 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
         <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2 text-xs">
           <ul className="space-y-1.5 text-slate-600 dark:text-slate-300">
             <li>
-              • <strong>1. What This Shows in Plain English</strong>: Calculates how many cents on the dollar bondholders get back (<strong className="font-mono">{restructuringResult.restructuredNpvRecoveryCents.toFixed(1)}¢</strong>) if a country restructures its debt, who gets paid first, and whether ”vulture” holdout funds can block the deal in court.
+              • <strong>1. What This Shows in Plain English</strong>: Calculates how many cents on the dollar bondholders get back (<strong className="tabular-nums">{restructuringResult.restructuredNpvRecoveryCents.toFixed(1)}¢</strong>) if a country restructures its debt, who gets paid first, and whether ”vulture” holdout funds can block the deal in court.
             </li>
             <li>
-              • <strong>2. Why It Matters</strong>: Under older bond contracts (<strong className="font-mono">{restructuringResult.cacGameTheory.legacyDualLimbSharePct}%</strong> of bonds), a holdout fund can spend just <strong className="font-mono">${restructuringResult.cacGameTheory.singleSeriesBlockingCostUsdMillions}M</strong> to buy 25.1% of one bond and block a deal, whereas modern contracts group all bonds together so blocking costs <strong className="font-mono">${restructuringResult.cacGameTheory.aggregatedSingleLimbBlockingCostUsdMillions.toLocaleString()}M</strong>.
+              • <strong>2. Why It Matters</strong>: Under older bond contracts (<strong className="tabular-nums">{restructuringResult.cacGameTheory.legacyDualLimbSharePct}%</strong> of bonds), a holdout fund can spend just <strong className="tabular-nums">${restructuringResult.cacGameTheory.singleSeriesBlockingCostUsdMillions}M</strong> to buy 25.1% of one bond and block a deal, whereas modern contracts group all bonds together so blocking costs <strong className="tabular-nums">${restructuringResult.cacGameTheory.aggregatedSingleLimbBlockingCostUsdMillions.toLocaleString()}M</strong>.
             </li>
             <li>
-              • <strong>3. Warning Sign &amp; Action</strong>: Modern bonds require a <strong className="font-mono">75% vote</strong> across all bondholders to force a deal through; if suing in court pays more than +2.5¢ above the voluntary deal (<strong className="font-mono">{restructuringResult.cacGameTheory.holdoutExpectedNetPayoffCents.toFixed(1)}¢</strong> vs. <strong className="font-mono">{restructuringResult.cacGameTheory.nashEquilibriumPayoffCents.toFixed(1)}¢</strong>), expect drawn-out holdout lawsuits.
+              • <strong>3. Warning Sign &amp; Action</strong>: Modern bonds require a <strong className="tabular-nums">75% vote</strong> across all bondholders to force a deal through; if suing in court pays more than +2.5¢ above the voluntary deal (<strong className="tabular-nums">{restructuringResult.cacGameTheory.holdoutExpectedNetPayoffCents.toFixed(1)}¢</strong> vs. <strong className="tabular-nums">{restructuringResult.cacGameTheory.nashEquilibriumPayoffCents.toFixed(1)}¢</strong>), expect drawn-out holdout lawsuits.
             </li>
           </ul>
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -1248,12 +1248,12 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Cross-Market Arbitrage &amp; Indenture Monitor · Covered Interest Parity (CIP), XCCY Swap Basis &amp; Governing Law
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {run.countryName} ({run.iso3}): <RichTextWithStatRefs text={xccyAndLegalResult.conclusionHeadline} />
             </h2>
           </div>
 
-          <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-xs font-mono font-semibold text-blue-700 dark:text-blue-300 shrink-0">
+          <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 shrink-0">
             Optimal Vehicle: {xccyAndLegalResult.preferredSovereignVehicle}
           </div>
         </div>
@@ -1299,7 +1299,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       x={xBase + 12}
                       y={145 - euroH - 5}
                       textAnchor="middle"
-                      className="fill-slate-600 dark:fill-slate-400 text-[9px] font-mono font-bold"
+                      className="fill-slate-600 dark:fill-slate-400 text-xs tabular-nums font-semibold"
                     >
                       {pt.usdEurobondYieldPct.toFixed(1)}%
                     </text>
@@ -1316,7 +1316,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       x={xBase + 40}
                       y={145 - hedgedH - 5}
                       textAnchor="middle"
-                      className="fill-emerald-600 dark:fill-emerald-400 text-[9px] font-mono font-bold"
+                      className="fill-emerald-600 dark:fill-emerald-400 text-xs tabular-nums font-semibold"
                     >
                       {pt.fxHedgedLocalYieldInUsdPct.toFixed(1)}%
                     </text>
@@ -1325,7 +1325,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       x={xBase + 26}
                       y={162}
                       textAnchor="middle"
-                      className="fill-slate-800 dark:fill-slate-200 text-[11px] font-mono font-bold"
+                      className="fill-slate-800 dark:fill-slate-200 text-xs tabular-nums font-semibold"
                     >
                       {pt.tenor}
                     </text>
@@ -1333,7 +1333,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       x={xBase + 26}
                       y={175}
                       textAnchor="middle"
-                      className="fill-blue-600 dark:fill-blue-400 text-[9px] font-mono"
+                      className="fill-blue-600 dark:fill-blue-400 text-xs tabular-nums"
                     >
                       {pt.netHedgedPickUpOverEurobondBps >= 0 ? '+' : ''}
                       {pt.netHedgedPickUpOverEurobondBps}bp
@@ -1342,7 +1342,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                 );
               })}
             </svg>
-            <div className="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-200 dark:border-slate-800">
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 bg-slate-500 inline-block" />
                 <span>Hard-Currency USD Eurobond Yield</span>
@@ -1370,10 +1370,10 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                     <th className="py-2 px-2.5 text-right">Desk Signal</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                   {xccyAndLegalResult.basisCurve.map((pt) => (
                     <tr key={pt.tenor}>
-                      <td className="py-2 px-2.5 font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2 px-2.5 font-semibold text-slate-900 dark:text-slate-100">
                         {pt.tenor}
                       </td>
                       <td className="py-2 px-2.5 text-right">
@@ -1385,14 +1385,14 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       <td className="py-2 px-2.5 text-right text-amber-600 dark:text-amber-400">
                         {pt.xccySwapBasisBps} bps
                       </td>
-                      <td className="py-2 px-2.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2 px-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                         {pt.fxHedgedLocalYieldInUsdPct.toFixed(2)}%
                       </td>
                       <td className="py-2 px-2.5 text-right text-slate-700 dark:text-slate-300">
                         {pt.usdEurobondYieldPct.toFixed(2)}%
                       </td>
                       <td
-                        className={`py-2 px-2.5 text-right font-bold ${
+                        className={`py-2 px-2.5 text-right font-semibold ${
                           pt.netHedgedPickUpOverEurobondBps >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-blue-600 dark:text-blue-400'
@@ -1401,7 +1401,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                         {pt.netHedgedPickUpOverEurobondBps >= 0 ? '+' : ''}
                         {pt.netHedgedPickUpOverEurobondBps} bps
                       </td>
-                      <td className="py-2 px-2.5 text-right font-sans text-[11px] font-semibold">
+                      <td className="py-2 px-2.5 text-right font-sans text-xs font-semibold">
                         {pt.optimalExpression === 'BUY_FX_HEDGED_LOCAL'
                           ? 'FX-Hedged Local'
                           : 'USD Eurobond'}
@@ -1415,34 +1415,34 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             {/* NY-Law vs Domestic-Law Jurisdictional & Liquidity Monitor */}
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
               <div>
-                <span className="text-[11px] text-slate-500 block">
+                <span className="text-xs text-slate-500 block">
                   NY-Law vs. Local-Law Legal Basis
                 </span>
-                <span className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">
+                <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                   +{xccyAndLegalResult.legalAndLiquidity.jurisdictionalLegalSpreadBps} bps Indenture Premium
                 </span>
-                <span className="text-[11px] text-slate-400 block">
+                <span className="text-xs text-slate-400 block">
                   {xccyAndLegalResult.legalAndLiquidity.bondPairLabel}
                 </span>
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-500 block">
+                <span className="text-xs text-slate-500 block">
                   Market Depth &amp; Bid-Ask Liquidity
                 </span>
-                <span className="text-sm font-bold font-mono text-slate-900 dark:text-slate-100">
+                <span className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                   {xccyAndLegalResult.legalAndLiquidity.onTheRunBidAskBps} bps Normal /{' '}
                   <span className="text-amber-600 dark:text-amber-400">
                     {xccyAndLegalResult.legalAndLiquidity.stressedCrisisBidAskBps} bps Stressed
                   </span>
                 </span>
-                <span className="text-[11px] text-slate-400 block font-mono">
+                <span className="text-xs text-slate-400 block tabular-nums">
                   Avg Daily Turnover: ${xccyAndLegalResult.legalAndLiquidity.avgDailyTurnoverUsdMillions}M
                 </span>
               </div>
 
               <div>
-                <span className="text-[11px] text-slate-500 block">
+                <span className="text-xs text-slate-500 block">
                   Statutory Redenomination Assessment
                 </span>
                 <span className="text-xs text-slate-700 dark:text-slate-300 leading-snug block mt-0.5">
@@ -1460,10 +1460,10 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
               • <strong>1. What This Shows in Plain English</strong>: Compares whether you earn more by buying a country&apos;s US dollar Eurobonds directly or by buying its local-currency bonds and locking in the exchange rate back into US dollars.
             </li>
             <li>
-              • <strong>2. Why It Matters</strong>: Bonds issued under New York or English law give stronger legal protection (<strong className="font-mono">+{xccyAndLegalResult.legalAndLiquidity.jurisdictionalLegalSpreadBps} bps</strong> safety premium) because a local parliament cannot unilaterally change their payment terms overnight.
+              • <strong>2. Why It Matters</strong>: Bonds issued under New York or English law give stronger legal protection (<strong className="tabular-nums">+{xccyAndLegalResult.legalAndLiquidity.jurisdictionalLegalSpreadBps} bps</strong> safety premium) because a local parliament cannot unilaterally change their payment terms overnight.
             </li>
             <li>
-              • <strong>3. Warning Sign &amp; Action</strong>: When currency-hedged local bonds pay at least <strong className="font-mono">+25 bps</strong> more than USD Eurobonds and default insurance (CDS) is below 300 bps, hedged local bonds are the better buy; above 300 bps CDS, stick to New York-law USD bonds.
+              • <strong>3. Warning Sign &amp; Action</strong>: When currency-hedged local bonds pay at least <strong className="tabular-nums">+25 bps</strong> more than USD Eurobonds and default insurance (CDS) is below 300 bps, hedged local bonds are the better buy; above 300 bps CDS, stick to New York-law USD bonds.
             </li>
           </ul>
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -1483,12 +1483,12 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Closed-Loop Execution Pipeline · 9-Agent Brier Conviction → Half-Kelly Sizing → Almgren-Chriss LOB Slippage Audit
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               <RichTextWithStatRefs text={kellyLobResult.conclusionHeadline} />
             </h2>
           </div>
 
-          <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-300 shrink-0">
+          <div className="px-3 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-300 shrink-0">
             Dealer Regime: {kellyLobResult.dealerInventoryRegime}
           </div>
         </div>
@@ -1496,34 +1496,34 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
         {/* 4 Summary KPI Tiles */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">
+            <span className="text-xs text-slate-500 block">
               Composite Brier Conviction
             </span>
-            <span className="text-base font-bold font-mono text-blue-600 dark:text-blue-400 tabular-nums">
+            <span className="text-base font-semibold tabular-nums text-blue-600 dark:text-blue-400">
               {kellyLobResult.compositeBrierConvictionPct}% Calibrated
             </span>
           </div>
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">
+            <span className="text-xs text-slate-500 block">
               Half-Kelly Gross Allocation
             </span>
-            <span className="text-base font-bold font-mono text-slate-900 dark:text-slate-100 tabular-nums">
+            <span className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               {kellyLobResult.totalHalfKellyGrossNavPct}% NAV (${kellyLobResult.totalAllocatedNotionalUsdMillions}M)
             </span>
           </div>
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">
+            <span className="text-xs text-slate-500 block">
               Weighted LOB Slippage Drag
             </span>
-            <span className="text-base font-bold font-mono text-amber-600 dark:text-amber-400 tabular-nums">
+            <span className="text-base font-semibold tabular-nums text-amber-600 dark:text-amber-400">
               -{kellyLobResult.weightedExecutionSlippageBps} bps
             </span>
           </div>
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">
+            <span className="text-xs text-slate-500 block">
               Net Post-Slippage Alpha
             </span>
-            <span className="text-base font-bold font-mono text-emerald-600 dark:text-emerald-400 tabular-nums">
+            <span className="text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
               +{kellyLobResult.netPortfolioExpectedAlphaBps} bps
             </span>
           </div>
@@ -1544,23 +1544,23 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                 <th className="py-2.5 px-3 font-semibold text-right">Net Alpha</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
               {kellyLobResult.tickets.map((t) => (
                 <tr key={t.ticketId}>
                   <td className="py-2.5 px-3">
-                    <div className="font-bold text-slate-900 dark:text-slate-100">{t.ticketId}</div>
-                    <div className="font-sans text-[11px] text-slate-500">{t.originatingDesk}</div>
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">{t.ticketId}</div>
+                    <div className="font-sans text-xs text-slate-500">{t.originatingDesk}</div>
                   </td>
                   <td className="py-2.5 px-3">
-                    <div className="font-sans font-bold text-slate-900 dark:text-slate-100">
+                    <div className="font-sans font-semibold text-slate-900 dark:text-slate-100">
                       {t.instrument}
                     </div>
-                    <div className="text-[11px] text-blue-600 dark:text-blue-400">{t.direction}</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">{t.direction}</div>
                   </td>
                   <td className="py-2.5 px-3 text-right text-slate-700 dark:text-slate-300">
                     {t.brierCalibratedWinProbPct}% / {t.rewardToRiskPayoffRatio}x
                   </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-slate-100">
+                  <td className="py-2.5 px-3 text-right font-semibold text-slate-900 dark:text-slate-100">
                     {t.halfKellyNavAllocationPct}% NAV (${t.recommendedNotionalUsdMillions}M)
                   </td>
                   <td className="py-2.5 px-3 text-right text-slate-700 dark:text-slate-300">
@@ -1570,12 +1570,12 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                     -{t.totalExecutionDragBps} bps ({t.lobQuotedBidAskBps}bp B/A + {t.lobMarketImpactSlippageBps}bp imp)
                   </td>
                   <td className="py-2.5 px-3 text-right">
-                    <span className="text-slate-900 dark:text-slate-100 font-bold">
+                    <span className="text-slate-900 dark:text-slate-100 font-semibold">
                       {t.optimalTwapExecutionDays}d
                     </span>{' '}
-                    <span className="text-[10px] text-slate-500">({t.executionFeasibilityStatus})</span>
+                    <span className="text-xs text-slate-500">({t.executionFeasibilityStatus})</span>
                   </td>
-                  <td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                  <td className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                     +{t.netPostSlippageAlphaBps} bps
                   </td>
                 </tr>
@@ -1588,13 +1588,13 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
         <div className="border-t border-slate-200 dark:border-slate-800 pt-3 space-y-2 text-xs">
           <ul className="space-y-1.5 text-slate-600 dark:text-slate-300">
             <li>
-              • <strong>1. What This Shows in Plain English</strong>: Uses the AI Council&apos;s historical forecasting accuracy (<strong className="font-mono">{kellyLobResult.compositeBrierConvictionPct}%</strong>) to calculate how much money to put into each recommended trade, and subtracts the real-world cost of executing those trades in the bond market.
+              • <strong>1. What This Shows in Plain English</strong>: Uses the AI Council&apos;s historical forecasting accuracy (<strong className="tabular-nums">{kellyLobResult.compositeBrierConvictionPct}%</strong>) to calculate how much money to put into each recommended trade, and subtracts the real-world cost of executing those trades in the bond market.
             </li>
             <li>
               • <strong>2. Why It Matters</strong>: Even a great trade idea loses money if you bet too much at once or move the market price against yourself by placing a huge order into a thin market.
             </li>
             <li>
-              • <strong>3. Warning Sign &amp; Action</strong>: No single trade is allowed to exceed <strong className="font-mono">28% of the portfolio</strong>, and any order larger than <strong className="font-mono">65% of available dealer liquidity</strong> is automatically broken into smaller pieces over several days (TWAP).
+              • <strong>3. Warning Sign &amp; Action</strong>: No single trade is allowed to exceed <strong className="tabular-nums">28% of the portfolio</strong>, and any order larger than <strong className="tabular-nums">65% of available dealer liquidity</strong> is automatically broken into smaller pieces over several days (TWAP).
             </li>
           </ul>
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800">

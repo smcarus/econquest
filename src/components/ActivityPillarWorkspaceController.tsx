@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { DataStatusBadge } from './DataStatusBadge';
 import {
   TrendingUp,
   Landmark,
@@ -192,7 +193,7 @@ export const ACTIVITY_PILLARS: ActivityPillarConfig[] = [
     title: 'Policy Research',
     shortTitle: '2. Policy Research',
     subtitle:
-      'Central bank Taylor Rules, Treasury DMO auctions, IMF/Paris Club debt restructuring, shadow ratings & 9-agent Council governance',
+      'Central bank Taylor Rules, Treasury DMO auctions, IMF/Paris Club debt restructuring,  ratings & 9-agent Council governance',
     accentColor: 'emerald',
     defaultSection: 'taylor_rule_fiscal_dominance',
     subGroups: [
@@ -219,7 +220,7 @@ export const ACTIVITY_PILLARS: ActivityPillarConfig[] = [
             label: 'Shadow Rating & Fallen-Angel Cliff',
             shortLabel: 'Shadow Credit Ratings',
             description:
-              'S&P/Moody’s/Fitch 5-pillar shadow rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
+              'S&P/Moody’s/Fitch 5-pillar  rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
           },
           {
             id: 'debt_investor_base_doom_loop',
@@ -498,8 +499,8 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
     pillar.id === 'market_trading'
       ? 'bg-blue-600 text-white border-blue-600'
       : pillar.id === 'policy_research'
-      ? 'bg-emerald-600 text-white border-emerald-600'
-      : 'bg-indigo-600 text-white border-indigo-600';
+      ? 'bg-blue-600 text-white border-blue-600'
+      : 'bg-blue-600 text-white border-blue-600';
 
   return (
     <div className="flex flex-col gap-2">
@@ -507,7 +508,7 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-wrap items-center gap-1.5">
           <span
-            className={`px-2.5 py-1 text-[11px] font-mono font-bold border ${pillarBadgeStyles}`}
+            className={`px-2.5 py-1 text-xs tabular-nums font-semibold border ${pillarBadgeStyles}`}
           >
             {pillar.shortTitle}
           </span>
@@ -521,11 +522,8 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
                   key={sg.groupId}
                   type="button"
                   onClick={() => onSelectNavSection(sg.modules[0].id)}
-                  className={`px-2.5 py-1 text-[11px] font-medium transition-colors whitespace-nowrap ${
-                    isActiveGroup
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  aria-pressed={isActiveGroup}
+                  className="ui-pill whitespace-nowrap"
                 >
                   {sg.groupTitle}
                 </button>
@@ -548,11 +546,8 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
                   type="button"
                   onClick={() => onSelectNavSection(mod.id)}
                   title={mod.description}
-                  className={`px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${
-                    isSelected
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold shadow-2xs'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={isSelected}
+                  className="ui-pill whitespace-nowrap"
                 >
                   {mod.shortLabel}
                 </button>
@@ -562,8 +557,8 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
         </div>
 
         {/* Right: Active Module 1-Line Context */}
-        <div className="hidden xl:flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 max-w-md truncate">
-          <span className="font-mono font-semibold text-slate-700 dark:text-slate-300 shrink-0">
+        <div className="hidden xl:flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 max-w-md truncate">
+          <span className="tabular-nums font-semibold text-slate-700 dark:text-slate-300 shrink-0">
             {moduleItem.label}:
           </span>
           <span className="truncate" title={moduleItem.description}>
@@ -616,19 +611,21 @@ export const CompactTopStatusAndDrawersBar: React.FC<
   return (
     <>
       {/* 1-LINE CONSOLIDATED STATUS & DRAWER TRIGGER BAR */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2.5 shadow-2xs">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3.5 py-2 flex flex-wrap items-center justify-between gap-2.5">
         {/* Left: Active Sovereign Live KPIs */}
         <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-mono font-bold text-[11px]">
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 tabular-nums font-semibold text-xs">
             <span>{run.iso3}</span>
             <span className="opacity-75">·</span>
             <span>{run.countryName}</span>
           </span>
 
-          <div className="flex flex-wrap items-center gap-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
+          <DataStatusBadge snapshot={run.openData} />
+
+          <div className="flex flex-wrap items-center gap-2.5 tabular-nums text-xs text-slate-600 dark:text-slate-300">
             <span>
               <strong className="text-slate-400 dark:text-slate-500 font-normal">Debt/GDP:</strong>{' '}
-              <span className="font-bold text-slate-900 dark:text-white">
+              <span className="font-semibold text-slate-900 dark:text-white">
                 {debtGdp.toFixed(1)}%
               </span>
             </span>
@@ -636,9 +633,9 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             <span>
               <strong className="text-slate-400 dark:text-slate-500 font-normal">5Y CDS:</strong>{' '}
               <span
-                className={`font-bold ${
+                className={`font-semibold ${
                   cds5Y >= 350
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-rose-600 dark:text-rose-400'
                     : cds5Y >= 200
                     ? 'text-amber-600 dark:text-amber-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -650,21 +647,21 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             <span className="text-slate-300 dark:text-slate-700">|</span>
             <span>
               <strong className="text-slate-400 dark:text-slate-500 font-normal">10Y Yield:</strong>{' '}
-              <span className="font-bold text-slate-900 dark:text-white">
+              <span className="font-semibold text-slate-900 dark:text-white">
                 {yield10Y.toFixed(2)}%
               </span>
             </span>
             <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
-            <span className="hidden sm:inline">
+            <span className="hidden sm:inline" title="FX reserves, in months of imports">
               <strong className="text-slate-400 dark:text-slate-500 font-normal">Reserves:</strong>{' '}
-              <span className="font-bold text-slate-900 dark:text-white">
-                {reservesMos.toFixed(1)}m
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {reservesMos.toFixed(1)} mo imports
               </span>
             </span>
             <span className="text-slate-300 dark:text-slate-700 hidden md:inline">|</span>
             <span className="hidden md:inline">
               <strong className="text-slate-400 dark:text-slate-500 font-normal">Policy Rate:</strong>{' '}
-              <span className="font-bold text-slate-900 dark:text-white">
+              <span className="font-semibold text-slate-900 dark:text-white">
                 {policyRate.toFixed(2)}%
               </span>
             </span>
@@ -672,9 +669,9 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             <span className="hidden lg:inline">
               <strong className="text-slate-400 dark:text-slate-500 font-normal">Risk Score:</strong>{' '}
               <span
-                className={`font-bold ${
+                className={`font-semibold ${
                   compositeRisk >= 0.7
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-rose-600 dark:text-rose-400'
                     : compositeRisk >= 0.5
                     ? 'text-amber-600 dark:text-amber-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -695,11 +692,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
                 prev === 'morning_radar' ? null : 'morning_radar'
               )
             }
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-semibold border transition-colors ${
-              openDrawer === 'morning_radar'
-                ? 'bg-amber-600 text-white border-amber-600'
-                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50'
-            }`}
+            aria-pressed={openDrawer === 'morning_radar'}
+            className="ui-pill inline-flex items-center gap-1.5"
             title="Open Morning Alpha & Catalyst Radar Slide-Over Drawer (Top-3 Daily Dislocations & Upcoming MPC/CPI Catalysts)"
           >
             <Radar className="w-3.5 h-3.5" />
@@ -713,11 +707,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
                 prev === 'executive_bluf' ? null : 'executive_bluf'
               )
             }
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-semibold border transition-colors ${
-              openDrawer === 'executive_bluf'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/50'
-            }`}
+            aria-pressed={openDrawer === 'executive_bluf'}
+            className="ui-pill inline-flex items-center gap-1.5"
             title="Open Executive BLUF Risk Scorecard & Investment Thesis Slide-Over Drawer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -729,11 +720,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             onClick={() =>
               setOpenDrawer((prev) => (prev === 'desk_guide' ? null : 'desk_guide'))
             }
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-mono font-semibold border transition-colors ${
-              openDrawer === 'desk_guide'
-                ? 'bg-emerald-600 text-white border-emerald-600'
-                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
-            }`}
+            aria-pressed={openDrawer === 'desk_guide'}
+            className="ui-pill inline-flex items-center gap-1.5"
             title="Open Plain-English Desk Clarity Guide & Formula Glossary Slide-Over Drawer"
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -755,10 +743,10 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             {/* Drawer Header */}
             <div className="px-5 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
               <div className="flex items-center gap-3">
-                <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-600 text-white">
+                <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-blue-600 text-white">
                   {pillar.shortTitle}
                 </span>
-                <h3 className="text-sm font-bold">
+                <h3 className="text-sm font-semibold">
                   {openDrawer === 'morning_radar' &&
                     'Morning Alpha & Catalyst Radar — Top Dislocations & 7D Event Vol'}
                   {openDrawer === 'executive_bluf' &&
@@ -769,13 +757,13 @@ export const CompactTopStatusAndDrawersBar: React.FC<
               </div>
               <div className="flex items-center gap-2">
                 {/* Quick Switch Tabs inside the Slide-Over Drawer */}
-                <div className="hidden sm:flex items-center bg-slate-800 p-0.5 border border-slate-700 text-[11px] font-mono">
+                <div className="hidden sm:flex items-center bg-slate-800 p-0.5 border border-slate-700 text-xs tabular-nums">
                   <button
                     type="button"
                     onClick={() => setOpenDrawer('morning_radar')}
                     className={`px-2 py-0.5 ${
                       openDrawer === 'morning_radar'
-                        ? 'bg-amber-500 text-slate-950 font-bold'
+                        ? 'bg-amber-500 text-slate-950 font-semibold'
                         : 'text-slate-300 hover:text-white'
                     }`}
                   >
@@ -786,7 +774,7 @@ export const CompactTopStatusAndDrawersBar: React.FC<
                     onClick={() => setOpenDrawer('executive_bluf')}
                     className={`px-2 py-0.5 ${
                       openDrawer === 'executive_bluf'
-                        ? 'bg-blue-500 text-white font-bold'
+                        ? 'bg-blue-500 text-white font-semibold'
                         : 'text-slate-300 hover:text-white'
                     }`}
                   >
@@ -797,7 +785,7 @@ export const CompactTopStatusAndDrawersBar: React.FC<
                     onClick={() => setOpenDrawer('desk_guide')}
                     className={`px-2 py-0.5 ${
                       openDrawer === 'desk_guide'
-                        ? 'bg-emerald-500 text-slate-950 font-bold'
+                        ? 'bg-emerald-500 text-slate-950 font-semibold'
                         : 'text-slate-300 hover:text-white'
                     }`}
                   >
@@ -889,17 +877,14 @@ export const MacroOverviewTabbedWorkspace: React.FC<
       {/* Inner Card Tab Bar so Global Macro Overview fits in 1–1.5 screens maximum */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[11px] font-mono uppercase tracking-wider font-bold text-indigo-600 dark:text-indigo-400 mr-1">
+          <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1">
             Macro Overview Workspace ({iso3}):
           </span>
           <button
             type="button"
             onClick={() => setOverviewTab('horizon_charts')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              overviewTab === 'horizon_charts'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-2xs'
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+            aria-pressed={overviewTab === 'horizon_charts'}
+            className="ui-pill inline-flex items-center gap-1.5"
           >
             <BarChart3 className="w-3.5 h-3.5" />
             <span>1. Sovereign Horizon Charts &amp; Debt Maturity Wall</span>
@@ -907,18 +892,15 @@ export const MacroOverviewTabbedWorkspace: React.FC<
           <button
             type="button"
             onClick={() => setOverviewTab('geo_map')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              overviewTab === 'geo_map'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-2xs'
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+            aria-pressed={overviewTab === 'geo_map'}
+            className="ui-pill inline-flex items-center gap-1.5"
           >
             <MapPin className="w-3.5 h-3.5" />
             <span>2. Interactive Global Geopolitical &amp; Chokepoint Map</span>
           </button>
         </div>
 
-        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+        <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
           {countryName} ({iso3}) · 1–2 Page Maximum Scroll View
         </span>
       </div>
@@ -1061,11 +1043,11 @@ export const ViewportScrollBudgetContainer: React.FC<
   return (
     <div className="space-y-3" data-active-page={activePage}>
       {/* Top 1-Line Desk Page Switcher Bar (Zero Nested Scrollbars) */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono font-bold text-blue-600 dark:text-blue-400">
+          <span className="inline-flex items-center gap-1.5 text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
             <Layers className="w-3.5 h-3.5" />
-            <span>Desk View:</span>
+            <span>View</span>
           </span>
 
           {hasMultiplePages ? (
@@ -1073,62 +1055,47 @@ export const ViewportScrollBudgetContainer: React.FC<
               <button
                 type="button"
                 onClick={() => setActivePage('page1')}
-                className={`px-3 py-1 text-xs font-semibold border transition-colors ${
-                  activePage === 'page1'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-2xs'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={activePage === 'page1'}
+                className="ui-pill"
               >
-                Page 1: Primary Workbench &amp; Controls ({page1CardCount}{' '}
-                {page1CardCount === 1 ? 'panel' : 'panels'})
+                Overview
               </button>
               <button
                 type="button"
                 onClick={() => setActivePage('page2')}
-                className={`px-3 py-1 text-xs font-semibold border transition-colors ${
-                  activePage === 'page2'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 shadow-2xs'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={activePage === 'page2'}
+                className="ui-pill"
               >
-                Page 2: Deep-Dive Matrix &amp; Diagnostics ({page2CardCount}{' '}
-                {page2CardCount === 1 ? 'panel' : 'panels'})
+                Details
               </button>
             </div>
           ) : (
-            <span className="px-2.5 py-0.5 text-[11px] font-mono font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-              Single-Page Compact Desk ({totalDetectedCards}{' '}
-              {totalDetectedCards === 1 ? 'panel' : 'panels'})
+            <span className="text-xs text-slate-500 dark:text-slate-400">
+              Single page
             </span>
           )}
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline text-[11px] font-mono text-emerald-700 dark:text-emerald-400 font-semibold">
-            1–2 Screens Max · No Inner Scrollbars
-          </span>
           {hasMultiplePages && (
             <button
               type="button"
               onClick={() =>
                 setActivePage((prev) => (prev === 'all' ? 'page1' : 'all'))
               }
-              className={`inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-semibold border transition-colors ${
-                activePage === 'all'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-500'
-              }`}
-              title="Toggle between Paginated 1–2 Screen View and Full Stacked Desk View"
+              aria-pressed={activePage === 'all'}
+              className="ui-pill inline-flex items-center gap-1"
+              title="Show every panel on one page, or go back to the Overview / Details split"
             >
               {activePage === 'all' ? (
                 <>
                   <Minimize2 className="w-3 h-3" />
-                  <span>Return to Page 1 / 2 Tabs</span>
+                  <span>Split into pages</span>
                 </>
               ) : (
                 <>
                   <Maximize2 className="w-3 h-3" />
-                  <span>Show All ({totalDetectedCards})</span>
+                  <span>Show all panels</span>
                 </>
               )}
             </button>
@@ -1143,9 +1110,9 @@ export const ViewportScrollBudgetContainer: React.FC<
 
       {/* Bottom Page Switcher Footer when Desk has 2 Pages */}
       {hasMultiplePages && activePage !== 'all' && (
-        <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono">
+        <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs tabular-nums">
           <span className="text-slate-500 dark:text-slate-400">
-            Showing {activePage === 'page1' ? 'Page 1 of 2 (Primary Workbench)' : 'Page 2 of 2 (Deep-Dive Diagnostics)'}
+            {activePage === 'page1' ? 'Overview (1 of 2)' : 'Details (2 of 2)'}
           </span>
           <div className="flex items-center gap-2">
             {activePage === 'page1' ? (
@@ -1155,9 +1122,9 @@ export const ViewportScrollBudgetContainer: React.FC<
                   setActivePage('page2');
                   window.scrollTo({ top: 0, behavior: 'smooth' });
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+                className="ui-btn ui-btn-primary inline-flex"
               >
-                <span>Next: Page 2 (Deep-Dive Matrix &amp; Diagnostics)</span>
+                <span>Next: Details</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </button>
             ) : (
@@ -1170,7 +1137,7 @@ export const ViewportScrollBudgetContainer: React.FC<
                 className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold transition-colors"
               >
                 <ArrowUp className="w-3.5 h-3.5" />
-                <span>Back to Page 1 (Primary Workbench &amp; Controls)</span>
+                <span>Back to Overview</span>
               </button>
             )}
           </div>

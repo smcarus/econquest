@@ -166,17 +166,17 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
   return (
     <div className="space-y-6">
       {/* Top Institutional Header */}
-      <div className="institutional-card p-5 border-l-4 border-l-indigo-600">
+      <div className="institutional-card p-5 border-l-4 border-l-blue-600">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
-              <span>TIER-9 SOVEREIGN WORKOUT, MONETARY REACTION & GEO-ECONOMIC DESK</span>
+            <div className="flex items-center gap-2 text-xs tabular-nums text-blue-600 dark:text-blue-400">
+              <span>Tier-9 sovereign workout, monetary reaction & geo-economic desk</span>
               <span>•</span>
-              <span>ZERO-NOTIONAL NORMALIZED (% GDP / BPS / 0–100¢ PAR / MONTHS COVER)</span>
+              <span>Zero-notional normalized (% GDP / bps / 0–100¢ par / months cover)</span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               9. Restructuring Waterfall, Taylor Rule Reaction, Reserve Custody Freeze & NGFS Climate Lab —{' '}
-              <span className="text-indigo-600 dark:text-indigo-400">
+              <span className="text-blue-600 dark:text-blue-400">
                 {run.countryName} ({run.iso3})
               </span>
             </h2>
@@ -186,21 +186,21 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="px-3 py-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-right">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Eurobond NPV / Haircut</div>
-              <div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">
+            <div className="px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-right">
+              <div className="text-xs tabular-nums text-slate-500">Eurobond NPV / Haircut</div>
+              <div className="text-xs tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                 {restructuringSuite.eurobondNpvRecoveryCents.toFixed(1)}¢ / -{restructuringSuite.weightedAverageNpvHaircutPct.toFixed(1)}% NPV
               </div>
             </div>
-            <div className="px-3 py-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-right">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Spot vs. Taylor Rate</div>
-              <div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">
+            <div className="px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-right">
+              <div className="text-xs tabular-nums text-slate-500">Spot vs. Taylor Rate</div>
+              <div className="text-xs tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                 {taylorSuite.activeRow.spotPolicyRatePct.toFixed(2)}% vs. {taylorSuite.activeRow.taylorImpliedPolicyRatePct.toFixed(2)}%
               </div>
             </div>
-            <div className="px-3 py-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-right">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Sanction-Immune Reserves</div>
-              <div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">
+            <div className="px-3 py-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-right">
+              <div className="text-xs tabular-nums text-slate-500">Sanction-Immune Reserves</div>
+              <div className="text-xs tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                 {geoSuite.activeRow.sanctionImmuneReserveSharePct.toFixed(1)}% ({geoSuite.activeRow.postFreezeImportCoverMonths.toFixed(1)}M)
               </div>
             </div>
@@ -216,23 +216,20 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                 <button
                   key={tab.id}
                   onClick={() => handleSelectSubTab(tab.id)}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded text-left border transition-all ${
-                    isActive
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-indigo-600 dark:border-indigo-500 shadow-sm'
-                      : 'bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
-                  }`}
+                  aria-pressed={isActive}
+                  className="ui-pill flex items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className={isActive ? 'text-indigo-300 dark:text-white' : 'text-indigo-600 dark:text-indigo-400'}>
+                    <span className={isActive ? 'text-blue-300 dark:text-white' : 'text-blue-600 dark:text-blue-400'}>
                       {tab.icon}
                     </span>
                     <div className="truncate">
-                      <span className="text-[10px] font-mono opacity-75 mr-1.5">{tab.code}</span>
+                      <span className="text-xs tabular-nums opacity-75 mr-1.5">{tab.code}</span>
                       <span className="text-xs font-semibold">{tab.label}</span>
                     </div>
                   </div>
                   <span
-                    className={`ml-2 px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 ${
+                    className={`ml-2 px-1.5 py-0.5 text-xs tabular-nums  shrink-0 ${
                       isActive
                         ? 'bg-white/15 text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -255,15 +252,15 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* Diagnostic Banner */}
           <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-amber-500 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-mono font-bold uppercase text-amber-600 dark:text-amber-400 mr-2">
-                [IMF DSA & PARIS CLUB COMPARABILITY ENGINE]
+              <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400 mr-2">
+                [IMF DSA & paris club comparability engine]
               </span>
               {restructuringSuite.headlineDiagnostic}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setTermSheetInputs(DEFAULT_RESTRUCTURING_TERM_SHEET)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Reset Term Sheet
@@ -278,7 +275,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       fxDepreciationPct: Number((termSheetInputs.principalHaircutPct * 0.25).toFixed(1)),
                     })
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                  className="ui-btn ui-btn-primary inline-flex"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   Propagate Restructuring Stress to Terminal
@@ -290,59 +287,59 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Eurobond NPV Recovery</div>
-              <div className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Eurobond NPV Recovery</div>
+              <div className="text-lg tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1">
                 {restructuringSuite.eurobondNpvRecoveryCents.toFixed(1)}¢
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Per 100¢ par (+{restructuringSuite.vriPresentValueGainCents.toFixed(1)}¢ GDP VRI)
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Pre → Post Debt / GDP</div>
-              <div className="text-lg font-mono font-bold text-slate-900 dark:text-slate-100 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Pre → Post Debt / GDP</div>
+              <div className="text-lg tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                 {restructuringSuite.preRestructuringDebtGdpPct.toFixed(1)}% → {restructuringSuite.postRestructuringDebtGdpPct.toFixed(1)}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 IMF Target: {restructuringSuite.imfTargetDebtGdpPct.toFixed(1)}% GDP
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Weighted NPV Relief</div>
-              <div className="text-lg font-mono font-bold text-amber-600 dark:text-amber-400 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Weighted NPV Relief</div>
+              <div className="text-lg tabular-nums font-semibold text-amber-600 dark:text-amber-400 mt-1">
                 -{restructuringSuite.weightedAverageNpvHaircutPct.toFixed(1)}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Across all 5 creditor tiers
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">GFN Relief (% of GDP)</div>
-              <div className="text-lg font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">GFN Relief (% of GDP)</div>
+              <div className="text-lg tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
                 {restructuringSuite.preRestructuringGfnPctGdp.toFixed(1)}% → {restructuringSuite.postRestructuringGfnPctGdp.toFixed(1)}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Gross Financing Need / GDP
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Paris Club Parity Gap</div>
-              <div className="text-lg font-mono font-bold text-slate-900 dark:text-slate-100 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Paris Club Parity Gap</div>
+              <div className="text-lg tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                 {restructuringSuite.parisClubComparabilityGapPct.toFixed(1)}¢
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 {restructuringSuite.parisClubComparabilityGapPct <= 10 ? 'Comparability Met' : 'Parity Divergence'}
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">CAC Holdout Litigation Risk</div>
+              <div className="text-xs tabular-nums text-slate-500">CAC Holdout Litigation Risk</div>
               <div
-                className={`text-lg font-mono font-bold mt-1 ${
+                className={`text-lg tabular-nums font-semibold mt-1 ${
                   restructuringSuite.cacHoldoutBlockingProbPct >= 35
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -350,7 +347,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
               >
                 {restructuringSuite.cacHoldoutBlockingProbPct}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Blocking minority probability
               </div>
             </div>
@@ -361,14 +358,14 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             <div className="lg:col-span-5 institutional-card p-5 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Restructuring Term-Sheet Calibrator
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Adjust nominal haircut, extension, exit yield, and CAC aggregation regime
                   </p>
                 </div>
-                <span className="px-2 py-0.5 text-[10px] font-mono rounded bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                <span className="px-2 py-0.5 text-xs tabular-nums bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400">
                   0–100¢ Par Engine
                 </span>
               </div>
@@ -379,7 +376,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Nominal Principal Haircut (%)
                     </span>
-                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                    <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       -{termSheetInputs.principalHaircutPct}%
                     </span>
                   </div>
@@ -395,7 +392,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         principalHaircutPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -404,7 +401,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Maturity Extension (+Years)
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       +{termSheetInputs.maturityExtensionYears} Years
                     </span>
                   </div>
@@ -420,7 +417,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         maturityExtensionYears: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -429,7 +426,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Coupon Reduction Adjustment (bps)
                     </span>
-                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {termSheetInputs.couponReductionBps} bps
                     </span>
                   </div>
@@ -445,7 +442,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         couponReductionBps: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -454,7 +451,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Principal Grace Period (Years)
                     </span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                    <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                       {termSheetInputs.gracePeriodYears} Years
                     </span>
                   </div>
@@ -470,7 +467,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         gracePeriodYears: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -479,7 +476,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Post-Exchange Exit Yield Discount Rate (%)
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {termSheetInputs.exitYieldPct.toFixed(1)}%
                     </span>
                   </div>
@@ -495,7 +492,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         exitYieldPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -504,7 +501,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       GDP-Linked Warrant / VRI Kicker (+bps)
                     </span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                       +{termSheetInputs.vriGdpWarrantKickerBps} bps
                     </span>
                   </div>
@@ -520,7 +517,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         vriGdpWarrantKickerBps: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -536,7 +533,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         cacRegime: e.target.value as RestructuringTermSheetInputs['cacRegime'],
                       }))
                     }
-                    className="w-full px-3 py-2 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    className="w-full px-3 py-2 text-xs tabular-nums border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
                     <option value="SINGLE_LIMB_AGGREGATED_75">
                       ICMA Single-Limb Aggregated CAC (75% Cross-Series Vote)
@@ -557,16 +554,16 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
               <div>
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       NPV Recovery vs. Exit Yield Discount Curve (0–100¢ per 100¢ Par)
                     </h3>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Compares External Eurobond NPV (including GDP warrant kicker) vs. Paris Club Bilateral NPV across exit yields (6%–20%)
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] font-mono">
-                    <span className="inline-flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400">
-                      <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block" />
+                  <div className="flex items-center gap-3 text-xs tabular-nums">
+                    <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                      <span className="w-2.5 h-2.5 rounded-full bg-blue-600 inline-block" />
                       Eurobonds (CAC)
                     </span>
                     <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
@@ -596,7 +593,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                             x={40}
                             y={y + 4}
                             textAnchor="end"
-                            className="text-[10px] font-mono fill-slate-400"
+                            className="text-xs tabular-nums fill-slate-400"
                           >
                             {val}¢
                           </text>
@@ -626,7 +623,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     {/*Polyline for Eurobond NPV*/}
                     <polyline
                       fill="none"
-                      stroke="#4f46e5"
+                      stroke="#2563eb"
                       strokeWidth={3}
                       points={restructuringSuite.exitYieldSensitivityCurve
                         .map((pt, idx) => {
@@ -653,12 +650,12 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       return (
                         <g key={pt.exitYieldPct}>
                           <circle cx={x} cy={yPc} r={3.5} fill="#10b981" />
-                          <circle cx={x} cy={yEb} r={4.5} fill="#4f46e5" />
+                          <circle cx={x} cy={yEb} r={4.5} fill="#2563eb" />
                           <text
                             x={x}
                             y={yEb - 8}
                             textAnchor="middle"
-                            className="text-[10px] font-mono font-bold fill-indigo-600 dark:fill-indigo-400"
+                            className="text-xs tabular-nums font-semibold fill-blue-600 dark:fill-blue-400"
                           >
                             {pt.eurobondNpvCents.toFixed(0)}¢
                           </text>
@@ -666,7 +663,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                             x={x}
                             y={214}
                             textAnchor="middle"
-                            className="text-[10px] font-mono fill-slate-500"
+                            className="text-xs tabular-nums fill-slate-500"
                           >
                             {pt.exitYieldPct}%
                           </text>
@@ -679,7 +676,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
 
               {/* Creditor Tier Comparability Summary Bars */}
               <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                <div className="text-[11px] font-mono uppercase text-slate-500">
+                <div className="text-xs tabular-nums text-slate-500">
                   Creditor Seniority Recovery Waterfall (0–100¢ per 100¢ Par)
                 </div>
                 {restructuringSuite.creditorWaterfall.map((tier) => (
@@ -687,23 +684,23 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <div className="flex justify-between text-xs">
                       <span className="font-medium text-slate-700 dark:text-slate-300">
                         #{tier.seniorityRank} {tier.tierLabel}{' '}
-                        <span className="text-slate-400 font-mono">
+                        <span className="text-slate-400 tabular-nums">
                           ({tier.debtShareOfTotalPct}% of debt / {tier.preRestructuringDebtGdpPct}% GDP)
                         </span>
                       </span>
-                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         {tier.npvRecoveryCentsPerPar.toFixed(1)}¢ recovery (-{tier.impliedPresentValueLossPct.toFixed(1)}% NPV)
                       </span>
                     </div>
-                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded overflow-hidden">
+                    <div className="w-full h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                       <div
-                        className={`h-full rounded ${
+                        className={`h-full  ${
                           tier.seniorityRank === 1
                             ? 'bg-emerald-500'
                             : tier.seniorityRank <= 3
-                            ? 'bg-sky-500'
+                            ? 'bg-blue-500'
                             : tier.seniorityRank === 4
-                            ? 'bg-indigo-600'
+                            ? 'bg-blue-600'
                             : 'bg-amber-500'
                         }`}
                         style={{ width: `${Math.min(100, tier.npvRecoveryCentsPerPar)}%` }}
@@ -719,10 +716,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Creditor Seniority, Comparability of Treatment & CAC Holdout Matrix — {run.countryName} ({run.iso3})
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Audits IMF/World Bank Preferred Creditor Status (PCS) exemption, Paris Club Evian comparability, and CAC single-limb voting thresholds
                 </p>
               </div>
@@ -730,7 +727,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Rank & Creditor Class</th>
                     <th className="py-2.5 px-3">Legal / CAC Regime</th>
                     <th className="py-2.5 px-3 text-right">Debt Share (%)</th>
@@ -746,39 +743,39 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                   {restructuringSuite.creditorWaterfall.map((row) => (
                     <tr key={row.tierId} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
                       <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
-                        <span className="font-mono text-indigo-600 dark:text-indigo-400 mr-1.5">
+                        <span className="tabular-nums text-blue-600 dark:text-blue-400 mr-1.5">
                           #{row.seniorityRank}
                         </span>
                         {row.tierLabel}
                       </td>
-                      <td className="py-2.5 px-3 text-[11px] text-slate-600 dark:text-slate-400">
+                      <td className="py-2.5 px-3 text-xs text-slate-600 dark:text-slate-400">
                         {row.legalRegime}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.debtShareOfTotalPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.preRestructuringDebtGdpPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                         -{row.appliedPrincipalHaircutPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         +{row.maturityExtensionYears}Y
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {row.npvRecoveryCentsPerPar.toFixed(1)}¢
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.estimatedHoldoutRiskPct}%
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                          className={`px-2 py-0.5 text-xs tabular-nums  ${
                             row.comparabilityStatus === 'PREFERRED_CREDITOR_EXEMPT'
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                               : row.comparabilityStatus === 'COMPARABLE_BURDEN_PARITY'
-                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
                               : row.comparabilityStatus === 'DOMESTIC_STABILITY_CARVEOUT'
                               ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
                               : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
@@ -797,17 +794,17 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* Cross-Sovereign Restructuring & IMF DSA Sustainability Table */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Cross-Sovereign IMF DSA Post-Workout Sustainability Comparator
               </h3>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Evaluates whether the simulated term sheet restores each watchlist sovereign below its IMF Debt Sustainability Analysis (DSA) debt-to-GDP threshold
               </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3 text-right">Pre-Debt (% GDP)</th>
                     <th className="py-2.5 px-3 text-right">Post-Workout Debt (% GDP)</th>
@@ -827,34 +824,34 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       }}
                       className={`cursor-pointer transition-colors ${
                         peer.isCurrentActiveSovereign
-                          ? 'bg-indigo-50/70 dark:bg-indigo-950/30 font-semibold'
+                          ? 'bg-blue-50/70 dark:bg-blue-950/30 font-semibold'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-mono">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 tabular-nums">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {peer.countryName}
                         </span>{' '}
                         <span className="text-slate-400">({peer.iso3})</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {peer.preDebtToGdpPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {peer.postDebtToGdpPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {peer.imfDsaSustainabilityTargetGdpPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {peer.eurobondNpvRecoveryCents.toFixed(1)}¢
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
                         -{peer.gfnReductionPctGdp.toFixed(1)}% GDP
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono rounded ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums  ${
                             peer.dsaVerdict === 'RESTORED_SUSTAINABLE'
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                               : peer.dsaVerdict === 'MARGINAL_BUFFER'
@@ -884,17 +881,17 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
          ===================================================================== */}
       {activeSubTab === 'taylor_rule_fiscal_dominance' && (
         <div className="space-y-6">
-          <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-indigo-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-blue-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-mono font-bold uppercase text-indigo-600 dark:text-indigo-400 mr-2">
-                [AUGMENTED TAYLOR RULE & FISCAL DOMINANCE ENGINE]
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-2">
+                [Augmented taylor rule & fiscal dominance engine]
               </span>
               {taylorSuite.headlineDiagnostic}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setTaylorInputs(DEFAULT_TAYLOR_RULE_INPUTS)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Reset Taylor Parameters
@@ -911,7 +908,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       ),
                     })
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                  className="ui-btn ui-btn-primary inline-flex"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   Propagate Monetary Reaction to Terminal
@@ -923,29 +920,29 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Spot Policy Rate</div>
-              <div className="text-lg font-mono font-bold text-slate-900 dark:text-slate-100 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Spot Policy Rate</div>
+              <div className="text-lg tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                 {taylorSuite.activeRow.spotPolicyRatePct.toFixed(2)}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Real Rate: {taylorSuite.activeRow.realPolicyRatePct.toFixed(2)}%
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Taylor Equilibrium Rate</div>
-              <div className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Taylor Equilibrium Rate</div>
+              <div className="text-lg tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1">
                 {taylorSuite.activeRow.taylorImpliedPolicyRatePct.toFixed(2)}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 r* = {taylorSuite.activeRow.neutralRealRatePct.toFixed(2)}% | Target π* = {taylorSuite.activeRow.inflationTargetPct.toFixed(1)}%
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">MPC Stance Gap (bps)</div>
+              <div className="text-xs tabular-nums text-slate-500">MPC Stance Gap (bps)</div>
               <div
-                className={`text-lg font-mono font-bold mt-1 ${
+                className={`text-lg tabular-nums font-semibold mt-1 ${
                   taylorSuite.activeRow.policyStanceGapBps >= 0
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : 'text-rose-600 dark:text-rose-400'
@@ -956,15 +953,15 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                   : taylorSuite.activeRow.policyStanceGapBps}{' '}
                 bps
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 {taylorSuite.activeRow.policyStanceGapBps >= 0 ? 'Hawkish Buffer' : 'Behind the Curve'}
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Fiscal Dominance Score</div>
+              <div className="text-xs tabular-nums text-slate-500">Fiscal Dominance Score</div>
               <div
-                className={`text-lg font-mono font-bold mt-1 ${
+                className={`text-lg tabular-nums font-semibold mt-1 ${
                   taylorSuite.activeRow.fiscalDominanceScore >= 65
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'text-amber-600 dark:text-amber-400'
@@ -972,27 +969,27 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
               >
                 {taylorSuite.activeRow.fiscalDominanceScore} / 100
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Interest / Rev: {taylorSuite.activeRow.interestToRevenuePct.toFixed(1)}%
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Financial Repression Tax</div>
-              <div className="text-lg font-mono font-bold text-amber-600 dark:text-amber-400 mt-1">
+              <div className="text-xs tabular-nums text-slate-500">Financial Repression Tax</div>
+              <div className="text-lg tabular-nums font-semibold text-amber-600 dark:text-amber-400 mt-1">
                 {taylorSuite.activeRow.financialRepressionTaxPctGdp.toFixed(2)}% GDP
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Implicit domestic debt liquidation
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">Monetary Regime</div>
-              <div className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1.5">
+              <div className="text-xs tabular-nums text-slate-500">Monetary Regime</div>
+              <div className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1.5">
                 {taylorSuite.activeRow.regimeClassification.replace(/_/g, ' ')}
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Output Gap: {taylorSuite.activeRow.estimatedOutputGapPctGdp >= 0 ? `+${taylorSuite.activeRow.estimatedOutputGapPctGdp}` : taylorSuite.activeRow.estimatedOutputGapPctGdp}% GDP
               </div>
             </div>
@@ -1002,10 +999,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             {/* Taylor Rule Sliders */}
             <div className="lg:col-span-5 institutional-card p-5 space-y-4">
               <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   MPC Reaction Function Parameters
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Calibrate neutral real rate (r*), inflation target, Taylor weights, and CPI supply shocks
                 </p>
               </div>
@@ -1016,7 +1013,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Neutral Equilibrium Real Rate r* (%)
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {taylorInputs.neutralRealRateRStarPct.toFixed(2)}%
                     </span>
                   </div>
@@ -1032,7 +1029,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         neutralRealRateRStarPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1041,7 +1038,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Central Bank Inflation Target π* (%)
                     </span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                    <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                       {taylorInputs.inflationTargetPct.toFixed(1)}%
                     </span>
                   </div>
@@ -1057,7 +1054,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         inflationTargetPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1066,7 +1063,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Inflation Gap Hawkish Weight (α)
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {taylorInputs.inflationGapWeightAlpha.toFixed(2)}
                     </span>
                   </div>
@@ -1082,7 +1079,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         inflationGapWeightAlpha: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1091,7 +1088,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Output Gap Stabilization Weight (β)
                     </span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                    <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                       {taylorInputs.outputGapWeightBeta.toFixed(2)}
                     </span>
                   </div>
@@ -1107,7 +1104,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         outputGapWeightBeta: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1116,7 +1113,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       FX Pass-Through & Spread Defense Weight (γ)
                     </span>
-                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {taylorInputs.fxPassThroughDefenseWeightGamma.toFixed(2)}
                     </span>
                   </div>
@@ -1132,7 +1129,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         fxPassThroughDefenseWeightGamma: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1141,7 +1138,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Simulated CPI Supply Shock (bps)
                     </span>
-                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                    <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       {taylorInputs.simulatedSupplyInflationShockBps >= 0
                         ? `+${taylorInputs.simulatedSupplyInflationShockBps}`
                         : taylorInputs.simulatedSupplyInflationShockBps}{' '}
@@ -1160,7 +1157,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         simulatedSupplyInflationShockBps: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
               </div>
@@ -1171,16 +1168,16 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
               <div>
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       Sovereign Yield Curve Transmission (3M–30Y Nominal vs. Taylor Equilibrium vs. Real)
                     </h3>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Projects how closing the MPC Taylor stance gap reprices the sovereign curve across tenors
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 text-[11px] font-mono">
+                  <div className="flex items-center gap-3 text-xs tabular-nums">
                     <span className="text-slate-700 dark:text-slate-300">● Spot Nominal</span>
-                    <span className="text-indigo-600 dark:text-indigo-400">● Taylor Implied</span>
+                    <span className="text-blue-600 dark:text-blue-400">● Taylor Implied</span>
                     <span className="text-emerald-600 dark:text-emerald-400">● Real Yield</span>
                   </div>
                 </div>
@@ -1189,22 +1186,22 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                   {taylorSuite.yieldCurveTransmission.map((pt) => (
                     <div
                       key={pt.tenorLabel}
-                      className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 text-center space-y-1.5"
+                      className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 text-center space-y-1.5"
                     >
-                      <div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <div className="text-xs tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         {pt.tenorLabel}
                       </div>
-                      <div className="text-[10px] font-mono text-slate-500">Spot</div>
-                      <div className="text-xs font-mono font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="text-xs tabular-nums text-slate-500">Spot</div>
+                      <div className="text-xs tabular-nums font-semibold text-slate-800 dark:text-slate-200">
                         {pt.spotNominalYieldPct.toFixed(2)}%
                       </div>
-                      <div className="text-[10px] font-mono text-indigo-600 dark:text-indigo-400">
+                      <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                         Taylor Eq.
                       </div>
-                      <div className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <div className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {pt.taylorEquilibriumNominalYieldPct.toFixed(2)}%
                       </div>
-                      <div className="pt-1 border-t border-slate-200 dark:border-slate-800 text-[10px] font-mono text-emerald-600 dark:text-emerald-400">
+                      <div className="pt-1 border-t border-slate-200 dark:border-slate-800 text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
                         Real: {pt.realYieldPct.toFixed(2)}%
                       </div>
                     </div>
@@ -1212,16 +1209,16 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                 </div>
               </div>
 
-              <div className="mt-4 p-3.5 rounded bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
-                <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mr-1.5">
+              <div className="mt-4 p-3.5 bg-slate-100/80 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100 mr-1.5">
                   Fiscal Dominance Interpretation:
                 </span>
                 When interest payments consume{' '}
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-200">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-200">
                   {taylorSuite.activeRow.interestToRevenuePct.toFixed(1)}%
                 </span>{' '}
                 of government revenues, every +100 bps policy rate hike directly expands the fiscal deficit, creating pressure to hold rates below the Taylor-implied{' '}
-                <span className="font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {taylorSuite.activeRow.taylorImpliedPolicyRatePct.toFixed(2)}%
                 </span>
                 .
@@ -1232,14 +1229,14 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* Cross-Sovereign Taylor Rule Matrix */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Cross-Sovereign Central Bank Reaction & Fiscal Dominance Matrix
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3 text-right">Spot Policy (%)</th>
                     <th className="py-2.5 px-3 text-right">CPI / Target (%)</th>
@@ -1261,27 +1258,27 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       }}
                       className={`cursor-pointer ${
                         row.isCurrentActiveSovereign
-                          ? 'bg-indigo-50/70 dark:bg-indigo-950/30 font-semibold'
+                          ? 'bg-blue-50/70 dark:bg-blue-950/30 font-semibold'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-mono">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 tabular-nums">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {row.countryName}
                         </span>{' '}
                         <span className="text-slate-400">({row.iso3})</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.spotPolicyRatePct.toFixed(2)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.headlineInflationPct.toFixed(1)}% / {row.inflationTargetPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {row.taylorImpliedPolicyRatePct.toFixed(2)}%
                       </td>
                       <td
-                        className={`py-2.5 px-3 text-right font-mono font-bold ${
+                        className={`py-2.5 px-3 text-right tabular-nums font-semibold ${
                           row.policyStanceGapBps >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-rose-600 dark:text-rose-400'
@@ -1292,22 +1289,22 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                           : row.policyStanceGapBps}{' '}
                         bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.realPolicyRatePct.toFixed(2)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.fiscalDominanceScore}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.financialRepressionTaxPctGdp.toFixed(2)}%
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                          className={`px-2 py-0.5 text-xs tabular-nums  ${
                             row.regimeClassification === 'CREDIBLE_ORTHODOX_HAWK'
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                               : row.regimeClassification === 'NEUTRAL_TAYLOR_ALIGNED'
-                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
                               : row.regimeClassification === 'BEHIND_THE_CURVE_DOVISH'
                               ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
                               : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
@@ -1332,15 +1329,15 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
         <div className="space-y-6">
           <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-rose-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-mono font-bold uppercase text-rose-600 dark:text-rose-400 mr-2">
-                [RESERVE CUSTODY FREEZE & MARITIME CHOKEPOINT AUDIT]
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400 mr-2">
+                [Reserve custody freeze & maritime chokepoint audit]
               </span>
               {geoSuite.headlineDiagnostic}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setGeoInputs(DEFAULT_GEO_SANCTIONS_CHOKEPOINT_INPUTS)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Reset Geo Stress
@@ -1360,7 +1357,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       ),
                     })
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                  className="ui-btn ui-btn-danger inline-flex"
                 >
                   <Zap className="w-3.5 h-3.5" />
                   Propagate Geo-Sanctions Shock to Terminal
@@ -1373,10 +1370,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             {/* Controls */}
             <div className="lg:col-span-5 institutional-card p-5 space-y-4">
               <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Sanctions Custody Freeze & Maritime Blockade Controls
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Test central bank reserve immobilization and maritime trade artery disruption
                 </p>
               </div>
@@ -1388,7 +1385,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       <Lock className="w-3.5 h-3.5 text-rose-500" />
                       G7 Custody Reserve Freeze Severity (%)
                     </span>
-                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                    <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       {geoInputs.g7ReserveFreezeSeverityPct}% Frozen
                     </span>
                   </div>
@@ -1410,7 +1407,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
 
                 <div>
                   <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
-                    <Anchor className="w-3.5 h-3.5 text-indigo-500" />
+                    <Anchor className="w-3.5 h-3.5 text-blue-500" />
                     Primary Disrupted Maritime Chokepoint
                   </label>
                   <select
@@ -1421,7 +1418,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         activeChokepointDisruption: e.target.value as MaritimeChokepointId,
                       }))
                     }
-                    className="w-full px-3 py-2 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    className="w-full px-3 py-2 text-xs tabular-nums border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
                     <option value="strait_of_hormuz">Strait of Hormuz (Gulf Energy Artery)</option>
                     <option value="bab_el_mandeb_red_sea">Bab el-Mandeb / Red Sea Corridor</option>
@@ -1436,7 +1433,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Chokepoint Blockade / Rerouting Intensity (%)
                     </span>
-                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {geoInputs.chokepointBlockadeIntensityPct}%
                     </span>
                   </div>
@@ -1452,7 +1449,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         chokepointBlockadeIntensityPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1461,7 +1458,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Secondary Sanctions / Tariff Penalty (bps)
                     </span>
-                    <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                    <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                       +{geoInputs.secondaryTariffPenaltyBps} bps
                     </span>
                   </div>
@@ -1477,7 +1474,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         secondaryTariffPenaltyBps: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
               </div>
@@ -1487,10 +1484,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             <div className="lg:col-span-7 institutional-card p-5 space-y-4">
               <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Central Bank FX & Gold Reserve Custody Architecture (100% Sum)
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Pre-shock reserve share vs. post-freeze accessible liquidity ({geoSuite.activeRow.preShockImportCoverMonths.toFixed(1)}M → {geoSuite.activeRow.postFreezeImportCoverMonths.toFixed(2)}M import cover)
                   </p>
                 </div>
@@ -1503,15 +1500,15 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       <span className="font-medium text-slate-800 dark:text-slate-200">
                         {bucket.bucketLabel}
                       </span>
-                      <span className="font-mono">
+                      <span className="tabular-nums">
                         <span className="text-slate-500">Pre: {bucket.preShockSharePct}%</span>
                         {' → '}
-                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                           Accessible: {bucket.postShockAccessibleSharePct}%
                         </span>
                       </span>
                     </div>
-                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded overflow-hidden flex">
+                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
                       <div
                         className="bg-emerald-500 h-full"
                         style={{ width: `${bucket.postShockAccessibleSharePct}%` }}
@@ -1523,21 +1520,21 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         }}
                       />
                     </div>
-                    <div className="text-[10px] text-slate-500">{bucket.custodyJurisdictionNote}</div>
+                    <div className="text-xs text-slate-500">{bucket.custodyJurisdictionNote}</div>
                   </div>
                 ))}
               </div>
 
               {/* 5 Maritime Chokepoints Breakdown */}
               <div className="pt-3 border-t border-slate-200 dark:border-slate-800">
-                <div className="text-[11px] font-mono uppercase text-slate-500 mb-2">
+                <div className="text-xs tabular-nums text-slate-500 mb-2">
                   Maritime Chokepoint Trade Routing & Blockade Drag ({run.countryName})
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-2">
                   {geoSuite.chokepointVulnerabilityBreakdown.map((cp) => (
                     <div
                       key={cp.chokepointId}
-                      className={`p-2.5 rounded border text-xs ${
+                      className={`p-2.5  border text-xs ${
                         cp.chokepointId === geoInputs.activeChokepointDisruption
                           ? 'border-rose-500 bg-rose-50/50 dark:bg-rose-950/30'
                           : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40'
@@ -1546,10 +1543,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">
                         {cp.chokepointName.split('(')[0]}
                       </div>
-                      <div className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400 mt-1">
+                      <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 mt-1">
                         {cp.tradeShareRoutedPct}% Trade
                       </div>
-                      <div className="text-[10px] font-mono text-rose-600 dark:text-rose-400">
+                      <div className="text-xs tabular-nums text-rose-600 dark:text-rose-400">
                         GDP: {cp.gdpGrowthDragPct}%
                       </div>
                     </div>
@@ -1562,14 +1559,14 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* Cross-Sovereign Geo-Risk Table */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Cross-Sovereign Reserve Custody Freeze & Chokepoint Vulnerability Matrix
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3 text-right">G7 Custody (%)</th>
                     <th className="py-2.5 px-3 text-right">Gold + Non-G7 Swaps (%)</th>
@@ -1590,50 +1587,50 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       }}
                       className={`cursor-pointer ${
                         row.isCurrentActiveSovereign
-                          ? 'bg-indigo-50/70 dark:bg-indigo-950/30 font-semibold'
+                          ? 'bg-blue-50/70 dark:bg-blue-950/30 font-semibold'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-mono">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 tabular-nums">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {row.countryName}
                         </span>{' '}
                         <span className="text-slate-400">({row.iso3})</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.g7CustodyExposurePct}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
                         {row.domesticGoldAndSwapBufferPct}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                         {row.sanctionImmuneReserveSharePct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.preShockImportCoverMonths.toFixed(1)}M →{' '}
                         <span
                           className={
                             row.postFreezeImportCoverMonths < 3.0
-                              ? 'text-rose-600 font-bold'
-                              : 'text-emerald-600 font-bold'
+                              ? 'text-rose-600 font-semibold'
+                              : 'text-emerald-600 font-semibold'
                           }
                         >
                           {row.postFreezeImportCoverMonths.toFixed(2)}M
                         </span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                         +{row.blockadeCpiPassThroughBps} bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.emergencyFiscalSubsidyCostPctGdp.toFixed(2)}% GDP
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                          className={`px-2 py-0.5 text-xs tabular-nums  ${
                             row.geoResilienceVerdict === 'FORTRESS_AUTARKY_BUFFER'
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                               : row.geoResilienceVerdict === 'MODERATE_CHOKEPOINT_SENSITIVITY'
-                              ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300'
+                              ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
                               : row.geoResilienceVerdict === 'HIGH_CUSTODY_FREEZE_VULNERABILITY'
                               ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300'
                               : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
@@ -1658,15 +1655,15 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
         <div className="space-y-6">
           <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-emerald-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-mono font-bold uppercase text-emerald-600 dark:text-emerald-400 mr-2">
-                [NGFS CLIMATE FISCAL & SLB GREENIUM ENGINE]
+              <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mr-2">
+                [NGFS climate fiscal & SLB greenium engine]
               </span>
               {climateSuite.headlineDiagnostic}
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => setClimateInputs(DEFAULT_CLIMATE_FISCAL_SLB_INPUTS)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Reset NGFS Parameters
@@ -1683,7 +1680,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       ),
                     })
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   <ArrowUpRight className="w-3.5 h-3.5" />
                   Propagate NGFS Climate Stress to Terminal
@@ -1696,10 +1693,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             {/* NGFS Controls */}
             <div className="lg:col-span-5 institutional-card p-5 space-y-4">
               <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   NGFS Scenario & Sustainability-Linked Bond (SLB) Calibrator
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Configure carbon transition speed, physical weather severity, and SLB KPI step-up risk
                 </p>
               </div>
@@ -1717,7 +1714,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         selectedNgfsScenario: e.target.value as NgfsClimateScenarioId,
                       }))
                     }
-                    className="w-full px-3 py-2 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    className="w-full px-3 py-2 text-xs tabular-nums border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
                     <option value="ORDERLY_NET_ZERO_2050">
                       Orderly Net Zero 2050 (Early Carbon Price, Low Physical Damage)
@@ -1736,7 +1733,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Global Carbon Border & Transition Intensity (0–100)
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {climateInputs.globalCarbonTaxTrajectoryScore} / 100
                     </span>
                   </div>
@@ -1752,7 +1749,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         globalCarbonTaxTrajectoryScore: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1761,7 +1758,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Acute & Chronic Physical Weather Severity (0–100)
                     </span>
-                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {climateInputs.acuteWeatherShockSeverityPct} / 100
                     </span>
                   </div>
@@ -1777,7 +1774,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         acuteWeatherShockSeverityPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -1786,7 +1783,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       SLB Sustainability KPI Target Miss Probability (%)
                     </span>
-                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                    <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       {climateInputs.slbTargetMissProbabilityPct}%
                     </span>
                   </div>
@@ -1802,7 +1799,7 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         slbTargetMissProbabilityPct: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
               </div>
@@ -1811,10 +1808,10 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
             {/* 3-Pathway NGFS Comparison for Active Sovereign */}
             <div className="lg:col-span-7 institutional-card p-5 space-y-4">
               <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   NGFS 3-Scenario Macro-Fiscal & Sovereign Spread Comparison — {run.countryName} ({run.iso3})
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Compares transition revenue loss (% GDP), physical damage (% GDP), 10Y cumulative debt adder (% GDP), and net spread impact (bps)
                 </p>
               </div>
@@ -1831,16 +1828,16 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                           selectedNgfsScenario: sc.scenarioId,
                         }))
                       }
-                      className={`p-4 rounded border cursor-pointer transition-all space-y-2.5 ${
+                      className={`p-4  border cursor-pointer transition-all space-y-2.5 ${
                         isSelected
-                          ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 shadow-sm'
+                          ? 'border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/30 '
                           : 'border-slate-200 dark:border-slate-800 hover:border-slate-400'
                       }`}
                     >
-                      <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                         {sc.scenarioTitle}
                       </div>
-                      <div className="space-y-1 text-xs font-mono">
+                      <div className="space-y-1 text-xs tabular-nums">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Transition Loss:</span>
                           <span className="text-amber-600 dark:text-amber-400">
@@ -1855,13 +1852,13 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                         </div>
                         <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800">
                           <span className="text-slate-500">10Y Debt Adder:</span>
-                          <span className="font-bold text-slate-900 dark:text-slate-100">
+                          <span className="font-semibold text-slate-900 dark:text-slate-100">
                             +{sc.cumulativeDebtAdder10YPctGdp.toFixed(1)}% GDP
                           </span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-slate-500">Net Spread Impact:</span>
-                          <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                          <span className="font-semibold text-blue-600 dark:text-blue-400">
                             {sc.sovereignSpreadShockBps >= 0
                               ? `+${sc.sovereignSpreadShockBps}`
                               : sc.sovereignSpreadShockBps}{' '}
@@ -1875,32 +1872,32 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
               </div>
 
               <div className="grid grid-cols-3 gap-3 pt-2">
-                <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
-                  <div className="text-[10px] font-mono uppercase text-slate-500">
+                <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+                  <div className="text-xs tabular-nums text-slate-500">
                     Sovereign Greenium Discount
                   </div>
-                  <div className="text-base font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  <div className="text-base tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                     {climateSuite.activeRow.sovereignGreeniumDiscountBps} bps
                   </div>
-                  <div className="text-[10px] text-slate-500">Green bond pricing advantage</div>
+                  <div className="text-xs text-slate-500">Green bond pricing advantage</div>
                 </div>
-                <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
-                  <div className="text-[10px] font-mono uppercase text-slate-500">
+                <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+                  <div className="text-xs tabular-nums text-slate-500">
                     SLB Coupon Step-Up Penalty
                   </div>
-                  <div className="text-base font-mono font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+                  <div className="text-base tabular-nums font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
                     +{climateSuite.activeRow.slbCouponStepUpPenaltyBps} bps
                   </div>
-                  <div className="text-[10px] text-slate-500">Expected KPI miss penalty</div>
+                  <div className="text-xs text-slate-500">Expected KPI miss penalty</div>
                 </div>
-                <div className="p-3 rounded border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
-                  <div className="text-[10px] font-mono uppercase text-slate-500">
+                <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50">
+                  <div className="text-xs tabular-nums text-slate-500">
                     Climate Rating Notch Risk
                   </div>
-                  <div className="text-base font-mono font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                  <div className="text-base tabular-nums font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
                     {climateSuite.activeRow.climateFiscalRatingRiskNotches} Notches
                   </div>
-                  <div className="text-[10px] text-slate-500">10Y shadow rating migration</div>
+                  <div className="text-xs text-slate-500">10Y  rating migration</div>
                 </div>
               </div>
             </div>
@@ -1909,14 +1906,14 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
           {/* Cross-Sovereign Climate & SLB Table */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Cross-Sovereign NGFS Climate Fiscal Vulnerability & SLB Greenium Matrix
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3 text-right">Hydrocarbon Rev (% Rev)</th>
                     <th className="py-2.5 px-3 text-right">Stranded Rev Loss (% Rev)</th>
@@ -1937,35 +1934,35 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                       }}
                       className={`cursor-pointer ${
                         row.isCurrentActiveSovereign
-                          ? 'bg-indigo-50/70 dark:bg-indigo-950/30 font-semibold'
+                          ? 'bg-blue-50/70 dark:bg-blue-950/30 font-semibold'
                           : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                       }`}
                     >
-                      <td className="py-2.5 px-3 font-mono">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 tabular-nums">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {row.countryName}
                         </span>{' '}
                         <span className="text-slate-400">({row.iso3})</span>
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {row.hydrocarbonFiscalRevenueSharePct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-amber-600 dark:text-amber-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">
                         -{row.strandedRevenueErosionPctRev.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                         -{row.physicalClimateDamagePctGdp.toFixed(2)}% GDP
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                         +{row.projected10YClimateDebtAdderPctGdp.toFixed(1)}% GDP
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
                         {row.sovereignGreeniumDiscountBps} bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono text-rose-600 dark:text-rose-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                         +{row.slbCouponStepUpPenaltyBps} bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {row.netClimateSpreadImpactBps >= 0
                           ? `+${row.netClimateSpreadImpactBps}`
                           : row.netClimateSpreadImpactBps}{' '}

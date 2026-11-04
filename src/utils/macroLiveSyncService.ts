@@ -198,9 +198,23 @@ export async function syncLiveWorldBankAndTreasuryData(
     (currentSnapshot.monetaryAndMarket.policyRatePct - liveCpi).toFixed(2)
   );
 
+  const syncedFeeds: string[] = [];
+  const worldBankHits = liveHitCount - (usTreasury10Y ? 1 : 0);
+  if (worldBankHits > 0) syncedFeeds.push('World Bank Open Data v2 (browser sync)');
+  if (usTreasury10Y) syncedFeeds.push('US Treasury Fiscal Data (browser sync)');
+  const previousVerified = currentSnapshot.dataStatus?.verifiedLiveSources || [];
+  const verifiedLiveSources = Array.from(new Set([...previousVerified, ...syncedFeeds]));
+  const syncedAt = new Date().toISOString();
+
   const updatedSnapshot: OpenDataSnapshot = {
     ...currentSnapshot,
-    fetchedAt: new Date().toISOString(),
+    fetchedAt: syncedAt,
+    liveApiSourcesActive: Array.from(
+      new Set([...(currentSnapshot.liveApiSourcesActive || []), ...syncedFeeds])
+    ),
+    dataStatus: (currentSnapshot.dataStatus || syncedFeeds.length > 0)
+      ? { verifiedLiveSources, checkedAt: syncedAt }
+      : currentSnapshot.dataStatus,
     imfIndicators: {
       ...currentSnapshot.imfIndicators,
       debtToGdpPct: liveDebt,
@@ -235,7 +249,7 @@ export async function syncLiveWorldBankAndTreasuryData(
 
   const summaryHeadline =
     syncStatus === 'DETERMINISTIC_FALLBACK'
-      ? `Verified deterministic IMF/World Bank baseline telemetry for ${currentSnapshot.countryName} (${iso3}); US 10Y Treasury benchmark anchored at ${us10YBenchmark.toFixed(2)}%.`
+      ? `Could not reach World Bank or US Treasury for ${currentSnapshot.countryName} (${iso3}); figures remain built-in sample values, not live data.`
       : `Synchronized ${liveHitCount} live macroeconomic series from World Bank Open Data v2 & US Treasury APIs for ${currentSnapshot.countryName} (${iso3}); Debt-stabilizing primary balance pb* updated to ${pbStar >= 0 ? '+' : ''}${pbStar.toFixed(2)}% GDP (Ref: r - g = ${rMinusG >= 0 ? '+' : ''}${rMinusG.toFixed(2)}% · US 10Y = ${us10YBenchmark.toFixed(2)}%).`;
 
   return {

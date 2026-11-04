@@ -103,7 +103,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
               <span className="mx-2" aria-hidden="true">·</span>
               <span>Target Sovereign: {run.countryName} ({run.iso3} · {run.openData.currencyCode})</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Historical Council Trade Ticket Performance vs. Sovereign Benchmarks (2019–2025)
             </h2>
           </div>
@@ -169,10 +169,10 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                 CRO Stop-Loss &amp; Tail Gate
               </span>
               <span
-                className={`font-mono font-bold ${
+                className={`tabular-nums font-semibold ${
                   config.enforceCroStopLoss
                     ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-red-600 dark:text-red-400'
+                    : 'text-rose-600 dark:text-rose-400'
                 }`}
               >
                 {config.enforceCroStopLoss ? 'ENFORCED (ON)' : 'DISABLED (RAW)'}
@@ -200,7 +200,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Agent Sizing &amp; Leverage
               </span>
-              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {config.leverageTarget.toFixed(1)}x · {config.sizingMode === 'BRIER_WEIGHTED' ? 'Brier' : 'Equal'}
               </span>
             </div>
@@ -226,7 +226,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                     leverageTarget: Number(e.target.value),
                   }))
                 }
-                className="w-20 px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
+                className="w-20 px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
               >
                 <option value={0.5}>0.5x</option>
                 <option value={1.0}>1.0x</option>
@@ -240,58 +240,58 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-3 border-t border-slate-200 dark:border-slate-800">
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Council Cumulative Return</div>
-            <div className="text-lg font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
+            <div className="text-lg font-semibold tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
               {backtest.totalStrategyReturnPct >= 0 ? '+' : ''}
               {backtest.totalStrategyReturnPct}%
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               {backtest.horizonLabel.slice(0, 22)}
             </div>
           </div>
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Benchmark Return</div>
-            <div className="text-lg font-bold font-mono tabular-nums text-slate-800 dark:text-slate-200 mt-0.5">
+            <div className="text-lg font-semibold tabular-nums text-slate-800 dark:text-slate-200 mt-0.5">
               {backtest.totalBenchmarkReturnPct >= 0 ? '+' : ''}
               {backtest.totalBenchmarkReturnPct}%
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               {config.benchmarkId}
             </div>
           </div>
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Net Cumulative Alpha</div>
-            <div className="text-lg font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
+            <div className="text-lg font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
               {backtest.netCumulativeAlphaPct >= 0 ? '+' : ''}
               {backtest.netCumulativeAlphaPct}%
             </div>
-            <div className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
+            <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
               +{backtest.annualizedAlphaPct}% / yr Annualized
             </div>
           </div>
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Information &amp; Sharpe Ratio</div>
-            <div className="text-lg font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+            <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
               IR {backtest.informationRatio}
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Sharpe: {backtest.annualizedSharpeRatio}
             </div>
           </div>
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Council Hit Rate (Win %)</div>
-            <div className="text-lg font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+            <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
               {backtest.overallHitRatePct}%
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Profit Factor: {backtest.overallProfitFactor}x
             </div>
           </div>
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Max Drawdown (vs Bench)</div>
-            <div className="text-lg font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
+            <div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
               {backtest.strategyMaxDrawdownPct}%
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Bench Max DD: {backtest.benchmarkMaxDrawdownPct}%
             </div>
           </div>
@@ -309,30 +309,30 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
               <span className="mx-2" aria-hidden="true">·</span>
               <span>{backtest.benchmarkLabel}</span>
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1 text-balance">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-1 text-balance">
               {backtest.conclusionHeadline}
             </h3>
           </div>
 
           {activePoint && (
-            <div className="flex items-center gap-4 text-xs font-mono tabular-nums bg-slate-50 dark:bg-slate-950 px-3.5 py-2 border border-slate-200 dark:border-slate-800 shrink-0">
+            <div className="flex items-center gap-4 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 px-3.5 py-2 border border-slate-200 dark:border-slate-800 shrink-0">
               <div>
-                <span className="text-slate-400 block text-[10px]">{activePoint.periodLabel} ({activePoint.regimeTag})</span>
-                <span className="font-bold text-slate-900 dark:text-slate-100">
+                <span className="text-slate-400 block text-xs">{activePoint.periodLabel} ({activePoint.regimeTag})</span>
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
                   Strat: {activePoint.strategyCumulativeReturnPct >= 0 ? '+' : ''}
                   {activePoint.strategyCumulativeReturnPct}%
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Benchmark</span>
+                <span className="text-slate-400 block text-xs">Benchmark</span>
                 <span className="font-semibold text-slate-600 dark:text-slate-300">
                   {activePoint.benchmarkCumulativeReturnPct >= 0 ? '+' : ''}
                   {activePoint.benchmarkCumulativeReturnPct}%
                 </span>
               </div>
               <div>
-                <span className="text-slate-400 block text-[10px]">Net Alpha</span>
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="text-slate-400 block text-xs">Net Alpha</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                   {activePoint.cumulativeAlphaPct >= 0 ? '+' : ''}
                   {activePoint.cumulativeAlphaPct}%
                 </span>
@@ -365,7 +365,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                         x={padL - 8}
                         y={y + 3}
                         textAnchor="end"
-                        className="text-[10px] font-mono fill-slate-400"
+                        className="text-xs tabular-nums fill-slate-400"
                       >
                         {val >= 0 ? `+${val.toFixed(0)}%` : `${val.toFixed(0)}%`}
                       </text>
@@ -447,7 +447,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                         x={cx}
                         y={svgH - 8}
                         textAnchor="middle"
-                        className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                        className="text-xs tabular-nums fill-slate-500 dark:fill-slate-400"
                       >
                         {pt.periodLabel}
                       </text>
@@ -488,7 +488,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
           <div className="lg:col-span-4 space-y-4">
             {/* Stacked Desk Alpha Contribution Breakdown */}
             <div className="p-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2.5 text-xs">
-              <div className="font-bold text-slate-900 dark:text-slate-100">
+              <div className="font-semibold text-slate-900 dark:text-slate-100">
                 Realized Alpha Attribution by Desk
               </div>
               {backtest.deskAttribution.slice(0, 3).map((d) => (
@@ -497,7 +497,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       {d.deskName}
                     </span>
-                    <span className="font-mono font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                    <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                       +{d.cumulativeAlphaContributionPct}% ({d.alphaShareOfTotalPct}% Share)
                     </span>
                   </div>
@@ -513,7 +513,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
 
             {/* 3 Concise Decision Bullets */}
             <div className="p-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-              <div className="font-bold text-slate-900 dark:text-slate-100">
+              <div className="font-semibold text-slate-900 dark:text-slate-100">
                 Alpha Attribution — 3 Key Takeaways
               </div>
               <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 list-disc pl-4 leading-relaxed">
@@ -539,11 +539,11 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Empirical Desk Accuracy &amp; Brier Calibration Audit · Feeds Directly into Supreme Council Voting Weights
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Summary of Hit-Rate, Profit Factor, Sharpe &amp; Brier Calibration by Desk
             </h3>
           </div>
-          <div className="text-xs font-mono text-slate-500 dark:text-slate-400">
+          <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
             Sizing Mode: {config.sizingMode === 'BRIER_WEIGHTED' ? 'Brier-Calibrated Conviction Weights' : 'Equal Weighting'}
           </div>
         </div>
@@ -563,7 +563,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                 <th className="py-2.5 px-3 font-semibold">Top Historical Alpha Call</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
               {backtest.deskAttribution.map((d) => {
                 const isComposite = d.deskId === 'supreme_council';
                 return (
@@ -576,25 +576,25 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                     }
                   >
                     <td className="py-3 px-3 font-sans">
-                      <div className="font-bold text-slate-900 dark:text-slate-100">
+                      <div className="font-semibold text-slate-900 dark:text-slate-100">
                         {d.deskName}
                       </div>
-                      <div className="text-[11px] text-slate-500">{d.leadAgentTitle}</div>
+                      <div className="text-xs text-slate-500">{d.leadAgentTitle}</div>
                     </td>
                     <td className="py-3 px-3 text-right text-slate-700 dark:text-slate-300">
                       {d.totalSignalsGenerated} ({d.winningSignals}W / {d.losingSignals}L)
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-3 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                       {d.hitRatePct.toFixed(1)}%
                     </td>
                     <td className="py-3 px-3 text-right text-slate-700 dark:text-slate-300">
                       <span className="text-emerald-600 dark:text-emerald-400">+{d.avgWinBps}</span> /{' '}
-                      <span className="text-red-600 dark:text-red-400">-{d.avgLossBps} bps</span>
+                      <span className="text-rose-600 dark:text-rose-400">-{d.avgLossBps} bps</span>
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-blue-600 dark:text-blue-400">
+                    <td className="py-3 px-3 text-right font-semibold text-blue-600 dark:text-blue-400">
                       {d.profitFactor.toFixed(2)}x
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-3 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                       +{d.cumulativeAlphaContributionPct}%
                     </td>
                     <td className="py-3 px-3 text-right text-slate-900 dark:text-slate-100">
@@ -621,7 +621,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Auditable Historical Trade Execution Ledger · Entry, Target, CRO Stop &amp; Realized Alpha vs. Benchmark
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Historical Council Trade Ticket Execution Blotter ({run.countryName})
             </h3>
           </div>
@@ -638,11 +638,8 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                 key={f.id}
                 type="button"
                 onClick={() => setDeskFilter(f.id as any)}
-                className={`px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                  deskFilter === f.id
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
+                aria-pressed={deskFilter === f.id}
+                className="ui-pill whitespace-nowrap shrink-0"
               >
                 {f.label}
               </button>
@@ -668,10 +665,10 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
               {visibleBlotter.map((t) => (
                 <tr key={t.ticketId} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30">
                   <td className="py-3 px-3 whitespace-nowrap">
-                    <div className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                    <div className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {t.ticketId}
                     </div>
-                    <div className="text-[11px] font-mono text-slate-500">
+                    <div className="text-xs tabular-nums text-slate-500">
                       {t.entryQuarter} → {t.exitQuarter}
                     </div>
                   </td>
@@ -679,65 +676,65 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                     <div className="font-semibold text-slate-900 dark:text-slate-100">
                       {t.deskName}
                     </div>
-                    <div className="text-[11px] text-slate-500">{t.originatingSubAgent}</div>
+                    <div className="text-xs text-slate-500">{t.originatingSubAgent}</div>
                   </td>
                   <td className="py-3 px-3">
                     <div className="font-semibold text-slate-900 dark:text-slate-100">
                       [{t.direction}] {t.instrument}
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       Weight: {t.sizingWeightPct}% NAV · {t.regimeContext}
                     </div>
                   </td>
-                  <td className="py-3 px-3 font-mono tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                  <td className="py-3 px-3 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
                     <div>
                       {t.entryLevel} → <strong>{t.realizedExitLevel}</strong>
                     </div>
-                    <div className="text-[11px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       Target: {t.targetLevel} | Stop: {t.stopLevel}
                     </div>
                   </td>
-                  <td className="py-3 px-3 font-mono font-bold whitespace-nowrap">
+                  <td className="py-3 px-3 tabular-nums font-semibold whitespace-nowrap">
                     <span
                       className={
                         t.executionOutcome === 'TARGET_HIT'
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : t.executionOutcome === 'CRO_STOP_SAVED'
                           ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-red-600 dark:text-red-400'
+                          : 'text-rose-600 dark:text-rose-400'
                       }
                     >
                       {t.executionOutcome}
                     </span>
                   </td>
                   <td
-                    className={`py-3 px-3 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
+                    className={`py-3 px-3 text-right tabular-nums font-semibold tabular-nums whitespace-nowrap ${
                       t.realizedPnlBps >= 0
                         ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                        : 'text-rose-600 dark:text-rose-400'
                     }`}
                   >
                     <div>
                       {t.realizedPnlBps >= 0 ? '+' : ''}
                       {t.realizedPnlBps} bps
                     </div>
-                    <div className="text-[11px]">
+                    <div className="text-xs">
                       ({t.realizedNavReturnPct >= 0 ? '+' : ''}
                       {t.realizedNavReturnPct}% NAV)
                     </div>
                   </td>
                   <td
-                    className={`py-3 px-3 text-right font-mono font-bold tabular-nums whitespace-nowrap ${
+                    className={`py-3 px-3 text-right tabular-nums font-semibold tabular-nums whitespace-nowrap ${
                       t.netAlphaPct >= 0
                         ? 'text-emerald-600 dark:text-emerald-400'
-                        : 'text-red-600 dark:text-red-400'
+                        : 'text-rose-600 dark:text-rose-400'
                     }`}
                   >
                     <div>
                       {t.netAlphaPct >= 0 ? '+' : ''}
                       {t.netAlphaPct}%
                     </div>
-                    <div className="text-[11px] text-slate-500 font-normal">
+                    <div className="text-xs text-slate-500 font-normal">
                       Bench: {t.benchmarkPeriodReturnPct >= 0 ? '+' : ''}
                       {t.benchmarkPeriodReturnPct}%
                     </div>

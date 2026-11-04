@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AIRuntimeConfig,
   AnnotatedChartSpec,
@@ -64,6 +64,28 @@ import {
   syncLiveWorldBankAndTreasuryData,
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
+import { TodayPage } from './components/TodayPage';
+import {
+  COUNTRY_TABS,
+  CountryPage,
+  CountryTabId,
+  findCountryTabForDesk,
+} from './components/CountryPage';
+import {
+  WorkspacePage,
+  PORTFOLIO_TABS,
+  REPORTS_TABS,
+  findTabForDesk,
+} from './components/WorkspacePage';
+import { PortfolioSummary } from './components/PortfolioSummary';
+import { HoldingsPanel } from './components/HoldingsPanel';
+import { IcMemoBuilder } from './components/IcMemoBuilder';
+import { RolePicker } from './components/RolePicker';
+import { PresentMode } from './components/PresentMode';
+import { getRole, loadRole, saveRole, USER_ROLES, type UserRoleId, type WorkflowArea } from './data/roles';
+import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
+
+type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
 import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
 import { AnnotatedChartsDeck } from './components/AnnotatedChartsDeck';
@@ -154,6 +176,8 @@ import {
   Briefcase,
   BookOpen,
   Cpu,
+  Settings2,
+  Presentation,
 } from 'lucide-react';
 
 const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
@@ -426,7 +450,7 @@ const DOMAIN_HUBS: DomainHubConfig[] = [
       {
         id: 'ratings_shadow_fallen_angel',
         label: 'Shadow Rating & Fallen-Angel Cliff',
-        description: 'S&P/Moody’s/Fitch 5-pillar shadow rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
+        description: 'S&P/Moody’s/Fitch 5-pillar  rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
       },
       {
         id: 'fx_beer_feer_equilibrium',
@@ -539,7 +563,7 @@ export default function App() {
     () => (savedSessionOnBoot?.activeNavSection as NavSectionId) || 'quant_nss_yield_curve'
   );
   const [activePersona, setActivePersona] = useState<UserPersonaId>(
-    () => savedSessionOnBoot?.activePersona || 'INDIVIDUAL_TRADER'
+    () => savedSessionOnBoot?.activePersona || 'INSTITUTIONAL_PM_IC'
   );
 
   // Collapse Watchlist sidebar by default to maximize 1-2 screen canvas density
@@ -553,6 +577,104 @@ export default function App() {
   const [openPillarMenuId, setOpenPillarMenuId] =
     useState<ActivityPillarId | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
+  // Top-level area: the PM's Today page, or the analysis desks.
+  const [userRole, setUserRole] = useState<UserRoleId | null>(() => loadRole());
+  const [isRolePromptDismissed, setIsRolePromptDismissed] = useState<boolean>(false);
+  const role = getRole(userRole);
+  const [appArea, setAppArea] = useState<AppArea>(() => (userRole ? role.home.area : 'today'));
+  const [countryTab, setCountryTab] = useState<CountryTabId>(
+    () => ((userRole && role.home.countryTab) as CountryTabId) || 'overview'
+  );
+  const [portfolioTab, setPortfolioTab] = useState<string>(() => (userRole && role.home.portfolioTab) || PORTFOLIO_TABS[0].id);
+  const [reportsTab, setReportsTab] = useState<string>(() => (userRole && role.home.reportsTab) || REPORTS_TABS[0].id);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
+  const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
+  const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
+  const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
+  const setHoldings = (next: Holding[]) => {
+    setHoldingsState(next);
+    saveHoldings(next);
+  };
+  const openWorkspace = (area: 'portfolio' | 'reports', deskId?: string) => {
+    const tabs = area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
+    const current = area === 'portfolio' ? portfolioTab : reportsTab;
+    const tab = (deskId && findTabForDesk(tabs, deskId)) || tabs.find((t) => t.id === current) || tabs[0];
+    (area === 'portfolio' ? setPortfolioTab : setReportsTab)(tab.id);
+    const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
+    setActiveNavSection(desk as NavSectionId);
+    setAppArea(area);
+    window.scrollTo({ top: 0 });
+  };
+  const applyRole = (id: UserRoleId) => {
+    const r = getRole(id);
+    saveRole(id);
+    setUserRole(id);
+    setActivePersona(r.persona);
+    if (r.home.reportsTab) setReportsTab(r.home.reportsTab);
+    if (r.home.portfolioTab) setPortfolioTab(r.home.portfolioTab);
+    if (r.home.area === 'country') {
+      const tab = COUNTRY_TABS.find((t) => t.id === r.home.countryTab) || COUNTRY_TABS[0];
+      setCountryTab(tab.id);
+      setActiveNavSection(tab.desks[0] as NavSectionId);
+      setAppArea('country');
+    } else if (r.home.area === 'portfolio' || r.home.area === 'reports') {
+      const tabs = r.home.area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
+      const tabId = r.home.area === 'portfolio' ? r.home.portfolioTab : r.home.reportsTab;
+      const tab = tabs.find((t) => t.id === tabId) || tabs[0];
+      setActiveNavSection(tab.desks[0] as NavSectionId);
+      setAppArea(r.home.area);
+    } else {
+      setAppArea(r.home.area);
+    }
+    window.scrollTo({ top: 0 });
+  };
+  const openCountryPage = (deskId?: string) => {
+    if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(PORTFOLIO_TABS, deskId)) {
+      openWorkspace('portfolio', deskId);
+      return;
+    }
+    if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(REPORTS_TABS, deskId)) {
+      openWorkspace('reports', deskId);
+      return;
+    }
+    if (deskId && !findCountryTabForDesk(deskId)) {
+      // Not part of any workflow page: open it in the desk library.
+      setLayoutMode('executive_brief');
+      setActiveNavSection(deskId as NavSectionId);
+      setAppArea('desks');
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    const tab = (deskId && findCountryTabForDesk(deskId)) || COUNTRY_TABS[0];
+    setCountryTab(tab.id);
+    setActiveNavSection((deskId && tab.desks.includes(deskId) ? deskId : tab.desks[0]) as NavSectionId);
+    setAppArea('country');
+    window.scrollTo({ top: 0 });
+  };
+  const returnToCountryPage = () => {
+    const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || COUNTRY_TABS[0];
+    if (!tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
+    setAppArea('country');
+  };
+  const headerMenuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isHeaderMenuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsHeaderMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isHeaderMenuOpen]);
   const [isIntegrityAuditOpen, setIsIntegrityAuditOpen] = useState<boolean>(false);
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
     useState<boolean>(false);
@@ -1009,6 +1131,8 @@ export default function App() {
     () => computeScenarioDeltaComparison(pinnedScenarioA, liveScenarioBSnapshot),
     [pinnedScenarioA, liveScenarioBSnapshot]
   );
+  const scenarioChangeCount =
+    scenarioComparisonSuite.deteriorationCount + scenarioComparisonSuite.improvementCount;
 
   const handlePinCurrentAsScenarioA = () => {
     const pinned = captureScenarioSnapshot(
@@ -1110,6 +1234,7 @@ export default function App() {
     setSelectedBacktestEpisodeId(customEpisode.id);
     if (navigateImmediately) {
       setLayoutMode('executive_brief');
+    setAppArea('desks');
       setActiveNavSection('backtest_engine');
     }
     setStatusBanner({
@@ -1501,6 +1626,17 @@ export default function App() {
 
   const activeWatchlistItems =
     watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  // Imported holdings, shaped for the stress lab (weights) and the contagion desk (positions).
+  const holdingsStressWeights = useMemo(
+    () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
+    [holdings]
+  );
+  const holdingsContagionBook = useMemo(() => holdingsToContagionBook(holdings, SOVEREIGN_CATALOG), [holdings]);
+  // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
+  const holdingsRiskLookup = [
+    ...activeWatchlistItems,
+    ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3)),
+  ];
 
   const activeDomainHub =
     DOMAIN_HUBS.find((hub) => hub.subTabs.some((t) => t.id === activeNavSection)) ||
@@ -1591,6 +1727,7 @@ export default function App() {
     setActivePersona('INDIVIDUAL_TRADER');
     setActiveNavSection('charts_watchlists');
     setLayoutMode('executive_brief');
+    setAppArea('today');
     setForecastShocks(DEFAULT_FORECAST_SHOCKS);
     setGeopoliticalWargameParams(DEFAULT_WARGAME_PARAMS);
     setLiquidityStressParams(DEFAULT_LIQUIDITY_STRESS_PARAMS);
@@ -1607,6 +1744,7 @@ export default function App() {
   const handleSelectCommandPaletteItem = (item: CommandPaletteItem) => {
     if (item.targetNavSection) {
       setLayoutMode('executive_brief');
+    setAppArea('desks');
       setActiveNavSection(item.targetNavSection as NavSectionId);
       return;
     }
@@ -1636,281 +1774,477 @@ export default function App() {
     }
   };
 
+  // One desk's content, by section id. Used by the desk view and by the Country page tabs.
+  const renderDeskBody = (sec: NavSectionId) => (
+    <>
+              {sec === 'charts_watchlists' && (
+                <MacroOverviewTabbedWorkspace
+                  countryName={run.countryName}
+                  iso3={run.iso3}
+                  mapCard={
+                    <HeroGeopoliticalMapCard
+                      run={run}
+                      watchlistItems={activeWatchlistItems}
+                      wargameParams={geopoliticalWargameParams}
+                      onChangeWargameParams={setGeopoliticalWargameParams}
+                      onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                      onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
+                      onSelectSovereign={handleSelectSovereign}
+                    />
+                  }
+                  chartsDeck={
+                    <AnnotatedChartsDeck
+                      run={run}
+                      onRefreshLiveOpenData={() =>
+                        handlePullLiveOpenData(run.iso3, run.countryName, false)
+                      }
+                      isFetchingData={isFetchingOpenData}
+                      onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
+                    />
+                  }
+                />
+              )}
+
+              {sec === 'forecasting_lab' && (
+                <StatisticalForecastingLab
+                  run={run}
+                  propagatedGeoWargameParams={geopoliticalWargameParams}
+                  isGeoPropagationActive={propagateGeoShocks}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                  externalShocks={forecastShocks}
+                  onChangeExternalShocks={setForecastShocks}
+                />
+              )}
+
+              {sec === 'geopolitical_desk' && (
+                <GeopoliticalRiskDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  wargameParams={geopoliticalWargameParams}
+                  onChangeWargameParams={setGeopoliticalWargameParams}
+                  propagateGeoShocks={propagateGeoShocks}
+                  onTogglePropagateGeoShocks={setPropagateGeoShocks}
+                  onSelectSovereign={handleSelectSovereign}
+                  onJumpToCouncilDebates={() => setActiveNavSection('council_debates')}
+                  onJumpToPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                  onJumpToForecastingLab={() => setActiveNavSection('forecasting_lab')}
+                  onOpenSupplyChainMatrixDesk={() => setActiveNavSection('supply_chain_matrix')}
+                />
+              )}
+
+              {sec === 'supply_chain_matrix' && (
+                <SupplyChainMatrixDesk
+                  run={run}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                />
+              )}
+
+              {sec === 'global_liquidity' && (
+                <GlobalLiquidityDesk
+                  run={run}
+                  stressParams={liquidityStressParams}
+                  onChangeStressParams={setLiquidityStressParams}
+                  onOpenMarketMakerDesk={() => setActiveNavSection('market_maker_alpha')}
+                />
+              )}
+
+              {sec === 'market_maker_alpha' && (
+                <MarketMakerAlphaDesk
+                  run={run}
+                  stressParams={liquidityStressParams}
+                  onChangeStressParams={setLiquidityStressParams}
+                  onOpenGlobalLiquidityDesk={() => setActiveNavSection('global_liquidity')}
+                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                />
+              )}
+
+              {sec === 'portfolio_risk_desk' && (
+                <PortfolioContagionDesk
+                  key={`contagion-${holdings.length}`}
+                  holdingsBook={holdingsContagionBook}
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  onSelectSovereign={handleSelectSovereign}
+                  propagatedGeoWargameParams={geopoliticalWargameParams}
+                  isGeoPropagationActive={propagateGeoShocks}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                />
+              )}
+
+              {sec === 'backtest_engine' && (
+                <CrisisBacktestDesk
+                  run={run}
+                  customEpisodes={customBacktestEpisodes}
+                  initialSelectedEpisodeId={selectedBacktestEpisodeId}
+                  onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
+                  onOpenCsvLab={() => setActiveNavSection('policy_doc_lab')}
+                />
+              )}
+
+              {sec === 'risk_analytics' && (
+                <InstitutionalRiskModules
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  onSelectSovereign={handleSelectSovereign}
+                  onOpenPortfolioRiskDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                />
+              )}
+
+              {sec === 'council_debates' && (
+                <CouncilHierarchyAndDebates
+                  run={run}
+                  onJumpToCROGate={() => setActiveNavSection('cro_reports')}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                  isRunningPhase1And2={isRunningPhase1And2}
+                  onReverifyPipeline={handleRunCouncilPhase1And2}
+                  runtimeConfig={runtimeConfig}
+                  onUpdateRuntimeConfig={setRuntimeConfig}
+                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
+                />
+              )}
+
+              {sec === 'cro_reports' && (
+                <CROCheckpointAndReports
+                  run={run}
+                  croDraft={croDraft}
+                  runtimeConfig={runtimeConfig}
+                  isRunningPhase1And2={isRunningPhase1And2}
+                  isRunningPhase3={isRunningPhase3}
+                  onUpdateCroDraft={setCroDraft}
+                  onUpdateRuntimeConfig={setRuntimeConfig}
+                  onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
+                  onReverifyPipeline={handleRunCouncilPhase1And2}
+                />
+              )}
+
+              {sec === 'policy_doc_lab' && (
+                <PolicyDocumentAndCsvLab
+                  run={run}
+                  policyDocTitle={policyDocTitle}
+                  policyDocText={policyDocText}
+                  onChangePolicyDocTitle={setPolicyDocTitle}
+                  onChangePolicyDocText={setPolicyDocText}
+                  onDocumentFileUpload={handleDocumentFileUpload}
+                  onRunCouncilWithDocument={handleRunCouncilPhase1And2}
+                  onApplyCsvToLiveState={handleApplyCsvToLiveState}
+                  onRegisterCustomCrisisBacktest={handleRegisterCustomCrisisBacktest}
+                />
+              )}
+
+              {(sec === 'institutional_quant_desk' ||
+                sec === 'quant_cds_basis' ||
+                sec === 'quant_restructuring_npv' ||
+                sec === 'quant_matrix_econometrics' ||
+                sec === 'quant_trade_blotter' ||
+                sec === 'quant_macro_surprise' ||
+                sec === 'quant_alpha_correlation' ||
+                sec === 'quant_nss_yield_curve' ||
+                sec === 'quant_macro_catalyst_calendar' ||
+                sec === 'quant_portfolio_stress_lab') && (
+                <InstitutionalQuantDesk
+                  holdingsWeightsPct={holdingsStressWeights}
+                  holdings={holdings}
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={
+                    sec === 'institutional_quant_desk'
+                      ? 'quant_cds_basis'
+                      : (sec as QuantSubWorkspaceId)
+                  }
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onStageTradeTicket={handleStageTradeTicket}
+                />
+              )}
+
+              {(sec === 'embi_portfolio_pair_book' ||
+                sec === 'dmo_treasury_auction_sim' ||
+                sec === 'mpc_imf_document_ai') && (
+                <PortfolioAndFundingDesk
+                  holdingsWeightsPct={holdingsStressWeights}
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  runtimeConfig={runtimeConfig}
+                  isDark={darkMode}
+                  activeSubTab={sec as PortfolioFundingSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
+                />
+              )}
+
+              {(sec === 'decision_dislocation_screener' ||
+                sec === 'decision_premortem_killswitch' ||
+                sec === 'decision_ledger_brier' ||
+                sec === 'decision_quadrant_stress' ||
+                sec === 'decision_prediction_markets') && (
+                <DecisionCommandCenterDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={sec as DecisionCommandSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyConditionalEventShock={handleApplyConditionalEventShock}
+                />
+              )}
+
+              {(sec === 'ratings_shadow_fallen_angel' ||
+                sec === 'fx_beer_feer_equilibrium' ||
+                sec === 'debt_investor_base_doom_loop' ||
+                sec === 'ic_pitchbook_dossier_exporter') && (
+                <SovereignRatingsFxAndIcDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={sec as RatingsFxIcSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
+                />
+              )}
+
+              {(sec === 'restructuring_npv_cac_waterfall' ||
+                sec === 'taylor_rule_fiscal_dominance' ||
+                sec === 'geopolitical_reserves_chokepoints' ||
+                sec === 'ngfs_climate_slb_greenium') && (
+                <RestructuringMonetaryGeoDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={sec as RestructuringMonetaryGeoSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
+                />
+              )}
+
+              {(sec === 'persona_cross_hub_signal_scanner' ||
+                sec === 'persona_guided_playbook_cockpit' ||
+                sec === 'persona_strategy_backtester_lab' ||
+                sec === 'persona_academic_latex_csv_exporter') && (
+                <PersonaPlaybooksAndSignalDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  activePersona={activePersona}
+                  onChangePersona={setActivePersona}
+                  isDark={darkMode}
+                  activeSubTab={sec as PersonaPlaybookSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onJumpToNavSection={(sec) => setActiveNavSection(sec as NavSectionId)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
+                />
+              )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col">
+      {isPresentMode && (
+        <PresentMode
+          run={run}
+          stagedTickets={stagedTradeTickets}
+          holdings={holdings}
+          riskLookup={holdingsRiskLookup}
+          onClose={() => setIsPresentMode(false)}
+        />
+      )}
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
-      <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+      <header className="flex items-center justify-between gap-3 min-w-0 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         {/* Zone 1: EconQuest Crest Logo + Sovereign Council Orchestrator Identity */}
         <a
           href="#top"
           onClick={(e) => {
             e.preventDefault();
-            setLayoutMode('executive_brief');
-            setActiveNavSection('charts_watchlists');
+            setAppArea('today');
           }}
           className="flex items-center gap-2.5 shrink-0 group"
         >
           <EconQuestLogo size={34} />
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              Sovereign Council Orchestrator
-            </span>
-            <span className="hidden 2xl:block text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              3 Activity Pillars · 1–2 Screen Scroll Cap · Live API Provenance
+            <span className="hidden sm:inline lg:hidden xl:inline text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              EconQuest
             </span>
           </div>
         </a>
 
         {/* Zone 2: 3 Primary Activity Pillars (Market & Trading | Policy Research | Macroeconomic Research) + Cmd+K Search */}
         <nav className="hidden lg:flex items-center gap-2 text-xs font-medium">
-          {ACTIVITY_PILLARS.map((pillar) => {
-            const activePillarInfo = findPillarForNavSection(activeNavSection);
-            const isPillarActive =
-              layoutMode === 'executive_brief' &&
-              activePillarInfo.pillar.id === pillar.id;
-            const isOpen = openPillarMenuId === pillar.id;
-
-            const activeBtnClass =
-              pillar.id === 'market_trading'
-                ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-2xs'
-                : pillar.id === 'policy_research'
-                ? 'bg-emerald-600 text-white border-emerald-600 font-semibold shadow-2xs'
-                : 'bg-indigo-600 text-white border-indigo-600 font-semibold shadow-2xs';
-
-            return (
-              <div
-                key={pillar.id}
-                className="relative"
-                onMouseEnter={() => setOpenPillarMenuId(pillar.id)}
-                onMouseLeave={() => setOpenPillarMenuId(null)}
-              >
+          {role.nav.map((area) => (
+            <React.Fragment key={area}>
+              {({
+              today: (
                 <button
                   type="button"
-                  onClick={() => {
-                    setLayoutMode('executive_brief');
-                    setActiveNavSection(pillar.defaultSection as NavSectionId);
-                    setOpenPillarMenuId(isOpen ? null : pillar.id);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                    isPillarActive
-                      ? activeBtnClass
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  onClick={() => setAppArea('today')}
+                  aria-current={appArea === 'today' ? 'page' : undefined}
+                  aria-pressed={appArea === 'today'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  <span>{pillar.shortTitle}</span>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                  Today
                 </button>
-
-                {isOpen && (
-                  <div className="absolute left-0 top-full pt-1 w-[440px] z-50">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-2.5">
-                      <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
-                        <div className="text-xs font-bold text-slate-900 dark:text-white">
-                          {pillar.shortTitle}
+              ),
+              country: (
+                <button
+                  type="button"
+                  onClick={returnToCountryPage}
+                  aria-current={appArea === 'country' ? 'page' : undefined}
+                  title={`Country page: ${run.countryName}`}
+                  aria-pressed={appArea === 'country'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                >
+                  Countries
+                </button>
+              ),
+              portfolio: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('portfolio')}
+                  aria-current={appArea === 'portfolio' ? 'page' : undefined}
+                  aria-pressed={appArea === 'portfolio'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                >
+                  Portfolio
+                </button>
+              ),
+              reports: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('reports')}
+                  aria-current={appArea === 'reports' ? 'page' : undefined}
+                  aria-pressed={appArea === 'reports'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                >
+                  Reports
+                </button>
+              ),
+              desks: (
+                <div
+                  className="relative"
+                  onMouseEnter={() => setIsToolsMenuOpen(true)}
+                  onMouseLeave={() => setIsToolsMenuOpen(false)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsToolsMenuOpen((v) => !v)}
+                    aria-expanded={isToolsMenuOpen}
+                    aria-current={appArea === 'desks' ? 'page' : undefined}
+                    title="All 41 analysis desks"
+                    aria-pressed={appArea === 'desks'}
+                    className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
+                  >
+                    <span>Tools</span>
+                    <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                  </button>
+                  {isToolsMenuOpen && (
+                    <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
+                      <div className="ui-panel shadow-2xl p-3">
+                        <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
+                          The full desk library. Today, Countries, Portfolio and Reports group these desks by task.
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                          {pillar.subtitle}
+                        <div className="grid grid-cols-3 gap-3">
+                          {ACTIVITY_PILLARS.map((pillar) => (
+                            <div key={pillar.id} className="min-w-0 space-y-2">
+                              <div className="ui-section-title">{pillar.shortTitle.replace(/^\d+\.\s*/, '')}</div>
+                              {pillar.subGroups.map((sg) => (
+                                <div key={sg.groupId}>
+                                  <div className="ui-label mb-1">{sg.groupTitle}</div>
+                                  <div className="flex flex-col">
+                                    {sg.modules.map((mod) => (
+                                      <button
+                                        key={mod.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setLayoutMode('executive_brief');
+                                          setAppArea('desks');
+                                          setActiveNavSection(mod.id as NavSectionId);
+                                          setIsToolsMenuOpen(false);
+                                        }}
+                                        title={mod.description}
+                                        className={`text-left px-2 py-1 text-xs truncate hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                                          appArea === 'desks' && activeNavSection === mod.id
+                                            ? 'text-blue-700 dark:text-blue-300 font-semibold'
+                                            : 'text-slate-700 dark:text-slate-300'
+                                        }`}
+                                      >
+                                        {mod.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ))}
                         </div>
                       </div>
-                      {pillar.subGroups.map((sg) => (
-                        <div
-                          key={sg.groupId}
-                          className="p-2 border bg-slate-50/70 dark:bg-slate-950/60 border-slate-200/80 dark:border-slate-800"
-                        >
-                          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
-                            {sg.groupTitle}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {sg.modules.map((mod) => {
-                              const isModSel = activeNavSection === mod.id;
-                              return (
-                                <button
-                                  key={mod.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setLayoutMode('executive_brief');
-                                    setActiveNavSection(mod.id as NavSectionId);
-                                    setOpenPillarMenuId(null);
-                                  }}
-                                  title={mod.description}
-                                  className={`px-2.5 py-1 text-[11px] border transition-colors text-left ${
-                                    isModSel
-                                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-                                  }`}
-                                >
-                                  {mod.label}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
                     </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
+                  )}
+                </div>
+              )
+              } as Record<WorkflowArea, React.ReactNode>)[area]}
+            </React.Fragment>
+          ))}
 
           {/* Global Command Palette Cmd+K Trigger */}
           <button
             type="button"
             onClick={() => setIsCommandPaletteOpen(true)}
             title="Open Global Command Palette & Module Jump Bar (Cmd+K / Ctrl+K)"
-            className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs tabular-nums text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
           >
             <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Jump</span>
-            <kbd className="px-1.5 py-0.5 text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+            <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
               ⌘K
             </kbd>
           </button>
         </nav>
 
-        {/* Zone 3: Simple/Pro Density Switcher + Persona Mode Switcher + QA Audit + Session I/O + Scenario A/B + Theme + Run Council */}
+        {/* Zone 3: everyday actions stay visible; settings and tools live in one menu */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Global Simple Brief vs. Pro Quant Density Switcher */}
-          <div
-            className="hidden sm:inline-flex items-center border border-blue-200 dark:border-blue-800/80 bg-blue-50/50 dark:bg-blue-950/30 p-0.5"
-            title="Switch Desk Clarity Mode: Simple Brief (3-pillar plain-English desk guide) vs. Pro Quant (compact econometric bar)"
-          >
-            <button
-              type="button"
-              onClick={() => setDensityMode('SIMPLE_BRIEF')}
-              className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
-                densityMode === 'SIMPLE_BRIEF'
-                  ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Simple Brief
-            </button>
-            <button
-              type="button"
-              onClick={() => setDensityMode('PRO_QUANT')}
-              className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
-                densityMode === 'PRO_QUANT'
-                  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Pro Quant
-            </button>
-          </div>
-
-          {/* Top Header 3-Persona Mode Switcher (Updates Persona Lens In-Place Without Leaving Active Desk) */}
-          <div
-            className="hidden md:inline-flex items-center border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/30 p-0.5"
-            title="Switch Active Persona Lens In-Place (Individual Trader / Institutional PM & IC / Policy Researcher)"
-          >
-            {(
-              [
-                { id: 'INDIVIDUAL_TRADER', short: 'Trader' },
-                { id: 'INSTITUTIONAL_PM_IC', short: 'Institution' },
-                { id: 'POLICY_RESEARCHER', short: 'Researcher' },
-              ] as const
-            ).map((p) => {
-              const isSel = activePersona === p.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    setActivePersona(p.id);
-                  }}
-                  className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
-                    isSel
-                      ? 'bg-emerald-600 text-white shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {p.short}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Pre-Flight Model Integrity & Full-Stack Sweep Auditor */}
           <button
             type="button"
-            onClick={() => setIsIntegrityAuditOpen(true)}
-            title="Open Full-Stack Backend, Quant Engine & Model Integrity Sweep Auditor"
-            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors whitespace-nowrap shrink-0"
+            onClick={() => setIsPresentMode(true)}
+            title="Present this country and your book full screen (Esc to leave)"
+            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
           >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{liveIntegrityAuditReport.readinessScorePct}% QA</span>
+            <Presentation className="w-3.5 h-3.5" />
+            <span>Present</span>
           </button>
-
-          {/* 1-Click Local Ollama, External/Internal API Hosts & Docker Self-Host Runtime Switcher */}
-          <button
-            type="button"
-            onClick={() => setIsRuntimeModalOpen(true)}
-            title="Open 4-Tab GUI Studio: Global AI Models, 12-Agent Matrix, Docker Self-Host Builder & External/Internal API Host Connectors"
-            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              runtimeConfig.providerMode === 'ollama' ||
-              runtimeConfig.providerMode === 'hybrid'
-                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700'
-                : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span className="hidden sm:inline">
-              {runtimeConfig.providerMode === 'ollama'
-                ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
-                : runtimeConfig.providerMode === 'hybrid'
-                ? 'Hybrid Ollama'
-                : 'AI / APIs / Docker'}
-            </span>
-          </button>
-
-          {/* 1-Click User Manual & GitHub Docs Viewer */}
-          <button
-            type="button"
-            onClick={() => setIsManualModalOpen(true)}
-            title="Open Sovereign Council Orchestrator User Manual (docs/USER_MANUAL.md) & README.md"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors whitespace-nowrap shrink-0"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Manual & Docs</span>
-          </button>
-
-          {/* Session Persistence Manager */}
-          <button
-            type="button"
-            onClick={() => setIsSessionModalOpen(true)}
-            title="Workspace Session Save / Export / Restore (.json)"
-            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap shrink-0"
-          >
-            <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Session</span>
-          </button>
-
           <button
             type="button"
             onClick={() => setIsScenarioDrawerOpen((v) => !v)}
-            title="Open Side-by-Side Scenario A vs. Scenario B Delta Attribution Comparator"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              isScenarioDrawerOpen
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
-            }`}
+            title="Compare scenario A with scenario B"
+            aria-pressed={isScenarioDrawerOpen}
+            className="ui-pill hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             <GitCompare className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">A vs B</span>
-            {(scenarioComparisonSuite.deteriorationCount > 0 ||
-              scenarioComparisonSuite.improvementCount > 0) && (
-              <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-amber-500 text-slate-950">
-                Δ{scenarioComparisonSuite.deteriorationCount + scenarioComparisonSuite.improvementCount}
+            <span>A vs B</span>
+            {scenarioChangeCount > 0 && (
+              <span className="px-1.5 text-xs tabular-nums font-semibold bg-amber-500 text-slate-950">
+                {scenarioChangeCount}
               </span>
             )}
           </button>
 
           <button
             type="button"
+            onClick={() => exportSMCRPdfDossier(run)}
+            title="Download the PDF report for this country"
+            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>PDF</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Switch to Crisp Editorial Light Mode' : 'Switch to Dark Terminal Mode'}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap shrink-0"
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="inline-flex items-center px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors"
           >
             {darkMode ? (
               <Sun className="w-3.5 h-3.5 text-amber-400" />
@@ -1919,24 +2253,173 @@ export default function App() {
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => exportSMCRPdfDossier(run)}
-            title="Export Standardized SMCR-1.0 PDF Dossier"
-            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap shrink-0"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden 2xl:inline">PDF</span>
-          </button>
+          <div className="relative" ref={headerMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsHeaderMenuOpen((v) => !v)}
+              aria-label="Menu"
+              aria-haspopup="menu"
+              aria-expanded={isHeaderMenuOpen}
+              title="View settings, AI and data connections, manual, saved sessions"
+              aria-pressed={isHeaderMenuOpen}
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Menu</span>
+              <ChevronDown className="w-3 h-3 opacity-70" />
+            </button>
+
+            {isHeaderMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-3 text-xs"
+              >
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                    Detail level
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {(
+                      [
+                        { id: 'SIMPLE_BRIEF', label: 'Plain English' },
+                        { id: 'PRO_QUANT', label: 'Full detail' },
+                      ] as const
+                    ).map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => setDensityMode(d.id)}
+                        aria-pressed={densityMode === d.id}
+                        className="ui-pill"
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                    My role
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {USER_ROLES.map((r) => (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => {
+                          applyRole(r.id);
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        aria-pressed={userRole === r.id}
+                        className="ui-pill text-left"
+                      >
+                        {r.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
+                  {(
+                    [
+                      {
+                        key: 'runtime',
+                        icon: <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
+                        label: 'AI model and data connections',
+                        hint:
+                          runtimeConfig.providerMode === 'ollama'
+                            ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
+                            : runtimeConfig.providerMode === 'hybrid'
+                            ? 'Hybrid Ollama'
+                            : 'Gemini',
+                        onClick: () => setIsRuntimeModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'qa',
+                        icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
+                        label: 'Model health check',
+                        hint: `${liveIntegrityAuditReport.readinessScorePct}%`,
+                        onClick: () => setIsIntegrityAuditOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'session',
+                        icon: <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Save or restore session',
+                        hint: '',
+                        onClick: () => setIsSessionModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'manual',
+                        icon: <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'User manual',
+                        hint: '',
+                        onClick: () => setIsManualModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'present',
+                        icon: <Presentation className="w-3.5 h-3.5" />,
+                        label: 'Present (full screen)',
+                        hint: '',
+                        onClick: () => setIsPresentMode(true),
+                        className: 'xl:hidden',
+                      },
+                      {
+                        key: 'ab',
+                        icon: <GitCompare className="w-3.5 h-3.5" />,
+                        label: 'Compare scenario A vs B',
+                        hint: scenarioChangeCount > 0 ? String(scenarioChangeCount) : '',
+                        onClick: () => setIsScenarioDrawerOpen((v) => !v),
+                        className: 'xl:hidden',
+                      },
+                      {
+                        key: 'pdf',
+                        icon: <Download className="w-3.5 h-3.5" />,
+                        label: 'Download PDF report',
+                        hint: '',
+                        onClick: () => exportSMCRPdfDossier(run),
+                        className: 'xl:hidden',
+                      },
+                    ]
+                  ).map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        item.onClick();
+                      }}
+                      className={`flex items-center gap-2 px-2 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.className}`}
+                    >
+                      {item.icon}
+                      <span className="flex-1">{item.label}</span>
+                      {item.hint && (
+                        <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                          {item.hint}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
             onClick={handleRunCouncilPhase1And2}
             disabled={isRunningPhase1And2}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+            title="Run the AI council assessment for the selected country"
+            aria-label="Run Council"
+            className="ui-btn ui-btn-primary inline-flex"
           >
             <Play className="w-3.5 h-3.5" />
-            <span>
+            <span className="hidden sm:inline">
               {isRunningPhase1And2 ? 'Running...' : 'Run Council'}
             </span>
           </button>
@@ -1944,13 +2427,16 @@ export default function App() {
       </header>
 
       {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
-      <section className="bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-6 py-2">
-        <div className="max-w-[1600px] mx-auto space-y-2">
+      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea !== 'desks' ? 'lg:hidden' : ''}`}>
+        <div className="max-w-[1600px] mx-auto flex flex-col gap-2">
+          {appArea === 'desks' && (
+          <>
           {/* Row 1: Contextual Sub-Groups & Modules for Active Activity Pillar */}
           <PillarSubNavigationStrip
             activeNavSection={activeNavSection}
             onSelectNavSection={(sec) => {
               setLayoutMode('executive_brief');
+    setAppArea('desks');
               setActiveNavSection(sec as NavSectionId);
             }}
           />
@@ -1963,7 +2449,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsWatchlistCollapsed((v) => !v)}
                   title={isWatchlistCollapsed ? 'Show Sovereign Watchlist Sidebar' : 'Hide Sidebar to Expand Maps & Charts'}
-                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
+                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
                 >
                   {isWatchlistCollapsed ? (
                     <>
@@ -1977,7 +2463,7 @@ export default function App() {
                     </>
                   )}
                 </button>
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-0.5">
+                <span className="text-xs tabular-nums text-slate-400 dark:text-slate-500 mr-0.5">
                   Sovereign:
                 </span>
                 {activeWatchlistItems.map((item) => {
@@ -1988,11 +2474,8 @@ export default function App() {
                       type="button"
                       onClick={() => handleSelectSovereign(item)}
                       title={`Switch active sovereign to ${item.countryName} (${item.iso3} · ${item.currencyCode})`}
-                      className={`px-2 py-0.5 text-[11px] font-mono font-bold border transition-colors ${
-                        isActiveSov
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
-                          : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500'
-                      }`}
+                      aria-pressed={isActiveSov}
+                      className="ui-pill"
                     >
                       {item.iso3}
                     </button>
@@ -2002,7 +2485,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsCustomSovereignModalOpen(true)}
                   title="Onboard any new ISO-3 country (India, Poland, Chile, Colombia, Nigeria, or custom ISO-3) with live IMF/World Bank hydration"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
                 >
                   <Plus className="w-3 h-3" />
                   <span>+ ISO-3</span>
@@ -2011,7 +2494,7 @@ export default function App() {
                   type="button"
                   onClick={handleSyncLiveWorldBankAndTreasury}
                   disabled={isSyncingLiveMacro}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
                 >
                   <RefreshCw className={`w-3 h-3 ${isSyncingLiveMacro ? 'animate-spin' : ''}`} />
                   <span>{isSyncingLiveMacro ? 'Syncing...' : 'Sync WB/IMF'}</span>
@@ -2035,11 +2518,8 @@ export default function App() {
                       key={mode.id}
                       type="button"
                       onClick={() => setLayoutMode(mode.id)}
-                      className={`px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
-                        layoutMode === mode.id
-                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-2xs'
-                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                      }`}
+                      aria-pressed={layoutMode === mode.id}
+                      className="ui-pill"
                     >
                       {mode.label}
                     </button>
@@ -2050,7 +2530,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsComparatorDrawerOpen(true)}
                   title="Open Multi-Sovereign Head-to-Head Comparator (Compare any 2-3 countries side-by-side)"
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
                 >
                   <Columns className="w-3 h-3" />
                   <span>Compare 2–3 Sovereigns</span>
@@ -2059,7 +2539,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsTradeTicketDrawerOpen(true)}
                   title="Open 1-Click Executive Tear-Sheet & IC Trade Ticket Quick-Drawer"
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs tabular-nums font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition-colors"
                 >
                   <Briefcase className="w-3 h-3" />
                   <span>IC Ticket / Tear-Sheet ({stagedTradeTickets.length})</span>
@@ -2067,11 +2547,8 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowScenarioInput((v) => !v)}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold border transition-colors ${
-                    showScenarioInput
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={showScenarioInput}
+                  className="ui-pill inline-flex items-center gap-1"
                 >
                   <span>Scenario Directive {showScenarioInput ? '▴' : '▾'}</span>
                 </button>
@@ -2080,7 +2557,7 @@ export default function App() {
 
             {showScenarioInput && (
               <div className="flex items-center gap-2 pt-1">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
                   Scenario Query:
                 </span>
                 <input
@@ -2094,37 +2571,78 @@ export default function App() {
             )}
           </div>
 
+          </>
+          )}
+
           {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
-          <div className="flex lg:hidden items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800 overflow-x-auto">
+          <div className="order-first flex lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
             >
               <Search className="w-3 h-3" />
-              <span>⌘K Jump</span>
+              <span>Jump</span>
             </button>
-            {ACTIVITY_PILLARS.map((pillar) => {
-              const isAct =
-                findPillarForNavSection(activeNavSection).pillar.id === pillar.id;
-              return (
+            {role.nav.map((area) => (
+              <React.Fragment key={area}>
+                {({
+              today: (
                 <button
-                  key={pillar.id}
+                  type="button"
+                  onClick={() => setAppArea('today')}
+                  aria-pressed={appArea === 'today'}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                >
+                  Today
+                </button>
+              ),
+              country: (
+                <button
+                  type="button"
+                  onClick={returnToCountryPage}
+                  aria-pressed={appArea === 'country'}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                >
+                  Countries
+                </button>
+              ),
+              portfolio: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('portfolio')}
+                  aria-pressed={appArea === 'portfolio'}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                >
+                  Portfolio
+                </button>
+              ),
+              reports: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('reports')}
+                  aria-pressed={appArea === 'reports'}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                >
+                  Reports
+                </button>
+              ),
+              desks: (
+                <button
                   type="button"
                   onClick={() => {
                     setLayoutMode('executive_brief');
-                    setActiveNavSection(pillar.defaultSection as NavSectionId);
+                    setAppArea('desks');
                   }}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    isAct
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={appArea === 'desks'}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  {pillar.shortTitle}
+                  Tools
                 </button>
-              );
-            })}
+              )
+                } as Record<WorkflowArea, React.ReactNode>)[area]}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </section>
@@ -2153,7 +2671,7 @@ export default function App() {
             statusBanner.type === 'warning'
               ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-200'
               : statusBanner.type === 'error'
-              ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-800 dark:text-red-200'
+              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200'
               : statusBanner.type === 'success'
               ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-200'
               : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-200'
@@ -2198,6 +2716,132 @@ export default function App() {
 
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
         <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
+          {!userRole && !isRolePromptDismissed && (
+            <RolePicker current={userRole} onPick={applyRole} onSkip={() => setIsRolePromptDismissed(true)} />
+          )}
+
+          {appArea === 'today' && (
+            <TodayPage
+              run={run}
+              watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
+              watchlistItems={activeWatchlistItems}
+              stagedTickets={stagedTradeTickets}
+              onOpenCountry={(item, sectionId) => {
+                if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                openCountryPage(sectionId);
+              }}
+              onStageTicket={handleStageTradeTicket}
+              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
+              onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
+            />
+          )}
+
+          {appArea === 'country' && (
+            <CountryPage
+              run={run}
+              watchlistItems={activeWatchlistItems}
+              activeTab={countryTab}
+              activeDesk={activeNavSection}
+              onChangeTab={(tab) => {
+                setCountryTab(tab);
+                const cfg = COUNTRY_TABS.find((t) => t.id === tab) || COUNTRY_TABS[0];
+                setActiveNavSection(cfg.desks[0] as NavSectionId);
+              }}
+              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
+              onSelectCountry={handleSelectSovereign}
+              onAddCountry={() => setIsCustomSovereignModalOpen(true)}
+              onSync={handleSyncLiveWorldBankAndTreasury}
+              isSyncing={isSyncingLiveMacro}
+              onCompare={() => setIsComparatorDrawerOpen(true)}
+              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
+              ticketCount={stagedTradeTickets.length}
+              renderDesk={(d) => (
+                <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
+                  {renderDeskBody(d as NavSectionId)}
+                </ViewportScrollBudgetContainer>
+              )}
+            />
+          )}
+
+          {appArea === 'portfolio' && isHoldingsPanelOpen && (
+            <HoldingsPanel
+              holdings={holdings}
+              countries={holdingsRiskLookup}
+              onChange={setHoldings}
+              onClose={() => setIsHoldingsPanelOpen(false)}
+            />
+          )}
+
+          {(appArea === 'portfolio' || appArea === 'reports') && (
+            <WorkspacePage
+              key={appArea}
+              ariaLabel={appArea === 'portfolio' ? 'Portfolio sections' : 'Reports sections'}
+              title={appArea === 'portfolio' ? 'Portfolio' : 'Reports'}
+              subtitle={
+                appArea === 'portfolio'
+                  ? holdings.length
+                    ? 'Your book, from the holdings you imported'
+                    : `No holdings yet: showing your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}`
+                  : `Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`
+              }
+              tabs={appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS}
+              activeTabId={appArea === 'portfolio' ? portfolioTab : reportsTab}
+              activeDesk={activeNavSection}
+              onChangeTab={(tabId) => {
+                const tabs = appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
+                (appArea === 'portfolio' ? setPortfolioTab : setReportsTab)(tabId);
+                const cfg = tabs.find((t) => t.id === tabId) || tabs[0];
+                setActiveNavSection(cfg.desks[0] as NavSectionId);
+              }}
+              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
+              actions={
+                <>
+                  <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
+                    IC tickets ({stagedTradeTickets.length})
+                  </button>
+                  {appArea === 'reports' && (
+                    <button type="button" className="ui-btn" onClick={() => setIsComparatorDrawerOpen(true)}>
+                      Compare countries
+                    </button>
+                  )}
+                </>
+              }
+              summary={
+                appArea === 'portfolio' ? (
+                  <PortfolioSummary
+                    watchlistItems={activeWatchlistItems}
+                    riskLookup={holdingsRiskLookup}
+                    holdings={holdings}
+                    onManageHoldings={() => setIsHoldingsPanelOpen(true)}
+                    stagedTickets={stagedTradeTickets}
+                    onOpenCountry={(item) => {
+                      if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                      openCountryPage();
+                    }}
+                  />
+                ) : undefined
+              }
+              renderDesk={(d) =>
+                d === 'ic_memo_builder' ? (
+                  <IcMemoBuilder
+                    key={d}
+                    run={run}
+                    stagedTickets={stagedTradeTickets}
+                    holdings={holdings}
+                    riskLookup={holdingsRiskLookup}
+                    defaultAudience={userRole === 'UHNW' ? 'client' : 'ic'}
+                  />
+                ) : (
+                  <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
+                    {renderDeskBody(d as NavSectionId)}
+                  </ViewportScrollBudgetContainer>
+                )
+              }
+            />
+          )}
+
+          {appArea === 'desks' && (
+          <>
           {/* CONSOLIDATED 1-LINE STATUS BAR WITH SLIDE-OVER DRAWERS (MORNING RADAR, EXECUTIVE BLUF, DESK GUIDE) */}
           <CompactTopStatusAndDrawersBar
             run={run}
@@ -2209,6 +2853,7 @@ export default function App() {
             onSelectSovereign={handleSelectSovereign}
             onSelectNavSection={(sec) => {
               setLayoutMode('executive_brief');
+    setAppArea('desks');
               setActiveNavSection(sec as NavSectionId);
             }}
             onStageTradeTicket={handleStageTradeTicket}
@@ -2217,261 +2862,7 @@ export default function App() {
           {/* MODE 1: CLEAN EXECUTIVE BRIEFING (DEFAULT) WRAPPED IN 1-2 SCREEN SCROLL BUDGET CONTAINER */}
           {layoutMode === 'executive_brief' && (
             <ViewportScrollBudgetContainer activeNavSection={activeNavSection}>
-              {activeNavSection === 'charts_watchlists' && (
-                <MacroOverviewTabbedWorkspace
-                  countryName={run.countryName}
-                  iso3={run.iso3}
-                  mapCard={
-                    <HeroGeopoliticalMapCard
-                      run={run}
-                      watchlistItems={activeWatchlistItems}
-                      wargameParams={geopoliticalWargameParams}
-                      onChangeWargameParams={setGeopoliticalWargameParams}
-                      onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                      onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
-                      onSelectSovereign={handleSelectSovereign}
-                    />
-                  }
-                  chartsDeck={
-                    <AnnotatedChartsDeck
-                      run={run}
-                      onRefreshLiveOpenData={() =>
-                        handlePullLiveOpenData(run.iso3, run.countryName, false)
-                      }
-                      isFetchingData={isFetchingOpenData}
-                      onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                    />
-                  }
-                />
-              )}
-
-              {activeNavSection === 'forecasting_lab' && (
-                <StatisticalForecastingLab
-                  run={run}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  externalShocks={forecastShocks}
-                  onChangeExternalShocks={setForecastShocks}
-                />
-              )}
-
-              {activeNavSection === 'geopolitical_desk' && (
-                <GeopoliticalRiskDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  wargameParams={geopoliticalWargameParams}
-                  onChangeWargameParams={setGeopoliticalWargameParams}
-                  propagateGeoShocks={propagateGeoShocks}
-                  onTogglePropagateGeoShocks={setPropagateGeoShocks}
-                  onSelectSovereign={handleSelectSovereign}
-                  onJumpToCouncilDebates={() => setActiveNavSection('council_debates')}
-                  onJumpToPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                  onJumpToForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                  onOpenSupplyChainMatrixDesk={() => setActiveNavSection('supply_chain_matrix')}
-                />
-              )}
-
-              {activeNavSection === 'supply_chain_matrix' && (
-                <SupplyChainMatrixDesk
-                  run={run}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {activeNavSection === 'global_liquidity' && (
-                <GlobalLiquidityDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                  onOpenMarketMakerDesk={() => setActiveNavSection('market_maker_alpha')}
-                />
-              )}
-
-              {activeNavSection === 'market_maker_alpha' && (
-                <MarketMakerAlphaDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                  onOpenGlobalLiquidityDesk={() => setActiveNavSection('global_liquidity')}
-                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {activeNavSection === 'portfolio_risk_desk' && (
-                <PortfolioContagionDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                />
-              )}
-
-              {activeNavSection === 'backtest_engine' && (
-                <CrisisBacktestDesk
-                  run={run}
-                  customEpisodes={customBacktestEpisodes}
-                  initialSelectedEpisodeId={selectedBacktestEpisodeId}
-                  onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
-                  onOpenCsvLab={() => setActiveNavSection('policy_doc_lab')}
-                />
-              )}
-
-              {activeNavSection === 'risk_analytics' && (
-                <InstitutionalRiskModules
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  onOpenPortfolioRiskDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {activeNavSection === 'council_debates' && (
-                <CouncilHierarchyAndDebates
-                  run={run}
-                  onJumpToCROGate={() => setActiveNavSection('cro_reports')}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                  runtimeConfig={runtimeConfig}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
-                />
-              )}
-
-              {activeNavSection === 'cro_reports' && (
-                <CROCheckpointAndReports
-                  run={run}
-                  croDraft={croDraft}
-                  runtimeConfig={runtimeConfig}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  isRunningPhase3={isRunningPhase3}
-                  onUpdateCroDraft={setCroDraft}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                />
-              )}
-
-              {activeNavSection === 'policy_doc_lab' && (
-                <PolicyDocumentAndCsvLab
-                  run={run}
-                  policyDocTitle={policyDocTitle}
-                  policyDocText={policyDocText}
-                  onChangePolicyDocTitle={setPolicyDocTitle}
-                  onChangePolicyDocText={setPolicyDocText}
-                  onDocumentFileUpload={handleDocumentFileUpload}
-                  onRunCouncilWithDocument={handleRunCouncilPhase1And2}
-                  onApplyCsvToLiveState={handleApplyCsvToLiveState}
-                  onRegisterCustomCrisisBacktest={handleRegisterCustomCrisisBacktest}
-                />
-              )}
-
-              {(activeNavSection === 'institutional_quant_desk' ||
-                activeNavSection === 'quant_cds_basis' ||
-                activeNavSection === 'quant_restructuring_npv' ||
-                activeNavSection === 'quant_matrix_econometrics' ||
-                activeNavSection === 'quant_trade_blotter' ||
-                activeNavSection === 'quant_macro_surprise' ||
-                activeNavSection === 'quant_alpha_correlation' ||
-                activeNavSection === 'quant_nss_yield_curve' ||
-                activeNavSection === 'quant_macro_catalyst_calendar' ||
-                activeNavSection === 'quant_portfolio_stress_lab') && (
-                <InstitutionalQuantDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={
-                    activeNavSection === 'institutional_quant_desk'
-                      ? 'quant_cds_basis'
-                      : (activeNavSection as QuantSubWorkspaceId)
-                  }
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onStageTradeTicket={handleStageTradeTicket}
-                />
-              )}
-
-              {(activeNavSection === 'embi_portfolio_pair_book' ||
-                activeNavSection === 'dmo_treasury_auction_sim' ||
-                activeNavSection === 'mpc_imf_document_ai') && (
-                <PortfolioAndFundingDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  runtimeConfig={runtimeConfig}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as PortfolioFundingSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
-                />
-              )}
-
-              {(activeNavSection === 'decision_dislocation_screener' ||
-                activeNavSection === 'decision_premortem_killswitch' ||
-                activeNavSection === 'decision_ledger_brier' ||
-                activeNavSection === 'decision_quadrant_stress' ||
-                activeNavSection === 'decision_prediction_markets') && (
-                <DecisionCommandCenterDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as DecisionCommandSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyConditionalEventShock={handleApplyConditionalEventShock}
-                />
-              )}
-
-              {(activeNavSection === 'ratings_shadow_fallen_angel' ||
-                activeNavSection === 'fx_beer_feer_equilibrium' ||
-                activeNavSection === 'debt_investor_base_doom_loop' ||
-                activeNavSection === 'ic_pitchbook_dossier_exporter') && (
-                <SovereignRatingsFxAndIcDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as RatingsFxIcSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-
-              {(activeNavSection === 'restructuring_npv_cac_waterfall' ||
-                activeNavSection === 'taylor_rule_fiscal_dominance' ||
-                activeNavSection === 'geopolitical_reserves_chokepoints' ||
-                activeNavSection === 'ngfs_climate_slb_greenium') && (
-                <RestructuringMonetaryGeoDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as RestructuringMonetaryGeoSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-
-              {(activeNavSection === 'persona_cross_hub_signal_scanner' ||
-                activeNavSection === 'persona_guided_playbook_cockpit' ||
-                activeNavSection === 'persona_strategy_backtester_lab' ||
-                activeNavSection === 'persona_academic_latex_csv_exporter') && (
-                <PersonaPlaybooksAndSignalDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  activePersona={activePersona}
-                  onChangePersona={setActivePersona}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as PersonaPlaybookSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onJumpToNavSection={(sec) => setActiveNavSection(sec as NavSectionId)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
+              {renderDeskBody(activeNavSection)}
             </ViewportScrollBudgetContainer>
           )}
 
@@ -2527,6 +2918,7 @@ export default function App() {
                   onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
                   onOpenCsvLab={() => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection('policy_doc_lab');
                   }}
                 />
@@ -2536,11 +2928,14 @@ export default function App() {
                   onSelectSovereign={handleSelectSovereign}
                 />
                 <InstitutionalQuantDesk
+                  holdingsWeightsPct={holdingsStressWeights}
+                  holdings={holdings}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   isDark={darkMode}
                 />
                 <PortfolioAndFundingDesk
+                  holdingsWeightsPct={holdingsStressWeights}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   runtimeConfig={runtimeConfig}
@@ -2577,6 +2972,7 @@ export default function App() {
                   isDark={darkMode}
                   onJumpToNavSection={(sec) => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection(sec as NavSectionId);
                   }}
                   onSelectSovereign={handleSelectSovereign}
@@ -2588,6 +2984,7 @@ export default function App() {
                   run={run}
                   onJumpToCROGate={() => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection('cro_reports');
                   }}
                   isRunningPhase1And2={isRunningPhase1And2}
@@ -2662,6 +3059,7 @@ export default function App() {
                 onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
                 onOpenCsvLab={() => {
                   setLayoutMode('executive_brief');
+    setAppArea('desks');
                   setActiveNavSection('policy_doc_lab');
                 }}
               />
@@ -2712,6 +3110,7 @@ export default function App() {
                 isDark={darkMode}
                 onJumpToNavSection={(sec) => {
                   setLayoutMode('executive_brief');
+    setAppArea('desks');
                   setActiveNavSection(sec as NavSectionId);
                 }}
                 onSelectSovereign={handleSelectSovereign}
@@ -2721,6 +3120,7 @@ export default function App() {
                 run={run}
                 onJumpToCROGate={() => {
                   setLayoutMode('executive_brief');
+    setAppArea('desks');
                   setActiveNavSection('cro_reports');
                 }}
                 isRunningPhase1And2={isRunningPhase1And2}
@@ -2741,6 +3141,8 @@ export default function App() {
                 onReverifyPipeline={handleRunCouncilPhase1And2}
               />
             </div>
+          )}
+          </>
           )}
         </section>
       </main>
@@ -2819,6 +3221,7 @@ export default function App() {
         onRemoveTicket={handleRemoveTradeTicket}
         onNavigateToSection={(sec) => {
           setLayoutMode('executive_brief');
+    setAppArea('desks');
           setActiveNavSection(sec as NavSectionId);
         }}
       />

@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { holdingGreeks, ASSET_CLASS_LABEL, type Holding } from '../utils/holdings';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -79,6 +80,10 @@ interface InstitutionalQuantDeskProps {
   activeSubTab?: QuantSubWorkspaceId;
   onSelectSubTab?: (tab: QuantSubWorkspaceId) => void;
   onStageTradeTicket?: (ticket: StagedTradeTicketSpec) => void;
+  /** % weights per ISO3 from imported holdings; enables the "Your holdings" book weighting. */
+  holdingsWeightsPct?: Record<string, number>;
+  /** Imported holdings, so the blotter can load the user's positions in this country. */
+  holdings?: Holding[];
 }
 
 export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
@@ -88,6 +93,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
   activeSubTab,
   onSelectSubTab,
   onStageTradeTicket,
+  holdingsWeightsPct,
+  holdings = [],
 }) => {
   const [internalTab, setInternalTab] = useState<QuantSubWorkspaceId>('quant_cds_basis');
   const currentTab = activeSubTab ?? internalTab;
@@ -210,6 +217,54 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
     setNewTicketName('');
     setShowNewTicketForm(false);
   };
+
+  const countryHoldings = holdings.filter((h) => h.iso3 === run.iso3);
+  const handleLoadHoldingsIntoBlotter = () => {
+    const tickets: InstitutionalTradeTicket[] = countryHoldings.map((h) => {
+      const g = holdingGreeks(h);
+      return {
+        ticketId: `HOLD_${h.id}`,
+        strategyName: `Holding: ${h.instrument}`,
+        structureCategory:
+          h.assetClass === 'CDS' ? 'CREDIT_CURVE' : h.assetClass === 'FX' ? 'FX_MACRO_HEDGE' : h.assetClass === 'LC_BOND' ? 'RATES_CURVE' : 'CUSTOM_TICKET',
+        direction: g.cs01 > 0 || (g.cs01 === 0 && g.dv01 > 0) ? 'SHORT_RISK' : 'LONG_RISK',
+        leg1Description: `${ASSET_CLASS_LABEL[h.assetClass]}, ${h.side === 'LONG' ? 'long' : 'short'} $${h.notionalUsdMm}mm`,
+        leg2Description: h.durationYears
+          ? `Duration ${h.durationYears.toFixed(1)}y`
+          : 'No duration given: rate and credit sensitivity not computed',
+        notionalUsdMillions: h.notionalUsdMm,
+        entryLevelLabel: 'Imported holding',
+        targetLevelLabel: '–',
+        stopLossLevelLabel: '–',
+        modifiedDurationYears: h.durationYears || 0,
+        dv01UsdPerBp: Math.round(g.dv01),
+        slopeDv01UsdPerBp: 0,
+        cs01UsdPerBp: Math.round(g.cs01),
+        basis01UsdPerBp: 0,
+        fxDeltaUsdPer1Pct: Math.round(g.fxDeltaPer1Pct),
+        convexity: 0,
+        carry90DBps: 0,
+        rollDown90DBps: 0,
+        total90DCushionBps: 0,
+        expectedCarryRoll90DUsdThousands: 0,
+        annualizedVolBps: 45,
+        carryToVolRatio: 0,
+        breakevenWideningBps: 0,
+        stressedPnlBreakdown: {
+          ratesPnlUsdK: 0,
+          creditSpreadPnlUsdK: 0,
+          basisPnlUsdK: 0,
+          fxPnlUsdK: 0,
+          carryRollPnlUsdK: 0,
+          convexityPnlUsdK: 0,
+          netStressedPnlUsdK: 0,
+        },
+        isCustom: true,
+      };
+    });
+    setCustomTickets((prev) => [...prev.filter((t) => !t.ticketId.startsWith('HOLD_')), ...tickets]);
+  };
+  const holdingsLoaded = customTickets.some((t) => t.ticketId.startsWith('HOLD_'));
 
   const handleExportBlotterCsv = () => {
     const headers = [
@@ -447,8 +502,22 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
   // --------------------------------------------------------------------------
   // STATE 9: PORTFOLIO STRESS-TEST & SCENARIO LAB (5.9 EMBI BATCH P&L HIT)
   // --------------------------------------------------------------------------
-  const [portfolioStressParams, setPortfolioStressParams] =
-    useState<EmbiPortfolioStressParams>(DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS);
+  const hasHoldings = !!holdingsWeightsPct && Object.keys(holdingsWeightsPct).length > 0;
+  const [portfolioStressParams, setPortfolioStressParams] = useState<EmbiPortfolioStressParams>(() =>
+    hasHoldings
+      ? { ...DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS, weightScheme: 'HOLDINGS', holdingsWeightsPct }
+      : DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS
+  );
+  // Keep the holdings weights current; fall back to the benchmark if holdings are cleared.
+  useEffect(() => {
+    setPortfolioStressParams((prev) =>
+      hasHoldings
+        ? { ...prev, holdingsWeightsPct }
+        : prev.weightScheme === 'HOLDINGS'
+        ? { ...prev, weightScheme: 'EMBI_BENCHMARK', holdingsWeightsPct: undefined }
+        : prev
+    );
+  }, [hasHoldings, holdingsWeightsPct]);
 
   const portfolioStressSuite = useMemo(
     () =>
@@ -606,57 +675,57 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
     borderColor: isDark ? '#334155' : '#cbd5e1',
     color: isDark ? '#f8fafc' : '#0f172a',
     fontSize: '11px',
-    fontFamily: 'JetBrains Mono, monospace',
+    fontFamily: 'Public Sans, sans-serif',
   };
 
   return (
     <section
       id="institutional-quant-desk"
-      className="rounded-lg border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/90 shadow-sm overflow-hidden"
+      className="border border-slate-300 dark:border-slate-800 bg-white dark:bg-slate-950/90 overflow-hidden"
     >
       {/* Top Institutional Desk Header */}
       <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/70 flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold">
-              DOMAIN HUB 5 · BUY-SIDE EM SOVEREIGN CREDIT & RELATIVE-VALUE QUANT DESK
+            <span className="text-xs tabular-nums px-1.5 py-0.5 bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30 font-semibold">
+              EM sovereign credit & relative-value desk
             </span>
-            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+            <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
               {run.countryName} ({run.iso3}) · Currency: {run.openData.currencyCode}
             </span>
           </div>
-          <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+          <h2 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100 mt-1">
             Institutional Fixed Income, Credit Derivatives, LGD Restructuring & Matrix Econometrics Workbench
           </h2>
         </div>
 
         {/* Summary Telemetry Strip */}
-        <div className="flex flex-wrap items-center gap-2 text-xs font-mono tabular-nums">
-          <div className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">5Y SURVIVAL Q(0,5)</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400">
+        <div className="flex flex-wrap items-center gap-2 text-xs tabular-nums">
+          <div className="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <span className="text-xs text-slate-500 dark:text-slate-400 block">5Y survival Q(0,5)</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {cdsSuite.fiveYearSurvivalPct.toFixed(1)}%
             </span>
           </div>
-          <div className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">EXIT NPV RECOVERY</span>
-            <span className="font-bold text-amber-600 dark:text-amber-400">
+          <div className="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <span className="text-xs text-slate-500 dark:text-slate-400 block">Exit NPV recovery</span>
+            <span className="font-semibold text-amber-600 dark:text-amber-400">
               {restructuringSuite.weightedRecoveryCents.toFixed(1)}¢ / $1
             </span>
           </div>
-          <div className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">RV BOOK 90D CARRY+ROLL</span>
-            <span className="font-bold text-indigo-600 dark:text-indigo-400">
+          <div className="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <span className="text-xs text-slate-500 dark:text-slate-400 block">RV book 90D carry+roll</span>
+            <span className="font-semibold text-blue-600 dark:text-blue-400">
               +${tradeBlotterSuite.total90DCarryRollUsdK.toFixed(1)}k
             </span>
           </div>
-          <div className="px-2.5 py-1 rounded border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block">BAYESIAN P(CRISIS|Z)</span>
+          <div className="px-2.5 py-1 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+            <span className="text-xs text-slate-500 dark:text-slate-400 block">Bayesian p(crisis|z)</span>
             <span
-              className={`font-bold ${
+              className={`font-semibold ${
                 macroSurpriseSuite.posteriorHamiltonCrisisProbPct >= 45
                   ? 'text-rose-600 dark:text-rose-400'
-                  : 'text-sky-600 dark:text-sky-400'
+                  : 'text-blue-600 dark:text-blue-400'
               }`}
             >
               {macroSurpriseSuite.posteriorHamiltonCrisisProbPct.toFixed(1)}%
@@ -675,19 +744,16 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded text-xs font-medium transition-all border ${
-                  isActive
-                    ? 'bg-indigo-600 text-white border-indigo-500 shadow-xs'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-800 hover:border-indigo-400 dark:hover:border-indigo-700'
-                }`}
+                aria-pressed={isActive}
+                className="ui-pill flex items-center gap-2"
               >
                 {tab.icon}
-                <span className="font-mono text-[10px] opacity-80">{tab.shortCode}</span>
+                <span className="tabular-nums text-xs opacity-80">{tab.shortCode}</span>
                 <span>{tab.label}</span>
                 <span
-                  className={`text-[10px] font-mono tabular-nums px-1.5 py-0.5 rounded ${
+                  className={`text-xs tabular-nums tabular-nums px-1.5 py-0.5  ${
                     isActive
-                      ? 'bg-indigo-800/80 text-indigo-100'
+                      ? 'bg-blue-800/80 text-blue-100'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
                 >
@@ -705,10 +771,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_cds_basis' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & Formula Reference */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
-                ISDA PIECEWISE-CONSTANT HAZARD CURVE & CASH EUROBOND Z-SPREAD BASIS ENGINE
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
+                Isda piecewise-constant hazard curve & cash eurobond z-spread basis engine
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
                 {cdsSuite.headlineConclusion}
@@ -726,13 +792,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Interactive Calibration Controls */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Assumed Recovery Rate (R)
                 </span>
-                <span className="font-mono tabular-nums font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {recoveryRatePct}% (LGD = {100 - recoveryRatePct}%)
                 </span>
               </div>
@@ -743,9 +809,9 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 step={1}
                 value={recoveryRatePct}
                 onChange={(e) => setRecoveryRatePct(Number(e.target.value))}
-                className="w-full accent-indigo-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+              <div className="flex justify-between text-xs tabular-nums text-slate-500">
                 <span>15% (Severe Holdout)</span>
                 <span>40% (ISDA Standard)</span>
                 <span>65% (Secured/Senior)</span>
@@ -757,7 +823,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Dealer Repo / Balance-Sheet Funding Spread
                 </span>
-                <span className="font-mono tabular-nums font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   SOFR + {fundingSpreadBps} bps
                 </span>
               </div>
@@ -768,9 +834,9 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 step={5}
                 value={fundingSpreadBps}
                 onChange={(e) => setFundingSpreadBps(Number(e.target.value))}
-                className="w-full accent-indigo-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+              <div className="flex justify-between text-xs tabular-nums text-slate-500">
                 <span>0 bps (GC Repo)</span>
                 <span>35 bps (Prime Spec)</span>
                 <span>120 bps (Balance-Sheet Squeeze)</span>
@@ -788,7 +854,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     setRecoveryRatePct(40);
                     setFundingSpreadBps(30);
                   }}
-                  className="px-2.5 py-1 text-[11px] font-mono rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  className="ui-btn"
                 >
                   ISDA Std (R=40%)
                 </button>
@@ -798,7 +864,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     setRecoveryRatePct(25);
                     setFundingSpreadBps(65);
                   }}
-                  className="px-2.5 py-1 text-[11px] font-mono rounded border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
+                  className="px-2.5 py-1 text-xs tabular-nums border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20"
                 >
                   EM Stress (R=25%)
                 </button>
@@ -808,7 +874,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     setRecoveryRatePct(18);
                     setFundingSpreadBps(95);
                   }}
-                  className="px-2.5 py-1 text-[11px] font-mono rounded border border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
+                  className="px-2.5 py-1 text-xs tabular-nums border border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300 hover:bg-rose-500/20"
                 >
                   Hard Default (R=18%)
                 </button>
@@ -818,17 +884,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
           {/* Dual Charts: Survival vs Hazard Curve & Cash-Bond Basis Curve */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Bootstrapped Survival Curve Q(0,T) & Hazard Rate λ(t)
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Exact piecewise-constant intensity calibration across 1Y–10Y CDS tenors
                   </p>
                 </div>
-                <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                <span className="text-xs tabular-nums px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                   2s10s CDS: {cdsSuite.cdsSlope2s10sBps > 0 ? '+' : ''}
                   {cdsSuite.cdsSlope2s10sBps} bps
                 </span>
@@ -875,7 +941,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       yAxisId="right"
                       dataKey="piecewiseHazardRatePct"
                       name="Piecewise Hazard λ_t (%/yr)"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                       barSize={22}
                       radius={[3, 3, 0, 0]}
                     />
@@ -884,18 +950,18 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               </div>
             </div>
 
-            <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Eurobond Z-Spread vs. CDS Par Spread & Net Basis (bps)
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Negative Basis (CDS &lt; Z-Spread) identifies funded cash-bond + protection arbitrage
                   </p>
                 </div>
                 <span
-                  className={`text-[11px] font-mono px-2 py-0.5 rounded font-semibold ${
+                  className={`text-xs tabular-nums px-2 py-0.5  font-semibold ${
                     cdsSuite.fiveYearNetBasisBps <= -18
                       ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
@@ -962,10 +1028,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Tenor-by-Tenor Bootstrapped Term Structure Table */}
-          <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+          <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-[11px] font-mono uppercase text-slate-600 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                   <th className="py-2 px-3">Tenor</th>
                   <th className="py-2 px-3 text-right">CDS Spread</th>
                   <th className="py-2 px-3 text-right">Hazard λ_t</th>
@@ -979,23 +1045,23 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <th className="py-2 px-3">Desk Relative-Value Signal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {cdsSuite.tenors.map((row) => (
                   <tr
                     key={row.tenorLabel}
                     className={`hover:bg-slate-50 dark:hover:bg-slate-900/50 ${
-                      row.tenorLabel === '5Y' ? 'bg-indigo-500/5 dark:bg-indigo-500/10' : ''
+                      row.tenorLabel === '5Y' ? 'bg-blue-500/5 dark:bg-blue-500/10' : ''
                     }`}
                   >
-                    <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">
+                    <td className="py-2 px-3 font-semibold text-slate-900 dark:text-slate-100">
                       {row.tenorLabel}
                       {row.tenorLabel === '5Y' && (
-                        <span className="ml-1.5 text-[10px] px-1 py-0.5 rounded bg-indigo-500/20 text-indigo-600 dark:text-indigo-300">
+                        <span className="ml-1.5 text-xs px-1 py-0.5 bg-blue-500/20 text-blue-600 dark:text-blue-300">
                           BMK
                         </span>
                       )}
                     </td>
-                    <td className="py-2 px-3 text-right font-semibold text-sky-600 dark:text-sky-400">
+                    <td className="py-2 px-3 text-right font-semibold text-blue-600 dark:text-blue-400">
                       {row.cdsParSpreadBps} bps
                     </td>
                     <td className="py-2 px-3 text-right text-slate-700 dark:text-slate-300">
@@ -1022,7 +1088,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       {row.cashBondZSpreadBps} bps
                     </td>
                     <td
-                      className={`py-2 px-3 text-right font-bold ${
+                      className={`py-2 px-3 text-right font-semibold ${
                         row.netFundingAdjustedBasisBps <= -18
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : row.netFundingAdjustedBasisBps >= 18
@@ -1033,7 +1099,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       {row.netFundingAdjustedBasisBps > 0 ? '+' : ''}
                       {row.netFundingAdjustedBasisBps} bps
                     </td>
-                    <td className="py-2 px-3 font-sans text-[11px] text-slate-700 dark:text-slate-300">
+                    <td className="py-2 px-3 font-sans text-xs text-slate-700 dark:text-slate-300">
                       {row.deskTradeAction}
                     </td>
                   </tr>
@@ -1050,14 +1116,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_restructuring_npv' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & Formula Reference */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
+                <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                   SOVEREIGN LGD & COMPARABILITY OF TREATMENT (CoT) NPV RESTRUCTURING WORKBENCH
                 </span>
                 <span
-                  className={`text-[10px] font-mono px-2 py-0.5 rounded font-bold ${
+                  className={`text-xs tabular-nums px-2 py-0.5  font-semibold ${
                     restructuringSuite.imfDsaVerdict === 'RESTORED_SUSTAINABILITY'
                       ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
                       : restructuringSuite.imfDsaVerdict === 'MARGINAL_BUFFER_INSUFFICIENT'
@@ -1084,14 +1150,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Interactive Restructuring Parameter Sliders + Sovereign Deal Presets */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 space-y-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
-                <Sliders className="w-3.5 h-3.5 text-indigo-500" />
+                <Sliders className="w-3.5 h-3.5 text-blue-500" />
                 <span>Exchange Offer Term Sheet Parameters & Comparability Perimeter</span>
               </div>
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-[11px] font-mono text-slate-500 mr-1">Historical Deal Templates:</span>
+                <span className="text-xs tabular-nums text-slate-500 mr-1">Historical Deal Templates:</span>
                 <button
                   type="button"
                   onClick={() =>
@@ -1105,7 +1171,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       includeOfficialBilateral: false,
                     })
                   }
-                  className="px-2 py-0.5 text-[11px] font-mono rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                  className="ui-btn"
                 >
                   Ecuador 2020 (Reprofiling)
                 </button>
@@ -1122,7 +1188,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       includeOfficialBilateral: true,
                     })
                   }
-                  className="px-2 py-0.5 text-[11px] font-mono rounded border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                  className="px-2 py-0.5 text-xs tabular-nums border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
                 >
                   Ukraine 2024 (37% Cut)
                 </button>
@@ -1139,7 +1205,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       includeOfficialBilateral: true,
                     })
                   }
-                  className="px-2 py-0.5 text-[11px] font-mono rounded border border-indigo-500/40 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300"
+                  className="px-2 py-0.5 text-xs tabular-nums border border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300"
                 >
                   Sri Lanka / Ghana 2024 (DDO + Ext)
                 </button>
@@ -1150,7 +1216,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-slate-600 dark:text-slate-400">Nominal Haircut</span>
-                  <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                  <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                     {restructuringParams.nominalHaircutPct}%
                   </span>
                 </div>
@@ -1166,14 +1232,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       nominalHaircutPct: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-slate-600 dark:text-slate-400">Maturity Extension</span>
-                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     +{restructuringParams.maturityExtensionYears} Years
                   </span>
                 </div>
@@ -1189,14 +1255,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       maturityExtensionYears: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-slate-600 dark:text-slate-400">Principal Grace Period</span>
-                  <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {restructuringParams.gracePeriodYears} Years
                   </span>
                 </div>
@@ -1212,14 +1278,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       gracePeriodYears: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-slate-600 dark:text-slate-400">Coupon Step-Down</span>
-                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                     −{restructuringParams.couponReductionBps} bps
                   </span>
                 </div>
@@ -1235,14 +1301,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       couponReductionBps: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
 
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span className="text-slate-600 dark:text-slate-400">Exit Discount Yield</span>
-                  <span className="font-mono font-bold text-sky-600 dark:text-sky-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {restructuringParams.exitYieldPct.toFixed(1)}%
                   </span>
                 </div>
@@ -1258,7 +1324,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       exitYieldPct: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
             </div>
@@ -1275,7 +1341,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         includeOfficialBilateral: e.target.checked,
                       }))
                     }
-                    className="rounded accent-indigo-600"
+                    className="accent-blue-600"
                   />
                   <span className="text-slate-700 dark:text-slate-300">
                     Enforce Paris Club / G20 Official Bilateral Comparability of Treatment (CoT)
@@ -1292,7 +1358,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         includeDomesticDebt: e.target.checked,
                       }))
                     }
-                    className="rounded accent-indigo-600"
+                    className="accent-blue-600"
                   />
                   <span className="text-slate-700 dark:text-slate-300">
                     Include Domestic Local-Law Bonds (DDO — caution: Bank CET1 impact)
@@ -1300,7 +1366,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 </label>
               </div>
 
-              <div className="flex items-center gap-4 font-mono tabular-nums">
+              <div className="flex items-center gap-4 tabular-nums">
                 <span>
                   Pre-Deal Debt/GDP: <strong>{restructuringSuite.preDebtToGdpPct.toFixed(1)}%</strong>
                 </span>
@@ -1312,7 +1378,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 </span>
                 <span>
                   5Y Cashflow Relief:{' '}
-                  <strong className="text-indigo-600 dark:text-indigo-400">
+                  <strong className="text-blue-600 dark:text-blue-400">
                     ${restructuringSuite.fiveYearCumulativeReliefUsdBn.toFixed(2)}Bn
                   </strong>
                 </span>
@@ -1321,17 +1387,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* 15-Year Debt Service Relief Chart */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   15-Year Sovereign Debt Service Profile: Contractual Pre-Deal vs. Post-Exchange ($Bn)
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Bars show annual contractual principal + interest before and after grace period, extension, and coupon step-down
                 </p>
               </div>
-              <span className="text-xs font-mono tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
+              <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
                 Post-Deal 3Y GFN: {restructuringSuite.postGfnPctGdp.toFixed(1)}% GDP (IMF Threshold: 15.0%)
               </span>
             </div>
@@ -1358,7 +1424,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <Bar
                     dataKey="postDebtServiceUsdBn"
                     name="Post-Restructuring Debt Service ($Bn)"
-                    fill="#6366f1"
+                    fill="#3b82f6"
                     barSize={16}
                   />
                   <Line
@@ -1375,10 +1441,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Creditor Seniority Waterfall & CAC Holdout Table */}
-          <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+          <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-[11px] font-mono uppercase text-slate-600 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                   <th className="py-2 px-3">Creditor Seniority Tranche</th>
                   <th className="py-2 px-3">Governing Law & CAC Clause</th>
                   <th className="py-2 px-3 text-right">Principal ($Bn)</th>
@@ -1390,26 +1456,26 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <th className="py-2 px-3 text-right">Recovery Value</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {restructuringSuite.tranches.map((tr) => (
                   <tr key={tr.trancheId} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                     <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-slate-100">
                       <div>{tr.trancheName}</div>
                       <span
-                        className={`inline-block mt-0.5 text-[10px] font-mono px-1.5 py-0.5 rounded ${
+                        className={`inline-block mt-0.5 text-xs tabular-nums px-1.5 py-0.5  ${
                           tr.isIncludedInPerimeter
-                            ? 'bg-indigo-500/15 text-indigo-600 dark:text-indigo-300'
+                            ? 'bg-blue-500/15 text-blue-600 dark:text-blue-300'
                             : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                         }`}
                       >
-                        {tr.isIncludedInPerimeter ? 'IN RESTRUCTURING PERIMETER' : 'EXEMPT / PROTECTED'}
+                        {tr.isIncludedInPerimeter ? 'In restructuring perimeter' : 'Exempt or protected'}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-[11px] text-slate-600 dark:text-slate-400">
-                      <div className="font-mono text-slate-800 dark:text-slate-200">{tr.governingLaw}</div>
+                    <td className="py-2.5 px-3 font-sans text-xs text-slate-600 dark:text-slate-400">
+                      <div className="tabular-nums text-slate-800 dark:text-slate-200">{tr.governingLaw}</div>
                       <div>{tr.cacMechanism}</div>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-slate-100">
+                    <td className="py-2.5 px-3 text-right font-semibold text-slate-900 dark:text-slate-100">
                       ${tr.outstandingPrincipalUsdBn.toFixed(2)}B
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-600 dark:text-slate-400">
@@ -1424,10 +1490,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     <td className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400">
                       −{tr.appliedNominalHaircutPct.toFixed(1)}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-rose-600 dark:text-rose-400">
+                    <td className="py-2.5 px-3 text-right font-semibold text-rose-600 dark:text-rose-400">
                       −{tr.npvHaircutPct.toFixed(1)}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                    <td className="py-2.5 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                       {tr.recoveryCentsPerDollar.toFixed(1)}¢ / $1
                     </td>
                   </tr>
@@ -1444,9 +1510,9 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_matrix_econometrics' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & Formula Reference */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                 LIVE MATRIX OLS SOLVER (β̂ = (XᵀX)⁻¹Xᵀy) WITH NEWEY-WEST HAC SEs & OUT-OF-SAMPLE ROC/AUC
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
@@ -1472,7 +1538,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Model Specification Selector & ROC Threshold Controls */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <div className="lg:col-span-2 space-y-1.5">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 block">
                 Select Structural Econometric Specification (Estimated across T = {econometricsSuite.sampleSizeQuarters} Quarters)
@@ -1498,17 +1564,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={m.id}
                     type="button"
                     onClick={() => setEconometricModelId(m.id)}
-                    className={`px-3 py-1.5 rounded text-xs font-mono border transition-all ${
-                      econometricModelId === m.id
-                        ? 'bg-indigo-600 text-white border-indigo-500 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-indigo-400'
-                    }`}
+                    aria-pressed={econometricModelId === m.id}
+                    className="ui-pill"
                   >
                     {m.label}
                   </button>
                 ))}
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-1">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 pt-1">
                 Specification: <strong className="text-slate-800 dark:text-slate-200">{econometricsSuite.equationFormula}</strong>
               </div>
             </div>
@@ -1518,7 +1581,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <span className="font-semibold text-slate-700 dark:text-slate-300">
                   Crisis Signal Alert Threshold (τ)
                 </span>
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   τ = {(rocThreshold * 100).toFixed(0)}% (Optimal τ* = {(econometricsSuite.confusionMatrix.optimalThreshold * 100).toFixed(0)}%)
                 </span>
               </div>
@@ -1529,9 +1592,9 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 step={0.05}
                 value={rocThreshold}
                 onChange={(e) => setRocThreshold(Number(e.target.value))}
-                className="w-full accent-indigo-600"
+                className="w-full accent-blue-600"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-500">
+              <div className="flex justify-between text-xs tabular-nums text-slate-500">
                 <span>15% (High Recall)</span>
                 <span>45% (KLR Balanced)</span>
                 <span>85% (Low False Alarm)</span>
@@ -1540,12 +1603,12 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Matrix OLS Parameter Table with Newey-West HAC t-stats */}
-          <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
-            <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-              <span className="font-bold text-slate-800 dark:text-slate-200">
+          <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
+            <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">
                 DEPENDENT VARIABLE: {econometricsSuite.dependentVariableLabel} ({econometricsSuite.dependentVariableUnit})
               </span>
-              <div className="flex flex-wrap items-center gap-4 text-[11px]">
+              <div className="flex flex-wrap items-center gap-4 text-xs">
                 <span>R² = {(econometricsSuite.rSquared * 100).toFixed(1)}%</span>
                 <span>Adj R² = {(econometricsSuite.adjustedRSquared * 100).toFixed(1)}%</span>
                 <span>F-Stat = {econometricsSuite.fStatistic.toFixed(1)}</span>
@@ -1556,7 +1619,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             </div>
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-[11px] font-mono uppercase text-slate-600 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                   <th className="py-2 px-3">Regressor Variable</th>
                   <th className="py-2 px-3">Economic Interpretation</th>
                   <th className="py-2 px-3 text-right">Coeff (β̂)</th>
@@ -1567,16 +1630,16 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <th className="py-2 px-3">Institutional Hypothesis Test</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {econometricsSuite.coefficients.map((c) => (
                   <tr key={c.variableKey} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
-                    <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">
+                    <td className="py-2 px-3 font-semibold text-slate-900 dark:text-slate-100">
                       {c.variableLabel}
                     </td>
-                    <td className="py-2 px-3 font-sans text-[11px] text-slate-600 dark:text-slate-400">
+                    <td className="py-2 px-3 font-sans text-xs text-slate-600 dark:text-slate-400">
                       {c.economicMeaning}
                     </td>
-                    <td className="py-2 px-3 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                    <td className="py-2 px-3 text-right font-semibold text-blue-600 dark:text-blue-400">
                       {c.betaHat > 0 ? '+' : ''}
                       {c.betaHat.toFixed(4)}{' '}
                       <span className="text-amber-500">{c.significanceStars}</span>
@@ -1587,7 +1650,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     <td className="py-2 px-3 text-right font-semibold text-slate-700 dark:text-slate-300">
                       [{c.hacNeweyWestStdError.toFixed(4)}]
                     </td>
-                    <td className="py-2 px-3 text-right font-bold text-slate-800 dark:text-slate-200">
+                    <td className="py-2 px-3 text-right font-semibold text-slate-800 dark:text-slate-200">
                       {c.tStatHac.toFixed(2)}
                     </td>
                     <td className="py-2 px-3 text-right text-slate-600 dark:text-slate-400">
@@ -1595,7 +1658,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     </td>
                     <td className="py-2 px-3">
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                        className={`inline-flex items-center gap-1 px-2 py-0.5  text-xs font-semibold ${
                           c.hypothesisStatus === 'CONFIRMED'
                             ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                             : c.hypothesisStatus === 'WEAK'
@@ -1614,17 +1677,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
           {/* Dual Charts: Actual vs Fitted OLS Time Series + Out-of-Sample ROC & Confusion Matrix */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+            <div className="lg:col-span-2 p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     In-Sample Fit & 95% HAC Confidence Band: {econometricsSuite.dependentVariableLabel}
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     Actual sovereign series vs. Matrix OLS fitted trajectory and residual shocks
                   </p>
                 </div>
-                <span className="text-[11px] font-mono text-slate-500">
+                <span className="text-xs tabular-nums text-slate-500">
                   RMSE = {econometricsSuite.residualStdError.toFixed(2)} {econometricsSuite.dependentVariableUnit}
                 </span>
               </div>
@@ -1644,7 +1707,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       dataKey="upper95Band"
                       name="Upper 95% HAC Band"
                       stroke="none"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                       fillOpacity={0.12}
                     />
                     <Line
@@ -1659,7 +1722,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       type="monotone"
                       dataKey="fittedY"
                       name="Matrix OLS Fitted (Xβ̂)"
-                      stroke="#6366f1"
+                      stroke="#3b82f6"
                       strokeWidth={2}
                       strokeDasharray="4 4"
                       dot={false}
@@ -1676,80 +1739,80 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             </div>
 
             {/* Out-of-Sample Confusion Matrix & ROC Card */}
-            <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col justify-between space-y-3">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40 flex flex-col justify-between space-y-3">
               <div>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                  <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Out-of-Sample EWS Confusion Matrix
                   </h3>
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                     AUROC = {econometricsSuite.confusionMatrix.auroc.toFixed(3)}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   48 Sovereign Episodes at Threshold τ = {(rocThreshold * 100).toFixed(0)}%
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 font-mono text-xs tabular-nums">
-                <div className="p-2.5 rounded border border-emerald-500/30 bg-emerald-500/10">
-                  <div className="text-[10px] text-emerald-700 dark:text-emerald-300 uppercase">
+              <div className="grid grid-cols-2 gap-2 tabular-nums text-xs">
+                <div className="p-2.5 border border-emerald-500/30 bg-emerald-500/10">
+                  <div className="text-xs text-emerald-700 dark:text-emerald-300">
                     True Positives (TP)
                   </div>
-                  <div className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  <div className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                     {econometricsSuite.confusionMatrix.truePositives}
                   </div>
-                  <div className="text-[10px] text-slate-500">
+                  <div className="text-xs text-slate-500">
                     TPR Recall: {econometricsSuite.confusionMatrix.tprRecallPct.toFixed(1)}%
                   </div>
                 </div>
-                <div className="p-2.5 rounded border border-amber-500/30 bg-amber-500/10">
-                  <div className="text-[10px] text-amber-700 dark:text-amber-300 uppercase">
+                <div className="p-2.5 border border-amber-500/30 bg-amber-500/10">
+                  <div className="text-xs text-amber-700 dark:text-amber-300">
                     False Positives (FP)
                   </div>
-                  <div className="text-lg font-bold text-amber-600 dark:text-amber-400">
+                  <div className="text-lg font-semibold text-amber-600 dark:text-amber-400">
                     {econometricsSuite.confusionMatrix.falsePositives}
                   </div>
-                  <div className="text-[10px] text-slate-500">
+                  <div className="text-xs text-slate-500">
                     FPR Noise: {econometricsSuite.confusionMatrix.fprFalseAlarmPct.toFixed(1)}%
                   </div>
                 </div>
-                <div className="p-2.5 rounded border border-rose-500/30 bg-rose-500/10">
-                  <div className="text-[10px] text-rose-700 dark:text-rose-300 uppercase">
+                <div className="p-2.5 border border-rose-500/30 bg-rose-500/10">
+                  <div className="text-xs text-rose-700 dark:text-rose-300">
                     False Negatives (FN)
                   </div>
-                  <div className="text-lg font-bold text-rose-600 dark:text-rose-400">
+                  <div className="text-lg font-semibold text-rose-600 dark:text-rose-400">
                     {econometricsSuite.confusionMatrix.falseNegatives}
                   </div>
-                  <div className="text-[10px] text-slate-500">Missed Crises</div>
+                  <div className="text-xs text-slate-500">Missed Crises</div>
                 </div>
-                <div className="p-2.5 rounded border border-sky-500/30 bg-sky-500/10">
-                  <div className="text-[10px] text-sky-700 dark:text-sky-300 uppercase">
+                <div className="p-2.5 border border-blue-500/30 bg-blue-500/10">
+                  <div className="text-xs text-blue-700 dark:text-blue-300">
                     True Negatives (TN)
                   </div>
-                  <div className="text-lg font-bold text-sky-600 dark:text-sky-400">
+                  <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
                     {econometricsSuite.confusionMatrix.trueNegatives}
                   </div>
-                  <div className="text-[10px] text-slate-500">Tranquil Correct</div>
+                  <div className="text-xs text-slate-500">Tranquil Correct</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-center font-mono text-xs tabular-nums">
+              <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-center tabular-nums text-xs">
                 <div>
-                  <span className="text-[10px] text-slate-500 block">KLR NSR (FPR/TPR)</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="text-xs text-slate-500 block">KLR NSR (FPR/TPR)</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {econometricsSuite.confusionMatrix.noiseToSignalRatio.toFixed(2)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 block">F1 Score</span>
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                  <span className="text-xs text-slate-500 block">F1 Score</span>
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
                     {econometricsSuite.confusionMatrix.f1Score.toFixed(2)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 block">Brier Score</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs text-slate-500 block">Brier Score</span>
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                     {econometricsSuite.confusionMatrix.brierScore.toFixed(3)}
                   </span>
                 </div>
@@ -1765,10 +1828,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_trade_blotter' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & Formula Reference */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
-                INSTITUTIONAL RELATIVE-VALUE STRUCTURING BLOTTER, FIXED-INCOME GREEKS & 5-FACTOR P&L WATERFALL
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
+                Institutional relative-value structuring blotter, fixed-income greeks & 5-factor p&l waterfall
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
                 {tradeBlotterSuite.headlineConclusion}
@@ -1781,15 +1844,28 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <button
                 type="button"
                 onClick={() => setShowNewTicketForm((s) => !s)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-mono font-semibold bg-indigo-600 text-white hover:bg-indigo-500"
+                className="ui-btn ui-btn-primary"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Custom Ticket</span>
               </button>
+              {countryHoldings.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleLoadHoldingsIntoBlotter}
+                  className="ui-btn"
+                  title="Add your imported positions in this country to the blotter (carry is not modelled for them)"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>
+                    {holdingsLoaded ? 'Reload' : 'Add'} my {run.countryName} holdings ({countryHoldings.length})
+                  </span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleExportBlotterCsv}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-mono border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -1799,23 +1875,23 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
           {/* Optional Add Custom Trade Ticket Form */}
           {showNewTicketForm && (
-            <div className="p-3 rounded-md border border-indigo-500/40 bg-indigo-500/5 space-y-3">
-              <div className="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-300">
+            <div className="p-3 border border-blue-500/40 bg-blue-500/5 space-y-3">
+              <div className="text-xs font-semibold text-blue-600 dark:text-blue-300">
                 Structure New Custom Relative-Value Trade Ticket
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs">
                 <div className="lg:col-span-2">
-                  <label className="block text-[11px] text-slate-500 mb-1">Strategy Package Name</label>
+                  <label className="block text-xs text-slate-500 mb-1">Strategy Package Name</label>
                   <input
                     type="text"
                     placeholder={`${run.iso3} 5s10s Eurobond Curve Flattener`}
                     value={newTicketName}
                     onChange={(e) => setNewTicketName(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs"
+                    className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 tabular-nums text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">Category</label>
+                  <label className="block text-xs text-slate-500 mb-1">Category</label>
                   <select
                     value={newTicketCategory}
                     onChange={(e) =>
@@ -1823,7 +1899,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         e.target.value as InstitutionalTradeTicket['structureCategory']
                       )
                     }
-                    className="w-full px-2 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs"
+                    className="w-full px-2 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 tabular-nums text-xs"
                   >
                     <option value="CDS_BOND_BASIS">CDS-Bond Basis</option>
                     <option value="RATES_CURVE">Rates Curve</option>
@@ -1832,30 +1908,30 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">Notional ($M)</label>
+                  <label className="block text-xs text-slate-500 mb-1">Notional ($M)</label>
                   <input
                     type="number"
                     value={newTicketNotional}
                     onChange={(e) => setNewTicketNotional(Number(e.target.value))}
-                    className="w-full px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs"
+                    className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 tabular-nums text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">Net DV01 ($/bp)</label>
+                  <label className="block text-xs text-slate-500 mb-1">Net DV01 ($/bp)</label>
                   <input
                     type="number"
                     value={newTicketDv01}
                     onChange={(e) => setNewTicketDv01(Number(e.target.value))}
-                    className="w-full px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs"
+                    className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 tabular-nums text-xs"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-slate-500 mb-1">Net CS01 ($/bp)</label>
+                  <label className="block text-xs text-slate-500 mb-1">Net CS01 ($/bp)</label>
                   <input
                     type="number"
                     value={newTicketCs01}
                     onChange={(e) => setNewTicketCs01(Number(e.target.value))}
-                    className="w-full px-2.5 py-1.5 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 font-mono text-xs"
+                    className="w-full px-2.5 py-1.5 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 tabular-nums text-xs"
                   />
                 </div>
               </div>
@@ -1863,14 +1939,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowNewTicketForm(false)}
-                  className="px-3 py-1 rounded text-xs font-mono border border-slate-300 dark:border-slate-700"
+                  className="px-3 py-1 text-xs tabular-nums border border-slate-300 dark:border-slate-700"
                 >
                   Cancel
                 </button>
                 <button
                   type="button"
                   onClick={handleAddCustomTicket}
-                  className="px-3 py-1 rounded text-xs font-mono font-semibold bg-indigo-600 text-white"
+                  className="ui-btn ui-btn-primary"
                 >
                   Book Ticket to Blotter
                 </button>
@@ -1879,11 +1955,11 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           )}
 
           {/* 5-Factor Stress Scenario Sliders */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 dark:text-slate-400">Parallel Rate Shock</span>
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {blotterShocks.parallelRateShockBps > 0 ? '+' : ''}
                   {blotterShocks.parallelRateShockBps} bps
                 </span>
@@ -1900,14 +1976,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     parallelRateShockBps: Number(e.target.value),
                   }))
                 }
-                className="w-full accent-indigo-600"
+                className="w-full accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 dark:text-slate-400">2s10s Curve Shift</span>
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {blotterShocks.curve2s10sSteepeningBps > 0 ? '+' : ''}
                   {blotterShocks.curve2s10sSteepeningBps} bps
                 </span>
@@ -1924,14 +2000,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     curve2s10sSteepeningBps: Number(e.target.value),
                   }))
                 }
-                className="w-full accent-indigo-600"
+                className="w-full accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 dark:text-slate-400">5Y CDS Spread Shock</span>
-                <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                   {blotterShocks.creditSpreadShockBps > 0 ? '+' : ''}
                   {blotterShocks.creditSpreadShockBps} bps
                 </span>
@@ -1948,14 +2024,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     creditSpreadShockBps: Number(e.target.value),
                   }))
                 }
-                className="w-full accent-indigo-600"
+                className="w-full accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 dark:text-slate-400">CDS-Bond Basis Shift</span>
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                   {blotterShocks.cdsBondBasisWideningBps > 0 ? '+' : ''}
                   {blotterShocks.cdsBondBasisWideningBps} bps
                 </span>
@@ -1972,14 +2048,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     cdsBondBasisWideningBps: Number(e.target.value),
                   }))
                 }
-                className="w-full accent-indigo-600"
+                className="w-full accent-blue-600"
               />
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 dark:text-slate-400">Spot FX Depreciation</span>
-                <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                   {blotterShocks.fxSpotDepreciationPct > 0 ? '+' : ''}
                   {blotterShocks.fxSpotDepreciationPct}%
                 </span>
@@ -1996,24 +2072,24 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     fxSpotDepreciationPct: Number(e.target.value),
                   }))
                 }
-                className="w-full accent-indigo-600"
+                className="w-full accent-blue-600"
               />
             </div>
           </div>
 
           {/* 5-Factor P&L Attribution Waterfall Chart */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Multi-Factor Stress P&L Attribution Decomposition ($ Thousands)
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Decomposes total book P&L into 90D Carry & Roll-Down, Rates DV01, Credit CS01, Basis Convergence, FX Delta, and Convexity
                 </p>
               </div>
               <span
-                className={`text-xs font-mono font-bold px-2 py-0.5 rounded ${
+                className={`text-xs tabular-nums font-semibold px-2 py-0.5  ${
                   tradeBlotterSuite.totalNetStressedPnlUsdK >= 0
                     ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
                     : 'bg-rose-500/15 text-rose-600 dark:text-rose-400'
@@ -2043,7 +2119,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         key={`wf-${idx}`}
                         fill={
                           entry.category === 'NET'
-                            ? '#6366f1'
+                            ? '#3b82f6'
                             : entry.pnlUsdThousands >= 0
                             ? '#10b981'
                             : '#f43f5e'
@@ -2057,10 +2133,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Institutional Trade Blotter Table */}
-          <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+          <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-[11px] font-mono uppercase text-slate-600 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                   <th className="py-2 px-3">Strategy Package & Leg Structure</th>
                   <th className="py-2 px-3 text-right">Notional</th>
                   <th className="py-2 px-3 text-right">DV01 ($/bp)</th>
@@ -2071,12 +2147,12 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <th className="py-2 px-3 text-right">Stressed P&L</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {tradeBlotterSuite.tickets.map((t) => (
                   <tr key={t.ticketId} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                     <td className="py-2.5 px-3 font-sans">
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {t.strategyName}
                         </span>
                         {t.isCustom && (
@@ -2094,36 +2170,36 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                           </button>
                         )}
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                         Leg 1: {t.leg1Description}
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         Leg 2: {t.leg2Description}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-bold text-slate-900 dark:text-slate-100">
+                    <td className="py-2.5 px-3 text-right font-semibold text-slate-900 dark:text-slate-100">
                       ${t.notionalUsdMillions.toFixed(1)}M
                     </td>
                     <td className="py-2.5 px-3 text-right text-slate-700 dark:text-slate-300">
                       {t.dv01UsdPerBp >= 0 ? '+' : ''}${t.dv01UsdPerBp.toLocaleString()}
                       {t.slopeDv01UsdPerBp !== 0 && (
-                        <div className="text-[10px] text-indigo-500">
+                        <div className="text-xs text-blue-500">
                           Slope: {t.slopeDv01UsdPerBp > 0 ? '+' : ''}$
                           {t.slopeDv01UsdPerBp.toLocaleString()}
                         </div>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-semibold text-sky-600 dark:text-sky-400">
+                    <td className="py-2.5 px-3 text-right font-semibold text-blue-600 dark:text-blue-400">
                       {t.cs01UsdPerBp >= 0 ? '+' : ''}${t.cs01UsdPerBp.toLocaleString()}
                       {t.basis01UsdPerBp !== 0 && (
-                        <div className="text-[10px] text-emerald-500">
+                        <div className="text-xs text-emerald-500">
                           Basis01: ${t.basis01UsdPerBp.toLocaleString()}
                         </div>
                       )}
                     </td>
                     <td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold">
                       +{t.total90DCushionBps} bps
-                      <div className="text-[10px] text-slate-500">
+                      <div className="text-xs text-slate-500">
                         (+${t.expectedCarryRoll90DUsdThousands.toFixed(1)}k)
                       </div>
                     </td>
@@ -2134,7 +2210,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       {t.carryToVolRatio.toFixed(2)}x
                     </td>
                     <td
-                      className={`py-2.5 px-3 text-right font-bold ${
+                      className={`py-2.5 px-3 text-right font-semibold ${
                         t.stressedPnlBreakdown.netStressedPnlUsdK >= 0
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-rose-600 dark:text-rose-400'
@@ -2157,13 +2233,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_macro_surprise' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & Formula Reference */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
-                  STANDARDIZED CONSENSUS SURPRISE Z-SCORE & BAYESIAN REGIME POSTERIOR ENGINE
+                <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
+                  Standardized consensus surprise z-score & bayesian regime posterior engine
                 </span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 font-bold">
+                <span className="text-xs tabular-nums px-2 py-0.5 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold">
                   QUADRANT: {macroSurpriseSuite.macroQuadrantRegime.replace(/_/g, ' ')}
                 </span>
               </div>
@@ -2185,12 +2261,12 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Bayesian Prior-to-Posterior Bar & Quick Surprise Scenario Presets */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
-            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono tabular-nums">
-              <div className="p-2.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                <span className="text-[10px] text-slate-500 block">GROWTH SURPRISE (ESI)</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+            <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3 tabular-nums">
+              <div className="p-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <span className="text-xs text-slate-500 block">Growth surprise (ESI)</span>
                 <span
-                  className={`text-base font-bold ${
+                  className={`text-base font-semibold ${
                     macroSurpriseSuite.economicSurpriseIndexEsi >= 0
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-rose-600 dark:text-rose-400'
@@ -2200,10 +2276,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   {macroSurpriseSuite.economicSurpriseIndexEsi.toFixed(1)}
                 </span>
               </div>
-              <div className="p-2.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                <span className="text-[10px] text-slate-500 block">INFLATION SURPRISE (ISI)</span>
+              <div className="p-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <span className="text-xs text-slate-500 block">Inflation surprise (ISI)</span>
                 <span
-                  className={`text-base font-bold ${
+                  className={`text-base font-semibold ${
                     macroSurpriseSuite.inflationSurpriseIndexIsi <= 10
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-amber-600 dark:text-amber-400'
@@ -2213,17 +2289,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   {macroSurpriseSuite.inflationSurpriseIndexIsi.toFixed(1)}
                 </span>
               </div>
-              <div className="p-2.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                <span className="text-[10px] text-slate-500 block">PRIOR → POSTERIOR P(S₁)</span>
-                <span className="text-base font-bold text-indigo-600 dark:text-indigo-400">
+              <div className="p-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <span className="text-xs text-slate-500 block">Prior → posterior p(s₁)</span>
+                <span className="text-base font-semibold text-blue-600 dark:text-blue-400">
                   {macroSurpriseSuite.priorHamiltonCrisisProbPct.toFixed(1)}% →{' '}
                   {macroSurpriseSuite.posteriorHamiltonCrisisProbPct.toFixed(1)}%
                 </span>
               </div>
-              <div className="p-2.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                <span className="text-[10px] text-slate-500 block">IMPLIED 5Y CDS IMPULSE</span>
+              <div className="p-2.5 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <span className="text-xs text-slate-500 block">Implied 5Y CDS impulse</span>
                 <span
-                  className={`text-base font-bold ${
+                  className={`text-base font-semibold ${
                     macroSurpriseSuite.netCdsRepricingImpulseBps <= 0
                       ? 'text-emerald-600 dark:text-emerald-400'
                       : 'text-rose-600 dark:text-rose-400'
@@ -2243,28 +2319,28 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <button
                   type="button"
                   onClick={() => applyMacroPreset('GOLDILOCKS')}
-                  className="px-2.5 py-1 text-[11px] font-mono rounded border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                  className="px-2.5 py-1 text-xs tabular-nums border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
                 >
                   Disinflation Boom
                 </button>
                 <button
                   type="button"
                   onClick={() => applyMacroPreset('STAGFLATION')}
-                  className="px-2.5 py-1 text-[11px] font-mono rounded border border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                  className="px-2.5 py-1 text-xs tabular-nums border border-rose-500/40 bg-rose-500/10 text-rose-700 dark:text-rose-300"
                 >
                   Stagflation Shock
                 </button>
                 <button
                   type="button"
                   onClick={() => applyMacroPreset('FISCAL_SLIPPAGE')}
-                  className="px-2.5 py-1 text-[11px] font-mono rounded border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                  className="px-2.5 py-1 text-xs tabular-nums border border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
                 >
                   Fiscal & Auction Miss
                 </button>
                 <button
                   type="button"
                   onClick={() => applyMacroPreset('RESET')}
-                  className="flex items-center gap-1 px-2 py-1 text-[11px] font-mono rounded border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
+                  className="flex items-center gap-1 px-2 py-1 text-xs tabular-nums border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Reset</span>
@@ -2274,17 +2350,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* 12-Month ESI vs ISI & Posterior Crisis Probability Chart */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/40">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   12-Month Decay-Weighted Economic Surprise (ESI), Inflation Surprise (ISI) & Posterior Crisis Prob
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-xs text-slate-500 dark:text-slate-400">
                   Tracks how cumulative macro data beats/misses shift Hamilton Markov crisis probabilities in real time
                 </p>
               </div>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Bayes Likelihood Ratio L(Z) = {macroSurpriseSuite.bayesLikelihoodRatio.toFixed(2)}x
               </span>
             </div>
@@ -2342,10 +2418,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Interactive Macro Release Calendar Table */}
-          <div className="overflow-x-auto rounded-md border border-slate-200 dark:border-slate-800">
+          <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-[11px] font-mono uppercase text-slate-600 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-900/80 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                   <th className="py-2 px-3">Macroeconomic Release</th>
                   <th className="py-2 px-3">Release Window</th>
                   <th className="py-2 px-3 text-right">Prior</th>
@@ -2357,13 +2433,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <th className="py-2 px-3 text-right">5Y CDS Impact</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {macroSurpriseSuite.releases.map((r) => (
                   <tr key={r.releaseId} className="hover:bg-slate-50 dark:hover:bg-slate-900/50">
                     <td className="py-2 px-3 font-sans font-semibold text-slate-900 dark:text-slate-100">
                       {r.indicatorName}
                     </td>
-                    <td className="py-2 px-3 text-slate-500 text-[11px]">{r.releaseDateLabel}</td>
+                    <td className="py-2 px-3 text-slate-500 text-xs">{r.releaseDateLabel}</td>
                     <td className="py-2 px-3 text-right text-slate-600 dark:text-slate-400">
                       {r.priorReading.toFixed(2)} {r.unit}
                     </td>
@@ -2384,14 +2460,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                             }));
                           }
                         }}
-                        className="w-24 text-right px-2 py-1 rounded border border-indigo-500/40 bg-indigo-500/5 text-indigo-700 dark:text-indigo-300 font-mono font-bold text-xs"
+                        className="w-24 text-right px-2 py-1 border border-blue-500/40 bg-blue-500/5 text-blue-700 dark:text-blue-300 tabular-nums font-semibold text-xs"
                       />
                     </td>
                     <td className="py-2 px-3 text-right text-slate-500">
                       ±{r.forecastStdDevSigma.toFixed(2)}
                     </td>
                     <td
-                      className={`py-2 px-3 text-right font-bold ${
+                      className={`py-2 px-3 text-right font-semibold ${
                         Math.abs(r.standardizedSurpriseZ) >= 1.0
                           ? 'text-amber-600 dark:text-amber-400'
                           : 'text-slate-700 dark:text-slate-300'
@@ -2411,7 +2487,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       {r.implied2YYieldMoveBps.toFixed(1)} bps
                     </td>
                     <td
-                      className={`py-2 px-3 text-right font-bold ${
+                      className={`py-2 px-3 text-right font-semibold ${
                         r.implied5YCdsMoveBps > 0
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -2434,13 +2510,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_alpha_correlation' && (
         <div className="p-4 space-y-5">
           {/* Answer-First Institutional Conclusion Banner */}
-          <div className="p-3.5 rounded-lg border border-indigo-500/30 bg-indigo-500/5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="p-3.5 border border-blue-500/30 bg-blue-500/5 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-[10px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-indigo-600 text-white font-bold">
-                  5.6 CROSS-SOVEREIGN ALPHA CORRELATION MATRIX & EMBI DIVERSIFICATION ENGINE
+                <span className="text-xs tabular-nums px-1.5 py-0.5 bg-blue-600 text-white font-semibold">
+                  5.6 Cross-sovereign alpha correlation matrix & EMBI diversification engine
                 </span>
-                <span className="text-[11px] font-mono text-indigo-700 dark:text-indigo-300 font-semibold">
+                <span className="text-xs tabular-nums text-blue-700 dark:text-blue-300 font-semibold">
                   {alphaCorrSuite.universeCount}×{alphaCorrSuite.universeCount} Sovereign Matrix · Window: {corrRollingWindow} · Stress θ = {corrCrisisStressPct}%
                 </span>
               </div>
@@ -2453,7 +2529,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <button
                 type="button"
                 onClick={handleExportAlphaCorrelationCsv}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded border border-indigo-500/40 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-mono font-semibold transition-colors cursor-pointer"
+                className="ui-btn ui-btn-primary inline-flex"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Matrix & Weights CSV</span>
@@ -2462,10 +2538,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Interactive Control Bar: Spread Series Toggle + Rolling Horizon + Crisis Contagion Stress Slider */}
-          <div className="p-3.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+          <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
             {/* 1. Spread Series Toggle */}
             <div className="lg:col-span-5 space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">
+              <label className="text-xs tabular-nums text-slate-500 dark:text-slate-400 font-semibold block">
                 1. Sovereign Spread Series Analyzed (bps)
               </label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -2480,11 +2556,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => setCorrSpreadSeries(item.id)}
-                    className={`px-2.5 py-1.5 rounded text-xs font-mono font-semibold border transition-colors cursor-pointer ${
-                      corrSpreadSeries === item.id
-                        ? 'bg-indigo-600 text-white border-indigo-600'
-                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-indigo-400'
-                    }`}
+                    aria-pressed={corrSpreadSeries === item.id}
+                    className="ui-pill"
                   >
                     {item.label}
                   </button>
@@ -2494,7 +2567,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
             {/* 2. Rolling Window Selector */}
             <div className="lg:col-span-3 space-y-1.5">
-              <label className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold block">
+              <label className="text-xs tabular-nums text-slate-500 dark:text-slate-400 font-semibold block">
                 2. Rolling Correlation Window
               </label>
               <div className="grid grid-cols-4 gap-1">
@@ -2503,11 +2576,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={win}
                     type="button"
                     onClick={() => setCorrRollingWindow(win)}
-                    className={`px-2 py-1.5 rounded text-xs font-mono font-bold border transition-colors cursor-pointer ${
-                      corrRollingWindow === win
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-slate-400'
-                    }`}
+                    aria-pressed={corrRollingWindow === win}
+                    className="ui-pill"
                   >
                     {win}
                   </button>
@@ -2517,12 +2587,12 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
             {/* 3. Crisis Contagion Compression Slider (Fisher-z tanh transformation) */}
             <div className="lg:col-span-4 space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-mono">
-                <span className="uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+              <div className="flex items-center justify-between text-xs tabular-nums">
+                <span className="text-slate-500 dark:text-slate-400 font-semibold">
                   3. Stressed Contagion Regime Overlay (θ)
                 </span>
                 <span
-                  className={`font-bold px-1.5 py-0.5 rounded ${
+                  className={`font-semibold px-1.5 py-0.5  ${
                     corrCrisisStressPct >= 50
                       ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30'
                       : corrCrisisStressPct > 0
@@ -2543,12 +2613,12 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   step={5}
                   value={corrCrisisStressPct}
                   onChange={(e) => setCorrCrisisStressPct(Number(e.target.value))}
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
                 <button
                   type="button"
                   onClick={() => setCorrCrisisStressPct(corrCrisisStressPct > 0 ? 0 : 75)}
-                  className="px-2 py-1 rounded text-[11px] font-mono font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-indigo-500 shrink-0 cursor-pointer"
+                  className="px-2 py-1 text-xs tabular-nums font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:border-blue-500 shrink-0 cursor-pointer"
                 >
                   {corrCrisisStressPct > 0 ? 'Reset 0%' : 'Crisis 75%'}
                 </button>
@@ -2558,68 +2628,68 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
           {/* 4-Card Institutional Diversification & Alpha KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-            <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  CHOUEIFATY DIVERSIFICATION RATIO
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                  Choueifaty diversification ratio
                 </span>
                 <StatRefBadge
                   refText={`Choueifaty Diversification Ratio DR = (wᵀσ) / √(wᵀΣw) = ${alphaCorrSuite.choueifatyDiversificationRatio.toFixed(2)}x · Standalone σ̄ = ${alphaCorrSuite.weightedAverageStandaloneVolBps.toFixed(1)} bps vs. Portfolio σ = ${alphaCorrSuite.maxDiversificationPortfolioVolBps.toFixed(1)} bps`}
                 />
               </div>
-              <div className="mt-1 flex items-baseline gap-2 font-mono tabular-nums">
-                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="mt-1 flex items-baseline gap-2 tabular-nums">
+                <span className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
                   {alphaCorrSuite.choueifatyDiversificationRatio.toFixed(2)}x
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
                   (Normal: {alphaCorrSuite.normalDiversificationRatio.toFixed(2)}x)
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 tabular-nums">
                 Standalone σ̄: {alphaCorrSuite.weightedAverageStandaloneVolBps.toFixed(1)} bps → Port σ:{' '}
                 {alphaCorrSuite.maxDiversificationPortfolioVolBps.toFixed(1)} bps (−
                 {alphaCorrSuite.volatilityReductionVsStandalonePct.toFixed(1)}%)
               </p>
             </div>
 
-            <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  PCA BETA VS. IDIOSYNCRATIC ALPHA
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                  PCA beta vs. idiosyncratic alpha
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold">
+                <span className="text-xs tabular-nums px-1.5 py-0.5 bg-blue-500/10 text-blue-600 dark:text-blue-400 font-semibold">
                   Eigen-Decomposition
                 </span>
               </div>
-              <div className="mt-1 flex items-baseline gap-2 font-mono tabular-nums">
-                <span className="text-xl font-bold text-indigo-600 dark:text-indigo-400">
+              <div className="mt-1 flex items-baseline gap-2 tabular-nums">
+                <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">
                   {alphaCorrSuite.idiosyncraticAlphaVariancePct.toFixed(1)}% Alpha
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
                   vs. {alphaCorrSuite.pc1GlobalBetaVariancePct.toFixed(1)}% PC1 Beta
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 tabular-nums">
                 PC2 Regional/Commodity Factor: {alphaCorrSuite.pc2RegionalFactorVariancePct.toFixed(1)}% of variance
               </p>
             </div>
 
-            <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  BEST EMBI DIVERSIFIER PAIR (MIN ρ)
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                  Best EMBI diversifier pair (min ρ)
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="text-xs tabular-nums px-1.5 py-0.5 bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-semibold">
                   Orthogonal Pair
                 </span>
               </div>
-              <div className="mt-1 flex items-baseline gap-2 font-mono tabular-nums">
-                <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+              <div className="mt-1 flex items-baseline gap-2 tabular-nums">
+                <span className="text-xl font-semibold text-emerald-600 dark:text-emerald-400">
                   {alphaCorrSuite.bestDiversifierPair.isoA}–{alphaCorrSuite.bestDiversifierPair.isoB} (ρ ={' '}
                   {alphaCorrSuite.bestDiversifierPair.correlation.toFixed(2)})
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 tabular-nums">
                 Spread Diff: {alphaCorrSuite.bestDiversifierPair.spreadDiffBps > 0 ? '+' : ''}
                 {alphaCorrSuite.bestDiversifierPair.spreadDiffBps} bps · Max Contagion:{' '}
                 {alphaCorrSuite.highestContagionPair.isoA}–{alphaCorrSuite.highestContagionPair.isoB} (
@@ -2627,17 +2697,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               </p>
             </div>
 
-            <div className="p-3 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
+            <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/70">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  EMBI PORTFOLIO VOL COMPRESSION
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+                  EMBI portfolio vol compression
                 </span>
-                <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 font-semibold">
+                <span className="text-xs tabular-nums px-1.5 py-0.5 bg-blue-500/15 text-blue-600 dark:text-blue-400 font-semibold">
                   Max-Div vs. Benchmark
                 </span>
               </div>
-              <div className="mt-1 flex items-baseline gap-2 font-mono tabular-nums">
-                <span className="text-xl font-bold text-cyan-600 dark:text-cyan-400">
+              <div className="mt-1 flex items-baseline gap-2 tabular-nums">
+                <span className="text-xl font-semibold text-blue-600 dark:text-blue-400">
                   −{alphaCorrSuite.volatilityReductionVsBenchmarkBps.toFixed(1)} bps
                 </span>
                 <span className="text-xs text-slate-500 dark:text-slate-400">
@@ -2645,7 +2715,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   {alphaCorrSuite.embiBenchmarkPortfolioVolBps.toFixed(1)} bps)
                 </span>
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 font-mono">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 tabular-nums">
                 Min-Var σ: {alphaCorrSuite.minVariancePortfolioVolBps.toFixed(1)} bps · Equal-Wt σ:{' '}
                 {alphaCorrSuite.equalWeightPortfolioVolBps.toFixed(1)} bps
               </p>
@@ -2655,45 +2725,45 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           {/* MAIN WORKBENCH GRID: N x N CORRELATION HEATMAP + PAIRWISE ROLLING TIME-SERIES INSPECTOR */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
             {/* LEFT 7 COLS: INTERACTIVE N x N PAIRWISE ROLLING CORRELATION HEATMAP */}
-            <div className="xl:col-span-7 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+            <div className="xl:col-span-7 p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 font-mono uppercase tracking-wider">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                     Pairwise Sovereign Spread Correlation Matrix R({corrRollingWindow}) — Click Any Cell (i, j) to Inspect Pair
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Emerald cells (ρ ≤ +0.15) denote high-value EMBI portfolio diversifiers; Rose cells (ρ ≥ +0.68) denote contagion clusters.
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                <div className="flex items-center gap-1.5 text-xs tabular-nums">
+                  <span className="px-1.5 py-0.5 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
                     ρ ≤ 0.15 Diversifier
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-700 dark:text-sky-300 border border-sky-500/30">
+                  <span className="px-1.5 py-0.5 bg-blue-500/15 text-blue-700 dark:text-blue-300 border border-blue-500/30">
                     0.16–0.42 Mod
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                  <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
                     0.43–0.68 Co-Move
                   </span>
-                  <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30">
+                  <span className="px-1.5 py-0.5 bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30">
                     &gt; 0.68 Contagion
                   </span>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono tabular-nums border-collapse">
+                <table className="w-full text-xs tabular-nums border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
-                      <th className="py-2 px-2 text-left">SOVEREIGN</th>
-                      <th className="py-2 px-1.5 text-right">SPREAD</th>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                      <th className="py-2 px-2 text-left">Sovereign</th>
+                      <th className="py-2 px-1.5 text-right">Spread</th>
                       <th className="py-2 px-1.5 text-right">VOL (σ)</th>
                       {alphaCorrSuite.matrixRows.map((colHeader) => (
                         <th
                           key={colHeader.iso3}
-                          className={`py-2 px-1.5 text-center font-bold ${
+                          className={`py-2 px-1.5 text-center font-semibold ${
                             colHeader.iso3 === run.iso3
-                              ? 'text-indigo-600 dark:text-indigo-400 underline'
+                              ? 'text-blue-600 dark:text-blue-400 underline'
                               : ''
                           }`}
                         >
@@ -2707,10 +2777,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     {alphaCorrSuite.matrixRows.map((row) => (
                       <tr key={row.iso3} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
                         <td className="py-1.5 px-2 font-sans font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                          <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 mr-1">
+                          <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1">
                             {row.iso3}
                           </span>
-                          <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                          <span className="text-xs text-slate-600 dark:text-slate-400">
                             {row.countryName}
                           </span>
                         </td>
@@ -2734,7 +2804,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                             : cell.activeCorrelation <= 0.15
                             ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/35'
                             : cell.activeCorrelation <= 0.42
-                            ? 'bg-sky-500/15 text-sky-800 dark:text-sky-200 hover:bg-sky-500/30'
+                            ? 'bg-blue-500/15 text-blue-800 dark:text-blue-200 hover:bg-blue-500/30'
                             : cell.activeCorrelation <= 0.68
                             ? 'bg-amber-500/20 text-amber-800 dark:text-amber-200 hover:bg-amber-500/35'
                             : 'bg-rose-500/25 text-rose-800 dark:text-rose-200 hover:bg-rose-500/40';
@@ -2753,11 +2823,11 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                                   ? `${cell.rowCountryName} (${cell.rowIso3}) Diagonal = 1.00`
                                   : `${cell.rowCountryName} (${cell.rowIso3}) vs ${cell.colCountryName} (${cell.colIso3}): ρ = ${cell.activeCorrelation.toFixed(2)} (Normal: ${cell.normalCorrelation.toFixed(2)}, β Hedge = ${cell.betaHedgeRatioRowVsCol.toFixed(2)}x)`
                               }
-                              className={`py-1.5 px-1 text-center font-mono text-[11px] font-semibold transition-all ${cellBg} ${
+                              className={`py-1.5 px-1 text-center tabular-nums text-xs font-semibold transition-all ${cellBg} ${
                                 isDiagonal ? 'cursor-default' : 'cursor-pointer'
                               } ${
                                 isSelectedPair
-                                  ? 'ring-2 ring-indigo-500 dark:ring-indigo-400 font-bold'
+                                  ? 'ring-2 ring-blue-500 dark:ring-blue-400 font-semibold'
                                   : ''
                               }`}
                             >
@@ -2765,7 +2835,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                             </td>
                           );
                         })}
-                        <td className="py-1.5 px-2 text-right font-bold text-slate-800 dark:text-slate-200">
+                        <td className="py-1.5 px-2 text-right font-semibold text-slate-800 dark:text-slate-200">
                           {row.averagePeerCorrelation.toFixed(2)}
                         </td>
                       </tr>
@@ -2776,25 +2846,25 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             </div>
 
             {/* RIGHT 5 COLS: PAIRWISE ROLLING CORRELATION TIME-SERIES & REGIME BREAKDOWN INSPECTOR */}
-            <div className="xl:col-span-5 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+            <div className="xl:col-span-5 p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-bold block">
-                    PAIRWISE REGIME BREAKDOWN & COINTEGRATION INSPECTOR
+                  <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold block">
+                    Pairwise regime breakdown & cointegration inspector
                   </span>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {alphaCorrSuite.selectedPairSummary.countryA} ({alphaCorrSuite.selectedPairSummary.isoA}) vs.{' '}
                     {alphaCorrSuite.selectedPairSummary.countryB} ({alphaCorrSuite.selectedPairSummary.isoB})
                   </h3>
                 </div>
 
                 {/* Quick Pair Selectors */}
-                <div className="flex items-center gap-1.5 text-xs font-mono">
+                <div className="flex items-center gap-1.5 text-xs tabular-nums">
                   <select
                     aria-label="Primary Sovereign Pair Leg A"
                     value={alphaCorrSuite.selectedPairSummary.isoA}
                     onChange={(e) => setSelectedPairIsoA(e.target.value)}
-                    className="px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-mono text-xs"
+                    className="px-2 py-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 tabular-nums text-xs"
                   >
                     {alphaCorrSuite.matrixRows.map((r) => (
                       <option key={r.iso3} value={r.iso3}>
@@ -2807,7 +2877,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     aria-label="Secondary Sovereign Pair Leg B"
                     value={alphaCorrSuite.selectedPairSummary.isoB}
                     onChange={(e) => setSelectedPairIsoB(e.target.value)}
-                    className="px-2 py-1 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-mono text-xs"
+                    className="px-2 py-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 tabular-nums text-xs"
                   >
                     {alphaCorrSuite.matrixRows.map((r) => (
                       <option key={r.iso3} value={r.iso3}>
@@ -2819,23 +2889,23 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               </div>
 
               {/* Pair Telemetry Mini-Strip */}
-              <div className="grid grid-cols-4 gap-2 text-center font-mono text-xs">
-                <div className="p-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <span className="text-[10px] text-slate-500 block">ACTIVE ρ</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+              <div className="grid grid-cols-4 gap-2 text-center tabular-nums text-xs">
+                <div className="p-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                  <span className="text-xs text-slate-500 block">Active ρ</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {alphaCorrSuite.selectedPairSummary.currentCorrelation.toFixed(2)}
                   </span>
                 </div>
-                <div className="p-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <span className="text-[10px] text-slate-500 block">MEAN ρ̄</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">
+                <div className="p-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                  <span className="text-xs text-slate-500 block">MEAN ρ̄</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {alphaCorrSuite.selectedPairSummary.longRunMeanCorrelation.toFixed(2)}
                   </span>
                 </div>
-                <div className="p-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <span className="text-[10px] text-slate-500 block">SPREAD Z-SCORE</span>
+                <div className="p-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                  <span className="text-xs text-slate-500 block">Spread z-score</span>
                   <span
-                    className={`font-bold ${
+                    className={`font-semibold ${
                       Math.abs(alphaCorrSuite.selectedPairSummary.spreadDiffZScore) >= 1.15
                         ? 'text-amber-600 dark:text-amber-400'
                         : 'text-emerald-600 dark:text-emerald-400'
@@ -2845,9 +2915,9 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     {alphaCorrSuite.selectedPairSummary.spreadDiffZScore.toFixed(2)}σ
                   </span>
                 </div>
-                <div className="p-2 rounded border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
-                  <span className="text-[10px] text-slate-500 block">HEDGE RATIO β</span>
-                  <span className="font-bold text-cyan-600 dark:text-cyan-400">
+                <div className="p-2 border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                  <span className="text-xs text-slate-500 block">Hedge ratio β</span>
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {alphaCorrSuite.selectedPairSummary.optimalHedgeRatioBeta.toFixed(2)}x
                   </span>
                 </div>
@@ -2863,23 +2933,23 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                     <XAxis
                       dataKey="periodLabel"
-                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'JetBrains Mono' }}
+                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'Public Sans' }}
                     />
                     <YAxis
                       yAxisId="corr"
                       domain={[-0.6, 1.0]}
-                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'JetBrains Mono' }}
+                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'Public Sans' }}
                       tickFormatter={(v) => `${Number(v).toFixed(1)}`}
                     />
                     <YAxis
                       yAxisId="zscore"
                       orientation="right"
                       domain={[-3.0, 3.0]}
-                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'JetBrains Mono' }}
+                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'Public Sans' }}
                       tickFormatter={(v) => `${Number(v).toFixed(1)}σ`}
                     />
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'JetBrains Mono' }} />
+                    <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'Public Sans' }} />
                     <ReferenceLine
                       yAxisId="corr"
                       y={alphaCorrSuite.selectedPairSummary.longRunMeanCorrelation}
@@ -2890,7 +2960,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       yAxisId="zscore"
                       dataKey="spreadDiffZScore"
                       name="Spread Diff Z-Score (σ)"
-                      fill="#06b6d4"
+                      fill="#3b82f6"
                       opacity={0.3}
                     />
                     <Line
@@ -2918,8 +2988,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 </ResponsiveContainer>
               </div>
 
-              <div className="p-2.5 rounded border border-indigo-500/25 bg-indigo-500/5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 mr-1.5">
+              <div className="p-2.5 border border-blue-500/25 bg-blue-500/5 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1.5">
                   [{alphaCorrSuite.selectedPairSummary.pairRegimeSignal.replace(/_/g, ' ')}]:
                 </span>
                 {alphaCorrSuite.selectedPairSummary.pairTradeRationale}
@@ -2930,15 +3000,15 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           {/* BOTTOM ROW: PCA EIGEN-DECOMPOSITION + EMBI MINIMUM-VARIANCE & MAX-DIVERSIFICATION WEIGHT OPTIMIZER */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
             {/* LEFT 5 COLS: PRINCIPAL COMPONENT ANALYSIS (PC1 GLOBAL BETA VS IDIOSYNCRATIC ALPHA %) */}
-            <div className="xl:col-span-5 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+            <div className="xl:col-span-5 p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-widest text-indigo-600 dark:text-indigo-400 font-bold block">
-                  EIGEN-DECOMPOSITION OF SOVEREIGN SPREAD COVARIANCE
+                <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold block">
+                  Eigen-decomposition of sovereign spread covariance
                 </span>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Principal Component Analysis: PC1 Global Beta vs. Idiosyncratic Alpha (%)
                 </h3>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   Quantifies the % of each sovereign’s spread variance driven by systemic EM beta (PC1), regional/commodity factors (PC2), and pure country-specific alpha.
                 </p>
               </div>
@@ -2952,20 +3022,20 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     <CartesianGrid strokeDasharray="3 3" stroke={chartGridStroke} />
                     <XAxis
                       dataKey="iso3"
-                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'JetBrains Mono' }}
+                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'Public Sans' }}
                     />
                     <YAxis
                       domain={[0, 100]}
-                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'JetBrains Mono' }}
+                      tick={{ fontSize: 10, fill: chartAxisTick, fontFamily: 'Public Sans' }}
                       tickFormatter={(v) => `${v}%`}
                     />
                     <Tooltip contentStyle={tooltipStyle} />
-                    <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'JetBrains Mono' }} />
+                    <Legend wrapperStyle={{ fontSize: '10px', fontFamily: 'Public Sans' }} />
                     <Bar
                       dataKey="pc1GlobalBetaSharePct"
                       stackId="pca"
                       name="PC1 Global Risk Beta (%)"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                     />
                     <Bar
                       dataKey="pc2RegionalCommoditySharePct"
@@ -2984,39 +3054,39 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono tabular-nums">
+                <table className="w-full text-xs tabular-nums">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500">
                       <th className="py-1.5 px-2 text-left">ISO3</th>
-                      <th className="py-1.5 px-2 text-right">PC1 BETA %</th>
+                      <th className="py-1.5 px-2 text-right">PC1 beta %</th>
                       <th className="py-1.5 px-2 text-right">PC2 REG %</th>
-                      <th className="py-1.5 px-2 text-right">IDIO ALPHA %</th>
-                      <th className="py-1.5 px-2 text-left">REGIME ROLE</th>
+                      <th className="py-1.5 px-2 text-right">Idio alpha %</th>
+                      <th className="py-1.5 px-2 text-left">Regime role</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
                     {alphaCorrSuite.pcaDecompositionRows.map((p) => (
                       <tr key={p.iso3} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
-                        <td className="py-1.5 px-2 font-bold text-slate-900 dark:text-slate-100">
+                        <td className="py-1.5 px-2 font-semibold text-slate-900 dark:text-slate-100">
                           {p.iso3}
                         </td>
-                        <td className="py-1.5 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                        <td className="py-1.5 px-2 text-right text-blue-600 dark:text-blue-400">
                           {p.pc1GlobalBetaSharePct.toFixed(1)}%
                         </td>
                         <td className="py-1.5 px-2 text-right text-amber-600 dark:text-amber-400">
                           {p.pc2RegionalCommoditySharePct.toFixed(1)}%
                         </td>
-                        <td className="py-1.5 px-2 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                        <td className="py-1.5 px-2 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                           {p.idiosyncraticAlphaSharePct.toFixed(1)}%
                         </td>
-                        <td className="py-1.5 px-2 text-[10px]">
+                        <td className="py-1.5 px-2 text-xs">
                           <span
-                            className={`px-1.5 py-0.5 rounded font-semibold ${
+                            className={`px-1.5 py-0.5  font-semibold ${
                               p.alphaClassification === 'PURE_IDIOSYNCRATIC_ALPHA'
                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300'
                                 : p.alphaClassification === 'REGIONAL_THEMATIC_MOVER'
                                 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
-                                : 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300'
+                                : 'bg-blue-500/15 text-blue-700 dark:text-blue-300'
                             }`}
                           >
                             {p.alphaClassification.replace(/_/g, ' ')}
@@ -3030,47 +3100,47 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             </div>
 
             {/* RIGHT 7 COLS: MINIMUM-VARIANCE & MAXIMUM-DIVERSIFICATION EMBI WEIGHT OPTIMIZER TABLE (% WEIGHTS) */}
-            <div className="xl:col-span-7 p-4 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+            <div className="xl:col-span-7 p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-600 dark:text-emerald-400 font-bold block">
-                    MARKOWITZ MIN-VARIANCE & CHOUEIFATY MAX-DIVERSIFICATION SOLVER
+                  <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold block">
+                    Markowitz min-variance & choueifaty max-diversification solver
                   </span>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h3 className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100">
                     EMBI Portfolio Weight Optimizer & Marginal Risk Contribution (% Weights Summing to 100.0%)
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Strictly unit/ratio-normalized (% allocation weights and bps spread volatility). Overweights low-correlation sovereigns to maximize the portfolio Diversification Ratio.
                   </p>
                 </div>
               </div>
 
               <div className="overflow-x-auto">
-                <table className="w-full text-xs font-mono tabular-nums">
+                <table className="w-full text-xs tabular-nums">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400">
-                      <th className="py-2 px-2 text-left">SOVEREIGN</th>
-                      <th className="py-2 px-2 text-right">SPREAD / σ</th>
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                      <th className="py-2 px-2 text-left">Sovereign</th>
+                      <th className="py-2 px-2 text-right">Spread / σ</th>
                       <th className="py-2 px-2 text-right">AVG ρ</th>
-                      <th className="py-2 px-2 text-right">EMBI BENCH %</th>
-                      <th className="py-2 px-2 text-right">EQUAL WT %</th>
-                      <th className="py-2 px-2 text-right">MIN-VAR %</th>
+                      <th className="py-2 px-2 text-right">EMBI bench %</th>
+                      <th className="py-2 px-2 text-right">Equal wt %</th>
+                      <th className="py-2 px-2 text-right">Min-VAR %</th>
                       <th className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
-                        MAX-DIV %
+                        Max-div %
                       </th>
-                      <th className="py-2 px-2 text-right">ACTIVE O/W</th>
-                      <th className="py-2 px-2 text-right">RISK CONTRIB %</th>
-                      <th className="py-2 px-2 text-left">DESK STANCE</th>
+                      <th className="py-2 px-2 text-right">Active o/w</th>
+                      <th className="py-2 px-2 text-right">Risk contrib %</th>
+                      <th className="py-2 px-2 text-left">Desk stance</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200/60 dark:divide-slate-800/60">
                     {alphaCorrSuite.embiWeightRows.map((w) => (
                       <tr key={w.iso3} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
                         <td className="py-2 px-2 font-sans font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
-                          <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 mr-1">
+                          <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1">
                             {w.iso3}
                           </span>
-                          <span className="text-[11px] text-slate-600 dark:text-slate-400">
+                          <span className="text-xs text-slate-600 dark:text-slate-400">
                             {w.countryName}
                           </span>
                         </td>
@@ -3086,14 +3156,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         <td className="py-2 px-2 text-right text-slate-500">
                           {w.equalWeightPct.toFixed(1)}%
                         </td>
-                        <td className="py-2 px-2 text-right text-cyan-600 dark:text-cyan-400 font-semibold">
+                        <td className="py-2 px-2 text-right text-blue-600 dark:text-blue-400 font-semibold">
                           {w.minVarianceWeightPct.toFixed(1)}%
                         </td>
-                        <td className="py-2 px-2 text-right font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                        <td className="py-2 px-2 text-right font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
                           {w.maxDiversificationWeightPct.toFixed(1)}%
                         </td>
                         <td
-                          className={`py-2 px-2 text-right font-bold ${
+                          className={`py-2 px-2 text-right font-semibold ${
                             w.activeOverweightVsEmbiPct > 0
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : w.activeOverweightVsEmbiPct < 0
@@ -3107,9 +3177,9 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         <td className="py-2 px-2 text-right text-slate-700 dark:text-slate-300">
                           {w.marginalRiskContributionPct.toFixed(1)}%
                         </td>
-                        <td className="py-2 px-2 text-[10px]">
+                        <td className="py-2 px-2 text-xs">
                           <span
-                            className={`px-1.5 py-0.5 rounded font-semibold ${
+                            className={`px-1.5 py-0.5  font-semibold ${
                               w.allocationRecommendation === 'CORE_OVERWEIGHT_DIVERSIFIER'
                                 ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30'
                                 : w.allocationRecommendation === 'UNDERWEIGHT_BETA_CROWDED'
@@ -3118,18 +3188,18 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                             }`}
                           >
                             {w.allocationRecommendation === 'CORE_OVERWEIGHT_DIVERSIFIER'
-                              ? 'OVERWEIGHT DIVERSIFIER'
+                              ? 'Overweight diversifier'
                               : w.allocationRecommendation === 'UNDERWEIGHT_BETA_CROWDED'
-                              ? 'UNDERWEIGHT BETA'
-                              : 'NEUTRAL CARRY'}
+                              ? 'Underweight beta'
+                              : 'Neutral carry'}
                           </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t-2 border-slate-300 dark:border-slate-700 font-bold text-slate-900 dark:text-slate-100 bg-slate-50/80 dark:bg-slate-900/80">
-                      <td className="py-2 px-2">PORTFOLIO TOTAL / σ</td>
+                    <tr className="border-t-2 border-slate-300 dark:border-slate-700 font-semibold text-slate-900 dark:text-slate-100 bg-slate-50/80 dark:bg-slate-900/80">
+                      <td className="py-2 px-2">Portfolio total / σ</td>
                       <td className="py-2 px-2 text-right">
                         σ̄ = {alphaCorrSuite.weightedAverageStandaloneVolBps.toFixed(1)}bp
                       </td>
@@ -3142,7 +3212,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       <td className="py-2 px-2 text-right">
                         100.0% ({alphaCorrSuite.equalWeightPortfolioVolBps.toFixed(1)}bp)
                       </td>
-                      <td className="py-2 px-2 text-right text-cyan-600 dark:text-cyan-400">
+                      <td className="py-2 px-2 text-right text-blue-600 dark:text-blue-400">
                         100.0% ({alphaCorrSuite.minVariancePortfolioVolBps.toFixed(1)}bp)
                       </td>
                       <td className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
@@ -3152,7 +3222,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         DR {alphaCorrSuite.choueifatyDiversificationRatio.toFixed(2)}x
                       </td>
                       <td className="py-2 px-2 text-right">100.0%</td>
-                      <td className="py-2 px-2 text-[10px] text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2 px-2 text-xs text-emerald-600 dark:text-emerald-400">
                         −{alphaCorrSuite.volatilityReductionVsBenchmarkBps.toFixed(1)} bps vs EMBI
                       </td>
                     </tr>
@@ -3170,10 +3240,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_nss_yield_curve' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & NSS Formula Reference */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-indigo-600 dark:text-indigo-400 font-semibold">
-                5.7 NELSON-SIEGEL-SVENSSON (NSS) PARAMETRIC TERM STRUCTURE, 12M CARRY+ROLL & BUTTERFLY LAB
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
+                5.7 Nelson-Siegel-Svensson (NSS) parametric term structure, 12M carry+roll & butterfly lab
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
                 {nssSuite.headlineConclusion}
@@ -3187,7 +3257,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <button
                   type="button"
                   onClick={() => onStageTradeTicket(nssSuite.recommendedCurveTickets[0])}
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold bg-emerald-600 text-white hover:bg-emerald-500"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs tabular-nums font-semibold bg-blue-600 text-white hover:bg-blue-500"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>
@@ -3199,10 +3269,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Interactive NSS Regime Presets & Parameter Shock Sliders */}
-          <div className="p-3.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+          <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 mr-1">
+                <span className="text-xs tabular-nums font-semibold text-slate-600 dark:text-slate-300 mr-1">
                   Curve Regime Preset:
                 </span>
                 {(
@@ -3221,11 +3291,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={preset.id}
                     type="button"
                     onClick={() => setNssPresetRegime(preset.id)}
-                    className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
-                      nssPresetRegime === preset.id
-                        ? 'bg-indigo-600 text-white border-indigo-600 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-indigo-400'
-                    }`}
+                    aria-pressed={nssPresetRegime === preset.id}
+                    className="ui-pill"
                   >
                     {preset.label}
                   </button>
@@ -3239,20 +3306,20 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   setNssSlopeShiftBps(0);
                   setNssCurvatureShiftBps(0);
                 }}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <RotateCcw className="w-3 h-3" />
                 <span>Reset Curve Shocks</span>
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs font-mono">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs tabular-nums">
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-500">
                     Parallel Level Shift (Δβ₀):
                   </span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {nssLevelShiftBps > 0 ? '+' : ''}
                     {nssLevelShiftBps} bps
                   </span>
@@ -3264,7 +3331,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   step={5}
                   value={nssLevelShiftBps}
                   onChange={(e) => setNssLevelShiftBps(Number(e.target.value))}
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
 
@@ -3273,7 +3340,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <span className="text-slate-500">
                     Short-End Slope Shift (Δβ₁):
                   </span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {nssSlopeShiftBps > 0 ? '+' : ''}
                     {nssSlopeShiftBps} bps
                   </span>
@@ -3285,7 +3352,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   step={5}
                   value={nssSlopeShiftBps}
                   onChange={(e) => setNssSlopeShiftBps(Number(e.target.value))}
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
 
@@ -3294,7 +3361,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <span className="text-slate-500">
                     Belly Hump Curvature (Δβ₂):
                   </span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {nssCurvatureShiftBps > 0 ? '+' : ''}
                     {nssCurvatureShiftBps} bps
                   </span>
@@ -3306,23 +3373,23 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   step={5}
                   value={nssCurvatureShiftBps}
                   onChange={(e) => setNssCurvatureShiftBps(Number(e.target.value))}
-                  className="w-full accent-indigo-600"
+                  className="w-full accent-blue-600"
                 />
               </div>
             </div>
           </div>
 
           {/* 4-Card Term-Structure Summary Strip */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 tabular-nums text-xs">
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
-                PEAK 12M CARRY + ROLL-DOWN TENOR
+              <span className="text-xs text-slate-500 block">
+                Peak 12M carry + roll-down tenor
               </span>
-              <div className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-base font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {nssSuite.optimalCarryRollTenor.tenorLabel} (+
                 {nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps/yr)
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 Carry {nssSuite.optimalCarryRollTenor.carry12MBps > 0 ? '+' : ''}
                 {nssSuite.optimalCarryRollTenor.carry12MBps}bp · Roll{' '}
                 {nssSuite.optimalCarryRollTenor.rollDown12MBps > 0 ? '+' : ''}
@@ -3331,41 +3398,41 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             </div>
 
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
-                MAX BREAKEVEN SELL-OFF CUSHION
+              <span className="text-xs text-slate-500 block">
+                Max breakeven sell-off cushion
               </span>
-              <div className="text-base font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+              <div className="text-base font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
                 {nssSuite.optimalBreakevenTenor.tenorLabel} (+
                 {nssSuite.optimalBreakevenTenor.breakevenCushionBps} bps/yr)
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 ModDur {nssSuite.optimalBreakevenTenor.modifiedDurationYears.toFixed(2)}y
               </span>
             </div>
 
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
+              <span className="text-xs text-slate-500 block">
                 2s10s & 5s30s CURVE SLOPES
               </span>
-              <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
                 2s10s: {nssSuite.slope2s10sBps > 0 ? '+' : ''}
                 {nssSuite.slope2s10sBps} bps
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 5s30s: {nssSuite.slope5s30sBps > 0 ? '+' : ''}
                 {nssSuite.slope5s30sBps} bps
               </span>
             </div>
 
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
+              <span className="text-xs text-slate-500 block">
                 2s5s10s BELLY BUTTERFLY SPREAD
               </span>
-              <div className="text-base font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+              <div className="text-base font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
                 {nssSuite.butterfly2s5s10sBps > 0 ? '+' : ''}
                 {nssSuite.butterfly2s5s10sBps} bps
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 Cheapest vs NSS: {nssSuite.cheapestVsModelTenor.tenorLabel} (+
                 {nssSuite.cheapestVsModelTenor.cheapRichResidualBps}bp)
               </span>
@@ -3376,10 +3443,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   1Y–30Y Parametric NSS Fitted Curve vs. Market Spot Yields (%)
                 </h3>
-                <span className="text-[11px] font-mono text-slate-500">
+                <span className="text-xs tabular-nums text-slate-500">
                   {nssSuite.curveRegimeClassification}
                 </span>
               </div>
@@ -3411,7 +3478,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       type="monotone"
                       dataKey="shockedNssYieldPct"
                       name="Active Shocked NSS Curve (%)"
-                      stroke="#4f46e5"
+                      stroke="#2563eb"
                       strokeWidth={2.5}
                       dot={{ r: 4 }}
                     />
@@ -3430,10 +3497,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
             <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   12-Month Carry + Roll-Down & Breakeven Sell-Off Cushion by Tenor (bps)
                 </h3>
-                <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
                   Sweet Spot: {nssSuite.optimalCarryRollTenor.tenorLabel} (+
                   {nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps)
                 </span>
@@ -3480,21 +3547,21 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
           {/* Full 8-Tenor NSS Term-Structure & Carry+Roll Decomposition Table */}
           <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
-            <table className="w-full text-xs font-mono tabular-nums">
+            <table className="w-full text-xs tabular-nums">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[10px] text-slate-500">
-                  <th className="py-2 px-3 text-left">TENOR</th>
-                  <th className="py-2 px-3 text-right">MARKET SPOT %</th>
-                  <th className="py-2 px-3 text-right">NSS FITTED %</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
+                  <th className="py-2 px-3 text-left">Tenor</th>
+                  <th className="py-2 px-3 text-right">Market spot %</th>
+                  <th className="py-2 px-3 text-right">NSS fitted %</th>
                   <th className="py-2 px-3 text-right">CHEAP / RICH (bps)</th>
-                  <th className="py-2 px-3 text-right">MOD DURATION</th>
+                  <th className="py-2 px-3 text-right">Mod duration</th>
                   <th className="py-2 px-3 text-right">12M CARRY (bps)</th>
                   <th className="py-2 px-3 text-right">12M ROLL-DOWN (bps)</th>
                   <th className="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400">
-                    TOTAL CARRY+ROLL
+                    Total carry+roll
                   </th>
-                  <th className="py-2 px-3 text-right">BREAKEVEN CUSHION</th>
-                  <th className="py-2 px-3 text-left">VALUATION SIGNAL</th>
+                  <th className="py-2 px-3 text-right">Breakeven cushion</th>
+                  <th className="py-2 px-3 text-left">Valuation signal</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
@@ -3510,18 +3577,18 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                           : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
                       }
                     >
-                      <td className="py-2 px-3 font-bold text-slate-900 dark:text-white">
+                      <td className="py-2 px-3 font-semibold text-slate-900 dark:text-white">
                         {node.tenorLabel}{' '}
                         {isSweetSpot && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400">
-                            ★ SWEET SPOT
+                          <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                            ★ Sweet spot
                           </span>
                         )}
                       </td>
                       <td className="py-2 px-3 text-right">
                         {node.marketSpotYieldPct.toFixed(2)}%
                       </td>
-                      <td className="py-2 px-3 text-right font-semibold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2 px-3 text-right font-semibold text-blue-600 dark:text-blue-400">
                         {node.shockedNssYieldPct.toFixed(2)}%
                       </td>
                       <td
@@ -3547,7 +3614,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         {node.rollDown12MBps > 0 ? '+' : ''}
                         {node.rollDown12MBps} bps
                       </td>
-                      <td className="py-2 px-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2 px-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
                         {node.totalCarryRoll12MBps > 0 ? '+' : ''}
                         {node.totalCarryRoll12MBps} bps
                       </td>
@@ -3555,7 +3622,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         {node.breakevenCushionBps > 0 ? '+' : ''}
                         {node.breakevenCushionBps} bps/yr
                       </td>
-                      <td className="py-2 px-3 text-[10px] font-bold">
+                      <td className="py-2 px-3 text-xs font-semibold">
                         <span
                           className={
                             node.valuationSignal === 'CHEAP_OVERWEIGHT'
@@ -3583,17 +3650,17 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col justify-between gap-2.5"
               >
                 <div className="space-y-1">
-                  <div className="flex items-center justify-between text-[10px] font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+                  <div className="flex items-center justify-between text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                     <span>{ticket.direction}</span>
                     <span>CONVICTION {ticket.convictionScore0To100}/100</span>
                   </div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                  <h4 className="text-xs font-semibold text-slate-900 dark:text-white">
                     {ticket.strategyTitle}
                   </h4>
-                  <p className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                  <p className="text-xs tabular-nums text-slate-600 dark:text-slate-400">
                     1: {ticket.leg1Summary}
                   </p>
-                  <p className="text-[11px] font-mono text-slate-600 dark:text-slate-400">
+                  <p className="text-xs tabular-nums text-slate-600 dark:text-slate-400">
                     2: {ticket.leg2Summary}
                   </p>
                   <p className="text-xs text-slate-600 dark:text-slate-300 pt-1">
@@ -3601,14 +3668,14 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   </p>
                 </div>
                 <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                     +{ticket.expected12MCarryRollBps} bps/yr Carry+Roll
                   </span>
                   {onStageTradeTicket && (
                     <button
                       type="button"
                       onClick={() => onStageTradeTicket(ticket)}
-                      className="px-2.5 py-1 text-[11px] font-mono font-semibold text-white bg-indigo-600 hover:bg-indigo-500"
+                      className="ui-btn ui-btn-primary"
                     >
                       + Stage IC Ticket
                     </button>
@@ -3626,10 +3693,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_macro_catalyst_calendar' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">
-                5.8 FORWARD 90-DAY SOVEREIGN MACRO, MPC & IMF CATALYST EVENT VOLATILITY CALENDAR (±BPS)
+              <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400 font-semibold">
+                5.8 Forward 90-day sovereign macro, MPC & IMF catalyst event volatility calendar (±bps)
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
                 {catalystSuite.headlineConclusion}
@@ -3642,7 +3709,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   onClick={() =>
                     onStageTradeTicket(activeInspectedCatalyst.stagedTicketSpec)
                   }
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold bg-amber-600 text-white hover:bg-amber-500"
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs tabular-nums font-semibold bg-blue-600 text-white hover:bg-blue-500"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>
@@ -3655,28 +3722,22 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Filter Bar: Scope (All Watchlist vs Active Sovereign) + Category Filter */}
-          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-3 text-xs tabular-nums">
             <div className="flex items-center gap-1.5">
               <span className="text-slate-500">Scope:</span>
               <button
                 type="button"
                 onClick={() => setCatalystScope('ALL_WATCHLIST')}
-                className={`px-2.5 py-1 border ${
-                  catalystScope === 'ALL_WATCHLIST'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={catalystScope === 'ALL_WATCHLIST'}
+                className="ui-pill"
               >
                 All Watchlist Sovereigns ({catalystSuite.events.length})
               </button>
               <button
                 type="button"
                 onClick={() => setCatalystScope('ACTIVE_SOVEREIGN')}
-                className={`px-2.5 py-1 border ${
-                  catalystScope === 'ACTIVE_SOVEREIGN'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={catalystScope === 'ACTIVE_SOVEREIGN'}
+                className="ui-pill"
               >
                 Active Sovereign Only ({run.iso3} ·{' '}
                 {catalystSuite.activeSovereignEvents.length})
@@ -3698,11 +3759,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setCatalystCategoryFilter(cat.id)}
-                  className={`px-2.5 py-1 border ${
-                    catalystCategoryFilter === cat.id
-                      ? 'bg-indigo-600 text-white border-indigo-600 font-bold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                  }`}
+                  aria-pressed={catalystCategoryFilter === cat.id}
+                  className="ui-pill"
                 >
                   {cat.label}
                 </button>
@@ -3713,15 +3771,15 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           {/* 2-Column Split: Left 7 Cols = Catalyst Event Schedule Table | Right 5 Cols = Event Volatility & Scenario Tree Inspector */}
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
             <div className="xl:col-span-7 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
-              <table className="w-full text-xs font-mono tabular-nums">
+              <table className="w-full text-xs tabular-nums">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[10px] text-slate-500">
-                    <th className="py-2 px-2.5 text-left">COUNTDOWN</th>
-                    <th className="py-2 px-2.5 text-left">SOVEREIGN / EVENT</th>
-                    <th className="py-2 px-2.5 text-right">CONSENSUS</th>
-                    <th className="py-2 px-2.5 text-right">ECONQUEST MODEL</th>
-                    <th className="py-2 px-2.5 text-right">1D IMPLIED VOL</th>
-                    <th className="py-2 px-2.5 text-right">ACTION</th>
+                  <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
+                    <th className="py-2 px-2.5 text-left">Countdown</th>
+                    <th className="py-2 px-2.5 text-left">Sovereign / event</th>
+                    <th className="py-2 px-2.5 text-right">Consensus</th>
+                    <th className="py-2 px-2.5 text-right">Econquest model</th>
+                    <th className="py-2 px-2.5 text-right">1D implied vol</th>
+                    <th className="py-2 px-2.5 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
@@ -3734,24 +3792,24 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         onClick={() => setSelectedCatalystEventId(evt.eventId)}
                         className={`cursor-pointer transition-colors ${
                           isSelected
-                            ? 'bg-indigo-50/70 dark:bg-indigo-950/30'
+                            ? 'bg-blue-50/70 dark:bg-blue-950/30'
                             : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                         }`}
                       >
                         <td className="py-2.5 px-2.5 whitespace-nowrap">
-                          <span className="font-bold text-amber-600 dark:text-amber-400 block">
+                          <span className="font-semibold text-amber-600 dark:text-amber-400 block">
                             T−{evt.daysUntilEvent}d
                           </span>
-                          <span className="text-[10px] text-slate-500">
+                          <span className="text-xs text-slate-500">
                             {evt.eventDateLabel}
                           </span>
                         </td>
                         <td className="py-2.5 px-2.5 font-sans">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                            <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                               {evt.iso3}
                             </span>
-                            <span className="text-[10px] font-mono text-slate-500">
+                            <span className="text-xs tabular-nums text-slate-500">
                               {evt.categoryBadge}
                             </span>
                           </div>
@@ -3766,10 +3824,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                           {evt.econQuestModelForecastLabel}
                         </td>
                         <td className="py-2.5 px-2.5 text-right">
-                          <span className="font-bold text-amber-600 dark:text-amber-400 block">
+                          <span className="font-semibold text-amber-600 dark:text-amber-400 block">
                             ±{evt.implied1DayYieldVolBps} bps Yield
                           </span>
-                          <span className="text-[10px] text-slate-500">
+                          <span className="text-xs text-slate-500">
                             ±{evt.implied1DayCdsVolBps} bps CDS
                           </span>
                         </td>
@@ -3781,7 +3839,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                                 e.stopPropagation();
                                 onStageTradeTicket(evt.stagedTicketSpec);
                               }}
-                              className="px-2 py-1 text-[10px] font-semibold bg-indigo-600 text-white hover:bg-indigo-500"
+                              className="ui-btn ui-btn-primary"
                             >
                               + Stage
                             </button>
@@ -3798,13 +3856,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             {activeInspectedCatalyst && (
               <div className="xl:col-span-5 p-4 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-4">
                 <div>
-                  <div className="flex items-center justify-between text-[11px] font-mono text-amber-600 dark:text-amber-400 font-bold">
+                  <div className="flex items-center justify-between text-xs tabular-nums text-amber-600 dark:text-amber-400 font-semibold">
                     <span>
-                      EVENT VOLATILITY & POST-RELEASE SCENARIO TREE INSPECTOR
+                      Event volatility & post-release scenario tree inspector
                     </span>
                     <span>T−{activeInspectedCatalyst.daysUntilEvent} DAYS</span>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
                     {activeInspectedCatalyst.eventTitle}
                   </h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -3814,51 +3872,51 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 </div>
 
                 {/* 3-Branch Post-Catalyst Spread Delta Matrix */}
-                <div className="grid grid-cols-3 gap-2.5 font-mono text-xs tabular-nums text-center">
+                <div className="grid grid-cols-3 gap-2.5 tabular-nums text-xs text-center">
                   <div className="p-2.5 border border-emerald-500/30 bg-emerald-500/10">
-                    <span className="text-[10px] text-emerald-700 dark:text-emerald-300 block">
-                      DOVISH / CONSOLIDATION
+                    <span className="text-xs text-emerald-700 dark:text-emerald-300 block">
+                      Dovish / consolidation
                     </span>
-                    <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-base font-semibold text-emerald-600 dark:text-emerald-400">
                       {activeInspectedCatalyst.dovishScenarioSpreadDeltaBps} bps
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-xs text-slate-500 block">
                       Spread Compression
                     </span>
                   </div>
                   <div className="p-2.5 border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950">
-                    <span className="text-[10px] text-slate-500 block">
-                      ECONQUEST BASELINE
+                    <span className="text-xs text-slate-500 block">
+                      Econquest baseline
                     </span>
-                    <span className="text-base font-bold text-slate-900 dark:text-white">
+                    <span className="text-base font-semibold text-slate-900 dark:text-white">
                       {activeInspectedCatalyst.baselineScenarioSpreadDeltaBps > 0 ? '+' : ''}
                       {activeInspectedCatalyst.baselineScenarioSpreadDeltaBps} bps
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-xs text-slate-500 block">
                       Expected Drift
                     </span>
                   </div>
                   <div className="p-2.5 border border-rose-500/30 bg-rose-500/10">
-                    <span className="text-[10px] text-rose-700 dark:text-rose-300 block">
-                      HAWKISH / SLIPPAGE SHOCK
+                    <span className="text-xs text-rose-700 dark:text-rose-300 block">
+                      Hawkish / slippage shock
                     </span>
-                    <span className="text-base font-bold text-rose-600 dark:text-rose-400">
+                    <span className="text-base font-semibold text-rose-600 dark:text-rose-400">
                       +{activeInspectedCatalyst.hawkishScenarioSpreadDeltaBps} bps
                     </span>
-                    <span className="text-[10px] text-slate-500 block">
+                    <span className="text-xs text-slate-500 block">
                       Spread Widening
                     </span>
                   </div>
                 </div>
 
                 <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
-                  <div className="font-mono text-[10px] uppercase text-indigo-600 dark:text-indigo-400 font-bold">
-                    PRE-EVENT TRADING PLAYBOOK & KILL-SWITCH
+                  <div className="tabular-nums text-xs text-blue-600 dark:text-blue-400 font-semibold">
+                    Pre-event trading playbook & kill-switch
                   </div>
                   <p className="text-slate-700 dark:text-slate-300">
                     {activeInspectedCatalyst.actionablePlaybookText}
                   </p>
-                  <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 pt-1">
+                  <p className="text-xs tabular-nums text-amber-700 dark:text-amber-400 pt-1">
                     Kill-Switch: {activeInspectedCatalyst.stagedTicketSpec.preMortemKillSwitchRule}
                   </p>
                 </div>
@@ -3874,10 +3932,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
       {currentTab === 'quant_portfolio_stress_lab' && (
         <div className="p-4 space-y-4">
           {/* Headline Conclusion & Action Buttons */}
-          <div className="p-3 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
+          <div className="p-3 border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50 flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1 max-w-4xl">
-              <div className="text-[11px] font-mono uppercase tracking-wider text-rose-600 dark:text-rose-400 font-semibold">
-                5.9 EMBI MULTI-SOVEREIGN PORTFOLIO BATCH STRESS-TEST & INSTANTANEOUS P&L HIT LAB
+              <div className="text-xs tabular-nums text-rose-600 dark:text-rose-400 font-semibold">
+                5.9 EMBI multi-sovereign portfolio batch stress-test & instantaneous p&l hit lab
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
                 {portfolioStressSuite.headlineConclusion}
@@ -3895,7 +3953,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       portfolioStressSuite.recommendedTailHedgeTicket
                     )
                   }
-                  className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold bg-rose-600 text-white hover:bg-rose-500"
+                  className="ui-btn ui-btn-danger inline-flex"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>
@@ -3906,7 +3964,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <button
                 type="button"
                 onClick={handleExportPortfolioStressCsv}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Stress CSV</span>
@@ -3915,10 +3973,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* Batch Scenario Preset Bar & Portfolio Weight Scheme Selector */}
-          <div className="p-3.5 rounded-md border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
+          <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-1.5">
-                <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 mr-1">
+                <span className="text-xs tabular-nums font-semibold text-slate-600 dark:text-slate-300 mr-1">
                   Batch Stress Scenario Preset:
                 </span>
                 {EMBI_BATCH_SCENARIO_PRESETS.map((preset) => {
@@ -3933,7 +3991,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       key={preset.id}
                       type="button"
                       onClick={() => handleSelectStressPreset(preset.id)}
-                      className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+                      className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                         isActive
                           ? 'bg-rose-600 text-white border-rose-600 font-semibold'
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-rose-400'
@@ -3945,14 +4003,15 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 })}
               </div>
 
-              <div className="flex items-center gap-1.5 text-xs font-mono">
+              <div className="flex items-center gap-1.5 text-xs tabular-nums">
                 <span className="text-slate-500">Book Weights:</span>
                 {(
                   [
+                    ...(hasHoldings ? [{ id: 'HOLDINGS', label: 'Your holdings' }] : []),
                     { id: 'EMBI_BENCHMARK', label: 'EMBI Benchmark %' },
                     { id: 'MAX_DIVERSIFICATION', label: 'Max-Div %' },
                     { id: 'EQUAL_WEIGHT', label: 'Equal Wt %' },
-                  ] as const
+                  ] as Array<{ id: EmbiPortfolioWeightScheme; label: string }>
                 ).map((scheme) => (
                   <button
                     key={scheme.id}
@@ -3963,11 +4022,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         weightScheme: scheme.id as EmbiPortfolioWeightScheme,
                       }))
                     }
-                    className={`px-2 py-1 border ${
-                      portfolioStressParams.weightScheme === scheme.id
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-bold'
-                        : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                    }`}
+                    aria-pressed={portfolioStressParams.weightScheme === scheme.id}
+                    className="ui-pill"
                   >
                     {scheme.label}
                   </button>
@@ -3975,9 +4031,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <button
                   type="button"
                   onClick={() =>
-                    setPortfolioStressParams(DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS)
+                    setPortfolioStressParams(
+                      hasHoldings
+                        ? { ...DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS, weightScheme: 'HOLDINGS', holdingsWeightsPct }
+                        : DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS
+                    )
                   }
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="ui-btn inline-flex"
                 >
                   <RotateCcw className="w-3 h-3" />
                   <span>Reset (20% FX + 200bp)</span>
@@ -3986,11 +4046,11 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             </div>
 
             {/* 5 Interactive Joint Shock Vector Sliders */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs font-mono">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 pt-2.5 border-t border-slate-100 dark:border-slate-800 text-xs tabular-nums">
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-500">FX Devaluation Shock:</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
                     {portfolioStressParams.fxDevaluationShockPct > 0 ? '−' : '+'}
                     {Math.abs(portfolioStressParams.fxDevaluationShockPct)}% vs USD
                   </span>
@@ -4014,7 +4074,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-500">Credit Spread Shock:</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
                     {portfolioStressParams.creditSpreadWideningBps > 0 ? '+' : ''}
                     {portfolioStressParams.creditSpreadWideningBps} bps
                   </span>
@@ -4038,7 +4098,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-500">US Treasury Shift:</span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">
                     {portfolioStressParams.usTreasuryShiftBps > 0 ? '+' : ''}
                     {portfolioStressParams.usTreasuryShiftBps} bps
                   </span>
@@ -4062,7 +4122,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-500">Commodity ToT Shock:</span>
-                  <span className="font-bold text-amber-600 dark:text-amber-400">
+                  <span className="font-semibold text-amber-600 dark:text-amber-400">
                     {portfolioStressParams.commodityShockPct > 0 ? '+' : ''}
                     {portfolioStressParams.commodityShockPct}%
                   </span>
@@ -4086,7 +4146,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <div>
                 <div className="flex justify-between mb-1">
                   <span className="text-slate-500">FX Forward Hedge Ratio:</span>
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                     {portfolioStressParams.fxHedgeRatioPct}% Hedged
                   </span>
                 </div>
@@ -4109,13 +4169,13 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           </div>
 
           {/* 4-Card Instantaneous Multi-Sovereign Book P&L Hit KPI Strip */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 tabular-nums text-xs">
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
-                INSTANTANEOUS NET BOOK P&L HIT
+              <span className="text-xs text-slate-500 block">
+                Instantaneous net book p&l hit
               </span>
               <div
-                className={`text-base font-bold mt-0.5 ${
+                className={`text-base font-semibold mt-0.5 ${
                   portfolioStressSuite.totalBookNetPnlPctNav < 0
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -4126,45 +4186,45 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 {portfolioStressSuite.totalBookNetPnlBps > 0 ? '+' : ''}
                 {portfolioStressSuite.totalBookNetPnlBps.toFixed(0)} bps)
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 Unhedged (0% FX Hedge): {portfolioStressSuite.unhedgedBookNetPnlPctNav.toFixed(2)}% NAV
               </span>
             </div>
 
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
-                CREDIT SPREAD VS. FX DEVALUATION SPLIT
+              <span className="text-xs text-slate-500 block">
+                Credit spread vs. FX devaluation split
               </span>
-              <div className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
                 Credit: {portfolioStressSuite.totalBookCreditHitBps.toFixed(0)}bp · FX:{' '}
                 {portfolioStressSuite.totalBookFxHitBps.toFixed(0)}bp
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 UST Duration Hit: {portfolioStressSuite.totalBookRatesHitBps.toFixed(0)} bps of NAV
               </span>
             </div>
 
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
-                CARRY+ROLL CUSHION & FX HEDGE SAVINGS
+              <span className="text-xs text-slate-500 block">
+                Carry+roll cushion & FX hedge savings
               </span>
-              <div className="text-base font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-base font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
                 +{portfolioStressSuite.totalBookCarryOffsetBps.toFixed(0)} bps Carry Offset
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 Absorbs {portfolioStressSuite.carryBufferCoveragePct.toFixed(1)}% of shock · FX Hedge saved +{portfolioStressSuite.fxHedgeSavedBps}bp
               </span>
             </div>
 
             <div className="p-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-              <span className="text-[10px] text-slate-500 block">
-                TOP DRAWDOWN CONTRIBUTOR IN BOOK
+              <span className="text-xs text-slate-500 block">
+                Top drawdown contributor in book
               </span>
-              <div className="text-base font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+              <div className="text-base font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
                 {portfolioStressSuite.worstHitSovereign.iso3} (
                 {portfolioStressSuite.worstHitSovereign.bookWeightedNetPnlPctNav.toFixed(2)}% NAV)
               </div>
-              <span className="text-[11px] text-slate-500">
+              <span className="text-xs text-slate-500">
                 {portfolioStressSuite.worstHitSovereign.shareOfTotalBookLossPct.toFixed(1)}% of book loss · Wt{' '}
                 {portfolioStressSuite.worstHitSovereign.portfolioWeightPct.toFixed(1)}%
               </span>
@@ -4175,10 +4235,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Instantaneous P&L Hit by Sovereign Sleeve (bps of Total Book NAV)
                 </h3>
-                <span className="text-[11px] font-mono text-rose-600 dark:text-rose-400">
+                <span className="text-xs tabular-nums text-rose-600 dark:text-rose-400">
                   Net Book Hit: {portfolioStressSuite.totalBookNetPnlBps.toFixed(0)} bps
                 </span>
               </div>
@@ -4212,7 +4272,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       dataKey="bookWeightedRatesHitBps"
                       name="UST Rates Hit (bps NAV)"
                       stackId="stress"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                       barSize={20}
                     />
                     <Bar
@@ -4236,10 +4296,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
 
             <div className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/50 space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <h3 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Batch Stress-Test Comparison Across 6 Macro/FX Regimes (% Book NAV)
                 </h3>
-                <span className="text-[11px] font-mono text-slate-500">
+                <span className="text-xs tabular-nums text-slate-500">
                   Click any preset row below to load sliders
                 </span>
               </div>
@@ -4276,7 +4336,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       dataKey="bookRatesHitPctNav"
                       name="UST Rates Hit (% NAV)"
                       stackId="batch"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                       barSize={22}
                     />
                     <Line
@@ -4296,30 +4356,30 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           {/* Full Multi-Sovereign EMBI Book Instantaneous P&L Hit Attribution Table */}
           <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
             <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Multi-Sovereign EMBI Book Instantaneous P&L Hit & Post-Shock Solvency Attribution Table
               </span>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Weights sum to 100.0% · All P&L contributions in bps & % of Total Book NAV
               </span>
             </div>
-            <table className="w-full text-xs font-mono tabular-nums">
+            <table className="w-full text-xs tabular-nums">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-[10px] text-slate-500">
-                  <th className="py-2 px-2.5 text-left">SOVEREIGN</th>
-                  <th className="py-2 px-2 text-right">BOOK WT %</th>
-                  <th className="py-2 px-2 text-right">MOD DUR</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-xs text-slate-500">
+                  <th className="py-2 px-2.5 text-left">Sovereign</th>
+                  <th className="py-2 px-2 text-right">Book wt %</th>
+                  <th className="py-2 px-2 text-right">Mod dur</th>
                   <th className="py-2 px-2 text-right">β_CRED / β_FX</th>
                   <th className="py-2 px-2 text-right">EFF SHOCK (FX / Δs)</th>
                   <th className="py-2 px-2 text-right">CREDIT HIT (bp)</th>
                   <th className="py-2 px-2 text-right">FX HIT (bp)</th>
                   <th className="py-2 px-2 text-right">RATES HIT (bp)</th>
                   <th className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
-                    CARRY OFFSET
+                    Carry offset
                   </th>
-                  <th className="py-2 px-2 text-right">NET BOOK P&L</th>
-                  <th className="py-2 px-2 text-right">LOSS SHARE %</th>
-                  <th className="py-2 px-2 text-right">STRESSED DEBT / CDS</th>
+                  <th className="py-2 px-2 text-right">Net book p&l</th>
+                  <th className="py-2 px-2 text-right">Loss share %</th>
+                  <th className="py-2 px-2 text-right">Stressed debt / CDS</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
@@ -4333,7 +4393,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     }
                   >
                     <td className="py-2 px-2.5 font-sans font-semibold text-slate-900 dark:text-white whitespace-nowrap">
-                      <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400 mr-1">
+                      <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1">
                         {row.iso3}
                       </span>
                       <span>{row.countryName}</span>
@@ -4361,7 +4421,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       {row.bookWeightedFxHitBps > 0 ? '+' : ''}
                       {row.bookWeightedFxHitBps.toFixed(1)}bp
                     </td>
-                    <td className="py-2 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                    <td className="py-2 px-2 text-right text-blue-600 dark:text-blue-400">
                       {row.bookWeightedRatesHitBps > 0 ? '+' : ''}
                       {row.bookWeightedRatesHitBps.toFixed(1)}bp
                     </td>
@@ -4369,7 +4429,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       +{row.bookWeightedCarryOffsetBps.toFixed(1)}bp
                     </td>
                     <td
-                      className={`py-2 px-2 text-right font-bold ${
+                      className={`py-2 px-2 text-right font-semibold ${
                         row.bookWeightedNetPnlBps < 0
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -4390,8 +4450,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 ))}
               </tbody>
               <tfoot>
-                <tr className="border-t-2 border-slate-300 dark:border-slate-700 font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900">
-                  <td className="py-2 px-2.5">EMBI PORTFOLIO TOTAL</td>
+                <tr className="border-t-2 border-slate-300 dark:border-slate-700 font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-900">
+                  <td className="py-2 px-2.5">EMBI portfolio total</td>
                   <td className="py-2 px-2 text-right">100.0%</td>
                   <td className="py-2 px-2 text-right">—</td>
                   <td className="py-2 px-2 text-right">—</td>
@@ -4407,7 +4467,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <td className="py-2 px-2 text-right text-amber-600 dark:text-amber-400">
                     {portfolioStressSuite.totalBookFxHitBps.toFixed(1)}bp
                   </td>
-                  <td className="py-2 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                  <td className="py-2 px-2 text-right text-blue-600 dark:text-blue-400">
                     {portfolioStressSuite.totalBookRatesHitBps.toFixed(1)}bp
                   </td>
                   <td className="py-2 px-2 text-right text-emerald-600 dark:text-emerald-400">
@@ -4436,25 +4496,25 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           {/* Simultaneous 6-Scenario Batch Stress Matrix Table */}
           <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-x-auto">
             <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Simultaneous 6-Regime Batch Stress-Test Summary Matrix
               </span>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Click &quot;Load Scenario&quot; on any row to apply its joint shock vector to the active book
               </span>
             </div>
-            <table className="w-full text-xs font-mono tabular-nums">
+            <table className="w-full text-xs tabular-nums">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-[10px] text-slate-500">
-                  <th className="py-2 px-2.5 text-left">BATCH SCENARIO</th>
-                  <th className="py-2 px-2 text-left">SHOCK FORMULA</th>
-                  <th className="py-2 px-2 text-right">CREDIT HIT (% NAV)</th>
-                  <th className="py-2 px-2 text-right">FX HIT (% NAV)</th>
-                  <th className="py-2 px-2 text-right">RATES HIT (% NAV)</th>
-                  <th className="py-2 px-2 text-right">CARRY OFFSET</th>
-                  <th className="py-2 px-2 text-right">NET BOOK P&L (% NAV)</th>
-                  <th className="py-2 px-2 text-right">WORST SOVEREIGN</th>
-                  <th className="py-2 px-2 text-right">ACTION</th>
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-xs text-slate-500">
+                  <th className="py-2 px-2.5 text-left">Batch scenario</th>
+                  <th className="py-2 px-2 text-left">Shock formula</th>
+                  <th className="py-2 px-2 text-right">Credit hit (% NAV)</th>
+                  <th className="py-2 px-2 text-right">FX hit (% NAV)</th>
+                  <th className="py-2 px-2 text-right">Rates hit (% NAV)</th>
+                  <th className="py-2 px-2 text-right">Carry offset</th>
+                  <th className="py-2 px-2 text-right">Net book p&l (% NAV)</th>
+                  <th className="py-2 px-2 text-right">Worst sovereign</th>
+                  <th className="py-2 px-2 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
@@ -4477,7 +4537,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       {bRow.bookFxHitPctNav > 0 ? '+' : ''}
                       {bRow.bookFxHitPctNav.toFixed(2)}%
                     </td>
-                    <td className="py-2 px-2 text-right text-indigo-600 dark:text-indigo-400">
+                    <td className="py-2 px-2 text-right text-blue-600 dark:text-blue-400">
                       {bRow.bookRatesHitPctNav > 0 ? '+' : ''}
                       {bRow.bookRatesHitPctNav.toFixed(2)}%
                     </td>
@@ -4485,7 +4545,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                       +{bRow.bookCarryOffsetPctNav.toFixed(2)}%
                     </td>
                     <td
-                      className={`py-2 px-2 text-right font-bold ${
+                      className={`py-2 px-2 text-right font-semibold ${
                         bRow.netPortfolioPnlPctNav < 0
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -4503,7 +4563,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         onClick={() =>
                           handleSelectStressPreset(bRow.scenarioId as EmbiStressPresetId)
                         }
-                        className="px-2 py-0.5 text-[10px] font-semibold bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:opacity-90"
+                        className="px-2 py-0.5 text-xs font-semibold bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:opacity-90"
                       >
                         Load Scenario
                       </button>

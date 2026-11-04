@@ -118,7 +118,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
               <History className="w-3.5 h-3.5" />
               <span>Out-of-Sample Institutional Model Validation · Historical Sovereign Crisis Replay &amp; Custom CSV Backtesting</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Historical Crisis Replay &amp; Early-Warning Signal (EWS) Calibration Engine
             </h2>
           </div>
@@ -143,7 +143,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                     activeEpisode.equivalentForecastShocks
                   )
                 }
-                className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors whitespace-nowrap shrink-0"
+                className="ui-btn ui-btn-primary inline-flex shrink-0"
               >
                 <Zap className="w-3.5 h-3.5" />
                 <span>
@@ -170,23 +170,23 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between gap-2 text-[11px] font-mono">
-                    <span className="font-bold text-blue-600 dark:text-blue-400">
+                  <div className="flex items-center justify-between gap-2 text-xs tabular-nums">
+                    <span className="font-semibold text-blue-600 dark:text-blue-400">
                       {ep.eraLabel}
                     </span>
                     <span className="px-1.5 py-0.5 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
                       Lead: +{ep.earlyWarningLeadTimeMonths}m Early
                     </span>
                   </div>
-                  <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">
                     {ep.title}
                   </div>
-                  <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {ep.archetypeTag}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[11px] font-mono pt-2 border-t border-slate-200/70 dark:border-slate-800 text-slate-600 dark:text-slate-300">
+                <div className="flex items-center justify-between text-xs tabular-nums pt-2 border-t border-slate-200/70 dark:border-slate-800 text-slate-600 dark:text-slate-300">
                   <span>AUROC: {ep.aurocScore.toFixed(2)}</span>
                   <span>NSR: {ep.noiseToSignalRatio.toFixed(2)}</span>
                   <span>Peak: {ep.peakSpreadBps}bp</span>
@@ -199,51 +199,51 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
         {/* 5-KPI Model Calibration & EWS Validation Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">ROC Curve Area (AUROC)</span>
-            <span className="text-base font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+            <span className="text-xs text-slate-500 block">ROC Curve Area (AUROC)</span>
+            <span className="text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
               {activeEpisode.aurocScore.toFixed(2)} / 1.00
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               Institutional Benchmark ≥ 0.82
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Noise-to-Signal Ratio (NSR)</span>
-            <span className="text-base font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400">
+            <span className="text-xs text-slate-500 block">Noise-to-Signal Ratio (NSR)</span>
+            <span className="text-base font-semibold tabular-nums text-blue-600 dark:text-blue-400">
               {activeEpisode.noiseToSignalRatio.toFixed(2)}
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               Kaminsky-Reinhart (FPR / TPR)
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Early-Warning Lead Time</span>
-            <span className="text-base font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400">
+            <span className="text-xs text-slate-500 block">Early-Warning Lead Time</span>
+            <span className="text-base font-semibold tabular-nums text-amber-600 dark:text-amber-400">
               {activeEpisode.earlyWarningLeadTimeMonths} Months Prior
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               Crossed 35% Markov Alert Threshold
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Brier Skill Score (BSS)</span>
-            <span className="text-base font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100">
+            <span className="text-xs text-slate-500 block">Brier Skill Score (BSS)</span>
+            <span className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100">
               +{activeEpisode.brierSkillScore.toFixed(2)}
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               vs. Naive Climatology Baseline
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Realized Peak Crisis Drawdown</span>
-            <span className="text-base font-bold font-mono tabular-nums text-red-600 dark:text-red-400">
+            <span className="text-xs text-slate-500 block">Realized Peak Crisis Drawdown</span>
+            <span className="text-base font-semibold tabular-nums text-rose-600 dark:text-rose-400">
               {activeEpisode.peakSpreadBps} bps / {activeEpisode.peakFxDepreciationPct}% FX
             </span>
-            <span className="text-[11px] text-slate-400 block">
+            <span className="text-xs text-slate-400 block">
               T=0 Regime Break Realization
             </span>
           </div>
@@ -254,23 +254,23 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-xs">
               <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="font-bold text-slate-900 dark:text-slate-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
                 Replay Timeline Scrubber ({currentStep.monthOffsetLabel} · {currentStep.calendarDateLabel}):
               </span>
               <span
-                className={`px-2 py-0.5 font-mono font-bold text-[11px] ${
+                className={`px-2 py-0.5 tabular-nums font-semibold text-xs ${
                   currentStep.isActualCrisisWindow
-                    ? 'bg-red-500/20 text-red-700 dark:text-red-300'
+                    ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
                     : currentStep.isAlertTriggered
                     ? 'bg-amber-500/20 text-amber-700 dark:text-amber-300'
                     : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
                 }`}
               >
                 {currentStep.isActualCrisisWindow
-                  ? 'REGIME 2: ACUTE CRISIS BREAK'
+                  ? 'Regime 2: acute crisis break'
                   : currentStep.isAlertTriggered
                   ? 'REGIME 1: EARLY WARNING ALERT ACTIVE (≥35%)'
-                  : 'REGIME 0: PRE-ALERT BUILD-UP'}
+                  : 'Regime 0: pre-alert build-up'}
               </span>
             </div>
 
@@ -290,7 +290,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                     prev >= activeEpisode.timeline.length - 1 ? 0 : prev + 1
                   )
                 }
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 text-white hover:bg-blue-500"
+                className="ui-btn ui-btn-primary inline-flex"
               >
                 <SkipForward className="w-3 h-3" />
                 <span>Step Forward</span>
@@ -307,18 +307,18 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                   key={pt.monthOffsetLabel}
                   type="button"
                   onClick={() => setActiveStepIdx(idx)}
-                  className={`p-2 text-left border text-[11px] font-mono transition-colors ${
+                  className={`p-2 text-left border text-xs tabular-nums transition-colors ${
                     isCurr
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-bold'
+                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold'
                       : pt.isActualCrisisWindow
-                      ? 'bg-red-50/60 dark:bg-red-950/30 border-red-300 dark:border-red-900 text-red-700 dark:text-red-300'
+                      ? 'bg-rose-50/60 dark:bg-rose-950/30 border-rose-300 dark:border-rose-900 text-rose-700 dark:text-rose-300'
                       : pt.isAlertTriggered
                       ? 'bg-amber-50/60 dark:bg-amber-950/30 border-amber-300 dark:border-amber-900 text-amber-700 dark:text-amber-300'
                       : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
                 >
                   <div className="truncate">{pt.monthOffsetLabel}</div>
-                  <div className="text-[10px] opacity-80">{pt.calendarDateLabel}</div>
+                  <div className="text-xs opacity-80">{pt.calendarDateLabel}</div>
                 </button>
               );
             })}
@@ -330,10 +330,10 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
           {/* Left 7 Cols: Dual-Axis SVG Chart (Markov EWS Prob % vs Realized Sovereign Spread bps) */}
           <div className="lg:col-span-7 bg-slate-50/60 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 space-y-3">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-900 dark:text-slate-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
                 Model Markov Crisis Probability (%) vs. Realized Sovereign Credit Spread (bps)
               </span>
-              <span className="font-mono text-[11px] text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums text-xs text-amber-600 dark:text-amber-400">
                 EWS Alert Threshold: 35.0%
               </span>
             </div>
@@ -358,7 +358,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                       x={padL - 6}
                       y={y + 3}
                       textAnchor="end"
-                      className="text-[10px] font-mono fill-blue-600 dark:fill-blue-400"
+                      className="text-xs tabular-nums fill-blue-600 dark:fill-blue-400"
                     >
                       {probVal}%
                     </text>
@@ -366,7 +366,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                       x={svgW - padR + 6}
                       y={y + 3}
                       textAnchor="start"
-                      className="text-[10px] font-mono fill-red-500"
+                      className="text-xs tabular-nums fill-rose-500"
                     >
                       {eqSpread}bp
                     </text>
@@ -387,7 +387,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
               <text
                 x={padL + 6}
                 y={alertThresholdY - 5}
-                className="text-[9px] font-mono fill-amber-600 dark:fill-amber-400 font-bold"
+                className="text-xs tabular-nums fill-amber-600 dark:fill-amber-400 font-semibold"
               >
                 35% EWS Crisis Alert Trigger (+{activeEpisode.earlyWarningLeadTimeMonths}m Lead Time)
               </text>
@@ -395,7 +395,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
               {/* Realized Sovereign Spread Line (Red Dashed) */}
               <polyline
                 fill="none"
-                stroke="#ef4444"
+                stroke="#f43f5e"
                 strokeWidth="2.25"
                 strokeDasharray="4 3"
                 points={spreadPolyline}
@@ -435,7 +435,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                       cx={cx}
                       cy={cySpread}
                       r={isSelectedNode ? 5 : 3.5}
-                      className="fill-red-500"
+                      className="fill-rose-500"
                     />
                     <circle
                       cx={cx}
@@ -451,9 +451,9 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                       x={cx}
                       y={svgH - 8}
                       textAnchor="middle"
-                      className={`text-[9px] font-mono ${
+                      className={`text-xs tabular-nums ${
                         isSelectedNode
-                          ? 'fill-slate-900 dark:fill-white font-bold'
+                          ? 'fill-slate-900 dark:fill-white font-semibold'
                           : 'fill-slate-500 dark:fill-slate-400'
                       }`}
                     >
@@ -464,7 +464,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
               })}
             </svg>
 
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
               <div className="flex items-center gap-4">
                 <span className="inline-flex items-center gap-1.5">
                   <span className="w-3 h-0.5 bg-blue-600 inline-block" />
@@ -473,8 +473,8 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                   </span>
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <span className="w-3 h-0.5 bg-red-500 inline-block" />
-                  <span className="font-semibold text-red-600 dark:text-red-400">
+                  <span className="w-3 h-0.5 bg-rose-500 inline-block" />
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
                     Right Axis: Realized 5Y Sovereign Spread (bps)
                   </span>
                 </span>
@@ -490,22 +490,22 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
             <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
                 <div>
-                  <span className="text-[11px] font-mono text-slate-500 block">
+                  <span className="text-xs tabular-nums text-slate-500 block">
                     Snapshot at {currentStep.monthOffsetLabel} ({currentStep.calendarDateLabel})
                   </span>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     {activeEpisode.countryOrRegionName}
                   </h4>
                 </div>
                 {currentStep.isAlertTriggered ? (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-bold bg-amber-500/20 text-amber-700 dark:text-amber-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold bg-amber-500/20 text-amber-700 dark:text-amber-300">
                     <AlertTriangle className="w-3.5 h-3.5" />
-                    <span>EWS ALERT ACTIVE</span>
+                    <span>EWS alert active</span>
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>PRE-THRESHOLD</span>
+                    <span>Pre-threshold</span>
                   </span>
                 )}
               </div>
@@ -514,39 +514,39 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                 <strong>Historical Milestone:</strong> {currentStep.historicalMilestoneNote}
               </p>
 
-              <div className="grid grid-cols-2 gap-2.5 pt-1 text-xs font-mono tabular-nums">
+              <div className="grid grid-cols-2 gap-2.5 pt-1 text-xs tabular-nums">
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-sans text-slate-500 block">
+                  <span className="text-xs font-sans text-slate-500 block">
                     Markov Crisis Prob (EWS)
                   </span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {currentStep.markovCrisisProbPct.toFixed(1)}% (Z = +{currentStep.ewsCompositeZScore.toFixed(2)}σ)
                   </span>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-sans text-slate-500 block">
+                  <span className="text-xs font-sans text-slate-500 block">
                     Realized Spread &amp; FX
                   </span>
-                  <span className="font-bold text-red-600 dark:text-red-400">
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
                     {currentStep.realizedSpreadBps} bps / {currentStep.realizedFxDrawdownPct}%
                   </span>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-sans text-slate-500 block">
+                  <span className="text-xs font-sans text-slate-500 block">
                     IMF ARA Reserve Adequacy
                   </span>
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
                     {currentStep.imfAraCoveragePct}% of Floor
                   </span>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <span className="text-[10px] font-sans text-slate-500 block">
+                  <span className="text-xs font-sans text-slate-500 block">
                     Blanchard-Leeper Headroom
                   </span>
                   <span
-                    className={`font-bold ${
+                    className={`font-semibold ${
                       currentStep.fiscalDominanceHeadroomBps < 0
-                        ? 'text-red-600 dark:text-red-400'
+                        ? 'text-rose-600 dark:text-rose-400'
                         : 'text-emerald-600 dark:text-emerald-400'
                     }`}
                   >
@@ -558,7 +558,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
             </div>
 
             <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-              <div className="font-bold text-slate-900 dark:text-slate-100">
+              <div className="font-semibold text-slate-900 dark:text-slate-100">
                 Plain-English Structural Diagnosis &amp; Early-Warning Proof
               </div>
               <p className="text-slate-600 dark:text-slate-300 leading-relaxed">

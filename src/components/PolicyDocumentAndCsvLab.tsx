@@ -244,7 +244,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
               <StatRefBadge refText="Ref: Hamilton Markov Switching P(S_t=1)" variant="inline" />
               <StatRefBadge refText="Ref: IMF DSA Debt Stabilizing Primary Balance" variant="inline" />
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Sovereign CSV Batch Import &amp; Custom Backtest Calibration Engine
             </h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
@@ -262,7 +262,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
               <span>Download .CSV Template ({run.iso3})</span>
             </button>
 
-            <label className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 cursor-pointer transition-colors">
+            <label className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 cursor-pointer transition-colors">
               <FileUp className="w-3.5 h-3.5" />
               <span>Upload Sovereign Dataset (.CSV / .TSV)</span>
               <input
@@ -278,7 +278,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
         {/* Institutional Preset Loader Bar + Dataset Title */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-end bg-slate-50 dark:bg-slate-950/70 p-3.5 border border-slate-200 dark:border-slate-800">
           <div className="lg:col-span-5">
-            <label className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block mb-1">
+            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 block mb-1">
               Active CSV Dataset Title &amp; Provenance Label
             </label>
             <input
@@ -292,7 +292,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
 
           <div className="lg:col-span-7 flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mr-1">
+              <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 mr-1">
                 Sample Sovereign CSVs:
               </span>
               {SAMPLE_SOVEREIGN_CSV_PRESETS.map((preset) => {
@@ -302,11 +302,8 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                     key={preset.id}
                     type="button"
                     onClick={() => handleLoadSamplePreset(preset.id)}
-                    className={`px-2.5 py-1.5 text-[11px] font-semibold border transition-colors ${
-                      isCurrent
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-500'
-                    }`}
+                    aria-pressed={isCurrent}
+                    className="ui-pill"
                   >
                     {preset.iso3} · {preset.id.split('_')[1]}–{preset.id.split('_')[2]}
                   </button>
@@ -317,7 +314,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
             <button
               type="button"
               onClick={() => setShowRawCsvEditor((v) => !v)}
-              className="px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-slate-400"
+              className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-slate-400"
             >
               {showRawCsvEditor ? 'Hide Raw CSV Editor' : 'Edit / Paste Raw CSV'}
             </button>
@@ -331,7 +328,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
               <span>
                 Paste comma-, semicolon-, or tab-delimited sovereign series below. Leave cells blank or `NA` to test automatic linear interpolation:
               </span>
-              <span className="font-mono">
+              <span className="tabular-nums">
                 Delimiter: &ldquo;{parsedCsv.delimiter === '\t' ? 'TAB' : parsedCsv.delimiter}&rdquo; · {parsedCsv.headers.length} Columns · {parsedCsv.rows.length} Rows
               </span>
             </div>
@@ -339,7 +336,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
               rows={7}
               value={rawCsvInput}
               onChange={(e) => setRawCsvInput(e.target.value)}
-              className="w-full p-3 text-xs font-mono bg-slate-950 text-emerald-300 border border-slate-800 leading-relaxed"
+              className="w-full p-3 text-xs tabular-nums bg-slate-950 text-emerald-300 border border-slate-800 leading-relaxed"
             />
           </div>
         )}
@@ -347,61 +344,61 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
         {/* Data Hygiene & Telemetry KPI Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Detected Sovereign</div>
-            <div className="text-base font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Detected Sovereign</div>
+            <div className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
               {cleanedDataset.detectedIso3} · {cleanedDataset.rowCount} Steps
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {cleanedDataset.rows[0]?.observationDate} → {cleanedDataset.rows[cleanedDataset.rows.length - 1]?.observationDate}
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Mapped Schema Series</div>
-            <div className="text-base font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Mapped Schema Series</div>
+            <div className="text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
               {cleanedDataset.mappedFieldCount} / 12 Series
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               {cleanedDataset.totalBaselineFallbackColumns} baseline fallback(s)
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Linearly Interpolated</div>
-            <div className="text-base font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Linearly Interpolated</div>
+            <div className="text-base font-semibold tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
               {cleanedDataset.totalInterpolatedCells} Gap Cell(s)
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Interior missing values repaired
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">3σ Outlier Diagnostics</div>
-            <div className="text-base font-bold font-mono tabular-nums text-rose-600 dark:text-rose-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">3σ Outlier Diagnostics</div>
+            <div className="text-base font-semibold tabular-nums text-rose-600 dark:text-rose-400 mt-0.5">
               {cleanedDataset.totalOutlierCells} Tail Spike(s)
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Flagged at |Z| ≥ 2.35σ
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Peak Realized 5Y CDS</div>
-            <div className="text-base font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Peak Realized 5Y CDS</div>
+            <div className="text-base font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
               {synthesizedEpisode.peakSpreadBps} bps
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Peak FX Drawdown: +{synthesizedEpisode.peakFxDepreciationPct}%
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Backtest EWS Lead Time</div>
-            <div className="text-base font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400">Backtest EWS Lead Time</div>
+            <div className="text-base font-semibold tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
               T-{synthesizedEpisode.earlyWarningLeadTimeMonths} Steps
             </div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Markov P(S_t=1) ≥ 35% trigger
             </div>
           </div>
@@ -412,11 +409,11 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Sliders className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 1. Interactive Column Mapping &amp; Unit Scaling Preview
               </h3>
             </div>
-            <span className="text-[11px] text-slate-500 dark:text-slate-400">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               Auto-detected from CSV header tokens · Override any target schema field or unit multiplier below
             </span>
           </div>
@@ -457,11 +454,11 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                       key={col.columnIndex}
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                     >
-                      <td className="py-2 px-2.5 font-mono font-semibold text-slate-900 dark:text-slate-100">
+                      <td className="py-2 px-2.5 tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         <span className="text-slate-400 mr-1.5">#{col.columnIndex + 1}</span>
                         {col.rawHeader}
                         <span
-                          className={`ml-2 text-[10px] font-sans font-semibold ${
+                          className={`ml-2 text-xs font-sans font-semibold ${
                             col.autoConfidence === 'HIGH'
                               ? 'text-emerald-600 dark:text-emerald-400'
                               : col.autoConfidence === 'MEDIUM'
@@ -472,7 +469,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                           · {col.autoConfidence}
                         </span>
                       </td>
-                      <td className="py-2 px-2.5 font-mono text-slate-500 dark:text-slate-400 max-w-[180px] truncate">
+                      <td className="py-2 px-2.5 tabular-nums text-slate-500 dark:text-slate-400 max-w-[180px] truncate">
                         {sampleVals}
                       </td>
                       <td className="py-2 px-2.5">
@@ -503,17 +500,17 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                                 Number(e.target.value) as CsvUnitMultiplier
                               )
                             }
-                            className="px-2 py-1 text-xs font-mono bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                            className="px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                           >
                             <option value={1}>1x (Native Unit)</option>
                             <option value={100}>100x (% → bps)</option>
                             <option value={0.01}>0.01x (bps → %)</option>
                           </select>
                         ) : (
-                          <span className="text-slate-400 font-mono">Identity / Text</span>
+                          <span className="text-slate-400 tabular-nums">Identity / Text</span>
                         )}
                       </td>
-                      <td className="py-2 px-2.5 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="py-2 px-2.5 text-right tabular-nums text-slate-700 dark:text-slate-300">
                         {stats ? (
                           <span>
                             {stats.mean} ± {stats.stdDev}{' '}
@@ -525,7 +522,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                           <span className="text-slate-400">—</span>
                         )}
                       </td>
-                      <td className="py-2 px-2.5 text-right font-mono tabular-nums">
+                      <td className="py-2 px-2.5 text-right tabular-nums">
                         {stats ? (
                           <span>
                             <span className="text-emerald-600 dark:text-emerald-400">
@@ -569,11 +566,11 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <Database className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <h3 className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 2. Cleaned &amp; Interpolated Time-Series Matrix (Click Any Row to Set Live Snapshot Override)
               </h3>
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-[11px]">
+            <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="text-slate-600 dark:text-slate-400">
                 <span className="inline-block w-2 h-2 bg-amber-500 mr-1" />
                 Amber Cell = Linearly Interpolated Gap
@@ -595,7 +592,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                   {PREVIEW_NUMERIC_COLUMNS.map((col) => (
                     <th key={col.field} className="py-2 px-2 font-semibold text-right">
                       {col.shortLabel}
-                      <span className="block text-[10px] font-normal text-slate-400">
+                      <span className="block text-xs font-normal text-slate-400">
                         {col.unit}
                       </span>
                     </th>
@@ -603,7 +600,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                   <th className="py-2 px-2.5 font-semibold text-right">EWS P(Crisis)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {cleanedDataset.rows.map((row, rIdx) => {
                   const isSelectedSnapshot = rIdx === clampedRowIdx;
                   const backtestPt = synthesizedEpisode.timeline[rIdx];
@@ -626,7 +623,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                           className="accent-blue-600"
                         />
                         {isSelectedSnapshot && (
-                          <span className="ml-1.5 text-[10px] font-bold text-blue-600 dark:text-blue-400">
+                          <span className="ml-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
                             ACTIVE
                           </span>
                         )}
@@ -655,7 +652,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                             }
                             className={`py-1.5 px-2 text-right ${
                               isOutlier
-                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 font-bold'
+                                ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 font-semibold'
                                 : isInterp
                                 ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold'
                                 : 'text-slate-800 dark:text-slate-200'
@@ -663,12 +660,12 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                           >
                             {val.toFixed(col.decimals)}
                             {isInterp && (
-                              <span className="ml-1 text-[9px] text-amber-600 dark:text-amber-400">
+                              <span className="ml-1 text-xs text-amber-600 dark:text-amber-400">
                                 INT
                               </span>
                             )}
                             {isOutlier && (
-                              <span className="ml-1 text-[9px] text-rose-600 dark:text-rose-400">
+                              <span className="ml-1 text-xs text-rose-600 dark:text-rose-400">
                                 {diag.zScore >= 0 ? '+' : ''}
                                 {diag.zScore}σ
                               </span>
@@ -677,7 +674,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                         );
                       })}
                       <td
-                        className={`py-1.5 px-2.5 text-right font-bold ${
+                        className={`py-1.5 px-2.5 text-right font-semibold ${
                           (backtestPt?.markovCrisisProbPct || 0) >= 35
                             ? 'text-rose-600 dark:text-rose-400'
                             : 'text-emerald-600 dark:text-emerald-400'
@@ -698,15 +695,15 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
           <div className="space-y-1 text-xs text-slate-600 dark:text-slate-400">
             <div className="font-semibold text-slate-800 dark:text-slate-200">
               Selected Live Snapshot Row:{' '}
-              <span className="font-mono text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums text-blue-600 dark:text-blue-400">
                 {selectedRow?.observationDate} ({selectedRow?.iso3})
               </span>{' '}
-              · 5Y CDS: <span className="font-mono">{Math.round(selectedRow?.values.cds5YSpreadBps || 0)} bps</span> · 10Y Yield:{' '}
-              <span className="font-mono">{selectedRow?.values.sovereign10YBondYieldPct.toFixed(2)}%</span> · Debt/GDP:{' '}
-              <span className="font-mono">{selectedRow?.values.debtToGdpPct.toFixed(1)}%</span>
+              · 5Y CDS: <span className="tabular-nums">{Math.round(selectedRow?.values.cds5YSpreadBps || 0)} bps</span> · 10Y Yield:{' '}
+              <span className="tabular-nums">{selectedRow?.values.sovereign10YBondYieldPct.toFixed(2)}%</span> · Debt/GDP:{' '}
+              <span className="tabular-nums">{selectedRow?.values.debtToGdpPct.toFixed(1)}%</span>
             </div>
             {cleanedDataset.diagnosticLog.length > 0 && (
-              <div className="text-[11px] text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+              <div className="text-xs text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
                 <span>{cleanedDataset.diagnosticLog.slice(0, 2).join(' · ')}</span>
               </div>
@@ -735,7 +732,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
             <button
               type="button"
               onClick={() => handleApplyBothLiveAndBacktest(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+              className="ui-btn ui-btn-primary inline-flex"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>Apply to Both Live State + Crisis Replay Backtest</span>
@@ -764,7 +761,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
               <FileText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               <span>Deep Policy Research Context Window (Up to 2M Tokens via Google AI Studio)</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Policy Document &amp; IMF Article IV Qualitative Ingestion Lab
             </h2>
           </div>
@@ -819,7 +816,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
               value={policyDocText}
               onChange={(e) => onChangePolicyDocText(e.target.value)}
               placeholder="Paste IMF Article IV Consultation Report, Central Bank Monetary Policy Committee minutes, sovereign debt restructuring term sheet, or diplomatic cable text here..."
-              className="w-full p-3 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 leading-relaxed"
+              className="w-full p-3 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 leading-relaxed"
             />
           </div>
 
@@ -868,7 +865,7 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
             <button
               type="button"
               onClick={onRunCouncilWithDocument}
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500"
+              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500"
             >
               <Play className="w-3.5 h-3.5" />
               <span>Run Council Assessment with Document</span>

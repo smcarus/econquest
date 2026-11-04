@@ -112,11 +112,11 @@ export const MultiSovereignComparatorDrawer: React.FC<
         {/* Top Drawer Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
+            <div className="flex items-center gap-2 text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
               <Columns className="w-4 h-4" />
-              <span>MULTI-SOVEREIGN HEAD-TO-HEAD RELATIVE-VALUE COMPARATOR (2–3 COUNTRIES)</span>
+              <span>Multi-sovereign head-to-head relative-value comparator (2–3 countries)</span>
             </div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
               Side-by-Side DSA Solvency, NSS Term Structure Carry+Roll & Credit Buffer Scorecard
             </h2>
           </div>
@@ -124,7 +124,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
             <button
               type="button"
               onClick={handleExportComparisonCsv}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="ui-btn inline-flex"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export CSV</span>
@@ -142,7 +142,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
         {/* Country Selector Bar (Pick 2 or 3 Sovereigns) */}
         <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs font-mono text-slate-500 dark:text-slate-400 mr-1">
+            <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 mr-1">
               Select 2–3 Sovereigns:
             </span>
             {watchlistItems.map((item) => {
@@ -152,11 +152,8 @@ export const MultiSovereignComparatorDrawer: React.FC<
                   key={item.iso3}
                   type="button"
                   onClick={() => handleToggleIso(item.iso3)}
-                  className={`px-2.5 py-1 text-xs font-mono font-bold border transition-colors ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400'
-                  }`}
+                  aria-pressed={isSelected}
+                  className="ui-pill"
                 >
                   {item.iso3} · {item.countryName}
                 </button>
@@ -164,7 +161,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
             })}
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs font-mono">
+          <div className="flex items-center gap-1.5 text-xs tabular-nums">
             <button
               type="button"
               onClick={() => setSelectedIsos(['BRA', 'MEX', 'TUR'])}
@@ -187,11 +184,11 @@ export const MultiSovereignComparatorDrawer: React.FC<
           {/* Automated Pair Trade Verdict Banner */}
           <div className="p-4 border border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1">
-              <div className="text-[11px] font-mono font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
-                AUTOMATED HEAD-TO-HEAD RELATIVE-VALUE PAIR VERDICT · WINNER:{' '}
+              <div className="text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-400">
+                Head-to-head relative value verdict · winner:{' '}
                 {comparisonSuite.overallRelativeValueWinnerIso} (
                 {comparisonSuite.winCountByIso[comparisonSuite.overallRelativeValueWinnerIso]}{' '}
-                BENCHMARK WINS)
+                benchmark wins)
               </div>
               <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
                 {comparisonSuite.pairTradeVerdictSummary}
@@ -203,7 +200,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
                 onClick={() => {
                   onStageTradeTicket(comparisonSuite.recommendedPairTicket);
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-mono font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs tabular-nums font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>
@@ -216,14 +213,14 @@ export const MultiSovereignComparatorDrawer: React.FC<
 
           {/* Head-to-Head Scorecard Table */}
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
-            <table className="w-full text-xs font-mono tabular-nums">
+            <table className="w-full text-xs tabular-nums">
               <thead>
                 <tr className="bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300">
-                  <th className="py-2.5 px-3 text-left font-sans font-bold">
-                    INSTITUTIONAL BENCHMARK METRIC
+                  <th className="py-2.5 px-3 text-left font-sans font-semibold">
+                    Institutional benchmark metric
                   </th>
                   <th className="py-2.5 px-3 text-left font-sans font-semibold text-slate-500">
-                    UNIT / POLARITY
+                    Unit / polarity
                   </th>
                   {comparisonSuite.comparedRuns.map((r) => (
                     <th key={r.iso3} className="py-2.5 px-3 text-right">
@@ -234,11 +231,11 @@ export const MultiSovereignComparatorDrawer: React.FC<
                             const found = watchlistItems.find((w) => w.iso3 === r.iso3);
                             if (found) onSelectSovereign(found);
                           }}
-                          className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline"
+                          className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                         >
                           {r.countryName} ({r.iso3})
                         </button>
-                        <span className="text-[10px] text-slate-500">
+                        <span className="text-xs text-slate-500">
                           {r.supremeCouncil?.marketTranslationLayer.regimeStance || 'Hold & Monitor'} ·{' '}
                           {comparisonSuite.winCountByIso[r.iso3]} Wins
                         </span>
@@ -258,7 +255,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
                         <tr className="bg-slate-50 dark:bg-slate-900/70">
                           <td
                             colSpan={2 + comparisonSuite.comparedRuns.length}
-                            className="py-1.5 px-3 text-[11px] font-mono font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300"
+                            className="py-1.5 px-3 text-xs tabular-nums font-semibold text-slate-700 dark:text-slate-300"
                           >
                             {row.pillarCategory}
                           </td>
@@ -268,7 +265,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
                         <td className="py-2 px-3 font-sans font-medium text-slate-900 dark:text-slate-100">
                           {row.metricLabel}
                         </td>
-                        <td className="py-2 px-3 text-[11px] text-slate-500 dark:text-slate-400">
+                        <td className="py-2 px-3 text-xs text-slate-500 dark:text-slate-400">
                           {row.unitLabel} ({row.higherIsBetter ? 'Higher = Better' : 'Lower = Better'})
                         </td>
                         {comparisonSuite.comparedRuns.map((r) => {
@@ -278,7 +275,7 @@ export const MultiSovereignComparatorDrawer: React.FC<
                               key={r.iso3}
                               className={`py-2 px-3 text-right font-semibold ${
                                 cell?.isRelativeWinner
-                                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 font-bold'
+                                  ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20 font-semibold'
                                   : 'text-slate-800 dark:text-slate-200'
                               }`}
                             >
@@ -392,17 +389,17 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
 
   const handleExportTearSheetMarkdown = () => {
     const lines = [
-      `# ECONQUEST SOVEREIGN EXECUTIVE TEAR-SHEET & IC TRADE TICKET DOSSIER`,
+      `# EconQuest sovereign tear sheet and IC trade tickets`,
       `Generated: ${new Date().toISOString()}`,
       ``,
-      `## 1. SOVEREIGN EXECUTIVE TEAR-SHEET: ${activeRun.countryName.toUpperCase()} (${activeRun.iso3})`,
+      `## 1. Sovereign tear sheet: ${activeRun.countryName} (${activeRun.iso3})`,
       `- **Executive Stance**: ${activeRun.supremeCouncil?.marketTranslationLayer.regimeStance || 'Hold & Monitor'} (Composite Risk: ${Math.round((activeRun.supremeCouncil?.compositeRiskScore ?? 0.58) * 100)}/100, Coherence: ${Math.round((activeRun.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100)}%)`,
       `- **Debt & DSA Solvency**: Debt/GDP ${activeRun.openData.imfIndicators.debtToGdpPct.toFixed(1)}% | Primary Balance ${activeRun.openData.imfIndicators.primaryFiscalBalancePct.toFixed(2)}% GDP vs. Stabilizing pb* ${activeRun.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct.toFixed(2)}% GDP (Gap: ${activeRun.openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% GDP)`,
       `- **NSS Yield Curve & Carry+Roll**: 2s10s Slope ${nssSuite.slope2s10sBps > 0 ? '+' : ''}${nssSuite.slope2s10sBps} bps | 2s5s10s Butterfly ${nssSuite.butterfly2s5s10sBps > 0 ? '+' : ''}${nssSuite.butterfly2s5s10sBps} bps | Optimal Carry+Roll Tenor: ${nssSuite.optimalCarryRollTenor.tenorLabel} (+${nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps/yr, Breakeven +${nssSuite.optimalCarryRollTenor.breakevenCushionBps} bps/yr)`,
       `- **Credit & External Buffers**: 5Y CDS ${activeRun.openData.monetaryAndMarket.cds5YSpreadBps} bps | 10Y Yield ${activeRun.openData.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}% | FX Reserves ${activeRun.openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports`,
       `- **Next Macro Catalyst**: ${nextSovCatalyst.eventTitle} in ${nextSovCatalyst.daysUntilEvent}d (${nextSovCatalyst.eventDateLabel}) · Implied 1D Event Vol ±${nextSovCatalyst.implied1DayYieldVolBps} bps`,
       ``,
-      `## 2. STAGED INVESTMENT COMMITTEE (IC) TRADE TICKET BOOK (${stagedTickets.length} TICKETS)`,
+      `## 2. Staged IC trade tickets (${stagedTickets.length})`,
       ...stagedTickets.flatMap((t, idx) => [
         `### Ticket ${idx + 1}: ${t.strategyTitle} (${t.ticketId})`,
         `- **Sovereign**: ${t.countryName} (${t.iso3}${t.secondaryIso3 ? ` vs. ${t.secondaryIso3}` : ''}) · **Direction**: ${t.direction}`,
@@ -433,11 +430,11 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
         {/* Drawer Header */}
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between gap-4 bg-slate-50 dark:bg-slate-900">
           <div>
-            <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
+            <div className="flex items-center gap-2 text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
               <Briefcase className="w-4 h-4" />
-              <span>1-CLICK EXECUTIVE TEAR-SHEET & IC TRADE TICKET BOOK</span>
+              <span>1-Click executive tear-sheet & IC trade ticket book</span>
             </div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mt-0.5">
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white mt-0.5">
               {activeRun.countryName} ({activeRun.iso3}) Instant IC Tear-Sheet & Staged Relative-Value Trade Tickets
             </h2>
           </div>
@@ -446,7 +443,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
             <button
               type="button"
               onClick={handleExportTearSheetMarkdown}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+              className="ui-btn ui-btn-primary inline-flex"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export IC Tear-Sheet (.md)</span>
@@ -467,18 +464,18 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
           <div className="p-4 border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/50 space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2.5">
               <div>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 block">
-                  1-PAGE BOARDROOM SOVEREIGN SNAPSHOT
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 block">
+                  1-Page boardroom sovereign snapshot
                 </span>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                   {activeRun.countryName} ({activeRun.iso3} · {activeRun.openData.currencyCode}) —{' '}
-                  <span className="font-mono text-blue-600 dark:text-blue-400">
+                  <span className="tabular-nums text-blue-600 dark:text-blue-400">
                     {activeRun.supremeCouncil?.marketTranslationLayer.regimeStance ||
                       'Hold & Monitor'}
                   </span>
                 </h3>
               </div>
-              <div className="flex items-center gap-2 text-xs font-mono">
+              <div className="flex items-center gap-2 text-xs tabular-nums">
                 <span>
                   Composite Risk:{' '}
                   <strong>
@@ -496,25 +493,25 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
             </div>
 
             {/* 4-Pillar Tear-Sheet KPI Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono text-xs tabular-nums">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 tabular-nums text-xs">
               <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="text-[10px] text-slate-500 uppercase">1. DSA SOLVENCY (% GDP)</div>
-                <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                <div className="text-xs text-slate-500">1. DSA solvency (% GDP)</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
                   Debt {activeRun.openData.imfIndicators.debtToGdpPct.toFixed(1)}% GDP
                 </div>
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   PB {activeRun.openData.imfIndicators.primaryFiscalBalancePct.toFixed(2)}% vs pb*{' '}
                   {activeRun.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct.toFixed(2)}%
                 </div>
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="text-[10px] text-slate-500 uppercase">2. NSS CURVE SWEET SPOT</div>
-                <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                <div className="text-xs text-slate-500">2. NSS curve sweet spot</div>
+                <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
                   {nssSuite.optimalCarryRollTenor.tenorLabel} +
                   {nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps/yr
                 </div>
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   2s10s {nssSuite.slope2s10sBps > 0 ? '+' : ''}
                   {nssSuite.slope2s10sBps} bps · Cushion +
                   {nssSuite.optimalCarryRollTenor.breakevenCushionBps} bps
@@ -522,22 +519,22 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="text-[10px] text-slate-500 uppercase">3. CREDIT & RESERVES</div>
-                <div className="text-sm font-bold text-slate-900 dark:text-white mt-1">
+                <div className="text-xs text-slate-500">3. Credit & reserves</div>
+                <div className="text-sm font-semibold text-slate-900 dark:text-white mt-1">
                   5Y CDS {activeRun.openData.monetaryAndMarket.cds5YSpreadBps} bps
                 </div>
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   FX Cover {activeRun.openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)}{' '}
                   mos · 10Y {activeRun.openData.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}%
                 </div>
               </div>
 
               <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <div className="text-[10px] text-slate-500 uppercase">4. NEXT CATALYST VOL</div>
-                <div className="text-sm font-bold text-amber-600 dark:text-amber-400 mt-1">
+                <div className="text-xs text-slate-500">4. Next catalyst vol</div>
+                <div className="text-sm font-semibold text-amber-600 dark:text-amber-400 mt-1">
                   {nextSovCatalyst.categoryBadge} ({nextSovCatalyst.daysUntilEvent}d)
                 </div>
-                <div className="text-[11px] text-slate-600 dark:text-slate-400 mt-0.5">
+                <div className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
                   Implied 1D Move ±{nextSovCatalyst.implied1DayYieldVolBps} bps
                 </div>
               </div>
@@ -554,7 +551,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     key={t.ticketId}
                     type="button"
                     onClick={() => onAddTicket(t)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
                   >
                     <Plus className="w-3 h-3" />
                     <span>+ {t.strategyTitle.slice(0, 34)}...</span>
@@ -568,7 +565,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
                   <FileText className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   <span>
                     Staged Investment Committee Trade Ticket Book ({stagedTickets.length} Active)
@@ -581,7 +578,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
               <button
                 type="button"
                 onClick={() => setShowCustomForm((v) => !v)}
-                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
+                className="inline-flex items-center gap-1 px-3 py-1.5 text-xs tabular-nums font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>{showCustomForm ? 'Close Custom Ticket Form' : 'New Custom IC Ticket'}</span>
@@ -590,12 +587,12 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
 
             {showCustomForm && (
               <div className="p-4 border border-blue-200 dark:border-blue-900/70 bg-blue-50/30 dark:bg-blue-950/20 space-y-3 text-xs">
-                <div className="font-mono font-bold uppercase text-blue-700 dark:text-blue-300">
+                <div className="tabular-nums font-semibold text-blue-700 dark:text-blue-300">
                   Create Custom IC Trade Ticket for {activeRun.countryName} ({activeRun.iso3})
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-mono text-slate-500 mb-1">
+                    <label className="block text-xs tabular-nums text-slate-500 mb-1">
                       Strategy Title
                     </label>
                     <input
@@ -607,7 +604,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-mono text-slate-500 mb-1">
+                    <label className="block text-xs tabular-nums text-slate-500 mb-1">
                       Structure Direction
                     </label>
                     <select
@@ -615,7 +612,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                       onChange={(e) =>
                         setCustomDirection(e.target.value as StagedTradeDirection)
                       }
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white tabular-nums"
                     >
                       <option value="LONG_CARRY_ROLL">LONG_CARRY_ROLL</option>
                       <option value="CURVE_STEEPENER">CURVE_STEEPENER</option>
@@ -626,9 +623,9 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-3 font-mono">
+                <div className="grid grid-cols-3 gap-3 tabular-nums">
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1">
+                    <label className="block text-xs text-slate-500 mb-1">
                       Entry Level (bps)
                     </label>
                     <input
@@ -639,7 +636,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1">
+                    <label className="block text-xs text-slate-500 mb-1">
                       Target Level (bps)
                     </label>
                     <input
@@ -650,7 +647,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] text-slate-500 mb-1">
+                    <label className="block text-xs text-slate-500 mb-1">
                       Stop-Loss Level (bps)
                     </label>
                     <input
@@ -662,7 +659,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[11px] font-mono text-slate-500 mb-1">
+                  <label className="block text-xs tabular-nums text-slate-500 mb-1">
                     Pre-Mortem Kill-Switch Rule
                   </label>
                   <input
@@ -676,7 +673,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                   <button
                     type="button"
                     onClick={handleCreateCustomTicket}
-                    className="px-4 py-1.5 font-mono font-bold text-white bg-blue-600 hover:bg-blue-500"
+                    className="ui-btn ui-btn-primary"
                   >
                     Add Ticket to IC Book
                   </button>
@@ -693,8 +690,8 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                 >
                   <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
-                      <div className="flex items-center gap-2 text-[11px] font-mono">
-                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                      <div className="flex items-center gap-2 text-xs tabular-nums">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
                           {ticket.iso3}
                           {ticket.secondaryIso3 ? ` vs ${ticket.secondaryIso3}` : ''}
                         </span>
@@ -703,7 +700,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                         <span aria-hidden="true">·</span>
                         <span className="text-slate-500">Source: {ticket.sourceModuleLabel}</span>
                       </div>
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-white mt-0.5">
                         {ticket.strategyTitle}
                       </h4>
                     </div>
@@ -715,7 +712,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                           onNavigateToSection(ticket.targetSectionId);
                           onClose();
                         }}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-mono text-blue-600 dark:text-blue-400 hover:underline"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs tabular-nums text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         <span>Open Source Desk</span>
                         <ArrowRight className="w-3 h-3" />
@@ -724,23 +721,23 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                         type="button"
                         onClick={() => onRemoveTicket(ticket.ticketId)}
                         title="Remove ticket from IC Book"
-                        className="p-1 text-slate-400 hover:text-red-600 dark:hover:text-red-400"
+                        className="p-1 text-slate-400 hover:text-rose-600 dark:hover:text-rose-400"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs font-mono bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-100 dark:border-slate-800">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 p-2.5 border border-slate-100 dark:border-slate-800">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">PRIMARY LEG 1</span>
+                      <span className="text-xs text-slate-400 block">Primary leg 1</span>
                       <span className="text-slate-800 dark:text-slate-200">
                         {ticket.leg1Summary}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block">
-                        HEDGE / FUNDING LEG 2
+                      <span className="text-xs text-slate-400 block">
+                        Hedge / funding leg 2
                       </span>
                       <span className="text-slate-800 dark:text-slate-200">
                         {ticket.leg2Summary}
@@ -748,34 +745,34 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs font-mono tabular-nums">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs tabular-nums">
                     <div>
-                      <span className="text-[10px] text-slate-500 block">ENTRY LEVEL</span>
-                      <span className="font-bold text-slate-900 dark:text-white">
+                      <span className="text-xs text-slate-500 block">Entry level</span>
+                      <span className="font-semibold text-slate-900 dark:text-white">
                         {ticket.entrySpreadOrYieldBps} bps
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">TARGET LEVEL</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="text-xs text-slate-500 block">Target level</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                         {ticket.targetSpreadOrYieldBps} bps
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">STOP-LOSS</span>
-                      <span className="font-bold text-rose-600 dark:text-rose-400">
+                      <span className="text-xs text-slate-500 block">Stop-loss</span>
+                      <span className="font-semibold text-rose-600 dark:text-rose-400">
                         {ticket.stopLossSpreadOrYieldBps} bps
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">12M CARRY+ROLL</span>
-                      <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="text-xs text-slate-500 block">12M carry+roll</span>
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                         +{ticket.expected12MCarryRollBps} bps/yr
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-500 block">BREAKEVEN CUSHION</span>
-                      <span className="font-bold text-blue-600 dark:text-blue-400">
+                      <span className="text-xs text-slate-500 block">Breakeven cushion</span>
+                      <span className="font-semibold text-blue-600 dark:text-blue-400">
                         +{ticket.breakevenCushionBps} bps/yr
                       </span>
                     </div>
@@ -785,7 +782,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                     {ticket.thesisRationale}
                   </p>
 
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 text-[11px] font-mono text-amber-700 dark:text-amber-400">
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1.5 text-xs tabular-nums text-amber-700 dark:text-amber-400">
                     <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                     <span>
                       <strong>Kill-Switch:</strong> {ticket.preMortemKillSwitchRule}

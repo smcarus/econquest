@@ -1222,7 +1222,7 @@ export function buildCsvPolicySummaryMarkdown(cleanedDataset: CleanedCsvDatasetR
   if (!first || !last) return '';
 
   const lines: string[] = [
-    `### QUANTITATIVE CSV TELEMETRY ANNEX: ${cleanedDataset.datasetTitle} (${cleanedDataset.detectedIso3})`,
+    `### CSV data annex: ${cleanedDataset.datasetTitle} (${cleanedDataset.detectedIso3})`,
     `- **Time Horizon & Coverage**: ${cleanedDataset.rowCount} chronological observations (${first.observationDate} to ${last.observationDate}), ${cleanedDataset.mappedFieldCount} mapped macro-financial series.`,
     `- **Data Hygiene & Outlier Audit**: ${cleanedDataset.totalInterpolatedCells} missing observation(s) repaired via linear interpolation; ${cleanedDataset.totalOutlierCells} statistical tail outlier(s) (|Z| ≥ 2.35σ) flagged.`,
     `- **5Y Sovereign CDS Trajectory**: ${Math.round(first.values.cds5YSpreadBps)} bps (${first.observationDate}) → ${Math.round(last.values.cds5YSpreadBps)} bps (${last.observationDate}) [Series Range: ${cleanedDataset.columnStats.cds5YSpreadBps?.min}–${cleanedDataset.columnStats.cds5YSpreadBps?.max} bps].`,

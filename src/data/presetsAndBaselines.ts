@@ -1,7 +1,9 @@
+import { upcomingOfficialEvents } from './officialCalendar';
 import {
   AnnotatedChartSpec,
   CouncilAssessmentRun,
   CustomSovereignOnboardingDraft,
+  InstitutionalCatalystEvent,
   OpenDataSnapshot,
   WatchlistGroup,
   WatchlistItem,
@@ -513,13 +515,9 @@ export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
     region: item.region,
     currencyCode: item.currencyCode,
     fetchedAt: new Date().toISOString(),
-    liveApiSourcesActive: [
-      'IMF DataMapper WEO v1 (GGXWDG_NGDP, PCPIPCH)',
-      'World Bank Open Data v2 (FI.RES.TOTL.MO, BN.CAB.XOKA.GD.ZS)',
-      'Polymarket Gamma Markets API',
-      'GDELT 2.0 Global Conflict & Tone API',
-      'US Treasury Fiscal Data Exchange Rates API',
-    ],
+    // Built-in sample values: no feed has answered yet, so nothing is labelled live.
+    liveApiSourcesActive: [],
+    dataStatus: { verifiedLiveSources: [], checkedAt: new Date().toISOString() },
     imfIndicators: imf,
     worldBankIndicators: wb,
     monetaryAndMarket: mkt,
@@ -643,52 +641,7 @@ export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
         },
       ],
     },
-    catalystCalendar: [
-      {
-        eventId: `cat-${item.iso3}-1`,
-        dateLabel: 'In 9 Days',
-        daysOut: 9,
-        category: 'CENTRAL_BANK_MPC',
-        title: `${item.countryName} Central Bank Monetary Policy Committee Rate Decision`,
-        consensusExpectation: `Hold / +25bps Hawkish Guidance (${mkt.policyRatePct.toFixed(2)}% Benchmark)`,
-        tailRiskScenario: 'Unanimous +75bps hike or dissenting dovish split unanchoring 5Y breakevens',
-        impliedVolatilityImpact: '±38 bps on 2Y/5Y Swaps · ±1.6% Spot FX',
-        deskOwner: 'macro',
-      },
-      {
-        eventId: `cat-${item.iso3}-2`,
-        dateLabel: 'In 21 Days',
-        daysOut: 21,
-        category: 'BOND_REDEMPTION_WALL',
-        title: `Quarterly Domestic Treasury Benchmark Auction & Coupon Rollover`,
-        consensusExpectation: 'Bid-to-cover > 2.1x with partial floating-rate note allocation',
-        tailRiskScenario: 'Tail > 12bps forcing Debt Management Office to shorten issuance maturity',
-        impliedVolatilityImpact: '±45 bps on 10Y Local Yield',
-        deskOwner: 'sovereign',
-      },
-      {
-        eventId: `cat-${item.iso3}-3`,
-        dateLabel: 'In 38 Days',
-        daysOut: 38,
-        category: 'IMF_FISCAL_REVIEW',
-        title: `Bimonthly Primary Fiscal Budget Execution Report & IMF Staff Assessment`,
-        consensusExpectation: `Primary deficit containment within ${imf.primaryFiscalBalancePct.toFixed(1)}% GDP corridor`,
-        tailRiskScenario: 'Mandatory spending overrun > 0.6% GDP triggering fiscal target revision',
-        impliedVolatilityImpact: '±35 bps on 5Y Sovereign CDS · ±2.2% Spot FX',
-        deskOwner: 'sovereign',
-      },
-      {
-        eventId: `cat-${item.iso3}-4`,
-        dateLabel: 'In 64 Days',
-        daysOut: 64,
-        category: 'CREDIT_RATING_WINDOW',
-        title: `Sovereign Credit Rating Agency Scheduled Outlook Review (S&P / Moody's)`,
-        consensusExpectation: 'Affirm current rating with Stable/Cautious fiscal commentary',
-        tailRiskScenario: 'Negative Outlook revision citing rising (r - g) debt service trajectory',
-        impliedVolatilityImpact: '±50 bps on 5Y USD CDS',
-        deskOwner: 'sovereign',
-      },
-    ],
+    catalystCalendar: buildOfficialCatalystCalendar(item.iso3, mkt.policyRatePct),
     factorBetas: [
       {
         factorName: 'US 10Y Real Yield (TIPS) +50 bps Shock',
@@ -1133,12 +1086,41 @@ export function recomputeDerivedOpenDataAnalytics(
     ],
   };
 
-  if (Array.isArray(snapshot.catalystCalendar) && snapshot.catalystCalendar.length >= 3) {
-    snapshot.catalystCalendar[0].consensusExpectation = `Hold / +25bps Hawkish Guidance (${mkt.policyRatePct.toFixed(2)}% Benchmark)`;
-    snapshot.catalystCalendar[2].consensusExpectation = `Primary balance containment within ${imf.primaryFiscalBalancePct.toFixed(1)}% GDP corridor`;
-  }
+  snapshot.catalystCalendar = buildOfficialCatalystCalendar(snapshot.iso3, mkt.policyRatePct);
 
   return snapshot;
+}
+
+/**
+ * Upcoming events for one country, from the official calendar only (next ~13 months).
+ * Empty when no schedule is on file; nothing is generated.
+ */
+export function buildOfficialCatalystCalendar(
+  iso3: string,
+  policyRatePct: number,
+  now: Date = new Date()
+): InstitutionalCatalystEvent[] {
+  return upcomingOfficialEvents([iso3], 400, now).map((ev, i) => ({
+    eventId: `off-${iso3}-${ev.date}-${i}`,
+    dateLabel: `${ev.date} (${ev.daysUntil === 0 ? 'today' : `in ${ev.daysUntil}d`})`,
+    daysOut: ev.daysUntil,
+    category:
+      ev.category === 'MPC_DECISION'
+        ? 'CENTRAL_BANK_MPC'
+        : ev.category === 'INFLATION_REPORT'
+        ? 'CENTRAL_BANK_REPORT'
+        : 'DATA_RELEASE',
+    title: ev.title,
+    consensusExpectation:
+      ev.category === 'MPC_DECISION'
+        ? `Policy rate now ${policyRatePct.toFixed(2)}% (no consensus feed)`
+        : 'No consensus feed',
+    tailRiskScenario: '',
+    impliedVolatilityImpact: 'not estimated',
+    deskOwner: 'macro',
+    sourceName: ev.sourceName,
+    sourceUrl: ev.sourceUrl,
+  }));
 }
 
 export function buildDefaultAssessmentRun(

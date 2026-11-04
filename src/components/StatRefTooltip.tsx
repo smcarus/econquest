@@ -168,12 +168,12 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
 
   const triggerClasses =
     variant === 'inline'
-      ? `inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 text-[11px] font-mono tabular-nums border transition-colors cursor-pointer select-none align-baseline ${
+      ? `inline-flex items-center gap-1 px-1.5 py-0.5 mx-0.5 text-xs tabular-nums tabular-nums border transition-colors cursor-pointer select-none align-baseline ${
           isPinned
             ? 'bg-blue-100 dark:bg-blue-950/90 border-blue-500 text-blue-800 dark:text-blue-200 font-semibold'
             : 'bg-slate-100/90 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-blue-500 dark:hover:border-blue-400 hover:text-blue-700 dark:hover:text-blue-300'
         } ${className}`
-      : `group inline-flex flex-wrap items-center justify-between gap-2 w-full px-2.5 py-1.5 text-[11px] font-mono tabular-nums border transition-colors cursor-pointer select-none ${
+      : `group inline-flex flex-wrap items-center justify-between gap-2 w-full px-2.5 py-1.5 text-xs tabular-nums tabular-nums border transition-colors cursor-pointer select-none ${
           isPinned
             ? 'bg-blue-50 dark:bg-blue-950/70 border-blue-500 text-blue-800 dark:text-blue-200'
             : 'bg-slate-50/90 dark:bg-slate-950/80 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-slate-900'
@@ -204,11 +204,11 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
             {refText}
           </span>
         </span>
-        <span className="inline-flex items-center gap-1 text-[10px] font-sans font-semibold text-blue-600 dark:text-blue-400 shrink-0 opacity-85 group-hover:opacity-100">
+        <span className="inline-flex items-center gap-1 text-xs font-sans font-semibold text-blue-600 dark:text-blue-400 shrink-0 opacity-85 group-hover:opacity-100">
           {isPinned ? (
             <>
               <Pin className="w-2.5 h-2.5 fill-current" />
-              <span>PINNED</span>
+              <span>Pinned</span>
             </>
           ) : (
             <span className="hidden sm:inline">[Formula &amp; Source]</span>
@@ -232,21 +232,21 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
               width: 'min(480px, calc(100vw - 24px))',
               zIndex: 9999,
             }}
-            className="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-4 space-y-3 text-xs animate-in fade-in duration-100"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-4 space-y-3 text-xs animate-in fade-in duration-100"
           >
             {/* Header Bar */}
             <div className="flex items-start justify-between gap-3 pb-2.5 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
+                <div className="flex items-center gap-1.5 text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                   <BookOpen className="w-3 h-3 shrink-0" />
                   <span>{resolved.categoryLabel}</span>
                   {isPinned && (
-                    <span className="ml-1 px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-mono">
+                    <span className="ml-1 px-1.5 py-0.2 bg-blue-600 text-white text-xs tabular-nums">
                       PINNED
                     </span>
                   )}
                 </div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
+                <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
                   {resolved.title}
                 </h4>
               </div>
@@ -256,11 +256,8 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
                   type="button"
                   onClick={handleTogglePin}
                   title={isPinned ? 'Unpin tooltip' : 'Pin tooltip open'}
-                  className={`p-1 border text-[10px] font-mono inline-flex items-center gap-1 cursor-pointer transition-colors ${
-                    isPinned
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-500'
-                  }`}
+                  aria-pressed={isPinned}
+                  className="ui-pill inline-flex items-center gap-1"
                 >
                   <Pin className="w-3 h-3" />
                   <span>{isPinned ? 'Pinned' : 'Pin'}</span>
@@ -282,19 +279,19 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
             {/* Active Sovereign Telemetry Extracted from the Badge */}
             {resolved.extractedMetrics.length > 0 && (
               <div className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-2">
-                <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">
+                <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 mb-1">
                   Live Sovereign Telemetry in Badge
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                   {resolved.extractedMetrics.map((m, idx) => (
                     <div
                       key={`${m.label}-${idx}`}
-                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono"
+                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 tabular-nums"
                     >
-                      <span className="text-[9px] text-slate-500 dark:text-slate-400 block truncate">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block truncate">
                         {m.label}
                       </span>
-                      <span className="text-[11px] font-bold text-blue-600 dark:text-blue-400 tabular-nums block truncate">
+                      <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 tabular-nums block truncate">
                         {m.value}
                       </span>
                     </div>
@@ -305,39 +302,39 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
 
             {/* Formal Mathematical Specification */}
             <div className="bg-slate-900 dark:bg-slate-950 border border-slate-800 p-2.5 text-slate-100">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-                <span>FORMAL MATHEMATICAL SPECIFICATION</span>
-                <span className="text-emerald-400">STRUCTURAL IDENTITY</span>
+              <div className="flex items-center justify-between text-xs tabular-nums text-slate-400 mb-1">
+                <span>Formal mathematical specification</span>
+                <span className="text-emerald-400">Structural identity</span>
               </div>
-              <div className="font-mono text-[11px] text-emerald-300 leading-relaxed break-words select-all">
+              <div className="tabular-nums text-xs text-emerald-300 leading-relaxed break-words select-all">
                 {resolved.formulaMono}
               </div>
             </div>
 
             {/* Plain-English Intuition */}
-            <div className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+            <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
               <strong className="text-slate-900 dark:text-slate-100">Plain-English Meaning: </strong>
               {resolved.plainEnglishSummary}
             </div>
 
             {/* Variable Glossary */}
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1">
+              <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1">
                 Variable &amp; Parameter Glossary
               </div>
               <div className="border border-slate-200 dark:border-slate-800 divide-y divide-slate-200 dark:divide-slate-800 max-h-36 overflow-y-auto">
                 {resolved.variables.map((v) => (
                   <div
                     key={v.symbol}
-                    className="px-2 py-1 flex items-baseline justify-between gap-2 text-[11px] bg-white dark:bg-slate-900/60"
+                    className="px-2 py-1 flex items-baseline justify-between gap-2 text-xs bg-white dark:bg-slate-900/60"
                   >
                     <div className="min-w-0">
-                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400 mr-1.5">
+                      <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1.5">
                         {v.symbol}
                       </span>
                       <span className="text-slate-600 dark:text-slate-300">{v.meaning}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-slate-400 shrink-0">{v.unit}</span>
+                    <span className="tabular-nums text-xs text-slate-400 shrink-0">{v.unit}</span>
                   </div>
                 ))}
               </div>
@@ -345,21 +342,21 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
 
             {/* Institutional Warning & Distress Thresholds */}
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1">
+              <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1">
                 Institutional Calibration &amp; Distress Thresholds
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[10px] font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-xs tabular-nums">
                 {resolved.thresholds.map((t) => {
                   const badgeStyle =
                     t.severity === 'SAFE'
                       ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/80 text-emerald-700 dark:text-emerald-300'
                       : t.severity === 'WATCH'
                       ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/80 text-amber-700 dark:text-amber-300'
-                      : 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/80 text-red-700 dark:text-red-300';
+                      : 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-800/80 text-rose-700 dark:text-rose-300';
                   return (
                     <div key={t.label} className={`p-1.5 border ${badgeStyle}`}>
-                      <div className="font-sans font-bold text-[10px] truncate">{t.label}</div>
-                      <div className="mt-0.5 font-mono font-semibold">{t.value}</div>
+                      <div className="font-sans font-semibold text-xs truncate">{t.label}</div>
+                      <div className="mt-0.5 tabular-nums font-semibold">{t.value}</div>
                     </div>
                   );
                 })}
@@ -368,7 +365,7 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
 
             {/* Primary Data Source Citation & Copy Action */}
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">
+              <div className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                 <strong className="text-slate-700 dark:text-slate-200">Source Citation: </strong>
                 {resolved.primarySourceCitation}
               </div>
@@ -376,7 +373,7 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
               <button
                 type="button"
                 onClick={handleCopyCitation}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-mono font-semibold hover:opacity-90 transition-opacity shrink-0 cursor-pointer self-start sm:self-center"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs tabular-nums font-semibold hover:opacity-90 transition-opacity shrink-0 cursor-pointer self-start sm:self-center"
               >
                 {copied ? (
                   <>

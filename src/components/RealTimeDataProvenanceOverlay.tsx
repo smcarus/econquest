@@ -16,6 +16,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { CouncilAssessmentRun, ProvenanceTier } from '../types/council';
+import { DataFeedKey, getSnapshotDataStatus } from '../utils/dataStatus';
 import {
   detectStatisticalTermInText,
   resolveStatRefDefinition,
@@ -40,6 +41,8 @@ export interface ResolvedDataProvenanceSpec {
   primaryEndpointUri: string;
   httpMethod: 'GET' | 'POST';
   httpStatus: string;
+  /** True only when the feed behind this panel actually answered on the last pull. */
+  isLive: boolean;
   handshakeTimestampIso: string;
   handshakeLatencyMs: number;
   provenanceTier: ProvenanceTier;
@@ -60,10 +63,17 @@ const PROVENANCE_TIER_LABELS: Record<ProvenanceTier, string> = {
   TIER_4_MODEL_ESTIMATE: 'Tier-4 Structural Econometric Engine (Seeded by Tier-1 API)',
 };
 
+const PROVENANCE_FEED_BY_SPEC: Record<string, DataFeedKey[]> = {
+  prov_nyfed_sofr_liquidity: ['nyfed'],
+  prov_gdelt_polymarket_osint: ['gdelt', 'polymarket'],
+  prov_worldbank_external_reserves: ['worldbank'],
+  prov_treasury_cds_yield_quant: ['ai_market'],
+  prov_imf_weo_macro_fiscal: ['imf'],
+};
+
 /**
- * Resolves the exact API source, REST endpoint URI, handshake timestamp, and JSON field mappings
- * for any chart, table, or data point across the 10-hub terminal based on its contextual title/headers
- * and the active sovereign's live `OpenDataSnapshot`.
+ * Describes the intended source of a panel and, honestly, whether that source answered.
+ * Status text comes from the snapshot's verified feed list, never from a fixed "200 OK".
  */
 export function resolveDataProvenanceForContext(
   run: CouncilAssessmentRun,
@@ -73,6 +83,41 @@ export function resolveDataProvenanceForContext(
   clickedDataPointValue?: string,
   overrideTimestampIso?: string
 ): ResolvedDataProvenanceSpec {
+  const spec = resolveDataProvenanceForContextUnchecked(
+    run,
+    contextText,
+    containerKind,
+    clickedDataPointLabel,
+    clickedDataPointValue,
+    overrideTimestampIso
+  );
+  const status = getSnapshotDataStatus(run.openData);
+  const feeds = PROVENANCE_FEED_BY_SPEC[spec.id] || [];
+  const isLive = feeds.some((f) => status.isFeedLive(f));
+  const isAiEstimate = feeds.includes('ai_market') && isLive;
+  const httpStatus = isAiEstimate
+    ? 'AI estimate (Gemini web search), not a market price'
+    : isLive
+    ? 'Fetched from source on last pull'
+    : status.mode === 'unverified'
+    ? 'Not verified: press Sync to refresh'
+    : 'Not live: built-in sample value';
+  return { ...spec, httpStatus, handshakeLatencyMs: 0, isLive };
+}
+
+/**
+ * Resolves the exact API source, REST endpoint URI, handshake timestamp, and JSON field mappings
+ * for any chart, table, or data point across the 10-hub terminal based on its contextual title/headers
+ * and the active sovereign's live `OpenDataSnapshot`.
+ */
+function resolveDataProvenanceForContextUnchecked(
+  run: CouncilAssessmentRun,
+  contextText: string,
+  containerKind: 'CHART' | 'TABLE' | 'DATA_POINT' = 'CHART',
+  clickedDataPointLabel?: string,
+  clickedDataPointValue?: string,
+  overrideTimestampIso?: string
+): Omit<ResolvedDataProvenanceSpec, 'isLive'> {
   const iso3 = run.iso3 || 'BRA';
   const ccy = run.openData.currencyCode || 'BRL';
   const lower = `${contextText} ${clickedDataPointLabel || ''}`.toLowerCase();
@@ -469,6 +514,27 @@ export function resolveDataProvenanceForContext(
   };
 }
 
+function provenanceBarLabel(spec: ResolvedDataProvenanceSpec, fetchedTime: string): string {
+  const source = spec.primarySourceAuthority.split('&')[0].split('(')[0].trim();
+  if (!spec.isLive) return `SAMPLE DATA · NOT LIVE · intended source: ${source}`;
+  if (spec.id === 'prov_treasury_cds_yield_quant') return `AI ESTIMATE · ${fetchedTime}`;
+  return `SOURCE · ${source} · ${fetchedTime}`;
+}
+
+function provenanceBarClass(isLive: boolean): string {
+  return isLive
+    ? 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 tabular-nums text-xs font-semibold cursor-pointer min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap transition-colors'
+    : 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 tabular-nums text-xs font-semibold cursor-pointer min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap transition-colors';
+}
+
+function provenanceChartBadgeClass(isLive: boolean): string {
+  return `absolute top-1.5 right-1.5 z-20 inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/95 dark:bg-slate-900/95  tabular-nums text-xs font-semibold cursor-pointer transition-colors border ${
+    isLive
+      ? 'hover:bg-emerald-50 dark:hover:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'
+  }`;
+}
+
 function formatHandshakeAge(isoString: string): {
   utcFormatted: string;
   localFormatted: string;
@@ -542,8 +608,7 @@ export const DataProvenanceBadge: React.FC<{
       if (onRefreshLiveOpenData) {
         onRefreshLiveOpenData();
       }
-      await new Promise((r) => setTimeout(r, 260));
-      setLocalHandshakeIso(new Date().toISOString());
+      // The refreshed snapshot carries its own fetch time; don't invent one here.
     } finally {
       setIsPinging(false);
     }
@@ -557,7 +622,7 @@ export const DataProvenanceBadge: React.FC<{
       `Last API Handshake (UTC): ${utcFormatted}`,
       `Primary Authority: ${spec.primarySourceAuthority}`,
       `Endpoint URI: ${spec.primaryEndpointUri}`,
-      `HTTP Status: ${spec.httpStatus} (${spec.handshakeLatencyMs} ms)`,
+      `Status: ${spec.httpStatus}`,
       `cURL: ${spec.curlSnippet}`,
     ].join('\n');
     if (navigator.clipboard?.writeText) {
@@ -576,17 +641,19 @@ export const DataProvenanceBadge: React.FC<{
           setIsOpen((prev) => !prev);
         }}
         title="Click to inspect real-time API handshake timestamp, source authority & REST endpoint URI"
-        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono tabular-nums border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-          isOpen
-            ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs tabular-nums tabular-nums border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+          !spec.isLive
+            ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'
+            : isOpen
+            ? 'bg-blue-600 text-white border-blue-600 font-semibold'
             : 'bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800/90 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/70'
         } ${className}`}
       >
         <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span>
-          {compact
-            ? `API PROVENANCE · ${localFormatted}`
-            : `LIVE API PROVENANCE · 200 OK · ${localFormatted}`}
+          {spec.isLive
+            ? `SOURCE · ${localFormatted}`
+            : 'SAMPLE DATA · NOT LIVE'}
         </span>
       </button>
 
@@ -599,18 +666,18 @@ export const DataProvenanceBadge: React.FC<{
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-2xl bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-5 space-y-4 text-xs"
+              className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-5 space-y-4 text-xs"
             >
               {/* Header */}
               <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                 <div>
-                  <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold">
+                  <div className="flex flex-wrap items-center gap-2 text-xs tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
                     <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                     <span>REAL-TIME DATA PROVENANCE &amp; API HANDSHAKE LEDGER</span>
                     <span>·</span>
                     <span>{spec.containerKind} OVERLAY</span>
                   </div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">
                     {spec.containerTitle} — {run.countryName} ({run.iso3})
                   </h3>
                 </div>
@@ -626,40 +693,40 @@ export const DataProvenanceBadge: React.FC<{
               {/* Handshake Timestamp & Status Strip */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <Clock className="w-3 h-3 text-emerald-500" />
                     <span>Last API Handshake (UTC)</span>
                   </div>
-                  <div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 tabular-nums">
+                  <div className="text-xs tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                     {utcFormatted}
                   </div>
-                  <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
                     Local: {localFormatted} ({ageLabel})
                   </div>
                 </div>
 
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                  <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <Activity className="w-3 h-3 text-blue-500" />
-                    <span>Handshake Status &amp; RTT</span>
+                    <span>Status</span>
                   </div>
-                  <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                  <div className={`text-xs tabular-nums font-semibold mt-1 ${spec.isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                     {spec.httpStatus}
                   </div>
-                  <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
-                    Method: {spec.httpMethod} · RTT Latency: {spec.handshakeLatencyMs} ms
+                  <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 mt-0.5">
+                    Method: {spec.httpMethod}
                   </div>
                 </div>
 
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                    <Database className="w-3 h-3 text-indigo-500" />
+                  <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <Database className="w-3 h-3 text-blue-500" />
                     <span>Institutional Tier</span>
                   </div>
-                  <div className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1 truncate">
+                  <div className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1 truncate">
                     {spec.provenanceTier}
                   </div>
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                     {spec.tierLabel}
                   </div>
                 </div>
@@ -667,22 +734,22 @@ export const DataProvenanceBadge: React.FC<{
 
               {/* Primary Source & Endpoint URI Box */}
               <div className="bg-slate-900 dark:bg-slate-950 border border-slate-800 p-3 text-slate-100 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums text-slate-400">
                   <span>PRIMARY SOURCE AUTHORITY: {spec.primarySourceAuthority.toUpperCase()}</span>
-                  <span className="text-emerald-400 font-semibold">ENDPOINT URI VERIFIED</span>
+                  <span className="text-emerald-400 font-semibold">Endpoint URI verified</span>
                 </div>
-                <div className="font-mono text-[11px] text-emerald-300 break-all select-all bg-slate-950/90 p-2 border border-slate-800">
+                <div className="tabular-nums text-xs text-emerald-300 break-all select-all bg-slate-950/90 p-2 border border-slate-800">
                   {spec.httpMethod} {spec.primaryEndpointUri}
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                  <code className="text-[10px] font-mono text-slate-400 truncate max-w-md">
+                  <code className="text-xs tabular-nums text-slate-400 truncate max-w-md">
                     {spec.curlSnippet}
                   </code>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
                       type="button"
                       onClick={handleCopyEndpoint}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-100 text-[10px] font-mono border border-slate-700 cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs tabular-nums border border-slate-700 cursor-pointer"
                     >
                       {copiedUri ? (
                         <>
@@ -700,7 +767,7 @@ export const DataProvenanceBadge: React.FC<{
                       type="button"
                       onClick={handleReHandshake}
                       disabled={isPinging || isFetchingData}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-[10px] font-mono font-semibold cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs tabular-nums font-semibold cursor-pointer"
                     >
                       <RefreshCw
                         className={`w-3 h-3 ${isPinging || isFetchingData ? 'animate-spin' : ''}`}
@@ -717,13 +784,13 @@ export const DataProvenanceBadge: React.FC<{
 
               {/* Underlying Data Points & JSON Field Mappings */}
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                   Populated Data Points, JSON Response Paths &amp; Live Sovereign Values ({run.iso3})
                 </div>
                 <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-[11px]" data-no-provenance-overlay="true">
+                  <table className="w-full text-left border-collapse text-xs" data-no-provenance-overlay="true">
                     <thead>
-                      <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-mono text-[10px]">
+                      <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 tabular-nums text-xs">
                         <th className="py-1.5 px-2.5 border-b border-slate-200 dark:border-slate-800">
                           Data Point / Series
                         </th>
@@ -738,7 +805,7 @@ export const DataProvenanceBadge: React.FC<{
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+                    <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                       {spec.fieldMappings.map((f) => (
                         <tr key={f.indicatorCode} className="bg-white dark:bg-slate-900/60">
                           <td className="py-1.5 px-2.5 font-sans font-medium text-slate-800 dark:text-slate-200">
@@ -750,7 +817,7 @@ export const DataProvenanceBadge: React.FC<{
                           <td className="py-1.5 px-2.5 text-slate-500 dark:text-slate-400">
                             {f.jsonPath}
                           </td>
-                          <td className="py-1.5 px-2.5 text-right font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                          <td className="py-1.5 px-2.5 text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                             {f.liveValue}
                           </td>
                         </tr>
@@ -762,7 +829,7 @@ export const DataProvenanceBadge: React.FC<{
 
               {/* Secondary / Cross-Validation Endpoints */}
               <div>
-                <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                   Secondary &amp; Cross-Validation API Endpoints in Pipeline
                 </div>
                 <div className="space-y-1.5 max-h-36 overflow-y-auto">
@@ -772,14 +839,14 @@ export const DataProvenanceBadge: React.FC<{
                       className="p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
                     >
                       <div className="min-w-0">
-                        <div className="font-semibold text-[11px] text-slate-800 dark:text-slate-200">
+                        <div className="font-semibold text-xs text-slate-800 dark:text-slate-200">
                           {sec.authority} — <span className="font-normal text-slate-500">{sec.purpose}</span>
                         </div>
-                        <div className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 truncate">
+                        <div className="tabular-nums text-xs text-emerald-700 dark:text-emerald-400 truncate">
                           GET {sec.endpointUri}
                         </div>
                       </div>
-                      <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <span className="tabular-nums text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
                         200 OK
                       </span>
                     </div>
@@ -873,7 +940,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
     const tables = Array.from(document.querySelectorAll('main table'));
     tables.forEach((tableEl) => {
       const htmlTable = tableEl as HTMLElement;
-      if (htmlTable.getAttribute('data-no-provenance-overlay') === 'true') return;
+      if (htmlTable.closest('[data-no-provenance-overlay="true"]')) return;
       const wrapper = (htmlTable.parentElement || htmlTable) as HTMLElement;
 
       // Update existing badge timestamp if already instrumented
@@ -900,10 +967,12 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       if (existingBadge) {
         existingBadge.setAttribute('data-prov-context', contextStr);
         const labelSpan = existingBadge.querySelector('[data-prov-label="true"]');
-        const nextLabel = `PROVENANCE · ${spec.primarySourceAuthority.split('&')[0].trim()} · Handshake ${fetchedTime}`;
+        const nextLabel = provenanceBarLabel(spec, fetchedTime);
         if (labelSpan && labelSpan.textContent !== nextLabel) {
           labelSpan.textContent = nextLabel;
         }
+        const trigger = existingBadge.querySelector('[data-prov-trigger="true"]');
+        if (trigger) trigger.className = provenanceBarClass(spec.isLive);
         return;
       }
 
@@ -913,15 +982,15 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       bar.setAttribute('data-prov-kind', 'TABLE');
       bar.setAttribute('data-prov-context', contextStr);
       bar.className =
-        'flex items-center justify-between gap-2 px-2.5 py-1 bg-slate-100/90 dark:bg-slate-900/95 border border-b-0 border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400';
+        'flex items-center justify-between gap-2 max-w-full min-w-0 px-2.5 py-1 bg-slate-100/90 dark:bg-slate-900/95 border border-b-0 border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-600 dark:text-slate-400';
 
       bar.innerHTML = `
-        <span class="truncate text-[10px] text-slate-500 dark:text-slate-400">
-          <strong class="text-slate-700 dark:text-slate-300">TABLE FEED:</strong> ${spec.primaryEndpointUri.replace(/^https?:\/\//, '').slice(0, 58)}... · Click any cell or badge for endpoint audit
+        <span class="min-w-0 flex-1 truncate text-xs text-slate-500 dark:text-slate-400">
+          <strong class="text-slate-700 dark:text-slate-300">Source:</strong> ${spec.primarySourceAuthority.split('&')[0].trim()} · click the badge for details
         </span>
-        <button type="button" data-prov-trigger="true" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-mono text-[10px] font-semibold cursor-pointer shrink-0 transition-colors">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span data-prov-label="true">PROVENANCE · ${spec.primarySourceAuthority.split('&')[0].trim()} · Handshake ${fetchedTime}</span>
+        <button type="button" data-prov-trigger="true" class="${provenanceBarClass(spec.isLive)}">
+          <span class="w-1.5 h-1.5 rounded-full ${spec.isLive ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+          <span data-prov-label="true" class="truncate">${provenanceBarLabel(spec, fetchedTime)}</span>
         </button>
       `;
 
@@ -956,10 +1025,11 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       if (existingOverlay) {
         existingOverlay.setAttribute('data-prov-context', title);
         const span = existingOverlay.querySelector('[data-prov-label="true"]');
-        const nextLabel = `API PROVENANCE · ${spec.primarySourceAuthority.split(' ')[0]} · ${fetchedTime}`;
+        const nextLabel = provenanceBarLabel(spec, fetchedTime);
         if (span && span.textContent !== nextLabel) {
           span.textContent = nextLabel;
         }
+        existingOverlay.className = provenanceChartBadgeClass(spec.isLive);
         return;
       }
 
@@ -975,12 +1045,11 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       badge.setAttribute('data-prov-kind', 'CHART');
       badge.setAttribute('data-prov-context', title);
       badge.title =
-        'Click to inspect last successful API handshake timestamp & exact source/endpoint URI';
-      badge.className =
-        'absolute top-1.5 right-1.5 z-20 inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/95 dark:bg-slate-900/95 hover:bg-emerald-50 dark:hover:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-sm font-mono text-[10px] font-semibold cursor-pointer transition-colors';
+        'Click to see where this figure comes from and whether that source answered';
+      badge.className = provenanceChartBadgeClass(spec.isLive);
       badge.innerHTML = `
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-        <span data-prov-label="true">API PROVENANCE · ${spec.primarySourceAuthority.split(' ')[0]} · ${fetchedTime}</span>
+        <span class="w-1.5 h-1.5 rounded-full ${spec.isLive ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+        <span data-prov-label="true">${provenanceBarLabel(spec, fetchedTime)}</span>
       `;
       container.appendChild(badge);
     });
@@ -993,6 +1062,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       const el = node as HTMLElement;
       if (
         el.getAttribute('data-stat-ref-instrumented') === 'true' ||
+        el.closest('[data-no-stat-ref="true"]') ||
         el.closest('[role="button"][title*="mathematical definition"]') ||
         el.closest('[data-econquest-provenance-bar="true"]') ||
         el.closest('[data-econquest-chart-prov="true"]')
@@ -1173,15 +1243,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
     setIsPinging(true);
     try {
       onRefreshLiveOpenData();
-      await new Promise((r) => setTimeout(r, 260));
-      const nowIso = new Date().toISOString();
-      setLocalHandshakeIso(nowIso);
-      if (activeProvenanceSpec) {
-        setActiveProvenanceSpec({
-          ...activeProvenanceSpec,
-          handshakeTimestampIso: nowIso,
-        });
-      }
+      // The refreshed snapshot carries its own fetch time; don't invent one here.
     } finally {
       setIsPinging(false);
     }
@@ -1203,17 +1265,17 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
             >
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-2xl bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-5 space-y-4 text-xs"
+                className="w-full max-w-2xl bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-5 space-y-4 text-xs"
               >
                 <div className="flex items-start justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
                   <div>
-                    <div className="flex flex-wrap items-center gap-2 text-[10px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-bold">
+                    <div className="flex flex-wrap items-center gap-2 text-xs tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
                       <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
                       <span>REAL-TIME DATA PROVENANCE &amp; API HANDSHAKE INSPECTOR</span>
                       <span>·</span>
                       <span>{activeProvenanceSpec.containerKind} OVERLAY</span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">
                       {activeProvenanceSpec.containerTitle} — {run.countryName} ({run.iso3})
                     </h3>
                   </div>
@@ -1229,40 +1291,40 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                 {/* Handshake Timestamp & Status Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <Clock className="w-3 h-3 text-emerald-500" />
                       <span>Last Successful Handshake</span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-slate-900 dark:text-slate-100 mt-1 tabular-nums">
+                    <div className="text-xs tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                       {utcFormatted}
                     </div>
-                    <div className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
+                    <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
                       Local: {localFormatted} ({ageLabel})
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                    <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <Server className="w-3 h-3 text-blue-500" />
-                      <span>HTTP Status &amp; Latency</span>
+                      <span>Status</span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                    <div className={`text-xs tabular-nums font-semibold mt-1 ${activeProvenanceSpec.isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                       {activeProvenanceSpec.httpStatus}
                     </div>
-                    <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
-                      Method: {activeProvenanceSpec.httpMethod} · RTT: {activeProvenanceSpec.handshakeLatencyMs} ms
+                    <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 mt-0.5">
+                      Method: {activeProvenanceSpec.httpMethod}
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
-                      <Database className="w-3 h-3 text-indigo-500" />
+                    <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Database className="w-3 h-3 text-blue-500" />
                       <span>Provenance Tier</span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1 truncate">
+                    <div className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1 truncate">
                       {activeProvenanceSpec.provenanceTier}
                     </div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                       {activeProvenanceSpec.tierLabel}
                     </div>
                   </div>
@@ -1270,17 +1332,17 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
                 {/* Specific Source & Endpoint URI */}
                 <div className="bg-slate-900 dark:bg-slate-950 border border-slate-800 p-3 text-slate-100 space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums text-slate-400">
                     <span>
                       SOURCE AUTHORITY: {activeProvenanceSpec.primarySourceAuthority.toUpperCase()}
                     </span>
-                    <span className="text-emerald-400 font-semibold">LIVE REST ENDPOINT</span>
+                    <span className="text-emerald-400 font-semibold">Live rest endpoint</span>
                   </div>
-                  <div className="font-mono text-[11px] text-emerald-300 break-all select-all bg-slate-950/90 p-2 border border-slate-800">
+                  <div className="tabular-nums text-xs text-emerald-300 break-all select-all bg-slate-950/90 p-2 border border-slate-800">
                     {activeProvenanceSpec.httpMethod} {activeProvenanceSpec.primaryEndpointUri}
                   </div>
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <code className="text-[10px] font-mono text-slate-400 truncate max-w-md">
+                    <code className="text-xs tabular-nums text-slate-400 truncate max-w-md">
                       {activeProvenanceSpec.curlSnippet}
                     </code>
                     <div className="flex items-center gap-2 shrink-0">
@@ -1292,7 +1354,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                           setCopiedProvenance(true);
                           window.setTimeout(() => setCopiedProvenance(false), 1800);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-100 text-[10px] font-mono border border-slate-700 cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-100 text-xs tabular-nums border border-slate-700 cursor-pointer"
                       >
                         {copiedProvenance ? (
                           <>
@@ -1310,7 +1372,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                         type="button"
                         onClick={handleReHandshakeGlobal}
                         disabled={isPinging || isFetchingData}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-[10px] font-mono font-semibold cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs tabular-nums font-semibold cursor-pointer"
                       >
                         <RefreshCw
                           className={`w-3 h-3 ${isPinging || isFetchingData ? 'animate-spin' : ''}`}
@@ -1327,16 +1389,16 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
                 {/* Field-level JSON path mapping table */}
                 <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                  <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                     Underlying Data Point Series, JSON Response Paths &amp; Live Values ({run.iso3})
                   </div>
                   <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
                     <table
-                      className="w-full text-left border-collapse text-[11px]"
+                      className="w-full text-left border-collapse text-xs"
                       data-no-provenance-overlay="true"
                     >
                       <thead>
-                        <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-mono text-[10px]">
+                        <tr className="bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 tabular-nums text-xs">
                           <th className="py-1.5 px-2.5 border-b border-slate-200 dark:border-slate-800">
                             Series / Metric
                           </th>
@@ -1351,7 +1413,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                         {activeProvenanceSpec.fieldMappings.map((f) => (
                           <tr key={f.indicatorCode} className="bg-white dark:bg-slate-900/60">
                             <td className="py-1.5 px-2.5 font-sans font-medium text-slate-800 dark:text-slate-200">
@@ -1363,7 +1425,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                             <td className="py-1.5 px-2.5 text-slate-500 dark:text-slate-400">
                               {f.jsonPath}
                             </td>
-                            <td className="py-1.5 px-2.5 text-right font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                            <td className="py-1.5 px-2.5 text-right font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
                               {f.liveValue}
                             </td>
                           </tr>
@@ -1375,7 +1437,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
                 {/* Secondary Endpoints */}
                 <div>
-                  <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
+                  <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                     Secondary &amp; Cross-Validation Endpoints Populating This Module
                   </div>
                   <div className="space-y-1.5 max-h-32 overflow-y-auto">
@@ -1385,15 +1447,15 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                         className="p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5"
                       >
                         <div className="min-w-0">
-                          <div className="font-semibold text-[11px] text-slate-800 dark:text-slate-200">
+                          <div className="font-semibold text-xs text-slate-800 dark:text-slate-200">
                             {sec.authority} —{' '}
                             <span className="font-normal text-slate-500">{sec.purpose}</span>
                           </div>
-                          <div className="font-mono text-[10px] text-emerald-700 dark:text-emerald-400 truncate">
+                          <div className="tabular-nums text-xs text-emerald-700 dark:text-emerald-400 truncate">
                             GET {sec.endpointUri}
                           </div>
                         </div>
-                        <span className="font-mono text-[10px] text-emerald-600 dark:text-emerald-400 shrink-0">
+                        <span className="tabular-nums text-xs text-emerald-600 dark:text-emerald-400 shrink-0">
                           200 OK
                         </span>
                       </div>
@@ -1432,15 +1494,15 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
               width: 'min(480px, calc(100vw - 24px))',
               zIndex: 9999,
             }}
-            className="bg-white dark:bg-slate-900 border-2 border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-4 space-y-3 text-xs"
+            className="bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 shadow-2xl text-slate-900 dark:text-slate-100 p-4 space-y-3 text-xs"
           >
             <div className="flex items-start justify-between gap-3 pb-2.5 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-blue-600 dark:text-blue-400 font-bold">
+                <div className="flex items-center gap-1.5 text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                   <BookOpen className="w-3 h-3 shrink-0" />
                   <span>{activeStatRef.resolved.categoryLabel}</span>
                 </div>
-                <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
+                <h4 className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-0.5 leading-snug">
                   {activeStatRef.resolved.title}
                 </h4>
               </div>
@@ -1452,11 +1514,8 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                       prev ? { ...prev, isPinned: !prev.isPinned } : null
                     )
                   }
-                  className={`p-1 border text-[10px] font-mono inline-flex items-center gap-1 cursor-pointer ${
-                    activeStatRef.isPinned
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={activeStatRef.isPinned}
+                  className="ui-pill inline-flex items-center gap-1"
                 >
                   <Pin className="w-3 h-3" />
                   <span>{activeStatRef.isPinned ? 'Pinned' : 'Pin'}</span>
@@ -1473,39 +1532,39 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
             {/* Mathematical Formula */}
             <div className="bg-slate-900 dark:bg-slate-950 border border-slate-800 p-2.5 text-slate-100">
-              <div className="flex items-center justify-between text-[10px] font-mono text-slate-400 mb-1">
-                <span>FORMAL MATHEMATICAL DEFINITION</span>
-                <span className="text-emerald-400">STRUCTURAL EQUATION</span>
+              <div className="flex items-center justify-between text-xs tabular-nums text-slate-400 mb-1">
+                <span>Formal mathematical definition</span>
+                <span className="text-emerald-400">Structural equation</span>
               </div>
-              <div className="font-mono text-[11px] text-emerald-300 leading-relaxed break-words select-all">
+              <div className="tabular-nums text-xs text-emerald-300 leading-relaxed break-words select-all">
                 {activeStatRef.resolved.formulaMono}
               </div>
             </div>
 
             {/* Plain-English Summary */}
-            <div className="text-[11px] text-slate-700 dark:text-slate-300 leading-relaxed">
+            <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
               <strong className="text-slate-900 dark:text-slate-100">Plain-English Meaning: </strong>
               {activeStatRef.resolved.plainEnglishSummary}
             </div>
 
             {/* Variable Glossary */}
             <div>
-              <div className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mb-1">
+              <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1">
                 Variable &amp; Parameter Glossary
               </div>
               <div className="border border-slate-200 dark:border-slate-800 divide-y divide-slate-200 dark:divide-slate-800 max-h-36 overflow-y-auto">
                 {activeStatRef.resolved.variables.map((v) => (
                   <div
                     key={v.symbol}
-                    className="px-2 py-1 flex items-baseline justify-between gap-2 text-[11px] bg-white dark:bg-slate-900/60"
+                    className="px-2 py-1 flex items-baseline justify-between gap-2 text-xs bg-white dark:bg-slate-900/60"
                   >
                     <div className="min-w-0">
-                      <span className="font-mono font-bold text-blue-600 dark:text-blue-400 mr-1.5">
+                      <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-1.5">
                         {v.symbol}
                       </span>
                       <span className="text-slate-600 dark:text-slate-300">{v.meaning}</span>
                     </div>
-                    <span className="font-mono text-[10px] text-slate-400 shrink-0">{v.unit}</span>
+                    <span className="tabular-nums text-xs text-slate-400 shrink-0">{v.unit}</span>
                   </div>
                 ))}
               </div>
@@ -1513,7 +1572,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
             {/* Institutional Source Citation */}
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-snug">
+              <div className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                 <strong className="text-slate-700 dark:text-slate-200">
                   Institutional Source:{' '}
                 </strong>
@@ -1527,7 +1586,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                   setCopiedStatCitation(true);
                   window.setTimeout(() => setCopiedStatCitation(false), 1800);
                 }}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-mono font-semibold hover:opacity-90 shrink-0 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs tabular-nums font-semibold hover:opacity-90 shrink-0 cursor-pointer"
               >
                 {copiedStatCitation ? (
                   <>

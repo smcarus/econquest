@@ -59,7 +59,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
               <GitCompare className="w-3.5 h-3.5" />
               <span>CRO Side-by-Side Scenario A vs. Scenario B Delta Attribution &amp; Live API Provenance</span>
             </div>
-            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {scenarioB.countryName} ({scenarioB.iso3}): {scenarioA.label} vs. {scenarioB.label}
             </h3>
           </div>
@@ -68,7 +68,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
             <button
               type="button"
               onClick={onPinCurrentAsScenarioA}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              className="ui-btn ui-btn-primary inline-flex"
             >
               <Pin className="w-3.5 h-3.5" />
               <span>Pin Current State as Scenario A</span>
@@ -111,7 +111,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
           </div>
 
           <div className="lg:col-span-5 flex flex-wrap items-center justify-end gap-1.5">
-            <span className="text-[11px] font-semibold text-slate-500 mr-1 flex items-center gap-1">
+            <span className="text-xs font-semibold text-slate-500 mr-1 flex items-center gap-1">
               <Flame className="w-3 h-3 text-amber-500" />
               <span>Test Scenario B Shock:</span>
             </span>
@@ -126,7 +126,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
                   externalVolatilityMultiplier: 1.75,
                 })
               }
-              className="px-2.5 py-1 text-[11px] font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100"
+              className="px-2.5 py-1 text-xs font-medium bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 hover:bg-amber-100"
             >
               Stagflation +250bp
             </button>
@@ -141,7 +141,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
                   externalVolatilityMultiplier: 2.15,
                 })
               }
-              className="px-2.5 py-1 text-[11px] font-medium bg-red-50 dark:bg-red-950/50 text-red-800 dark:text-red-300 border border-red-300 dark:border-red-800 hover:bg-red-100"
+              className="px-2.5 py-1 text-xs font-medium bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800 hover:bg-rose-100"
             >
               Sudden-Stop FX -35%
             </button>
@@ -156,7 +156,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
                   externalVolatilityMultiplier: 0.85,
                 })
               }
-              className="px-2.5 py-1 text-[11px] font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100"
+              className="px-2.5 py-1 text-xs font-medium bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 hover:bg-emerald-100"
             >
               Fiscal Reform +1.8% GDP
             </button>
@@ -184,21 +184,21 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
                 const isZero = Math.abs(row.delta) < 0.01;
                 return (
                   <tr key={row.metricId} className="hover:bg-slate-50/70 dark:hover:bg-slate-950/50">
-                    <td className="py-2.5 px-3 font-bold text-slate-900 dark:text-slate-100">
+                    <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                       {row.label}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-slate-300">
                       {row.formattedScenarioA}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                       {row.formattedScenarioB}
                     </td>
                     <td
-                      className={`py-2.5 px-3 text-right font-mono font-bold tabular-nums ${
+                      className={`py-2.5 px-3 text-right tabular-nums font-semibold tabular-nums ${
                         isZero
                           ? 'text-slate-400'
                           : row.isDeterioration
-                          ? 'text-red-600 dark:text-red-400 bg-red-50/40 dark:bg-red-950/20'
+                          ? 'text-rose-600 dark:text-rose-400 bg-rose-50/40 dark:bg-rose-950/20'
                           : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/40 dark:bg-emerald-950/20'
                       }`}
                     >
@@ -225,7 +225,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
             <div className="flex items-center gap-2 text-xs">
               <Database className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <div>
-                <span className="font-bold text-slate-900 dark:text-slate-100">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
                   Live World Bank WDI v2 &amp; US Treasury Fiscal Data API Telemetry Sync
                 </span>
                 <span className="text-slate-500 dark:text-slate-400 ml-2">
@@ -240,7 +240,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
               type="button"
               onClick={onTriggerLiveMacroSync}
               disabled={isSyncingLiveMacro}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncingLiveMacro ? 'animate-spin' : ''}`} />
               <span>
@@ -258,25 +258,25 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
                   key={d.indicatorCode}
                   className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                 >
-                  <div className="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                  <div className="flex items-center justify-between text-xs tabular-nums text-slate-500">
                     <span>{d.indicatorCode}</span>
                     <span
                       className={
                         d.isLiveApi
-                          ? 'text-emerald-600 dark:text-emerald-400 font-bold'
+                          ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
                           : 'text-amber-600 dark:text-amber-400'
                       }
                     >
-                      {d.isLiveApi ? `LIVE (${d.observationYear})` : 'FALLBACK'}
+                      {d.isLiveApi ? `Live (${d.observationYear})` : 'Fallback'}
                     </span>
                   </div>
                   <div className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">
                     {d.label}
                   </div>
-                  <div className="font-mono font-bold text-slate-900 dark:text-slate-100 mt-1">
+                  <div className="tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                     {d.liveValue}
                     {d.unit}{' '}
-                    <span className="text-[11px] font-normal text-slate-500">
+                    <span className="text-xs font-normal text-slate-500">
                       (Base: {d.baselineValue}
                       {d.unit})
                     </span>

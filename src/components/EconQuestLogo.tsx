@@ -28,7 +28,7 @@ export const EconQuestLogo: React.FC<EconQuestLogoProps> = ({
         height={size}
         referrerPolicy="no-referrer"
         onError={() => setImageError(true)}
-        className={`shrink-0 select-none object-cover rounded-xs border border-slate-700/80 shadow-2xs ${className}`}
+        className={`shrink-0 select-none object-cover  border border-slate-700/80  ${className}`}
       />
     );
   }

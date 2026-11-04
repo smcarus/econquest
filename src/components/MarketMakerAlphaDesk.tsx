@@ -152,7 +152,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
   const getSignalStyle = (signal: CorridorStrategyAlphaRow['executionSignal']) => {
     switch (signal) {
       case 'HARVEST_CIP_BASIS':
-        return 'text-cyan-700 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-950/60 border-cyan-300 dark:border-cyan-800';
+        return 'text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800';
       case 'LONG_CARRY':
         return 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800';
       case 'PROVIDE_DEPTH':
@@ -167,12 +167,12 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
   return (
     <section
       aria-label="Market-Maker Strategy and Alpha Generator Workbench"
-      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-sm overflow-hidden"
+      className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 overflow-hidden"
     >
       {/* Institutional Header */}
       <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/70 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400 tabular-nums">
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               Quantitative Alpha &amp; Dealer Execution Simulator
             </span>
@@ -183,7 +183,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             <span aria-hidden="true">·</span>
             <span>Sovereign FX Carry</span>
           </div>
-          <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-slate-100">
+          <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-slate-100">
             Market-Maker Strategy &amp; Alpha Generator — Real-Time PnL &amp; Funding Squeeze Attribution
           </h2>
           <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed max-w-5xl">
@@ -199,7 +199,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             <button
               type="button"
               onClick={onOpenGlobalLiquidityDesk}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-cyan-600 hover:bg-cyan-500 text-white transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+              className="ui-btn ui-btn-primary inline-flex shrink-0"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>Global Liquidity &amp; XCCY Desk</span>
@@ -235,7 +235,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         {/* KPI 1: Stressed 30-Day Net Strategy PnL */}
         <div className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
               30-Day Projected Net Strategy PnL
             </span>
             {alphaSuite.stressed30DayNetPnlUsdM >= 0 ? (
@@ -244,9 +244,9 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               <TrendingDown className="w-4 h-4 text-rose-500 shrink-0" />
             )}
           </div>
-          <div className="my-1.5 flex items-baseline gap-2 font-mono tabular-nums">
+          <div className="my-1.5 flex items-baseline gap-2 tabular-nums">
             <span
-              className={`text-xl font-bold ${
+              className={`text-xl font-semibold ${
                 alphaSuite.stressed30DayNetPnlUsdM >= 0
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-rose-600 dark:text-rose-400'
@@ -260,7 +260,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               {alphaSuite.stressedAnnualizedReturnPct.toFixed(1)}% Ann.)
             </span>
           </div>
-          <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+          <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
             Unstressed Baseline:{' '}
             <span className="text-slate-800 dark:text-slate-200 font-semibold">
               +${alphaSuite.baseline30DayNetPnlUsdM.toFixed(2)}M
@@ -282,20 +282,20 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         {/* KPI 2: Avellaneda-Stoikov Optimal Bid-Ask & Order Flow */}
         <div className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Avellaneda-Stoikov Quoted Bid-Ask
             </span>
             <Activity className="w-4 h-4 text-blue-500 shrink-0" />
           </div>
-          <div className="my-1.5 flex items-baseline gap-2 font-mono tabular-nums">
-            <span className="text-xl font-bold text-slate-900 dark:text-slate-100">
+          <div className="my-1.5 flex items-baseline gap-2 tabular-nums">
+            <span className="text-xl font-semibold text-slate-900 dark:text-slate-100">
               {alphaSuite.avgOptimalBidAskSpreadBps.toFixed(1)} bps
             </span>
             <span className="text-xs text-slate-500 dark:text-slate-400">
               (δ* = {(alphaSuite.avgOptimalBidAskSpreadBps / 2).toFixed(1)} bps half-spread)
             </span>
           </div>
-          <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+          <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
             Toxic Flow Adverse Selection:{' '}
             <span
               className={
@@ -314,14 +314,14 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         {/* KPI 3: Strategy Sharpe Ratio & Gross Notional */}
         <div className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Multi-Book Sharpe Ratio (Stressed vs Base)
             </span>
-            <BarChart3 className="w-4 h-4 text-cyan-500 shrink-0" />
+            <BarChart3 className="w-4 h-4 text-blue-500 shrink-0" />
           </div>
-          <div className="my-1.5 flex items-baseline gap-2 font-mono tabular-nums">
+          <div className="my-1.5 flex items-baseline gap-2 tabular-nums">
             <span
-              className={`text-xl font-bold ${
+              className={`text-xl font-semibold ${
                 alphaSuite.stressedSharpeRatio >= 1.2
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : alphaSuite.stressedSharpeRatio >= 0
@@ -335,7 +335,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               vs {alphaSuite.baselineSharpeRatio.toFixed(2)}x Baseline
             </span>
           </div>
-          <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+          <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
             AUM: <span className="text-slate-800 dark:text-slate-200">${strategyConfig.bookAumUsdMillions}M</span> ·
             Gross Notional:{' '}
             <span className="text-slate-800 dark:text-slate-200 font-semibold">
@@ -347,7 +347,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         {/* KPI 4: Prime Broker Margin & Stop-Out Buffer */}
         <div className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+            <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
               Margin &amp; Repo Haircut Utilization
             </span>
             <ShieldAlert
@@ -360,9 +360,9 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               }`}
             />
           </div>
-          <div className="my-1.5 flex items-baseline gap-2 font-mono tabular-nums">
+          <div className="my-1.5 flex items-baseline gap-2 tabular-nums">
             <span
-              className={`text-xl font-bold ${
+              className={`text-xl font-semibold ${
                 alphaSuite.marginTelemetry.marginUtilizationPctOfAum >= 85
                   ? 'text-rose-600 dark:text-rose-400'
                   : alphaSuite.marginTelemetry.marginUtilizationPctOfAum >= 70
@@ -376,7 +376,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               ({alphaSuite.marginTelemetry.marginStatus.replace(/_/g, ' ')})
             </span>
           </div>
-          <div className="text-[11px] font-mono tabular-nums text-slate-500 dark:text-slate-400">
+          <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
             Encumbered:{' '}
             <span className="text-slate-800 dark:text-slate-200 font-semibold">
               ${alphaSuite.marginTelemetry.totalEncumberedCapitalUsdM.toFixed(1)}M
@@ -395,7 +395,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         <div className="lg:col-span-7 p-5 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>01. Multi-Book Strategy &amp; Microstructure Parameters</span>
               </h3>
@@ -406,18 +406,15 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
 
             {/* Funding Leg Currency Selector */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <span className="text-[11px] text-slate-500 dark:text-slate-400">Funding Leg:</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">Funding Leg:</span>
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700">
                 {(['USD', 'JPY', 'CHF', 'EUR'] as const).map((ccy) => (
                   <button
                     key={ccy}
                     type="button"
                     onClick={() => handleConfigChange('fundingLegCurrency', ccy)}
-                    className={`px-2 py-0.5 text-xs font-mono font-medium transition-colors cursor-pointer ${
-                      strategyConfig.fundingLegCurrency === ccy
-                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                    aria-pressed={strategyConfig.fundingLegCurrency === ccy}
+                    className="ui-pill"
                   >
                     {ccy}
                   </button>
@@ -442,7 +439,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate">
                   {preset.label}
                 </div>
-                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                   {preset.subtitle}
                 </div>
               </button>
@@ -455,7 +452,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300 font-medium">Pod AUM ($M)</span>
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                   ${strategyConfig.bookAumUsdMillions}M
                 </span>
               </div>
@@ -468,7 +465,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 onChange={(e) => handleConfigChange('bookAumUsdMillions', Number(e.target.value))}
                 className="w-full accent-emerald-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <div className="flex justify-between text-xs tabular-nums text-slate-400">
                 <span>$200M</span>
                 <span>$850M</span>
                 <span>$1,500M</span>
@@ -479,7 +476,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300 font-medium">Gross Leverage</span>
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                   {strategyConfig.grossLeverageMultiplier.toFixed(1)}x
                 </span>
               </div>
@@ -494,7 +491,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 }
                 className="w-full accent-emerald-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <div className="flex justify-between text-xs tabular-nums text-slate-400">
                 <span>1.0x</span>
                 <span>4.5x</span>
                 <span>8.0x</span>
@@ -507,7 +504,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   Risk Aversion (γ)
                 </span>
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                   {strategyConfig.avellanedaRiskAversionGamma.toFixed(2)}
                 </span>
               </div>
@@ -522,7 +519,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 }
                 className="w-full accent-emerald-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <div className="flex justify-between text-xs tabular-nums text-slate-400">
                 <span>0.05 (Tight)</span>
                 <span>0.50</span>
                 <span>1.00 (Wide)</span>
@@ -535,7 +532,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   Inventory Skew (q)
                 </span>
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                   {strategyConfig.inventorySkewPct > 0 ? '+' : ''}
                   {strategyConfig.inventorySkewPct}%
                 </span>
@@ -549,7 +546,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 onChange={(e) => handleConfigChange('inventorySkewPct', Number(e.target.value))}
                 className="w-full accent-emerald-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <div className="flex justify-between text-xs tabular-nums text-slate-400">
                 <span>-80% (Short)</span>
                 <span>0% (Neutral)</span>
                 <span>+80% (Long)</span>
@@ -562,7 +559,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   Order Arrival (κ)
                 </span>
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                   {strategyConfig.orderArrivalIntensityKappa.toFixed(2)}
                 </span>
               </div>
@@ -577,7 +574,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 }
                 className="w-full accent-emerald-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <div className="flex justify-between text-xs tabular-nums text-slate-400">
                 <span>0.5 (Illiquid)</span>
                 <span>1.7</span>
                 <span>3.0 (Deep)</span>
@@ -590,7 +587,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 <span className="text-slate-600 dark:text-slate-300 font-medium">
                   CIP Basis Share
                 </span>
-                <span className="font-mono font-semibold text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                   {alphaSuite.config.cipArbBookWeightPct.toFixed(0)}%
                 </span>
               </div>
@@ -613,7 +610,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 }}
                 className="w-full accent-emerald-600 cursor-pointer"
               />
-              <div className="flex justify-between text-[10px] font-mono text-slate-400">
+              <div className="flex justify-between text-xs tabular-nums text-slate-400">
                 <span>MM {alphaSuite.config.mmBookWeightPct.toFixed(0)}%</span>
                 <span>CIP {alphaSuite.config.cipArbBookWeightPct.toFixed(0)}%</span>
                 <span>Carry {alphaSuite.config.carryBookWeightPct.toFixed(0)}%</span>
@@ -636,7 +633,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 Enforce CRO Dynamic Stop-Out &amp; Auto-Deleveraging on Margin Warning (&gt;70% AUM Encumbrance)
               </span>
             </label>
-            <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 tabular-nums">
+            <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
               Effective Post-Haircut Leverage: {alphaSuite.marginTelemetry.effectiveLeverageAfterHaircut.toFixed(2)}x
             </span>
           </div>
@@ -646,15 +643,15 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         <div className="lg:col-span-5 p-5 bg-slate-50/50 dark:bg-slate-950/40 space-y-4">
           <div className="flex items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-cyan-600 dark:text-cyan-400" />
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+                <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>02. Live Global Liquidity Squeeze Link (2-Way Sync)</span>
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Synchronized with Global Liquidity &amp; XCCY Desk — shocks feed strategy funding drag live
               </p>
             </div>
-            <span className="text-xs font-mono font-bold text-cyan-600 dark:text-cyan-400 tabular-nums">
+            <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
               Z = {liquiditySuite.globalLiquidityStressIndexZScore >= 0 ? '+' : ''}
               {liquiditySuite.globalLiquidityStressIndexZScore.toFixed(2)}σ
             </span>
@@ -675,11 +672,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => handleLiquidityPresetSelect(preset.id)}
-                className={`px-2.5 py-1 text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                  stressParams.presetId === preset.id
-                    ? 'bg-cyan-600 text-white border-cyan-600 font-semibold'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={stressParams.presetId === preset.id}
+                className="ui-pill whitespace-nowrap shrink-0"
               >
                 {preset.label}
               </button>
@@ -691,7 +685,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300">Offshore USD Basis Shock</span>
-                <span className="font-mono font-semibold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   -{stressParams.usdBasisSqueezeBps} bps
                 </span>
               </div>
@@ -704,14 +698,14 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 onChange={(e) =>
                   handleLiquiditySliderChange('usdBasisSqueezeBps', Number(e.target.value))
                 }
-                className="w-full accent-cyan-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300">LIBOR/FRA-OIS &amp; Repo Shock</span>
-                <span className="font-mono font-semibold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   +{stressParams.interbankFraOisShockBps} bps
                 </span>
               </div>
@@ -724,14 +718,14 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 onChange={(e) =>
                   handleLiquiditySliderChange('interbankFraOisShockBps', Number(e.target.value))
                 }
-                className="w-full accent-cyan-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300">Fed QT &amp; TGA Drain</span>
-                <span className="font-mono font-semibold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   ${stressParams.fedQtAndTgaDrainUsdBn}B
                 </span>
               </div>
@@ -744,14 +738,14 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 onChange={(e) =>
                   handleLiquiditySliderChange('fedQtAndTgaDrainUsdBn', Number(e.target.value))
                 }
-                className="w-full accent-cyan-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
 
             <div className="space-y-1">
               <div className="flex justify-between text-xs">
                 <span className="text-slate-600 dark:text-slate-300">G-SIB Turn Scarcity</span>
-                <span className="font-mono font-semibold text-cyan-600 dark:text-cyan-400 tabular-nums">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {stressParams.gsibTurnWindowDressingMultiplier.toFixed(2)}x
                 </span>
               </div>
@@ -767,13 +761,13 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                     Number(e.target.value)
                   )
                 }
-                className="w-full accent-cyan-600 cursor-pointer"
+                className="w-full accent-blue-600 cursor-pointer"
               />
             </div>
           </div>
 
           {/* Live Plumbing Readout Strip */}
-          <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono tabular-nums text-slate-600 dark:text-slate-300">
+          <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums text-slate-600 dark:text-slate-300">
             <span>
               SOFR: <strong>{liquiditySuite.usSofrRatePct.toFixed(2)}%</strong>
             </span>
@@ -783,7 +777,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             </span>
             <span>·</span>
             <span>
-              US 3M FRA-OIS: <strong>{liquiditySuite.us3mFraOisSpreadBps.toFixed(1)} bps</strong>
+              US 3M fra-OIS: <strong>{liquiditySuite.us3mFraOisSpreadBps.toFixed(1)} bps</strong>
             </span>
             <span>·</span>
             <span>
@@ -800,7 +794,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
               <Layers className="w-4 h-4 text-blue-600 dark:text-blue-400" />
               <span>03. Strategy Book Performance &amp; Funding Squeeze Decomposition</span>
             </h3>
@@ -818,21 +812,21 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
             >
               <div>
                 <div className="flex items-center justify-between gap-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                     {book.bookName}
                   </span>
-                  <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 tabular-nums">
+                  <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {book.weightPct.toFixed(0)}% (${book.allocatedNotionalUsdMillions.toFixed(0)}M)
                   </span>
                 </div>
-                <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-1">
+                <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400 mt-1">
                   {book.modelSpecification}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs font-mono tabular-nums">
+              <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs tabular-nums">
                 <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
                     Gross Book Alpha
                   </span>
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
@@ -840,7 +834,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
                     Repo &amp; Funding Drag
                   </span>
                   <span className="font-semibold text-amber-600 dark:text-amber-400">
@@ -848,7 +842,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
                     Squeeze MTM Shock
                   </span>
                   <span className="font-semibold text-rose-600 dark:text-rose-400">
@@ -856,11 +850,11 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 block">
+                  <span className="text-xs text-slate-500 dark:text-slate-400 block">
                     Net Book PnL (30D)
                   </span>
                   <span
-                    className={`font-bold ${
+                    className={`font-semibold ${
                       book.netPnlUsdMillions >= 0
                         ? 'text-emerald-600 dark:text-emerald-400'
                         : 'text-rose-600 dark:text-rose-400'
@@ -873,11 +867,11 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px]">
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
                 <span className="text-slate-500 dark:text-slate-400 truncate max-w-[220px]" title={book.primaryRiskDriver}>
                   {book.primaryRiskDriver}
                 </span>
-                <span className="font-mono tabular-nums font-semibold text-slate-700 dark:text-slate-300 shrink-0">
+                <span className="tabular-nums font-semibold text-slate-700 dark:text-slate-300 shrink-0">
                   Sharpe: {book.stressedAnnualizedSharpe.toFixed(2)}x
                 </span>
               </div>
@@ -891,7 +885,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         {/* Left 6 Columns: Real-Time PnL Waterfall Attribution */}
         <div className="lg:col-span-6 p-5 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-800 space-y-4">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               04. Real-Time PnL Waterfall Attribution (Alpha vs. Funding Squeeze Drag)
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -930,9 +924,9 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                     <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {step.label}
                     </span>
-                    <div className="font-mono tabular-nums flex items-center gap-2 shrink-0">
+                    <div className="tabular-nums flex items-center gap-2 shrink-0">
                       <span
-                        className={`font-bold ${
+                        className={`font-semibold ${
                           isPositive
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-rose-600 dark:text-rose-400'
@@ -940,7 +934,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                       >
                         {isPositive ? '+' : ''}${step.valueUsdMillions.toFixed(2)}M
                       </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         ({isPositive ? '+' : ''}
                         {step.valueBpsOfAum.toFixed(0)} bps AUM)
                       </span>
@@ -955,7 +949,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                     />
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono tabular-nums">
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                     <span className="truncate">{step.driverDetail}</span>
                     <span className="shrink-0">
                       Cum: {step.cumulativeUsdMillions >= 0 ? '+' : ''}$
@@ -972,20 +966,20 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         <div className="lg:col-span-6 p-5 flex flex-col justify-between space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 05. 30-Day Cumulative Equity Curve (Baseline vs. Funding Squeeze)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Click or scrub days D1–D30 to inspect funding squeeze drawdown &amp; CRO stop-out stabilization
               </p>
             </div>
-            <div className="flex items-center gap-3 text-[11px] font-mono shrink-0">
+            <div className="flex items-center gap-3 text-xs tabular-nums shrink-0">
               <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                 <span className="w-3 h-0.5 bg-emerald-500 inline-block" />
                 Baseline
               </span>
-              <span className="inline-flex items-center gap-1.5 text-cyan-600 dark:text-cyan-400">
-                <span className="w-3 h-0.5 bg-cyan-500 inline-block" />
+              <span className="inline-flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                <span className="w-3 h-0.5 bg-blue-500 inline-block" />
                 Active Regime
               </span>
             </div>
@@ -1018,7 +1012,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                       x={padL - 6}
                       y={y + 3}
                       textAnchor="end"
-                      className="fill-slate-500 dark:fill-slate-400 text-[10px] font-mono"
+                      className="fill-slate-500 dark:fill-slate-400 text-xs tabular-nums"
                     >
                       {val >= 0 ? `+$${val.toFixed(0)}M` : `-$${Math.abs(val).toFixed(0)}M`}
                     </text>
@@ -1051,7 +1045,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 x={(toX(8) + toX(19)) / 2}
                 y={padT + 12}
                 textAnchor="middle"
-                className="fill-rose-600 dark:fill-rose-400 text-[9px] font-mono"
+                className="fill-rose-600 dark:fill-rose-400 text-xs tabular-nums"
               >
                 Funding Squeeze Window (D8–D19)
               </text>
@@ -1068,7 +1062,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               {/* Active Stressed Trajectory */}
               <polyline
                 fill="none"
-                stroke="#06b6d4"
+                stroke="#3b82f6"
                 strokeWidth={2.5}
                 points={stressedPoints}
               />
@@ -1093,7 +1087,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 cx={toX(activeDayPoint.day)}
                 cy={toY(activeDayPoint.stressedCumulativePnlUsdM)}
                 r={4.5}
-                className="fill-cyan-400 stroke-slate-900"
+                className="fill-blue-400 stroke-slate-900"
                 strokeWidth={1.5}
               />
 
@@ -1104,7 +1098,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   x={toX(d)}
                   y={svgH - 10}
                   textAnchor="middle"
-                  className="fill-slate-500 dark:fill-slate-400 text-[10px] font-mono"
+                  className="fill-slate-500 dark:fill-slate-400 text-xs tabular-nums"
                 >
                   Day {d}
                 </text>
@@ -1113,7 +1107,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
 
             {/* Day Scrubber Slider */}
             <div className="px-3 pt-1 pb-2 flex items-center gap-3 border-t border-slate-200 dark:border-slate-800">
-              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 shrink-0">
+              <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 shrink-0">
                 Inspect Horizon: Day {activeDayPoint.day}
               </span>
               <input
@@ -1122,9 +1116,9 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 max={30}
                 value={inspectedDay}
                 onChange={(e) => setInspectedDay(Number(e.target.value))}
-                className="flex-1 accent-cyan-600 cursor-pointer"
+                className="flex-1 accent-blue-600 cursor-pointer"
               />
-              <span className="text-[11px] font-mono tabular-nums text-slate-700 dark:text-slate-300 shrink-0">
+              <span className="text-xs tabular-nums text-slate-700 dark:text-slate-300 shrink-0">
                 Active: {activeDayPoint.stressedCumulativePnlUsdM >= 0 ? '+' : ''}$
                 {activeDayPoint.stressedCumulativePnlUsdM.toFixed(2)}M vs Base +$
                 {activeDayPoint.baselineCumulativePnlUsdM.toFixed(2)}M
@@ -1135,10 +1129,10 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
           {/* Prime Broker Margin Utilization & Repo Encumbrance Diagnostic Panel */}
           <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5">
             <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-slate-900 dark:text-slate-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
                 Prime Broker Margin, Repo Haircut &amp; Stop-Out Telemetry
               </span>
-              <span className="font-mono tabular-nums text-slate-600 dark:text-slate-300">
+              <span className="tabular-nums text-slate-600 dark:text-slate-300">
                 Stop-Out Trigger: 85.0% AUM
               </span>
             </div>
@@ -1183,7 +1177,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px] font-mono tabular-nums">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs tabular-nums">
               <div>
                 <span className="text-slate-500 dark:text-slate-400 block">Initial Margin</span>
                 <span className="font-semibold text-blue-600 dark:text-blue-400">
@@ -1217,7 +1211,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               {alphaSuite.marginTelemetry.primeBrokerDiagnostic}
             </p>
           </div>
@@ -1228,7 +1222,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
       <div className="p-5 space-y-4">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               06. Strategy Greeks, Quoting Spreads, Sharpe Ratio &amp; DV01 / FX Delta Exposure Matrix
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1244,11 +1238,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   key={grp}
                   type="button"
                   onClick={() => setRegionFilter(grp)}
-                  className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                    regionFilter === grp
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  aria-pressed={regionFilter === grp}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   {grp === 'ALL' ? 'All Corridors (12)' : `${grp} Desk`}
                 </button>
@@ -1268,11 +1259,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   key={b.id}
                   type="button"
                   onClick={() => setBookFilter(b.id)}
-                  className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                    bookFilter === b.id
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  aria-pressed={bookFilter === b.id}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   {b.label}
                 </button>
@@ -1284,7 +1272,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 <th className="py-2.5 px-3">Corridor / Sovereign</th>
                 <th className="py-2.5 px-2.5">Dominant Book</th>
                 <th className="py-2.5 px-2.5 text-right">Notional</th>
@@ -1299,7 +1287,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 <th className="py-2.5 px-3 text-right">Desk Signal</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs font-mono tabular-nums">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs tabular-nums">
               {filteredCorridors.map((row) => (
                 <tr
                   key={row.corridorId}
@@ -1313,12 +1301,12 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                     <div className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                       <span>{row.pairLabel}</span>
                       {row.isTargetSovereign && (
-                        <span className="text-[10px] font-mono text-blue-600 dark:text-blue-400">
+                        <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                           [TARGET]
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <div className="text-xs text-slate-500 dark:text-slate-400">
                       {row.sovereignLabel} · {row.regionGroup}
                     </div>
                   </td>
@@ -1330,12 +1318,12 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   </td>
                   <td className="py-2.5 px-2.5 text-right text-slate-800 dark:text-slate-200">
                     <div>{row.quotedBidAskSpreadBps.toFixed(1)} bps</div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       skew {row.reservationSpreadAdjustBps >= 0 ? '+' : ''}
                       {row.reservationSpreadAdjustBps.toFixed(1)}
                     </div>
                   </td>
-                  <td className="py-2.5 px-2.5 text-right text-cyan-600 dark:text-cyan-400 font-semibold">
+                  <td className="py-2.5 px-2.5 text-right text-blue-600 dark:text-blue-400 font-semibold">
                     +{row.cipBasisPickupBps.toFixed(1)} bps
                   </td>
                   <td
@@ -1356,7 +1344,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   </td>
                   <td className="py-2.5 px-2.5 text-right">
                     <div
-                      className={`font-bold ${
+                      className={`font-semibold ${
                         row.netStrategyPnlUsdM >= 0
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : 'text-rose-600 dark:text-rose-400'
@@ -1364,7 +1352,7 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                     >
                       {row.netStrategyPnlUsdM >= 0 ? '+' : ''}${row.netStrategyPnlUsdM.toFixed(2)}M
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       ({row.netStrategyReturnBps >= 0 ? '+' : ''}
                       {row.netStrategyReturnBps.toFixed(1)} bps)
                     </div>
@@ -1382,13 +1370,13 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   </td>
                   <td className="py-2.5 px-2.5 text-right text-slate-700 dark:text-slate-300">
                     <div>${row.dv01UsdThousands.toFixed(0)}k/bp</div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       FX Δ ${row.fxDeltaUsdMillions.toFixed(1)}M
                     </div>
                   </td>
                   <td className="py-2.5 px-3 text-right">
                     <span
-                      className={`inline-block px-2 py-0.5 text-[10px] font-mono font-semibold border ${getSignalStyle(
+                      className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${getSignalStyle(
                         row.executionSignal
                       )}`}
                     >

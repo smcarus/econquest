@@ -113,7 +113,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Institutional Watchlist Manager
             </div>
-            <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+            <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               Sovereign &amp; Macro Watchlists
             </h2>
           </div>
@@ -146,14 +146,14 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   className="flex-1 text-left truncate pr-2"
                 >
                   <span>{wl.name}</span>
-                  <span className="ml-1.5 opacity-70 font-mono tabular-nums">({wl.items.length})</span>
+                  <span className="ml-1.5 opacity-70 tabular-nums">({wl.items.length})</span>
                 </button>
                 {wl.isCustom && (
                   <button
                     type="button"
                     onClick={() => onDeleteWatchlist(wl.id)}
                     title="Delete custom watchlist"
-                    className="text-slate-400 hover:text-red-500 p-0.5 shrink-0"
+                    className="text-slate-400 hover:text-rose-500 p-0.5 shrink-0"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -197,7 +197,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500"
+                className="ui-btn ui-btn-primary"
               >
                 Save Watchlist
               </button>
@@ -236,7 +236,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
             {availableCatalogToQuickAdd.length > 0 && (
               <div className="space-y-1.5">
-                <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                   Quick-Add from Institutional Catalog:
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -245,7 +245,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                       key={cat.iso3}
                       type="button"
                       onClick={() => onAddSovereignToWatchlist(activeList.id, cat)}
-                      className="px-2 py-1 text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-800 dark:text-slate-200"
+                      className="px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-800 dark:text-slate-200"
                     >
                       + {cat.iso3} ({cat.countryName})
                     </button>
@@ -255,7 +255,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             )}
 
             <form onSubmit={handleAddCustomSovereignSubmit} className="space-y-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+              <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Or Add Any Custom ISO-3 Sovereign / Macro Flashpoint:
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -266,7 +266,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   placeholder="ISO3 (e.g. ARG)"
                   maxLength={4}
                   required
-                  className="px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  className="px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
                 <input
                   type="text"
@@ -279,33 +279,33 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               </div>
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-[10px] text-slate-500 block">10Y Yield %</label>
+                  <label className="text-xs text-slate-500 block">10Y Yield %</label>
                   <input
                     type="number"
                     step="0.1"
                     value={customYield}
                     onChange={(e) => setCustomYield(e.target.value)}
-                    className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                    className="w-full px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-500 block">Debt/GDP %</label>
+                  <label className="text-xs text-slate-500 block">Debt/GDP %</label>
                   <input
                     type="number"
                     step="0.5"
                     value={customDebtGdp}
                     onChange={(e) => setCustomDebtGdp(e.target.value)}
-                    className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                    className="w-full px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] text-slate-500 block">Reserves (m)</label>
+                  <label className="text-xs text-slate-500 block">Reserves (m)</label>
                   <input
                     type="number"
                     step="0.1"
                     value={customReserves}
                     onChange={(e) => setCustomReserves(e.target.value)}
-                    className="w-full px-2 py-1 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                    className="w-full px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   />
                 </div>
               </div>
@@ -326,7 +326,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-3 py-1 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500"
+                  className="ui-btn ui-btn-primary"
                 >
                   Add to Watchlist
                 </button>
@@ -346,7 +346,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
             <button
               type="button"
               onClick={() => setShowAddSovereignForm(true)}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500"
+              className="ui-btn ui-btn-primary"
             >
               Add First Sovereign Entry
             </button>
@@ -366,7 +366,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 shrink-0">
+                    <span className="tabular-nums font-semibold text-xs text-blue-600 dark:text-blue-400 shrink-0">
                       {item.iso3}
                     </span>
                     <span className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate">
@@ -375,9 +375,9 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span
-                      className={`text-[11px] font-mono font-semibold tabular-nums ${
+                      className={`text-xs tabular-nums font-semibold tabular-nums ${
                         item.alertStatus === 'CRITICAL'
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-rose-600 dark:text-rose-400'
                           : item.alertStatus === 'ELEVATED'
                           ? 'text-amber-600 dark:text-amber-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -393,7 +393,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                           onRemoveSovereignFromWatchlist(activeList.id, item.iso3);
                         }}
                         title="Remove from watchlist"
-                        className="text-slate-400 hover:text-red-500 p-0.5"
+                        className="text-slate-400 hover:text-rose-500 p-0.5"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -405,7 +405,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   {item.focusTheme}
                 </p>
 
-                <div className="grid grid-cols-4 gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-[11px] font-mono tabular-nums">
+                <div className="grid grid-cols-4 gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-xs tabular-nums">
                   <div>
                     <span className="text-slate-400 block">10Y Yld</span>
                     <span className="text-slate-800 dark:text-slate-200 font-semibold">
