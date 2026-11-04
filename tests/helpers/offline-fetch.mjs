@@ -69,5 +69,17 @@ globalThis.fetch = async (input, init = {}) => {
       });
     }
   }
+  // BIS debt securities (CSV): answer for Indonesia (ID) only, values from the live 2026-11-04 answers.
+  if (url.includes('stats.bis.org') && url.includes('/WS_DEBT_SEC2_PUB/Q.ID.')) {
+    const head =
+      'FREQ,ISSUER_RES,ISSUER_NAT,ISSUER_BUS_IMM,ISSUER_BUS_ULT,MARKET,ISSUE_TYPE,ISSUE_CUR_GROUP,ISSUE_CUR,ISSUE_OR_MAT,ISSUE_RE_MAT,ISSUE_RATE,ISSUE_RISK,ISSUE_COL,MEASURE,DECIMALS,UNIT_MEASURE,UNIT_MULT,COLLECTION,TIME_FORMAT,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_PRE_BREAK,OBS_CONF';
+    const r = (cur, re, v) => `Q,ID,3P,2,1,C,A,${cur},TO1,A,${re},A,A,A,I,0,USD,6,,,2026-Q2,${v},A,,F`;
+    return new Response([head, r('A', 'A', '88044'), r('A', 'U', '3615')].join('\n'), { status: 200 });
+  }
+  if (url.includes('stats.bis.org') && url.includes('/WS_NA_SEC_DSS/Q.N.ID.')) {
+    const head =
+      'FREQ,ADJUSTMENT,REF_AREA,COUNTERPART_AREA,REF_SECTOR,COUNTERPART_SECTOR,CONSOLIDATION,ACCOUNTING_ENTRY,STO,INSTR_ASSET,MATURITY,EXPENDITURE,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,PRICES,TRANSFORMATION,CUST_BREAKDOWN,TITLE,UNIT_MULT,TIME_PERIOD,OBS_VALUE,OBS_STATUS';
+    return new Response(`${head}\nQ,N,ID,XW,S13,S1,N,L,LE,F3,T,_Z,USD,_T,N,V,N,_T,"Indonesia - Debt sec, issued by gen govt",9,2026-Q1,507.4643714097,A\n`, { status: 200 });
+  }
   throw new TypeError(`offline: ${new URL(url).host}`);
 };

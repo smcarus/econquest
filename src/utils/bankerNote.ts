@@ -22,7 +22,8 @@ import {
  * Banker's view of a sovereign issuer: can it issue, how much does it need, when to go,
  * and how it prices against peers. Same source-tag rules as the economist brief.
  * Government external debt falling due comes from QEDS (quarterly schedule) and IDS (yearly
- * projections) when those answered; the full maturity profile, domestic debt included, is a
+ * projections) when those answered, and government debt securities outstanding from the BIS
+ * (international markets, with what falls due within a year, and all markets); the full maturity profile, domestic debt included, is a
  * built-in sample for every country and is labelled so.
  */
 
@@ -61,6 +62,38 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
     ds?.ids?.years.find((y) => y.debtServiceUsdBn !== undefined);
   const QEDS_SRC = qeds ? `QEDS (World Bank/IMF), as of end of ${quarterLabel(qeds.asOf)}` : '';
   const IDS_SRC = 'World Bank IDS projection';
+  const bis = ds?.bis;
+  const bisSrc = (q: string) => `BIS debt securities, end of ${quarterLabel(q)}`;
+  const bn = (v: number) => (v >= 100 ? `$${Math.round(v).toLocaleString('en-US')} bn` : `$${v.toFixed(1)} bn`);
+  const fxShare =
+    bis?.intl?.foreignCcyUsdBn !== undefined && bis.intl.outstandingUsdBn > 0
+      ? Math.round((bis.intl.foreignCcyUsdBn / bis.intl.outstandingUsdBn) * 100)
+      : undefined;
+  const bisRows = [
+    ...(bis?.intl?.dueWithin1yUsdBn !== undefined
+      ? [{ label: 'Government bonds due within a year, international markets', value: bn(bis.intl.dueWithin1yUsdBn), source: bisSrc(bis.intl.asOf), verified: true }]
+      : []),
+    ...(bis?.intl
+      ? [
+          {
+            label: 'Government bonds outstanding, international markets',
+            value: `${bn(bis.intl.outstandingUsdBn)}${fxShare !== undefined ? ` (${fxShare}% foreign currency)` : ''}`,
+            source: bisSrc(bis.intl.asOf),
+            verified: true,
+          },
+        ]
+      : []),
+    ...(bis?.all
+      ? [
+          {
+            label: 'Government debt securities, all markets incl. domestic',
+            value: `${bn(bis.all.outstandingUsdBn)} (${bis.all.valuation} value)`,
+            source: bisSrc(bis.all.asOf),
+            verified: true,
+          },
+        ]
+      : []),
+  ];
 
   // Distress signals, each a simple stated threshold.
   const signals: string[] = [];
@@ -105,6 +138,19 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
         idsYear.principalUsdBn !== undefined ? `, of which $${idsYear.principalUsdBn.toFixed(1)} bn is principal` : ''
       }.`
     );
+  if (bis?.intl) {
+    const parts = [
+      bis.intl.dueWithin1yUsdBn !== undefined ? `${bn(bis.intl.dueWithin1yUsdBn)} of it due within a year` : '',
+      fxShare !== undefined ? `${fxShare}% in foreign currency` : '',
+    ].filter(Boolean);
+    j.push(
+      `The BIS counts ${bn(bis.intl.outstandingUsdBn)} of government bonds in international markets at the end of ${quarterLabel(bis.intl.asOf)}${
+        parts.length ? `, ${parts.join(' and ')}` : ''
+      }${bis.all ? `; all government debt securities, domestic included, come to ${bn(bis.all.outstandingUsdBn)}` : ''}.`
+    );
+  } else if (bis?.all) {
+    j.push(`The BIS counts ${bn(bis.all.outstandingUsdBn)} of government debt securities in all markets at the end of ${quarterLabel(bis.all.asOf)}.`);
+  }
   j.push(
     events.length
       ? `Avoid pricing around ${events
@@ -168,6 +214,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
                 },
               ]
             : []),
+          ...bisRows,
           row(status, qeds ? 'All debt due in 12 months, incl. domestic' : 'Due in next 12 months', `$${next12m.toFixed(1)} bn`, 'sample'),
           row(status, 'Heaviest period', `${peak.periodLabel}, $${peak.totalUsdBn.toFixed(1)} bn`, 'sample'),
           row(status, 'Average maturity', `${roll.weightedAvgMaturityYears.toFixed(1)} years`, 'sample'),
