@@ -287,3 +287,76 @@ export function summariseBook(holdings: Holding[], lookup: WatchlistItem[]): Boo
     uncovered: rows.filter((r) => !r.item).map((r) => r.iso3),
   };
 }
+
+/** Gross-notional weights (% summing to 100) per covered country, for the stress lab. */
+export function holdingsWeightsPct(holdings: Holding[], coveredIso3: string[]): Record<string, number> {
+  const covered = new Set(coveredIso3);
+  const gross: Record<string, number> = {};
+  for (const h of holdings) {
+    if (!covered.has(h.iso3)) continue;
+    gross[h.iso3] = (gross[h.iso3] || 0) + h.notionalUsdMm;
+  }
+  const total = Object.values(gross).reduce((a, b) => a + b, 0);
+  if (!total) return {};
+  const out: Record<string, number> = {};
+  for (const [iso, g] of Object.entries(gross)) out[iso] = (g / total) * 100;
+  return out;
+}
+
+export type ContagionExpression =
+  | 'LOCAL_RATES_RECEIVER'
+  | 'USD_EUROBOND_LONG'
+  | 'CDS_5Y_PROTECTION'
+  | 'CURVE_2S10S_STEEPENER'
+  | 'FX_HEDGED_LOCAL_CARRY';
+
+export interface HoldingsContagionBook {
+  positions: Array<{
+    iso3: string;
+    countryName: string;
+    currencyCode: string;
+    expressionType: ContagionExpression;
+    weightNavPct: number;
+  }>;
+  navUsdMm: number;
+  skipped: string[];
+}
+
+/**
+ * One contagion-desk position per covered country: the largest asset class by notional sets
+ * the expression, and the weight is that country's gross notional as % of the book.
+ */
+export function holdingsToContagionBook(
+  holdings: Holding[],
+  catalog: Array<{ iso3: string; countryName: string; currencyCode: string }>
+): HoldingsContagionBook {
+  const byIso = new Map<string, Holding[]>();
+  holdings.forEach((h) => byIso.set(h.iso3, [...(byIso.get(h.iso3) || []), h]));
+  const gross = holdings.reduce((a, h) => a + h.notionalUsdMm, 0);
+  const skipped: string[] = [];
+  const positions: HoldingsContagionBook['positions'] = [];
+  for (const [iso3, list] of byIso) {
+    const cat = catalog.find((c) => c.iso3 === iso3);
+    if (!cat) {
+      skipped.push(iso3);
+      continue;
+    }
+    const byClass = new Map<string, number>();
+    list.forEach((h) => {
+      const key = h.assetClass === 'CDS' && h.side === 'LONG' ? 'CDS_PROT' : h.assetClass;
+      byClass.set(key, (byClass.get(key) || 0) + h.notionalUsdMm);
+    });
+    const top = [...byClass.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    const expressionType: ContagionExpression =
+      top === 'CDS_PROT' ? 'CDS_5Y_PROTECTION' : top === 'LC_BOND' ? 'LOCAL_RATES_RECEIVER' : top === 'FX' ? 'FX_HEDGED_LOCAL_CARRY' : 'USD_EUROBOND_LONG';
+    const g = list.reduce((a, h) => a + h.notionalUsdMm, 0);
+    positions.push({
+      iso3,
+      countryName: cat.countryName,
+      currencyCode: cat.currencyCode,
+      expressionType,
+      weightNavPct: Number(((g / (gross || 1)) * 100).toFixed(1)),
+    });
+  }
+  return { positions, navUsdMm: Math.max(1, Math.round(gross)), skipped };
+}

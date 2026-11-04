@@ -31,6 +31,8 @@ interface PortfolioContagionDeskProps {
   propagatedGeoWargameParams?: GeopoliticalWargameParams;
   isGeoPropagationActive?: boolean;
   onOpenGeopoliticalDesk?: () => void;
+  /** The user's imported holdings, mapped to one position per country. */
+  holdingsBook?: { positions: PortfolioPositionItem[]; navUsdMm: number; skipped: string[] };
 }
 
 const EXPRESSION_LABELS: Record<PortfolioExpressionType, string> = {
@@ -48,14 +50,25 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
   propagatedGeoWargameParams,
   isGeoPropagationActive,
   onOpenGeopoliticalDesk,
+  holdingsBook,
 }) => {
-  const [selectedPresetId, setSelectedPresetId] = useState<PortfolioBasketPresetId>('EM_HIGH_CARRY_CORE');
-  const [positions, setPositions] = useState<PortfolioPositionItem[]>(
-    () => PORTFOLIO_BASKET_PRESETS[0].positions
+  const hasHoldings = !!holdingsBook && holdingsBook.positions.length > 0;
+  const [selectedPresetId, setSelectedPresetId] = useState<PortfolioBasketPresetId | 'HOLDINGS'>(
+    hasHoldings ? 'HOLDINGS' : 'EM_HIGH_CARRY_CORE'
+  );
+  const [positions, setPositions] = useState<PortfolioPositionItem[]>(() =>
+    hasHoldings ? holdingsBook!.positions.map((p) => ({ ...p })) : PORTFOLIO_BASKET_PRESETS[0].positions
   );
   const [epicenterIso3, setEpicenterIso3] = useState<string>(() => run.iso3);
   const [epicenterShockBps, setEpicenterShockBps] = useState<number>(250);
-  const [portfolioNavUsdM, setPortfolioNavUsdM] = useState<number>(250);
+  const [portfolioNavUsdM, setPortfolioNavUsdM] = useState<number>(hasHoldings ? holdingsBook!.navUsdMm : 250);
+
+  const handleLoadHoldings = () => {
+    if (!holdingsBook || !holdingsBook.positions.length) return;
+    setSelectedPresetId('HOLDINGS');
+    setPositions(holdingsBook.positions.map((p) => ({ ...p })));
+    setPortfolioNavUsdM(holdingsBook.navUsdMm);
+  };
   const [channelView, setChannelView] = useState<'OMEGA_TOTAL' | 'TRADE' | 'BANK' | 'USD_BETA'>('OMEGA_TOTAL');
 
   const handleLoadPreset = (presetId: PortfolioBasketPresetId) => {
@@ -126,11 +139,11 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
           SECTION 1: MULTI-SOVEREIGN CONTAGION SIMULATOR & BASKET PRESET WORKBENCH
           ===================================================================== */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex flex-col gap-3 pb-4 border-b border-slate-200 dark:border-slate-800">
           <div>
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-blue-600 dark:text-blue-400">
               <Network className="w-3.5 h-3.5" />
-              <span>CRO Multi-Sovereign Contagion Book · Bilateral Spillover Matrix Ω(i→j) &amp; MCTR Attribution</span>
+              <span>Contagion book · bilateral spillover Ω(i→j) &amp; risk attribution</span>
             </div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Multi-Country Sovereign Book &amp; Cross-Border Contagion Cascade Simulator
@@ -138,6 +151,17 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {hasHoldings && (
+              <button
+                type="button"
+                onClick={handleLoadHoldings}
+                aria-pressed={selectedPresetId === 'HOLDINGS'}
+                className="ui-pill"
+                title={holdingsBook!.skipped.length ? `Not modelled (no country data): ${holdingsBook!.skipped.join(', ')}` : undefined}
+              >
+                Your holdings
+              </button>
+            )}
             {PORTFOLIO_BASKET_PRESETS.map((preset) => (
               <button
                 key={preset.id}
@@ -249,7 +273,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
               </select>
               <button
                 type="button"
-                onClick={() => handleLoadPreset(selectedPresetId)}
+                onClick={() => (selectedPresetId === 'HOLDINGS' ? handleLoadHoldings() : handleLoadPreset(selectedPresetId))}
                 title="Reset Basket Weights"
                 className="px-2.5 py-1.5 text-xs font-medium bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
               >

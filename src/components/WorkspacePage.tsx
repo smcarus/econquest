@@ -18,19 +18,19 @@ export const PORTFOLIO_TABS: WorkspaceTab[] = [
   {
     id: 'book',
     label: 'Book',
-    hint: 'Pair trades and risk sensitivities. These desks still use their own model book, not your imported holdings.',
+    hint: 'Pair trades and risk sensitivities. These two desks still use their own model book, not your imported holdings.',
     desks: ['embi_portfolio_pair_book', 'quant_trade_blotter'],
   },
   {
     id: 'risk',
     label: 'Risk & contagion',
-    hint: 'How a shock in one country spreads through the book, and what drives returns.',
+    hint: 'How a shock in one country spreads through the book. Contagion uses your imported holdings when you have them.',
     desks: ['portfolio_risk_desk', 'quant_alpha_correlation'],
   },
   {
     id: 'stress',
     label: 'Stress tests',
-    hint: 'Scenario shocks applied to the whole book.',
+    hint: 'Scenario shocks applied to the whole book. Uses your imported holdings when you have them.',
     desks: ['quant_portfolio_stress_lab'],
   },
   {

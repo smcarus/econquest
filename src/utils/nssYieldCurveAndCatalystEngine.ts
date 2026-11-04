@@ -1201,7 +1201,8 @@ export type EmbiStressPresetId =
 export type EmbiPortfolioWeightScheme =
   | 'EMBI_BENCHMARK'
   | 'MAX_DIVERSIFICATION'
-  | 'EQUAL_WEIGHT';
+  | 'EQUAL_WEIGHT'
+  | 'HOLDINGS';
 
 export interface EmbiPortfolioStressParams {
   activePresetId: EmbiStressPresetId;
@@ -1211,6 +1212,8 @@ export interface EmbiPortfolioStressParams {
   commodityShockPct: number; // e.g. -15% terms-of-trade shock
   fxHedgeRatioPct: number; // 0% to 100% FX forward hedge overlay
   weightScheme: EmbiPortfolioWeightScheme;
+  /** With weightScheme 'HOLDINGS': % weights per ISO3 from the user's imported holdings. */
+  holdingsWeightsPct?: Record<string, number>;
 }
 
 export const DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS: EmbiPortfolioStressParams = {
@@ -1584,9 +1587,11 @@ export function computeEmbiPortfolioBatchStressLabSuite(
   watchlistItems: WatchlistItem[] = SOVEREIGN_CATALOG,
   params: EmbiPortfolioStressParams = DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS
 ): EmbiPortfolioBatchStressSuite {
-  const uniqueIsos = Array.from(
-    new Set([activeRun.iso3, ...watchlistItems.map((w) => w.iso3)])
-  ).slice(0, 10);
+  const useHoldings =
+    params.weightScheme === 'HOLDINGS' && !!params.holdingsWeightsPct && Object.keys(params.holdingsWeightsPct).length > 0;
+  const uniqueIsos = useHoldings
+    ? Object.keys(params.holdingsWeightsPct!).slice(0, 10)
+    : Array.from(new Set([activeRun.iso3, ...watchlistItems.map((w) => w.iso3)])).slice(0, 10);
 
   const runs = uniqueIsos.map((iso) =>
     iso === activeRun.iso3 ? activeRun : buildDefaultAssessmentRun(iso)
@@ -1597,7 +1602,9 @@ export function computeEmbiPortfolioBatchStressLabSuite(
   runs.forEach((r) => {
     const cds = r.openData.monetaryAndMarket.cds5YSpreadBps;
     const res = r.openData.worldBankIndicators.fxReservesMonthsImport;
-    if (params.weightScheme === 'EQUAL_WEIGHT') {
+    if (useHoldings) {
+      rawWeights[r.iso3] = params.holdingsWeightsPct![r.iso3] || 0;
+    } else if (params.weightScheme === 'EQUAL_WEIGHT') {
       rawWeights[r.iso3] = 1;
     } else if (params.weightScheme === 'MAX_DIVERSIFICATION') {
       rawWeights[r.iso3] = Math.max(0.4, (res / Math.max(50, cds)) * 100);

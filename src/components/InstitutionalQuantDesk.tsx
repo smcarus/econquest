@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -79,6 +79,8 @@ interface InstitutionalQuantDeskProps {
   activeSubTab?: QuantSubWorkspaceId;
   onSelectSubTab?: (tab: QuantSubWorkspaceId) => void;
   onStageTradeTicket?: (ticket: StagedTradeTicketSpec) => void;
+  /** % weights per ISO3 from imported holdings; enables the "Your holdings" book weighting. */
+  holdingsWeightsPct?: Record<string, number>;
 }
 
 export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
@@ -88,6 +90,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
   activeSubTab,
   onSelectSubTab,
   onStageTradeTicket,
+  holdingsWeightsPct,
 }) => {
   const [internalTab, setInternalTab] = useState<QuantSubWorkspaceId>('quant_cds_basis');
   const currentTab = activeSubTab ?? internalTab;
@@ -447,8 +450,22 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
   // --------------------------------------------------------------------------
   // STATE 9: PORTFOLIO STRESS-TEST & SCENARIO LAB (5.9 EMBI BATCH P&L HIT)
   // --------------------------------------------------------------------------
-  const [portfolioStressParams, setPortfolioStressParams] =
-    useState<EmbiPortfolioStressParams>(DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS);
+  const hasHoldings = !!holdingsWeightsPct && Object.keys(holdingsWeightsPct).length > 0;
+  const [portfolioStressParams, setPortfolioStressParams] = useState<EmbiPortfolioStressParams>(() =>
+    hasHoldings
+      ? { ...DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS, weightScheme: 'HOLDINGS', holdingsWeightsPct }
+      : DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS
+  );
+  // Keep the holdings weights current; fall back to the benchmark if holdings are cleared.
+  useEffect(() => {
+    setPortfolioStressParams((prev) =>
+      hasHoldings
+        ? { ...prev, holdingsWeightsPct }
+        : prev.weightScheme === 'HOLDINGS'
+        ? { ...prev, weightScheme: 'EMBI_BENCHMARK', holdingsWeightsPct: undefined }
+        : prev
+    );
+  }, [hasHoldings, holdingsWeightsPct]);
 
   const portfolioStressSuite = useMemo(
     () =>
@@ -3949,10 +3966,11 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <span className="text-slate-500">Book Weights:</span>
                 {(
                   [
+                    ...(hasHoldings ? [{ id: 'HOLDINGS', label: 'Your holdings' }] : []),
                     { id: 'EMBI_BENCHMARK', label: 'EMBI Benchmark %' },
                     { id: 'MAX_DIVERSIFICATION', label: 'Max-Div %' },
                     { id: 'EQUAL_WEIGHT', label: 'Equal Wt %' },
-                  ] as const
+                  ] as Array<{ id: EmbiPortfolioWeightScheme; label: string }>
                 ).map((scheme) => (
                   <button
                     key={scheme.id}
@@ -3975,7 +3993,11 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <button
                   type="button"
                   onClick={() =>
-                    setPortfolioStressParams(DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS)
+                    setPortfolioStressParams(
+                      hasHoldings
+                        ? { ...DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS, weightScheme: 'HOLDINGS', holdingsWeightsPct }
+                        : DEFAULT_EMBI_PORTFOLIO_STRESS_PARAMS
+                    )
                   }
                   className="ui-btn inline-flex"
                 >

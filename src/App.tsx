@@ -79,7 +79,7 @@ import {
 } from './components/WorkspacePage';
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { HoldingsPanel } from './components/HoldingsPanel';
-import { loadHoldings, saveHoldings, type Holding } from './utils/holdings';
+import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
@@ -1592,6 +1592,12 @@ export default function App() {
 
   const activeWatchlistItems =
     watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  // Imported holdings, shaped for the stress lab (weights) and the contagion desk (positions).
+  const holdingsStressWeights = useMemo(
+    () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
+    [holdings]
+  );
+  const holdingsContagionBook = useMemo(() => holdingsToContagionBook(holdings, SOVEREIGN_CATALOG), [holdings]);
   // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
   const holdingsRiskLookup = [
     ...activeWatchlistItems,
@@ -1821,6 +1827,8 @@ export default function App() {
 
               {sec === 'portfolio_risk_desk' && (
                 <PortfolioContagionDesk
+                  key={`contagion-${holdings.length}`}
+                  holdingsBook={holdingsContagionBook}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   onSelectSovereign={handleSelectSovereign}
@@ -1901,6 +1909,7 @@ export default function App() {
                 sec === 'quant_macro_catalyst_calendar' ||
                 sec === 'quant_portfolio_stress_lab') && (
                 <InstitutionalQuantDesk
+                  holdingsWeightsPct={holdingsStressWeights}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   isDark={darkMode}
@@ -2864,6 +2873,7 @@ export default function App() {
                   onSelectSovereign={handleSelectSovereign}
                 />
                 <InstitutionalQuantDesk
+                  holdingsWeightsPct={holdingsStressWeights}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   isDark={darkMode}
