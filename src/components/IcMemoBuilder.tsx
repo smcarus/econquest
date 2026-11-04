@@ -7,6 +7,7 @@ import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { summariseBook, type Holding } from '../utils/holdings';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
+import { buildEconomistSections, ECONOMIST_SECTIONS } from '../utils/countryNotes';
 
 /**
  * One builder for the investment committee memo. It pulls the current country view,
@@ -23,8 +24,23 @@ export interface IcMemoBuilderProps {
   defaultAudience?: MemoAudience;
 }
 
-/** 'ic' = internal investment committee memo; 'client' = plain-language note for a private client. */
-export type MemoAudience = 'ic' | 'client';
+/**
+ * 'ic' = internal investment committee memo; 'client' = plain-language note for a private client;
+ * 'economist' = country economic note (growth, policy, fiscal, external).
+ */
+export type MemoAudience = 'ic' | 'client' | 'economist';
+
+export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; heading: string; file: string; help: string }> = {
+  ic: { tab: 'Investment committee memo', title: 'IC memo', heading: 'Memo', file: 'ic-memo', help: 'Internal memo with trades, risk figures and kill switches.' },
+  client: { tab: 'Client note', title: 'client note', heading: 'Client note', file: 'client-note', help: 'Plain language for a private client. No trade levels, scores or desk terms.' },
+  economist: {
+    tab: 'Country note',
+    title: 'country note',
+    heading: 'Country note',
+    file: 'country-note',
+    help: 'Economist’s note: growth, inflation and policy, the fiscal path and the external position. Every figure names its source.',
+  },
+};
 
 export type SectionId = 'recommendation' | 'figures' | 'thesis' | 'trades' | 'portfolio' | 'risks' | 'calendar' | 'sources';
 
@@ -50,8 +66,23 @@ export const CLIENT_SECTION_LABEL: Partial<Record<SectionId, string>> = {
   sources: 'Important information',
 };
 
-export const sectionLabels = (audience: MemoAudience): Partial<Record<SectionId, string>> =>
-  audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL;
+export const sectionLabels = (audience: MemoAudience): Record<string, string> =>
+  audience === 'economist'
+    ? ECONOMIST_SECTIONS
+    : ((audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL) as Record<string, string>);
+
+/** Sections for any audience. `include` lists sections switched off as false; anything absent is on. */
+export function buildReportSections(
+  p: IcMemoBuilderProps,
+  include: Record<string, boolean>,
+  ticketScope: 'country' | 'all',
+  audience: MemoAudience
+): Array<{ heading: string; lines: string[] }> {
+  const on = (id: string) => include[id] !== false;
+  if (audience === 'economist') return buildEconomistSections(p.run, on);
+  const all = Object.fromEntries((Object.keys(SECTION_LABEL) as SectionId[]).map((id) => [id, on(id)])) as Record<SectionId, boolean>;
+  return buildSections(p, all, ticketScope, audience);
+}
 
 const CLIENT_VERDICT: Record<string, string> = {
   EXECUTE_TRADES: 'We see an opportunity here and think it is worth adding exposure, within your agreed limits.',
@@ -303,7 +334,7 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
   return out;
 }
 
-function toMarkdown(title: string, author: string, sections: MemoSection[]): string {
+function toMarkdown(title: string, author: string, sections: Array<{ heading: string; lines: string[] }>): string {
   const date = new Date().toISOString().slice(0, 10);
   return [
     `# ${title}`,
@@ -344,27 +375,20 @@ function memoMarkdownToHtml(md: string): string {
 export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const { run } = props;
   const [audience, setAudience] = useState<MemoAudience>(props.defaultAudience ?? 'ic');
-  const [include, setInclude] = useState<Record<SectionId, boolean>>({
-    recommendation: true,
-    figures: true,
-    thesis: true,
-    trades: true,
-    portfolio: true,
-    risks: true,
-    calendar: true,
-    sources: true,
-  });
+  // Sections the user switched off, per section id. Anything not listed is included.
+  const [include, setInclude] = useState<Record<string, boolean>>({});
   const [ticketScope, setTicketScope] = useState<'country' | 'all'>('country');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [edited, setEdited] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const defaultTitle = audience === 'client' ? `${run.countryName}: client note` : `${run.countryName}: IC memo`;
+  const info = AUDIENCE_INFO[audience];
+  const defaultTitle = `${run.countryName}: ${info.title}`;
   const memoTitle = title.trim() || defaultTitle;
   const labels = sectionLabels(audience);
   const generated = useMemo(
-    () => toMarkdown(memoTitle, author.trim(), buildSections(props, include, ticketScope, audience)),
+    () => toMarkdown(memoTitle, author.trim(), buildReportSections(props, include, ticketScope, audience)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [props.run, props.stagedTickets, props.holdings, props.riskLookup, include, ticketScope, memoTitle, author, audience]
   );
@@ -380,7 +404,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${run.iso3}-${audience === 'client' ? 'client-note' : 'ic-memo'}-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `${run.iso3}-${info.file}-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -409,23 +433,18 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
       <section className="ui-panel" aria-label="Memo settings">
         <header className="ui-panel-header">
-          <h2 className="ui-section-title">Build the memo</h2>
+          <h2 className="ui-section-title">Build the report</h2>
           <p className="ui-label">Pulls the current country, your tickets, holdings and the official calendar.</p>
         </header>
         <div className="p-4 space-y-4">
           <div role="tablist" aria-label="Memo type" className="flex flex-wrap gap-1.5">
-            <button type="button" role="tab" aria-selected={audience === 'ic'} className="ui-pill" onClick={() => switchAudience('ic')}>
-              Investment committee memo
-            </button>
-            <button type="button" role="tab" aria-selected={audience === 'client'} className="ui-pill" onClick={() => switchAudience('client')}>
-              Client note
-            </button>
+            {(Object.keys(AUDIENCE_INFO) as MemoAudience[]).map((a) => (
+              <button key={a} type="button" role="tab" aria-selected={audience === a} className="ui-pill" onClick={() => switchAudience(a)}>
+                {AUDIENCE_INFO[a].tab}
+              </button>
+            ))}
           </div>
-          <p className="ui-label">
-            {audience === 'client'
-              ? 'Plain language for a private client. No trade levels, scores or desk terms.'
-              : 'Internal memo with trades, risk figures and kill switches.'}
-          </p>
+          <p className="ui-label">{info.help}</p>
           <label className="block ui-label space-y-0.5">
             <span className="block">Title</span>
             <input
@@ -445,9 +464,9 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
           </label>
           <fieldset className="space-y-1.5">
             <legend className="ui-label mb-1">Sections</legend>
-            {(Object.keys(labels) as SectionId[]).map((id) => (
+            {Object.keys(labels).map((id) => (
               <label key={id} className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-                <input type="checkbox" checked={include[id]} onChange={(e) => setInclude({ ...include, [id]: e.target.checked })} />
+                <input type="checkbox" checked={include[id] !== false} onChange={(e) => setInclude({ ...include, [id]: e.target.checked })} />
                 {labels[id]}
               </label>
             ))}
@@ -472,7 +491,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
       <section className="ui-panel xl:col-span-2" aria-label="Memo">
         <header className="ui-panel-header flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="ui-section-title">{audience === 'client' ? 'Client note' : 'Memo'}</h2>
+            <h2 className="ui-section-title">{info.heading}</h2>
             <p className="ui-label">{edited !== null ? 'Edited by you. Settings changes are paused until you reset.' : 'Edit the text below before you share it.'}</p>
           </div>
           <div className="flex flex-wrap gap-1.5">

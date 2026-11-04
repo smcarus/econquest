@@ -6,13 +6,14 @@ import { DataStatusBadge } from './DataStatusBadge';
 import { ExecutiveBriefScorecard } from './ExecutiveBriefScorecard';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { describeOfficialYield } from '../utils/officialYields';
+import { CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
  * Each tab is a short list of existing desks; one desk shows at a time.
  */
 
-export type CountryTabId = 'overview' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
+export type CountryTabId = 'brief' | 'overview' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
 
 export interface CountryTabConfig {
   id: CountryTabId;
@@ -21,6 +22,8 @@ export interface CountryTabConfig {
 }
 
 export const COUNTRY_TABS: CountryTabConfig[] = [
+  // Role start view (economist, banker): figures with sources and a link to the report template. No desks.
+  { id: 'brief', label: 'Brief', desks: [] },
   { id: 'overview', label: 'Overview', desks: ['charts_watchlists', 'risk_analytics'] },
   {
     id: 'debt',
@@ -68,6 +71,9 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
     desks: ['restructuring_npv_cac_waterfall', 'quant_restructuring_npv'],
   },
 ];
+
+/** Where the Country page opens when no role or desk says otherwise. */
+export const DEFAULT_COUNTRY_TAB: CountryTabConfig = COUNTRY_TABS.find((t) => t.id === 'overview')!;
 
 /** Restructuring is only relevant for stressed credits. */
 export function isRestructuringRelevant(item: WatchlistItem | undefined, run: CouncilAssessmentRun): boolean {
@@ -126,6 +132,8 @@ export const CountryPage: React.FC<{
   onOpenTickets: () => void;
   ticketCount: number;
   renderDesk: (deskId: string) => React.ReactNode;
+  briefView: BriefView;
+  onWriteNote: (view: BriefView) => void;
 }> = ({
   run,
   watchlistItems,
@@ -141,11 +149,13 @@ export const CountryPage: React.FC<{
   onOpenTickets,
   ticketCount,
   renderDesk,
+  briefView,
+  onWriteNote,
 }) => {
   const item = watchlistItems.find((w) => w.iso3 === run.iso3);
   const showRestructuring = isRestructuringRelevant(item, run);
   const tabs = COUNTRY_TABS.filter((t) => t.id !== 'restructuring' || showRestructuring || activeTab === 'restructuring');
-  const tab = COUNTRY_TABS.find((t) => t.id === activeTab) || COUNTRY_TABS[0];
+  const tab = COUNTRY_TABS.find((t) => t.id === activeTab) || DEFAULT_COUNTRY_TAB;
   const desk = tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0];
   const open = run.openData;
   const mkt = open.monetaryAndMarket;
@@ -321,6 +331,8 @@ export const CountryPage: React.FC<{
         </div>
       )}
 
+      {tab.id === 'brief' && <CountryBriefPanel run={run} view={briefView} onWriteNote={onWriteNote} />}
+
       {/* Desk picker for this tab */}
       {tab.desks.length > 1 && (
         <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={`${tab.label} tools`}>
@@ -339,7 +351,7 @@ export const CountryPage: React.FC<{
         </div>
       )}
 
-      {renderDesk(desk)}
+      {desk && renderDesk(desk)}
     </div>
   );
 };
