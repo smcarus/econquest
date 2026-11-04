@@ -556,7 +556,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             </label>
           </fieldset>
           )}
-          <p className="ui-label">To write a memo on another country, switch country from the Countries page, then come back.</p>
+          <p className="ui-label">To write a memo on another country, switch country on the Country Research page, then come back.</p>
         </div>
       </section>
 

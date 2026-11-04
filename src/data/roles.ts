@@ -1,6 +1,6 @@
 /**
- * Who is using the terminal. The role sets where the app opens, the order of the main
- * navigation, and the matching analysis persona. Saved in this browser only.
+ * Who is using the terminal. The app always opens on Workspace (Sam, 2026-11-04); the role sets
+ * the order of the main navigation, which tab each page opens on, and the matching analysis persona. Saved in this browser only.
  */
 import type { UserPersonaId } from '../types/council';
 
@@ -24,7 +24,7 @@ export const USER_ROLES: UserRole[] = [
   {
     id: 'PM',
     label: 'Portfolio manager',
-    description: 'Start with what changed overnight, then the book and the IC memo.',
+    description: 'What changed overnight, then the book and the IC memo.',
     persona: 'INSTITUTIONAL_PM_IC',
     home: { area: 'today', reportsTab: 'ic' },
     report: 'ic',
@@ -33,44 +33,44 @@ export const USER_ROLES: UserRole[] = [
   {
     id: 'ECONOMIST',
     label: 'Economist',
-    description: 'Start with a country brief: growth, policy, the fiscal path and the external position, then a country note.',
+    description: 'A country brief: growth, policy, the fiscal path and the external position, then a country note.',
     persona: 'POLICY_RESEARCHER',
-    home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
+    home: { area: 'today', countryTab: 'brief', reportsTab: 'ic' },
     report: 'economist',
-    nav: ['country', 'today', 'reports', 'desks', 'portfolio'],
+    nav: ['today', 'country', 'reports', 'desks', 'portfolio'],
   },
   {
     id: 'BANKER',
     label: 'Investment banker',
-    description: 'Start with an issuer brief: market access, financing need, timing and peers, then an issuer note.',
+    description: 'An issuer brief: market access, financing need, timing and peers, then an issuer note.',
     persona: 'INSTITUTIONAL_PM_IC',
-    home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
+    home: { area: 'today', countryTab: 'brief', reportsTab: 'ic' },
     report: 'banker',
-    nav: ['country', 'reports', 'today', 'portfolio', 'desks'],
+    nav: ['today', 'country', 'reports', 'portfolio', 'desks'],
   },
   {
     id: 'MULTILATERAL',
     label: 'Multilateral or official sector',
-    description: 'Start with debt sustainability: the debt path, standard shocks and the adjustment needed, then the written assessment.',
+    description: 'Debt sustainability: the debt path, standard shocks and the adjustment needed, then the written assessment.',
     persona: 'POLICY_RESEARCHER',
-    home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
+    home: { area: 'today', countryTab: 'brief', reportsTab: 'ic' },
     report: 'official',
-    nav: ['country', 'reports', 'today', 'desks', 'portfolio'],
+    nav: ['today', 'country', 'reports', 'desks', 'portfolio'],
   },
   {
     id: 'UHNW',
     label: 'Private wealth adviser',
-    description: 'Start with the client’s holdings and what could hurt them, then a client portfolio review.',
+    description: 'The client’s holdings and what could hurt them, then a client portfolio review.',
     persona: 'INSTITUTIONAL_PM_IC',
-    home: { area: 'portfolio', portfolioTab: 'book', reportsTab: 'ic' },
+    home: { area: 'today', portfolioTab: 'book', reportsTab: 'ic' },
     report: 'client_review',
-    nav: ['portfolio', 'today', 'country', 'reports', 'desks'],
+    nav: ['today', 'portfolio', 'country', 'reports', 'desks'],
   },
 ];
 
 export const NAV_LABEL: Record<WorkflowArea, string> = {
   today: 'Workspace',
-  country: 'Countries',
+  country: 'Country Research',
   portfolio: 'Portfolio',
   reports: 'Reports',
   desks: 'Tools',
