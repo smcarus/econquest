@@ -18,7 +18,12 @@ export interface IcMemoBuilderProps {
   stagedTickets: StagedTradeTicketSpec[];
   holdings: Holding[];
   riskLookup: WatchlistItem[];
+  /** Which version opens first. Private wealth advisers start on the client note. */
+  defaultAudience?: MemoAudience;
 }
+
+/** 'ic' = internal investment committee memo; 'client' = plain-language note for a private client. */
+export type MemoAudience = 'ic' | 'client';
 
 export type SectionId = 'recommendation' | 'figures' | 'thesis' | 'trades' | 'portfolio' | 'risks' | 'calendar' | 'sources';
 
@@ -31,6 +36,26 @@ export const SECTION_LABEL: Record<SectionId, string> = {
   risks: 'Risks and kill switch',
   calendar: 'Coming up',
   sources: 'Data and sources',
+};
+
+/** Headings for the client note. Trades and kill switches are internal, so the client note has no trades section. */
+export const CLIENT_SECTION_LABEL: Partial<Record<SectionId, string>> = {
+  recommendation: 'Our view',
+  thesis: 'Why we think this',
+  portfolio: 'What it means for your portfolio',
+  figures: 'Key numbers',
+  risks: 'What could go wrong',
+  calendar: 'Dates to watch',
+  sources: 'Important information',
+};
+
+export const sectionLabels = (audience: MemoAudience): Partial<Record<SectionId, string>> =>
+  audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL;
+
+const CLIENT_VERDICT: Record<string, string> = {
+  EXECUTE_TRADES: 'We see an opportunity here and think it is worth adding exposure, within your agreed limits.',
+  DEFENSIVE_HEDGE: 'We are cautious. We think it is sensible to reduce or protect exposure here.',
+  HOLD_AND_MONITOR: 'We would keep things as they are for now and watch closely.',
 };
 
 const VERDICT_LABEL: Record<string, string> = {
@@ -48,8 +73,10 @@ export interface MemoSection {
 export function buildSections(
   p: IcMemoBuilderProps,
   include: Record<SectionId, boolean>,
-  ticketScope: 'country' | 'all'
+  ticketScope: 'country' | 'all',
+  audience: MemoAudience = 'ic'
 ): MemoSection[] {
+  if (audience === 'client') return buildClientSections(p, include);
   const { run, stagedTickets, holdings, riskLookup } = p;
   const open = run.openData;
   const mkt = open.monetaryAndMarket;
@@ -170,6 +197,102 @@ export function buildSections(
   return out;
 }
 
+/** Plain-language note for a private client: no trade levels, scores, DV01 or desk jargon. */
+function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, boolean>): MemoSection[] {
+  const { run, holdings, riskLookup } = p;
+  const open = run.openData;
+  const mkt = open.monetaryAndMarket;
+  const sc = run.supremeCouncil;
+  const status = getSnapshotDataStatus(open);
+  const L = CLIENT_SECTION_LABEL as Record<SectionId, string>;
+  const out: MemoSection[] = [];
+  const clean = (t: string) => t.replace(/\s*\(Ref:[^)]*\)/g, '').trim();
+  // Split only where a full stop is followed by a space and a capital, so "14.2" and "+1.5%" stay whole.
+  const firstSentences = (t: string, n: number) => t.split(/(?<=[.!?])\s+(?=[A-Z])/).slice(0, n).join(' ').trim();
+
+  if (include.recommendation) {
+    out.push({
+      id: 'recommendation',
+      heading: L.recommendation,
+      lines: sc
+        ? [`**${run.countryName}.** ${CLIENT_VERDICT[sc.decisionVerdict] || 'We are reviewing our view.'}`]
+        : [`We have not yet completed our review of ${run.countryName}. We will follow up once it is done.`],
+    });
+  }
+
+  if (include.thesis) {
+    const lines: string[] = [];
+    if (sc?.executiveSummary) lines.push(firstSentences(clean(sc.executiveSummary), 3));
+    const vul = sc?.policyResearcherReport.structuralVulnerabilities || [];
+    if (vul.length) lines.push('The main things we are weighing:', ...vul.slice(0, 3).map((v) => `- ${firstSentences(clean(v), 1)}`));
+    if (!lines.length) lines.push('Write the reasoning here in a few plain sentences.');
+    out.push({ id: 'thesis', heading: L.thesis, lines });
+  }
+
+  if (include.portfolio) {
+    let lines: string[];
+    if (!holdings.length) {
+      lines = ['Import the client’s holdings on the Portfolio page to describe their exposure here.'];
+    } else {
+      const book = summariseBook(holdings, riskLookup);
+      const row = book.rows.find((r) => r.iso3 === run.iso3);
+      lines = row
+        ? [
+            `About ${(row.weight * 100).toFixed(0)}% of your emerging market holdings are linked to ${run.countryName} (around $${row.grossUsdMm.toFixed(1)} million).`,
+            `It accounts for roughly ${(row.riskShare * 100).toFixed(0)}% of the risk in that part of your portfolio.`,
+          ]
+        : [`You do not currently hold anything linked to ${run.countryName}, so this view does not change your portfolio today.`];
+    }
+    out.push({ id: 'portfolio', heading: L.portfolio, lines });
+  }
+
+  if (include.figures) {
+    const note = status.mode === 'live' ? '' : ` (${DATA_MODE_LABEL[status.mode].toLowerCase()})`;
+    const priceNote = status.isFeedLive('ai_market') ? ' (estimate)' : note;
+    out.push({
+      id: 'figures',
+      heading: L.figures,
+      lines: [
+        `- Government debt is ${open.imfIndicators.debtToGdpPct.toFixed(0)}% of the size of the economy${note}.`,
+        `- Foreign currency savings would cover about ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports${note}.`,
+        `- The central bank’s interest rate is ${mkt.policyRatePct.toFixed(2)}%${priceNote}.`,
+        `- The government pays about ${mkt.sovereign10YBondYieldPct.toFixed(1)}% a year to borrow for 10 years${priceNote}.`,
+      ],
+    });
+  }
+
+  if (include.risks) {
+    const rg = sc?.marketTranslationLayer.riskGuardianCheck;
+    const lines = rg
+      ? [`In a bad scenario, prices of these investments could fall by around ${rg.maxDrawdownEstimatePct}%. They can also be harder to sell quickly in a stressed market.`]
+      : ['Describe the main risks to the client here in plain terms.'];
+    out.push({ id: 'risks', heading: L.risks, lines });
+  }
+
+  if (include.calendar) {
+    const events = upcomingOfficialEvents([run.iso3], 90);
+    out.push({
+      id: 'calendar',
+      heading: L.calendar,
+      lines: events.length
+        ? events.slice(0, 5).map((e) => `- ${e.date}: ${e.title}`)
+        : [`No scheduled official dates for ${run.countryName} in the next three months.`],
+    });
+  }
+
+  if (include.sources) {
+    out.push({
+      id: 'sources',
+      heading: L.sources,
+      lines: [
+        `Figures ${status.mode === 'live' ? 'come from public data sources' : 'are partly sample or estimated values'}${status.asOf ? `, as of ${formatAsOf(status.asOf)}` : ''}.`,
+        'This note is for discussion with your adviser. It is not a personal recommendation to buy or sell, and the value of investments can go down as well as up.',
+      ],
+    });
+  }
+  return out;
+}
+
 function toMarkdown(title: string, author: string, sections: MemoSection[]): string {
   const date = new Date().toISOString().slice(0, 10);
   return [
@@ -210,6 +333,7 @@ function memoMarkdownToHtml(md: string): string {
 
 export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const { run } = props;
+  const [audience, setAudience] = useState<MemoAudience>(props.defaultAudience ?? 'ic');
   const [include, setInclude] = useState<Record<SectionId, boolean>>({
     recommendation: true,
     figures: true,
@@ -226,12 +350,18 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const [edited, setEdited] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const memoTitle = title.trim() || `${run.countryName}: IC memo`;
+  const defaultTitle = audience === 'client' ? `${run.countryName}: client note` : `${run.countryName}: IC memo`;
+  const memoTitle = title.trim() || defaultTitle;
+  const labels = sectionLabels(audience);
   const generated = useMemo(
-    () => toMarkdown(memoTitle, author.trim(), buildSections(props, include, ticketScope)),
+    () => toMarkdown(memoTitle, author.trim(), buildSections(props, include, ticketScope, audience)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [props.run, props.stagedTickets, props.holdings, props.riskLookup, include, ticketScope, memoTitle, author]
+    [props.run, props.stagedTickets, props.holdings, props.riskLookup, include, ticketScope, memoTitle, author, audience]
   );
+  const switchAudience = (a: MemoAudience) => {
+    setAudience(a);
+    setEdited(null);
+  };
   const memo = edited ?? generated;
   const html = useMemo(() => memoMarkdownToHtml(memo), [memo]);
 
@@ -240,7 +370,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${run.iso3}-ic-memo-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `${run.iso3}-${audience === 'client' ? 'client-note' : 'ic-memo'}-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -273,11 +403,24 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
           <p className="ui-label">Pulls the current country, your tickets, holdings and the official calendar.</p>
         </header>
         <div className="p-4 space-y-4">
+          <div role="tablist" aria-label="Memo type" className="flex flex-wrap gap-1.5">
+            <button type="button" role="tab" aria-selected={audience === 'ic'} className="ui-pill" onClick={() => switchAudience('ic')}>
+              Investment committee memo
+            </button>
+            <button type="button" role="tab" aria-selected={audience === 'client'} className="ui-pill" onClick={() => switchAudience('client')}>
+              Client note
+            </button>
+          </div>
+          <p className="ui-label">
+            {audience === 'client'
+              ? 'Plain language for a private client. No trade levels, scores or desk terms.'
+              : 'Internal memo with trades, risk figures and kill switches.'}
+          </p>
           <label className="block ui-label space-y-0.5">
             <span className="block">Title</span>
             <input
               className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
-              placeholder={`${run.countryName}: IC memo`}
+              placeholder={defaultTitle}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
@@ -292,13 +435,14 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
           </label>
           <fieldset className="space-y-1.5">
             <legend className="ui-label mb-1">Sections</legend>
-            {(Object.keys(SECTION_LABEL) as SectionId[]).map((id) => (
+            {(Object.keys(labels) as SectionId[]).map((id) => (
               <label key={id} className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                 <input type="checkbox" checked={include[id]} onChange={(e) => setInclude({ ...include, [id]: e.target.checked })} />
-                {SECTION_LABEL[id]}
+                {labels[id]}
               </label>
             ))}
           </fieldset>
+          {audience === 'ic' && (
           <fieldset className="space-y-1.5">
             <legend className="ui-label mb-1">Trade tickets</legend>
             <label className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
@@ -310,6 +454,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
               All staged tickets
             </label>
           </fieldset>
+          )}
           <p className="ui-label">To write a memo on another country, switch country from the Countries page, then come back.</p>
         </div>
       </section>
@@ -317,7 +462,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
       <section className="ui-panel xl:col-span-2" aria-label="Memo">
         <header className="ui-panel-header flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="ui-section-title">Memo</h2>
+            <h2 className="ui-section-title">{audience === 'client' ? 'Client note' : 'Memo'}</h2>
             <p className="ui-label">{edited !== null ? 'Edited by you. Settings changes are paused until you reset.' : 'Edit the text below before you share it.'}</p>
           </div>
           <div className="flex flex-wrap gap-1.5">

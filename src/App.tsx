@@ -2829,6 +2829,7 @@ export default function App() {
                     stagedTickets={stagedTradeTickets}
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
+                    defaultAudience={userRole === 'UHNW' ? 'client' : 'ic'}
                   />
                 ) : (
                   <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
