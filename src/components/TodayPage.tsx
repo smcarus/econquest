@@ -7,6 +7,7 @@ import {
 } from '../utils/nssYieldCurveAndCatalystEngine';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
+import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 
 /**
  * Today: the institutional PM's morning view.
@@ -18,7 +19,7 @@ const LAST_VISIT_KEY = 'econquest_today_last_visit_v1';
 
 type VisitSnapshot = {
   savedAt: string;
-  rows: Record<string, { cds5YBps: number; yield10YPct: number; compositeRisk: number }>;
+  rows: Record<string, { cds5YBps: number; yield10YPct: number; compositeRisk: number; yieldSource?: string }>;
 };
 
 function loadLastVisit(): VisitSnapshot | null {
@@ -38,6 +39,7 @@ function saveVisit(items: WatchlistItem[]) {
         cds5YBps: it.cds5YBps,
         yield10YPct: it.yield10YPct,
         compositeRisk: it.compositeRisk,
+        yieldSource: it.yield10YSource || 'sample',
       };
     });
     window.localStorage.setItem(
@@ -249,9 +251,28 @@ export const TodayPage: React.FC<{
                     <td className="hidden md:table-cell py-2 pr-3 text-right text-xs">
                       <Delta value={prev ? it.cds5YBps - prev.cds5YBps : null} unit="" />
                     </td>
-                    <td className="py-2 pr-3 text-right font-medium">{it.yield10YPct.toFixed(2)}%</td>
+                    <td className="py-2 pr-3 text-right" title={yieldSourceHelp(it)}>
+                      <div className="font-medium">{it.yield10YPct.toFixed(2)}%</div>
+                      <div
+                        className={`text-xs whitespace-nowrap ${
+                          it.yield10YSource === 'official'
+                            ? 'text-emerald-700 dark:text-emerald-400'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {yieldSourceNote(it)}
+                      </div>
+                    </td>
                     <td className="hidden md:table-cell py-2 pr-3 text-right text-xs">
-                      <Delta value={prev ? (it.yield10YPct - prev.yield10YPct) * 100 : null} unit=" bp" />
+                      {/* A change is only shown when both figures come from the same kind of source. */}
+                      <Delta
+                        value={
+                          prev && (prev.yieldSource || 'sample') === (it.yield10YSource || 'sample')
+                            ? (it.yield10YPct - prev.yield10YPct) * 100
+                            : null
+                        }
+                        unit=" bp"
+                      />
                     </td>
                     <td className="hidden md:table-cell py-2 pr-3 text-right">{it.debtToGdpPct.toFixed(1)}%</td>
                     <td className="hidden md:table-cell py-2 pr-3 text-right">{it.fxReservesMonths.toFixed(1)}</td>

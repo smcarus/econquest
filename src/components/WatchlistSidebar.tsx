@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { toDisplayCase } from '../utils/displayCase';
+import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import { WatchlistGroup, WatchlistItem } from '../types/council';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { Plus, Trash2, ArrowUpRight, FolderPlus, Search } from 'lucide-react';
@@ -407,9 +408,17 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                 </p>
 
                 <div className="grid grid-cols-4 gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-xs tabular-nums">
-                  <div>
-                    <span className="text-slate-400 block">10Y Yld</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                  <div title={`${yieldSourceNote(item)}. ${yieldSourceHelp(item)}`}>
+                    <span className="text-slate-400 block">
+                      10Y yield
+                    </span>
+                    <span
+                      className={`font-semibold ${
+                        item.yield10YSource === 'official'
+                          ? 'text-emerald-700 dark:text-emerald-400'
+                          : 'text-slate-800 dark:text-slate-200'
+                      }`}
+                    >
                       {item.yield10YPct.toFixed(1)}%
                     </span>
                   </div>
@@ -437,6 +446,12 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
           })
         )}
       </div>
+      {filteredItems.length > 0 && (
+        <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
+          A green 10Y yield is an official figure. Hover a yield to see its source and date. The others are sample
+          values or AI estimates, not market prices.
+        </p>
+      )}
     </div>
   );
 };

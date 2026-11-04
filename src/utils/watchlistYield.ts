@@ -1,0 +1,58 @@
+import type { OpenDataSnapshot, WatchlistItem } from '../types/council';
+import { getSnapshotDataStatus } from './dataStatus';
+import { formatPeriod, type OfficialYieldObservation } from './officialYields';
+
+export type YieldSource = NonNullable<WatchlistItem['yield10YSource']>;
+
+type YieldFields = Pick<WatchlistItem, 'yield10YPct' | 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency'>;
+
+/**
+ * The 10Y yield a watchlist row should show, and where it came from.
+ * An official figure wins: first the one recorded on the snapshot (only if its feed answered),
+ * then one fetched separately for the watchlist. Otherwise the snapshot's own value,
+ * labelled as an AI estimate or a sample value.
+ */
+export function watchlistYieldFields(
+  snapshot: OpenDataSnapshot,
+  fetchedOfficial?: OfficialYieldObservation | null
+): YieldFields {
+  const status = getSnapshotDataStatus(snapshot);
+  const official = status.officialYield ?? fetchedOfficial ?? undefined;
+  if (official) {
+    return {
+      yield10YPct: official.valuePct,
+      yield10YSource: 'official',
+      yield10YPeriod: official.period,
+      yield10YFrequency: official.frequency === 'daily' ? 'daily' : 'monthly',
+    };
+  }
+  return {
+    yield10YPct: snapshot.monetaryAndMarket.sovereign10YBondYieldPct,
+    yield10YSource: status.yieldSource === 'official' ? 'sample' : status.yieldSource,
+    yield10YPeriod: undefined,
+    yield10YFrequency: undefined,
+  };
+}
+
+/** Short source note for a row, e.g. "Official, Sep 2026 avg", "Official, 30 Oct 2026", "AI estimate", "Sample". */
+export function yieldSourceNote(item: Pick<WatchlistItem, 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency'>): string {
+  if (item.yield10YSource === 'official' && item.yield10YPeriod) {
+    const when = formatPeriod(item.yield10YPeriod);
+    return `Official, ${item.yield10YFrequency === 'daily' ? when : `${when} avg`}`;
+  }
+  if (item.yield10YSource === 'ai_estimate') return 'AI estimate';
+  if (item.yield10YSource === 'uploaded') return 'Your upload';
+  return 'Sample';
+}
+
+/** Longer explanation for a tooltip. */
+export function yieldSourceHelp(item: Pick<WatchlistItem, 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency'>): string {
+  if (item.yield10YSource === 'official') {
+    return item.yield10YFrequency === 'daily'
+      ? `Official Treasury rate on a named 10-year bond, ${yieldSourceNote(item).replace('Official, ', '')}.`
+      : `Official OECD monthly average 10-year government bond yield, published on FRED (${yieldSourceNote(item).replace('Official, ', '')}).`;
+  }
+  if (item.yield10YSource === 'ai_estimate') return 'Estimate from an AI web search, not a market price.';
+  if (item.yield10YSource === 'uploaded') return 'From a file you uploaded.';
+  return 'Built-in sample value, not a market price. No free official 10-year series is connected for this country.';
+}
