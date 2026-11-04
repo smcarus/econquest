@@ -18,14 +18,17 @@ test('a row with no recorded sources keeps no figures at all (old saved rows, th
   assert.equal(l.countryName, 'Mexico');
 });
 
-test('figures from real sources stay: IMF, World Bank, official yield, your CDS, AI estimates', () => {
+test('figures from real sources stay: IMF, World Bank, official yield, your CDS; AI estimates do not', () => {
   const l = toLive(
     row({ debtSource: 'live', reservesSource: 'live', cpiSource: 'live', policyRateSource: 'ai_estimate', yield10YSource: 'official', yield10YPeriod: '2026-08', cds5YSource: 'own', riskSource: 'live' })
   );
   assert.deepEqual(
     [l.debtToGdpPct, l.fxReservesMonths, l.cpiInflationPct, l.policyRatePct, l.yield10YPct, l.cds5YBps, l.compositeRisk],
-    [55, 4.6, 4.8, 9.15, 9.1, 120, 0.47]
+    [55, 4.6, 4.8, undefined, 9.1, 120, 0.47]
   );
+  // Sam, 23:27Z: AI web-search estimates count as missing.
+  assert.equal(toLive(row({ cds5YSource: 'ai_estimate' })).cds5YBps, undefined);
+  assert.equal(toLive(row({ yield10YSource: 'ai_estimate' })).yield10YPct, undefined);
   assert.equal(toLive(row({ yield10YSource: 'sample' })).yield10YPct, undefined);
   assert.equal(toLive(row({ cpiSource: 'sample' })).cpiInflationPct, undefined);
 });
@@ -33,7 +36,8 @@ test('figures from real sources stay: IMF, World Bank, official yield, your CDS,
 test('missing reasons say whether to set something up or that a free feed did not answer', () => {
   assert.equal(missingReason('cds', 'MEX').kind, 'setup');
   assert.match(missingReason('cds', 'MEX').help, /CDS_FEED=csv/);
-  assert.equal(missingReason('policy', 'MEX').short, 'Needs Gemini key');
+  assert.equal(missingReason('policy', 'MEX').short, 'No source yet');
+  assert.doesNotMatch(missingReason('cds', 'MEX').help, /Gemini/);
   assert.equal(missingReason('debt', 'MEX').kind, 'unreachable');
   assert.equal(missingReason('yield', 'MEX').kind, 'unreachable'); // free FRED series exists
   assert.equal(missingReason('yield', 'EGY').kind, 'setup'); // no free series
@@ -46,5 +50,6 @@ test('summary counts missing figures across the list, setup reason first', () =>
   assert.equal(y.count, 2);
   assert.equal(y.reason.kind, 'setup'); // Egypt needs setup, which beats Mexico's feed outage
   assert.equal(s.find((r) => r.key === 'cpi')!.count, 1);
-  assert.ok(hasFigure(row({ cds5YSource: 'ai_estimate' }), 'cds'));
+  assert.ok(hasFigure(row({ cds5YSource: 'own' }), 'cds'));
+  assert.ok(!hasFigure(row({ cds5YSource: 'ai_estimate' }), 'cds'));
 });

@@ -1,6 +1,6 @@
 /**
  * No built-in figures (Sam, 2026-11-04): a figure is shown only when a live feed, an official
- * series, your own data or an AI web search filled it. Everything else is left out, and the
+ * series or your own data filled it. AI web-search estimates do not count either (Sam, 23:27Z). Everything else is left out, and the
  * screen says which source is missing and whether it needs setting up or just did not answer.
  */
 import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
@@ -16,8 +16,6 @@ export interface MissingReason {
   /** What to do, in a sentence. */
   help: string;
 }
-
-const AI = 'Menu > AI model and data connections';
 
 export const FIGURE_LABEL: Record<FigureKey, string> = {
   risk: 'Risk score',
@@ -46,14 +44,14 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
       return {
         kind: 'setup',
         short: 'Needs setup',
-        help: `No free CDS source exists. Connect your own licensed CDS (CDS_FEED=csv with CDS_CSV_PATH, or CDS_FEED=lseg in .env), or add a Gemini key under ${AI} for an AI web-search estimate.`,
+        help: 'No free CDS source exists. Connect your own licensed CDS in .env: CDS_FEED=csv with CDS_CSV_PATH, or CDS_FEED=lseg.',
       };
     case 'yield':
       if (iso3 === 'TUR')
-        return { kind: 'setup', short: 'Needs EVDS key', help: 'Set EVDS_API_KEY (free from the central bank of Turkey) in .env, or add a Gemini key for an AI estimate.' };
+        return { kind: 'setup', short: 'Needs EVDS key', help: 'Set EVDS_API_KEY (free from the central bank of Turkey) in .env.' };
       if (hasFreeOfficialYield(iso3))
         return { kind: 'unreachable', short: 'Feed did not answer', help: 'The official yield feed did not answer. Press Sync, or set FRED_API_KEY in .env for a steadier connection.' };
-      return { kind: 'setup', short: 'Needs setup', help: `No free official 10Y series is wired in for this country. Upload a yields file, or add a Gemini key under ${AI} for an AI estimate.` };
+      return { kind: 'setup', short: 'No source yet', help: 'No free official 10Y series is wired in for this country. Upload a yields file with its official figures.' };
     case 'debt':
       return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Sync, or check the connection.' };
     case 'cpi':
@@ -61,7 +59,7 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
     case 'reserves':
       return { kind: 'unreachable', short: 'World Bank did not answer', help: 'The World Bank feed (free, no key) did not answer. Press Sync, or check the connection.' };
     case 'policy':
-      return { kind: 'setup', short: 'Needs Gemini key', help: `No free policy-rate feed is wired in. Add a Gemini key under ${AI} for an AI web-search estimate.` };
+      return { kind: 'setup', short: 'No source yet', help: 'No policy-rate feed is connected yet. Central bank rates need an official source wired in (planned), or your own data.' };
   }
 }
 
@@ -71,9 +69,9 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
     case 'risk':
       return it.riskSource === 'live';
     case 'cds':
-      return it.cds5YSource === 'own' || it.cds5YSource === 'ai_estimate';
+      return it.cds5YSource === 'own';
     case 'yield':
-      return it.yield10YSource === 'official' || it.yield10YSource === 'ai_estimate' || it.yield10YSource === 'uploaded';
+      return it.yield10YSource === 'official' || it.yield10YSource === 'uploaded';
     case 'debt':
       return it.debtSource === 'live';
     case 'reserves':
@@ -81,7 +79,8 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
     case 'cpi':
       return it.cpiSource === 'live';
     case 'policy':
-      return it.policyRateSource === 'ai_estimate';
+      // The only policy-rate source today is an AI web-search estimate, which does not count.
+      return false;
   }
 }
 
