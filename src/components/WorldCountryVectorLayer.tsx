@@ -338,7 +338,7 @@ export const WorldCountryVectorLayer: React.FC<WorldCountryVectorLayerProps> = (
 
         if (isHovered && !isActiveSovereign) {
           fillClass =
-            'fill-indigo-500/35 dark:fill-indigo-400/35 stroke-indigo-600 dark:stroke-indigo-300';
+            'fill-blue-500/35 dark:fill-blue-400/35 stroke-blue-600 dark:stroke-blue-300';
         }
 
         return (

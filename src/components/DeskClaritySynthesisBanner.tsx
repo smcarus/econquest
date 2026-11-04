@@ -278,7 +278,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
     return (
       <div className="bg-slate-900 dark:bg-slate-900/90 text-slate-100 border border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs">
         <div className="flex flex-wrap items-center gap-2 min-w-0 flex-1">
-          <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-indigo-600 text-white shrink-0">
+          <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-blue-600 text-white shrink-0">
             {activeSubTabLabel}
           </span>
           <span className="text-slate-300 truncate">{spec.plainEnglishPurpose}</span>
@@ -293,7 +293,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
           <button
             type="button"
             onClick={() => onJumpToSection(spec.nextStepTargetSection)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-semibold text-indigo-300 hover:text-white bg-indigo-950/80 border border-indigo-700/60 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold text-blue-300 hover:text-white bg-blue-950/80 border border-blue-700/60 transition-colors cursor-pointer"
           >
             <span>{spec.nextStepLabel}</span>
             <ArrowRight className="w-3 h-3" />
@@ -301,7 +301,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
           <button
             type="button"
             onClick={() => onToggleDensityMode('SIMPLE_BRIEF')}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors cursor-pointer"
           >
             <Eye className="w-3 h-3" />
             <span>Show Simple Brief</span>
@@ -312,14 +312,14 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
   }
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-2 border-indigo-500/30 dark:border-indigo-500/40 p-4 shadow-xs space-y-3">
+    <div className="bg-white dark:bg-slate-900 border border-blue-500/30 dark:border-blue-500/40 p-4 space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-200 dark:border-slate-800">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-mono font-bold uppercase tracking-wider bg-indigo-600 text-white">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs tabular-nums font-semibold bg-blue-600 text-white">
             <Sparkles className="w-3 h-3" />
             <span>PLAIN-ENGLISH DESK GUIDE · {activeHubLabel.toUpperCase()}</span>
           </span>
-          <span className="text-xs font-bold text-slate-900 dark:text-white">
+          <span className="text-xs font-semibold text-slate-900 dark:text-white">
             {activeSubTabLabel} — {run.countryName} ({run.iso3})
           </span>
         </div>
@@ -333,7 +333,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
           <button
             type="button"
             onClick={() => onJumpToSection(spec.nextStepTargetSection)}
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
           >
             <span>{spec.nextStepLabel}</span>
             <ArrowRight className="w-3 h-3" />
@@ -342,7 +342,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
             type="button"
             onClick={() => onToggleDensityMode('PRO_QUANT')}
             title="Condense this plain-English guide into a 1-line bar for maximum quant screen space"
-            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-300 dark:border-slate-700 transition-colors cursor-pointer"
           >
             <Layers className="w-3 h-3" />
             <span>Compact Pro Quant Bar</span>
@@ -352,7 +352,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
         <div className="p-3 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-1">
-          <div className="text-[10px] font-mono uppercase tracking-wider font-bold text-slate-500 dark:text-slate-400">
+          <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400">
             1. What This Desk Shows (In Plain English)
           </div>
           <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
@@ -361,16 +361,16 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
         </div>
 
         <div className="p-3 bg-blue-50/50 dark:bg-blue-950/25 border border-blue-200/80 dark:border-blue-900/60 space-y-1">
-          <div className="text-[10px] font-mono uppercase tracking-wider font-bold text-blue-700 dark:text-blue-300">
+          <div className="text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300">
             2. Live Signal for {run.countryName} ({run.iso3})
           </div>
-          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium font-mono text-[11.5px]">
+          <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium tabular-nums text-xs">
             {spec.liveSovereignSignal}
           </p>
         </div>
 
         <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/25 border border-emerald-200/80 dark:border-emerald-900/60 space-y-1">
-          <div className="text-[10px] font-mono uppercase tracking-wider font-bold text-emerald-700 dark:text-emerald-300">
+          <div className="text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-300">
             3. How To Use This For An Edge
           </div>
           <p className="text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
@@ -380,9 +380,9 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
       </div>
 
       {/* Interactive Statistical Reference Badges Ribbon (Hover for Formal Formula, Variable Glossary & Source) */}
-      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px]">
+      <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex flex-wrap items-center gap-1">
-          <span className="text-[10px] font-mono uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400 mr-1">
+          <span className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mr-1">
             Hover Statistical References (Formula &amp; Glossary):
           </span>
           <StatRefBadge
@@ -406,7 +406,7 @@ export const DeskClaritySynthesisBanner: React.FC<DeskClaritySynthesisBannerProp
             refText={`5Y CDS Hazard & Basis · ${run.iso3} = ${run.openData.monetaryAndMarket.cds5YSpreadBps} bps`}
           />
         </div>
-        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+        <span className="text-xs tabular-nums text-slate-400 dark:text-slate-500">
           Hover any underlined metric or click any Chart/Table Provenance Badge for live API audit
         </span>
       </div>

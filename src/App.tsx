@@ -434,7 +434,7 @@ const DOMAIN_HUBS: DomainHubConfig[] = [
       {
         id: 'ratings_shadow_fallen_angel',
         label: 'Shadow Rating & Fallen-Angel Cliff',
-        description: 'S&P/Moody’s/Fitch 5-pillar shadow rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
+        description: 'S&P/Moody’s/Fitch 5-pillar  rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
       },
       {
         id: 'fx_beer_feer_equilibrium',
@@ -1967,7 +1967,7 @@ export default function App() {
         >
           <EconQuestLogo size={34} />
           <div className="flex flex-col">
-            <span className="hidden sm:inline lg:hidden xl:inline text-sm font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+            <span className="hidden sm:inline lg:hidden xl:inline text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
               EconQuest
             </span>
           </div>
@@ -2010,10 +2010,10 @@ export default function App() {
 
             const activeBtnClass =
               pillar.id === 'market_trading'
-                ? 'bg-blue-600 text-white border-blue-600 font-semibold shadow-2xs'
+                ? 'bg-blue-600 text-white border-blue-600 font-semibold '
                 : pillar.id === 'policy_research'
-                ? 'bg-emerald-600 text-white border-emerald-600 font-semibold shadow-2xs'
-                : 'bg-indigo-600 text-white border-indigo-600 font-semibold shadow-2xs';
+                ? 'bg-blue-600 text-white border-blue-600 font-semibold '
+                : 'bg-blue-600 text-white border-blue-600 font-semibold ';
 
             return (
               <div
@@ -2044,10 +2044,10 @@ export default function App() {
                   <div className="absolute left-0 top-full pt-1 w-[440px] z-50">
                     <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-2.5">
                       <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
-                        <div className="text-xs font-bold text-slate-900 dark:text-white">
+                        <div className="text-xs font-semibold text-slate-900 dark:text-white">
                           {pillar.shortTitle}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                           {pillar.subtitle}
                         </div>
                       </div>
@@ -2056,7 +2056,7 @@ export default function App() {
                           key={sg.groupId}
                           className="p-2 border bg-slate-50/70 dark:bg-slate-950/60 border-slate-200/80 dark:border-slate-800"
                         >
-                          <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                          <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                             {sg.groupTitle}
                           </div>
                           <div className="flex flex-wrap gap-1.5">
@@ -2073,7 +2073,7 @@ export default function App() {
                                     setOpenPillarMenuId(null);
                                   }}
                                   title={mod.description}
-                                  className={`px-2.5 py-1 text-[11px] border transition-colors text-left ${
+                                  className={`px-2.5 py-1 text-xs border transition-colors text-left ${
                                     isModSel
                                       ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                                       : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
@@ -2098,11 +2098,11 @@ export default function App() {
             type="button"
             onClick={() => setIsCommandPaletteOpen(true)}
             title="Open Global Command Palette & Module Jump Bar (Cmd+K / Ctrl+K)"
-            className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs font-mono text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+            className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs tabular-nums text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
           >
             <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
             <span>Jump</span>
-            <kbd className="px-1.5 py-0.5 text-[10px] font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+            <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
               ⌘K
             </kbd>
           </button>
@@ -2123,7 +2123,7 @@ export default function App() {
             <GitCompare className="w-3.5 h-3.5" />
             <span>A vs B</span>
             {scenarioChangeCount > 0 && (
-              <span className="px-1.5 text-[10px] font-mono font-bold bg-amber-500 text-slate-950">
+              <span className="px-1.5 text-xs tabular-nums font-semibold bg-amber-500 text-slate-950">
                 {scenarioChangeCount}
               </span>
             )}
@@ -2178,7 +2178,7 @@ export default function App() {
                 className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-3 text-xs"
               >
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                     Detail level
                   </div>
                   <div className="grid grid-cols-2 gap-1">
@@ -2205,7 +2205,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
                     I am a
                   </div>
                   <div className="grid grid-cols-3 gap-1">
@@ -2222,7 +2222,7 @@ export default function App() {
                         onClick={() => setActivePersona(p.id)}
                         className={`px-2 py-1.5 border font-semibold transition-colors ${
                           activePersona === p.id
-                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
                         }`}
                       >
@@ -2303,7 +2303,7 @@ export default function App() {
                       {item.icon}
                       <span className="flex-1">{item.label}</span>
                       {item.hint && (
-                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                        <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                           {item.hint}
                         </span>
                       )}
@@ -2320,7 +2320,7 @@ export default function App() {
             disabled={isRunningPhase1And2}
             title="Run the AI council assessment for the selected country"
             aria-label="Run Council"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap"
+            className="ui-btn ui-btn-primary inline-flex"
           >
             <Play className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">
@@ -2353,7 +2353,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsWatchlistCollapsed((v) => !v)}
                   title={isWatchlistCollapsed ? 'Show Sovereign Watchlist Sidebar' : 'Hide Sidebar to Expand Maps & Charts'}
-                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
+                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
                 >
                   {isWatchlistCollapsed ? (
                     <>
@@ -2367,7 +2367,7 @@ export default function App() {
                     </>
                   )}
                 </button>
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 mr-0.5">
+                <span className="text-xs tabular-nums text-slate-400 dark:text-slate-500 mr-0.5">
                   Sovereign:
                 </span>
                 {activeWatchlistItems.map((item) => {
@@ -2378,9 +2378,9 @@ export default function App() {
                       type="button"
                       onClick={() => handleSelectSovereign(item)}
                       title={`Switch active sovereign to ${item.countryName} (${item.iso3} · ${item.currencyCode})`}
-                      className={`px-2 py-0.5 text-[11px] font-mono font-bold border transition-colors ${
+                      className={`px-2 py-0.5 text-xs tabular-nums font-semibold border transition-colors ${
                         isActiveSov
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-2xs'
+                          ? 'bg-blue-600 text-white border-blue-600 '
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500'
                       }`}
                     >
@@ -2392,7 +2392,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsCustomSovereignModalOpen(true)}
                   title="Onboard any new ISO-3 country (India, Poland, Chile, Colombia, Nigeria, or custom ISO-3) with live IMF/World Bank hydration"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
                 >
                   <Plus className="w-3 h-3" />
                   <span>+ ISO-3</span>
@@ -2401,7 +2401,7 @@ export default function App() {
                   type="button"
                   onClick={handleSyncLiveWorldBankAndTreasury}
                   disabled={isSyncingLiveMacro}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
                 >
                   <RefreshCw className={`w-3 h-3 ${isSyncingLiveMacro ? 'animate-spin' : ''}`} />
                   <span>{isSyncingLiveMacro ? 'Syncing...' : 'Sync WB/IMF'}</span>
@@ -2425,9 +2425,9 @@ export default function App() {
                       key={mode.id}
                       type="button"
                       onClick={() => setLayoutMode(mode.id)}
-                      className={`px-2 py-0.5 text-[10px] font-mono font-semibold transition-colors ${
+                      className={`px-2 py-0.5 text-xs tabular-nums font-semibold transition-colors ${
                         layoutMode === mode.id
-                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-2xs'
+                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 '
                           : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
                       }`}
                     >
@@ -2440,7 +2440,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsComparatorDrawerOpen(true)}
                   title="Open Multi-Sovereign Head-to-Head Comparator (Compare any 2-3 countries side-by-side)"
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
                 >
                   <Columns className="w-3 h-3" />
                   <span>Compare 2–3 Sovereigns</span>
@@ -2449,7 +2449,7 @@ export default function App() {
                   type="button"
                   onClick={() => setIsTradeTicketDrawerOpen(true)}
                   title="Open 1-Click Executive Tear-Sheet & IC Trade Ticket Quick-Drawer"
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition-colors"
+                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs tabular-nums font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition-colors"
                 >
                   <Briefcase className="w-3 h-3" />
                   <span>IC Ticket / Tear-Sheet ({stagedTradeTickets.length})</span>
@@ -2457,7 +2457,7 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowScenarioInput((v) => !v)}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-mono font-semibold border transition-colors ${
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold border transition-colors ${
                     showScenarioInput
                       ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
                       : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
@@ -2470,7 +2470,7 @@ export default function App() {
 
             {showScenarioInput && (
               <div className="flex items-center gap-2 pt-1">
-                <span className="text-[11px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
                   Scenario Query:
                 </span>
                 <input
@@ -2492,7 +2492,7 @@ export default function App() {
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
             >
               <Search className="w-3 h-3" />
               <span>Jump</span>
@@ -2570,7 +2570,7 @@ export default function App() {
             statusBanner.type === 'warning'
               ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-900/60 text-amber-800 dark:text-amber-200'
               : statusBanner.type === 'error'
-              ? 'bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-900/60 text-red-800 dark:text-red-200'
+              ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-800 dark:text-rose-200'
               : statusBanner.type === 'success'
               ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60 text-emerald-800 dark:text-emerald-200'
               : 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-blue-800 dark:text-blue-200'

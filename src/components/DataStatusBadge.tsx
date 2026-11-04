@@ -40,7 +40,7 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <span
         title={`${DATA_MODE_HELP[status.mode]}${feedList}`}
-        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold border ${MODE_CLASS[status.mode]}`}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold border ${MODE_CLASS[status.mode]}`}
       >
         <span className={`w-1.5 h-1.5 rounded-full ${DOT_CLASS[status.mode]}`} />
         <span>{DATA_MODE_LABEL[status.mode]}</span>
@@ -50,7 +50,7 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
       </span>
       <span
         title={marketHelp}
-        className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold border ${
+        className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold border ${
           status.marketSource === 'ai_estimate' ? MODE_CLASS.partial : MODE_CLASS.sample
         }`}
       >

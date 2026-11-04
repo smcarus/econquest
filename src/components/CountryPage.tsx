@@ -91,7 +91,7 @@ function deskLabel(id: string): string {
 }
 
 const ALERT_CLASS: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
+  CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
   ELEVATED: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
   STABLE: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
 };
@@ -103,7 +103,7 @@ const ALERT_LABEL: Record<WatchlistItem['alertStatus'], string> = {
 
 const Figure: React.FC<{ label: string; value: string; title?: string }> = ({ label, value, title }) => (
   <div className="min-w-0" title={title}>
-    <div className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</div>
+    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</div>
     <div className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap [font-variant-numeric:tabular-nums]">
       {value}
     </div>
@@ -154,7 +154,7 @@ export const CountryPage: React.FC<{
   return (
     <div className="space-y-3" data-country-page="true">
       {/* Country header: one row with selector, key figures, data status and actions */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-3">
+      <div className="ui-panel px-4 py-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="flex items-center gap-2">
             <label htmlFor="country-select" className="sr-only">
@@ -206,7 +206,7 @@ export const CountryPage: React.FC<{
               type="button"
               onClick={onSync}
               disabled={isSyncing}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50"
+              className="ui-btn inline-flex"
               title="Fetch the latest World Bank and US Treasury figures for this country"
             >
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -215,7 +215,7 @@ export const CountryPage: React.FC<{
             <button
               type="button"
               onClick={onCompare}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="ui-btn inline-flex"
             >
               <GitCompare className="w-3 h-3" />
               Compare
@@ -223,7 +223,7 @@ export const CountryPage: React.FC<{
             <button
               type="button"
               onClick={onOpenTickets}
-              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="ui-btn inline-flex"
             >
               <Ticket className="w-3 h-3" />
               IC tickets{ticketCount > 0 ? ` (${ticketCount})` : ''}
@@ -241,11 +241,7 @@ export const CountryPage: React.FC<{
                 type="button"
                 onClick={() => onChangeTab(t.id)}
                 aria-current={isActive ? 'page' : undefined}
-                className={`px-3 py-2 text-sm whitespace-nowrap border-b-2 transition-colors ${
-                  isActive
-                    ? 'border-blue-600 text-blue-700 dark:text-blue-300 font-semibold'
-                    : 'border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                } ${t.id === 'restructuring' ? 'text-red-700 dark:text-red-300' : ''}`}
+                className={`ui-tab ${t.id === 'restructuring' ? 'text-rose-700 dark:text-rose-300' : ''}`}
               >
                 {t.label}
               </button>
@@ -265,9 +261,9 @@ export const CountryPage: React.FC<{
               }
             }} />
           </div>
-          <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-            <header className="px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Coming up</h2>
+          <section className="ui-panel">
+            <header className="ui-panel-header">
+              <h2 className="ui-section-title">Coming up</h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">Official schedule, next 120 days</p>
             </header>
             <div className="p-4">
@@ -326,11 +322,7 @@ export const CountryPage: React.FC<{
               role="tab"
               aria-selected={d === desk}
               onClick={() => onChangeDesk(d)}
-              className={`px-2.5 py-1 text-xs border transition-colors ${
-                d === desk
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-              }`}
+              className="ui-pill"
             >
               {deskLabel(d)}
             </button>

@@ -208,12 +208,12 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
       <div className="institutional-card p-5 border-l-4 border-l-emerald-600">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-              <span>TIER-10 CROSS-HUB SIGNAL SYNTHESIS, PERSONA PLAYBOOKS & EMPIRICAL EXPORTER</span>
+            <div className="flex items-center gap-2 text-xs tabular-nums text-emerald-600 dark:text-emerald-400">
+              <span>Tier-10 cross-hub signal synthesis, persona playbooks & empirical exporter</span>
               <span>•</span>
-              <span>ZERO-NOTIONAL NORMALIZED (% GDP / BPS / 0–100¢ / SHARPE)</span>
+              <span>Zero-notional normalized (% GDP / bps / 0–100¢ / sharpe)</span>
             </div>
-            <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               10. Persona Playbooks, 9-Hub Signal Scanner, Strategy Backtester & Academic LaTeX Lab —{' '}
               <span className="text-emerald-600 dark:text-emerald-400">
                 {run.countryName} ({run.iso3})
@@ -232,17 +232,17 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <button
                   key={p.id}
                   onClick={() => onChangePersona(p.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded border text-left transition-all ${
+                  className={`flex items-center gap-2 px-3 py-2  border text-left transition-all ${
                     isSelected
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                      ? 'bg-blue-600 text-white border-blue-600 '
                       : 'bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
                   }`}
                 >
                   <span>{p.icon}</span>
                   <div>
-                    <div className="text-xs font-bold leading-tight">{p.label}</div>
+                    <div className="text-xs font-semibold leading-tight">{p.label}</div>
                     <div
-                      className={`text-[10px] font-mono ${
+                      className={`text-xs tabular-nums ${
                         isSelected ? 'text-emerald-100' : 'text-slate-500'
                       }`}
                     >
@@ -264,9 +264,9 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <button
                   key={tab.id}
                   onClick={() => handleSelectSubTab(tab.id)}
-                  className={`flex items-center justify-between px-3.5 py-2.5 rounded text-left border transition-all ${
+                  className={`flex items-center justify-between px-3.5 py-2.5  text-left border transition-all ${
                     isActive
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-emerald-600 dark:border-emerald-500 shadow-sm'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-blue-600 dark:border-blue-500 '
                       : 'bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
                   }`}
                 >
@@ -275,12 +275,12 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                       {tab.icon}
                     </span>
                     <div className="truncate">
-                      <span className="text-[10px] font-mono opacity-75 mr-1.5">{tab.code}</span>
+                      <span className="text-xs tabular-nums opacity-75 mr-1.5">{tab.code}</span>
                       <span className="text-xs font-semibold">{tab.label}</span>
                     </div>
                   </div>
                   <span
-                    className={`ml-2 px-1.5 py-0.5 text-[10px] font-mono rounded shrink-0 ${
+                    className={`ml-2 px-1.5 py-0.5 text-xs tabular-nums  shrink-0 ${
                       isActive
                         ? 'bg-white/15 text-white'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -302,15 +302,15 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
         <div className="space-y-6">
           <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-emerald-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-mono font-bold uppercase text-emerald-600 dark:text-emerald-400 mr-2">
+              <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mr-2">
                 [LIVE 9-HUB WATCHLIST SYNTHESIS — {activePersona.replace(/_/g, ' ')}]
               </span>
-              Scanning {watchlistItems.length} watchlist sovereigns across CDS hazard dislocations, Polymarket/Kalshi event spreads, S&P/Moody’s/Fitch shadow ratings, BEER/FEER FX misalignments, Bank CET1 doom-loops, Paris Club CAC recovery floors, Taylor Rule stance gaps, and G7 custody freeze buffers.
+              Scanning {watchlistItems.length} watchlist sovereigns across CDS hazard dislocations, Polymarket/Kalshi event spreads, S&P/Moody’s/Fitch  ratings, BEER/FEER FX misalignments, Bank CET1 doom-loops, Paris Club CAC recovery floors, Taylor Rule stance gaps, and G7 custody freeze buffers.
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <button
                 onClick={() => handleSelectSubTab('persona_guided_playbook_cockpit')}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-slate-900 dark:bg-slate-800 text-white"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-slate-900 dark:bg-slate-800 text-white"
               >
                 <Compass className="w-3.5 h-3.5" />
                 Open Step-by-Step Playbook
@@ -327,19 +327,19 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                    <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
                       #{sig.rank} TOP {sig.personaId === 'INDIVIDUAL_TRADER' ? 'TRADER ALPHA' : sig.personaId === 'INSTITUTIONAL_PM_IC' ? 'INSTITUTIONAL IC' : 'POLICY RESEARCH'} SIGNAL
                     </span>
-                    <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       Conviction: {sig.convictionScore}/100
                     </span>
                   </div>
 
                   <div>
-                    <div className="text-[11px] font-mono text-slate-500">
+                    <div className="text-xs tabular-nums text-slate-500">
                       {sig.sourceHubLabel} • {sig.signalCategory}
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                       {sig.countryName} ({sig.iso3}) — {sig.primaryDislocationMetric}
                     </h3>
                   </div>
@@ -348,7 +348,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     {sig.headlineThesis}
                   </p>
 
-                  <div className="p-3 rounded bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 space-y-1.5 text-[11px] font-mono">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs tabular-nums">
                     <div className="flex justify-between gap-2">
                       <span className="text-slate-500">Entry Anchor:</span>
                       <span className="text-slate-900 dark:text-slate-100 font-semibold text-right">
@@ -366,8 +366,8 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     </div>
                   </div>
 
-                  <div className="p-2.5 rounded bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/70 dark:border-indigo-900/50 text-xs">
-                    <span className="font-mono font-bold text-indigo-700 dark:text-indigo-300 mr-1">
+                  <div className="p-2.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/50 text-xs">
+                    <span className="tabular-nums font-semibold text-blue-700 dark:text-blue-300 mr-1">
                       Actionable Expression:
                     </span>
                     <span className="text-slate-800 dark:text-slate-200">
@@ -383,7 +383,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                       if (found && onSelectSovereign) onSelectSovereign(found);
                       if (onJumpToNavSection) onJumpToNavSection(sig.targetNavSection);
                     }}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="ui-btn inline-flex"
                   >
                     <ArrowUpRight className="w-3.5 h-3.5" />
                     Inspect Source Hub
@@ -391,7 +391,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                   {onApplyShockToTerminal && (
                     <button
                       onClick={() => onApplyShockToTerminal(sig.shockPropagationPayload)}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Zap className="w-3.5 h-3.5" />
                       Simulate in Terminal
@@ -405,14 +405,14 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
           {/* Complete Ranked Cross-Hub Signal Table */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Full Ranked Cross-Hub Watchlist Signal Queue ({activePersona.replace(/_/g, ' ')})
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Rank</th>
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3">Source Hub</th>
@@ -425,22 +425,22 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                   {signals.map((sig) => (
                     <tr key={sig.signalId} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-2.5 px-3 font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2.5 px-3 tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                         #{sig.rank}
                       </td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         {sig.countryName} ({sig.iso3})
                       </td>
-                      <td className="py-2.5 px-3 text-[11px] font-mono text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2.5 px-3 text-xs tabular-nums text-blue-600 dark:text-blue-400">
                         {sig.sourceHubLabel}
                       </td>
-                      <td className="py-2.5 px-3 font-mono">
+                      <td className="py-2.5 px-3 tabular-nums">
                         {sig.primaryDislocationMetric}
                       </td>
                       <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                         {sig.recommendedExpression}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                         {sig.convictionScore}/100
                       </td>
                       <td className="py-2.5 px-3 text-right">
@@ -450,7 +450,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                             if (found && onSelectSovereign) onSelectSovereign(found);
                             if (onJumpToNavSection) onJumpToNavSection(sig.targetNavSection);
                           }}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded text-[11px] font-mono bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 hover:text-white transition-colors"
+                          className="inline-flex items-center gap-1 px-2 py-1 text-xs tabular-nums bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white transition-colors"
                         >
                           Open Hub
                           <ArrowUpRight className="w-3 h-3" />
@@ -470,21 +470,21 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
          ===================================================================== */}
       {activeSubTab === 'persona_guided_playbook_cockpit' && (
         <div className="space-y-6">
-          <div className="institutional-card p-5 bg-slate-50/70 dark:bg-slate-900/50 border-l-4 border-l-indigo-600">
+          <div className="institutional-card p-5 bg-slate-50/70 dark:bg-slate-900/50 border-l-4 border-l-blue-600">
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
               <div>
-                <div className="text-[11px] font-mono uppercase text-indigo-600 dark:text-indigo-400">
+                <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                   ACTIVE OPERATIONAL PLAYBOOK • {activePlaybook.personaId.replace(/_/g, ' ')}
                 </div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   {activePlaybook.personaTitle}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                   {activePlaybook.personaSubtitle}
                 </p>
               </div>
-              <div className="p-3.5 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-md">
-                <div className="text-[10px] font-mono uppercase text-emerald-600 dark:text-emerald-400 font-bold">
+              <div className="p-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-md">
+                <div className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold">
                   Structural Edge Mechanism
                 </div>
                 <p className="text-xs text-slate-700 dark:text-slate-300 mt-1">
@@ -494,13 +494,13 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
             </div>
 
             <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-slate-200 dark:border-slate-800">
-              <span className="text-[10px] font-mono uppercase text-slate-500 mr-1">
+              <span className="text-xs tabular-nums text-slate-500 mr-1">
                 Zero-Notional Benchmark Metrics:
               </span>
               {activePlaybook.primaryMetricsUsed.map((m) => (
                 <span
                   key={m}
-                  className="px-2 py-0.5 text-[11px] font-mono rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
+                  className="px-2 py-0.5 text-xs tabular-nums bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300"
                 >
                   {m}
                 </span>
@@ -517,19 +517,19 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
               >
                 <div className="space-y-3">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="px-2.5 py-0.5 text-xs font-mono font-bold rounded bg-indigo-600 text-white">
+                    <span className="px-2.5 py-0.5 text-xs tabular-nums font-semibold bg-blue-600 text-white">
                       STEP {step.stepNumber}
                     </span>
-                    <span className="px-2.5 py-0.5 text-[11px] font-mono rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
+                    <span className="px-2.5 py-0.5 text-xs tabular-nums bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
                       {step.liveTelemetryBadge}
                     </span>
                   </div>
 
                   <div>
-                    <div className="text-[11px] font-mono text-indigo-600 dark:text-indigo-400">
+                    <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                       {step.hubReference}
                     </div>
-                    <h4 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                    <h4 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                       {step.stepTitle}
                     </h4>
                   </div>
@@ -538,9 +538,9 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     {step.analyticalObjective}
                   </p>
 
-                  <div className="p-3 rounded bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
+                  <div className="p-3 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 space-y-1.5 text-xs">
                     <div>
-                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mr-1.5">
+                      <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100 mr-1.5">
                         Quantitative Decision Rule:
                       </span>
                       <span className="text-slate-700 dark:text-slate-300">
@@ -548,7 +548,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                       </span>
                     </div>
                     <div className="pt-1 border-t border-slate-200 dark:border-slate-800">
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400 mr-1.5">
+                      <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mr-1.5">
                         Why It Generates Edge:
                       </span>
                       <span className="text-slate-600 dark:text-slate-400">
@@ -559,7 +559,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 </div>
 
                 <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
-                  <span className="text-[11px] font-mono text-slate-500">
+                  <span className="text-xs tabular-nums text-slate-500">
                     Target Module: {step.hubReference}
                   </span>
                   <button
@@ -574,7 +574,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                         }
                       }
                     }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     Launch Step {step.stepNumber} Workspace
                     <ArrowUpRight className="w-3.5 h-3.5" />
@@ -591,16 +591,16 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
          ===================================================================== */}
       {activeSubTab === 'persona_strategy_backtester_lab' && (
         <div className="space-y-6">
-          <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-indigo-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="institutional-card p-4 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-blue-600 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <span className="font-mono font-bold uppercase text-indigo-600 dark:text-indigo-400 mr-2">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 mr-2">
                 [SYSTEMATIC CROSS-HUB BACKTESTER — {backtestSuite.strategyTitle}]
               </span>
               {backtestSuite.strategyRuleSummary}
             </div>
             <button
               onClick={() => setBacktestInputs(DEFAULT_STRATEGY_BACKTEST_INPUTS)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              className="ui-btn inline-flex shrink-0"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset Backtest Rules
@@ -610,73 +610,73 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
           {/* Backtest KPI Strip */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">
+              <div className="text-xs tabular-nums text-slate-500">
                 Cumulative Net Alpha
               </div>
-              <div className="text-lg font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="text-lg tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
                 +{backtestSuite.totalCumulativeNetAlphaBps} bps
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Net of {backtestInputs.transactionBidAskHaircutBps} bps bid-ask cost
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">
+              <div className="text-xs tabular-nums text-slate-500">
                 Annualized Sharpe Ratio
               </div>
-              <div className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-lg tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1">
                 {backtestSuite.annualizedSharpeRatio.toFixed(2)}
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Risk-adjusted spread capture
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">
+              <div className="text-xs tabular-nums text-slate-500">
                 Win / Hit Rate (%)
               </div>
-              <div className="text-lg font-mono font-bold text-slate-900 dark:text-slate-100 mt-1">
+              <div className="text-lg tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-1">
                 {backtestSuite.winHitRatePct}%
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Across 12 historical regime windows
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">
+              <div className="text-xs tabular-nums text-slate-500">
                 Profit Factor
               </div>
-              <div className="text-lg font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+              <div className="text-lg tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
                 {backtestSuite.profitFactor.toFixed(2)}x
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Gross wins / gross losses
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">
+              <div className="text-xs tabular-nums text-slate-500">
                 Max Drawdown (bps)
               </div>
-              <div className="text-lg font-mono font-bold text-rose-600 dark:text-rose-400 mt-1">
+              <div className="text-lg tabular-nums font-semibold text-rose-600 dark:text-rose-400 mt-1">
                 -{backtestSuite.maxDrawdownBps} bps
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 Capped by {backtestInputs.stopLossKillSwitchBps} bps kill-switch
               </div>
             </div>
 
             <div className="institutional-card p-3.5">
-              <div className="text-[10px] font-mono uppercase text-slate-500">
+              <div className="text-xs tabular-nums text-slate-500">
                 Brier Calibration Score
               </div>
-              <div className="text-lg font-mono font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+              <div className="text-lg tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-1">
                 {backtestSuite.brierCalibrationScore.toFixed(3)}
               </div>
-              <div className="text-[11px] text-slate-500 mt-0.5">
+              <div className="text-xs text-slate-500 mt-0.5">
                 0.00 = Perfect calibration
               </div>
             </div>
@@ -686,10 +686,10 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             <div className="lg:col-span-5 institutional-card p-5 space-y-4">
               <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Systematic Rule & Risk-Control Calibrator
                 </h3>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Select strategy archetype, entry conviction filter, kill-switch stop, and holding horizon
                 </p>
               </div>
@@ -707,7 +707,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                         strategyId: e.target.value as SystematicStrategyId,
                       }))
                     }
-                    className="w-full px-3 py-2 text-xs font-mono rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+                    className="w-full px-3 py-2 text-xs tabular-nums border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                   >
                     <option value="PREDICTION_MARKET_CDS_ARB">
                       1. Polymarket / Kalshi vs. 5Y CDS Hazard Arbitrage (Trader)
@@ -729,7 +729,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Minimum Signal Dislocation Threshold (¢ / Notch Score)
                     </span>
-                    <span className="font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       ≥ {backtestInputs.entryThresholdScore}
                     </span>
                   </div>
@@ -745,7 +745,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                         entryThresholdScore: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -754,7 +754,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Pre-Mortem Hard Stop-Loss Kill-Switch (bps)
                     </span>
-                    <span className="font-mono font-bold text-rose-600 dark:text-rose-400">
+                    <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       -{backtestInputs.stopLossKillSwitchBps} bps
                     </span>
                   </div>
@@ -770,7 +770,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                         stopLossKillSwitchBps: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -779,7 +779,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     <span className="font-medium text-slate-700 dark:text-slate-300">
                       Transaction Bid-Ask & Roll Slippage (bps)
                     </span>
-                    <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+                    <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {backtestInputs.transactionBidAskHaircutBps} bps
                     </span>
                   </div>
@@ -795,7 +795,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                         transactionBidAskHaircutBps: Number(e.target.value),
                       }))
                     }
-                    className="w-full accent-indigo-600"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
@@ -813,9 +813,9 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                             holdingHorizonDays: days,
                           }))
                         }
-                        className={`py-1.5 text-xs font-mono font-bold rounded border ${
+                        className={`py-1.5 text-xs tabular-nums font-semibold  border ${
                           backtestInputs.holdingHorizonDays === days
-                            ? 'bg-indigo-600 text-white border-indigo-600'
+                            ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                         }`}
                       >
@@ -832,14 +832,14 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
               <div>
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3 mb-4">
                   <div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       Historical Regime Replay Cumulative Net Alpha Curve (bps, 2022–2025)
                     </h3>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Tracks cumulative spread/probability alpha (in basis points) net of transaction costs and kill-switch stops
                     </p>
                   </div>
-                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="text-xs tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                     Total: +{backtestSuite.totalCumulativeNetAlphaBps} bps
                   </span>
                 </div>
@@ -876,7 +876,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                                 x={48}
                                 y={y + 4}
                                 textAnchor="end"
-                                className="text-[10px] font-mono fill-slate-400"
+                                className="text-xs tabular-nums fill-slate-400"
                               >
                                 {val} bps
                               </text>
@@ -929,7 +929,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                                 x={x}
                                 y={y - 8}
                                 textAnchor="middle"
-                                className="text-[9px] font-mono font-bold fill-slate-700 dark:fill-slate-300"
+                                className="text-xs tabular-nums font-semibold fill-slate-700 dark:fill-slate-300"
                               >
                                 {w.cumulativeAlphaBps}
                               </text>
@@ -937,7 +937,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                                 x={x}
                                 y={212}
                                 textAnchor="middle"
-                                className="text-[9px] font-mono fill-slate-500"
+                                className="text-xs tabular-nums fill-slate-500"
                               >
                                 {w.windowLabel}
                               </text>
@@ -950,12 +950,12 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 })()}
               </div>
 
-              <div className="mt-3 p-3 rounded bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
-                <span className="font-mono font-bold text-slate-900 dark:text-slate-100 mr-1.5">
+              <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100 mr-1.5">
                   Kill-Switch Protection Note:
                 </span>
                 Episodes whose adverse excursion exceeds{' '}
-                <span className="font-mono font-semibold text-rose-600 dark:text-rose-400">
+                <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                   -{backtestInputs.stopLossKillSwitchBps} bps
                 </span>{' '}
                 are automatically stopped out (red markers), preventing tail drawdowns from eroding multi-quarter cumulative alpha.
@@ -966,14 +966,14 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
           {/* Historical Regime Episode Log */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Historical Regime Replay Episode Ledger (2022–2025)
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Quarter</th>
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3">Historical Dislocation Episode</th>
@@ -986,18 +986,18 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
                   {backtestSuite.historicalWindows.map((w) => (
                     <tr key={w.windowLabel} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-2.5 px-3 font-mono font-semibold">{w.windowLabel}</td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                      <td className="py-2.5 px-3 tabular-nums font-semibold">{w.windowLabel}</td>
+                      <td className="py-2.5 px-3 tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {w.sovereignIso3}
                       </td>
                       <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
                         {w.episodeDescription}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {w.grossAlphaBps >= 0 ? `+${w.grossAlphaBps}` : w.grossAlphaBps} bps
                       </td>
                       <td
-                        className={`py-2.5 px-3 text-right font-mono font-bold ${
+                        className={`py-2.5 px-3 text-right tabular-nums font-semibold ${
                           w.netAlphaAfterCostBps >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
                             : 'text-rose-600 dark:text-rose-400'
@@ -1008,12 +1008,12 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                           : w.netAlphaAfterCostBps}{' '}
                         bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono font-bold">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                         +{w.cumulativeAlphaBps} bps
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`px-2 py-0.5 text-[10px] font-mono rounded ${
+                          className={`px-2 py-0.5 text-xs tabular-nums  ${
                             w.outcome === 'WIN'
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                               : w.outcome === 'STOPPED_OUT'
@@ -1038,12 +1038,12 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
          ===================================================================== */}
       {activeSubTab === 'persona_academic_latex_csv_exporter' && (
         <div className="space-y-6">
-          <div className="institutional-card p-5 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-indigo-600 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          <div className="institutional-card p-5 bg-slate-50/80 dark:bg-slate-900/50 border-l-4 border-l-blue-600 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <div className="text-[11px] font-mono uppercase text-indigo-600 dark:text-indigo-400">
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                 EMPIRICAL ECONOMETRIC PANEL & OVERLEAF LATEX GENERATOR (N = {academicSuite.panelRows.length} SOVEREIGNS)
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {academicSuite.paperTitle}
               </h3>
               <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 max-w-4xl">
@@ -1053,14 +1053,14 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button
                 onClick={() => exportEmpiricalPanelCsv(academicSuite)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm"
+                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
                 Download Panel CSV (.csv)
               </button>
               <button
                 onClick={() => exportAcademicWorkingPaperMarkdown(academicSuite)}
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white shadow-sm"
+                className="ui-btn ui-btn-primary inline-flex"
               >
                 <Download className="w-3.5 h-3.5" />
                 Export Working Paper (.md)
@@ -1073,17 +1073,17 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
             <div className="lg:col-span-7 institutional-card p-5 space-y-3">
               <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                    <FileCode className="w-4 h-4 text-indigo-600" />
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <FileCode className="w-4 h-4 text-blue-600" />
                     Publication-Ready LaTeX Booktabs Table (`\toprule`, `\midrule`, `\bottomrule`)
                   </h4>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     Ready to paste directly into Overleaf, AER / IMF Economic Review, or central bank working papers
                   </p>
                 </div>
                 <button
                   onClick={() => handleCopyText(academicSuite.latexBooktabsTable, 'latex')}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-mono font-semibold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                  className="ui-btn inline-flex"
                 >
                   {copiedLatex ? (
                     <>
@@ -1098,7 +1098,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                   )}
                 </button>
               </div>
-              <pre className="p-3.5 rounded bg-slate-950 text-slate-100 text-[11px] font-mono overflow-x-auto leading-relaxed max-h-80">
+              <pre className="p-3.5 bg-slate-950 text-slate-100 text-xs tabular-nums overflow-x-auto leading-relaxed max-h-80">
                 {academicSuite.latexBooktabsTable}
               </pre>
             </div>
@@ -1106,23 +1106,23 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
             <div className="lg:col-span-5 institutional-card p-5 space-y-4">
               <div>
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5 mb-2.5">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     Structural Panel Regression Specification (LaTeX)
                   </h4>
                 </div>
-                <pre className="p-3 rounded bg-slate-950 text-emerald-300 text-[11px] font-mono overflow-x-auto leading-relaxed">
+                <pre className="p-3 bg-slate-950 text-emerald-300 text-xs tabular-nums overflow-x-auto leading-relaxed">
                   {academicSuite.econometricSpecificationLatex}
                 </pre>
               </div>
 
               <div>
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2.5 mb-2.5">
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                     BibTeX Citation Block
                   </h4>
                   <button
                     onClick={() => handleCopyText(academicSuite.bibtexCitationBlock, 'bibtex')}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded text-[11px] font-mono border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="ui-btn inline-flex"
                   >
                     {copiedBibtex ? (
                       <>
@@ -1137,7 +1137,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     )}
                   </button>
                 </div>
-                <pre className="p-3 rounded bg-slate-950 text-indigo-200 text-[11px] font-mono overflow-x-auto leading-relaxed">
+                <pre className="p-3 bg-slate-950 text-blue-200 text-xs tabular-nums overflow-x-auto leading-relaxed">
                   {academicSuite.bibtexCitationBlock}
                 </pre>
               </div>
@@ -1147,14 +1147,14 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
           {/* Preview of Normalized Cross-Sovereign Empirical Panel */}
           <div className="institutional-card overflow-hidden">
             <div className="p-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Normalized Cross-Sovereign Empirical Panel Dataset Preview (N = {academicSuite.panelRows.length})
               </h3>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono uppercase text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
+                  <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500 bg-slate-50/70 dark:bg-slate-900/50">
                     <th className="py-2.5 px-3">Sovereign</th>
                     <th className="py-2.5 px-3 text-right">Debt (% GDP)</th>
                     <th className="py-2.5 px-3 text-right">r − g (%)</th>
@@ -1168,10 +1168,10 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                     <th className="py-2.5 px-3 text-right">5Y CDS (bps)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs font-mono">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs tabular-nums">
                   {academicSuite.panelRows.map((r) => (
                     <tr key={r.iso3} className="hover:bg-slate-50 dark:hover:bg-slate-800/40">
-                      <td className="py-2.5 px-3 font-sans font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-slate-100">
                         {r.countryName} ({r.iso3})
                       </td>
                       <td className="py-2.5 px-3 text-right">{r.debtToGdpPct.toFixed(1)}%</td>
@@ -1180,7 +1180,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                           ? `+${r.rMinusGSnowballPct.toFixed(2)}%`
                           : `${r.rMinusGSnowballPct.toFixed(2)}%`}
                       </td>
-                      <td className="py-2.5 px-3 text-center text-indigo-600 dark:text-indigo-400 font-bold">
+                      <td className="py-2.5 px-3 text-center text-blue-600 dark:text-blue-400 font-semibold">
                         {r.officialRating} / {r.shadowRating}
                       </td>
                       <td className="py-2.5 px-3 text-right">
@@ -1189,7 +1189,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                           : `${r.reerMisalignmentPct.toFixed(1)}%`}
                       </td>
                       <td className="py-2.5 px-3 text-right">{r.bankCet1PostStressPct.toFixed(2)}%</td>
-                      <td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-bold">
+                      <td className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400 font-semibold">
                         {r.eurobondWorkoutNpvCents.toFixed(1)}¢
                       </td>
                       <td className="py-2.5 px-3 text-right">{r.taylorStanceGapBps} bps</td>
@@ -1197,7 +1197,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                       <td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400">
                         +{r.ngfs10YClimateDebtAdderPctGdp.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-bold">{r.spot5YCdsBps} bps</td>
+                      <td className="py-2.5 px-3 text-right font-semibold">{r.spot5YCdsBps} bps</td>
                     </tr>
                   ))}
                 </tbody>

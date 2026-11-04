@@ -132,7 +132,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
               <Network className="w-3.5 h-3.5" />
               <span>CRO Multi-Sovereign Contagion Book · Bilateral Spillover Matrix Ω(i→j) &amp; MCTR Attribution</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Multi-Country Sovereign Book &amp; Cross-Border Contagion Cascade Simulator
             </h2>
           </div>
@@ -174,7 +174,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800">
           <div>
             <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 mb-1.5">
-              <Flame className="w-3.5 h-3.5 text-red-500" />
+              <Flame className="w-3.5 h-3.5 text-rose-500" />
               <span>Contagion Epicenter Sovereign (Source i)</span>
             </label>
             <select
@@ -188,7 +188,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                 </option>
               ))}
             </select>
-            <span className="block text-[11px] text-slate-500 mt-1">
+            <span className="block text-xs text-slate-500 mt-1">
               Simulates an acute sovereign spread blowout originating in {contagionSuite.epicenterCountryName}.
             </span>
           </div>
@@ -198,7 +198,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Epicenter 5Y Spread Shock (Δs_i)
               </span>
-              <span className="font-mono font-bold text-red-600 dark:text-red-400">
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                 +{epicenterShockBps} bps
               </span>
             </div>
@@ -209,9 +209,9 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
               step={25}
               value={epicenterShockBps}
               onChange={(e) => setEpicenterShockBps(Number(e.target.value))}
-              className="w-full accent-red-600 cursor-pointer"
+              className="w-full accent-rose-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>+50 bps (Moderate)</span>
               <span>+250 bps (Severe)</span>
               <span>+600 bps (Sudden Stop)</span>
@@ -223,7 +223,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Book Capital (NAV) &amp; Add Sovereign
               </span>
-              <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 ${portfolioNavUsdM}M NAV ({contagionSuite.grossExposurePctNav}% Gross)
               </span>
             </div>
@@ -262,58 +262,58 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
         {/* 5-KPI Contagion & Correlated Tail Risk Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Undiversified Sum CVaR₉₉</span>
-            <span className="text-base font-bold font-mono tabular-nums text-slate-700 dark:text-slate-300">
+            <span className="text-xs text-slate-500 block">Undiversified Sum CVaR₉₉</span>
+            <span className="text-base font-semibold tabular-nums text-slate-700 dark:text-slate-300">
               {contagionSuite.undiversifiedCvar99PctNav.toFixed(2)}% NAV
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               Assuming ρ = 1.00
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Correlated Book CVaR₉₉</span>
-            <span className="text-base font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400">
+            <span className="text-xs text-slate-500 block">Correlated Book CVaR₉₉</span>
+            <span className="text-base font-semibold tabular-nums text-blue-600 dark:text-blue-400">
               {contagionSuite.correlatedCvar99PctNav.toFixed(2)}% NAV
             </span>
-            <span className="text-[11px] text-emerald-600 dark:text-emerald-400 block font-mono">
+            <span className="text-xs text-emerald-600 dark:text-emerald-400 block tabular-nums">
               Diversification: -{contagionSuite.diversificationBenefitPct.toFixed(1)}%
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Contagion-Stressed CVaR₉₉</span>
-            <span className="text-base font-bold font-mono tabular-nums text-red-600 dark:text-red-400">
+            <span className="text-xs text-slate-500 block">Contagion-Stressed CVaR₉₉</span>
+            <span className="text-base font-semibold tabular-nums text-rose-600 dark:text-rose-400">
               {contagionSuite.contagionStressedCvar99PctNav.toFixed(2)}% NAV
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               Post-{contagionSuite.epicenterIso3} +{epicenterShockBps}bp Cascade
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Peak Bilateral Contagion Ω</span>
-            <span className="text-base font-bold font-mono tabular-nums text-amber-600 dark:text-amber-400">
+            <span className="text-xs text-slate-500 block">Peak Bilateral Contagion Ω</span>
+            <span className="text-base font-semibold tabular-nums text-amber-600 dark:text-amber-400">
               Ω = {contagionSuite.maxBilateralOmega.toFixed(2)}
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               {contagionSuite.epicenterIso3} → {contagionSuite.mostVulnerableTargetIso3}
             </span>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <span className="text-[11px] text-slate-500 block">Net Contagion Cascade PnL</span>
+            <span className="text-xs text-slate-500 block">Net Contagion Cascade PnL</span>
             <span
-              className={`text-base font-bold font-mono tabular-nums ${
+              className={`text-base font-semibold tabular-nums tabular-nums ${
                 contagionSuite.totalEpicenterCascadePnlUsdThousands >= 0
                   ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-red-600 dark:text-red-400'
+                  : 'text-rose-600 dark:text-rose-400'
               }`}
             >
               {contagionSuite.totalEpicenterCascadePnlUsdThousands >= 0 ? '+' : ''}$
               {contagionSuite.totalEpicenterCascadePnlUsdThousands.toLocaleString()}k
             </span>
-            <span className="text-[11px] text-slate-400 block font-mono">
+            <span className="text-xs text-slate-400 block tabular-nums">
               ({contagionSuite.totalEpicenterCascadePnlPctNav >= 0 ? '+' : ''}
               {contagionSuite.totalEpicenterCascadePnlPctNav}% NAV)
             </span>
@@ -325,10 +325,10 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
           {/* Left 7 Cols: Editable Book Positions, Transmitted Contagion Shock & MCTR */}
           <div className="xl:col-span-7 border border-slate-200 dark:border-slate-800 overflow-x-auto">
             <div className="px-3.5 py-2.5 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Position-Level Contagion Transmission &amp; Marginal Risk Attribution (MCTR)
               </span>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Epicenter: {contagionSuite.epicenterIso3} (+{epicenterShockBps} bps)
               </span>
             </div>
@@ -353,7 +353,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                       key={pos.iso3}
                       className={
                         isEpicenter
-                          ? 'bg-red-50/50 dark:bg-red-950/20'
+                          ? 'bg-rose-50/50 dark:bg-rose-950/20'
                           : 'hover:bg-slate-50/70 dark:hover:bg-slate-950/50'
                       }
                     >
@@ -364,11 +364,11 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                             const item = SOVEREIGN_CATALOG.find((c) => c.iso3 === pos.iso3);
                             if (item && onSelectSovereign) onSelectSovereign(item);
                           }}
-                          className="font-bold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 text-left"
+                          className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 text-left"
                         >
                           {pos.countryName} ({pos.iso3})
                         </button>
-                        <span className="block text-[10px] font-mono text-slate-400">
+                        <span className="block text-xs tabular-nums text-slate-400">
                           ${pos.notionalUsdMillions.toFixed(1)}M · {pos.currencyCode}
                           {isEpicenter ? ' · EPICENTER' : ''}
                         </span>
@@ -406,45 +406,45 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                             }
                             className="w-16 accent-blue-600 cursor-pointer"
                           />
-                          <span className="font-mono font-bold tabular-nums w-8 text-right">
+                          <span className="tabular-nums font-semibold w-8 text-right">
                             {pos.weightNavPct}%
                           </span>
                         </div>
                       </td>
 
-                      <td className="py-2.5 px-2.5 text-right font-mono font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                      <td className="py-2.5 px-2.5 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                         {pos.omegaFromEpicenter.toFixed(2)}
                       </td>
 
-                      <td className="py-2.5 px-2.5 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="py-2.5 px-2.5 text-right tabular-nums text-slate-700 dark:text-slate-300">
                         <div>+{pos.transmittedSpreadWideningBps}bp</div>
-                        <div className="text-[10px] text-red-500">
+                        <div className="text-xs text-rose-500">
                           FX -{pos.transmittedFxDeprPct}%
                         </div>
                       </td>
 
                       <td
-                        className={`py-2.5 px-2.5 text-right font-mono font-bold tabular-nums ${
+                        className={`py-2.5 px-2.5 text-right tabular-nums font-semibold tabular-nums ${
                           pos.stressedPositionPnlUsdThousands >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                            : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
                         <div>
                           {pos.stressedPositionPnlUsdThousands >= 0 ? '+' : ''}$
                           {pos.stressedPositionPnlUsdThousands}k
                         </div>
-                        <div className="text-[10px] font-normal">
+                        <div className="text-xs font-normal">
                           ({pos.stressedPositionPnlPctNav >= 0 ? '+' : ''}
                           {pos.stressedPositionPnlPctNav}% NAV)
                         </div>
                       </td>
 
-                      <td className="py-2.5 px-2.5 text-right font-mono tabular-nums">
+                      <td className="py-2.5 px-2.5 text-right tabular-nums">
                         <div className="font-semibold text-slate-900 dark:text-slate-100">
                           {pos.mctrPctNav.toFixed(2)}%
                         </div>
-                        <div className="text-[10px] text-slate-500">
+                        <div className="text-xs text-slate-500">
                           {pos.riskSharePct.toFixed(1)}% Risk
                         </div>
                       </td>
@@ -454,7 +454,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                           type="button"
                           disabled={positions.length <= 2}
                           onClick={() => handleRemovePosition(pos.iso3)}
-                          className="p-1 text-slate-400 hover:text-red-500 disabled:opacity-30"
+                          className="p-1 text-slate-400 hover:text-rose-500 disabled:opacity-30"
                           title="Remove position"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -471,14 +471,14 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
           <div className="xl:col-span-5 border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50/40 dark:bg-slate-950/40">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
               <div>
-                <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                   Bilateral Contagion Transmission Matrix Ω(i→j)
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-xs text-slate-500">
                   Row = Shock Source (i) · Col = Destination (j)
                 </div>
               </div>
-              <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-0.5 text-[11px]">
+              <div className="flex items-center gap-1 bg-slate-200/70 dark:bg-slate-800 p-0.5 text-xs">
                 {[
                   { id: 'OMEGA_TOTAL', label: 'Composite Ω' },
                   { id: 'TRADE', label: 'Trade T_ij' },
@@ -491,7 +491,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                     onClick={() => setChannelView(tab.id as any)}
                     className={`px-2 py-0.5 font-medium transition-colors ${
                       channelView === tab.id
-                        ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold'
+                        ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-semibold'
                         : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
@@ -502,7 +502,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-center border-collapse text-xs font-mono tabular-nums">
+              <table className="w-full text-center border-collapse text-xs tabular-nums">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-500">
                     <th className="py-1.5 px-2 text-left">Src \ Dst</th>
@@ -516,7 +516,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                 <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                   {uniqueIsosInMatrix.map((src) => (
                     <tr key={src}>
-                      <td className="py-2 px-2 text-left font-bold text-slate-800 dark:text-slate-200">
+                      <td className="py-2 px-2 text-left font-semibold text-slate-800 dark:text-slate-200">
                         {src}
                       </td>
                       {uniqueIsosInMatrix.map((dst) => {
@@ -536,7 +536,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                         const bgClass = isDiag
                           ? 'bg-slate-200/70 dark:bg-slate-800 text-slate-400'
                           : val >= 0.45
-                          ? 'bg-red-500/20 text-red-700 dark:text-red-300 font-bold'
+                          ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300 font-semibold'
                           : val >= 0.30
                           ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-semibold'
                           : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300';
@@ -558,7 +558,7 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
               </table>
             </div>
 
-            <div className="text-[11px] text-slate-600 dark:text-slate-400 space-y-1 pt-2 border-t border-slate-200 dark:border-slate-800">
+            <div className="text-xs text-slate-600 dark:text-slate-400 space-y-1 pt-2 border-t border-slate-200 dark:border-slate-800">
               <p>
                 • <strong>How to Read This Matrix</strong>: Each cell shows the fraction of a credit shock in row country <em>i</em> that spills over into column country <em>j</em> via bilateral trade (30%), BIS cross-border banking claims (32%), and shared USD funding beta (38%).
               </p>

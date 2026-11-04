@@ -130,15 +130,15 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
               <span className="mx-2" aria-hidden="true">·</span>
               <span>Epicenter: {sovereignCoord.capitalLabel} ({run.iso3})</span>
               <span className="mx-2" aria-hidden="true">·</span>
-              <span className="font-mono tabular-nums">
+              <span className="tabular-nums">
                 Composite GPR Z-Score: {gprAndEscalation.compositeGprZScore >= 0 ? '+' : ''}{gprAndEscalation.compositeGprZScore.toFixed(2)}σ
               </span>
               <span className="mx-2" aria-hidden="true">·</span>
-              <span className="font-mono tabular-nums text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums text-amber-600 dark:text-amber-400">
                 Expected 5Y CDS Impact: +{gprAndEscalation.expectedProbabilityWeightedCdsDeltaBps} bps
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1 text-balance">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1 text-balance">
               Global Maritime Chokepoints, Bilateral Trade Corridors &amp; Live GDELT Conflict Map ({run.countryName})
             </h2>
           </div>
@@ -155,7 +155,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={onOpenGeopoliticalDesk}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+              className="ui-btn ui-btn-primary inline-flex"
             >
               <span>Full Geopolitical Wargaming Desk</span>
               <ArrowUpRight className="w-3.5 h-3.5" />
@@ -174,9 +174,9 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={() => setShowLayerGdeltNodes((v) => !v)}
-              className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+              className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                 showLayerGdeltNodes
-                  ? 'bg-red-50 dark:bg-red-950/50 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 font-semibold'
+                  ? 'bg-rose-50 dark:bg-rose-950/50 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold'
                   : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
               }`}
             >
@@ -185,7 +185,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={() => setShowLayerChokepoints((v) => !v)}
-              className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+              className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                 showLayerChokepoints
                   ? 'bg-amber-50 dark:bg-amber-950/50 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-semibold'
                   : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
@@ -196,7 +196,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={() => setShowLayerTradeCorridors((v) => !v)}
-              className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+              className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                 showLayerTradeCorridors
                   ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold'
                   : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
@@ -207,7 +207,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={() => setShowLayerSubseaCables((v) => !v)}
-              className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+              className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                 showLayerSubseaCables
                   ? 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold'
                   : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
@@ -218,9 +218,9 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={() => setShowRiskChoropleth((v) => !v)}
-              className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+              className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                 showRiskChoropleth
-                  ? 'bg-indigo-50 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold'
+                  ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold'
                   : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
               }`}
             >
@@ -280,11 +280,11 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
         {/* Left 8 Columns: Theme-Aware Interactive SVG World Map */}
         <div className="xl:col-span-8 p-4 bg-slate-100/70 dark:bg-slate-950 border-b xl:border-b-0 xl:border-r border-slate-200 dark:border-slate-800 relative">
           {/* Top Cartographic Projection & Viewport Zoom / Theater Controls Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs tabular-nums text-slate-600 dark:text-slate-400">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
                 <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>NATURAL EARTH 1:110M VECTOR BORDERS</span>
+                <span>Natural earth 1:110m vector borders</span>
               </span>
               <span className="text-slate-400">·</span>
               {REGIONAL_THEATER_PRESETS.map((preset) => (
@@ -301,9 +301,9 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                       setPanCenter(pt);
                     }
                   }}
-                  className={`px-2 py-0.5 text-[10px] font-mono border transition-colors cursor-pointer ${
+                  className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
                     activeTheaterId === preset.id
-                      ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                       : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
                   }`}
                 >
@@ -317,9 +317,9 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                   setZoomLevel(2.4);
                   setPanCenter(sovPt);
                 }}
-                className={`px-2 py-0.5 text-[10px] font-mono border transition-colors cursor-pointer ${
+                className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
                   activeTheaterId === 'ACTIVE_SOVEREIGN'
-                    ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                    ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                     : 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 hover:border-blue-500'
                 }`}
               >
@@ -362,7 +362,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                   setPanCenter({ x: MAP_W / 2, y: MAP_H / 2 });
                   setActiveTheaterId('GLOBAL');
                 }}
-                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-[10px] cursor-pointer"
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs cursor-pointer"
               >
                 <Maximize2 className="w-3 h-3" />
                 <span>{zoomLevel.toFixed(1)}x</span>
@@ -373,14 +373,14 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
           <div className="relative">
             {/* Floating Hovered Country Telemetry HUD Overlay */}
             {hoveredCountry && (
-              <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none px-3 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 shadow-md text-xs font-mono space-y-0.5 max-w-xs">
+              <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none px-3 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 text-xs tabular-nums space-y-0.5 max-w-xs">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="font-bold text-slate-900 dark:text-white">
+                  <span className="font-semibold text-slate-900 dark:text-white">
                     {hoveredCountry.countryName} ({hoveredCountry.iso3})
                   </span>
                   {hoveredCountry.watchlistItem && (
                     <span
-                      className={`px-1.5 py-0.2 text-[10px] font-bold ${
+                      className={`px-1.5 py-0.2 text-xs font-semibold ${
                         hoveredCountry.watchlistItem.alertStatus === 'CRITICAL'
                           ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
                           : hoveredCountry.watchlistItem.alertStatus === 'ELEVATED'
@@ -393,19 +393,19 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                   )}
                 </div>
                 {hoveredCountry.watchlistItem ? (
-                  <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-0.5">
+                  <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
                     <div>
-                      5Y CDS: <strong className="text-indigo-600 dark:text-indigo-400">{hoveredCountry.watchlistItem.cds5YBps} bps</strong> · 10Y Yield: <strong>{hoveredCountry.watchlistItem.yield10YPct}%</strong>
+                      5Y CDS: <strong className="text-blue-600 dark:text-blue-400">{hoveredCountry.watchlistItem.cds5YBps} bps</strong> · 10Y Yield: <strong>{hoveredCountry.watchlistItem.yield10YPct}%</strong>
                     </div>
                     <div>
                       Debt/GDP: <strong>{hoveredCountry.watchlistItem.debtToGdpPct}%</strong> · Reserves: <strong>{hoveredCountry.watchlistItem.fxReservesMonths}m</strong>
                     </div>
-                    <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold pt-0.5">
+                    <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold pt-0.5">
                       Click country polygon to switch active sovereign →
                     </div>
                   </div>
                 ) : (
-                  <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
                     Natural Earth Sovereign Boundary · Use + Add ISO-3 Country in header to onboard
                   </div>
                 )}
@@ -508,7 +508,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                 const p2 = projectLatLon(cable.endLat, cable.endLon);
                 const strokeColor =
                   cable.status === 'CHOKED_ALERT'
-                    ? '#dc2626'
+                    ? '#e11d48'
                     : cable.status === 'DEGRADED_LATENCY'
                     ? '#d97706'
                     : '#059669';
@@ -525,7 +525,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                       x={pm.x}
                       y={pm.y - 4}
                       textAnchor="middle"
-                      className="text-[8.5px] font-mono font-semibold fill-emerald-800 dark:fill-emerald-300"
+                      className="text-xs tabular-nums font-semibold fill-emerald-800 dark:fill-emerald-300"
                     >
                       {cable.cableName.split(' ')[0]} ({cable.bandwidthSharePct}% BW)
                     </text>
@@ -552,7 +552,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                       x={midX}
                       y={midY - 4}
                       textAnchor="middle"
-                      className="text-[8.5px] font-mono font-semibold fill-blue-800 dark:fill-blue-300"
+                      className="text-xs tabular-nums font-semibold fill-blue-800 dark:fill-blue-300"
                     >
                       {arc.partnerName.split(' ')[0]} ({arc.tradeSharePct}% · Tariff {arc.effectiveTariffPct}%)
                     </text>
@@ -567,7 +567,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                 const isSelected = selectedChokepoint?.corridorId === cp.corridorId && !selectedEvent;
                 const color =
                   cp.vulnerabilityStatus === 'CRITICAL'
-                    ? '#dc2626'
+                    ? '#e11d48'
                     : cp.vulnerabilityStatus === 'HIGH'
                     ? '#d97706'
                     : '#0284c7';
@@ -614,9 +614,9 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                     <text
                       x={cpPt.x + 8}
                       y={cpPt.y + 3}
-                      className={`text-[9px] font-mono ${
+                      className={`text-xs tabular-nums ${
                         isSelected
-                          ? 'fill-amber-700 dark:fill-amber-300 font-bold'
+                          ? 'fill-amber-700 dark:fill-amber-300 font-semibold'
                           : 'fill-slate-800 dark:fill-slate-200 font-medium'
                       }`}
                     >
@@ -642,7 +642,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                 x={sovPt.x}
                 y={sovPt.y - 14}
                 textAnchor="middle"
-                className="text-[10px] font-mono font-bold fill-slate-900 dark:fill-white"
+                className="text-xs tabular-nums font-semibold fill-slate-900 dark:fill-white"
               >
                 {run.countryName.toUpperCase()} ({run.iso3})
               </text>
@@ -660,10 +660,10 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                 const radius = Math.max(5, Math.round(ev.acledSeverityScore / 11));
                 const nodeColor =
                   ev.goldsteinScale <= -7.0
-                    ? '#dc2626'
+                    ? '#e11d48'
                     : ev.goldsteinScale <= -5.5
-                    ? '#ea580c'
-                    : '#ca8a04';
+                    ? '#d97706'
+                    : '#d97706';
 
                 return (
                   <g
@@ -694,7 +694,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                       x={cx}
                       y={cy - radius - 7}
                       textAnchor="middle"
-                      className="text-[8.5px] font-mono font-bold fill-red-800 dark:fill-red-300"
+                      className="text-xs tabular-nums font-semibold fill-rose-800 dark:fill-rose-300"
                     >
                       {ev.cameoCode.split(' ')[0]} ({ev.goldsteinScale.toFixed(1)})
                     </text>
@@ -707,14 +707,14 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
           </div>
 
           {/* Compact Legend Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 text-[11px] text-slate-600 dark:text-slate-400">
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 text-xs text-slate-600 dark:text-slate-400">
             <div className="flex flex-wrap items-center gap-4">
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rotate-45 bg-amber-500 inline-block" />
                 <span>Maritime Chokepoint Diamond</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-red-600 inline-block" />
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
                 <span>GDELT / ACLED Conflict Alert</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
@@ -726,7 +726,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                 <span>Subsea Fiber Trunk</span>
               </span>
             </div>
-            <span className="font-mono">
+            <span className="tabular-nums">
               GDELT Conflict Index: {run.openData.gdeltMetrics.conflictIntensityIndex}/100
             </span>
           </div>
@@ -736,11 +736,11 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
         <div className="xl:col-span-4 p-4 bg-slate-50/60 dark:bg-slate-900/60 flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-900 dark:text-slate-100">
                 <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                 <span>Interactive Map Node Inspector</span>
               </div>
-              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 {selectedEvent ? 'GDELT Event Selected' : 'Chokepoint Selected'}
               </span>
             </div>
@@ -748,33 +748,33 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             {selectedEvent ? (
               <div className="p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-red-600 dark:text-red-400">
+                  <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                     {selectedEvent.cameoCode}
                   </span>
                   <button
                     type="button"
                     onClick={() => setSelectedEventId(null)}
-                    className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline"
+                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     Switch to Chokepoints
                   </button>
                 </div>
-                <div className="font-bold text-slate-900 dark:text-slate-100 leading-snug">
+                <div className="font-semibold text-slate-900 dark:text-slate-100 leading-snug">
                   {selectedEvent.headline}
                 </div>
                 <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                   {selectedEvent.locationLabel} · {selectedEvent.eventCategory.replace(/_/g, ' ')} ({selectedEvent.verificationStatus.replace(/_/g, ' ')})
                 </p>
-                <div className="grid grid-cols-2 gap-2 pt-1 font-mono tabular-nums text-[11px]">
+                <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums text-xs">
                   <div className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                     <span className="text-slate-500 block">Goldstein / ACLED</span>
-                    <span className="font-bold text-red-600 dark:text-red-400">
+                    <span className="font-semibold text-rose-600 dark:text-rose-400">
                       {selectedEvent.goldsteinScale.toFixed(1)} · {selectedEvent.acledSeverityScore}/100
                     </span>
                   </div>
                   <div className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                     <span className="text-slate-500 block">5Y CDS &amp; FX Impact</span>
-                    <span className="font-bold text-amber-600 dark:text-amber-400">
+                    <span className="font-semibold text-amber-600 dark:text-amber-400">
                       +{selectedEvent.empiricalCdsImpactBps} bps · {selectedEvent.empiricalFxImpactPct}%
                     </span>
                   </div>
@@ -784,13 +784,13 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
               selectedChokepoint && (
                 <div className="p-3.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {selectedChokepoint.corridorName}
                     </span>
                     <span
-                      className={`font-mono font-bold text-[11px] ${
+                      className={`tabular-nums font-semibold text-xs ${
                         selectedChokepoint.vulnerabilityStatus === 'CRITICAL'
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-rose-600 dark:text-rose-400'
                           : selectedChokepoint.vulnerabilityStatus === 'HIGH'
                           ? 'text-amber-600 dark:text-amber-400'
                           : 'text-blue-600 dark:text-blue-400'
@@ -802,16 +802,16 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                   <div className="text-slate-600 dark:text-slate-300">
                     <strong>Exposed Cargo:</strong> {selectedChokepoint.primaryCommodities}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 pt-1 font-mono tabular-nums text-[11px]">
+                  <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums text-xs">
                     <div className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 block">Trade Share / Delay</span>
-                      <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {selectedChokepoint.sovereignTradeShareExposedPct}% · +{selectedChokepoint.reroutingDelayDays}d
                       </span>
                     </div>
                     <div className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                       <span className="text-slate-500 block">Imported CPI / CDS</span>
-                      <span className="font-bold text-red-600 dark:text-red-400">
+                      <span className="font-semibold text-rose-600 dark:text-rose-400">
                         +{selectedChokepoint.importedCpiPassThroughBps} bps · +{selectedChokepoint.cds5YSpreadImpactBps} bps
                       </span>
                     </div>
@@ -822,7 +822,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
 
             {/* Quick Chokepoint Selector List */}
             <div className="space-y-1.5">
-              <div className="text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                 Click Corridor to Inspect Pass-Through ({run.countryName})
               </div>
               <div className="space-y-1 max-h-44 overflow-y-auto pr-1">
@@ -843,7 +843,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                       }`}
                     >
                       <span className="truncate pr-2">{cp.corridorName.split(' (')[0]}</span>
-                      <span className="font-mono tabular-nums text-[11px] shrink-0">
+                      <span className="tabular-nums text-xs shrink-0">
                         {cp.sovereignTradeShareExposedPct}% trade · +{cp.importedCpiPassThroughBps} bps CPI
                       </span>
                     </button>
@@ -864,7 +864,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
       <div className="p-5 bg-white dark:bg-slate-900 space-y-3 text-xs">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           <div className="space-y-1.5">
-            <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
+            <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
               1. What This Map Shows in Plain English
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -873,7 +873,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
           </div>
 
           <div className="space-y-1.5">
-            <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[11px]">
+            <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs">
               2. Why It Matters to Everyday Prices &amp; Bonds
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -882,12 +882,12 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
           </div>
 
           <div className="space-y-1.5">
-            <div className="font-bold text-red-600 dark:text-red-400 uppercase tracking-wider text-[11px] flex items-center gap-1">
+            <div className="font-semibold text-rose-600 dark:text-rose-400 text-xs flex items-center gap-1">
               <ShieldAlert className="w-3.5 h-3.5" />
               <span>3. Warning Threshold &amp; Action</span>
             </div>
             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-              <strong>Red-Alert Trigger:</strong> If global conflict tension hits <span className="font-mono font-semibold">65/100</span> (now <span className="font-mono font-semibold">{run.openData.gdeltMetrics.conflictIntensityIndex}/100</span>) or a shipping lane closes by <span className="font-mono font-semibold">35%+</span>, bond default risk jumps by <span className="font-mono font-semibold">+{gprAndEscalation.expectedProbabilityWeightedCdsDeltaBps} bps</span>—triggering oil/freight hedges and 5-year CDS protection.
+              <strong>Red-Alert Trigger:</strong> If global conflict tension hits <span className="tabular-nums font-semibold">65/100</span> (now <span className="tabular-nums font-semibold">{run.openData.gdeltMetrics.conflictIntensityIndex}/100</span>) or a shipping lane closes by <span className="tabular-nums font-semibold">35%+</span>, bond default risk jumps by <span className="tabular-nums font-semibold">+{gprAndEscalation.expectedProbabilityWeightedCdsDeltaBps} bps</span>—triggering oil/freight hedges and 5-year CDS protection.
             </p>
           </div>
         </div>

@@ -272,7 +272,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <span className="mx-2" aria-hidden="true">·</span>
               <span>Live 1,000-Path Monte Carlo, BVAR Impulse Responses, GaR/FaR Tail Density &amp; Nelson-Siegel Curve</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Interactive Stochastic &amp; Econometric Forecasting Engine ({run.countryName})
             </h2>
           </div>
@@ -297,7 +297,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
             <button
               type="button"
               onClick={() => applyPresetScenario('sudden_stop')}
-              className="px-3 py-1.5 text-xs font-medium text-red-800 dark:text-red-300 bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 hover:bg-red-100 transition-colors whitespace-nowrap shrink-0"
+              className="px-3 py-1.5 text-xs font-medium text-rose-800 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0"
             >
               Hard-Currency Sudden Stop
             </button>
@@ -328,7 +328,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <button
                 type="button"
                 onClick={onOpenGeopoliticalDesk}
-                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors whitespace-nowrap shrink-0"
+                className="ui-btn ui-btn-primary inline-flex shrink-0"
               >
                 <span>Adjust Geopolitical Wargame</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
@@ -344,7 +344,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <label className="font-medium text-slate-700 dark:text-slate-300">
                 Real Interest Rate (Δr)
               </label>
-              <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {shocks.realRateShockBps >= 0 ? '+' : ''}
                 {shocks.realRateShockBps} bps
               </span>
@@ -363,7 +363,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               }
               className="w-full mt-2 accent-blue-600"
             />
-            <div className="text-[11px] text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               Base r: {run.openData.dsaAnalytics.effectiveRealInterestRatePct.toFixed(1)}%
             </div>
           </div>
@@ -373,7 +373,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <label className="font-medium text-slate-700 dark:text-slate-300">
                 Real GDP Growth (Δg)
               </label>
-              <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {shocks.realGdpGrowthShockPct >= 0 ? '+' : ''}
                 {shocks.realGdpGrowthShockPct.toFixed(1)}%
               </span>
@@ -392,7 +392,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               }
               className="w-full mt-2 accent-blue-600"
             />
-            <div className="text-[11px] text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               Base g: +{run.openData.imfIndicators.realGdpGrowthPct.toFixed(1)}% YoY
             </div>
           </div>
@@ -402,7 +402,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <label className="font-medium text-slate-700 dark:text-slate-300">
                 Primary Balance (Δpb)
               </label>
-              <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {shocks.primaryBalanceShockPctGdp >= 0 ? '+' : ''}
                 {shocks.primaryBalanceShockPctGdp.toFixed(1)}% GDP
               </span>
@@ -421,7 +421,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               }
               className="w-full mt-2 accent-blue-600"
             />
-            <div className="text-[11px] text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               Base pb: {run.openData.imfIndicators.primaryFiscalBalancePct.toFixed(1)}% GDP
             </div>
           </div>
@@ -431,7 +431,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <label className="font-medium text-slate-700 dark:text-slate-300">
                 FX Depreciation (Δe)
               </label>
-              <span className="font-mono font-bold tabular-nums text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                 +{shocks.fxDepreciationShockPct}%
               </span>
             </div>
@@ -449,7 +449,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               }
               className="w-full mt-2 accent-amber-500"
             />
-            <div className="text-[11px] text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               FX Debt Reval: +{stochasticDsa.foreignCurrencyRevaluationImpactPctGdp}% GDP
             </div>
           </div>
@@ -459,7 +459,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <label className="font-medium text-slate-700 dark:text-slate-300">
                 Volatility Regime (σ)
               </label>
-              <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {shocks.externalVolatilityMultiplier.toFixed(2)}x
               </span>
             </div>
@@ -477,7 +477,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               }
               className="w-full mt-2 accent-blue-600"
             />
-            <div className="text-[11px] text-slate-500 mt-1">
+            <div className="text-xs text-slate-500 mt-1">
               Scales Monte Carlo &amp; BVAR dispersion
             </div>
           </div>
@@ -493,12 +493,12 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Stochastic Debt Sustainability Analysis (IMF SRDSF Monte Carlo)
               </span>
-              <span className="font-mono">
+              <span className="tabular-nums">
                 {stochasticDsa.pathsSimulated.toLocaleString()} Correlated Paths · 2025–2030
               </span>
             </div>
 
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
               <RichTextWithStatRefs text={stochasticDsa.conclusionHeadline} />
             </h3>
 
@@ -506,22 +506,22 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
             <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div>
                 <span className="text-slate-500 block">2030 Median (P50)</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                   {stochasticDsa.medianDebt2030PctGdp}% GDP
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">2030 Tail (P95)</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-red-600 dark:text-red-400">
+                <span className="tabular-nums font-semibold text-sm text-rose-600 dark:text-rose-400">
                   {stochasticDsa.p95Debt2030PctGdp}% GDP
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">Distress Prob (≥{stochasticDsa.distressThresholdPctGdp}%)</span>
                 <span
-                  className={`font-mono font-bold text-sm tabular-nums ${
+                  className={`tabular-nums font-semibold text-sm tabular-nums ${
                     stochasticDsa.probabilityOfDistress2030Pct >= 50
-                      ? 'text-red-600 dark:text-red-400'
+                      ? 'text-rose-600 dark:text-rose-400'
                       : 'text-amber-600 dark:text-amber-400'
                   }`}
                 >
@@ -530,7 +530,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               </div>
               <div>
                 <span className="text-slate-500 block">FX Debt Reval Effect</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                   +{stochasticDsa.foreignCurrencyRevaluationImpactPctGdp}% GDP
                 </span>
               </div>
@@ -559,7 +559,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                       x={fanPadL - 6}
                       y={y + 3}
                       textAnchor="end"
-                      className="text-[10px] font-mono fill-slate-400"
+                      className="text-xs tabular-nums fill-slate-400"
                     >
                       {val.toFixed(0)}%
                     </text>
@@ -589,7 +589,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                 y1={thresholdLineY}
                 x2={fanW - fanPadR}
                 y2={thresholdLineY}
-                stroke="#ef4444"
+                stroke="#f43f5e"
                 strokeWidth="1.5"
                 strokeDasharray="4 4"
               />
@@ -597,7 +597,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                 x={fanW - fanPadR - 4}
                 y={Math.max(12, thresholdLineY - 5)}
                 textAnchor="end"
-                className="text-[10px] font-mono fill-red-500 font-semibold"
+                className="text-xs tabular-nums fill-rose-500 font-semibold"
               >
                 Distress Threshold ({stochasticDsa.distressThresholdPctGdp}% GDP)
               </text>
@@ -632,7 +632,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     x={getFanX(i)}
                     y={fanH - 8}
                     textAnchor="middle"
-                    className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                    className="text-xs tabular-nums fill-slate-500 dark:fill-slate-400"
                   >
                     {p.year}
                   </text>
@@ -681,9 +681,9 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     key={tab.id}
                     type="button"
                     onClick={() => setSelectedIrfVar(tab.id as any)}
-                    className={`px-2 py-1 text-[11px] font-mono font-medium transition-colors whitespace-nowrap shrink-0 ${
+                    className={`px-2 py-1 text-xs tabular-nums font-medium transition-colors whitespace-nowrap shrink-0 ${
                       selectedIrfVar === tab.id
-                        ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs'
+                        ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 '
                         : 'text-slate-600 dark:text-slate-400'
                     }`}
                   >
@@ -693,7 +693,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               </div>
             </div>
 
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
               <RichTextWithStatRefs text={bvarIrf.conclusionHeadline} />
             </h3>
 
@@ -705,9 +705,9 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     Peak {s.variableId === 'cds_5y_bps' ? '5Y CDS' : s.variableId === 'yield_10y_bps' ? '10Y Yield' : s.variableId === 'cpi_yoy_pct' ? 'Headline CPI' : 'Real GDP'} ({s.peakQuarter})
                   </span>
                   <span
-                    className={`font-mono font-bold text-sm tabular-nums ${
+                    className={`tabular-nums font-semibold text-sm tabular-nums ${
                       s.variableId === 'gdp_yoy_pct'
-                        ? 'text-red-600 dark:text-red-400'
+                        ? 'text-rose-600 dark:text-rose-400'
                         : 'text-amber-600 dark:text-amber-400'
                     }`}
                   >
@@ -764,7 +764,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     x={getIrfX(i)}
                     y={getIrfY(p.meanResponse) - 8}
                     textAnchor="middle"
-                    className="text-[10px] font-mono fill-slate-700 dark:fill-slate-200"
+                    className="text-xs tabular-nums fill-slate-700 dark:fill-slate-200"
                   >
                     {p.meanResponse >= 0 ? '+' : ''}
                     {p.meanResponse}
@@ -773,7 +773,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     x={getIrfX(i)}
                     y={fanH - 8}
                     textAnchor="middle"
-                    className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                    className="text-xs tabular-nums fill-slate-500 dark:fill-slate-400"
                   >
                     {p.quarterLabel}
                   </text>
@@ -813,36 +813,36 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 IMF-Standard Growth-at-Risk (GaR 5%) &amp; Fiscal-at-Risk (FaR 95%)
               </span>
-              <span className="font-mono">12M Forward Quantile Regression Density</span>
+              <span className="tabular-nums">12M Forward Quantile Regression Density</span>
             </div>
 
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
               <RichTextWithStatRefs text={garFarTail.conclusionHeadline} />
             </h3>
 
             <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div>
                 <span className="text-slate-500 block">Mean GDP Forecast</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                   {garFarTail.gdpMeanForecastPct >= 0 ? '+' : ''}
                   {garFarTail.gdpMeanForecastPct}%
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">5th-Pct Left Tail (GaR)</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-red-600 dark:text-red-400">
+                <span className="tabular-nums font-semibold text-sm text-rose-600 dark:text-rose-400">
                   {garFarTail.gdpGar5thPercentilePct}% YoY
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">12M Recession Prob</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-amber-600 dark:text-amber-400">
+                <span className="tabular-nums font-semibold text-sm text-amber-600 dark:text-amber-400">
                   {garFarTail.recessionProbabilityPct}%
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">95th-Pct Fiscal-at-Risk</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-red-600 dark:text-red-400">
+                <span className="tabular-nums font-semibold text-sm text-rose-600 dark:text-rose-400">
                   {garFarTail.fiscalFar95thDeficitPctGdp}% GDP
                 </span>
               </div>
@@ -856,7 +856,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               {tailPolygon && (
                 <polygon
                   points={tailPolygon}
-                  className="fill-red-500/35 dark:fill-red-500/40"
+                  className="fill-rose-500/35 dark:fill-rose-500/40"
                 />
               )}
 
@@ -872,7 +872,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               {/* Stressed Conditional Density Curve */}
               <polyline
                 fill="none"
-                stroke="#ef4444"
+                stroke="#f43f5e"
                 strokeWidth="2.5"
                 points={stressedDensityLine}
               />
@@ -888,7 +888,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                       x={getDensX(origIdx)}
                       y={fanH - 8}
                       textAnchor="middle"
-                      className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                      className="text-xs tabular-nums fill-slate-500 dark:fill-slate-400"
                     >
                       {p.xValue >= 0 ? `+${p.xValue}%` : `${p.xValue}%`}
                     </text>
@@ -925,33 +925,33 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <span className="font-semibold text-slate-700 dark:text-slate-300">
                 Nelson-Siegel-Svensson (NSS) Forward Curve &amp; Term Premium
               </span>
-              <span className="font-mono">
+              <span className="tabular-nums">
                 β₀={nssTermStructure.beta0Level}% · β₁={nssTermStructure.beta1Slope}% · β₂={nssTermStructure.beta2Curvature}%
               </span>
             </div>
 
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-2 leading-snug text-balance">
               <RichTextWithStatRefs text={nssTermStructure.conclusionHeadline} />
             </h3>
 
             <div className="grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-xs">
               <div>
                 <span className="text-slate-500 block">10Y Fiscal Term Premium</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-amber-600 dark:text-amber-400">
+                <span className="tabular-nums font-semibold text-sm text-amber-600 dark:text-amber-400">
                   {nssTermStructure.tenYearTermPremiumBps >= 0 ? '+' : ''}
                   {nssTermStructure.tenYearTermPremiumBps} bps
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">1Y Implied Policy Δ</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-blue-600 dark:text-blue-400">
+                <span className="tabular-nums font-semibold text-sm text-blue-600 dark:text-blue-400">
                   {nssTermStructure.implied1YPolicyRateDeltaBps >= 0 ? '+' : ''}
                   {nssTermStructure.implied1YPolicyRateDeltaBps} bps
                 </span>
               </div>
               <div>
                 <span className="text-slate-500 block">Long-Run Level (β₀)</span>
-                <span className="font-mono font-bold text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                   {nssTermStructure.beta0Level}%
                 </span>
               </div>
@@ -996,7 +996,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     x={getNssX(i)}
                     y={getNssY(p.spotYieldPct) - 8}
                     textAnchor="middle"
-                    className="text-[10px] font-mono fill-slate-700 dark:fill-slate-200"
+                    className="text-xs tabular-nums fill-slate-700 dark:fill-slate-200"
                   >
                     {p.spotYieldPct.toFixed(1)}%
                   </text>
@@ -1004,7 +1004,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     x={getNssX(i)}
                     y={fanH - 8}
                     textAnchor="middle"
-                    className="text-[10px] font-mono fill-slate-500 dark:fill-slate-400"
+                    className="text-xs tabular-nums fill-slate-500 dark:fill-slate-400"
                   >
                     {p.tenor} ({p.sovereignTermPremiumBps >= 0 ? `+${p.sovereignTermPremiumBps}` : p.sovereignTermPremiumBps}bp TP)
                   </text>
@@ -1046,18 +1046,18 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               <span className="mx-2" aria-hidden="true">·</span>
               <span>12-Month Forward Regime Switching &amp; Multi-Indicator Z-Score Audit</span>
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1 text-balance">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-1 text-balance">
               <RichTextWithStatRefs text={markovEws.conclusionHeadline} />
             </h3>
           </div>
 
-          <div className="flex items-center gap-4 text-xs font-mono shrink-0">
+          <div className="flex items-center gap-4 text-xs tabular-nums shrink-0">
             <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 block text-[11px]">Composite Crisis Z-Score</span>
+              <span className="text-slate-500 block text-xs">Composite Crisis Z-Score</span>
               <span
-                className={`font-bold text-sm ${
+                className={`font-semibold text-sm ${
                   markovEws.compositeCrisisZScore >= 1.65
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-rose-600 dark:text-rose-400'
                     : markovEws.compositeCrisisZScore >= 0.85
                     ? 'text-amber-600 dark:text-amber-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -1068,8 +1068,8 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               </span>
             </div>
             <div className="px-3 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <span className="text-slate-500 block text-[11px]">12M Crisis Transition Prob</span>
-              <span className="font-bold text-sm text-slate-900 dark:text-slate-100">
+              <span className="text-slate-500 block text-xs">12M Crisis Transition Prob</span>
+              <span className="font-semibold text-sm text-slate-900 dark:text-slate-100">
                 {markovEws.crisisProbability12MPct}%
               </span>
             </div>
@@ -1079,7 +1079,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left: 3x3 Markov Regime Transition Matrix */}
           <div className="lg:col-span-6 space-y-2">
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
               12-Month Markov-Switching Regime Transition Probability Matrix (P_ij)
             </div>
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
@@ -1092,7 +1092,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     <th className="py-2.5 px-3 font-semibold text-right">→ Sudden Stop (t+12M)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                   {markovEws.transitionMatrix.map((row) => (
                     <tr key={row.fromRegime} className="hover:bg-slate-50/60 dark:hover:bg-slate-800/30">
                       <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-slate-100">
@@ -1104,7 +1104,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                       <td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400 font-semibold">
                         {row.toFiscalDominancePct}%
                       </td>
-                      <td className="py-2.5 px-3 text-right text-red-600 dark:text-red-400 font-bold">
+                      <td className="py-2.5 px-3 text-right text-rose-600 dark:text-rose-400 font-semibold">
                         {row.toSuddenStopPct}%
                       </td>
                     </tr>
@@ -1116,7 +1116,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
 
           {/* Right: 5-Factor Kaminsky-Reinhart Early Warning Z-Score Breakdown */}
           <div className="lg:col-span-6 space-y-2">
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
               Kaminsky-Reinhart Crisis Early-Warning Indicator Z-Scores (Threshold: +1.65σ)
             </div>
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
@@ -1135,17 +1135,17 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                       <td className="py-2 px-3 font-medium text-slate-900 dark:text-slate-100">
                         {f.factorName}
                       </td>
-                      <td className="py-2 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="py-2 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                         {f.currentReading}
                       </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                      <td className="py-2 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         {f.zScore >= 0 ? '+' : ''}
                         {f.zScore}σ
                       </td>
                       <td
-                        className={`py-2 px-3 text-right font-mono font-bold ${
+                        className={`py-2 px-3 text-right tabular-nums font-semibold ${
                           f.status === 'CRISIS_ALERT'
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : f.status === 'WATCH'
                             ? 'text-amber-600 dark:text-amber-400'
                             : 'text-emerald-600 dark:text-emerald-400'
@@ -1192,18 +1192,18 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Engine 6 · Blanchard (2004) / Leeper (1991) Monetary-Fiscal Nexus &amp; Reserve Depletion
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Blanchard-Leeper Fiscal Dominance Frontier &amp; FXI Burn Clock
                 </h3>
               </div>
-              <div className="text-right font-mono tabular-nums">
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-right tabular-nums">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                   Reversal Threshold r* / Headroom
                 </div>
                 <div
-                  className={`text-sm font-bold ${
+                  className={`text-sm font-semibold ${
                     fiscalDominanceAndFxBurn.isFiscalDominanceActive
-                      ? 'text-red-600 dark:text-red-400'
+                      ? 'text-rose-600 dark:text-rose-400'
                       : 'text-emerald-600 dark:text-emerald-400'
                   }`}
                 >
@@ -1214,44 +1214,44 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
               </div>
             </div>
 
-            <div className="p-3 bg-slate-50 dark:bg-slate-950 border-l-2 border-purple-600 text-xs font-semibold text-slate-900 dark:text-slate-100">
+            <div className="p-3 bg-slate-50 dark:bg-slate-950 border-l-2 border-blue-600 text-xs font-semibold text-slate-900 dark:text-slate-100">
               <RichTextWithStatRefs text={fiscalDominanceAndFxBurn.conclusionHeadline} />
             </div>
 
             {/* 4 Key KPI Tiles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
               <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs text-slate-500 dark:text-slate-400 block">
                   Floating/1Y Debt Share
                 </span>
-                <span className="font-mono font-bold text-sm text-slate-900 dark:text-slate-100 tabular-nums">
+                <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                   {fiscalDominanceAndFxBurn.floatingShortDebtSharePct}%
                 </span>
               </div>
               <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs text-slate-500 dark:text-slate-400 block">
                   +100bp Hike Fiscal Cost
                 </span>
-                <span className="font-mono font-bold text-sm text-amber-600 dark:text-amber-400 tabular-nums">
+                <span className="tabular-nums font-semibold text-sm text-amber-600 dark:text-amber-400">
                   +{fiscalDominanceAndFxBurn.annualFiscalCostPer100BpsPctGdp}% GDP
                 </span>
               </div>
               <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs text-slate-500 dark:text-slate-400 block">
                   FXI Burn Velocity
                 </span>
-                <span className="font-mono font-bold text-sm text-red-600 dark:text-red-400 tabular-nums">
+                <span className="tabular-nums font-semibold text-sm text-rose-600 dark:text-rose-400">
                   ${fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B / mo
                 </span>
               </div>
               <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                <span className="text-xs text-slate-500 dark:text-slate-400 block">
                   Clock to 100% ARA Floor
                 </span>
                 <span
-                  className={`font-mono font-bold text-sm tabular-nums ${
+                  className={`tabular-nums font-semibold text-sm tabular-nums ${
                     fiscalDominanceAndFxBurn.monthsToAraBreach <= 6
-                      ? 'text-red-600 dark:text-red-400'
+                      ? 'text-rose-600 dark:text-rose-400'
                       : 'text-blue-600 dark:text-blue-400'
                   }`}
                 >
@@ -1271,7 +1271,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                     <th className="py-2 px-3 font-semibold text-right">Monetary-Fiscal Regime</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+                <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                   {fiscalDominanceAndFxBurn.frontierCurve.map((pt) => (
                     <tr
                       key={pt.policyRatePct}
@@ -1281,10 +1281,10 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                           : ''
                       }
                     >
-                      <td className="py-2 px-3 font-bold text-slate-900 dark:text-slate-100">
+                      <td className="py-2 px-3 font-semibold text-slate-900 dark:text-slate-100">
                         {pt.policyRatePct.toFixed(1)}%
                         {Math.abs(pt.policyRatePct - fiscalDominanceAndFxBurn.currentPolicyRatePct) <= 1.1 && (
-                          <span className="ml-1.5 text-[10px] font-sans font-semibold text-blue-600 dark:text-blue-400">
+                          <span className="ml-1.5 text-xs font-sans font-semibold text-blue-600 dark:text-blue-400">
                             (Current)
                           </span>
                         )}
@@ -1294,9 +1294,9 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                         {pt.annualInterestBillDeltaPctGdp.toFixed(2)}%
                       </td>
                       <td
-                        className={`py-2 px-3 text-right font-bold ${
+                        className={`py-2 px-3 text-right font-semibold ${
                           pt.inflationPassThroughPct > 0
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
@@ -1304,9 +1304,9 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                         {pt.inflationPassThroughPct.toFixed(2)}%
                       </td>
                       <td
-                        className={`py-2 px-3 text-right font-bold text-[11px] ${
+                        className={`py-2 px-3 text-right font-semibold text-xs ${
                           pt.regime === 'FISCAL_DOMINANCE'
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : pt.regime === 'TRANSITION_ZONE'
                             ? 'text-amber-600 dark:text-amber-400'
                             : 'text-emerald-600 dark:text-emerald-400'
@@ -1325,13 +1325,13 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
           <div className="p-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
             <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 list-disc pl-4 leading-relaxed">
               <li>
-                <strong className="text-slate-900 dark:text-slate-100">1. What This Shows in Plain English:</strong> Finds the exact tipping-point interest rate (<span className="font-mono">r* = {fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}%</span>) where central bank rate hikes stop fighting inflation and start making it worse, plus how many months the central bank can spend US dollars defending the currency.
+                <strong className="text-slate-900 dark:text-slate-100">1. What This Shows in Plain English:</strong> Finds the exact tipping-point interest rate (<span className="tabular-nums">r* = {fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}%</span>) where central bank rate hikes stop fighting inflation and start making it worse, plus how many months the central bank can spend US dollars defending the currency.
               </li>
               <li>
-                <strong className="text-slate-900 dark:text-slate-100">2. Why It Matters:</strong> When a large share of government debt has floating interest rates (<span className="font-mono">{fiscalDominanceAndFxBurn.floatingShortDebtSharePct}%</span>), raising interest rates balloons the government's interest bill (+{fiscalDominanceAndFxBurn.annualFiscalCostPer100BpsPctGdp}% of GDP per +1% hike), scaring investors and weakening the currency.
+                <strong className="text-slate-900 dark:text-slate-100">2. Why It Matters:</strong> When a large share of government debt has floating interest rates (<span className="tabular-nums">{fiscalDominanceAndFxBurn.floatingShortDebtSharePct}%</span>), raising interest rates balloons the government's interest bill (+{fiscalDominanceAndFxBurn.annualFiscalCostPer100BpsPctGdp}% of GDP per +1% hike), scaring investors and weakening the currency.
               </li>
               <li>
-                <strong className="text-slate-900 dark:text-slate-100">3. Warning Sign &amp; Action:</strong> If interest rates cross above the <span className="font-mono">{fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}%</span> tipping point (0 bps headroom) or reserve support drops below <span className="font-mono">6 months</span>, exit unhedged local-currency bond trades immediately.
+                <strong className="text-slate-900 dark:text-slate-100">3. Warning Sign &amp; Action:</strong> If interest rates cross above the <span className="tabular-nums">{fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}%</span> tipping point (0 bps headroom) or reserve support drops below <span className="tabular-nums">6 months</span>, exit unhedged local-currency bond trades immediately.
               </li>
             </ul>
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
@@ -1350,18 +1350,18 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Engine 7 · IMF Sovereign Risk &amp; Debt Sustainability Framework (SRDSF) Rollover Matrix
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Gross Financing Needs (GFN % GDP) &amp; Sovereign-Bank Doom Loop
                 </h3>
               </div>
-              <div className="text-right font-mono tabular-nums">
-                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="text-right tabular-nums">
+                <div className="text-xs text-slate-500 dark:text-slate-400">
                   Annual GFN vs. {imfSrdsfGfn.imfEmDistressThresholdPctGdp}% IMF Threshold
                 </div>
                 <div
-                  className={`text-sm font-bold ${
+                  className={`text-sm font-semibold ${
                     imfSrdsfGfn.srdsfRiskZone === 'HIGH_ROLLOVER_CRISIS'
-                      ? 'text-red-600 dark:text-red-400'
+                      ? 'text-rose-600 dark:text-rose-400'
                       : imfSrdsfGfn.srdsfRiskZone === 'MODERATE_STRESS'
                       ? 'text-amber-600 dark:text-amber-400'
                       : 'text-emerald-600 dark:text-emerald-400'
@@ -1380,7 +1380,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <span>12-Month Gross Financing Needs Decomposition</span>
-                <span className="font-mono">
+                <span className="tabular-nums">
                   Total: {imfSrdsfGfn.totalGfnPctGdp}% GDP · Doom-Loop CET1 Hit: -{imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps
                 </span>
               </div>
@@ -1394,7 +1394,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                       <span className="font-medium text-slate-800 dark:text-slate-200 truncate">
                         {comp.componentLabel}
                       </span>
-                      <span className="font-mono font-bold text-slate-900 dark:text-slate-100 tabular-nums">
+                      <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                         {comp.pctOfGdp}% GDP (${comp.usdBillions}B)
                       </span>
                     </div>
@@ -1426,13 +1426,13 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                       <td className="py-2 px-3 font-medium text-slate-900 dark:text-slate-100">
                         {row.investorSector}
                       </td>
-                      <td className="py-2 px-3 text-right font-mono font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                      <td className="py-2 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {row.stressedAbsorptionPctGdp}% GDP
                       </td>
-                      <td className="py-2 px-3 text-right font-mono text-slate-600 dark:text-slate-400 tabular-nums">
+                      <td className="py-2 px-3 text-right tabular-nums text-slate-600 dark:text-slate-400">
                         {row.maxCapacityLimitPctGdp}% GDP
                       </td>
-                      <td className="py-2 px-3 text-[11px] text-slate-600 dark:text-slate-300">
+                      <td className="py-2 px-3 text-xs text-slate-600 dark:text-slate-300">
                         {row.crowdingOutOrConstraintNote}
                       </td>
                     </tr>
@@ -1446,13 +1446,13 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
           <div className="p-4 bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
             <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 list-disc pl-4 leading-relaxed">
               <li>
-                <strong className="text-slate-900 dark:text-slate-100">1. What This Shows in Plain English:</strong> Adds up the government's total yearly borrowing bill—new budget deficits plus interest payments plus old debt coming due (<span className="font-mono">{imfSrdsfGfn.totalGfnPctGdp}% of GDP</span>)—and checks who has enough cash to buy those bonds if foreign investors step back.
+                <strong className="text-slate-900 dark:text-slate-100">1. What This Shows in Plain English:</strong> Adds up the government's total yearly borrowing bill—new budget deficits plus interest payments plus old debt coming due (<span className="tabular-nums">{imfSrdsfGfn.totalGfnPctGdp}% of GDP</span>)—and checks who has enough cash to buy those bonds if foreign investors step back.
               </li>
               <li>
-                <strong className="text-slate-900 dark:text-slate-100">2. Why It Matters:</strong> Countries rarely default just because total debt is high; they run into trouble when their yearly refinancing bill is too big for local banks and pension funds to swallow without hurting bank capital (<span className="font-mono">-{imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps CET1</span> hit).
+                <strong className="text-slate-900 dark:text-slate-100">2. Why It Matters:</strong> Countries rarely default just because total debt is high; they run into trouble when their yearly refinancing bill is too big for local banks and pension funds to swallow without hurting bank capital (<span className="tabular-nums">-{imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps CET1</span> hit).
               </li>
               <li>
-                <strong className="text-slate-900 dark:text-slate-100">3. Warning Sign &amp; Action:</strong> When yearly borrowing needs exceed <span className="font-mono">15% of GDP</span> (for emerging markets) or force the Central Bank to print money to buy leftover bonds (<span className="font-mono">{imfSrdsfGfn.centralBankMonetizationResidualPctGdp}% GDP</span>), rollover crisis risk is high.
+                <strong className="text-slate-900 dark:text-slate-100">3. Warning Sign &amp; Action:</strong> When yearly borrowing needs exceed <span className="tabular-nums">15% of GDP</span> (for emerging markets) or force the Central Bank to print money to buy leftover bonds (<span className="tabular-nums">{imfSrdsfGfn.centralBankMonetizationResidualPctGdp}% GDP</span>), rollover crisis risk is high.
               </li>
             </ul>
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">

@@ -283,7 +283,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
               <span className="mx-2" aria-hidden="true">·</span>
               <span>Select any specialist analyst card below to inspect its quantitative findings &amp; JSON schema</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Council of Agents Architecture &amp; Specialist Analyst Inspector
             </h2>
           </div>
@@ -310,7 +310,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
             <button
               type="button"
               onClick={onJumpToCROGate}
-              className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors whitespace-nowrap shrink-0"
+              className="ui-btn ui-btn-primary shrink-0"
             >
               Open CRO Override Gate &amp; Decision Report
             </button>
@@ -320,12 +320,12 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
         {/* Supreme Council Top Node */}
         <div className="mt-5 flex flex-col items-center">
           <div className="w-full max-w-2xl bg-slate-900 dark:bg-slate-950 text-white border border-slate-800 p-4 text-center">
-            <div className="text-[11px] font-mono text-blue-400">
+            <div className="text-xs tabular-nums text-blue-400">
               SUPREME COUNCIL ORCHESTRATOR (PORTFOLIO &amp; POLICY TRANSLATION LAYER)
             </div>
-            <div className="text-sm font-bold mt-0.5">
+            <div className="text-sm font-semibold mt-0.5">
               Global Coherence: {((run.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100).toFixed(0)}% · Verdict:{' '}
-              <span className="font-mono text-amber-400">
+              <span className="tabular-nums text-amber-400">
                 {run.supremeCouncil?.decisionVerdict || 'AWAITING_CRO_GATE'}
               </span>{' '}
               · Composite Risk: {(run.supremeCouncil?.compositeRiskScore ?? 0.62).toFixed(2)}
@@ -350,11 +350,11 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                   <div className="pb-3 border-b border-slate-200 dark:border-slate-800">
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
                       <span>{desk.lead}</span>
-                      <span className="font-mono font-semibold tabular-nums text-slate-800 dark:text-slate-200">
+                      <span className="tabular-nums font-semibold text-slate-800 dark:text-slate-200">
                         {debate.preCascadeRiskScore.toFixed(2)} → {debate.postCascadeRiskScore.toFixed(2)}
                       </span>
                     </div>
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-1">
                       {desk.label}
                     </h3>
                   </div>
@@ -370,7 +370,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                           onClick={() => setSelectedAgentId(agent.agentId)}
                           className={`w-full text-left p-3 border transition-colors ${
                             isSelected
-                              ? 'bg-white dark:bg-slate-900 border-blue-600 dark:border-blue-500 shadow-xs'
+                              ? 'bg-white dark:bg-slate-900 border-blue-600 dark:border-blue-500 '
                               : 'bg-white/70 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-400 dark:hover:border-slate-700'
                           }`}
                         >
@@ -378,14 +378,14 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                             <span className="font-semibold text-blue-600 dark:text-blue-400">
                               {agent.agentCode}
                             </span>
-                            <span className="font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                            <span className="tabular-nums text-slate-600 dark:text-slate-400">
                               {agent.stance} · Risk {agent.riskScore.toFixed(2)} · Calib {(agent.brierCalibrationWeight * 100).toFixed(0)}%
                             </span>
                           </div>
-                          <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1">
+                          <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">
                             {agent.agentName}
                           </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
+                          <div className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 mt-0.5">
                             <RichTextWithStatRefs text={agent.findingsSummary} />
                           </div>
                         </button>
@@ -394,7 +394,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="mt-3 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
                   <strong>Desk Consensus:</strong> {debate.consensusStance} ({debate.postCascadeRiskScore.toFixed(2)})
                 </div>
               </div>
@@ -414,7 +414,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                   <span className="mx-2" aria-hidden="true">·</span>
                   <span>Confidence: {(activeAgent.confidence * 100).toFixed(0)}%</span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   {activeAgent.agentName} — {activeAgent.roleTitle}
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-2 leading-relaxed">
@@ -426,7 +426,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
               {runtimeConfig && onUpdateRuntimeConfig && (
                 <div className="p-3.5 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60 space-y-2.5 text-xs">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1.5 font-bold text-slate-900 dark:text-slate-100">
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-slate-900 dark:text-slate-100">
                       <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                       <span>
                         GUI Model &amp; Directive Configurator for {activeAgent.agentCode} (
@@ -438,7 +438,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                         <button
                           type="button"
                           onClick={onOpenRuntimeModal}
-                          className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
+                          className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 hover:underline"
                         >
                           All 12 Agents &amp; Docker GUI →
                         </button>
@@ -448,7 +448,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                           type="button"
                           onClick={onReverifyPipeline}
                           disabled={isRunningPhase1And2}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
                         >
                           <Play className="w-3 h-3" />
                           <span>{isRunningPhase1And2 ? 'Running...' : 'Apply & Re-Run Agent'}</span>
@@ -459,7 +459,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Assigned Ollama / LLM Model Tag for {activeAgent.agentCode}
                       </label>
                       <input
@@ -479,11 +479,11 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                           runtimeConfig.ollamaQuickModel ||
                           'qwen2.5:7b'
                         }`}
-                        className="w-full px-2.5 py-1.5 font-mono text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 tabular-nums text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       />
                     </div>
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Custom Analytical Directive / Prompt Override for {activeAgent.agentCode}
                       </label>
                       <input
@@ -523,10 +523,10 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                         <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
                           {m.label}
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-bold tabular-nums text-right text-blue-600 dark:text-blue-400">
+                        <td className="py-2.5 px-3 tabular-nums font-semibold text-right text-blue-600 dark:text-blue-400">
                           {m.value}
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                        <td className="py-2.5 px-3 tabular-nums text-slate-600 dark:text-slate-400">
                           {m.change}
                         </td>
                         <td className="py-2.5 px-3 text-slate-500 dark:text-slate-400">
@@ -541,7 +541,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
               {/* Closed-Loop Quantitative Desk Engine Feed */}
               <div className="p-3.5 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/60 space-y-2.5 text-xs">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <span className="font-bold text-slate-900 dark:text-slate-100">
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">
                     Closed-Loop Desk Engine Wired to {activeAgent.agentCode}: {activeAgentClosedLoopMetrics.engineName}
                   </span>
                   <StatRefBadge
@@ -558,13 +558,13 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                       key={it.label}
                       className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                     >
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
+                      <span className="text-xs text-slate-500 dark:text-slate-400 block">
                         {it.label}
                       </span>
-                      <span className="font-mono font-bold text-sm text-blue-600 dark:text-blue-400 tabular-nums">
+                      <span className="tabular-nums font-semibold text-sm text-blue-600 dark:text-blue-400">
                         {it.value}
                       </span>
-                      <span className="text-[11px] text-slate-600 dark:text-slate-400 block mt-0.5">
+                      <span className="text-xs text-slate-600 dark:text-slate-400 block mt-0.5">
                         {it.note}
                       </span>
                     </div>
@@ -598,13 +598,13 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
             <div className="lg:col-span-5 bg-slate-950 text-slate-100 p-4 border border-slate-800 flex flex-col justify-between">
               <div>
                 <div className="flex items-center justify-between text-xs text-slate-400 pb-2 border-b border-slate-800">
-                  <span className="inline-flex items-center gap-1.5 font-mono">
+                  <span className="inline-flex items-center gap-1.5 tabular-nums">
                     <Code2 className="w-3.5 h-3.5 text-blue-400" />
                     <span>Structured Inter-Agent JSON Payload</span>
                   </span>
-                  <span className="font-mono text-[11px] text-emerald-400">SCHEMA VERIFIED</span>
+                  <span className="tabular-nums text-xs text-emerald-400">Schema verified</span>
                 </div>
-                <pre className="mt-3 text-xs font-mono tabular-nums text-slate-200 overflow-x-auto leading-relaxed">
+                <pre className="mt-3 text-xs tabular-nums text-slate-200 overflow-x-auto leading-relaxed">
                   {JSON.stringify(
                     {
                       analyst: activeAgent.agentName,
@@ -619,7 +619,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                   )}
                 </pre>
               </div>
-              <div className="mt-3 pt-2 border-t border-slate-800 text-[11px] text-slate-400">
+              <div className="mt-3 pt-2 border-t border-slate-800 text-xs text-slate-400">
                 Analysts communicate via deterministic JSON payloads so downstream desks parse quantitative variables without ambiguity.
               </div>
             </div>
@@ -635,7 +635,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
               <div className="text-xs text-slate-500 dark:text-slate-400">
                 Adversarial Committee Cross-Examination (Devil&apos;s Advocate Protocol)
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 Internal Desk Debates &amp; Managing Director Resolutions
               </h3>
             </div>
@@ -647,7 +647,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                   onClick={() => setSelectedDeskTab(tab)}
                   className={`px-2.5 py-1 text-xs font-medium capitalize transition-colors whitespace-nowrap shrink-0 ${
                     selectedDeskTab === tab
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 '
                       : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                   }`}
                 >
@@ -667,7 +667,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
                     <div>
-                      <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                      <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         {debate.deskName}
                       </span>
                       <span className="mx-2 text-slate-400">·</span>
@@ -675,7 +675,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                         {debate.deskLeadTitle}
                       </span>
                     </div>
-                    <span className="text-xs font-mono font-semibold tabular-nums text-blue-600 dark:text-blue-400">
+                    <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       Consensus: {debate.consensusStance} ({debate.postCascadeRiskScore.toFixed(2)})
                     </span>
                   </div>
@@ -691,7 +691,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                         </p>
                       </div>
                       <div className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                        <div className="font-semibold text-red-600 dark:text-red-400">
+                        <div className="font-semibold text-rose-600 dark:text-rose-400">
                           Devil&apos;s Advocate Challenge — {r.challengerAgent}
                         </div>
                         <p className="text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
@@ -714,7 +714,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
         <div className="xl:col-span-4 space-y-6">
           {/* Minority Dissent Box */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>Formal Minority Report &amp; Dissenting View</span>
             </div>
@@ -724,9 +724,9 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
             {allMinorityDissents.map((d) => (
               <div
                 key={d.dissentId}
-                className="p-3.5 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 space-y-2 text-xs"
+                className="p-3.5 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50 space-y-2 text-xs"
               >
-                <div className="flex items-center justify-between font-mono font-bold text-red-700 dark:text-red-300">
+                <div className="flex items-center justify-between tabular-nums font-semibold text-rose-700 dark:text-rose-300">
                   <span>{d.agentName}</span>
                   <span>
                     {d.agentRiskScore.toFixed(2)} vs {d.deskConsensusScore.toFixed(2)}
@@ -735,7 +735,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                 <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
                   <RichTextWithStatRefs text={d.coreDissentArgument} />
                 </p>
-                <div className="pt-2 border-t border-red-200/60 dark:border-red-900/40 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+                <div className="pt-2 border-t border-rose-200/60 dark:border-rose-900/40 text-xs text-slate-600 dark:text-slate-400 space-y-1">
                   <div>
                     <strong>Early-Warning Catalyst:</strong> {d.earlyWarningTrigger}
                   </div>
@@ -749,7 +749,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
 
           {/* Historical Crisis Analog Matcher */}
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-900 dark:text-slate-100">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-900 dark:text-slate-100">
               <History className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
               <span>Historical Crisis Parallels &amp; Realized Drawdowns</span>
             </div>
@@ -760,17 +760,17 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                   className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 text-xs"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
                       {analog.crisisName}
                     </span>
-                    <span className="font-mono font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                    <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       {analog.similarityScorePct}% Match
                     </span>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 py-1.5 border-y border-slate-200 dark:border-slate-800 font-mono tabular-nums text-[11px]">
+                  <div className="grid grid-cols-3 gap-2 py-1.5 border-y border-slate-200 dark:border-slate-800 tabular-nums text-xs">
                     <div>
                       <span className="text-slate-400 block">3M FX</span>
-                      <span className="text-red-600 dark:text-red-400 font-semibold">
+                      <span className="text-rose-600 dark:text-rose-400 font-semibold">
                         {analog.historicalOutcome.fxDrawdown3MPct}%
                       </span>
                     </div>
@@ -782,7 +782,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                     </div>
                     <div>
                       <span className="text-slate-400 block">6M Local Bond</span>
-                      <span className="text-red-600 dark:text-red-400 font-semibold">
+                      <span className="text-rose-600 dark:text-rose-400 font-semibold">
                         {analog.historicalOutcome.localBondReturn6MPct}%
                       </span>
                     </div>
@@ -803,7 +803,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
           <div className="text-xs text-slate-500 dark:text-slate-400">
             Automated Inter-Desk Contagion Propagation (`Geopolitical → Macro → Sovereign Credit`)
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
             Cross-Desk Dependency Cascade &amp; Quantitative State Transmission
           </h3>
         </div>
@@ -815,21 +815,21 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
               className="p-4 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 space-y-3"
             >
               <div className="flex items-center justify-between text-xs">
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400 uppercase">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {step.sourceDesk} Desk → {step.targetDesk} Desk Transmission
                 </span>
-                <span className="font-mono font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                   Risk Shift: {step.priorRiskScore.toFixed(2)} → {step.postCascadeRiskScore.toFixed(2)}
                 </span>
               </div>
 
-              <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                 <span>{step.triggerAgent}</span>
                 <ArrowRight className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span>{step.receivingAgent}</span>
               </div>
 
-              <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-800 dark:text-slate-200">
+              <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-800 dark:text-slate-200">
                 {step.shockDelta}
               </div>
 
@@ -837,7 +837,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                 <RichTextWithStatRefs text={step.transmissionMechanism} />
               </p>
 
-              <pre className="p-3 bg-slate-950 text-slate-200 text-[11px] font-mono tabular-nums overflow-x-auto">
+              <pre className="p-3 bg-slate-950 text-slate-200 text-xs tabular-nums overflow-x-auto">
                 {JSON.stringify(step.jsonPatch, null, 2)}
               </pre>
             </div>

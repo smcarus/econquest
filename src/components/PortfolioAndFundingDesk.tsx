@@ -227,19 +227,19 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
   const tooltipBorder = isDark ? '#334155' : '#cbd5e1';
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
       {/* TOP HEADER & SUB-WORKSPACE BAR */}
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-950/60">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider bg-blue-600 text-white">
-              TIER-6 INSTITUTIONAL DESK
+            <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-blue-600 text-white">
+              Tier-6 institutional desk
             </span>
-            <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+            <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
               {run.countryName} ({run.iso3}) · Zero-Notional Index Weight & % GDP Mode
             </span>
           </div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
+          <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mt-1">
             EMBI Multi-Sovereign Portfolio Book, 24M DMO Auction Simulator & Document AI Lab
           </h2>
         </div>
@@ -296,7 +296,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* Top Headline Banner */}
           <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border-l-4 border-blue-600 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white mr-1.5">
+              <span className="font-semibold text-slate-900 dark:text-white mr-1.5">
                 EMBI Global Diversified Relative-Value Book:
               </span>
               {embiSuite.headlineSummary}
@@ -304,7 +304,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             <button
               type="button"
               onClick={() => setActiveTiltOverridesBps({})}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              className="ui-btn inline-flex shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset Active Tilts</span>
@@ -314,13 +314,13 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* 5 KPI Summary Cards (All in % Weight, bps, Duration Years, and Beta) */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Active Book OAS vs. EMBI
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {embiSuite.activePortfolioWeightedSpreadBps} bps
               </div>
-              <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400">
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                 Benchmark: {embiSuite.benchmarkWeightedSpreadBps} bps (
                 {embiSuite.activePortfolioWeightedSpreadBps -
                   embiSuite.benchmarkWeightedSpreadBps >=
@@ -336,49 +336,49 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Ex-Ante Tracking Error
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {embiSuite.exAnteTrackingErrorBps} bps
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Active Weight Vol √(wᵀΣw)
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Book Beta & Spread Dur
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {embiSuite.portfolioBetaToEmbi}x · {embiSuite.portfolioSpreadDurationYears}y
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Mod Duration: {embiSuite.portfolioModifiedDurationYears} yrs
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Weighted Carry-to-Vol
               </div>
-              <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {embiSuite.weightedCarryToVolRatio}x
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 12M Carry + Roll / Spread Vol
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 99% Cornish-Fisher CVaR
               </div>
-              <div className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
                 -{embiSuite.cornishFisherCvar99Pct}%
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Parametric VaR₉₉: -{embiSuite.parametricVaR99Pct}%
               </div>
             </div>
@@ -387,16 +387,16 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* Interactive EMBI Multi-Sovereign Allocation & Relative-Value Table */}
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
             <div className="px-4 py-2.5 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 J.P. Morgan EMBI Global Diversified Constituent Weights & Active Tilt Allocator
               </span>
-              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Adjust sliders (-250 bps to +250 bps) to rebalance active weights (normalized to 100%)
               </span>
             </div>
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 text-xs tabular-nums text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3">Sovereign</th>
                   <th className="py-2.5 px-2">Rating</th>
                   <th className="py-2.5 px-2 text-right">EMBI Bench %</th>
@@ -411,7 +411,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   <th className="py-2.5 px-3">Stance</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {embiSuite.positions.map((pos) => {
                   const sliderVal =
                     typeof activeTiltOverridesBps[pos.iso3] === 'number'
@@ -433,10 +433,10 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                             const found = watchlistItems.find((w) => w.iso3 === pos.iso3);
                             if (found && onSelectSovereign) onSelectSovereign(found);
                           }}
-                          className="font-bold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left flex items-center gap-1.5"
+                          className="font-semibold text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 text-left flex items-center gap-1.5"
                         >
                           <span>{pos.countryName}</span>
-                          <span className="text-[10px] font-mono px-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <span className="text-xs tabular-nums px-1 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                             {pos.iso3}
                           </span>
                         </button>
@@ -447,7 +447,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       <td className="py-2.5 px-2 text-right text-slate-600 dark:text-slate-400">
                         {pos.embiBenchmarkWeightPct.toFixed(1)}%
                       </td>
-                      <td className="py-2.5 px-2 text-right font-bold text-slate-900 dark:text-white">
+                      <td className="py-2.5 px-2 text-right font-semibold text-slate-900 dark:text-white">
                         {pos.activePortfolioWeightPct.toFixed(1)}%
                       </td>
                       <td className="py-2.5 px-3">
@@ -467,7 +467,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                             className="w-24 accent-blue-600 cursor-pointer"
                           />
                           <span
-                            className={`w-14 text-right text-[11px] font-bold ${
+                            className={`w-14 text-right text-xs font-semibold ${
                               pos.activeTiltBps > 0
                                 ? 'text-emerald-600 dark:text-emerald-400'
                                 : pos.activeTiltBps < 0
@@ -492,7 +492,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`px-1.5 py-0.5 text-[10px] font-bold ${
+                          className={`px-1.5 py-0.5 text-xs font-semibold ${
                             pos.convictionSignal === 'OVERWEIGHT_CONVICTION'
                               ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                               : pos.convictionSignal === 'SHORT_CREDIT_HEDGE'
@@ -518,7 +518,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               <div>
                 <div className="flex items-center gap-2">
                   <ArrowRightLeft className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
                     Beta-Neutral Cross-Sovereign Pair-Trade Structurer (12M Spread Z-Score & Carry)
                   </h3>
                 </div>
@@ -540,11 +540,11 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       setPairShortIso(idea.shortIso3);
                       setPairInstrument(idea.instrumentType);
                     }}
-                    className={`px-2.5 py-1 text-[11px] font-mono border transition-colors ${
+                    className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                       pairLongIso === idea.longIso3 &&
                       pairShortIso === idea.shortIso3 &&
                       pairInstrument === idea.instrumentType
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-bold'
+                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold'
                         : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                     }`}
                   >
@@ -559,13 +559,13 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               <div className="lg:col-span-5 space-y-3 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Long Risk Sovereign
                     </label>
                     <select
                       value={pairLongIso}
                       onChange={(e) => setPairLongIso(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                      className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                     >
                       {embiSuite.positions.map((p) => (
                         <option key={p.iso3} value={p.iso3}>
@@ -576,13 +576,13 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Short Risk Hedge Sovereign
                     </label>
                     <select
                       value={pairShortIso}
                       onChange={(e) => setPairShortIso(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                      className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                     >
                       {embiSuite.positions
                         .filter((p) => p.iso3 !== pairLongIso)
@@ -597,7 +597,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Instrument Expression
                     </label>
                     <select
@@ -610,7 +610,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                             | '5Y_LOCAL_LCY_BOND'
                         )
                       }
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                      className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                     >
                       <option value="5Y_USD_CDS">5Y USD Sovereign CDS</option>
                       <option value="10Y_USD_EUROBOND">10Y USD Eurobond Z-Spread</option>
@@ -619,7 +619,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Long Leg Allocation (% Index): {pairLongWeightPct}%
                     </label>
                     <input
@@ -634,13 +634,13 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs font-mono">
+                <div className="grid grid-cols-2 gap-2.5 pt-2 border-t border-slate-200 dark:border-slate-800 text-xs tabular-nums">
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">Spread Differential</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-500">Spread Differential</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">
                       {embiSuite.activePairTrade.currentSpreadDifferentialBps} bps
                     </div>
-                    <div className="text-[10px] text-blue-600 dark:text-blue-400">
+                    <div className="text-xs text-blue-600 dark:text-blue-400">
                       Z-Score:{' '}
                       {embiSuite.activePairTrade.currentSpreadZScore >= 0
                         ? `+${embiSuite.activePairTrade.currentSpreadZScore}σ`
@@ -649,40 +649,40 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   </div>
 
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">Beta-Hedged Short Wt</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-500">Beta-Hedged Short Wt</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">
                       {embiSuite.activePairTrade.shortLegBetaHedgedWeightPct}%
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       Hedge Ratio β = {embiSuite.activePairTrade.empiricalHedgeRatioBeta}x
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">Net Carry Pickup</div>
-                    <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <div className="text-xs text-slate-500">Net Carry Pickup</div>
+                    <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                       {embiSuite.activePairTrade.annualizedNetCarryPickupBps >= 0
                         ? `+${embiSuite.activePairTrade.annualizedNetCarryPickupBps}`
                         : embiSuite.activePairTrade.annualizedNetCarryPickupBps}{' '}
                       bps/yr
                     </div>
-                    <div className="text-[10px] text-slate-500">
+                    <div className="text-xs text-slate-500">
                       90D E[Return]: +{embiSuite.activePairTrade.expected90DReturnBps} bps
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">Mean-Reversion Target</div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-500">Mean-Reversion Target</div>
+                    <div className="text-sm font-semibold text-slate-900 dark:text-white">
                       {embiSuite.activePairTrade.meanReversionTargetBps} bps
                     </div>
-                    <div className="text-[10px] text-rose-600 dark:text-rose-400">
+                    <div className="text-xs text-rose-600 dark:text-rose-400">
                       Stop: {embiSuite.activePairTrade.stopLossTriggerBps} bps
                     </div>
                   </div>
                 </div>
 
-                <div className="p-2.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-[11px] text-slate-700 dark:text-slate-300">
+                <div className="p-2.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 text-xs text-slate-700 dark:text-slate-300">
                   {embiSuite.activePairTrade.pairRationale}
                 </div>
               </div>
@@ -690,11 +690,11 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               {/* 12-Month Spread Differential & +/-2 Sigma Mean Reversion Chart */}
               <div className="lg:col-span-7 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     12-Month Pair Spread Differential ({embiSuite.activePairTrade.longIso3} minus{' '}
                     {embiSuite.activePairTrade.shortIso3}, bps) & ±2σ Bands
                   </span>
-                  <span className="text-[11px] font-mono text-slate-500">
+                  <span className="text-xs tabular-nums text-slate-500">
                     12M Mean: {embiSuite.activePairTrade.historical12MMeanSpreadBps} bps · σ ={' '}
                     {embiSuite.activePairTrade.historical12MStdDevBps} bps
                   </span>
@@ -770,9 +770,9 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
       {activeTab === 'dmo_treasury_auction_sim' && (
         <div className="p-5 space-y-6">
           {/* Headline Diagnostic */}
-          <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border-l-4 border-indigo-600 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border-l-4 border-blue-600 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white mr-1.5">
+              <span className="font-semibold text-slate-900 dark:text-white mr-1.5">
                 DMO 24-Month Issuance & Bank Absorption Audit:
               </span>
               {dmoSuite.headlineDiagnostic}
@@ -781,7 +781,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               <button
                 type="button"
                 onClick={() => setFundingMix(DEFAULT_TREASURY_FUNDING_MIX)}
-                className="px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn"
               >
                 Baseline Mix
               </button>
@@ -796,7 +796,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                     officialImfAndBilateralPct: 4,
                   })
                 }
-                className="px-2.5 py-1 text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                className="px-2.5 py-1 text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
               >
                 T-Bill Rollover Stress
               </button>
@@ -811,7 +811,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                     officialImfAndBilateralPct: 20,
                   })
                 }
-                className="px-2.5 py-1 text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                className="px-2.5 py-1 text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
               >
                 Extend WAM + IMF Anchor
               </button>
@@ -821,26 +821,26 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* 5 KPI Summary Cards (All in % of GDP, WACB %, WAM yrs, Bid-to-Cover x, and Bank Tier-1 %) */}
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 24M Cumulative GFN
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {dmoSuite.total24MGrossFinancingNeedPctGdp}% GDP
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Annualized GFN: {dmoSuite.annualizedGfnPctGdp}% GDP
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Weighted Avg Borrowing Cost
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {dmoSuite.weightedAverageCostOfBorrowingPct}%
               </div>
               <div
-                className={`text-[11px] font-mono ${
+                className={`text-xs tabular-nums ${
                   dmoSuite.wacbDeltaBps > 0
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -854,37 +854,37 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Weighted Avg Maturity (WAM)
               </div>
-              <div className="text-lg font-bold font-mono text-blue-600 dark:text-blue-400 mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
                 {dmoSuite.weightedAverageMaturityYears} yrs
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 T-Bill Share: {dmoSuite.normalizedMix.shortTermTBillsPct}%
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Auction Bid-to-Cover & Tail
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {dmoSuite.averageBidToCoverRatio}x avg
               </div>
-              <div className="text-[11px] font-mono text-amber-600 dark:text-amber-400">
+              <div className="text-xs tabular-nums text-amber-600 dark:text-amber-400">
                 Min: {dmoSuite.minBidToCoverRatio}x · Peak Tail: +{dmoSuite.peakAuctionTailBps}bp
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Peak Bank Sovereign Exposure
               </div>
-              <div className="text-lg font-bold font-mono text-rose-600 dark:text-rose-400 mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-rose-600 dark:text-rose-400 mt-0.5">
                 {dmoSuite.peakBankSovereignExposurePctTier1}% Tier-1
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Uncovered Gap: {dmoSuite.cumulative24MUncoveredGapPctGdp}% GDP
               </div>
             </div>
@@ -895,20 +895,20 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Interactive DMO Gross Issuance Allocation Mix (Auto-Normalized to 100%)
                 </span>
               </div>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Regime: {dmoSuite.crowdingOutSeverity.replace(/_/g, ' ')}
               </span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 pt-1">
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
+                <div className="flex justify-between text-xs tabular-nums mb-1">
                   <span>91d/364d T-Bills</span>
-                  <span className="font-bold">{dmoSuite.normalizedMix.shortTermTBillsPct}%</span>
+                  <span className="font-semibold">{dmoSuite.normalizedMix.shortTermTBillsPct}%</span>
                 </div>
                 <input
                   type="range"
@@ -923,9 +923,9 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
+                <div className="flex justify-between text-xs tabular-nums mb-1">
                   <span>5Y/10Y Local Bonds</span>
-                  <span className="font-bold">
+                  <span className="font-semibold">
                     {dmoSuite.normalizedMix.mediumLongLocalBondsPct}%
                   </span>
                 </div>
@@ -945,9 +945,9 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
+                <div className="flex justify-between text-xs tabular-nums mb-1">
                   <span>USD Eurobonds</span>
-                  <span className="font-bold">{dmoSuite.normalizedMix.usdEurobondsPct}%</span>
+                  <span className="font-semibold">{dmoSuite.normalizedMix.usdEurobondsPct}%</span>
                 </div>
                 <input
                   type="range"
@@ -962,9 +962,9 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
+                <div className="flex justify-between text-xs tabular-nums mb-1">
                   <span>Sukuk / Syndicated</span>
-                  <span className="font-bold">
+                  <span className="font-semibold">
                     {dmoSuite.normalizedMix.sukukAndSyndicatedLoansPct}%
                   </span>
                 </div>
@@ -984,9 +984,9 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               </div>
 
               <div>
-                <div className="flex justify-between text-xs font-mono mb-1">
+                <div className="flex justify-between text-xs tabular-nums mb-1">
                   <span>Official IMF / Bilat</span>
-                  <span className="font-bold">
+                  <span className="font-semibold">
                     {dmoSuite.normalizedMix.officialImfAndBilateralPct}%
                   </span>
                 </div>
@@ -1010,7 +1010,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* Dual Charts: 24-Month GFN Decomposition (% GDP) & Bid-to-Cover vs Auction Tail */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2">
                 24-Month Gross Financing Needs Stack (% GDP) & Cumulative Uncovered Gap
               </div>
               <div className="h-64 w-full">
@@ -1042,7 +1042,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       dataKey="primaryDeficitComponentPctGdp"
                       stackId="gfn"
                       name="Primary Deficit (% GDP)"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                     />
                     <Bar
                       dataKey="maturingTBillRolloverPctGdp"
@@ -1060,7 +1060,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       type="monotone"
                       dataKey="cumulativeUncoveredFundingGapPctGdp"
                       name="Cumulative Uncovered Gap (% GDP)"
-                      stroke="#ef4444"
+                      stroke="#f43f5e"
                       strokeWidth={2.5}
                       dot={false}
                     />
@@ -1070,7 +1070,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             </div>
 
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2">
                 Simulated Auction Bid-to-Cover Ratio (x) vs. Clearing Yield Tail (bps)
               </div>
               <div className="h-64 w-full">
@@ -1106,7 +1106,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: '11px' }} />
-                    <ReferenceLine yAxisId="left" y={1.25} stroke="#ef4444" strokeDasharray="3 3" />
+                    <ReferenceLine yAxisId="left" y={1.25} stroke="#f43f5e" strokeDasharray="3 3" />
                     <Area
                       yAxisId="right"
                       type="monotone"
@@ -1135,7 +1135,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* Compact 24-Month DMO Auction Schedule Table */}
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto max-h-72">
             <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-mono text-slate-500">
+              <thead className="sticky top-0 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500">
                 <tr>
                   <th className="py-2 px-3">Month</th>
                   <th className="py-2 px-2">Quarter</th>
@@ -1148,19 +1148,19 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   <th className="py-2 px-3">Auction Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {dmoSuite.monthlySchedule.map((row) => (
                   <tr
                     key={row.monthIndex}
                     className="hover:bg-slate-50 dark:hover:bg-slate-800/40"
                   >
-                    <td className="py-2 px-3 font-bold">{row.monthLabel}</td>
+                    <td className="py-2 px-3 font-semibold">{row.monthLabel}</td>
                     <td className="py-2 px-2 text-slate-500">{row.calendarQuarter}</td>
                     <td className="py-2 px-2 text-right font-semibold">
                       {row.grossFinancingNeedPctGdp}%
                     </td>
                     <td className="py-2 px-2 text-right">{row.maturingTBillRolloverPctGdp}%</td>
-                    <td className="py-2 px-2 text-right font-bold">{row.simulatedBidToCoverRatio}x</td>
+                    <td className="py-2 px-2 text-right font-semibold">{row.simulatedBidToCoverRatio}x</td>
                     <td className="py-2 px-2 text-right text-amber-600 dark:text-amber-400">
                       +{row.auctionClearingTailBps} bp
                     </td>
@@ -1170,7 +1170,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                     </td>
                     <td className="py-2 px-3">
                       <span
-                        className={`px-1.5 py-0.5 text-[10px] font-bold ${
+                        className={`px-1.5 py-0.5 text-xs font-semibold ${
                           row.auctionStatus === 'WELL_COVERED'
                             ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
                             : row.auctionStatus === 'TAIL_WIDENING'
@@ -1251,7 +1251,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                 type="button"
                 onClick={handleRunHybridAiDocumentAudit}
                 disabled={isAnalyzingDoc}
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors"
+                className="ui-btn ui-btn-primary inline-flex"
               >
                 <Sparkles className="w-3.5 h-3.5" />
                 <span>
@@ -1273,55 +1273,55 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           {/* 4 Quantitative Document Intelligence Gauges */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Hawkish / Dovish Stance
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {activeDocAnalysis.hawkishDovishStanceScore >= 0
                   ? `+${activeDocAnalysis.hawkishDovishStanceScore}`
                   : activeDocAnalysis.hawkishDovishStanceScore}{' '}
                 / 100
               </div>
-              <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400">
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                 {activeDocAnalysis.monetaryStanceLabel.replace(/_/g, ' ')}
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Taylor-Rule Rate Gap
               </div>
-              <div className="text-lg font-bold font-mono text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-white mt-0.5">
                 {activeDocAnalysis.actualPolicyRateGapBps >= 0
                   ? `+${activeDocAnalysis.actualPolicyRateGapBps}`
                   : activeDocAnalysis.actualPolicyRateGapBps}{' '}
                 bps
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Implied Taylor Rate: {activeDocAnalysis.taylorRuleImpliedPolicyRatePct}%
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 Fiscal Slippage / QPC Risk
               </div>
-              <div className="text-lg font-bold font-mono text-amber-600 dark:text-amber-400 mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-amber-600 dark:text-amber-400 mt-0.5">
                 {activeDocAnalysis.fiscalSlippageRiskScore} / 100
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 CAC Regime: {activeDocAnalysis.cacVotingThresholdType.slice(0, 28)}
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
                 IMF Tranche Disbursement Prob
               </div>
-              <div className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-lg font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {activeDocAnalysis.imfProgramTrancheDisbursementProbPct}%
               </div>
-              <div className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Engine: {activeDocAnalysis.isAiEnhanced ? 'Hybrid Gemini AI' : 'Deterministic'}
               </div>
             </div>
@@ -1356,7 +1356,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                     setDocText(e.target.value);
                     setAiAnalysisOverride(null);
                   }}
-                  className="w-full p-3 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 leading-relaxed"
+                  className="w-full p-3 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 leading-relaxed"
                 />
               </div>
             </div>
@@ -1364,10 +1364,10 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             <div className="lg:col-span-6 space-y-4">
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Executive Synthesis & Calibrated Macro Shock Vector
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
+                  <span className="text-xs tabular-nums px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300">
                     {activeDocAnalysis.providerUsed}
                   </span>
                 </div>
@@ -1375,10 +1375,10 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                   {activeDocAnalysis.executiveSynthesis}
                 </p>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 font-mono text-xs">
+                <div className="grid grid-cols-3 gap-2 pt-2 tabular-nums text-xs">
                   <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">Policy Rate Δ</div>
-                    <div className="font-bold text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-500">Policy Rate Δ</div>
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       {activeDocAnalysis.calibratedShockVector.policyRateDeltaBps >= 0
                         ? `+${activeDocAnalysis.calibratedShockVector.policyRateDeltaBps}`
                         : activeDocAnalysis.calibratedShockVector.policyRateDeltaBps}{' '}
@@ -1386,8 +1386,8 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                     </div>
                   </div>
                   <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">Primary Bal Δ</div>
-                    <div className="font-bold text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-500">Primary Bal Δ</div>
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       {activeDocAnalysis.calibratedShockVector.primaryFiscalBalanceDeltaPctGdp >= 0
                         ? `+${activeDocAnalysis.calibratedShockVector.primaryFiscalBalanceDeltaPctGdp}`
                         : activeDocAnalysis.calibratedShockVector.primaryFiscalBalanceDeltaPctGdp}
@@ -1395,8 +1395,8 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                     </div>
                   </div>
                   <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <div className="text-[10px] text-slate-500">5Y CDS Spread Δ</div>
-                    <div className="font-bold text-slate-900 dark:text-white">
+                    <div className="text-xs text-slate-500">5Y CDS Spread Δ</div>
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       {activeDocAnalysis.calibratedShockVector.sovereignSpreadShockBps >= 0
                         ? `+${activeDocAnalysis.calibratedShockVector.sovereignSpreadShockBps}`
                         : activeDocAnalysis.calibratedShockVector.sovereignSpreadShockBps}{' '}
@@ -1415,7 +1415,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                         docText
                       )
                     }
-                    className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
+                    className="w-full mt-2 inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
                   >
                     <Zap className="w-3.5 h-3.5" />
                     <span>
@@ -1427,25 +1427,25 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
 
               {/* Clause-by-Clause Extraction Table */}
               <div className="border border-slate-200 dark:border-slate-800">
-                <div className="px-3 py-2 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div className="px-3 py-2 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Clause-by-Clause Quantitative Telemetry
                 </div>
                 <div className="divide-y divide-slate-200 dark:divide-slate-800">
                   {activeDocAnalysis.extractedClauses.map((cl) => (
                     <div key={cl.clauseId} className="p-3 space-y-1 text-xs">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-bold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-slate-900 dark:text-white">
                           {cl.categoryLabel}
                         </span>
-                        <span className="font-mono text-[10px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                        <span className="tabular-nums text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                           {cl.directionalSignal.replace(/_/g, ' ')} ·{' '}
                           {cl.impactScoreBps >= 0 ? `+${cl.impactScoreBps}` : cl.impactScoreBps} bps
                         </span>
                       </div>
-                      <p className="text-slate-600 dark:text-slate-400 italic text-[11px]">
+                      <p className="text-slate-600 dark:text-slate-400 italic text-xs">
                         “{cl.verbatimQuote}”
                       </p>
-                      <div className="text-[11px] font-mono text-blue-600 dark:text-blue-400">
+                      <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400">
                         Extracted Anchor: {cl.quantitativeMetricExtracted} (Confidence:{' '}
                         {cl.confidencePct}%)
                       </div>

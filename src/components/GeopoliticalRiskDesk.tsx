@@ -681,7 +681,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <div className="text-xs text-slate-500 dark:text-slate-400">
               Tier-1 Geopolitical Risk &amp; Strategic Intelligence Desk · GDELT Alerts Map, Synchronized Supply-Chain Matrix, UNGA Topology &amp; Portfolio VaR Transmission
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {run.countryName} ({run.iso3}) — Geopolitical Wargaming &amp; Strategic Intelligence Suite
             </h2>
           </div>
@@ -705,21 +705,21 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <button
               type="button"
               onClick={() => applyPresetWargame('tariff_sanctions')}
-              className="px-2.5 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-950/50 border border-orange-300 dark:border-orange-800 text-orange-800 dark:text-orange-300 hover:bg-orange-100 transition-colors whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-xs font-medium bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors whitespace-nowrap shrink-0"
             >
               45% Tariff &amp; Chip/REE Ban
             </button>
             <button
               type="button"
               onClick={() => applyPresetWargame('cyber_grid')}
-              className="px-2.5 py-1.5 text-xs font-medium bg-purple-50 dark:bg-purple-950/50 border border-purple-300 dark:border-purple-800 text-purple-800 dark:text-purple-300 hover:bg-purple-100 transition-colors whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-xs font-medium bg-blue-50 dark:bg-blue-950/50 border border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-300 hover:bg-blue-100 transition-colors whitespace-nowrap shrink-0"
             >
               Subsea Cable &amp; Grid Cyber Shock
             </button>
             <button
               type="button"
               onClick={() => applyPresetWargame('tail_blockade')}
-              className="px-2.5 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-100 transition-colors whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0"
             >
               Stage-3 Kinetic &amp; Sanctions Crisis
             </button>
@@ -735,10 +735,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="flex items-start sm:items-center gap-2.5">
             <Zap className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5 sm:mt-0" />
             <div>
-              <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-2">
+              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex flex-wrap items-center gap-2">
                 <span>Bidirectional Cross-Desk Shock Propagation</span>
                 <span
-                  className={`px-1.5 py-0.5 text-[10px] font-mono font-bold ${
+                  className={`px-1.5 py-0.5 text-xs tabular-nums font-semibold ${
                     propagateGeoShocks
                       ? 'bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
                       : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
@@ -747,7 +747,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   {propagateGeoShocks ? 'LIVE TRANSMISSION ACTIVE' : 'STANDALONE MODE'}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-600 dark:text-slate-300 mt-0.5">
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                 Dynamically transmits active Geopolitical Wargame &amp; Supply-Chain Export-Ban shocks (+
                 {portfolioTransmission.propagatedForecastShocks.realRateShockBps} bps real rate,{' '}
                 {portfolioTransmission.propagatedForecastShocks.realGdpGrowthShockPct}% GDP, +
@@ -783,7 +783,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={onJumpToForecastingLab}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors whitespace-nowrap shrink-0"
+                className="ui-btn ui-btn-primary inline-flex shrink-0"
               >
                 <span>Open Stressed Debt Fan Chart</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
@@ -793,7 +793,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={onJumpToCouncilDebates}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 transition-colors whitespace-nowrap shrink-0"
+                className="ui-btn inline-flex shrink-0"
               >
                 <span>Geopolitical Council Debate</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
@@ -810,7 +810,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <Anchor className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Chokepoint Closure</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {wargameParams.chokepointClosureSeverityPct}%
               </span>
             </div>
@@ -828,7 +828,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               }
               className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0% Open</span>
               <span>50% Reroute</span>
               <span>100% Blockade</span>
@@ -841,7 +841,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <Sliders className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Bilateral Tariff Shock</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                 +{wargameParams.tariffEscalationPct}%
               </span>
             </div>
@@ -859,7 +859,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               }
               className="w-full accent-amber-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>+0% WTO</span>
               <span>+25% Sector</span>
               <span>+60% Embargo</span>
@@ -869,10 +869,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Lock className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>OFAC / Custody Freeze</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-red-600 dark:text-red-400">
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                 {wargameParams.sanctionsAndClearingIntensity}/100
               </span>
             </div>
@@ -888,9 +888,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   sanctionsAndClearingIntensity: Number(e.target.value),
                 }))
               }
-              className="w-full accent-red-600 cursor-pointer"
+              className="w-full accent-rose-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0 None</span>
               <span>50 Secondary</span>
               <span>100 G7 Freeze</span>
@@ -900,10 +900,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <ShieldAlert className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <ShieldAlert className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Electoral &amp; Unrest</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-purple-600 dark:text-purple-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {wargameParams.electoralAndUnrestShock}/100
               </span>
             </div>
@@ -919,9 +919,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   electoralAndUnrestShock: Number(e.target.value),
                 }))
               }
-              className="w-full accent-purple-600 cursor-pointer"
+              className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0 Stable</span>
               <span>50 Slippage</span>
               <span>100 Crisis</span>
@@ -934,7 +934,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <WifiOff className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Cyber &amp; Subsea Attack</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                 {wargameParams.cyberHybridIntensityPct ?? 20}/100
               </span>
             </div>
@@ -952,7 +952,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               }
               className="w-full accent-emerald-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0 Baseline</span>
               <span>50 DDoS/OT</span>
               <span>100 Grid/Cable</span>
@@ -963,85 +963,85 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
         {/* 6-KPI EXECUTIVE TELEMETRY STRIP */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               GPR Threat / Act Z-Score
             </div>
             <div
-              className={`text-lg font-mono tabular-nums font-bold mt-0.5 ${
+              className={`text-lg tabular-nums tabular-nums font-semibold mt-0.5 ${
                 gprAndEscalation.compositeGprZScore >= 2.0
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-amber-600 dark:text-amber-400'
               }`}
             >
               +{gprAndEscalation.compositeGprZScore.toFixed(2)}σ
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               T: +{gprAndEscalation.gprThreatZScore.toFixed(1)}σ · A: +{gprAndEscalation.gprActZScore.toFixed(1)}σ
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Sanctions-Usable Reserves
             </div>
             <div
-              className={`text-lg font-mono tabular-nums font-bold mt-0.5 ${
+              className={`text-lg tabular-nums tabular-nums font-semibold mt-0.5 ${
                 sanctionsAndReserves.sanctionsInsulatedImportCoverMonths < 3.0
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-emerald-600 dark:text-emerald-400'
               }`}
             >
               ${sanctionsAndReserves.sanctionsInsulatedReservesUsdBn}B
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               {sanctionsAndReserves.sanctionsInsulatedImportCoverMonths}m cover (vs {sanctionsAndReserves.headlineImportCoverMonths}m)
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               UNGA Bloc &amp; Contagion
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {diplomaticAlignment.secondarySanctionsContagionProbPct}% Prob
             </div>
-            <div className="text-[11px] font-mono text-slate-500 truncate">
+            <div className="text-xs tabular-nums text-slate-500 truncate">
               Swing Score: {diplomaticAlignment.nonAlignedSwingLeverageScore}/100
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Supply-Chain &amp; Cyber Drag
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
               -{strategicSupplyChain.totalSupplyShockGdpDragBps + cyberVulnerability.stressed7DayHybridAttackGdpDragBps} bps GDP
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Export Bans: {activeExportBanChainIds.length} · Cyber: {cyberVulnerability.compositeCyberFragilityScore}/100
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Book Unhedged Geo Stress
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-red-600 dark:text-red-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
               {portfolioTransmission.totalUnhedgedGeoStressPctNav}% NAV
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               ${Math.abs(portfolioTransmission.totalUnhedgedGeoStressPnlUsdThousands).toLocaleString()}k · CVaR {portfolioTransmission.geoStressedCvar99PctNav}%
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Net Hedged Book Impact
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5">
               {portfolioTransmission.netHedgedGeoStressPctNav}% NAV
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Hedge Offset: +${portfolioTransmission.tailHedgeOffsetPnlUsdThousands.toLocaleString()}k
             </div>
           </div>
@@ -1082,28 +1082,28 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                <MapPin className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>
                   Geospatial Intelligence Theater · Synchronized GDELT/ACLED Conflict Alerts, Maritime Chokepoints, Subsea Cables &amp; Trade Corridors
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 Interactive GDELT 2.0 Alerts &amp; Strategic Supply-Chain Theater Map ({run.countryName})
               </h3>
             </div>
 
             {/* 4 Geospatial Layer Toggles + Clear Filter */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <span className="text-[11px] font-semibold text-slate-500 flex items-center gap-1">
+              <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
                 <Layers className="w-3.5 h-3.5" />
                 <span>Layers:</span>
               </span>
               <button
                 type="button"
                 onClick={() => setShowLayerGdeltNodes((v) => !v)}
-                className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                   showLayerGdeltNodes
-                    ? 'bg-red-50 dark:bg-red-950/60 border-red-400 dark:border-red-800 text-red-700 dark:text-red-300 font-semibold'
+                    ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-400 dark:border-rose-800 text-rose-700 dark:text-rose-300 font-semibold'
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500'
                 }`}
               >
@@ -1112,7 +1112,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={() => setShowLayerChokepoints((v) => !v)}
-                className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                   showLayerChokepoints
                     ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-400 dark:border-amber-800 text-amber-800 dark:text-amber-300 font-semibold'
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500'
@@ -1123,7 +1123,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={() => setShowLayerSubseaCables((v) => !v)}
-                className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                   showLayerSubseaCables
                     ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold'
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500'
@@ -1134,7 +1134,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={() => setShowLayerTradeCorridors((v) => !v)}
-                className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                   showLayerTradeCorridors
                     ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold'
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500'
@@ -1145,9 +1145,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <button
                 type="button"
                 onClick={() => setShowRiskChoropleth((v) => !v)}
-                className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                   showRiskChoropleth
-                    ? 'bg-indigo-50 dark:bg-indigo-950/60 border-indigo-400 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 font-semibold'
+                    ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-800 text-blue-700 dark:text-blue-300 font-semibold'
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500'
                 }`}
               >
@@ -1170,11 +1170,11 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             {/* Geospatial Tactical World Map SVG (8 columns on XL) */}
             <div className="xl:col-span-8 bg-slate-100/80 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3 relative overflow-hidden">
               {/* Top Cartographic Projection & Viewport Zoom / Theater Controls Bar */}
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-[11px] font-mono text-slate-600 dark:text-slate-400">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2 text-xs tabular-nums text-slate-600 dark:text-slate-400">
                 <div className="flex flex-wrap items-center gap-1.5">
                   <span className="inline-flex items-center gap-1 font-semibold text-slate-700 dark:text-slate-300">
                     <Globe className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                    <span>NATURAL EARTH 1:110M VECTOR BORDERS</span>
+                    <span>Natural earth 1:110m vector borders</span>
                   </span>
                   <span className="text-slate-400">·</span>
                   {REGIONAL_THEATER_PRESETS.map((preset) => (
@@ -1191,9 +1191,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           setPanCenter(pt);
                         }
                       }}
-                      className={`px-2 py-0.5 text-[10px] font-mono border transition-colors cursor-pointer ${
+                      className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
                         activeTheaterId === preset.id
-                          ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                          ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                           : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
                       }`}
                     >
@@ -1207,9 +1207,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       setZoomLevel(2.4);
                       setPanCenter(sovPt);
                     }}
-                    className={`px-2 py-0.5 text-[10px] font-mono border transition-colors cursor-pointer ${
+                    className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
                       activeTheaterId === 'ACTIVE_SOVEREIGN'
-                        ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                        ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                         : 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 hover:border-blue-500'
                     }`}
                   >
@@ -1252,7 +1252,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       setPanCenter({ x: MAP_W / 2, y: MAP_H / 2 });
                       setActiveTheaterId('GLOBAL');
                     }}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-[10px] cursor-pointer"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500 text-slate-700 dark:text-slate-200 text-xs cursor-pointer"
                   >
                     <Maximize2 className="w-3 h-3" />
                     <span>{zoomLevel.toFixed(1)}x</span>
@@ -1263,14 +1263,14 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <div className="relative">
                 {/* Floating Hovered Country Telemetry HUD Overlay */}
                 {hoveredCountry && (
-                  <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none px-3 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 shadow-md text-xs font-mono space-y-0.5 max-w-xs">
+                  <div className="absolute top-2.5 left-2.5 z-10 pointer-events-none px-3 py-2 bg-white/95 dark:bg-slate-900/95 border border-slate-300 dark:border-slate-700 text-xs tabular-nums space-y-0.5 max-w-xs">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="font-bold text-slate-900 dark:text-white">
+                      <span className="font-semibold text-slate-900 dark:text-white">
                         {hoveredCountry.countryName} ({hoveredCountry.iso3})
                       </span>
                       {hoveredCountry.watchlistItem && (
                         <span
-                          className={`px-1.5 py-0.2 text-[10px] font-bold ${
+                          className={`px-1.5 py-0.2 text-xs font-semibold ${
                             hoveredCountry.watchlistItem.alertStatus === 'CRITICAL'
                               ? 'bg-rose-500/20 text-rose-700 dark:text-rose-300'
                               : hoveredCountry.watchlistItem.alertStatus === 'ELEVATED'
@@ -1283,19 +1283,19 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       )}
                     </div>
                     {hoveredCountry.watchlistItem ? (
-                      <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-0.5">
+                      <div className="text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
                         <div>
-                          5Y CDS: <strong className="text-indigo-600 dark:text-indigo-400">{hoveredCountry.watchlistItem.cds5YBps} bps</strong> · 10Y Yield: <strong>{hoveredCountry.watchlistItem.yield10YPct}%</strong>
+                          5Y CDS: <strong className="text-blue-600 dark:text-blue-400">{hoveredCountry.watchlistItem.cds5YBps} bps</strong> · 10Y Yield: <strong>{hoveredCountry.watchlistItem.yield10YPct}%</strong>
                         </div>
                         <div>
                           Debt/GDP: <strong>{hoveredCountry.watchlistItem.debtToGdpPct}%</strong> · Reserves: <strong>{hoveredCountry.watchlistItem.fxReservesMonths}m</strong>
                         </div>
-                        <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold pt-0.5">
+                        <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold pt-0.5">
                           Click country polygon to switch active sovereign →
                         </div>
                       </div>
                     ) : (
-                      <div className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
                         Natural Earth Sovereign Boundary · Use + Add ISO-3 Country in header to onboard
                       </div>
                     )}
@@ -1398,7 +1398,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     const p2 = projectLatLon(cable.endLat, cable.endLon);
                     const strokeColor =
                       cable.status === 'CHOKED_ALERT'
-                        ? '#dc2626'
+                        ? '#e11d48'
                         : cable.status === 'DEGRADED_LATENCY'
                         ? '#d97706'
                         : '#059669';
@@ -1415,7 +1415,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           x={pm.x}
                           y={pm.y - 4}
                           textAnchor="middle"
-                          className="text-[8px] font-mono font-semibold fill-emerald-800 dark:fill-emerald-400"
+                          className="text-xs tabular-nums font-semibold fill-emerald-800 dark:fill-emerald-400"
                         >
                           {cable.cableName.split(' ')[0]} ({cable.bandwidthSharePct}% BW)
                         </text>
@@ -1442,7 +1442,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           x={midX}
                           y={midY - 3}
                           textAnchor="middle"
-                          className="text-[8.5px] font-mono font-semibold fill-blue-800 dark:fill-blue-300"
+                          className="text-xs tabular-nums font-semibold fill-blue-800 dark:fill-blue-300"
                         >
                           {arc.partnerName.split(' ')[0]} ({arc.tradeSharePct}% · Tariff {arc.effectiveTariffPct}%)
                         </text>
@@ -1459,7 +1459,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       highlightedChokepointIds.has(cp.corridorId);
                     const color =
                       cp.vulnerabilityStatus === 'CRITICAL'
-                        ? '#dc2626'
+                        ? '#e11d48'
                         : cp.vulnerabilityStatus === 'HIGH'
                         ? '#d97706'
                         : '#0284c7';
@@ -1509,9 +1509,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         <text
                           x={cpPt.x + 8}
                           y={cpPt.y + 3}
-                          className={`text-[9px] font-mono ${
+                          className={`text-xs tabular-nums ${
                             isSelected
-                              ? 'fill-amber-700 dark:fill-amber-300 font-bold'
+                              ? 'fill-amber-700 dark:fill-amber-300 font-semibold'
                               : 'fill-slate-800 dark:fill-slate-200 font-medium'
                           }`}
                         >
@@ -1537,7 +1537,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     x={sovPt.x}
                     y={sovPt.y - 14}
                     textAnchor="middle"
-                    className="text-[10px] font-mono font-bold fill-slate-900 dark:fill-white"
+                    className="text-xs tabular-nums font-semibold fill-slate-900 dark:fill-white"
                   >
                     {run.countryName.toUpperCase()} ({run.iso3})
                   </text>
@@ -1555,10 +1555,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     const radius = Math.max(5, Math.round(ev.acledSeverityScore / 11));
                     const nodeColor =
                       ev.goldsteinScale <= -7.0
-                        ? '#dc2626'
+                        ? '#e11d48'
                         : ev.goldsteinScale <= -5.5
-                        ? '#ea580c'
-                        : '#ca8a04';
+                        ? '#d97706'
+                        : '#d97706';
 
                     return (
                       <g
@@ -1592,7 +1592,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           x={cx}
                           y={cy - radius - 8}
                           textAnchor="middle"
-                          className="text-[8.5px] font-mono font-bold fill-red-800 dark:fill-red-300"
+                          className="text-xs tabular-nums font-semibold fill-rose-800 dark:fill-rose-300"
                         >
                           {ev.cameoCode.split(' ')[0]} ({ev.goldsteinScale.toFixed(1)})
                         </text>
@@ -1607,7 +1607,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               {/* Structured 3-Pillar Plain-English Explainer Below the Tactical Map */}
               <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[10px] mb-1">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs mb-1">
                     1. What This Map Shows
                   </div>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -1615,7 +1615,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   </p>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider text-[10px] mb-1">
+                  <div className="font-semibold text-slate-900 dark:text-slate-100 text-xs mb-1">
                     2. Why It Matters
                   </div>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -1623,7 +1623,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   </p>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="font-bold text-red-600 dark:text-red-400 uppercase tracking-wider text-[10px] mb-1">
+                  <div className="font-semibold text-rose-600 dark:text-rose-400 text-xs mb-1">
                     3. Key Thresholds &amp; Filter Sync
                   </div>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
@@ -1638,10 +1638,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               {/* Tactical Node Inspector Card */}
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
                 <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
-                  <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                  <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                     Tactical Geospatial Node Inspector
                   </span>
-                  <span className="text-[10px] font-mono px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold">
+                  <span className="text-xs tabular-nums px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold">
                     {selectedEventObj
                       ? 'GDELT/OSINT NODE'
                       : selectedChokepointObj
@@ -1654,54 +1654,54 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
 
                 {selectedEventObj ? (
                   <div className="space-y-2 text-xs">
-                    <div className="font-mono text-xs font-bold text-red-600 dark:text-red-400">
+                    <div className="tabular-nums text-xs font-semibold text-rose-600 dark:text-rose-400">
                       {selectedEventObj.cameoCode}
                     </div>
                     <div className="font-semibold text-slate-900 dark:text-slate-100">
                       {selectedEventObj.headline}
                     </div>
-                    <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                    <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums text-xs">
                       <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="text-slate-500 block">Goldstein / ACLED</span>
-                        <span className="font-bold text-red-600 dark:text-red-400">
+                        <span className="font-semibold text-rose-600 dark:text-rose-400">
                           {selectedEventObj.goldsteinScale.toFixed(1)} · {selectedEventObj.acledSeverityScore}/100
                         </span>
                       </div>
                       <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="text-slate-500 block">Empirical Market Shock</span>
-                        <span className="font-bold text-amber-600 dark:text-amber-400">
+                        <span className="font-semibold text-amber-600 dark:text-amber-400">
                           +{selectedEventObj.empiricalCdsImpactBps} bps CDS · {selectedEventObj.empiricalFxImpactPct}% FX
                         </span>
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-600 dark:text-slate-400 pt-1">
+                    <div className="text-xs text-slate-600 dark:text-slate-400 pt-1">
                       <strong>Synchronized Supply Chains Affected:</strong>{' '}
                       {selectedEventObj.linkedSupplyChainIds.join(', ')}
                     </div>
                   </div>
                 ) : selectedChokepointObj ? (
                   <div className="space-y-2 text-xs">
-                    <div className="font-bold text-slate-900 dark:text-slate-100">
+                    <div className="font-semibold text-slate-900 dark:text-slate-100">
                       {selectedChokepointObj.corridorName}
                     </div>
                     <div className="text-slate-600 dark:text-slate-400">
                       Commodities: {selectedChokepointObj.primaryCommodities}
                     </div>
-                    <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[11px]">
+                    <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums text-xs">
                       <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="text-slate-500 block">Sovereign Trade Share</span>
-                        <span className="font-bold text-blue-600 dark:text-blue-400">
+                        <span className="font-semibold text-blue-600 dark:text-blue-400">
                           {selectedChokepointObj.sovereignTradeShareExposedPct}% (+{selectedChokepointObj.reroutingDelayDays}d delay)
                         </span>
                       </div>
                       <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
                         <span className="text-slate-500 block">CPI &amp; 5Y CDS Shock</span>
-                        <span className="font-bold text-red-600 dark:text-red-400">
+                        <span className="font-semibold text-rose-600 dark:text-rose-400">
                           +{selectedChokepointObj.importedCpiPassThroughBps} bps CPI · +{selectedChokepointObj.cds5YSpreadImpactBps} bps CDS
                         </span>
                       </div>
                     </div>
-                    <div className="text-[11px] text-slate-600 dark:text-slate-400 pt-1">
+                    <div className="text-xs text-slate-600 dark:text-slate-400 pt-1">
                       <strong>Synchronized Supply Chains Highlighted Below:</strong>{' '}
                       {selectedChokepointObj.linkedSupplyChainIds.length} strategic input chains
                     </div>
@@ -1718,7 +1718,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           key={cp.corridorId}
                           type="button"
                           onClick={() => setSelectedChokepointId(cp.corridorId)}
-                          className="px-2 py-1 text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500"
+                          className="px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:border-blue-500"
                         >
                           Inspect {cp.corridorName.split(' (')[0]}
                         </button>
@@ -1730,8 +1730,8 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
 
               {/* Quick OSINT Flash Injector on Map Panel */}
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5">
-                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
-                  <Radio className="w-3.5 h-3.5 text-red-600 dark:text-red-400 animate-pulse" />
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                  <Radio className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 animate-pulse" />
                   <span>Inject Live GDELT / OSINT Alert onto Map</span>
                 </div>
                 <div className="flex gap-1.5">
@@ -1740,12 +1740,12 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     value={osintInputText}
                     onChange={(e) => setOsintInputText(e.target.value)}
                     placeholder="Paste breaking maritime, tariff, or cyber alert..."
-                    className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                    className="flex-1 px-2.5 py-1.5 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => handleInjectOsintSignal()}
-                    className="px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white whitespace-nowrap shrink-0"
+                    className="ui-btn ui-btn-primary shrink-0"
                   >
                     Plot Node
                   </button>
@@ -1758,7 +1758,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         `FLASH GDELT: Naval interdiction in Strait of Hormuz & Red Sea spikes war-risk insurance for ${run.countryName} tankers.`
                       )
                     }
-                    className="px-2 py-1 text-[10px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-red-500"
+                    className="px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-rose-500"
                   >
                     + Hormuz Tanker Alert
                   </button>
@@ -1769,7 +1769,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         `FLASH GDELT: Taiwan Strait wafer foundry export quota inspection delays <7nm semiconductor shipments to ${run.countryName}.`
                       )
                     }
-                    className="px-2 py-1 text-[10px] font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500"
+                    className="px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500"
                   >
                     + Taiwan Strait Chip Alert
                   </button>
@@ -1788,20 +1788,20 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Cpu className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>
                   Synchronized 4-View Supply Chain Dependency Matrix · Chokepoint-to-Commodity Heatmap, HHI vs. Stockpile Quadrant &amp; Upstream Flow Network
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {strategicSupplyChain.conclusionHeadline}
               </h3>
             </div>
 
             {/* Interactive Export-Ban / Quota Stress Toggles per Commodity Node */}
             <div className="flex flex-wrap items-center gap-1.5 shrink-0">
-              <span className="text-[11px] font-semibold text-slate-500 mr-1 flex items-center gap-1">
-                <AlertOctagon className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+              <span className="text-xs font-semibold text-slate-500 mr-1 flex items-center gap-1">
+                <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>Simulate Export Ban / Quota Cut:</span>
               </span>
               {strategicSupplyChain.supplyChainNodes.map((node) => {
@@ -1811,10 +1811,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     key={node.chainId}
                     type="button"
                     onClick={() => toggleExportBan(node.chainId)}
-                    className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                    className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                       banned
-                        ? 'bg-red-600 border-red-600 text-white font-bold'
-                        : 'bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-red-400'
+                        ? 'bg-rose-600 border-rose-600 text-white font-semibold'
+                        : 'bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-400'
                     }`}
                   >
                     {banned ? `BAN: ${node.shortLabel}` : node.shortLabel}
@@ -1825,7 +1825,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <button
                   type="button"
                   onClick={onOpenSupplyChainMatrixDesk}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white transition-colors whitespace-nowrap shrink-0 ml-1"
+                  className="ui-btn ui-btn-primary inline-flex shrink-0 ml-1"
                 >
                   <span>Full Leontief &amp; IB Supply Chain Matrix</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
@@ -1839,10 +1839,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             {/* View 1: 6x5 Chokepoint-to-Commodity Cross-Impact Heatmap Matrix (7 cols) */}
             <div className="xl:col-span-7 bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Chokepoint-to-Commodity Cross-Impact Heatmap (Transit Share % &amp; Stressed CPI bps)
                 </div>
-                <span className="text-[10px] font-mono text-slate-500">
+                <span className="text-xs tabular-nums text-slate-500">
                   Click any cell to synchronize Map &amp; Matrix
                 </span>
               </div>
@@ -1850,7 +1850,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-500">
+                    <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500">
                       <th className="py-2 px-2">Maritime Corridor \ Chain</th>
                       {strategicSupplyChain.supplyChainNodes.map((sc) => (
                         <th
@@ -1862,7 +1862,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           }
                           className={`py-2 px-2 text-center cursor-pointer ${
                             highlightedSupplyChainIds.has(sc.chainId)
-                              ? 'text-blue-600 dark:text-blue-400 font-bold underline'
+                              ? 'text-blue-600 dark:text-blue-400 font-semibold underline'
                               : ''
                           }`}
                         >
@@ -1871,7 +1871,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs font-mono">
+                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs tabular-nums">
                     {chokepoints.map((cp) => {
                       const rowHighlighted = highlightedChokepointIds.has(cp.corridorId);
                       const shortCorridor = cp.corridorName.split(' (')[0];
@@ -1901,7 +1901,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               rowHighlighted || highlightedSupplyChainIds.has(sc.chainId);
                             const cellBg =
                               cell.severityTier === 'CRITICAL'
-                                ? 'bg-red-100/80 dark:bg-red-950/70 text-red-800 dark:text-red-200 border-red-300 dark:border-red-800'
+                                ? 'bg-rose-100/80 dark:bg-rose-950/70 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
                                 : cell.severityTier === 'HIGH'
                                 ? 'bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-800'
                                 : cell.severityTier === 'MODERATE'
@@ -1917,14 +1917,14 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                                 }}
                                 className={`p-1.5 text-center border cursor-pointer transition-all ${cellBg} ${
                                   isSyncHighlighted
-                                    ? 'ring-2 ring-blue-500 dark:ring-amber-400 font-bold'
+                                    ? 'ring-2 ring-blue-500 dark:ring-amber-400 font-semibold'
                                     : ''
                                 }`}
                               >
-                                <div className="text-[11px] font-bold tabular-nums">
+                                <div className="text-xs font-semibold tabular-nums">
                                   {cell.transitFlowDependencyPct}% flow
                                 </div>
-                                <div className="text-[9.5px] opacity-85 tabular-nums">
+                                <div className="text-xs opacity-85 tabular-nums">
                                   +{cell.stressedCpiImpactBps}bp CPI
                                 </div>
                               </td>
@@ -1939,19 +1939,19 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
 
               <ul className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs text-slate-600 dark:text-slate-300">
                 <li className="flex items-start gap-2">
-                  <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-semibold">•</span>
                   <span>
                     <strong>Taiwan Strait Tech Choke:</strong> Concentrates 84% of advanced wafer/chip flow and 76% of rare-earth magnet transit.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-amber-600 dark:text-amber-400 font-bold">•</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold">•</span>
                   <span>
                     <strong>Hormuz &amp; Black Sea Inflation Beta:</strong> Hydrocarbon and NPK fertilizer corridors drive the largest headline CPI pass-through when blocked.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+                  <span className="text-blue-600 dark:text-blue-400 font-semibold">•</span>
                   <span>
                     <strong>Interactive Cell Isolation:</strong> Clicking any cell highlights both the transit corridor on the map and the commodity row below.
                   </span>
@@ -1961,7 +1961,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
 
             {/* View 2: Supplier Monopoly (HHI) vs. Domestic Stockpile Buffer Quadrant Scatter Plot (5 cols) */}
             <div className="xl:col-span-5 bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-3">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Supplier Monopoly (HHI) vs. Domestic Stockpile Buffer (Days) Quadrant
               </div>
 
@@ -1977,15 +1977,15 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   y={16}
                   width={150}
                   height={98}
-                  fill="#ef4444"
+                  fill="#f43f5e"
                   fillOpacity={0.12}
                 />
                 <text
                   x={54}
                   y={30}
-                  className="text-[9px] font-mono font-bold fill-red-600 dark:fill-red-400"
+                  className="text-xs tabular-nums font-semibold fill-rose-600 dark:fill-rose-400"
                 >
-                  ACUTE MONOPOLY CHOKE ZONE
+                  Acute monopoly choke zone
                 </text>
 
                 {/* Axes */}
@@ -2010,7 +2010,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   strokeDasharray="4 4"
                 />
 
-                <text x={230} y={218} textAnchor="middle" className="text-[10px] font-mono fill-slate-500">
+                <text x={230} y={218} textAnchor="middle" className="text-xs tabular-nums fill-slate-500">
                   Domestic Strategic Stockpile Buffer (Days of Consumption →)
                 </text>
                 <text
@@ -2018,7 +2018,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   y={110}
                   transform="rotate(-90 14 110)"
                   textAnchor="middle"
-                  className="text-[10px] font-mono fill-slate-500"
+                  className="text-xs tabular-nums fill-slate-500"
                 >
                   Supplier Monopoly HHI (↑)
                 </text>
@@ -2059,9 +2059,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         r={sc.isExportBanActive ? 8 : 6}
                         fill={
                           sc.isExportBanActive
-                            ? '#dc2626'
+                            ? '#e11d48'
                             : isDanger
-                            ? '#ef4444'
+                            ? '#f43f5e'
                             : '#3b82f6'
                         }
                         stroke="#ffffff"
@@ -2070,7 +2070,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       <text
                         x={cx + 9}
                         y={cy + 3}
-                        className="text-[9.5px] font-mono font-semibold fill-slate-800 dark:fill-slate-200"
+                        className="text-xs tabular-nums font-semibold fill-slate-800 dark:fill-slate-200"
                       >
                         {sc.shortLabel} ({sc.domesticStockpileDays}d, HHI {sc.globalSupplierHhiIndex})
                       </text>
@@ -2081,19 +2081,19 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
 
               <ul className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs text-slate-600 dark:text-slate-300">
                 <li className="flex items-start gap-2">
-                  <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+                  <span className="text-rose-600 dark:text-rose-400 font-semibold">•</span>
                   <span>
                     <strong>Extreme HHI Monopoly Concentration:</strong> Rare Earth Magnets (HHI 7,100) and Logic Chips &lt;7nm (HHI 6,450) sit deep inside the top-left danger quadrant.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-amber-600 dark:text-amber-400 font-bold">•</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold">•</span>
                   <span>
                     <strong>Stockpile Exhaustion Horizon:</strong> Domestic semiconductor inventories cover just 24 days of industrial consumption before assembly halts.
                   </span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-semibold">•</span>
                   <span>
                     <strong>Export-Ban Stress Amplification:</strong> Toggling an export ban above enlarges the node marker and injects +85% tail amplification into GDP/CPI drag.
                   </span>
@@ -2105,10 +2105,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           {/* VIEW 3: UPSTREAM EXPORTER-TO-SOVEREIGN INPUT-OUTPUT SANKEY FLOW DIAGRAM */}
           <div className="bg-slate-50 dark:bg-slate-950/60 p-4 border border-slate-200 dark:border-slate-800 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Upstream Supplier Hub → Maritime Chokepoint → Sovereign Domestic Sector Input-Output Flow Diagram
               </div>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Bezier Width = Flow Share (%) · Color = Bottleneck Vulnerability Score
               </span>
             </div>
@@ -2119,13 +2119,13 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               role="img"
               aria-label="Upstream Exporter to Sovereign Input-Output Flow Diagram"
             >
-              <text x={24} y={18} className="text-[10px] font-mono font-bold fill-slate-500">
-                STAGE 1: UPSTREAM MONOPOLY SUPPLIER HUBS
+              <text x={24} y={18} className="text-xs tabular-nums font-semibold fill-slate-500">
+                Stage 1: upstream monopoly supplier hubs
               </text>
-              <text x={325} y={18} className="text-[10px] font-mono font-bold fill-slate-500">
+              <text x={325} y={18} className="text-xs tabular-nums font-semibold fill-slate-500">
                 STAGE 2: MARITIME CHOKEPOINT &amp; TARIFF FILTER
               </text>
-              <text x={615} y={18} className="text-[10px] font-mono font-bold fill-slate-500">
+              <text x={615} y={18} className="text-xs tabular-nums font-semibold fill-slate-500">
                 STAGE 3: {run.countryName.toUpperCase()} DOMESTIC SECTORS
               </text>
 
@@ -2136,7 +2136,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   highlightedChokepointIds.has(link.chokepointCorridorId);
                 const strokeColor =
                   link.stressedBottleneckScore >= 75
-                    ? '#ef4444'
+                    ? '#f43f5e'
                     : link.stressedBottleneckScore >= 55
                     ? '#f59e0b'
                     : '#3b82f6';
@@ -2163,7 +2163,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       strokeWidth={isHighlighted ? 2 : 1}
                       rx={2}
                     />
-                    <text x={28} y={y + 5} className="text-[9.5px] font-mono fill-slate-100">
+                    <text x={28} y={y + 5} className="text-xs tabular-nums fill-slate-100">
                       {link.upstreamHubLabel}
                     </text>
 
@@ -2186,7 +2186,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       strokeWidth={isHighlighted ? 2 : 1}
                       rx={2}
                     />
-                    <text x={333} y={y + 5} className="text-[9.5px] font-mono fill-amber-300">
+                    <text x={333} y={y + 5} className="text-xs tabular-nums fill-amber-300">
                       {link.chokepointLabel} ({link.flowVolumeSharePct}%)
                     </text>
 
@@ -2209,7 +2209,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       strokeWidth={isHighlighted ? 2 : 1}
                       rx={2}
                     />
-                    <text x={623} y={y + 5} className="text-[9.5px] font-mono fill-emerald-300">
+                    <text x={623} y={y + 5} className="text-xs tabular-nums fill-emerald-300">
                       {link.domesticSectorLabel}
                     </text>
                   </g>
@@ -2222,7 +2222,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3">Strategic Supply Chain / Node</th>
                   <th className="py-2.5 px-3">Sovereign Position</th>
                   <th className="py-2.5 px-3 text-right">Net Balance</th>
@@ -2255,17 +2255,17 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         <div className="font-semibold text-slate-900 dark:text-slate-100">
                           {node.commodityOrTechName}
                         </div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-xs text-slate-500">
                           Hub: {node.primarySupplierBloc} · Sectors: {node.downstreamDomesticSectors}
                         </div>
                       </td>
                       <td className="py-2.5 px-3">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                          className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                             node.sovereignPosition === 'NET_STRATEGIC_EXPORTER'
                               ? 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
                               : node.sovereignPosition === 'ACUTE_IMPORT_DEPENDENT'
-                              ? 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
+                              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                               : 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300'
                           }`}
                         >
@@ -2273,28 +2273,28 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         </span>
                       </td>
                       <td
-                        className={`py-2.5 px-3 text-right font-mono tabular-nums font-semibold ${
+                        className={`py-2.5 px-3 text-right tabular-nums tabular-nums font-semibold ${
                           node.netTradeBalancePctConsumption >= 0
                             ? 'text-emerald-600 dark:text-emerald-400'
-                            : 'text-red-600 dark:text-red-400'
+                            : 'text-rose-600 dark:text-rose-400'
                         }`}
                       >
                         {node.netTradeBalancePctConsumption >= 0 ? '+' : ''}
                         {node.netTradeBalancePctConsumption}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-slate-800 dark:text-slate-200">
                         {node.globalSupplierHhiIndex.toLocaleString()}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                         {node.domesticStockpileDays}d
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                         {node.exportControlVulnerabilityScore}/100
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-red-600 dark:text-red-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                         -{node.stressedGdpImpactBps} bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                         +{node.stressedCpiImpactBps} bps
                       </td>
                       <td
@@ -2306,9 +2306,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       >
                         <button
                           type="button"
-                          className={`px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                          className={`px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                             node.isExportBanActive
-                              ? 'bg-red-600 border-red-600 text-white'
+                              ? 'bg-rose-600 border-rose-600 text-white'
                               : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                           }`}
                         >
@@ -2332,16 +2332,16 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Radio className="w-3.5 h-3.5 text-red-600 dark:text-red-400 animate-pulse" />
+                <Radio className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 animate-pulse" />
                 <span>
                   Hybrid Intelligence Ingestion · GDELT 2.0 CAMEO Taxonomy, ACLED Conflict Intensity &amp; Live AI OSINT Signal Parser
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {suite.osintEventStreamHeadline}
               </h3>
             </div>
-            <span className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="text-xs tabular-nums text-slate-500 shrink-0">
               Goldstein Scale: -10.0 (Extreme Kinetic) to +10.0 (Cooperation)
             </span>
           </div>
@@ -2349,7 +2349,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3">Timestamp / Feed</th>
                   <th className="py-2.5 px-3">CAMEO Event Code &amp; Intelligence Headline</th>
                   <th className="py-2.5 px-3 text-right">Coords</th>
@@ -2370,37 +2370,37 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     }
                     className={`cursor-pointer ${
                       selectedEventId === ev.eventId
-                        ? 'bg-red-50/60 dark:bg-red-950/30'
+                        ? 'bg-rose-50/60 dark:bg-rose-950/30'
                         : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
                     }`}
                   >
-                    <td className="py-2.5 px-3 font-mono whitespace-nowrap">
+                    <td className="py-2.5 px-3 tabular-nums whitespace-nowrap">
                       <div className="font-semibold text-slate-800 dark:text-slate-200">
                         {ev.sourceFeed}
                       </div>
-                      <div className="text-[10px] text-slate-500">{ev.timestampUtc}</div>
+                      <div className="text-xs text-slate-500">{ev.timestampUtc}</div>
                     </td>
                     <td className="py-2.5 px-3">
-                      <div className="font-mono text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                      <div className="tabular-nums text-xs font-semibold text-blue-600 dark:text-blue-400">
                         {ev.cameoCode} · {ev.locationLabel}
                       </div>
                       <div className="text-slate-700 dark:text-slate-300 mt-0.5">
                         {ev.headline}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-[11px] text-slate-500">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-xs text-slate-500">
                       {ev.lat.toFixed(1)}°, {ev.lon.toFixed(1)}°
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-red-600 dark:text-red-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       {ev.goldsteinScale.toFixed(1)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-800 dark:text-slate-200">
                       {ev.acledSeverityScore}/100
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-red-600 dark:text-red-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       +{ev.empiricalCdsImpactBps} bps
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {ev.empiricalFxImpactPct.toFixed(1)}%
                     </td>
                   </tr>
@@ -2419,16 +2419,16 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>
                   Sanctions, Bilateral Tariff Escalation &amp; Central Bank FX Reserve Freeze Stress Lab
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {sanctionsAndReserves.conclusionHeadline}
               </h3>
             </div>
-            <span className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="text-xs tabular-nums text-slate-500 shrink-0">
               IMF ARA Minimum Adequacy Threshold: 3.0 Months Cover
             </span>
           </div>
@@ -2448,7 +2448,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <text
                   x={8}
                   y={32}
-                  className="text-[11px] font-semibold fill-slate-700 dark:fill-slate-300"
+                  className="text-xs font-semibold fill-slate-700 dark:fill-slate-300"
                 >
                   Headline Reserves
                 </text>
@@ -2456,7 +2456,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <text
                   x={382}
                   y={32}
-                  className="text-[11px] font-mono font-bold fill-slate-900 dark:fill-slate-100"
+                  className="text-xs tabular-nums font-semibold fill-slate-900 dark:fill-slate-100"
                 >
                   ${sanctionsAndReserves.headlineReservesUsdBn}B ({sanctionsAndReserves.headlineImportCoverMonths}m)
                 </text>
@@ -2464,7 +2464,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <text
                   x={8}
                   y={74}
-                  className="text-[11px] font-semibold fill-slate-700 dark:fill-slate-300"
+                  className="text-xs font-semibold fill-slate-700 dark:fill-slate-300"
                 >
                   Post-Freeze Usable
                 </text>
@@ -2486,14 +2486,14 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         y={60}
                         width={frozenW}
                         height={20}
-                        fill="#ef4444"
+                        fill="#f43f5e"
                         fillOpacity={0.35}
                         rx={2}
                       />
                       <text
                         x={382}
                         y={74}
-                        className="text-[11px] font-mono font-bold fill-emerald-600 dark:fill-emerald-400"
+                        className="text-xs tabular-nums font-semibold fill-emerald-600 dark:fill-emerald-400"
                       >
                         ${sanctionsAndReserves.sanctionsInsulatedReservesUsdBn}B ({sanctionsAndReserves.sanctionsInsulatedImportCoverMonths}m)
                       </text>
@@ -2504,7 +2504,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 <text
                   x={8}
                   y={122}
-                  className="text-[11px] font-semibold fill-slate-700 dark:fill-slate-300"
+                  className="text-xs font-semibold fill-slate-700 dark:fill-slate-300"
                 >
                   Custody Tranches
                 </text>
@@ -2516,7 +2516,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   const multiW = Math.max(4, 230 - g7W - domW);
                   return (
                     <>
-                      <rect x={145} y={108} width={g7W} height={18} fill="#ef4444" />
+                      <rect x={145} y={108} width={g7W} height={18} fill="#f43f5e" />
                       <rect x={145 + g7W} y={108} width={multiW} height={18} fill="#f59e0b" />
                       <rect
                         x={145 + g7W + multiW}
@@ -2528,7 +2528,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       <text
                         x={145}
                         y={142}
-                        className="text-[10px] font-mono fill-slate-600 dark:fill-slate-400"
+                        className="text-xs tabular-nums fill-slate-600 dark:fill-slate-400"
                       >
                         Red: G7 Custody ({sanctionsAndReserves.g7FreezeExposedSharePct}%) · Amber: IMF SDR · Green: Domestic Gold/CNY ({sanctionsAndReserves.domesticGoldAndNonG7SharePct}%)
                       </text>
@@ -2538,7 +2538,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               </svg>
 
               <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300">
-                <span className="font-bold text-slate-900 dark:text-slate-100">
+                <span className="font-semibold text-slate-900 dark:text-slate-100">
                   Euroclear / NY Paying-Agent Assessment:{' '}
                 </span>
                 {sanctionsAndReserves.clearingChannelAssessment}
@@ -2549,7 +2549,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                       <th className="py-2 px-3">Central Bank Reserve Custody Tranche</th>
                       <th className="py-2 px-3 text-right">Share</th>
                       <th className="py-2 px-3 text-right">Gross ($Bn)</th>
@@ -2568,18 +2568,18 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                             <div className="font-semibold text-slate-900 dark:text-slate-100">
                               {t.custodyCategory}
                             </div>
-                            <div className="text-[11px] text-slate-500">{t.jurisdictionLabel}</div>
+                            <div className="text-xs text-slate-500">{t.jurisdictionLabel}</div>
                           </td>
-                          <td className="py-2 px-3 text-right font-mono tabular-nums">
+                          <td className="py-2 px-3 text-right tabular-nums">
                             {t.shareOfReservesPct}%
                           </td>
-                          <td className="py-2 px-3 text-right font-mono tabular-nums font-semibold">
+                          <td className="py-2 px-3 text-right tabular-nums font-semibold">
                             ${t.amountUsdBn}B
                           </td>
-                          <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600 dark:text-red-400">
+                          <td className="py-2 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                             -{t.effectiveHaircutUnderSanctionsPct}%
                           </td>
-                          <td className="py-2 px-3 text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                          <td className="py-2 px-3 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                             ${usable}B
                           </td>
                         </tr>
@@ -2592,7 +2592,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                    <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                       <th className="py-2 px-3">Bilateral Trade Partner Corridor</th>
                       <th className="py-2 px-3 text-right">Export Share</th>
                       <th className="py-2 px-3 text-right">Stressed Tariff</th>
@@ -2607,18 +2607,18 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           <div className="font-semibold text-slate-900 dark:text-slate-100">
                             {te.partnerBloc}
                           </div>
-                          <div className="text-[11px] text-slate-500">{te.keyVulnerableSectors}</div>
+                          <div className="text-xs text-slate-500">{te.keyVulnerableSectors}</div>
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums">
+                        <td className="py-2 px-3 text-right tabular-nums">
                           {te.shareOfSovereignExportsPct}%
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+                        <td className="py-2 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                           {te.effectiveTariffRatePct}%
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums font-semibold text-red-600 dark:text-red-400">
+                        <td className="py-2 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                           -{te.estimatedGdpDragBps} bps
                         </td>
-                        <td className="py-2 px-3 text-right font-mono tabular-nums text-red-600 dark:text-red-400">
+                        <td className="py-2 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                           -{te.fxDepreciationPressurePct}%
                         </td>
                       </tr>
@@ -2644,11 +2644,11 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   Bailey-Strezhnev-Voeten UNGA Voting Topology, Friend-Shoring Beta &amp; Secondary Sanctions Spillover
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {diplomaticAlignment.conclusionHeadline}
               </h3>
             </div>
-            <span className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="text-xs tabular-nums text-slate-500 shrink-0">
               Friend-Shoring FDI Net Beta: {diplomaticAlignment.friendShoringFdiNetBetaPctGdp >= 0 ? '+' : ''}
               {diplomaticAlignment.friendShoringFdiNetBetaPctGdp}% GDP
             </span>
@@ -2657,7 +2657,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3">Geopolitical &amp; Economic Bloc</th>
                   <th className="py-2.5 px-3 text-right">UNGA Voting Coincidence</th>
                   <th className="py-2.5 px-3 text-right">Ideal-Point Distance</th>
@@ -2673,27 +2673,27 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       <div className="font-semibold text-slate-900 dark:text-slate-100">
                         {b.blocName}
                       </div>
-                      <div className="text-[11px] text-slate-500">
+                      <div className="text-xs text-slate-500">
                         {b.defenseAndSecurityTreatyStatus}
                       </div>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                       {b.ungaVotingAlignmentPct}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                       {b.idealPointDistance.toFixed(2)}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                       {b.bilateralTradeSharePct}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                    <td className="py-2.5 px-3 text-right tabular-nums">
                       {b.fdiStockSharePct}%
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                        className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                           b.secondarySanctionsSpilloverRisk === 'CRITICAL'
-                            ? 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
+                            ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                             : b.secondarySanctionsSpilloverRisk === 'ELEVATED'
                             ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300'
                             : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
@@ -2718,16 +2718,16 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <GitBranch className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <GitBranch className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>
                   Caldara-Iacoviello GPR Threat vs. Act Decomposition, Electoral Fragility &amp; 3-Stage Escalation Game-Tree
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {gprAndEscalation.conclusionHeadline}
               </h3>
             </div>
-            <span className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="text-xs tabular-nums text-slate-500 shrink-0">
               GDELT Goldstein Tone: {gprAndEscalation.gdeltGoldsteinTone}
             </span>
           </div>
@@ -2738,34 +2738,34 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 Electoral Calendar &amp; Institutional Insulation Scorecard
               </div>
               <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                <div className="text-[11px] text-slate-500">Primary Political Catalyst</div>
-                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <div className="text-xs text-slate-500">Primary Political Catalyst</div>
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   {gprAndEscalation.electoralProfile.nextPoliticalCatalystLabel}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-2.5 text-xs">
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500">Pre-Election Fiscal Slippage</div>
-                  <div className="text-sm font-mono font-bold text-red-600 dark:text-red-400 mt-0.5">
+                  <div className="text-xs text-slate-500">Pre-Election Fiscal Slippage</div>
+                  <div className="text-sm tabular-nums font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
                     -{gprAndEscalation.electoralProfile.preElectionFiscalSlippagePctGdp}% GDP
                   </div>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500">Coalition Cohesion Score</div>
-                  <div className="text-sm font-mono font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                  <div className="text-xs text-slate-500">Coalition Cohesion Score</div>
+                  <div className="text-sm tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                     {gprAndEscalation.electoralProfile.coalitionCohesionScore}/100
                   </div>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500">Central Bank Insulation</div>
-                  <div className="text-sm font-mono font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+                  <div className="text-xs text-slate-500">Central Bank Insulation</div>
+                  <div className="text-sm tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
                     {gprAndEscalation.electoralProfile.cbAndJudicialInsulationScore}/100
                   </div>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[11px] text-slate-500">Social Unrest Intensity</div>
-                  <div className="text-sm font-mono font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+                  <div className="text-xs text-slate-500">Social Unrest Intensity</div>
+                  <div className="text-sm tabular-nums font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
                     {gprAndEscalation.electoralProfile.socialUnrestAndStrikeIntensity}/100
                   </div>
                 </div>
@@ -2781,41 +2781,41 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     key={branch.stageId}
                     className={`p-4 border ${
                       isStage3
-                        ? 'bg-red-50/40 dark:bg-red-950/20 border-red-300 dark:border-red-900/60'
+                        ? 'bg-rose-50/40 dark:bg-rose-950/20 border-rose-300 dark:border-rose-900/60'
                         : isStage2
                         ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-900/60'
                         : 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-900/60'
                     }`}
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                      <span className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                         {branch.stageTitle}
                       </span>
-                      <span className="px-2 py-0.5 text-xs font-mono font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700">
+                      <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700">
                         Branch Probability: {branch.branchProbabilityPct}%
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5">
                       {branch.triggerConditions}
                     </p>
-                    <div className="grid grid-cols-3 gap-2 mt-2.5 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 text-xs font-mono">
+                    <div className="grid grid-cols-3 gap-2 mt-2.5 pt-2.5 border-t border-slate-200/80 dark:border-slate-800/80 text-xs tabular-nums">
                       <div>
                         <span className="text-slate-500">10Y Local Yield: </span>
-                        <span className="font-bold text-slate-900 dark:text-slate-100">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">
                           {branch.local10YYieldDeltaBps >= 0 ? '+' : ''}
                           {branch.local10YYieldDeltaBps} bps
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-500">5Y CDS Spread: </span>
-                        <span className="font-bold text-red-600 dark:text-red-400">
+                        <span className="font-semibold text-rose-600 dark:text-rose-400">
                           {branch.cds5YSpreadDeltaBps >= 0 ? '+' : ''}
                           {branch.cds5YSpreadDeltaBps} bps
                         </span>
                       </div>
                       <div>
                         <span className="text-slate-500">Spot FX Shock: </span>
-                        <span className="font-bold text-amber-600 dark:text-amber-400">
+                        <span className="font-semibold text-amber-600 dark:text-amber-400">
                           {branch.spotFxDeltaPct >= 0 ? '+' : ''}
                           {branch.spotFxDeltaPct}%
                         </span>
@@ -2842,11 +2842,11 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   Hybrid &amp; Asymmetric Infrastructure Warfare Scorer · Subsea Fiber Cables, Power Grid SCADA, Central Bank RTGS &amp; Port Automation
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {cyberVulnerability.conclusionHeadline}
               </h3>
             </div>
-            <span className="text-xs font-mono text-slate-500 shrink-0">
+            <span className="text-xs tabular-nums text-slate-500 shrink-0">
               Subsea Cables: {cyberVulnerability.subseaCableRedundancyCount} · Grid Reserve: {cyberVulnerability.powerGridReserveMarginPct}%
             </span>
           </div>
@@ -2854,7 +2854,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3">Critical Infrastructure Vector</th>
                   <th className="py-2.5 px-3">Active Threat Actor &amp; Choke Topology</th>
                   <th className="py-2.5 px-3 text-right">Redundancy Score</th>
@@ -2877,25 +2877,25 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       <div className="text-slate-800 dark:text-slate-200 font-medium">
                         {vec.activeThreatActorProfile}
                       </div>
-                      <div className="text-[11px] text-slate-500">{vec.chokeConcentrationMetric}</div>
+                      <div className="text-xs text-slate-500">{vec.chokeConcentrationMetric}</div>
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                       {vec.redundancyScore}/100
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                       {vec.attackProbabilityPct}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-red-600 dark:text-red-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       -${vec.estimatedDailyGdpLossUsdMillions}M/d
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                       {vec.bankingLiquidityFreezeHours} hrs
                     </td>
                     <td className="py-2.5 px-3 text-center">
                       <span
-                        className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                        className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                           vec.vulnerabilityTier === 'CRITICAL'
-                            ? 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
+                            ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                             : vec.vulnerabilityTier === 'HIGH'
                             ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300'
                             : 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300'
@@ -2926,11 +2926,11 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   Direct Multi-Sovereign Portfolio Stress Transmission ($250M Book) &amp; Safe-Haven Tail-Hedge Convexity Pricer
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {portfolioTransmission.conclusionHeadline}
               </h3>
             </div>
-            <span className="text-xs font-mono text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
+            <span className="text-xs tabular-nums text-emerald-600 dark:text-emerald-400 font-semibold shrink-0">
               Top Hedge: {suite.topRankedHedgeInstrument}
             </span>
           </div>
@@ -2938,7 +2938,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                   <th className="py-2.5 px-3">Sovereign Book Position ($250M NAV)</th>
                   <th className="py-2.5 px-3 text-right">Book Weight</th>
                   <th className="py-2.5 px-3 text-right">Notional</th>
@@ -2960,30 +2960,30 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                       {row.countryName} ({row.iso3}) · {row.currencyCode}
                       {row.iso3 === run.iso3 && (
-                        <span className="ml-2 px-1.5 py-0.5 text-[10px] font-mono bg-blue-600 text-white">
-                          ACTIVE EPICENTER
+                        <span className="ml-2 px-1.5 py-0.5 text-xs tabular-nums bg-blue-600 text-white">
+                          Active epicenter
                         </span>
                       )}
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                    <td className="py-2.5 px-3 text-right tabular-nums">
                       {row.weightNavPct}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                    <td className="py-2.5 px-3 text-right tabular-nums">
                       ${row.notionalUsdMillions}M
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                       {row.geopoliticalSpilloverBeta.toFixed(2)}x
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-red-600 dark:text-red-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                       +{row.projectedCdsWideningBps} bps
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-600 dark:text-amber-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">
                       {row.projectedFxMovePct}%
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                       +{row.projectedLocalYieldMoveBps} bps
                     </td>
-                    <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-red-600 dark:text-red-400">
+                    <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       -${Math.abs(row.unhedgedStressPnlUsdThousands).toLocaleString()}k ({row.unhedgedStressReturnBpsNav} bps)
                     </td>
                   </tr>
@@ -2993,14 +2993,14 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
           </div>
 
           <div className="pt-2">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800 dark:text-slate-200 mb-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2.5">
               <Umbrella className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>{suite.tailHedgeConclusionHeadline}</span>
             </div>
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-2.5 px-3">Rank &amp; Tail-Hedge Instrument</th>
                     <th className="py-2.5 px-3">Asset Class</th>
                     <th className="py-2.5 px-3 text-right">Annual Carry / Bleed</th>
@@ -3020,24 +3020,24 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                         <div className="font-semibold text-slate-900 dark:text-slate-100">
                           #{i + 1} · {h.instrumentName}
                         </div>
-                        <div className="text-[11px] text-slate-500">{h.protectionMechanism}</div>
+                        <div className="text-xs text-slate-500">{h.protectionMechanism}</div>
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                      <td className="py-2.5 px-3 tabular-nums text-xs text-slate-600 dark:text-slate-400">
                         {h.assetClass}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-red-600 dark:text-red-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-rose-600 dark:text-rose-400">
                         {h.annualizedCarryCostBps} bps/yr
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                         +{h.twoSigmaGprShockPayoffBps} bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-blue-600 dark:text-blue-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {h.convexityToCarryRatio.toFixed(2)}x
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         +{h.correlationToSovereignDrawdown.toFixed(2)}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                         {h.recommendedAllocationPctNav}% NAV
                       </td>
                     </tr>
@@ -3060,12 +3060,12 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
               <div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <Scale className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                  <Scale className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                   <span>
                     Interactive Multilateral Sanction Coalition Builder · Central Bank Reserve Custody Freeze &amp; Secondary Tariff Cascade
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Active Coalition Freezes ${coalitionCascade.frozenReservesUsdBn}B ({coalitionCascade.frozenSharePct}% of Total Reserves) · Sanction-Immune Liquidity: ${coalitionCascade.sanctionImmuneReservesUsdBn}B ({coalitionCascade.effectiveImportCoverMonths}m Import Cover)
                 </h3>
               </div>
@@ -3087,9 +3087,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       key={bloc.id}
                       type="button"
                       onClick={() => toggleSanctionBloc(bloc.id)}
-                      className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                      className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                         active
-                          ? 'bg-red-600 border-red-600 text-white font-semibold'
+                          ? 'bg-rose-600 border-rose-600 text-white font-semibold'
                           : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                       }`}
                     >
@@ -3103,42 +3103,42 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
 
             {/* 4-Card Sanction Cascade Telemetry */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
-              <div className="p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
-                <span className="text-red-600 dark:text-red-400 block">Immediately Frozen FX Reserves</span>
-                <span className="font-mono font-bold text-lg text-red-600 dark:text-red-400">
+              <div className="p-3 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50">
+                <span className="text-rose-600 dark:text-rose-400 block">Immediately Frozen FX Reserves</span>
+                <span className="tabular-nums font-semibold text-lg text-rose-600 dark:text-rose-400">
                   ${coalitionCascade.frozenReservesUsdBn}B ({coalitionCascade.frozenSharePct}%)
                 </span>
-                <span className="text-[11px] text-slate-500 block mt-0.5">
+                <span className="text-xs text-slate-500 block mt-0.5">
                   Out of ${coalitionCascade.totalReservesUsdBn}B Gross Sovereign Reserves
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                 <span className="text-slate-500 block">Sanction-Immune Usable Reserves</span>
-                <span className="font-mono font-bold text-lg text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums font-semibold text-lg text-emerald-600 dark:text-emerald-400">
                   ${coalitionCascade.sanctionImmuneReservesUsdBn}B
                 </span>
-                <span className="text-[11px] text-slate-400 block mt-0.5">
+                <span className="text-xs text-slate-400 block mt-0.5">
                   Effective Import Cover: {coalitionCascade.effectiveImportCoverMonths} Months
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                 <span className="text-slate-500 block">Shadow-Fleet / Export Price Haircut</span>
-                <span className="font-mono font-bold text-lg text-amber-600 dark:text-amber-400">
+                <span className="tabular-nums font-semibold text-lg text-amber-600 dark:text-amber-400">
                   -{coalitionCascade.exportPriceHaircutPct}% Discount
                 </span>
-                <span className="text-[11px] text-slate-400 block mt-0.5">
+                <span className="text-xs text-slate-400 block mt-0.5">
                   Bilateral Export Revenue Loss: -{coalitionCascade.bilateralExportLossPctGdp}% GDP
                 </span>
               </div>
 
               <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                 <span className="text-slate-500 block">SWIFT-to-CIPS / Barter Rerouting Drag</span>
-                <span className="font-mono font-bold text-lg text-slate-900 dark:text-slate-100">
+                <span className="tabular-nums font-semibold text-lg text-slate-900 dark:text-slate-100">
                   +{coalitionCascade.paymentReroutingCostBps} bps
                 </span>
-                <span className="text-[11px] text-slate-400 block mt-0.5">
+                <span className="text-xs text-slate-400 block mt-0.5">
                   Cross-Border Settlement Friction Premium
                 </span>
               </div>
@@ -3148,7 +3148,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-2.5 px-3">Central Bank Reserve Tranche &amp; Custody Jurisdiction</th>
                     <th className="py-2.5 px-3">Primary Settlement Rail</th>
                     <th className="py-2.5 px-3 text-right">Portfolio Share</th>
@@ -3162,27 +3162,27 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       key={tr.trancheId}
                       className={
                         tr.frozen
-                          ? 'bg-red-50/40 dark:bg-red-950/20'
+                          ? 'bg-rose-50/40 dark:bg-rose-950/20'
                           : 'hover:bg-slate-50/70 dark:hover:bg-slate-800/40'
                       }
                     >
                       <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                         {tr.custodyLabel}
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+                      <td className="py-2.5 px-3 tabular-nums text-xs text-slate-600 dark:text-slate-400">
                         {tr.settlementRail}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums">
+                      <td className="py-2.5 px-3 text-right tabular-nums">
                         {tr.sharePct}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold">
                         ${tr.amountUsdBn}B
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                          className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                             tr.frozen
-                              ? 'bg-red-600 border-red-600 text-white'
+                              ? 'bg-rose-600 border-rose-600 text-white'
                               : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
                           }`}
                         >
@@ -3206,7 +3206,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     8-Quarter Structural VAR Kinetic-to-Macro Shock Impulse Response Functions (Q0–Q8)
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   {kineticIrfAnalytics.triggerLabel} · Peak Q+2 Impact: +{kineticIrfAnalytics.peakCpiBps}bp CPI, {kineticIrfAnalytics.peakGdpDropPct}% GDP, +{kineticIrfAnalytics.peakCdsBps}bp 5Y CDS
                 </h3>
               </div>
@@ -3226,7 +3226,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     onClick={() => setSelectedIrfTrigger(trig.id)}
                     className={`px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                       selectedIrfTrigger === trig.id
-                        ? 'bg-amber-600 text-white font-semibold'
+                        ? 'bg-blue-600 text-white font-semibold'
                         : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                     }`}
                   >
@@ -3240,10 +3240,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               {/* Left Chart: CPI Pass-Through & 5Y CDS Impulse Response (bps) */}
               <div className="xl:col-span-6 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
                     Headline CPI Inflation Pass-Through &amp; 5Y Sovereign CDS Widening (bps, Q0–Q8)
                   </span>
-                  <span className="font-mono text-[11px] text-slate-400">
+                  <span className="tabular-nums text-xs text-slate-400">
                     Amber: CPI (+bp) · Red: 5Y CDS (+bp)
                   </span>
                 </div>
@@ -3295,7 +3295,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               x={padL - 6}
                               y={y + 3}
                               textAnchor="end"
-                              className="text-[10px] font-mono fill-slate-400"
+                              className="text-xs tabular-nums fill-slate-400"
                             >
                               +{val}
                             </text>
@@ -3310,7 +3310,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       />
                       <polyline
                         fill="none"
-                        stroke="#ef4444"
+                        stroke="#f43f5e"
                         strokeWidth={2.3}
                         points={cdsPts}
                       />
@@ -3326,13 +3326,13 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                             cx={toX(i)}
                             cy={toY(d.cdsShockBps)}
                             r={3}
-                            fill="#ef4444"
+                            fill="#f43f5e"
                           />
                           <text
                             x={toX(i)}
                             y={svgH - 7}
                             textAnchor="middle"
-                            className="text-[10px] font-mono fill-slate-400"
+                            className="text-xs tabular-nums fill-slate-400"
                           >
                             {d.quarter}
                           </text>
@@ -3346,10 +3346,10 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               {/* Right Chart: Real GDP Contraction & Defense Fiscal Deficit Surge (% GDP) */}
               <div className="xl:col-span-6 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 space-y-2.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-bold text-slate-800 dark:text-slate-200">
+                  <span className="font-semibold text-slate-800 dark:text-slate-200">
                     Real GDP Contraction vs. Defense Fiscal Surge (% GDP, Q0–Q8)
                   </span>
-                  <span className="font-mono text-[11px] text-slate-400">
+                  <span className="tabular-nums text-xs text-slate-400">
                     Blue: Real GDP (%) · Purple: Fiscal Surge (+% GDP)
                   </span>
                 </div>
@@ -3399,7 +3399,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               x={padL - 6}
                               y={y + 3}
                               textAnchor="end"
-                              className="text-[10px] font-mono fill-slate-400"
+                              className="text-xs tabular-nums fill-slate-400"
                             >
                               {val > 0 ? `+${val}%` : `${val}%`}
                             </text>
@@ -3422,7 +3422,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       />
                       <polyline
                         fill="none"
-                        stroke="#a855f7"
+                        stroke="#3b82f6"
                         strokeWidth={2.3}
                         points={fiscPts}
                       />
@@ -3438,13 +3438,13 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                             cx={toX(i)}
                             cy={toY(d.fiscalSurgePctGdp)}
                             r={3}
-                            fill="#a855f7"
+                            fill="#3b82f6"
                           />
                           <text
                             x={toX(i)}
                             y={svgH - 7}
                             textAnchor="middle"
-                            className="text-[10px] font-mono fill-slate-400"
+                            className="text-xs tabular-nums fill-slate-400"
                           >
                             {d.quarter}
                           </text>
@@ -3470,16 +3470,16 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
               <div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                  <Vote className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                  <Vote className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   <span>
                     Regime Stability, Parliamentary Coalition Durability &amp; Electoral Transition Tail-Risk Tracker ({run.countryName})
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Composite Institutional Stability Score: {regimeStabilityAnalytics.compositeStabilityScore}/100 · Electoral Unrest Stress Parameter: {wargameParams.electoralAndUnrestShock}/100
                 </h3>
               </div>
-              <span className="text-xs font-mono text-purple-600 dark:text-purple-400 font-semibold shrink-0">
+              <span className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold shrink-0">
                 WB Political Stability Percentile: {run.openData.worldBankIndicators.politicalStabilityPercentile}th
               </span>
             </div>
@@ -3494,11 +3494,11 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   <div className="font-semibold text-slate-800 dark:text-slate-200 leading-snug">
                     {pil.pillarName}
                   </div>
-                  <div className="flex items-center justify-between font-mono">
+                  <div className="flex items-center justify-between tabular-nums">
                     <span
-                      className={`text-sm font-bold ${
+                      className={`text-sm font-semibold ${
                         pil.score < 45
-                          ? 'text-red-600 dark:text-red-400'
+                          ? 'text-rose-600 dark:text-rose-400'
                           : pil.score < 65
                           ? 'text-amber-600 dark:text-amber-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -3506,7 +3506,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     >
                       {pil.score}/100
                     </span>
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-xs text-slate-400">
                       {pil.score < 45 ? 'FRAGILE' : pil.score < 65 ? 'WATCH' : 'RESILIENT'}
                     </span>
                   </div>
@@ -3514,7 +3514,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     <div
                       className={`h-full ${
                         pil.score < 45
-                          ? 'bg-red-600'
+                          ? 'bg-rose-600'
                           : pil.score < 65
                           ? 'bg-amber-500'
                           : 'bg-emerald-500'
@@ -3522,7 +3522,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       style={{ width: `${pil.score}%` }}
                     />
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {pil.keyDriver}
                   </p>
                 </div>
@@ -3533,7 +3533,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-2.5 px-3">Political / Electoral Transition Scenario</th>
                     <th className="py-2.5 px-3 text-right">Implied Prob</th>
                     <th className="py-2.5 px-3">Primary Balance Trajectory</th>
@@ -3551,23 +3551,23 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                         {sc.scenarioTitle}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-blue-600 dark:text-blue-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                         {sc.probabilityPct}%
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-700 dark:text-slate-300">
+                      <td className="py-2.5 px-3 tabular-nums text-slate-700 dark:text-slate-300">
                         {sc.primaryBalanceDeltaPctGdp}
                       </td>
                       <td
-                        className={`py-2.5 px-3 text-right font-mono tabular-nums font-bold ${
+                        className={`py-2.5 px-3 text-right tabular-nums tabular-nums font-semibold ${
                           sc.yield10YImpactBps > 0
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
                         {sc.yield10YImpactBps > 0 ? '+' : ''}
                         {sc.yield10YImpactBps} bps
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-600 dark:text-amber-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400">
                         {sc.spotFxImpactPct}
                       </td>
                       <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
@@ -3590,11 +3590,11 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     Strategic Commodity Buffer Stockpile Days &amp; Defense Industrial Surge Ledger ({run.countryName})
                   </span>
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Defense Expenditure Surge: {mobilizationLedger.baseDefenseSpendPctGdp}% → {mobilizationLedger.stressedDefenseTargetPctGdp}% GDP (+{mobilizationLedger.defenseFiscalSurgePctGdp}% GDP) · Industrial Utilization: {mobilizationLedger.defenseIndustrialUtilizationPct}%
                 </h3>
               </div>
-              <span className="text-xs font-mono text-amber-600 dark:text-amber-400 font-semibold shrink-0">
+              <span className="text-xs tabular-nums text-amber-600 dark:text-amber-400 font-semibold shrink-0">
                 12M Stockpile Replenishment Issuance: +${mobilizationLedger.stockpileReplenishmentUsdBn}B
               </span>
             </div>
@@ -3602,7 +3602,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-2.5 px-3">Strategic Wartime / Crisis Commodity Vertical</th>
                     <th className="py-2.5 px-3 text-right">Domestic Self-Sufficiency</th>
                     <th className="py-2.5 px-3 text-right">Net Import Dependency</th>
@@ -3621,32 +3621,32 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                         {v.verticalName}
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-emerald-600 dark:text-emerald-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
                         {v.domesticSelfSufficiencyPct}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-amber-600 dark:text-amber-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                         {v.netImportDependencyPct}%
                       </td>
-                      <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-600 dark:text-slate-400">
+                      <td className="py-2.5 px-3 text-right tabular-nums text-slate-600 dark:text-slate-400">
                         {v.baselineBufferDays} days
                       </td>
                       <td
-                        className={`py-2.5 px-3 text-right font-mono tabular-nums font-bold ${
+                        className={`py-2.5 px-3 text-right tabular-nums tabular-nums font-semibold ${
                           v.stressedBufferDays < 30
-                            ? 'text-red-600 dark:text-red-400'
+                            ? 'text-rose-600 dark:text-rose-400'
                             : 'text-amber-600 dark:text-amber-400'
                         }`}
                       >
                         {v.stressedBufferDays} days
                       </td>
-                      <td className="py-2.5 px-3 text-[11px] text-slate-600 dark:text-slate-300">
+                      <td className="py-2.5 px-3 text-xs text-slate-600 dark:text-slate-300">
                         {v.primaryChokeExposure}
                       </td>
                       <td className="py-2.5 px-3 text-center">
                         <span
-                          className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                          className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                             v.mobilizationPriority === 'CRITICAL'
-                              ? 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
+                              ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                               : 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300'
                           }`}
                         >

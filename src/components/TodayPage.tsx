@@ -50,7 +50,7 @@ function saveVisit(items: WatchlistItem[]) {
 }
 
 const ALERT_CLASS: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-900',
+  CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
   ELEVATED: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
   STABLE: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
 };
@@ -75,7 +75,7 @@ const Delta: React.FC<{ value: number | null; unit: string; digits?: number; hig
   return (
     <span
       className={`inline-flex items-center gap-0.5 ${
-        worse ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'
+        worse ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
       }`}
     >
       <Icon className="w-3 h-3" />
@@ -95,7 +95,7 @@ const Card: React.FC<{
   className?: string;
 }> = ({ title, icon, note, action, children, className = '' }) => (
   <section
-    className={`bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 ${className}`}
+    className={`ui-panel ${className}`}
   >
     <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
       <div>
@@ -295,7 +295,7 @@ export const TodayPage: React.FC<{
                     <button
                       type="button"
                       onClick={() => openIso(sig.iso3, sig.targetSectionId)}
-                      className="px-2 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                      className="ui-btn"
                     >
                       Why
                     </button>
@@ -303,7 +303,7 @@ export const TodayPage: React.FC<{
                       <button
                         type="button"
                         onClick={() => onStageTicket(sig.ticketSpec)}
-                        className="px-2 py-1 text-xs font-medium border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50"
+                        className="ui-btn ui-btn-primary"
                       >
                         Stage ticket
                       </button>
@@ -401,7 +401,7 @@ export const TodayPage: React.FC<{
                 <button
                   type="button"
                   onClick={() => openIso(t.iso3, t.targetSectionId)}
-                  className="px-2 py-1 text-xs font-medium border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+                  className="ui-btn"
                 >
                   Open desk
                 </button>

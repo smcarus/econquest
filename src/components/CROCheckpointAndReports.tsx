@@ -160,7 +160,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   : 'CRO VERIFIED & SUPREME COUNCIL SYNTHESIZED'}
               </span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Chief Risk Officer (CRO) Assumption Override &amp; Counterfactual Shock War-Gaming
             </h2>
           </div>
@@ -187,7 +187,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               type="button"
               onClick={onApproveAndConveneSupremeCouncil}
               disabled={isRunningPhase3}
-              className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+              className="ui-btn ui-btn-primary shrink-0"
             >
               {isRunningPhase3
                 ? 'Convening Supreme Council (Deep Think)...'
@@ -201,7 +201,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 pt-5">
           {/* Desk Risk Score Overrides */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
               Desk Risk Vector &amp; Structural Variable Overrides
             </div>
 
@@ -211,7 +211,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-700 dark:text-slate-300">
                     Geopolitical Risk Score
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {croDraft.geopoliticalRiskScore.toFixed(2)}
                   </span>
                 </div>
@@ -237,7 +237,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-700 dark:text-slate-300">
                     Sovereign Credit Risk Score
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {croDraft.sovereignRiskScore.toFixed(2)}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-700 dark:text-slate-300">
                     Macroeconomic Risk Score
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {croDraft.macroRiskScore.toFixed(2)}
                   </span>
                 </div>
@@ -289,7 +289,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-700 dark:text-slate-300">
                     Political Will Index (0–100)
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {croDraft.politicalWillIndex}/100
                   </span>
                 </div>
@@ -332,7 +332,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
 
           {/* Counterfactual War-Gaming Shock Injectors */}
           <div className="lg:col-span-6 space-y-4">
-            <div className="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+            <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
               Counterfactual Stress-Test &amp; War-Gaming Shock Injector
             </div>
 
@@ -342,7 +342,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-800 dark:text-slate-200">
                     Brent Crude Oil Spike (+$/bbl)
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                     +${croDraft.counterfactualShocks.brentCrudeShockUsd}/bbl
                   </span>
                 </div>
@@ -371,7 +371,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-800 dark:text-slate-200">
                     US Fed Terminal Rate Shock (+bps)
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                     +{croDraft.counterfactualShocks.fedTerminalRateShockBps} bps
                   </span>
                 </div>
@@ -400,7 +400,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-800 dark:text-slate-200">
                     Maritime Chokepoint Transit Drop (%)
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                     -{croDraft.counterfactualShocks.chokepointTransitDropPct}%
                   </span>
                 </div>
@@ -429,7 +429,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <label className="font-medium text-slate-800 dark:text-slate-200">
                     Domestic Fiscal Slippage (+% GDP)
                   </label>
-                  <span className="font-mono font-bold tabular-nums text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                     +{croDraft.counterfactualShocks.domesticFiscalSlippagePctGdp.toFixed(1)}% GDP
                   </span>
                 </div>
@@ -456,7 +456,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
 
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
               <strong>Live Stress Preview:</strong> Applying these counterfactual shocks shifts effective Composite Risk to{' '}
-              <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+              <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                 {(
                   (croDraft.geopoliticalRiskScore +
                     croDraft.sovereignRiskScore +
@@ -481,7 +481,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               <span className="mx-2" aria-hidden="true">·</span>
               <span>Report ID: {sc?.reportId || run.runId}</span>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-1">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
               Supreme Council Decision-Point Dossier &amp; Multi-Format AI Export
             </h2>
           </div>
@@ -491,7 +491,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
             <button
               type="button"
               onClick={() => exportSMCRPdfDossier(run)}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors whitespace-nowrap shrink-0"
+              className="ui-btn ui-btn-primary inline-flex shrink-0"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Institutional PDF (.pdf)</span>
@@ -558,7 +558,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               onClick={() => setReportViewMode(tab.id as any)}
               className={`px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
                 reportViewMode === tab.id
-                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 '
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
               }`}
             >
@@ -572,8 +572,8 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
           <div className="space-y-6">
             {/* Executive Verdict Banner */}
             <div className="p-4 bg-slate-900 dark:bg-slate-950 text-white border border-slate-800 space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-mono">
-                <span className="text-blue-400">SUPREME COUNCIL DECISION VERDICT</span>
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums">
+                <span className="text-blue-400">Supreme council decision verdict</span>
                 <span>
                   VERDICT: <strong className="text-amber-400">{sc.decisionVerdict}</strong> · COMPOSITE RISK:{' '}
                   <strong>{sc.compositeRiskScore.toFixed(2)} / 1.00</strong> · COHERENCE:{' '}
@@ -587,7 +587,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
 
             {/* Decision-Point & Catalyst Threshold Matrix */}
             <div className="space-y-2">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Decision-Point &amp; Catalyst Threshold Matrix (Action Triggers)
               </h3>
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
@@ -606,30 +606,30 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {sc.decisionPointMatrix.map((dp) => (
                       <tr key={dp.variableId} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30">
-                        <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                        <td className="py-2.5 px-3 tabular-nums font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                           {dp.variableId}
                         </td>
                         <td className="py-2.5 px-3">
                           <div className="font-semibold text-slate-900 dark:text-slate-100">
                             {dp.variableName}
                           </div>
-                          <div className="text-[11px] text-slate-500">
+                          <div className="text-xs text-slate-500">
                             {dp.deskSource.toUpperCase()} · {dp.provenanceTier}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                        <td className="py-2.5 px-3 tabular-nums text-slate-800 dark:text-slate-200">
                           {dp.currentValue}
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-emerald-700 dark:text-emerald-400">
+                        <td className="py-2.5 px-3 tabular-nums text-emerald-700 dark:text-emerald-400">
                           {dp.bullThreshold}
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-red-600 dark:text-red-400">
+                        <td className="py-2.5 px-3 tabular-nums text-rose-600 dark:text-rose-400">
                           {dp.bearBreakTrigger}
                         </td>
                         <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-slate-100">
                           {dp.requiredActionIfTriggered}
                         </td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        <td className="py-2.5 px-3 tabular-nums font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">
                           {dp.urgency}
                         </td>
                       </tr>
@@ -643,10 +643,10 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {/* Policy Researcher Structural Report */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50/40 dark:bg-slate-950/40">
-                <div className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
+                <div className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   FOR THE POLICY RESEARCHER &amp; CENTRAL BANK / IMF STAFF
                 </div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Structural Vulnerabilities &amp; Institutional Policy Recommendations
                 </h4>
                 <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 list-disc pl-4">
@@ -665,14 +665,14 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     >
                       <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-slate-100">
                         <span>{rec.authority}</span>
-                        <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400">
+                        <span className="tabular-nums text-xs text-blue-600 dark:text-blue-400">
                           {rec.priority}
                         </span>
                       </div>
                       <p className="text-slate-600 dark:text-slate-300">
                         <RichTextWithStatRefs text={rec.action} />
                       </p>
-                      <div className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400">
+                      <div className="text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
                         Expected Quantitative Impact: {rec.expectedImpact}
                       </div>
                     </div>
@@ -682,11 +682,11 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
 
               {/* Asset Manager / Trader Execution Tickets */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50/40 dark:bg-slate-950/40">
-                <div className="flex items-center justify-between text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                <div className="flex items-center justify-between text-xs tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                   <span>FOR THE ASSET MANAGER &amp; MACRO TRADER</span>
                   <span>STANCE: {sc.marketTranslationLayer.regimeStance}</span>
                 </div>
-                <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Portfolio Trade Execution Tickets &amp; Risk Guardian Audit
                 </h4>
 
@@ -697,21 +697,21 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                       className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1.5"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-mono font-bold text-slate-900 dark:text-slate-100">
+                        <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                           {trd.ticketId} · [{trd.direction}] {trd.instrument}
                         </span>
-                        <span className="font-mono font-bold tabular-nums text-blue-600 dark:text-blue-400 shrink-0">
+                        <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 shrink-0">
                           Weight: {trd.sizingWeightPct}% ({trd.targetHorizon})
                         </span>
                       </div>
                       <p className="text-slate-600 dark:text-slate-300">
                         <RichTextWithStatRefs text={trd.entryRationale} />
                       </p>
-                      <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 font-mono text-[11px]">
+                      <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800 tabular-nums text-xs">
                         <div className="text-slate-600 dark:text-slate-400">
                           Entry/Target: <strong className="text-slate-900 dark:text-slate-100">{trd.targetLevel}</strong>
                         </div>
-                        <div className="text-red-600 dark:text-red-400">
+                        <div className="text-rose-600 dark:text-rose-400">
                           Stop/Invalidation: <strong>{trd.invalidationStopTrigger}</strong>
                         </div>
                       </div>
@@ -721,7 +721,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
 
                 {/* Risk Guardian Box */}
                 <div className="p-3 bg-slate-900 text-slate-100 text-xs space-y-1">
-                  <div className="flex items-center justify-between font-mono font-semibold text-emerald-400">
+                  <div className="flex items-center justify-between tabular-nums font-semibold text-emerald-400">
                     <span className="inline-flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
                       <span>Risk Guardian Portfolio Audit: {sc.marketTranslationLayer.riskGuardianCheck.approvalStatus}</span>
@@ -731,7 +731,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                       {sc.marketTranslationLayer.riskGuardianCheck.liquidityHaircutPct}%
                     </span>
                   </div>
-                  <p className="text-slate-300 text-[11px] leading-relaxed">
+                  <p className="text-slate-300 text-xs leading-relaxed">
                     <RichTextWithStatRefs
                       text={sc.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning}
                     />
@@ -755,7 +755,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                 {copiedLabel === 'md_raw' ? 'Copied Markdown!' : 'Copy Full Markdown'}
               </button>
             </div>
-            <pre className="p-4 bg-slate-950 text-slate-100 text-xs font-mono overflow-x-auto max-h-[520px] leading-relaxed">
+            <pre className="p-4 bg-slate-950 text-slate-100 text-xs tabular-nums overflow-x-auto max-h-[520px] leading-relaxed">
               {markdownContent}
             </pre>
           </div>
@@ -774,7 +774,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                 {copiedLabel === 'json_raw' ? 'Copied JSON!' : 'Copy JSON Envelope'}
               </button>
             </div>
-            <pre className="p-4 bg-slate-950 text-slate-100 text-xs font-mono tabular-nums overflow-x-auto max-h-[520px] leading-relaxed">
+            <pre className="p-4 bg-slate-950 text-slate-100 text-xs tabular-nums overflow-x-auto max-h-[520px] leading-relaxed">
               {jsonEnvelope}
             </pre>
           </div>
@@ -804,7 +804,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                 </button>
               </div>
             </div>
-            <pre className="p-4 bg-slate-950 text-slate-100 text-xs font-mono overflow-x-auto max-h-[520px] leading-relaxed">
+            <pre className="p-4 bg-slate-950 text-slate-100 text-xs tabular-nums overflow-x-auto max-h-[520px] leading-relaxed">
               {pythonCode}
             </pre>
           </div>
@@ -817,7 +817,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
           <div className="text-xs text-slate-500 dark:text-slate-400">
             Multi-Platform AI Interoperability · Self-Hosted Ollama, OpenAI-Compatible &amp; Webhook Dispatch
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
             AI Runtime Routing &amp; External Platform Connectors
           </h3>
         </div>
@@ -864,7 +864,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     onUpdateRuntimeConfig({ ...runtimeConfig, ollamaBaseUrl: e.target.value })
                   }
                   placeholder="http://localhost:11434"
-                  className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
@@ -878,7 +878,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     onUpdateRuntimeConfig({ ...runtimeConfig, ollamaQuickModel: e.target.value })
                   }
                   placeholder="qwen2.5:32b"
-                  className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
@@ -892,7 +892,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     onUpdateRuntimeConfig({ ...runtimeConfig, ollamaDeepModel: e.target.value })
                   }
                   placeholder="deepseek-r1:32b"
-                  className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
@@ -914,11 +914,11 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
           {/* Downstream AI Platform Webhook Push */}
           <div className="lg:col-span-5 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col justify-between space-y-3">
             <div className="space-y-2">
-              <div className="text-xs font-bold text-slate-900 dark:text-slate-100">
+              <div className="text-xs font-semibold text-slate-900 dark:text-slate-100">
                 Downstream AI Platform Webhook / MCP Dispatcher
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                Push the standardized <code className="font-mono">SMCR-1.0</code> JSON envelope directly to external agent orchestrators (n8n, LangGraph Cloud, CrewAI, AutoGen, or execution bots).
+                Push the standardized <code className="tabular-nums">SMCR-1.0</code> JSON envelope directly to external agent orchestrators (n8n, LangGraph Cloud, CrewAI, AutoGen, or execution bots).
               </p>
               <div className="flex items-center gap-2 pt-1">
                 <input
@@ -928,25 +928,25 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     onUpdateRuntimeConfig({ ...runtimeConfig, webhookTargetUrl: e.target.value })
                   }
                   placeholder="https://your-ai-pipeline.example.com/webhook/smcr"
-                  className="flex-1 px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
+                  className="flex-1 px-2.5 py-1.5 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
                 />
                 <button
                   type="button"
                   onClick={handleDispatchWebhook}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 whitespace-nowrap shrink-0"
+                  className="ui-btn ui-btn-primary inline-flex shrink-0"
                 >
                   <Send className="w-3.5 h-3.5" />
                   <span>Push SMCR-1.0</span>
                 </button>
               </div>
               {webhookStatus && (
-                <div className="text-xs font-mono text-blue-600 dark:text-blue-400 pt-1">
+                <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 pt-1">
                   {webhookStatus}
                 </div>
               )}
             </div>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500">
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500">
               Tip: Switch the report tab above to <strong>TradingAgents Python + Ollama Exporter (.py)</strong> to copy the complete self-hosted Python script.
             </div>
           </div>

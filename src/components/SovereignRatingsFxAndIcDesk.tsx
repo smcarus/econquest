@@ -140,12 +140,12 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
   const tooltipBorder = isDark ? '#334155' : '#cbd5e1';
 
   return (
-    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xs">
+    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
       {/* TOP HEADER & SUB-TAB SWITCHER */}
       <div className="p-5 border-b border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/70 dark:bg-slate-950/60">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-slate-500 dark:text-slate-400">
-            <span className="font-bold text-indigo-600 dark:text-indigo-400 uppercase">
+          <div className="flex items-center gap-2 text-xs tabular-nums text-slate-500 dark:text-slate-400">
+            <span className="font-semibold text-blue-600 dark:text-blue-400">
               8. Sovereign Ratings, FX & IC Dossier
             </span>
             <span aria-hidden="true">·</span>
@@ -153,7 +153,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
               {run.countryName} ({run.iso3}) · S&P/Moody’s/Fitch Shadow Model · BEER/FEER FX · Bank Doom-Loop
             </span>
           </div>
-          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-1">
+          <h2 className="text-base sm:text-lg font-semibold text-slate-900 dark:text-white mt-1">
             Shadow Credit Rating Scorecard, FX BEER/FEER Equilibrium, Investor Base & Boardroom IC Pitchbook
           </h2>
         </div>
@@ -165,7 +165,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
               onClick={() => handleTabChange('ratings_shadow_fallen_angel')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'ratings_shadow_fallen_angel'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -178,7 +178,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
               onClick={() => handleTabChange('fx_beer_feer_equilibrium')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'fx_beer_feer_equilibrium'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -191,7 +191,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
               onClick={() => handleTabChange('debt_investor_base_doom_loop')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'debt_investor_base_doom_loop'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -204,7 +204,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
               onClick={() => handleTabChange('ic_pitchbook_dossier_exporter')}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
                 activeTab === 'ic_pitchbook_dossier_exporter'
-                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
               }`}
             >
@@ -222,7 +222,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
         <div className="p-5 space-y-6">
           <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white mr-1.5">
+              <span className="font-semibold text-slate-900 dark:text-white mr-1.5">
                 5-Pillar Rating Agency Shadow Replica:
               </span>
               {shadowRatingSuite.headlineDiagnostic}
@@ -230,7 +230,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => setRatingStress(DEFAULT_SHADOW_RATING_STRESS)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              className="ui-btn inline-flex shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset Pillar Shocks</span>
@@ -238,29 +238,29 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           </div>
 
           {/* 4 KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 tabular-nums">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Official Agency Rating ({run.iso3})
               </div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold text-slate-900 dark:text-white mt-0.5">
                 {shadowRatingSuite.activeSovereignRow.officialRating} /{' '}
                 {shadowRatingSuite.activeSovereignRow.officialMoodysEquivalent}
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Notch #{shadowRatingSuite.activeSovereignRow.officialNumericNotch} of 21 (IG Floor = 12)
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 5-Pillar Shadow Rating (Stressed)
               </div>
-              <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">
+              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
                 {shadowRatingSuite.activeSovereignRow.stressedShadowRating} (Score:{' '}
                 {shadowRatingSuite.compositeShadowScore}/100)
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Notch Dislocation:{' '}
                 {shadowRatingSuite.activeSovereignRow.notchDislocationVsOfficial >= 0
                   ? `+${shadowRatingSuite.activeSovereignRow.notchDislocationVsOfficial}`
@@ -270,24 +270,24 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 12M Rating Migration Probabilities
               </div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold text-slate-900 dark:text-white mt-0.5">
                 ▼{shadowRatingSuite.activeSovereignRow.prob12MDowngradePct}% / ▲
                 {shadowRatingSuite.activeSovereignRow.prob12MUpgradePct}%
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Stable Outlook Prob: {shadowRatingSuite.activeSovereignRow.prob12MStablePct}%
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Index-Exclusion / Migration Spread Impact
               </div>
               <div
-                className={`text-lg font-bold mt-0.5 ${
+                className={`text-lg font-semibold mt-0.5 ${
                   shadowRatingSuite.fallenAngelCliffSpreadBps > 0
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -298,7 +298,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                   : shadowRatingSuite.fallenAngelCliffSpreadBps}{' '}
                 bps
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 IG Cliff Distance:{' '}
                 {shadowRatingSuite.activeSovereignRow.distanceToInvestmentGradeCliffNotches >= 0
                   ? `+${shadowRatingSuite.activeSovereignRow.distanceToInvestmentGradeCliffNotches}`
@@ -311,14 +311,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           {/* Interactive Pillar Shock Sliders + 5-Pillar Scorecard Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             <div className="lg:col-span-5 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3.5 text-xs">
-              <div className="font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <div className="font-semibold text-slate-900 dark:text-white">
                 Simulate Rating Agency Pillar Shocks ({run.iso3})
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Fiscal Deficit Slippage (% of GDP):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {ratingStress.fiscalSlippagePctGdp >= 0
                       ? `+${ratingStress.fiscalSlippagePctGdp.toFixed(1)}%`
                       : `${ratingStress.fiscalSlippagePctGdp.toFixed(1)}%`}{' '}
@@ -337,14 +337,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       fiscalSlippagePctGdp: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Institutional & Rule-of-Law Shock (pts):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {ratingStress.institutionalGovernanceShockPts >= 0
                       ? `+${ratingStress.institutionalGovernanceShockPts}`
                       : ratingStress.institutionalGovernanceShockPts}{' '}
@@ -363,14 +363,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       institutionalGovernanceShockPts: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>FX Reserve Cover Shock (months of imports):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {ratingStress.externalReserveDrainMonths >= 0
                       ? `+${ratingStress.externalReserveDrainMonths.toFixed(1)}m`
                       : `${ratingStress.externalReserveDrainMonths.toFixed(1)}m`}
@@ -388,14 +388,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       externalReserveDrainMonths: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Monetary Credibility & De-Anchoring (pts):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {ratingStress.monetaryCredibilityShockPts >= 0
                       ? `+${ratingStress.monetaryCredibilityShockPts}`
                       : ratingStress.monetaryCredibilityShockPts}{' '}
@@ -414,7 +414,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       monetaryCredibilityShockPts: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
@@ -433,7 +433,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       ),
                     })
                   }
-                  className="w-full py-2 px-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+                  className="ui-btn ui-btn-primary w-full"
                 >
                   Apply Rating Migration Spread Impact (
                   {shadowRatingSuite.fallenAngelCliffSpreadBps >= 0
@@ -446,7 +446,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
 
             {/* Right: 5-Pillar Baseline vs Stressed Score Chart */}
             <div className="lg:col-span-7 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2">
                 S&P / Moody’s / Fitch 5-Pillar Quantitative Scorecard (0–100 Scale · BBB- Threshold = 54)
               </div>
               <div className="h-64 w-full">
@@ -494,7 +494,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     <Bar
                       dataKey="stressedScore"
                       name="Stressed Pillar Score"
-                      fill="#4f46e5"
+                      fill="#2563eb"
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -506,7 +506,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[11px] font-mono text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs tabular-nums text-slate-500">
                   <th className="py-2.5 px-3">Sovereign</th>
                   <th className="py-2.5 px-2 text-right">Official (S&P / Moody’s)</th>
                   <th className="py-2.5 px-2 text-right">Shadow Rating</th>
@@ -517,7 +517,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                   <th className="py-2.5 px-3">Rating Action Signal</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {shadowRatingSuite.peerRatingLadder.map((row) => (
                   <tr
                     key={row.iso3}
@@ -527,21 +527,21 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     }}
                     className={`cursor-pointer ${
                       row.isCurrentActiveSovereign
-                        ? 'bg-indigo-50/50 dark:bg-indigo-950/30'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/30'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     }`}
                   >
-                    <td className="py-2.5 px-3 font-sans font-bold text-slate-900 dark:text-white">
+                    <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-white">
                       {row.countryName} ({row.iso3})
                     </td>
                     <td className="py-2.5 px-2 text-right">
                       {row.officialRating} ({row.officialMoodysEquivalent})
                     </td>
-                    <td className="py-2.5 px-2 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                    <td className="py-2.5 px-2 text-right font-semibold text-blue-600 dark:text-blue-400">
                       {row.stressedShadowRating}
                     </td>
                     <td
-                      className={`py-2.5 px-2 text-right font-bold ${
+                      className={`py-2.5 px-2 text-right font-semibold ${
                         row.notchDislocationVsOfficial > 0
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : row.notchDislocationVsOfficial < 0
@@ -570,7 +570,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       </span>
                     </td>
                     <td
-                      className={`py-2.5 px-2 text-right font-bold ${
+                      className={`py-2.5 px-2 text-right font-semibold ${
                         row.forcedIndexSellingSpreadImpactBps > 0
                           ? 'text-rose-600 dark:text-rose-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -581,7 +581,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                         : row.forcedIndexSellingSpreadImpactBps}{' '}
                       bps
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-[11px] font-semibold">
+                    <td className="py-2.5 px-3 font-sans text-xs font-semibold">
                       {row.ratingActionSignal.replace(/_/g, ' ')}
                     </td>
                   </tr>
@@ -599,7 +599,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
         <div className="p-5 space-y-6">
           <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white mr-1.5">
+              <span className="font-semibold text-slate-900 dark:text-white mr-1.5">
                 BEER & IMF FEER Real Effective Exchange Rate (REER) Valuation:
               </span>
               {fxEquilibriumSuite.headlineDiagnostic}
@@ -607,7 +607,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => setFxStress(DEFAULT_FX_EQUILIBRIUM_STRESS)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              className="ui-btn inline-flex shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset FX Drivers</span>
@@ -615,16 +615,16 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           </div>
 
           {/* 4 KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 tabular-nums">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Spot REER vs. BEER Equilibrium ({fxEquilibriumSuite.activeSovereignFx.currencyCode})
               </div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold text-slate-900 dark:text-white mt-0.5">
                 {fxEquilibriumSuite.activeSovereignFx.spotReerIndex} vs.{' '}
                 {fxEquilibriumSuite.activeSovereignFx.beerEquilibriumReerIndex}
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 BEER Misalignment:{' '}
                 {fxEquilibriumSuite.activeSovereignFx.beerMisalignmentPct >= 0
                   ? `+${fxEquilibriumSuite.activeSovereignFx.beerMisalignmentPct}%`
@@ -633,16 +633,16 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 IMF FEER Current Account Gap (% GDP)
               </div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold text-slate-900 dark:text-white mt-0.5">
                 {fxEquilibriumSuite.activeSovereignFx.currentAccountGapPctGdp >= 0
                   ? `+${fxEquilibriumSuite.activeSovereignFx.currentAccountGapPctGdp}%`
                   : `${fxEquilibriumSuite.activeSovereignFx.currentAccountGapPctGdp}%`}{' '}
                 GDP
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 FEER Misalignment:{' '}
                 {fxEquilibriumSuite.activeSovereignFx.feerImpliedMisalignmentPct >= 0
                   ? `+${fxEquilibriumSuite.activeSovereignFx.feerImpliedMisalignmentPct}%`
@@ -651,11 +651,11 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Consensus FX Misalignment (BEER + FEER)
               </div>
               <div
-                className={`text-lg font-bold mt-0.5 ${
+                className={`text-lg font-semibold mt-0.5 ${
                   fxEquilibriumSuite.activeSovereignFx.consensusFxMisalignmentPct >= 5
                     ? 'text-rose-600 dark:text-rose-400'
                     : fxEquilibriumSuite.activeSovereignFx.consensusFxMisalignmentPct <= -4
@@ -667,7 +667,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                   ? `+${fxEquilibriumSuite.activeSovereignFx.consensusFxMisalignmentPct}% Overvalued`
                   : `${fxEquilibriumSuite.activeSovereignFx.consensusFxMisalignmentPct}% Undervalued`}
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Req. Real FX Adj:{' '}
                 {fxEquilibriumSuite.activeSovereignFx.requiredRealFxAdjustmentPct >= 0
                   ? `+${fxEquilibriumSuite.activeSovereignFx.requiredRealFxAdjustmentPct}%`
@@ -676,16 +676,16 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Real Carry Pickup & 12M Deval Risk
               </div>
-              <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">
+              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
                 {fxEquilibriumSuite.activeSovereignFx.realCarryDifferentialBps >= 0
                   ? `+${fxEquilibriumSuite.activeSovereignFx.realCarryDifferentialBps}`
                   : fxEquilibriumSuite.activeSovereignFx.realCarryDifferentialBps}{' '}
                 bps
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 12M Devaluation Tail Prob:{' '}
                 {fxEquilibriumSuite.activeSovereignFx.devaluation12MTailProbPct}%
               </div>
@@ -695,14 +695,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           {/* Interactive BEER/FEER Fundamental Sliders + Cross-Sovereign Misalignment Bar Chart */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             <div className="lg:col-span-5 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3.5 text-xs">
-              <div className="font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <div className="font-semibold text-slate-900 dark:text-white">
                 BEER / FEER Structural Equilibrium Shocks ({fxEquilibriumSuite.activeSovereignFx.currencyCode})
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Terms-of-Trade Commodity Shock (%):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {fxStress.termsOfTradeShockPct >= 0
                       ? `+${fxStress.termsOfTradeShockPct}%`
                       : `${fxStress.termsOfTradeShockPct}%`}
@@ -720,14 +720,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       termsOfTradeShockPct: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Real Interest Rate Differential Shift (bps):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {fxStress.realRateDifferentialShiftBps >= 0
                       ? `+${fxStress.realRateDifferentialShiftBps}`
                       : fxStress.realRateDifferentialShiftBps}{' '}
@@ -746,14 +746,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       realRateDifferentialShiftBps: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Balassa-Samuelson Tradable Productivity Shift (%):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {fxStress.balassaSamuelsonProductivityShiftPct >= 0
                       ? `+${fxStress.balassaSamuelsonProductivityShiftPct.toFixed(1)}%`
                       : `${fxStress.balassaSamuelsonProductivityShiftPct.toFixed(1)}%`}
@@ -771,17 +771,17 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       balassaSamuelsonProductivityShiftPct: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
-              <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] font-mono text-indigo-600 dark:text-indigo-400">
+              <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs tabular-nums text-blue-600 dark:text-blue-400">
                 Trade Expression: {fxEquilibriumSuite.activeSovereignFx.recommendedFxExpression}
               </div>
             </div>
 
             <div className="lg:col-span-7 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2">
                 Cross-Sovereign BEER vs. FEER Currency Misalignment (% Overvalued + / Undervalued -)
               </div>
               <div className="h-64 w-full">
@@ -813,7 +813,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     <Bar
                       dataKey="beerMisalignmentPct"
                       name="BEER Misalignment (%)"
-                      fill="#6366f1"
+                      fill="#3b82f6"
                     />
                     <Bar
                       dataKey="feerImpliedMisalignmentPct"
@@ -837,7 +837,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[11px] font-mono text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs tabular-nums text-slate-500">
                   <th className="py-2.5 px-3">Sovereign & FX</th>
                   <th className="py-2.5 px-2 text-right">Spot REER</th>
                   <th className="py-2.5 px-2 text-right">BEER Fair REER</th>
@@ -848,17 +848,17 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                   <th className="py-2.5 px-3">Recommended FX Trade Expression</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {fxEquilibriumSuite.peerFxValuationTable.map((row) => (
                   <tr
                     key={row.iso3}
                     className={
                       row.isCurrentActiveSovereign
-                        ? 'bg-indigo-50/50 dark:bg-indigo-950/30'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/30'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     }
                   >
-                    <td className="py-2.5 px-3 font-sans font-bold text-slate-900 dark:text-white">
+                    <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-white">
                       {row.countryName} ({row.currencyCode})
                     </td>
                     <td className="py-2.5 px-2 text-right">{row.spotReerIndex}</td>
@@ -868,7 +868,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       {row.structuralCurrentAccountNormPctGdp}%
                     </td>
                     <td
-                      className={`py-2.5 px-2 text-right font-bold ${
+                      className={`py-2.5 px-2 text-right font-semibold ${
                         row.consensusFxMisalignmentPct >= 5
                           ? 'text-rose-600 dark:text-rose-400'
                           : row.consensusFxMisalignmentPct <= -4
@@ -889,7 +889,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     <td className="py-2.5 px-2 text-right font-semibold">
                       {row.devaluation12MTailProbPct}%
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-[11px] text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 font-sans text-xs text-slate-700 dark:text-slate-300">
                       {row.recommendedFxExpression}
                     </td>
                   </tr>
@@ -907,7 +907,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
         <div className="p-5 space-y-6">
           <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <span className="font-bold text-slate-900 dark:text-white mr-1.5">
+              <span className="font-semibold text-slate-900 dark:text-white mr-1.5">
                 IMF Sovereign Debt Investor Base (SDIB) & Domestic Bank Doom-Loop Contagion:
               </span>
               {investorBaseSuite.headlineDiagnostic}
@@ -915,7 +915,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => setInvestorStress(DEFAULT_INVESTOR_BASE_STRESS)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0"
+              className="ui-btn inline-flex shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Reset Sudden-Stop Stress</span>
@@ -923,37 +923,37 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           </div>
 
           {/* 4 KPI Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 tabular-nums">
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Domestic Bank Share of Sovereign Debt
               </div>
-              <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">
+              <div className="text-lg font-semibold text-slate-900 dark:text-white mt-0.5">
                 {investorBaseSuite.activeSovereignRow.domesticBanksSharePct}% of Total Debt
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 {investorBaseSuite.activeSovereignRow.sovereignHoldingsPctOfBankTier1Cet1}% of Bank Tier-1 CET1
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Foreign Private Real-Money Share
               </div>
-              <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400 mt-0.5">
+              <div className="text-lg font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
                 {investorBaseSuite.activeSovereignRow.foreignPrivateSharePct}% of Total Debt
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Foreign Official: {investorBaseSuite.activeSovereignRow.foreignOfficialSharePct}%
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Stressed Banking System CET1 Ratio
               </div>
               <div
-                className={`text-lg font-bold mt-0.5 ${
+                className={`text-lg font-semibold mt-0.5 ${
                   investorBaseSuite.activeSovereignRow.stressedBankSystemCet1RatioPct < 10
                     ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
@@ -962,19 +962,19 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                 {investorBaseSuite.activeSovereignRow.stressedBankSystemCet1RatioPct}% (Δ -
                 {investorBaseSuite.activeSovereignRow.cet1CapitalErosionPctPts}%)
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Baseline CET1: {investorBaseSuite.activeSovereignRow.baselineBankSystemCet1RatioPct}%
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-sans font-medium text-slate-500">
+              <div className="text-xs font-sans font-medium text-slate-500">
                 Sudden-Stop 10Y Yield Repricing
               </div>
-              <div className="text-lg font-bold text-rose-600 dark:text-rose-400 mt-0.5">
+              <div className="text-lg font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
                 +{investorBaseSuite.activeSovereignRow.suddenStop10YRepricingBps} bps
               </div>
-              <div className="text-[11px] text-slate-500">
+              <div className="text-xs text-slate-500">
                 Doom-Loop Score: {investorBaseSuite.activeSovereignRow.doomLoopContagionScore}/100
               </div>
             </div>
@@ -983,14 +983,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           {/* Sliders + Sudden-Stop & CET1 Erosion Curve */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             <div className="lg:col-span-5 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4 text-xs">
-              <div className="font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <div className="font-semibold text-slate-900 dark:text-white">
                 Simulate Non-Resident Sudden Stop & Sovereign MTM Haircut ({run.iso3})
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Foreign Private Investor Exit (% of Foreign Holdings):</span>
-                  <span className="font-bold text-indigo-600 dark:text-indigo-400">
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
                     {investorStress.foreignPrivateExitShockPct}% Exit
                   </span>
                 </div>
@@ -1006,14 +1006,14 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       foreignPrivateExitShockPct: Number(e.target.value),
                     }))
                   }
-                  className="w-full accent-indigo-600 cursor-pointer"
+                  className="w-full accent-blue-600 cursor-pointer"
                 />
               </div>
 
               <div>
-                <div className="flex justify-between font-mono mb-1">
+                <div className="flex justify-between tabular-nums mb-1">
                   <span>Sovereign Bond MTM Price Haircut on Bank Book (%):</span>
-                  <span className="font-bold text-rose-600 dark:text-rose-400">
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
                     -{investorStress.sovereignBondHaircutMarkToMarketPct}% MTM Drop
                   </span>
                 </div>
@@ -1035,7 +1035,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
 
               {/* 5-Sector Creditor Table for Active Sovereign */}
               <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                <table className="w-full text-left border-collapse text-[11px] font-mono">
+                <table className="w-full text-left border-collapse text-xs tabular-nums">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 text-slate-500">
                       <th className="py-1.5 px-2">Creditor Sector</th>
@@ -1052,7 +1052,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                         <td className="py-1.5 px-2 text-right">
                           {sec.baselineSharePctOfTotalDebt}%
                         </td>
-                        <td className="py-1.5 px-2 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                        <td className="py-1.5 px-2 text-right font-semibold text-blue-600 dark:text-blue-400">
                           {sec.postShockSharePctOfTotalDebt}%
                         </td>
                       </tr>
@@ -1077,7 +1077,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       ),
                     })
                   }
-                  className="w-full py-2 px-3 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+                  className="ui-btn ui-btn-primary w-full"
                 >
                   Apply Sudden-Stop Repricing (+
                   {investorBaseSuite.activeSovereignRow.suddenStop10YRepricingBps} bps) to Terminal
@@ -1086,7 +1086,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             </div>
 
             <div className="lg:col-span-7 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200 mb-2">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 mb-2">
                 Non-Resident Sudden-Stop Curve: 10Y Yield Spike (bps) vs. Domestic Bank CET1 Ratio (%)
               </div>
               <div className="h-64 w-full">
@@ -1128,7 +1128,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       yAxisId="left"
                       dataKey="projected10YYieldBpsDelta"
                       name="10Y Yield Spike (bps)"
-                      fill="#4f46e5"
+                      fill="#2563eb"
                     />
                     <Line
                       yAxisId="right"
@@ -1148,7 +1148,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[11px] font-mono text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs tabular-nums text-slate-500">
                   <th className="py-2.5 px-3">Sovereign</th>
                   <th className="py-2.5 px-2 text-right">Dom. Banks (%)</th>
                   <th className="py-2.5 px-2 text-right">Dom. Pensions (%)</th>
@@ -1159,20 +1159,20 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                   <th className="py-2.5 px-3">Contagion Regime</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {investorBaseSuite.peerInvestorBaseMatrix.map((row) => (
                   <tr
                     key={row.iso3}
                     className={
                       row.isCurrentActiveSovereign
-                        ? 'bg-indigo-50/50 dark:bg-indigo-950/30'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/30'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     }
                   >
-                    <td className="py-2.5 px-3 font-sans font-bold text-slate-900 dark:text-white">
+                    <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-white">
                       {row.countryName} ({row.iso3})
                     </td>
-                    <td className="py-2.5 px-2 text-right font-bold">
+                    <td className="py-2.5 px-2 text-right font-semibold">
                       {row.domesticBanksSharePct}%
                     </td>
                     <td className="py-2.5 px-2 text-right">{row.domesticNonBankSharePct}%</td>
@@ -1186,10 +1186,10 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                         {row.stressedBankSystemCet1RatioPct}%
                       </strong>
                     </td>
-                    <td className="py-2.5 px-2 text-right font-bold">
+                    <td className="py-2.5 px-2 text-right font-semibold">
                       {row.doomLoopContagionScore}/100
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-[11px] font-semibold">
+                    <td className="py-2.5 px-3 font-sans text-xs font-semibold">
                       {row.doomLoopRegime.replace(/_/g, ' ')}
                     </td>
                   </tr>
@@ -1208,10 +1208,10 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           {/* Top Export Bar */}
           <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div>
-              <div className="text-xs font-mono text-indigo-600 dark:text-indigo-400 font-bold">
+              <div className="text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
                 {icPitchbookDossier.dossierId} · CONVICTION: {icPitchbookDossier.convictionConfidencePct}%
               </div>
-              <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white mt-0.5">
+              <h3 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-white mt-0.5">
                 {icPitchbookDossier.committeeTitle}
               </h3>
             </div>
@@ -1225,7 +1225,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     `Exported Multi-Page Investment Committee Pitchbook PDF (${icPitchbookDossier.dossierId}.pdf).`
                   );
                 }}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors"
+                className="ui-btn ui-btn-primary inline-flex"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Export Multi-Page PDF Pitchbook</span>
@@ -1239,7 +1239,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     `Downloaded Investment Committee Markdown Memo (${icPitchbookDossier.dossierId}.md).`
                   );
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <FileText className="w-3.5 h-3.5" />
                 <span>Download Markdown (.md)</span>
@@ -1253,7 +1253,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                     `Exported Canonical IC Pitchbook JSON (${icPitchbookDossier.dossierId}.json).`
                   );
                 }}
-                className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="ui-btn inline-flex"
               >
                 <FileCode className="w-3.5 h-3.5" />
                 <span>Export JSON (.json)</span>
@@ -1270,7 +1270,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
               <button
                 type="button"
                 onClick={() => setExportStatusBanner(null)}
-                className="underline text-[11px]"
+                className="underline text-xs"
               >
                 Dismiss
               </button>
@@ -1280,12 +1280,12 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           {/* Committee Vote Selector & Custom Thesis Editor */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             <div className="lg:col-span-5 p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
-              <div className="font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <div className="font-semibold text-slate-900 dark:text-white">
                 Customize Investment Committee Vote & Thesis Directive
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                   Formal Investment Committee Vote Recommendation
                 </label>
                 <select
@@ -1295,22 +1295,22 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       e.target.value as BoardroomICPitchbookDossier['recommendedCommitteeVote']
                     )
                   }
-                  className="w-full px-2.5 py-1.5 text-xs font-mono bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800"
                 >
                   <option value="APPROVE_OVERWEIGHT_ALLOCATION">
-                    APPROVE OVERWEIGHT ALLOCATION (SELL CDS / LONG CARRY)
+                    Approve overweight allocation (sell CDS / long carry)
                   </option>
                   <option value="HOLD_NEUTRAL_WAIT_FOR_CATALYST">
-                    HOLD NEUTRAL / RELATIVE-VALUE CURVE TRADE ONLY
+                    Hold neutral / relative-value curve trade only
                   </option>
                   <option value="APPROVE_DEFENSIVE_CDS_HEDGE">
-                    APPROVE DEFENSIVE 5Y CDS & FX NDF HEDGE
+                    Approve defensive 5Y CDS & FX ndf hedge
                   </option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                   Override Executive Thesis Summary (Optional)
                 </label>
                 <textarea
@@ -1325,7 +1325,7 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
 
             {/* Right: 4-Pillar Evidence Summary & Kill-Switches */}
             <div className="lg:col-span-7 p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
-              <div className="font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+              <div className="font-semibold text-slate-900 dark:text-white">
                 Executive Pitchbook Synthesis ({run.countryName} · {run.iso3})
               </div>
               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -1334,8 +1334,8 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
 
               <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-800">
                 {icPitchbookDossier.keyThesisPillars.map((pillar, idx) => (
-                  <div key={idx} className="text-[11px] text-slate-600 dark:text-slate-400">
-                    <strong className="font-mono text-indigo-600 dark:text-indigo-400 mr-1.5">
+                  <div key={idx} className="text-xs text-slate-600 dark:text-slate-400">
+                    <strong className="tabular-nums text-blue-600 dark:text-blue-400 mr-1.5">
                       0{idx + 1}.
                     </strong>
                     {pillar}
@@ -1348,16 +1348,16 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
           {/* Multi-Sovereign Comparative IC Matrix */}
           <div className="border border-slate-200 dark:border-slate-800 overflow-x-auto">
             <div className="px-4 py-2.5 bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+              <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 Cross-Sovereign Investment Committee Comparative Matrix (Zero-Notional Units)
               </span>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 5Y CDS (bps) · Shadow Rating · BEER/FEER FX (%) · Bank Doom-Loop · Event Odds (¢)
               </span>
             </div>
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-[11px] font-mono text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs tabular-nums text-slate-500">
                   <th className="py-2.5 px-3">Sovereign</th>
                   <th className="py-2.5 px-2 text-right">Spot 5Y CDS</th>
                   <th className="py-2.5 px-2 text-right">Mod-Mkt Gap</th>
@@ -1369,22 +1369,22 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                   <th className="py-2.5 px-3">Primary Trade Structure</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 font-mono tabular-nums">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 tabular-nums">
                 {icPitchbookDossier.comparativeMatrix.map((row) => (
                   <tr
                     key={row.iso3}
                     className={
                       row.isCurrentActiveSovereign
-                        ? 'bg-indigo-50/50 dark:bg-indigo-950/30'
+                        ? 'bg-blue-50/50 dark:bg-blue-950/30'
                         : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                     }
                   >
-                    <td className="py-2.5 px-3 font-sans font-bold text-slate-900 dark:text-white">
+                    <td className="py-2.5 px-3 font-sans font-semibold text-slate-900 dark:text-white">
                       {row.countryName} ({row.iso3})
                     </td>
                     <td className="py-2.5 px-2 text-right">{row.spot5YCdsBps} bp</td>
                     <td
-                      className={`py-2.5 px-2 text-right font-bold ${
+                      className={`py-2.5 px-2 text-right font-semibold ${
                         row.modelVsMarketCdsGapPct >= 4
                           ? 'text-emerald-600 dark:text-emerald-400'
                           : row.modelVsMarketCdsGapPct <= -4
@@ -1414,10 +1414,10 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
                       {row.bankDoomLoopScore}/100 ({row.cet1PostStressPct}%)
                     </td>
                     <td className="py-2.5 px-2 text-right">{row.topPredictionEventOddsCents}¢</td>
-                    <td className="py-2.5 px-2 font-sans text-[11px] font-bold">
+                    <td className="py-2.5 px-2 font-sans text-xs font-semibold">
                       {row.icConvictionVote.replace(/_/g, ' ')}
                     </td>
-                    <td className="py-2.5 px-3 font-sans text-[11px] text-slate-700 dark:text-slate-300">
+                    <td className="py-2.5 px-3 font-sans text-xs text-slate-700 dark:text-slate-300">
                       {row.primaryTradeStructure}
                     </td>
                   </tr>

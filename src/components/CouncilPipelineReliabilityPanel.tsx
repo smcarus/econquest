@@ -151,13 +151,13 @@ export const CouncilPipelineReliabilityPanel: React.FC<
           <div className="text-xs text-slate-500 dark:text-slate-400">
             <span>Council Execution DAG &amp; Quantitative Anchor Guardrail Telemetry</span>
             <span className="mx-2" aria-hidden="true">·</span>
-            <span className="font-mono tabular-nums">Run ID: {telemetry.pipelineRunId}</span>
+            <span className="tabular-nums">Run ID: {telemetry.pipelineRunId}</span>
             <span className="mx-2" aria-hidden="true">·</span>
-            <span className="font-mono tabular-nums">
+            <span className="tabular-nums">
               Anti-Hallucination Corridor: ±0.22 vs Live Market Anchors
             </span>
           </div>
-          <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-1">
+          <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-1">
             Pipeline Execution Health, Latency &amp; Quantitative Anchor Audit
           </h3>
         </div>
@@ -168,7 +168,7 @@ export const CouncilPipelineReliabilityPanel: React.FC<
               type="button"
               onClick={onReverifyPipeline}
               disabled={isRunningPhase1And2}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+              className="ui-btn ui-btn-primary inline-flex shrink-0"
             >
               <RefreshCw
                 className={`w-3.5 h-3.5 ${isRunningPhase1And2 ? 'animate-spin' : ''}`}
@@ -203,38 +203,38 @@ export const CouncilPipelineReliabilityPanel: React.FC<
       {/* Top 4 KPI Summary Strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             Pipeline Reliability &amp; Schema Verification
           </div>
-          <div className="text-lg font-bold font-mono tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
+          <div className="text-lg font-semibold tabular-nums text-emerald-600 dark:text-emerald-400 mt-0.5">
             {telemetry.overallReliabilityScorePct}% · 9/9 Agents Hydrated
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Parallel `Promise.allSettled` Desk Isolation
           </div>
         </div>
 
         <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             End-to-End Execution Latency &amp; Retries
           </div>
-          <div className="text-lg font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
+          <div className="text-lg font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-0.5">
             {telemetry.totalLatencyMs.toLocaleString()} ms · {totalRetries} Retries
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             Exponential Backoff + JSON Schema Sanitizer
           </div>
         </div>
 
         <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             Quantitative Anchor Bounds (±0.22 Corridor)
           </div>
-          <div className="text-lg font-bold font-mono tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
+          <div className="text-lg font-semibold tabular-nums text-blue-600 dark:text-blue-400 mt-0.5">
             Geo {anchors.geopolitical.toFixed(2)} · Sov {anchors.sovereign.toFixed(2)} · Mac{' '}
             {anchors.macro.toFixed(2)}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {clampedCount > 0
               ? `${clampedCount} stage(s) clamped to live market anchor corridor`
               : 'Zero model drift beyond empirical market corridor'}
@@ -242,13 +242,13 @@ export const CouncilPipelineReliabilityPanel: React.FC<
         </div>
 
         <div className="p-3.5 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             Active Grounding &amp; Runtime Provenance
           </div>
-          <div className="text-sm font-bold font-mono tabular-nums text-slate-900 dark:text-slate-100 mt-1 truncate">
+          <div className="text-sm font-semibold tabular-nums text-slate-900 dark:text-slate-100 mt-1 truncate">
             {telemetry.searchGroundingSourcesCount} Verified Feeds Active
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 truncate">
+          <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
             {telemetry.activeProvider}
           </div>
         </div>
@@ -270,7 +270,7 @@ export const CouncilPipelineReliabilityPanel: React.FC<
               }`}
             >
               <div>
-                <div className="flex items-center justify-between gap-1 text-[11px] font-mono tabular-nums">
+                <div className="flex items-center justify-between gap-1 text-xs tabular-nums">
                   <span className="text-slate-500 dark:text-slate-400">NODE 0{idx + 1}</span>
                   <span
                     className={
@@ -284,12 +284,12 @@ export const CouncilPipelineReliabilityPanel: React.FC<
                     {stage.latencyMs > 0 ? `${stage.latencyMs}ms` : 'GATE'}
                   </span>
                 </div>
-                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 mt-1 line-clamp-2">
+                <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1 line-clamp-2">
                   {stage.stageLabel.replace(/^Stage \d[A-C]? · /, '')}
                 </div>
               </div>
 
-              <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-[11px] font-mono tabular-nums">
+              <div className="mt-2.5 pt-2 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs tabular-nums">
                 <span className="text-slate-500 dark:text-slate-400">
                   { typeof stage.finalBoundedScore === 'number'
                     ? `Score ${stage.finalBoundedScore.toFixed(2)}`
@@ -312,9 +312,9 @@ export const CouncilPipelineReliabilityPanel: React.FC<
       {selectedStage && (
         <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-col lg:flex-row lg:items-center justify-between gap-3 text-xs">
           <div className="space-y-1">
-            <div className="flex flex-wrap items-center gap-2 text-slate-500 dark:text-slate-400 font-mono">
+            <div className="flex flex-wrap items-center gap-2 text-slate-500 dark:text-slate-400 tabular-nums">
               <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-              <span className="font-bold text-slate-900 dark:text-slate-100">
+              <span className="font-semibold text-slate-900 dark:text-slate-100">
                 {selectedStage.stageLabel}
               </span>
               <span aria-hidden="true">·</span>
@@ -328,24 +328,24 @@ export const CouncilPipelineReliabilityPanel: React.FC<
           </div>
 
           {typeof selectedStage.quantitativeAnchorScore === 'number' && (
-            <div className="flex items-center gap-4 shrink-0 font-mono tabular-nums text-xs border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 pt-2 lg:pt-0 lg:pl-4">
+            <div className="flex items-center gap-4 shrink-0 tabular-nums text-xs border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 pt-2 lg:pt-0 lg:pl-4">
               <div>
-                <span className="text-[10px] text-slate-400 block">QUANT ANCHOR</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">
+                <span className="text-xs text-slate-400 block">Quant anchor</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {selectedStage.quantitativeAnchorScore.toFixed(2)}
                 </span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
               <div>
-                <span className="text-[10px] text-slate-400 block">RAW AI SCORE</span>
-                <span className="font-bold text-slate-800 dark:text-slate-200">
+                <span className="text-xs text-slate-400 block">Raw AI score</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
                   {(selectedStage.rawModelScore ?? selectedStage.quantitativeAnchorScore).toFixed(2)}
                 </span>
               </div>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
               <div>
-                <span className="text-[10px] text-slate-400 block">BOUNDED FINAL</span>
-                <span className="font-bold text-blue-600 dark:text-blue-400">
+                <span className="text-xs text-slate-400 block">Bounded final</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400">
                   {(selectedStage.finalBoundedScore ?? selectedStage.quantitativeAnchorScore).toFixed(
                     2
                   )}
@@ -358,7 +358,7 @@ export const CouncilPipelineReliabilityPanel: React.FC<
             <button
               type="button"
               onClick={onJumpToCROGate}
-              className="px-3 py-1.5 text-xs font-semibold text-white bg-amber-600 hover:bg-amber-500 transition-colors whitespace-nowrap shrink-0"
+              className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors whitespace-nowrap shrink-0"
             >
               Open CRO Approval Gate →
             </button>
@@ -399,7 +399,7 @@ export const CouncilPipelineReliabilityPanel: React.FC<
                   <td className="py-2.5 px-3 text-slate-600 dark:text-slate-300">
                     {st.agentsCovered.join(' · ')}
                   </td>
-                  <td className="py-2.5 px-3 font-mono text-[11px]">
+                  <td className="py-2.5 px-3 tabular-nums text-xs">
                     <span
                       className={
                         st.status === 'VERIFIED_AI'
@@ -412,21 +412,21 @@ export const CouncilPipelineReliabilityPanel: React.FC<
                       {formatStatusLabel(st.status)}
                     </span>
                   </td>
-                  <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-700 dark:text-slate-300">
+                  <td className="py-2.5 px-3 tabular-nums text-right text-slate-700 dark:text-slate-300">
                     {st.latencyMs > 0 ? `${st.latencyMs} ms` : '—'}
                   </td>
-                  <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-700 dark:text-slate-300">
+                  <td className="py-2.5 px-3 tabular-nums text-right text-slate-700 dark:text-slate-300">
                     {st.retriesUsed}
                   </td>
-                  <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-600 dark:text-slate-400">
+                  <td className="py-2.5 px-3 tabular-nums text-right text-slate-600 dark:text-slate-400">
                     {typeof st.quantitativeAnchorScore === 'number'
                       ? st.quantitativeAnchorScore.toFixed(2)
                       : '—'}
                   </td>
-                  <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-600 dark:text-slate-400">
+                  <td className="py-2.5 px-3 tabular-nums text-right text-slate-600 dark:text-slate-400">
                     {typeof st.rawModelScore === 'number' ? st.rawModelScore.toFixed(2) : '—'}
                   </td>
-                  <td className="py-2.5 px-3 font-mono font-bold tabular-nums text-right text-blue-600 dark:text-blue-400">
+                  <td className="py-2.5 px-3 tabular-nums font-semibold text-right text-blue-600 dark:text-blue-400">
                     {typeof st.finalBoundedScore === 'number'
                       ? st.finalBoundedScore.toFixed(2)
                       : '—'}

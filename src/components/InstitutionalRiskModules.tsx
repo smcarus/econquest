@@ -168,7 +168,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
       { bucket: 'Affirm / Stable', probabilityPct: probStable, color: '#3b82f6' },
       { bucket: '-1 Notch Downgrade', probabilityPct: probDowngrade1, color: '#f59e0b' },
       { bucket: '-2+ Notch Cliff', probabilityPct: probDowngrade2Plus, color: '#f97316' },
-      { bucket: 'Distressed / CAC', probabilityPct: probDefaultExchange, color: '#ef4444' },
+      { bucket: 'Distressed / CAC', probabilityPct: probDefaultExchange, color: '#f43f5e' },
     ];
 
     // Fallen-Angel (IG -> HY) Forced-Selling Cliff Calculation
@@ -452,13 +452,13 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 Tier-1 Sovereign Credit &amp; Balance-of-Payments Desk · Rating Migration, Sovereign-Bank Doom Loop, IMF ARA Adequacy &amp; (r − g) Solvency
               </span>
             </div>
-            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {run.countryName} ({run.iso3}) — Sovereign Debt Sustainability, Rating Cliff &amp; BoP Stress Suite
             </h2>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <div className="inline-flex border border-slate-300 dark:border-slate-700 text-xs font-mono">
+            <div className="inline-flex border border-slate-300 dark:border-slate-700 text-xs tabular-nums">
               <button
                 type="button"
                 onClick={() => setFxRegimeMode('FLOATING')}
@@ -511,7 +511,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 <Sliders className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Sovereign Yield Curve Shock</span>
               </span>
-              <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                 +{yieldShockBps} bps
               </span>
             </div>
@@ -524,7 +524,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               onChange={(e) => setYieldShockBps(Number(e.target.value))}
               className="w-full accent-amber-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>+0 bps Baseline</span>
               <span>+200 bps Rerating</span>
               <span>+500 bps Distress</span>
@@ -534,10 +534,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <TrendingDown className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                <TrendingDown className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>1Y External Debt Rollover Freeze</span>
               </span>
-              <span className="font-mono font-bold text-red-600 dark:text-red-400">
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                 {rolloverFreezePct}% Frozen
               </span>
             </div>
@@ -548,9 +548,9 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               step={5}
               value={rolloverFreezePct}
               onChange={(e) => setRolloverFreezePct(Number(e.target.value))}
-              className="w-full accent-red-600 cursor-pointer"
+              className="w-full accent-rose-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0% Full Rollover</span>
               <span>50% Sudden Stop</span>
               <span>100% Market Lockout</span>
@@ -560,10 +560,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Building2 className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Domestic M2 Deposit Dollarization Flight</span>
               </span>
-              <span className="font-mono font-bold text-purple-600 dark:text-purple-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {m2CapitalFlightPct.toFixed(1)}% M2 Outflow
               </span>
             </div>
@@ -574,9 +574,9 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               step={0.5}
               value={m2CapitalFlightPct}
               onChange={(e) => setM2CapitalFlightPct(Number(e.target.value))}
-              className="w-full accent-purple-600 cursor-pointer"
+              className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0% Stable Deposits</span>
               <span>5% IMF ARA Weight</span>
               <span>15% Bank Run</span>
@@ -622,7 +622,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   Sovereign Credit Rating Migration Matrix &amp; Fallen-Angel Forced-Selling Cliff ({run.countryName})
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 Agency Rating ({ratingAnalytics.agencySpec.spCode}) vs. Stressed CDS-Implied Rating ({ratingAnalytics.cdsImpliedSpec.spCode}) ·{' '}
                 {ratingAnalytics.notchDislocation < 0
                   ? `Market Prices ${Math.abs(ratingAnalytics.notchDislocation)} Notch Downgrade Lead`
@@ -631,7 +631,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   : 'Aligned with Agency Rating'}
               </h3>
             </div>
-            <span className="text-xs font-mono font-bold text-amber-600 dark:text-amber-400 shrink-0">
+            <span className="text-xs tabular-nums font-semibold text-amber-600 dark:text-amber-400 shrink-0">
               Stressed 5Y CDS: {ratingAnalytics.stressedCds} bps · Fallen-Angel Risk: {ratingAnalytics.fallenAngelProbPct}%
             </span>
           </div>
@@ -640,13 +640,13 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">Agency Baseline Rating</span>
-              <span className="font-mono font-bold text-lg text-slate-900 dark:text-slate-100">
+              <span className="tabular-nums font-semibold text-lg text-slate-900 dark:text-slate-100">
                 {ratingAnalytics.agencySpec.spCode}{' '}
                 <span className="text-xs font-normal text-slate-500">
                   ({ratingAnalytics.agencySpec.moodysCode})
                 </span>
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Tier Bucket: {ratingAnalytics.agencySpec.bucket}
               </span>
             </div>
@@ -654,9 +654,9 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">CDS Market-Implied Rating</span>
               <span
-                className={`font-mono font-bold text-lg ${
+                className={`tabular-nums font-semibold text-lg ${
                   ratingAnalytics.cdsImpliedSpec.rank > ratingAnalytics.agencySpec.rank
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
                 }`}
               >
@@ -666,27 +666,27 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   {ratingAnalytics.notchDislocation} notches)
                 </span>
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Macro-Fundamental Implied: {ratingAnalytics.macroSpec.spCode}
               </span>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">IG-to-HY Forced Index Selling</span>
-              <span className="font-mono font-bold text-lg text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-lg text-amber-600 dark:text-amber-400">
                 -${ratingAnalytics.forcedIndexSellingUsdBn}B
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Domestic Absorption: +${ratingAnalytics.domesticAbsorptionCapacityUsdBn}B (Gap: ${ratingAnalytics.netUnabsorbedOutflowUsdBn}B)
               </span>
             </div>
 
-            <div className="p-3 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
-              <span className="text-red-600 dark:text-red-400 block">Fallen-Angel 10Y Yield Cliff</span>
-              <span className="font-mono font-bold text-lg text-red-600 dark:text-red-400">
+            <div className="p-3 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50">
+              <span className="text-rose-600 dark:text-rose-400 block">Fallen-Angel 10Y Yield Cliff</span>
+              <span className="tabular-nums font-semibold text-lg text-rose-600 dark:text-rose-400">
                 +{ratingAnalytics.fallenAngelYieldSpikeBps} bps
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
                 WGBI / EMBI IG Mandate Exclusion Impact
               </span>
             </div>
@@ -696,21 +696,21 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
             {/* 12-Month Markov Transition Probability Bar Chart (6 cols) */}
             <div className="xl:col-span-6 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   12-Month Markov Credit Rating Transition Distribution (%)
                 </div>
-                <span className="text-[11px] font-mono text-slate-500">
+                <span className="text-xs tabular-nums text-slate-500">
                   Conditioned on +{yieldShockBps}bp Shock
                 </span>
               </div>
               <div className="space-y-3 pt-1">
                 {ratingAnalytics.transitionData.map((entry) => (
                   <div key={entry.bucket} className="space-y-1 text-xs">
-                    <div className="flex items-center justify-between font-mono">
+                    <div className="flex items-center justify-between tabular-nums">
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
                         {entry.bucket}
                       </span>
-                      <span className="font-bold tabular-nums text-slate-900 dark:text-slate-100">
+                      <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                         {entry.probabilityPct}%
                       </span>
                     </div>
@@ -732,7 +732,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
             <div className="xl:col-span-6 overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+                  <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <th className="py-2 px-3">Rating Tier (S&amp;P / Moody&apos;s)</th>
                     <th className="py-2 px-3">Mandate Bucket</th>
                     <th className="py-2 px-3 text-right">Par 5Y CDS</th>
@@ -757,28 +757,28 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                             : ''
                         }
                       >
-                        <td className="py-2 px-3 font-mono text-slate-900 dark:text-slate-100">
+                        <td className="py-2 px-3 tabular-nums text-slate-900 dark:text-slate-100">
                           {tier.spCode} <span className="text-slate-400">({tier.moodysCode})</span>
                         </td>
-                        <td className="py-2 px-3 text-[11px] text-slate-600 dark:text-slate-300">
+                        <td className="py-2 px-3 text-xs text-slate-600 dark:text-slate-300">
                           {tier.rank === 7 ? 'BBB- IG CLIFF THRESHOLD' : tier.bucket}
                         </td>
-                        <td className="py-2 px-3 font-mono tabular-nums text-right text-slate-700 dark:text-slate-300">
+                        <td className="py-2 px-3 tabular-nums text-right text-slate-700 dark:text-slate-300">
                           {tier.typicalCdsBps} bps
                         </td>
                         <td className="py-2 px-3 text-center space-x-1">
                           {isAgency && (
-                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-blue-600 text-white">
+                            <span className="inline-block px-1.5 py-0.5 text-xs tabular-nums bg-blue-600 text-white">
                               AGENCY
                             </span>
                           )}
                           {isMarket && (
-                            <span className="inline-block px-1.5 py-0.5 text-[10px] font-mono bg-red-600 text-white">
-                              CDS IMPLIED
+                            <span className="inline-block px-1.5 py-0.5 text-xs tabular-nums bg-rose-600 text-white">
+                              CDS implied
                             </span>
                           )}
                           {!isAgency && !isMarket && (
-                            <span className="text-[10px] font-mono text-slate-400">—</span>
+                            <span className="text-xs tabular-nums text-slate-400">—</span>
                           )}
                         </td>
                       </tr>
@@ -803,16 +803,16 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div>
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                <Landmark className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <Landmark className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>
                   Sovereign-Bank &quot;Doom Loop&quot; Nexus, Tier-1 Capital Contagion &amp; Financial Repression Analyzer ({run.countryName})
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 Domestic Banks Hold ${doomLoopAnalytics.totalBankSovPortfolioUsdBn}B Sovereign Debt ({doomLoopAnalytics.bankSovHoldingsPctAssets}% Assets / {doomLoopAnalytics.bankSovHoldingsPctCet1}% CET1) · +{yieldShockBps}bp Shock Erodes -{doomLoopAnalytics.cet1ErosionBps} bps CET1
               </h3>
             </div>
-            <span className="text-xs font-mono font-bold text-purple-600 dark:text-purple-400 shrink-0">
+            <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400 shrink-0">
               Contingent Bank Bailout: +{doomLoopAnalytics.recapitalizationCostPctGdp}% GDP · CDS Feedback: +{doomLoopAnalytics.doomLoopCdsFeedbackBps} bps
             </span>
           </div>
@@ -821,20 +821,20 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">Bank Sovereign Bond Exposure</span>
-              <span className="font-mono font-bold text-lg text-slate-900 dark:text-slate-100">
+              <span className="tabular-nums font-semibold text-lg text-slate-900 dark:text-slate-100">
                 {doomLoopAnalytics.bankSovHoldingsPctAssets}% Assets
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 {doomLoopAnalytics.bankSovHoldingsPctCet1}% of Tier-1 CET1 (${doomLoopAnalytics.totalBankSovPortfolioUsdBn}B)
               </span>
             </div>
 
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">Unrealized Mark-to-Market Loss</span>
-              <span className="font-mono font-bold text-lg text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-lg text-amber-600 dark:text-amber-400">
                 -${doomLoopAnalytics.unrealizedLossUsdBn}B ({doomLoopAnalytics.portfolioMtmLossPct}%)
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 AFS Book: {doomLoopAnalytics.afsSharePct}% · HTM Book: {doomLoopAnalytics.htmSharePct}% (Dur: {doomLoopAnalytics.effectiveDurationYears}y)
               </span>
             </div>
@@ -842,9 +842,9 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">Stressed Banking CET1 Ratio</span>
               <span
-                className={`font-mono font-bold text-lg ${
+                className={`tabular-nums font-semibold text-lg ${
                   doomLoopAnalytics.stressedCet1RatioPct < 10.5
-                    ? 'text-red-600 dark:text-red-400'
+                    ? 'text-rose-600 dark:text-rose-400'
                     : 'text-emerald-600 dark:text-emerald-400'
                 }`}
               >
@@ -853,17 +853,17 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   (vs {doomLoopAnalytics.baselineCet1RatioPct}% Base)
                 </span>
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Regulatory Buffer Floor: 10.50% CET1
               </span>
             </div>
 
-            <div className="p-3 bg-purple-50/50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-900/50">
-              <span className="text-purple-700 dark:text-purple-300 block">Post-Bailout Sovereign Debt/GDP</span>
-              <span className="font-mono font-bold text-lg text-purple-700 dark:text-purple-300">
+            <div className="p-3 bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-900/50">
+              <span className="text-blue-700 dark:text-blue-300 block">Post-Bailout Sovereign Debt/GDP</span>
+              <span className="tabular-nums font-semibold text-lg text-blue-700 dark:text-blue-300">
                 {doomLoopAnalytics.postBailoutDebtToGdpPct}% GDP
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-500 dark:text-slate-400 block mt-0.5">
                 +{doomLoopAnalytics.recapitalizationCostPctGdp}% GDP Contingent Liability Transfer
               </span>
             </div>
@@ -873,10 +873,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
             {/* CET1 Capital Erosion Cascade Chart (6 cols) */}
             <div className="xl:col-span-6 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                   Domestic Banking Sector CET1 Ratio Under Sovereign Yield Shock (%)
                 </div>
-                <span className="text-[11px] font-mono text-red-500">
+                <span className="text-xs tabular-nums text-rose-500">
                   10.5% Basel III Hurdle
                 </span>
               </div>
@@ -885,14 +885,14 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   const breached = entry.cet1Pct < 10.5;
                   return (
                     <div key={entry.label} className="space-y-1 text-xs">
-                      <div className="flex items-center justify-between font-mono">
+                      <div className="flex items-center justify-between tabular-nums">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {entry.label}
                         </span>
                         <span
-                          className={`font-bold tabular-nums ${
+                          className={`font-semibold tabular-nums ${
                             breached
-                              ? 'text-red-600 dark:text-red-400'
+                              ? 'text-rose-600 dark:text-rose-400'
                               : 'text-emerald-600 dark:text-emerald-400'
                           }`}
                         >
@@ -905,7 +905,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                           style={{
                             width: `${Math.min(100, (entry.cet1Pct / 16) * 100)}%`,
                             backgroundColor: breached
-                              ? '#ef4444'
+                              ? '#f43f5e'
                               : idx === 0
                               ? '#3b82f6'
                               : '#f59e0b',
@@ -913,7 +913,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                         />
                         {/* 10.5% Minimum CET1 Marker */}
                         <div
-                          className="absolute top-0 bottom-0 w-0.5 bg-red-600"
+                          className="absolute top-0 bottom-0 w-0.5 bg-rose-600"
                           style={{ left: `${(10.5 / 16) * 100}%` }}
                           title="10.5% Basel III Regulatory Hurdle"
                         />
@@ -927,16 +927,16 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
             {/* Financial Repression & Captive Demand Breakdown (6 cols) */}
             <div className="xl:col-span-6 space-y-3">
               <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3 text-xs">
-                <div className="font-bold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-2">
+                <div className="font-semibold text-slate-900 dark:text-slate-100 border-b border-slate-200 dark:border-slate-800 pb-2">
                   Financial Repression &amp; Captive Domestic Absorption Channels
                 </div>
-                <div className="grid grid-cols-2 gap-3 font-mono">
+                <div className="grid grid-cols-2 gap-3 tabular-nums">
                   <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[11px] font-sans text-slate-500 block">
+                    <span className="text-xs font-sans text-slate-500 block">
                       Real 10Y Yield (Nominal − CPI)
                     </span>
                     <span
-                      className={`text-sm font-bold ${
+                      className={`text-sm font-semibold ${
                         doomLoopAnalytics.realInterestRepressionPct < 0
                           ? 'text-amber-600 dark:text-amber-400'
                           : 'text-emerald-600 dark:text-emerald-400'
@@ -945,20 +945,20 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                       {doomLoopAnalytics.realInterestRepressionPct > 0 ? '+' : ''}
                       {doomLoopAnalytics.realInterestRepressionPct}%
                     </span>
-                    <span className="text-[10px] font-sans text-slate-400 block">
+                    <span className="text-xs font-sans text-slate-400 block">
                       {doomLoopAnalytics.realInterestRepressionPct < 0
                         ? 'Negative Real Rate Repression Active'
                         : 'Positive Real Bond Compensation'}
                     </span>
                   </div>
                   <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-[11px] font-sans text-slate-500 block">
+                    <span className="text-xs font-sans text-slate-500 block">
                       Inflation Debt Liquidation Transfer
                     </span>
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                       {doomLoopAnalytics.implicitInflationLiquidationPctGdp}% GDP / yr
                     </span>
-                    <span className="text-[10px] font-sans text-slate-400 block">
+                    <span className="text-xs font-sans text-slate-400 block">
                       Implicit Real Bondholder Haircut
                     </span>
                   </div>
@@ -966,17 +966,17 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 <ul className="space-y-1.5 text-slate-600 dark:text-slate-300 leading-relaxed">
                   <li>
                     • <strong>HTM Accounting Shield vs. Liquidity Run:</strong> While{' '}
-                    <span className="font-mono font-semibold">{doomLoopAnalytics.htmSharePct}%</span> of domestic bank sovereign holdings sit in Held-to-Maturity (HTM) buckets, a{' '}
-                    <span className="font-mono font-semibold">{m2CapitalFlightPct.toFixed(1)}%</span> M2 deposit outflow forces banks to pledge underwater HTM bonds at central bank discount facilities with widened repo haircuts.
+                    <span className="tabular-nums font-semibold">{doomLoopAnalytics.htmSharePct}%</span> of domestic bank sovereign holdings sit in Held-to-Maturity (HTM) buckets, a{' '}
+                    <span className="tabular-nums font-semibold">{m2CapitalFlightPct.toFixed(1)}%</span> M2 deposit outflow forces banks to pledge underwater HTM bonds at central bank discount facilities with widened repo haircuts.
                   </li>
                   <li>
                     • <strong>Two-Way Sovereign-Bank Feedback:</strong> A{' '}
-                    <span className="font-mono font-semibold">+{yieldShockBps} bps</span> sovereign yield spike inflicts{' '}
-                    <span className="font-mono font-semibold text-red-600 dark:text-red-400">
+                    <span className="tabular-nums font-semibold">+{yieldShockBps} bps</span> sovereign yield spike inflicts{' '}
+                    <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       -${doomLoopAnalytics.unrealizedLossUsdBn}B
                     </span>{' '}
                     in portfolio losses, adding{' '}
-                    <span className="font-mono font-semibold">
+                    <span className="tabular-nums font-semibold">
                       +{doomLoopAnalytics.doomLoopCdsFeedbackBps} bps
                     </span>{' '}
                     of secondary contagion to 5Y Sovereign CDS.
@@ -1005,14 +1005,14 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   IMF Assessing Reserve Adequacy (ARA) Decomposition &amp; Capital-Account Sudden-Stop Stress Tester ({run.countryName})
                 </span>
               </div>
-              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 IMF ARA Composite Coverage: {araAnalytics.headlineAraRatioPct}% Headline ({araAnalytics.netUsableAraRatioPct}% Net Unencumbered) vs. 100%–150% IMF Safe Zone
               </h3>
             </div>
             <span
-              className={`text-xs font-mono font-bold shrink-0 ${
+              className={`text-xs tabular-nums font-semibold shrink-0 ${
                 araAnalytics.monthsToFloorBreach < 12
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-emerald-600 dark:text-emerald-400'
               }`}
             >
@@ -1024,10 +1024,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 text-xs">
             <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
               <span className="text-slate-500 block">1. ST External Debt (30% Weight)</span>
-              <span className="font-mono font-bold text-base text-slate-900 dark:text-slate-100">
+              <span className="tabular-nums font-semibold text-base text-slate-900 dark:text-slate-100">
                 ${araAnalytics.reqStDebtUsdBn}B Required
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Rollover Risk on ${rollover.shortTermExternalDebtUsdBn}B 1Y Debt
               </span>
             </div>
@@ -1036,10 +1036,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               <span className="text-slate-500 block">
                 2. Broad Money M2 ({fxRegimeMode === 'FLOATING' ? '5%' : '10%'} Weight)
               </span>
-              <span className="font-mono font-bold text-base text-slate-900 dark:text-slate-100">
+              <span className="tabular-nums font-semibold text-base text-slate-900 dark:text-slate-100">
                 ${araAnalytics.reqBroadMoneyUsdBn}B Required
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Resident Deposit Capital Flight Buffer
               </span>
             </div>
@@ -1048,10 +1048,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               <span className="text-slate-500 block">
                 3. Portfolio Liabilities ({fxRegimeMode === 'FLOATING' ? '15%' : '20%'} Weight)
               </span>
-              <span className="font-mono font-bold text-base text-slate-900 dark:text-slate-100">
+              <span className="tabular-nums font-semibold text-base text-slate-900 dark:text-slate-100">
                 ${araAnalytics.reqPortfolioUsdBn}B Required
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Non-Resident Equity &amp; Bond Outflow Buffer
               </span>
             </div>
@@ -1060,10 +1060,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               <span className="text-slate-500 block">
                 4. Export Drop ({fxRegimeMode === 'FLOATING' ? '5%' : '10%'} Weight) &amp; Total ARA
               </span>
-              <span className="font-mono font-bold text-base text-blue-600 dark:text-blue-400">
+              <span className="tabular-nums font-semibold text-base text-blue-600 dark:text-blue-400">
                 ${araAnalytics.totalImfAraRequirementUsdBn}B Total ARA
               </span>
-              <span className="text-[11px] text-slate-400 block mt-0.5">
+              <span className="text-xs text-slate-400 block mt-0.5">
                 Net Usable Reserves: ${araAnalytics.netUnencumberedReservesUsdBn}B (Ex-${araAnalytics.encumberedReservesUsdBn}B Encumbered)
               </span>
             </div>
@@ -1072,10 +1072,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
           {/* 24-Month FX Reserve Depletion Horizon Curve (Precision Native SVG) */}
           <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 p-4 space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
+              <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 24-Month FX Reserve Depletion Trajectory: Baseline vs. Capital-Account Sudden-Stop ($B)
               </div>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-xs tabular-nums text-slate-500">
                 Annual Sudden-Stop Outflow: -${araAnalytics.totalAnnualSuddenStopDrainUsdBn}B/yr ({rolloverFreezePct}% Rollover Freeze + {m2CapitalFlightPct.toFixed(1)}% M2 Flight)
               </span>
             </div>
@@ -1128,7 +1128,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                           x={padL - 6}
                           y={y + 3}
                           textAnchor="end"
-                          className="text-[10px] font-mono fill-slate-400"
+                          className="text-xs tabular-nums fill-slate-400"
                         >
                           ${val}B
                         </text>
@@ -1150,7 +1150,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                     x={svgW - padR - 4}
                     y={araY - 4}
                     textAnchor="end"
-                    className="text-[9.5px] font-mono fill-blue-400"
+                    className="text-xs tabular-nums fill-blue-400"
                   >
                     100% IMF ARA (${araAnalytics.totalImfAraRequirementUsdBn}B)
                   </text>
@@ -1161,7 +1161,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                     y1={floorY}
                     x2={svgW - padR}
                     y2={floorY}
-                    stroke="#ef4444"
+                    stroke="#f43f5e"
                     strokeWidth={1.3}
                     strokeDasharray="4 4"
                   />
@@ -1169,7 +1169,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                     x={svgW - padR - 4}
                     y={floorY - 4}
                     textAnchor="end"
-                    className="text-[9.5px] font-mono fill-red-400"
+                    className="text-xs tabular-nums fill-rose-400"
                   >
                     3M Import Floor (${araAnalytics.threeMonthImportFloorUsdBn}B)
                   </text>
@@ -1182,7 +1182,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   />
                   <polyline
                     fill="none"
-                    stroke="#ef4444"
+                    stroke="#f43f5e"
                     strokeWidth={2.4}
                     points={stressPts}
                   />
@@ -1199,13 +1199,13 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                         cx={toX(i)}
                         cy={toY(d.stressedReservesUsdBn)}
                         r={3.5}
-                        fill="#ef4444"
+                        fill="#f43f5e"
                       />
                       <text
                         x={toX(i)}
                         y={svgH - 8}
                         textAnchor="middle"
-                        className="text-[10px] font-mono fill-slate-400"
+                        className="text-xs tabular-nums fill-slate-400"
                       >
                         {d.horizon}
                       </text>
@@ -1235,7 +1235,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Cross-Sovereign Relative Value &amp; Peer Benchmarking Matrix
                 </div>
-                <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h2 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Sovereign Spread, Fiscal Burden &amp; Reserve Adequacy Peer Table
                 </h2>
               </div>
@@ -1283,29 +1283,29 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                       >
                         <td className="py-2.5 px-3 text-slate-900 dark:text-slate-100">
                           {peer.countryName} ({peer.iso3}){' '}
-                          <span className="text-slate-400 font-mono">{peer.currencyCode}</span>
+                          <span className="text-slate-400 tabular-nums">{peer.currencyCode}</span>
                           {isCurrent && (
-                            <span className="ml-2 text-[11px] text-blue-600 dark:text-blue-400 font-mono">
+                            <span className="ml-2 text-xs text-blue-600 dark:text-blue-400 tabular-nums">
                               [ACTIVE]
                             </span>
                           )}
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-900 dark:text-slate-100">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-slate-900 dark:text-slate-100">
                           {peer.compositeRisk.toFixed(2)}
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-900 dark:text-slate-100">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-slate-900 dark:text-slate-100">
                           {peer.yield10YPct.toFixed(2)}%
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-amber-600 dark:text-amber-400">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-amber-600 dark:text-amber-400">
                           {peer.cds5YBps} bps
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-800 dark:text-slate-200">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-slate-800 dark:text-slate-200">
                           {peer.debtToGdpPct.toFixed(1)}%
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-emerald-600 dark:text-emerald-400">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-emerald-600 dark:text-emerald-400">
                           {peer.fxReservesMonths.toFixed(1)}m
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-blue-600 dark:text-blue-400">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-blue-600 dark:text-blue-400">
                           {yieldToRisk}x
                         </td>
                         <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300">
@@ -1327,7 +1327,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Redemption Schedule &amp; Greenspan-Guidotti Liquidity Audit ({run.countryName})
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Sovereign Debt Rollover &amp; Maturity Wall Ladder
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
@@ -1339,31 +1339,31 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <span className="text-slate-500 block">Greenspan-Guidotti Ratio</span>
-                  <span className="font-mono font-bold text-sm tabular-nums text-emerald-600 dark:text-emerald-400">
+                  <span className="tabular-nums font-semibold text-sm text-emerald-600 dark:text-emerald-400">
                     {rollover.greenspanGuidottiRatioPct}%
                   </span>
-                  <span className="text-[11px] text-slate-400 block">Reserves / 1Y ST Ext Debt</span>
+                  <span className="text-xs text-slate-400 block">Reserves / 1Y ST Ext Debt</span>
                 </div>
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <span className="text-slate-500 block">Liquid FX Reserves</span>
-                  <span className="font-mono font-bold text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                  <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                     ${rollover.liquidFxReservesUsdBn}B
                   </span>
-                  <span className="text-[11px] text-slate-400 block">vs ${rollover.shortTermExternalDebtUsdBn}B 1Y Ext Wall</span>
+                  <span className="text-xs text-slate-400 block">vs ${rollover.shortTermExternalDebtUsdBn}B 1Y Ext Wall</span>
                 </div>
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <span className="text-slate-500 block">Floating-Rate Share</span>
-                  <span className="font-mono font-bold text-sm tabular-nums text-amber-600 dark:text-amber-400">
+                  <span className="tabular-nums font-semibold text-sm text-amber-600 dark:text-amber-400">
                     {rollover.floatingRateDebtSharePct}%
                   </span>
-                  <span className="text-[11px] text-slate-400 block">Immediate CB Rate Pass-Through</span>
+                  <span className="text-xs text-slate-400 block">Immediate CB Rate Pass-Through</span>
                 </div>
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <span className="text-slate-500 block">Avg Debt Maturity</span>
-                  <span className="font-mono font-bold text-sm tabular-nums text-slate-900 dark:text-slate-100">
+                  <span className="tabular-nums font-semibold text-sm text-slate-900 dark:text-slate-100">
                     {rollover.weightedAvgMaturityYears} yrs
                   </span>
-                  <span className="text-[11px] text-slate-400 block">Foreign Share: {rollover.foreignHoldingsSharePct}%</span>
+                  <span className="text-xs text-slate-400 block">Foreign Share: {rollover.foreignHoldingsSharePct}%</span>
                 </div>
               </div>
 
@@ -1375,7 +1375,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   const extWidth = Math.min(18, b.externalHardCurrencyPctGdp * 4.2);
                   return (
                     <div key={b.periodLabel} className="space-y-1 text-xs">
-                      <div className="flex items-center justify-between font-mono tabular-nums">
+                      <div className="flex items-center justify-between tabular-nums">
                         <span className="font-semibold text-slate-800 dark:text-slate-200">
                           {b.periodLabel} {b.isPeakRollover ? '· Peak Rollover Window' : ''}
                         </span>
@@ -1398,7 +1398,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                     </div>
                   );
                 })}
-                <div className="flex items-center gap-6 pt-2 text-[11px] text-slate-500 dark:text-slate-400">
+                <div className="flex items-center gap-6 pt-2 text-xs text-slate-500 dark:text-slate-400">
                   <span>Blue Bar: Domestic Local-Currency Maturities (% GDP)</span>
                   <span>Amber Bar: External Hard-Currency USD/EUR Maturities (% GDP)</span>
                 </div>
@@ -1413,49 +1413,49 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   <div className="text-xs text-slate-500 dark:text-slate-400">
                     IMF Solvency Identity: pb* = ((r − g) / (1 + g)) × Debt/GDP
                   </div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                     Debt Sustainability (r − g) &amp; Fiscal Consolidation Gap
                   </h3>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5 text-xs font-mono tabular-nums">
+                <div className="grid grid-cols-3 gap-2.5 text-xs tabular-nums">
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 font-sans block text-[11px]">Real Interest (r)</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <span className="text-slate-500 font-sans block text-xs">Real Interest (r)</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       +{dsa.effectiveRealInterestRatePct.toFixed(2)}%
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 font-sans block text-[11px]">Real Growth (g)</span>
-                    <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-slate-500 font-sans block text-xs">Real Growth (g)</span>
+                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                       +{dsa.realGdpGrowthRatePct.toFixed(2)}%
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 font-sans block text-[11px]">Snowball (r − g)</span>
-                    <span className="text-sm font-bold text-amber-600 dark:text-amber-400">
+                    <span className="text-slate-500 font-sans block text-xs">Snowball (r − g)</span>
+                    <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
                       +{dsa.rMinusGDifferentialPct.toFixed(2)}%
                     </span>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2.5 text-xs font-mono tabular-nums">
+                <div className="grid grid-cols-3 gap-2.5 text-xs tabular-nums">
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 font-sans block text-[11px]">Stabilizing pb*</span>
-                    <span className="text-sm font-bold text-blue-600 dark:text-blue-400">
+                    <span className="text-slate-500 font-sans block text-xs">Stabilizing pb*</span>
+                    <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
                       +{dsa.debtStabilizingPrimaryBalancePct.toFixed(2)}% GDP
                     </span>
                   </div>
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 font-sans block text-[11px]">Actual Primary pb</span>
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    <span className="text-slate-500 font-sans block text-xs">Actual Primary pb</span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                       {dsa.actualPrimaryBalancePct > 0 ? '+' : ''}
                       {dsa.actualPrimaryBalancePct.toFixed(2)}% GDP
                     </span>
                   </div>
-                  <div className="p-2.5 bg-red-50/50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50">
-                    <span className="text-red-600 dark:text-red-400 font-sans block text-[11px]">Fiscal Effort Gap</span>
-                    <span className="text-sm font-bold text-red-600 dark:text-red-400">
+                  <div className="p-2.5 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/50">
+                    <span className="text-rose-600 dark:text-rose-400 font-sans block text-xs">Fiscal Effort Gap</span>
+                    <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
                       {dsa.fiscalConsolidationGapPct > 0 ? '+' : ''}
                       {dsa.fiscalConsolidationGapPct.toFixed(2)}% GDP
                     </span>
@@ -1478,27 +1478,27 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                     <div className="text-xs text-slate-500 dark:text-slate-400">
                       Sovereign Yield Curve Term-Structure &amp; Basis
                     </div>
-                    <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                       {curve.curveRegimeLabel}
                     </h3>
                   </div>
-                  <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                  <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     2s10s: {curve.slope2s10sBps > 0 ? '+' : ''}
                     {curve.slope2s10sBps} bps
                   </span>
                 </div>
 
-                <div className="grid grid-cols-6 gap-1.5 text-center font-mono tabular-nums text-xs">
+                <div className="grid grid-cols-6 gap-1.5 text-center tabular-nums text-xs">
                   {curve.tenors.map((t) => (
                     <div
                       key={t.tenor}
                       className="p-2 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                     >
-                      <div className="text-[11px] text-slate-400">{t.tenor}</div>
-                      <div className="font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                      <div className="text-xs text-slate-400">{t.tenor}</div>
+                      <div className="font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                         {t.currentYieldPct.toFixed(2)}%
                       </div>
-                      <div className="text-[10px] text-amber-600 dark:text-amber-400">
+                      <div className="text-xs text-amber-600 dark:text-amber-400">
                         +{((t.currentYieldPct - t.prior90DYieldPct) * 100).toFixed(0)}bp
                       </div>
                     </div>
@@ -1520,7 +1520,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Forward 90-Day Event Risk Schedule ({run.countryName})
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Institutional Catalyst, Central Bank &amp; Rating Review Calendar
                 </h3>
               </div>
@@ -1534,10 +1534,10 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 {open.catalystCalendar.map((ev) => (
                   <div key={ev.eventId} className="py-3 first:pt-1 last:pb-0 space-y-1 text-xs">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-slate-900 dark:text-slate-100">
+                      <span className="font-semibold text-slate-900 dark:text-slate-100">
                         {ev.title}
                       </span>
-                      <span className="font-mono font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap shrink-0">
+                      <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap shrink-0">
                         {ev.dateLabel} · {ev.impliedVolatilityImpact}
                       </span>
                     </div>
@@ -1545,7 +1545,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                       <strong>Now:</strong> {ev.consensusExpectation}
                     </div>
                     {ev.tailRiskScenario && (
-                      <div className="text-red-600 dark:text-red-400">
+                      <div className="text-rose-600 dark:text-rose-400">
                         <strong>Tail Risk Scenario:</strong> {ev.tailRiskScenario}
                       </div>
                     )}
@@ -1570,7 +1570,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   Cross-Border Spillover Elasticities (1-Standard-Deviation Shock Impact)
                 </div>
-                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   Global Macro Factor Beta &amp; Sensitivity Matrix ({run.iso3})
                 </h3>
               </div>
@@ -1592,17 +1592,17 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                           <div className="font-semibold text-slate-900 dark:text-slate-100">
                             {fb.factorName}
                           </div>
-                          <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                          <div className="text-xs text-slate-500 dark:text-slate-400">
                             {fb.transmissionChannel}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-amber-600 dark:text-amber-400 font-semibold">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-amber-600 dark:text-amber-400 font-semibold">
                           +{fb.local10YYieldImpactBps} bps
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-red-600 dark:text-red-400 font-semibold">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-rose-600 dark:text-rose-400 font-semibold">
                           {fb.spotFxImpactPct}%
                         </td>
-                        <td className="py-2.5 px-3 font-mono tabular-nums text-right text-slate-800 dark:text-slate-200 font-semibold">
+                        <td className="py-2.5 px-3 tabular-nums text-right text-slate-800 dark:text-slate-200 font-semibold">
                           +{fb.cds5YImpactBps} bps
                         </td>
                       </tr>

@@ -134,7 +134,7 @@ export const GlobalCommandPaletteModal: React.FC<GlobalCommandPaletteModalProps>
             placeholder="Jump to any of 10 Hubs, 36 Sub-Modules (e.g. '8.1 Shadow Rating', '9.1 Restructuring', 'Polymarket', 'India')..."
             className="w-full bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none"
           />
-          <span className="px-1.5 py-0.5 text-[10px] font-mono bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
+          <span className="px-1.5 py-0.5 text-xs tabular-nums bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
             ESC
           </span>
           <button
@@ -147,7 +147,7 @@ export const GlobalCommandPaletteModal: React.FC<GlobalCommandPaletteModalProps>
         </div>
 
         {/* Category Filter Bar */}
-        <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-[11px]">
+        <div className="flex flex-wrap items-center gap-1.5 px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs">
           {(
             [
               { id: 'ALL', label: `All (${items.length})` },
@@ -199,32 +199,32 @@ export const GlobalCommandPaletteModal: React.FC<GlobalCommandPaletteModalProps>
                 >
                   <div className="flex items-start gap-3 min-w-0">
                     <span
-                      className={`px-2 py-0.5 text-[10px] font-mono font-bold shrink-0 mt-0.5 border ${
+                      className={`px-2 py-0.5 text-xs tabular-nums font-semibold shrink-0 mt-0.5 border ${
                         item.category === 'SUB_MODULE'
-                          ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800'
+                          ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
                           : item.category === 'ANALYTICAL_HUB'
                           ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
                           : item.category === 'SOVEREIGN_SWITCH'
                           ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                           : item.category === 'PERSONA_MODE'
                           ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800'
-                          : 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800'
+                          : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
                       }`}
                     >
                       {item.categoryBadge}
                     </span>
                     <div className="min-w-0">
-                      <div className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      <div className="text-xs font-semibold text-slate-900 dark:text-white truncate">
                         {item.title}
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
                         {item.subtitle}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {item.shortcutHint && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                      <span className="px-1.5 py-0.5 text-xs tabular-nums text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
                         {item.shortcutHint}
                       </span>
                     )}
@@ -237,7 +237,7 @@ export const GlobalCommandPaletteModal: React.FC<GlobalCommandPaletteModalProps>
         </div>
 
         {/* Footer */}
-        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
+        <div className="px-4 py-2 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 tabular-nums">
           <span>↑↓ Navigate · Enter Select · ESC Close</span>
           <span>10 Institutional Hubs · 36 Quantitative Modules Indexed</span>
         </div>
@@ -314,7 +314,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
           <div className="flex items-center gap-3">
             <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Full-Stack Backend, Quant Engine & Model Integrity Sweep Auditor
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -328,7 +328,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
               type="button"
               onClick={runLiveBackendSweep}
               disabled={isSweepingBackend}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors"
+              className="ui-btn ui-btn-primary inline-flex"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSweepingBackend ? 'animate-spin' : ''}`} />
               <span>{isSweepingBackend ? 'Sweeping APIs...' : 'Run Live Full-Stack Sweep'}</span>
@@ -336,7 +336,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
             <button
               type="button"
               onClick={() => exportIntegrityAuditCertificateMarkdown(auditReport)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500 transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export Audit Certificate (.md)</span>
@@ -356,49 +356,49 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
           {/* KPI Strip */}
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/70">
-              <div className="text-[11px] font-mono uppercase text-emerald-700 dark:text-emerald-300">
+              <div className="text-xs tabular-nums text-emerald-700 dark:text-emerald-300">
                 Turnkey Readiness Score
               </div>
-              <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-300 mt-1">
+              <div className="text-2xl font-semibold tabular-nums text-emerald-700 dark:text-emerald-300 mt-1">
                 {auditReport.readinessScorePct}% PASS
               </div>
-              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+              <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {auditReport.passedChecksCount} of {auditReport.totalChecksRun} invariants verified
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Accounting Identities
               </div>
-              <div className="text-xl font-bold font-mono text-slate-900 dark:text-white mt-1">
+              <div className="text-xl font-semibold tabular-nums text-slate-900 dark:text-white mt-1">
                 100.00% Exact
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 SDIB, Restructuring & Custody Σw = 100%
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Unit-Ratio Discipline
               </div>
-              <div className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400 mt-1">
+              <div className="text-xl font-semibold tabular-nums text-blue-600 dark:text-blue-400 mt-1">
                 {auditReport.zeroNotionalComplianceVerified ? '0 Notional Leaks' : 'Check Units'}
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 % GDP · bps · Notches (1–21) · 0–100¢
               </div>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-              <div className="text-[11px] font-mono uppercase text-slate-500 dark:text-slate-400">
+              <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
                 Multilateral Feeds
               </div>
-              <div className="text-xl font-bold font-mono text-slate-900 dark:text-white mt-1">
+              <div className="text-xl font-semibold tabular-nums text-slate-900 dark:text-white mt-1">
                 {auditReport.provenanceFeeds.length} Verified APIs
               </div>
-              <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 IMF WEO · World Bank v2 · BIS · Polymarket
               </div>
             </div>
@@ -406,7 +406,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
 
           {/* Executive Verdict */}
           <div className="p-3.5 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/70 text-xs text-slate-800 dark:text-slate-200">
-            <span className="font-bold text-blue-700 dark:text-blue-300">
+            <span className="font-semibold text-blue-700 dark:text-blue-300">
               Executive Pre-Flight Audit Verdict:{' '}
             </span>
             {auditReport.executiveAuditVerdict}
@@ -416,18 +416,18 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
           {backendSweep && (
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400">
                   0. Live Express Backend, Quant Engine & GitHub Repo Sweep ({backendSweep.passedCount}/
                   {backendSweep.totalChecks} Passed · {backendSweep.totalLatencyMs}ms)
                 </h3>
-                <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                   {backendSweep.status}
                 </span>
               </div>
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-mono text-[11px] border-b border-slate-200 dark:border-slate-800">
+                    <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 tabular-nums text-xs border-b border-slate-200 dark:border-slate-800">
                       <th className="py-2 px-3">Sweep ID</th>
                       <th className="py-2 px-3">Subsystem & Express Endpoint / Engine</th>
                       <th className="py-2 px-3">Live Diagnostic Telemetry</th>
@@ -441,25 +441,25 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                         key={item.id}
                         className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                       >
-                        <td className="py-2 px-3 font-mono font-bold text-slate-900 dark:text-white whitespace-nowrap">
+                        <td className="py-2 px-3 tabular-nums font-semibold text-slate-900 dark:text-white whitespace-nowrap">
                           {item.id}
                         </td>
                         <td className="py-2 px-3">
                           <div className="font-semibold text-slate-900 dark:text-white">
                             {item.name}
                           </div>
-                          <div className="font-mono text-[11px] text-blue-600 dark:text-blue-400">
+                          <div className="tabular-nums text-xs text-blue-600 dark:text-blue-400">
                             {item.endpointOrModule}
                           </div>
                         </td>
                         <td className="py-2 px-3 text-slate-600 dark:text-slate-300">
                           {item.detail}
                         </td>
-                        <td className="py-2 px-3 font-mono text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        <td className="py-2 px-3 tabular-nums text-slate-700 dark:text-slate-300 whitespace-nowrap">
                           {item.latencyMs}ms
                         </td>
                         <td className="py-2 px-3 whitespace-nowrap">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                             <CheckCircle2 className="w-3 h-3" />
                             {item.status}
                           </span>
@@ -474,13 +474,13 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
 
           {/* Checks Table */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
               1. Mathematical Identity, Boundary & Unit-Ratio Verification Matrix
             </h3>
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-mono text-[11px] border-b border-slate-200 dark:border-slate-800">
+                  <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 tabular-nums text-xs border-b border-slate-200 dark:border-slate-800">
                     <th className="py-2 px-3">Check ID & Hub</th>
                     <th className="py-2 px-3">Mathematical Identity / Invariant</th>
                     <th className="py-2 px-3">Expected</th>
@@ -496,10 +496,10 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                       className="hover:bg-slate-50/80 dark:hover:bg-slate-800/40"
                     >
                       <td className="py-2.5 px-3 align-top">
-                        <div className="font-mono font-bold text-slate-900 dark:text-white">
+                        <div className="tabular-nums font-semibold text-slate-900 dark:text-white">
                           {chk.checkId}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
                           {chk.hubReference}
                         </div>
                       </td>
@@ -507,25 +507,25 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                         <div className="font-semibold text-slate-900 dark:text-white">
                           {chk.title}
                         </div>
-                        <div className="font-mono text-[11px] text-blue-600 dark:text-blue-400 mt-0.5">
+                        <div className="tabular-nums text-xs text-blue-600 dark:text-blue-400 mt-0.5">
                           {chk.formulaChecked}
                         </div>
-                        <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                           {chk.diagnosticDetail}
                         </div>
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-slate-700 dark:text-slate-300 align-top whitespace-nowrap">
+                      <td className="py-2.5 px-3 tabular-nums text-slate-700 dark:text-slate-300 align-top whitespace-nowrap">
                         {chk.expectedInvariant}
                       </td>
-                      <td className="py-2.5 px-3 font-mono font-bold text-slate-900 dark:text-white align-top whitespace-nowrap">
+                      <td className="py-2.5 px-3 tabular-nums font-semibold text-slate-900 dark:text-white align-top whitespace-nowrap">
                         {chk.observedReading}
                       </td>
-                      <td className="py-2.5 px-3 font-mono text-emerald-600 dark:text-emerald-400 align-top whitespace-nowrap">
+                      <td className="py-2.5 px-3 tabular-nums text-emerald-600 dark:text-emerald-400 align-top whitespace-nowrap">
                         {chk.residualDeviationLabel}
                       </td>
                       <td className="py-2.5 px-3 align-top">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-[10px] font-mono font-bold ${
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold ${
                             chk.status === 'PASS'
                               ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800'
                               : 'bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800'
@@ -548,13 +548,13 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
 
           {/* Data Provenance Table */}
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
+            <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2">
               2. Multilateral & High-Frequency Data Provenance Matrix
             </h3>
             <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 font-mono text-[11px] border-b border-slate-200 dark:border-slate-800">
+                  <tr className="bg-slate-100 dark:bg-slate-950 text-slate-600 dark:text-slate-400 tabular-nums text-xs border-b border-slate-200 dark:border-slate-800">
                     <th className="py-2 px-3">Institution</th>
                     <th className="py-2 px-3">Endpoint / Series Codes</th>
                     <th className="py-2 px-3">Normalized Metrics Supplied</th>
@@ -567,14 +567,14 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                       <td className="py-2 px-3 font-semibold text-slate-900 dark:text-white">
                         {feed.institutionName}
                       </td>
-                      <td className="py-2 px-3 font-mono text-[11px] text-blue-600 dark:text-blue-400">
+                      <td className="py-2 px-3 tabular-nums text-xs text-blue-600 dark:text-blue-400">
                         {feed.endpointOrDataset}
                       </td>
                       <td className="py-2 px-3 text-slate-600 dark:text-slate-300">
                         {feed.metricsProvided}
                       </td>
-                      <td className="py-2 px-3 font-mono text-[11px]">
-                        <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-bold">
+                      <td className="py-2 px-3 tabular-nums text-xs">
+                        <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-semibold">
                           {feed.status}
                         </span>
                       </td>
@@ -640,7 +640,7 @@ export const CustomSovereignOnboardingModal: React.FC<
           <div className="flex items-center gap-3">
             <Globe className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Custom ISO-3 Sovereign Onboarding Wizard (Live IMF / World Bank Auto-Hydration)
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -669,9 +669,9 @@ export const CustomSovereignOnboardingModal: React.FC<
                   key={tpl.iso3}
                   type="button"
                   onClick={() => handleSelectTemplate(tpl)}
-                  className={`px-2.5 py-1.5 font-mono text-xs border transition-colors ${
+                  className={`px-2.5 py-1.5 tabular-nums text-xs border transition-colors ${
                     draft.iso3 === tpl.iso3
-                      ? 'bg-blue-600 text-white border-blue-600 font-bold'
+                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
                       : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -695,7 +695,7 @@ export const CustomSovereignOnboardingModal: React.FC<
                 onChange={(e) =>
                   setDraft((prev) => ({ ...prev, iso3: e.target.value.toUpperCase() }))
                 }
-                className="w-full px-2.5 py-1.5 font-mono font-bold uppercase bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                className="w-full px-2.5 py-1.5 tabular-nums font-semibold bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
               />
             </div>
 
@@ -729,7 +729,7 @@ export const CustomSovereignOnboardingModal: React.FC<
                     currencyCode: e.target.value.toUpperCase(),
                   }))
                 }
-                className="w-full px-2.5 py-1.5 font-mono uppercase bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
               />
             </div>
 
@@ -748,7 +748,7 @@ export const CustomSovereignOnboardingModal: React.FC<
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/70">
             <div className="text-slate-700 dark:text-slate-300">
-              <span className="font-bold text-blue-700 dark:text-blue-300">
+              <span className="font-semibold text-blue-700 dark:text-blue-300">
                 Auto-Hydrate from Multilateral Open Data:{' '}
               </span>
               {hydrationNote ||
@@ -758,7 +758,7 @@ export const CustomSovereignOnboardingModal: React.FC<
               type="button"
               onClick={handleLiveHydrate}
               disabled={isHydrating}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 shrink-0"
+              className="ui-btn ui-btn-primary inline-flex shrink-0"
             >
               <Sparkles className="w-3.5 h-3.5" />
               <span>
@@ -774,7 +774,7 @@ export const CustomSovereignOnboardingModal: React.FC<
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   Gross Debt / GDP (%)
                 </label>
                 <input
@@ -784,12 +784,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                   onChange={(e) =>
                     setDraft((p) => ({ ...p, debtToGdpPct: Number(e.target.value) }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   Primary Fiscal Balance (% GDP)
                 </label>
                 <input
@@ -802,12 +802,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                       primaryFiscalBalancePct: Number(e.target.value),
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   Real GDP Growth YoY (%)
                 </label>
                 <input
@@ -817,12 +817,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                   onChange={(e) =>
                     setDraft((p) => ({ ...p, realGdpGrowthPct: Number(e.target.value) }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   Headline CPI Inflation (%)
                 </label>
                 <input
@@ -832,12 +832,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                   onChange={(e) =>
                     setDraft((p) => ({ ...p, cpiInflationPct: Number(e.target.value) }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   CB Policy Rate (%)
                 </label>
                 <input
@@ -847,12 +847,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                   onChange={(e) =>
                     setDraft((p) => ({ ...p, policyRatePct: Number(e.target.value) }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   10Y Sovereign Yield (%)
                 </label>
                 <input
@@ -865,12 +865,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                       sovereign10YBondYieldPct: Number(e.target.value),
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   5Y USD CDS Spread (bps)
                 </label>
                 <input
@@ -880,12 +880,12 @@ export const CustomSovereignOnboardingModal: React.FC<
                   onChange={(e) =>
                     setDraft((p) => ({ ...p, cds5YSpreadBps: Number(e.target.value) }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">
                   FX Reserves (Mos. Imports)
                 </label>
                 <input
@@ -898,7 +898,7 @@ export const CustomSovereignOnboardingModal: React.FC<
                       fxReservesMonthsImport: Number(e.target.value),
                     }))
                   }
-                  className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
+                  className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800"
                 />
               </div>
             </div>
@@ -927,7 +927,7 @@ export const CustomSovereignOnboardingModal: React.FC<
             </button>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-500"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>
@@ -987,7 +987,7 @@ export const WorkspaceSessionModal: React.FC<WorkspaceSessionModalProps> = ({
           <div className="flex items-center gap-2.5">
             <Database className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Workspace State Persistence & Session Snapshot Manager
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -1007,31 +1007,31 @@ export const WorkspaceSessionModal: React.FC<WorkspaceSessionModalProps> = ({
         <div className="p-6 space-y-5 text-xs">
           {/* Active State Summary */}
           <div className="p-4 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2">
-            <div className="font-mono font-bold text-slate-900 dark:text-white uppercase text-[11px]">
+            <div className="tabular-nums font-semibold text-slate-900 dark:text-white text-xs">
               Current Live Persisted Workspace State
             </div>
             <div className="grid grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
               <div>
                 Active Sovereign:{' '}
-                <span className="font-mono font-bold text-slate-900 dark:text-white">
+                <span className="tabular-nums font-semibold text-slate-900 dark:text-white">
                   {currentSnapshot.activeCountryName} ({currentSnapshot.activeIso3})
                 </span>
               </div>
               <div>
                 Active Persona Lens:{' '}
-                <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                   {currentSnapshot.activePersona}
                 </span>
               </div>
               <div>
                 Active Module:{' '}
-                <span className="font-mono text-slate-900 dark:text-white">
+                <span className="tabular-nums text-slate-900 dark:text-white">
                   {currentSnapshot.activeNavSection}
                 </span>
               </div>
               <div>
                 Custom ISO-3 Sovereigns:{' '}
-                <span className="font-mono font-bold text-blue-600 dark:text-blue-400">
+                <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                   {currentSnapshot.customOnboardedSovereigns.length} onboarded
                 </span>
               </div>
@@ -1039,7 +1039,7 @@ export const WorkspaceSessionModal: React.FC<WorkspaceSessionModalProps> = ({
           </div>
 
           {importError && (
-            <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300">
               {importError}
             </div>
           )}
@@ -1049,23 +1049,23 @@ export const WorkspaceSessionModal: React.FC<WorkspaceSessionModalProps> = ({
             <button
               type="button"
               onClick={() => exportWorkspaceSessionJsonFile(currentSnapshot)}
-              className="flex flex-col items-start p-3.5 bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+              className="ui-btn ui-btn-primary"
             >
-              <div className="flex items-center gap-1.5 font-bold">
+              <div className="flex items-center gap-1.5 font-semibold">
                 <Download className="w-4 h-4" />
                 <span>Export Session (.json)</span>
               </div>
-              <span className="text-[11px] text-blue-100 mt-1 text-left">
+              <span className="text-xs text-blue-100 mt-1 text-left">
                 Download portable snapshot of watchlists, custom ISO-3s & shocks
               </span>
             </button>
 
             <label className="flex flex-col items-start p-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 cursor-pointer transition-colors">
-              <div className="flex items-center gap-1.5 font-bold">
+              <div className="flex items-center gap-1.5 font-semibold">
                 <Upload className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span>Restore Session (.json)</span>
               </div>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 text-left">
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-left">
                 Upload a saved `.json` session file from a colleague or prior run
               </span>
               <input
@@ -1082,13 +1082,13 @@ export const WorkspaceSessionModal: React.FC<WorkspaceSessionModalProps> = ({
                 onResetFactoryDefaults();
                 onClose();
               }}
-              className="flex flex-col items-start p-3.5 bg-slate-50 dark:bg-slate-950 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-700 dark:text-slate-300 hover:text-red-700 dark:hover:text-red-300 border border-slate-200 dark:border-slate-800 transition-colors"
+              className="flex flex-col items-start p-3.5 bg-slate-50 dark:bg-slate-950 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-700 dark:text-slate-300 hover:text-rose-700 dark:hover:text-rose-300 border border-slate-200 dark:border-slate-800 transition-colors"
             >
-              <div className="flex items-center gap-1.5 font-bold">
+              <div className="flex items-center gap-1.5 font-semibold">
                 <RotateCcw className="w-4 h-4" />
                 <span>Factory Reset</span>
               </div>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 text-left">
+              <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 text-left">
                 Clear custom overrides and restore default watchlists & baseline
               </span>
             </button>
@@ -1212,10 +1212,10 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
           <div className="flex items-center gap-3">
             <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Sovereign Council Orchestrator — User Manual & GitHub Repository Docs
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              <p className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                 Committed files: <span className="text-blue-600 dark:text-blue-400">README.md</span> &{' '}
                 <span className="text-emerald-600 dark:text-emerald-400">docs/USER_MANUAL.md</span> · Ready for GitHub Sync
               </p>
@@ -1242,7 +1242,7 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
             <button
               type="button"
               onClick={handleDownloadMarkdown}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 transition-colors"
+              className="ui-btn ui-btn-primary inline-flex"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Download {activeDoc === 'userManual' ? 'USER_MANUAL.md' : 'README.md'}</span>
@@ -1260,11 +1260,11 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
         {/* GitHub Repository Readiness Bar */}
         <div className="px-6 py-2.5 bg-slate-100/80 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 font-mono text-[11px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 tabular-nums text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
               <GitBranch className="w-3 h-3" />
               {docsPayload?.gitReady ? 'GIT REPO INITIALIZED (main)' : 'GIT SYNC READY'}
             </span>
-            <span className="text-slate-600 dark:text-slate-400 font-mono text-[11px]">
+            <span className="text-slate-600 dark:text-slate-400 tabular-nums text-xs">
               Active File: <strong className="text-slate-900 dark:text-white">{activeFile.path}</strong> ({activeFile.lines} lines · {(activeFile.bytes / 1024).toFixed(1)} KB)
             </span>
           </div>
@@ -1312,9 +1312,9 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
                 key={chap.id}
                 type="button"
                 onClick={() => setSearchFilter(chap.query)}
-                className={`px-2.5 py-1 text-[11px] font-mono border transition-colors ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                   searchFilter === chap.query
-                    ? 'bg-slate-900 dark:bg-blue-950 text-white dark:text-blue-200 border-slate-900 dark:border-blue-700 font-bold'
+                    ? 'bg-slate-900 dark:bg-blue-950 text-white dark:text-blue-200 border-slate-900 dark:border-blue-700 font-semibold'
                     : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -1337,11 +1337,11 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
         {/* Markdown Content Viewer */}
         <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-950/60">
           {isLoading ? (
-            <div className="py-12 text-center text-xs font-mono text-slate-500">
+            <div className="py-12 text-center text-xs tabular-nums text-slate-500">
               Loading committed documentation from workspace repository...
             </div>
           ) : (
-            <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-5 border border-slate-200 dark:border-slate-800 select-text">
+            <pre className="whitespace-pre-wrap tabular-nums text-xs leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-5 border border-slate-200 dark:border-slate-800 select-text">
               {filteredContent}
             </pre>
           )}
@@ -2048,12 +2048,12 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
           <div className="flex items-center gap-3">
             <Cpu className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
                 Interactive AI Runtime, 12-Agent Model Studio &amp; Docker Self-Host GUI Configurator
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-mono">
+              <p className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
                 Provider:{' '}
-                <strong className="text-emerald-600 dark:text-emerald-400 uppercase">
+                <strong className="text-emerald-600 dark:text-emerald-400">
                   {runtimeConfig.providerMode}
                 </strong>{' '}
                 · Phase 1–2: <strong>{runtimeConfig.ollamaQuickModel}</strong> · Phase 3:{' '}
@@ -2071,7 +2071,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 onClick={() => setActiveTab('global_gui')}
                 className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === 'global_gui'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
+                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -2082,7 +2082,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 onClick={() => setActiveTab('agent_matrix_gui')}
                 className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === 'agent_matrix_gui'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
+                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -2093,7 +2093,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 onClick={() => setActiveTab('docker_builder_gui')}
                 className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === 'docker_builder_gui'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
+                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -2104,7 +2104,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 onClick={() => setActiveTab('api_connectors_gui')}
                 className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === 'api_connectors_gui'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
+                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -2118,7 +2118,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 }}
                 className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
                   activeTab === 'top_level_integration_gui'
-                    ? 'bg-slate-900 dark:bg-emerald-600 text-white'
+                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
@@ -2142,7 +2142,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
             <>
               {/* Step 1: AI Runtime Provider Selector */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/70 dark:bg-slate-950/60">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2.5">
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2.5">
                   Step 1 · Select Council Execution Runtime Provider (Click to Switch)
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
@@ -2186,12 +2186,12 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs font-bold">{mode.title}</span>
+                          <span className="text-xs font-semibold">{mode.title}</span>
                           {isSelected && (
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
                           {mode.desc}
                         </p>
                       </button>
@@ -2204,10 +2204,10 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
               <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                    <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                       Step 2 · Local Server Endpoint URL &amp; Network Topology (GUI Input)
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       Click a preset topology button or type any custom host/IP and port below.
                     </p>
                   </div>
@@ -2248,9 +2248,9 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         });
                         probeOllamaEndpoint(preset.url);
                       }}
-                      className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+                      className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                         runtimeConfig.ollamaBaseUrl === preset.url
-                          ? 'bg-emerald-600 text-white border-emerald-500 font-bold'
+                          ? 'bg-blue-600 text-white border-blue-500 font-semibold'
                           : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-slate-400'
                       }`}
                     >
@@ -2261,7 +2261,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Ollama Base URL (Host or Docker Bridge)
                     </label>
                     <div className="flex items-center gap-2">
@@ -2276,13 +2276,13 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           })
                         }
                         placeholder="http://host.docker.internal:11434"
-                        className="w-full px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        className="w-full px-3 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       vLLM / LM Studio Base URL (Optional)
                     </label>
                     <input
@@ -2295,12 +2295,12 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         })
                       }
                       placeholder="http://localhost:8000/v1"
-                      className="w-full px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       vLLM / OpenAI-Compatible Model Name
                     </label>
                     <input
@@ -2313,14 +2313,14 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         })
                       }
                       placeholder="Qwen/Qwen2.5-14B-Instruct"
-                      className="w-full px-3 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-3 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
 
                 {ollamaStatus && (
                   <div
-                    className={`p-3 border text-xs font-mono flex flex-wrap items-center justify-between gap-2 ${
+                    className={`p-3 border text-xs tabular-nums flex flex-wrap items-center justify-between gap-2 ${
                       ollamaStatus.connected
                         ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
                         : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200'
@@ -2333,7 +2333,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       {ollamaStatus.message}
                     </span>
                     {ollamaStatus.models.length > 0 && (
-                      <span className="text-[11px]">
+                      <span className="text-xs">
                         Models: {ollamaStatus.models.slice(0, 5).join(', ')}
                       </span>
                     )}
@@ -2346,17 +2346,17 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 {/* Phase 1 & 2 Sub-Agents Model Card */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    <div className="text-xs font-semibold text-blue-600 dark:text-blue-400">
                       Phase 1 &amp; 2 Default · 9 Sub-Agents &amp; Desk Debate Model
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Powers AG-1 to AG-9 parallel desk workers, Devil&apos;s Advocate debates, and
                       Stage 2 Contagion Cascade (unless overridden per-desk/per-agent in Tab 2).
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Select Preset or Enter Any Ollama Tag:
                     </label>
                     <select
@@ -2392,7 +2392,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         })
                       }
                       placeholder="e.g. qwen2.5:7b or llama3.1:8b"
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
@@ -2412,7 +2412,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         handleTestModel(runtimeConfig.ollamaQuickModel, 'PHASE_1_2_SUB_AGENTS')
                       }
                       disabled={benchmarkResult.loading}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                      className="ui-btn ui-btn-primary flex-1 inline-flex justify-center"
                     >
                       <Play className="w-3.5 h-3.5" />
                       <span>Test Sub-Agent JSON</span>
@@ -2423,18 +2423,18 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 {/* Phase 3 Supreme Council Referees Model Card */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                    <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                       Phase 3 Default · 3 Supreme Council Referees Model
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Powers post-CRO Supreme Council synthesis (SMCR-1.0 Verdict) &amp; Policy
-                      Document NLP. Automatically strips <code className="font-mono">&lt;think&gt;</code>{' '}
+                      Document NLP. Automatically strips <code className="tabular-nums">&lt;think&gt;</code>{' '}
                       blocks from DeepSeek-R1 / QwQ.
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                    <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                       Select Reasoning Preset or Enter Any Ollama Tag:
                     </label>
                     <select
@@ -2470,7 +2470,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         })
                       }
                       placeholder="e.g. deepseek-r1:8b or deepseek-r1:32b"
-                      className="w-full px-2.5 py-1.5 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
@@ -2490,7 +2490,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         handleTestModel(runtimeConfig.ollamaDeepModel, 'PHASE_3_SUPREME_COUNCIL')
                       }
                       disabled={benchmarkResult.loading}
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
                     >
                       <Play className="w-3.5 h-3.5" />
                       <span>Test Reasoning JSON</span>
@@ -2501,7 +2501,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
               {/* Step 4: Interactive GUI Sliders & Controls for Inference Parameters */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   Step 4 · LLM Inference Hyperparameters &amp; Council Debate Controls (GUI Inputs)
                 </div>
 
@@ -2512,7 +2512,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       <span className="font-semibold text-slate-700 dark:text-slate-300">
                         Temperature
                       </span>
-                      <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                         {(runtimeConfig.temperature ?? 0.2).toFixed(2)}
                       </span>
                     </div>
@@ -2530,7 +2530,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       }
                       className="w-full accent-emerald-600"
                     />
-                    <span className="text-[10px] text-slate-500 block mt-1">
+                    <span className="text-xs text-slate-500 block mt-1">
                       0.1–0.3 recommended for deterministic JSON
                     </span>
                   </div>
@@ -2538,7 +2538,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   {/* Context Window num_ctx */}
                   <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                     <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Context Window (<code className="font-mono">num_ctx</code>)
+                      Context Window (<code className="tabular-nums">num_ctx</code>)
                     </label>
                     <select
                       value={runtimeConfig.numCtx ?? 8192}
@@ -2548,7 +2548,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           numCtx: Number(e.target.value),
                         })
                       }
-                      className="w-full px-2 py-1 font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2 py-1 tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     >
                       <option value={2048}>2,048 tokens (Low VRAM)</option>
                       <option value={4096}>4,096 tokens (Standard)</option>
@@ -2556,7 +2556,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       <option value={16384}>16,384 tokens (Long Policy Docs)</option>
                       <option value={32768}>32,768 tokens (32GB+ Unified RAM)</option>
                     </select>
-                    <span className="text-[10px] text-slate-500 block mt-1">
+                    <span className="text-xs text-slate-500 block mt-1">
                       Ollama context buffer per desk call
                     </span>
                   </div>
@@ -2578,9 +2578,9 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           timeoutSeconds: Math.max(5, Math.min(180, Number(e.target.value))),
                         })
                       }
-                      className="w-full px-2 py-1 font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2 py-1 tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
-                    <span className="text-[10px] text-slate-500 block mt-1">
+                    <span className="text-xs text-slate-500 block mt-1">
                       Increase to 45–90s for 32B reasoning models
                     </span>
                   </div>
@@ -2598,13 +2598,13 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           maxDebateRounds: Number(e.target.value),
                         })
                       }
-                      className="w-full px-2 py-1 font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2 py-1 tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     >
                       <option value={1}>1 Round (Fast Synthesis)</option>
                       <option value={2}>2 Rounds (Standard Institutional)</option>
                       <option value={3}>3 Rounds (Deep Cross-Examination)</option>
                     </select>
-                    <span className="text-[10px] text-slate-500 block mt-1">
+                    <span className="text-xs text-slate-500 block mt-1">
                       Adversarial rounds per desk
                     </span>
                   </div>
@@ -2637,7 +2637,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         })
                       }
                       placeholder="Optional Webhook URL..."
-                      className="w-full mt-2 px-2 py-1 text-[11px] font-mono bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full mt-2 px-2 py-1 text-xs tabular-nums bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
                 </div>
@@ -2651,14 +2651,14 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
               {/* Top Action Bar for Agent Matrix */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950 flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                  <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                     Individual Desk &amp; Specialist Agent Model / Prompt GUI Assignment
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Enter or select a specific Ollama/LLM model tag and custom analytical instruction
-                    for any Desk or Individual Sub-Agent (<code className="font-mono">AG-1</code> to{' '}
-                    <code className="font-mono">AG-9</code>). Leave blank to inherit the Phase 1–2
-                    default (<code className="font-mono">{runtimeConfig.ollamaQuickModel}</code>).
+                    for any Desk or Individual Sub-Agent (<code className="tabular-nums">AG-1</code> to{' '}
+                    <code className="tabular-nums">AG-9</code>). Leave blank to inherit the Phase 1–2
+                    default (<code className="tabular-nums">{runtimeConfig.ollamaQuickModel}</code>).
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -2694,7 +2694,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         agentPromptOverrides: {},
                       })
                     }
-                    className="px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100"
+                    className="ui-btn"
                   >
                     Clear Custom Agent Overrides
                   </button>
@@ -2731,7 +2731,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       key={desk.key}
                       className="p-3.5 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 space-y-2"
                     >
-                      <div className="text-xs font-bold text-slate-900 dark:text-white">
+                      <div className="text-xs font-semibold text-slate-900 dark:text-white">
                         {desk.title}
                       </div>
                       <select
@@ -2769,7 +2769,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           })
                         }
                         placeholder={`Default: ${desk.fallback}`}
-                        className="w-full px-2.5 py-1 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        className="w-full px-2.5 py-1 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       />
                     </div>
                   );
@@ -2781,13 +2781,13 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
-                      <th className="py-2.5 px-3 font-bold">Agent</th>
-                      <th className="py-2.5 px-3 font-bold">Specialist Role &amp; Desk</th>
-                      <th className="py-2.5 px-3 font-bold">Assigned Ollama / LLM Model Tag (GUI)</th>
-                      <th className="py-2.5 px-3 font-bold">
+                      <th className="py-2.5 px-3 font-semibold">Agent</th>
+                      <th className="py-2.5 px-3 font-semibold">Specialist Role &amp; Desk</th>
+                      <th className="py-2.5 px-3 font-semibold">Assigned Ollama / LLM Model Tag (GUI)</th>
+                      <th className="py-2.5 px-3 font-semibold">
                         Custom System Prompt / Focus Directive Override (GUI)
                       </th>
-                      <th className="py-2.5 px-3 font-bold text-right">Quick Action</th>
+                      <th className="py-2.5 px-3 font-semibold text-right">Quick Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -2801,12 +2801,12 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
                       return (
                         <tr key={ag.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-950/40">
-                          <td className="py-2.5 px-3 font-mono font-bold text-blue-600 dark:text-blue-400 whitespace-nowrap">
+                          <td className="py-2.5 px-3 tabular-nums font-semibold text-blue-600 dark:text-blue-400 whitespace-nowrap">
                             {ag.code}
                           </td>
                           <td className="py-2.5 px-3">
-                            <div className="font-bold text-slate-900 dark:text-white">{ag.name}</div>
-                            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                            <div className="font-semibold text-slate-900 dark:text-white">{ag.name}</div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
                               {ag.deskLabel} · {ag.defaultRoleHint}
                             </div>
                           </td>
@@ -2826,7 +2826,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                   })
                                 }
                                 placeholder={`Default: ${effectiveModel}`}
-                                className="w-full px-2.5 py-1 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                                className="w-full px-2.5 py-1 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                               />
                               <datalist id={`agent-models-${ag.id}`}>
                                 {availableOllamaModelOptions.map((m) => (
@@ -2858,7 +2858,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                 type="button"
                                 onClick={() => handlePullModel(effectiveModel)}
                                 disabled={pullStatus.loading}
-                                className="px-2 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                                className="px-2 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                               >
                                 Pull
                               </button>
@@ -2866,7 +2866,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                 type="button"
                                 onClick={() => handleTestModel(effectiveModel, ag.code)}
                                 disabled={benchmarkResult.loading}
-                                className="px-2 py-1 text-[11px] font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                                className="ui-btn ui-btn-primary"
                               >
                                 Test
                               </button>
@@ -2887,14 +2887,14 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
               {/* Interactive Docker Environment GUI Form */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-4">
                 <div>
-                  <div className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                  <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                     Interactive Docker &amp; Self-Host Environment GUI Form Builder
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     Enter your preferred operating system, container topology, ports, and Ollama
                     daemon settings below. All launch commands and downloadable{' '}
-                    <code className="font-mono">.env</code> /{' '}
-                    <code className="font-mono">docker-compose.yml</code> files update automatically.
+                    <code className="tabular-nums">.env</code> /{' '}
+                    <code className="tabular-nums">docker-compose.yml</code> files update automatically.
                   </p>
                 </div>
 
@@ -2957,7 +2957,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   {/* Web App Port */}
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      EconQuest Web App Port (<code className="font-mono">PORT</code>)
+                      EconQuest Web App Port (<code className="tabular-nums">PORT</code>)
                     </label>
                     <input
                       type="number"
@@ -2967,7 +2967,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       onChange={(e) =>
                         updateDockerGui({ appPort: Number(e.target.value) || 3000 })
                       }
-                      className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
@@ -2984,7 +2984,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       onChange={(e) =>
                         updateDockerGui({ ollamaPort: Number(e.target.value) || 11434 })
                       }
-                      className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
@@ -2997,19 +2997,19 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       type="text"
                       value={dockerGui.containerName}
                       onChange={(e) => updateDockerGui({ containerName: e.target.value })}
-                      className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
                   {/* Model Keep-Alive */}
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      Ollama Model Keep-Alive (<code className="font-mono">OLLAMA_KEEP_ALIVE</code>)
+                      Ollama Model Keep-Alive (<code className="tabular-nums">OLLAMA_KEEP_ALIVE</code>)
                     </label>
                     <select
                       value={dockerGui.keepAlive}
                       onChange={(e) => updateDockerGui({ keepAlive: e.target.value })}
-                      className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     >
                       <option value="24h">24h (Keep Warm All Day)</option>
                       <option value="4h">4h (Trading Session)</option>
@@ -3022,13 +3022,13 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   {/* CORS Allowed Origins */}
                   <div>
                     <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                      CORS Origins (<code className="font-mono">OLLAMA_ORIGINS</code>)
+                      CORS Origins (<code className="tabular-nums">OLLAMA_ORIGINS</code>)
                     </label>
                     <input
                       type="text"
                       value={dockerGui.corsOrigins}
                       onChange={(e) => updateDockerGui({ corsOrigins: e.target.value })}
-                      className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                      className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                     />
                   </div>
 
@@ -3045,7 +3045,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         className="accent-emerald-600 w-4 h-4"
                       />
                     </label>
-                    <span className="text-[10px] text-slate-500 mt-1">
+                    <span className="text-xs text-slate-500 mt-1">
                       Automatically pulls {runtimeConfig.ollamaQuickModel} &amp;{' '}
                       {runtimeConfig.ollamaDeepModel}
                     </span>
@@ -3057,16 +3057,16 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* macOS Card */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-white">
                     macOS Launcher (Apple Silicon &amp; Intel)
                   </div>
-                  <div className="p-2 bg-slate-950 text-emerald-300 font-mono text-[11px] overflow-x-auto">
+                  <div className="p-2 bg-slate-950 text-emerald-300 tabular-nums text-xs overflow-x-auto">
                     {macOneLiner}
                   </div>
                   <button
                     type="button"
                     onClick={() => copyText('mac-cmd', macOneLiner)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                   >
                     {copiedKey === 'mac-cmd' ? (
                       <Check className="w-3 h-3 text-emerald-500" />
@@ -3079,16 +3079,16 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
                 {/* Windows Card */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-white">
                     Windows 10/11 PowerShell Launcher
                   </div>
-                  <div className="p-2 bg-slate-950 text-blue-300 font-mono text-[11px] overflow-x-auto">
+                  <div className="p-2 bg-slate-950 text-blue-300 tabular-nums text-xs overflow-x-auto">
                     {winOneLiner}
                   </div>
                   <button
                     type="button"
                     onClick={() => copyText('win-cmd', winOneLiner)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                   >
                     {copiedKey === 'win-cmd' ? (
                       <Check className="w-3 h-3 text-emerald-500" />
@@ -3101,16 +3101,16 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
                 {/* Docker Compose Direct Command */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2">
-                  <div className="text-xs font-bold text-slate-900 dark:text-white">
+                  <div className="text-xs font-semibold text-slate-900 dark:text-white">
                     Direct Docker Compose Command
                   </div>
-                  <div className="p-2 bg-slate-950 text-amber-300 font-mono text-[11px] overflow-x-auto">
+                  <div className="p-2 bg-slate-950 text-amber-300 tabular-nums text-xs overflow-x-auto">
                     {composeUpOneLiner}
                   </div>
                   <button
                     type="button"
                     onClick={() => copyText('compose-cmd', composeUpOneLiner)}
-                    className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700"
                   >
                     {copiedKey === 'compose-cmd' ? (
                       <Check className="w-3 h-3 text-emerald-500" />
@@ -3133,9 +3133,9 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         key={key}
                         type="button"
                         onClick={() => setActiveDockerFile(key)}
-                        className={`px-2.5 py-1 text-xs font-mono border transition-colors ${
+                        className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
                           activeDockerFile === key
-                            ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500 font-bold'
+                            ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500 font-semibold'
                             : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
                         }`}
                       >
@@ -3169,14 +3169,14 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           activeFileMeta[activeDockerFile].content
                         )
                       }
-                      className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                      className="ui-btn ui-btn-primary inline-flex"
                     >
                       <Download className="w-3.5 h-3.5" />
                       <span>Download {activeFileMeta[activeDockerFile].filename}</span>
                     </button>
                   </div>
                 </div>
-                <pre className="p-4 text-xs font-mono leading-relaxed text-slate-800 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-950/60 overflow-x-auto max-h-64 select-text">
+                <pre className="p-4 text-xs tabular-nums leading-relaxed text-slate-800 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-950/60 overflow-x-auto max-h-64 select-text">
                   {activeFileMeta[activeDockerFile].content}
                 </pre>
               </div>
@@ -3303,11 +3303,11 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 {/* Top Summary & Filter Bar */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-slate-50 dark:bg-slate-950 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
+                    <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                       External &amp; Internal API / Host GUI Connector Hub (Server-Proxied)
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Connect internal enterprise hosts (<code className="font-mono">host.docker.internal</code>, intranet IPs), external REST macro feeds, LLM gateways, and outbound risk webhooks. Test live JSON responses and map JSON dot-paths directly into sovereign indicators.
+                      Connect internal enterprise hosts (<code className="tabular-nums">host.docker.internal</code>, intranet IPs), external REST macro feeds, LLM gateways, and outbound risk webhooks. Test live JSON responses and map JSON dot-paths directly into sovereign indicators.
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -3335,7 +3335,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                     <button
                       type="button"
                       onClick={handleAddConnector}
-                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                      className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       <span>Add API / Internal Host</span>
@@ -3347,7 +3347,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
                   {/* Left Column (4 cols): Registered Connectors List */}
                   <div className="lg:col-span-4 space-y-2">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 px-1">
+                    <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 px-1">
                       Registered APIs &amp; Internal Hosts ({filteredConnectors.length})
                     </div>
                     <div className="space-y-2 max-h-[540px] overflow-y-auto pr-1">
@@ -3364,7 +3364,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                             }`}
                           >
                             <div className="flex items-start justify-between gap-2">
-                              <div className="text-xs font-bold text-slate-900 dark:text-white leading-snug">
+                              <div className="text-xs font-semibold text-slate-900 dark:text-white leading-snug">
                                 {conn.name}
                               </div>
                               <input
@@ -3384,7 +3384,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                 className="accent-emerald-600 w-3.5 h-3.5 mt-0.5 shrink-0"
                               />
                             </div>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                            <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs tabular-nums text-slate-500 dark:text-slate-400">
                               <span>{conn.method}</span>
                               <span>·</span>
                               <span
@@ -3411,7 +3411,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                 </>
                               )}
                             </div>
-                            <div className="mt-1 text-[11px] font-mono text-slate-500 dark:text-slate-400 truncate">
+                            <div className="mt-1 text-xs tabular-nums text-slate-500 dark:text-slate-400 truncate">
                               {conn.url}
                             </div>
                           </div>
@@ -3426,7 +3426,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       {/* Card 1: Endpoint Configuration & Custom Headers */}
                       <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-200 dark:border-slate-800">
-                          <div className="font-bold text-slate-900 dark:text-white">
+                          <div className="font-semibold text-slate-900 dark:text-white">
                             Connector Configuration · {selectedConnector.name}
                           </div>
                           <div className="flex items-center gap-3">
@@ -3462,7 +3462,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                               <button
                                 type="button"
                                 onClick={() => handleDeleteConnector(selectedConnector.id)}
-                                className="px-2 py-1 text-[11px] font-semibold text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                                className="px-2 py-1 text-xs font-semibold text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 hover:bg-rose-50 dark:hover:bg-rose-950/40"
                               >
                                 Remove
                               </button>
@@ -3472,7 +3472,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                           <div className="sm:col-span-2">
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                               Connector Display Name
                             </label>
                             <input
@@ -3484,7 +3484,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                               Connector Category
                             </label>
                             <select
@@ -3503,7 +3503,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           </div>
 
                           <div>
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                               Network Scope
                             </label>
                             <select
@@ -3524,7 +3524,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         {/* Method + URL + Timeout */}
                         <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5">
                           <div className="sm:col-span-2">
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                               HTTP Method
                             </label>
                             <select
@@ -3534,7 +3534,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                   method: e.target.value as 'GET' | 'POST',
                                 })
                               }
-                              className="w-full px-2.5 py-1.5 font-mono font-bold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="w-full px-2.5 py-1.5 tabular-nums font-semibold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             >
                               <option value="GET">GET</option>
                               <option value="POST">POST</option>
@@ -3542,21 +3542,21 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           </div>
 
                           <div className="sm:col-span-8">
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                              Endpoint URL (Supports <code className="font-mono">{'{{ISO3}}'}</code> &amp;{' '}
-                              <code className="font-mono">{'{{ISO2}}'}</code> Variables)
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                              Endpoint URL (Supports <code className="tabular-nums">{'{{ISO3}}'}</code> &amp;{' '}
+                              <code className="tabular-nums">{'{{ISO2}}'}</code> Variables)
                             </label>
                             <input
                               type="text"
                               value={selectedConnector.url}
                               onChange={(e) => updateSelectedConnector({ url: e.target.value })}
                               placeholder="http://host.docker.internal:8080/api/v1/sovereign/{{ISO3}}"
-                              className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             />
                           </div>
 
                           <div className="sm:col-span-2">
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                               Timeout (ms)
                             </label>
                             <input
@@ -3570,23 +3570,23 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                   timeoutMs: Math.max(1000, Math.min(15000, Number(e.target.value))),
                                 })
                               }
-                              className="w-full px-2.5 py-1.5 font-mono tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             />
                           </div>
                         </div>
 
                         {/* Custom HTTP Headers Key-Value Builder */}
                         <div className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-2">
-                          <div className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                          <div className="text-xs font-semibold text-slate-600 dark:text-slate-400">
                             Custom HTTP Request Headers (Proxied Server-Side)
                           </div>
                           <div className="flex flex-wrap gap-1.5">
                             {Object.entries(selectedConnector.headers || {}).map(([hKey, hVal]) => (
                               <div
                                 key={hKey}
-                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 font-mono text-[11px]"
+                                className="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 tabular-nums text-xs"
                               >
-                                <span className="font-bold text-slate-800 dark:text-slate-200">
+                                <span className="font-semibold text-slate-800 dark:text-slate-200">
                                   {hKey}:
                                 </span>
                                 <span className="text-slate-600 dark:text-slate-400">{hVal}</span>
@@ -3610,14 +3610,14 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                               value={newHeaderKey}
                               onChange={(e) => setNewHeaderKey(e.target.value)}
                               placeholder="Header Name (e.g. X-Internal-Service)"
-                              className="px-2.5 py-1 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="px-2.5 py-1 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             />
                             <input
                               type="text"
                               value={newHeaderVal}
                               onChange={(e) => setNewHeaderVal(e.target.value)}
                               placeholder="Header Value"
-                              className="px-2.5 py-1 text-xs font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="px-2.5 py-1 text-xs tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             />
                             <button
                               type="button"
@@ -3641,8 +3641,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
 
                         {selectedConnector.method === 'POST' && (
                           <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-                            <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                              POST JSON Body Template (Supports <code className="font-mono">{'{{ISO3}}'}</code>)
+                            <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                              POST JSON Body Template (Supports <code className="tabular-nums">{'{{ISO3}}'}</code>)
                             </label>
                             <textarea
                               rows={2}
@@ -3650,7 +3650,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                               onChange={(e) =>
                                 updateSelectedConnector({ bodyTemplate: e.target.value })
                               }
-                              className="w-full px-2.5 py-1.5 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="w-full px-2.5 py-1.5 tabular-nums text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             />
                           </div>
                         )}
@@ -3661,12 +3661,12 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3 text-xs">
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div>
-                              <div className="font-bold text-slate-900 dark:text-white">
+                              <div className="font-semibold text-slate-900 dark:text-white">
                                 Visual JSON Dot-Path to Sovereign Telemetry Mapper
                               </div>
-                              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                                Map JSON response dot-paths (e.g. <code className="font-mono">1.0.value</code> or{' '}
-                                <code className="font-mono">telemetry.gdpGrowthPct</code>) into live sovereign indicators.
+                              <p className="text-xs text-slate-500 dark:text-slate-400">
+                                Map JSON response dot-paths (e.g. <code className="tabular-nums">1.0.value</code> or{' '}
+                                <code className="tabular-nums">telemetry.gdpGrowthPct</code>) into live sovereign indicators.
                               </p>
                             </div>
                             {connectorPingState.connectorId === selectedConnector.id &&
@@ -3681,7 +3681,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                       connectorPingState.extractedTelemetry || {}
                                     )
                                   }
-                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
                                 >
                                   <CheckCircle2 className="w-3.5 h-3.5" />
                                   <span>Apply Mapped Values to Active Sovereign ({activeIso3})</span>
@@ -3708,7 +3708,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                       {field.label} ({field.unit})
                                     </span>
                                     {typeof liveExtractedVal === 'number' && (
-                                      <span className="font-mono font-bold tabular-nums text-emerald-600 dark:text-emerald-400">
+                                      <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                                         Extracted: {liveExtractedVal}
                                       </span>
                                     )}
@@ -3725,7 +3725,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                       })
                                     }
                                     placeholder={field.placeholder}
-                                    className="w-full px-2 py-1 font-mono text-[11px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                                    className="w-full px-2 py-1 tabular-nums text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                                   />
                                 </div>
                               );
@@ -3738,18 +3738,18 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                       <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3 text-xs">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-white">
+                            <div className="font-semibold text-slate-900 dark:text-white">
                               Live Endpoint Ping Tester &amp; JSON Response Inspector
                             </div>
-                            <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                              Executes request via backend proxy (<code className="font-mono">POST /api/connectors/ping-and-inspect</code>) and evaluates all mapped JSON paths.
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                              Executes request via backend proxy (<code className="tabular-nums">POST /api/connectors/ping-and-inspect</code>) and evaluates all mapped JSON paths.
                             </p>
                           </div>
                           <div className="flex items-center gap-2">
                             <select
                               value={sampleTestIso3}
                               onChange={(e) => setSampleTestIso3(e.target.value)}
-                              className="px-2.5 py-1.5 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                              className="px-2.5 py-1.5 tabular-nums text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                             >
                               {['BRA', 'USA', 'JPN', 'DEU', 'GBR', 'TUR', 'EGY', 'ZAF', 'IND', 'ARG'].map(
                                 (iso) => (
@@ -3763,7 +3763,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                               type="button"
                               onClick={() => handlePingAndInspectConnector(selectedConnector)}
                               disabled={connectorPingState.loading}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                              className="ui-btn ui-btn-primary inline-flex"
                             >
                               <Play className="w-3.5 h-3.5" />
                               <span>
@@ -3779,7 +3779,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           connectorPingState.message && (
                             <div className="space-y-2">
                               <div
-                                className={`p-3 border font-mono text-xs flex flex-wrap items-center justify-between gap-2 ${
+                                className={`p-3 border tabular-nums text-xs flex flex-wrap items-center justify-between gap-2 ${
                                   connectorPingState.ok
                                     ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
                                     : 'bg-amber-50/70 dark:bg-amber-950/30 border-amber-300 dark:border-amber-800 text-amber-900 dark:text-amber-200'
@@ -3787,14 +3787,14 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                               >
                                 <span>{connectorPingState.message}</span>
                                 {typeof connectorPingState.latencyMs === 'number' && (
-                                  <span className="tabular-nums font-bold">
+                                  <span className="tabular-nums font-semibold">
                                     Latency: {connectorPingState.latencyMs}ms
                                   </span>
                                 )}
                               </div>
 
                               {connectorPingState.jsonPreview && (
-                                <pre className="p-3 font-mono text-[11px] leading-relaxed bg-slate-950 text-emerald-300 overflow-x-auto max-h-56 select-text">
+                                <pre className="p-3 tabular-nums text-xs leading-relaxed bg-slate-950 text-emerald-300 overflow-x-auto max-h-56 select-text">
                                   {JSON.stringify(connectorPingState.jsonPreview, null, 2)}
                                 </pre>
                               )}
@@ -3863,10 +3863,10 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                 {/* Top Summary & OpenAPI 3.1 Bar */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/70 dark:bg-slate-950/60 flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div className="font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Top-Level Application Integration Bus (<code className="font-mono">SMCR-1.0</code> REST Pull · Outbound Webhooks · Live SSE Stream)
+                    <div className="font-semibold text-slate-800 dark:text-slate-200">
+                      Top-Level Application Integration Bus (<code className="tabular-nums">SMCR-1.0</code> REST Pull · Outbound Webhooks · Live SSE Stream)
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Allow external applications, PMS/OMS engines, or downstream risk dashboards to pull or subscribe to individual desk outputs (Geopolitical, Sovereign, Macro), 9 sub-agent reports, quantitative suites, and Supreme Council verdicts.
                     </p>
                   </div>
@@ -3874,7 +3874,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                     <button
                       type="button"
                       onClick={handleDownloadOpenApiSpec}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-800 dark:text-slate-200 hover:bg-slate-100"
+                      className="ui-btn inline-flex"
                     >
                       <Download className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                       <span>Download OpenAPI 3.1 Spec (.json)</span>
@@ -3895,19 +3895,19 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                   {/* Left: Outbound Desk Broadcaster */}
                   <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-900 dark:text-white">
+                      <span className="font-semibold text-slate-900 dark:text-white">
                         1-Click Outbound Desk Output Broadcaster ({activeIso3})
                       </span>
-                      <span className="px-2 py-0.5 font-mono text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
+                      <span className="px-2 py-0.5 tabular-nums text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                         SSE Subscribers: {activeSseCount}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Push the active sovereign&apos;s desk outputs to all enabled <code className="font-mono">webhook_bus</code> connectors and connected SSE stream listeners with an <code className="font-mono">X-SMCR-Signature-256</code> HMAC header.
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Push the active sovereign&apos;s desk outputs to all enabled <code className="tabular-nums">webhook_bus</code> connectors and connected SSE stream listeners with an <code className="tabular-nums">X-SMCR-Signature-256</code> HMAC header.
                     </p>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                      <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
                         Select Granular Desk Output Scope to Broadcast
                       </label>
                       <select
@@ -3915,7 +3915,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                         onChange={(e) =>
                           setBroadcastScope(e.target.value as IntegrationBroadcastScope)
                         }
-                        className="w-full px-2.5 py-1.5 font-mono bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 tabular-nums bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       >
                         <option value="all_desks_bundle">
                           Full SMCR-1.0 Bundle (All 3 Desks + 9 Sub-Agents + Quant Suites + Supreme Council)
@@ -3963,7 +3963,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                         type="button"
                         onClick={() => void handleTriggerIntegrationBroadcast()}
                         disabled={broadcastState.loading}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                        className="ui-btn ui-btn-primary inline-flex"
                       >
                         <Play className="w-3.5 h-3.5" />
                         <span>
@@ -3982,7 +3982,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                               JSON.stringify(broadcastState.payloadPreview, null, 2)
                             )
                           }
-                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
+                          className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs tabular-nums bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-700"
                         >
                           <Copy className="w-3.5 h-3.5" />
                           <span>
@@ -3993,7 +3993,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                     </div>
 
                     {broadcastState.message && (
-                      <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 font-mono text-[11px]">
+                      <div className="p-2.5 bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 tabular-nums text-xs">
                         {broadcastState.message}
                       </div>
                     )}
@@ -4001,7 +4001,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
 
                   {/* Right: Security, API Key & HMAC-SHA256 Configuration */}
                   <div className="lg:col-span-6 border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-3">
-                    <div className="font-bold text-slate-900 dark:text-white">
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       API Key Authentication, HMAC-SHA256 Signing &amp; Auto-Broadcast Policy
                     </div>
 
@@ -4031,20 +4031,20 @@ es.addEventListener("manual.gui.broadcast", (e) => {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                          Inbound Consumer API Key (<code className="font-mono">X-SMCR-API-Key</code>)
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Inbound Consumer API Key (<code className="tabular-nums">X-SMCR-API-Key</code>)
                         </label>
                         <input
                           type="text"
                           value={integrationCfg.apiKey}
                           onChange={(e) => updateIntegrationConfig({ apiKey: e.target.value })}
-                          className="w-full px-2.5 py-1.5 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                          className="w-full px-2.5 py-1.5 tabular-nums text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                         />
                       </div>
 
                       <div>
-                        <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 mb-1">
-                          Outbound Webhook HMAC Secret (<code className="font-mono">X-SMCR-Signature-256</code>)
+                        <label className="block text-xs font-semibold text-slate-600 dark:text-slate-400 mb-1">
+                          Outbound Webhook HMAC Secret (<code className="tabular-nums">X-SMCR-Signature-256</code>)
                         </label>
                         <input
                           type="text"
@@ -4052,12 +4052,12 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                           onChange={(e) =>
                             updateIntegrationConfig({ webhookHmacSecret: e.target.value })
                           }
-                          className="w-full px-2.5 py-1.5 font-mono text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
+                          className="w-full px-2.5 py-1.5 tabular-nums text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                         />
                       </div>
                     </div>
 
-                    <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-[11px] space-y-1 text-slate-600 dark:text-slate-400">
+                    <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 tabular-nums text-xs space-y-1 text-slate-600 dark:text-slate-400">
                       <div>
                         <strong>Pull Desk Endpoint:</strong>{' '}
                         <code className="text-blue-600 dark:text-blue-400">
@@ -4083,16 +4083,16 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                 {/* Row 2: Live Outbound Webhook, SSE & REST Pull Delivery Audit Log */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-slate-900 dark:text-white">
+                    <span className="font-semibold text-slate-900 dark:text-white">
                       Live Top-Level Integration Delivery &amp; Consumer Audit Log
                     </span>
-                    <span className="font-mono text-[11px] text-slate-500">
+                    <span className="tabular-nums text-xs text-slate-500">
                       Showing {integrationDeliveries.length} recent dispatches
                     </span>
                   </div>
 
                   <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
-                    <table className="w-full text-left border-collapse font-mono text-[11px]">
+                    <table className="w-full text-left border-collapse tabular-nums text-xs">
                       <thead>
                         <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400">
                           <th className="py-2 px-2.5">Delivery ID</th>
@@ -4111,7 +4111,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                             key={dlv.deliveryId}
                             className="hover:bg-slate-50/80 dark:hover:bg-slate-950/50"
                           >
-                            <td className="py-2 px-2.5 font-bold text-slate-900 dark:text-white">
+                            <td className="py-2 px-2.5 font-semibold text-slate-900 dark:text-white">
                               {dlv.deliveryId}
                             </td>
                             <td className="py-2 px-2.5">{dlv.iso3}</td>
@@ -4124,7 +4124,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                             </td>
                             <td className="py-2 px-2.5">
                               <span
-                                className={`px-1.5 py-0.5 font-bold ${
+                                className={`px-1.5 py-0.5 font-semibold ${
                                   dlv.ok
                                     ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300'
                                     : 'bg-amber-100 dark:bg-amber-950 text-amber-700 dark:text-amber-300'
@@ -4150,7 +4150,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                 {/* Row 3: Downstream Consumer Quickstart Snippets */}
                 <div className="border border-slate-200 dark:border-slate-800 p-4 bg-white dark:bg-slate-900 space-y-2.5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="font-bold text-slate-900 dark:text-white">
+                    <div className="font-semibold text-slate-900 dark:text-white">
                       Downstream Application Consumer Code Snippets ({activeIso3})
                     </div>
                     <div className="flex items-center gap-1.5">
@@ -4165,7 +4165,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                           key={tab.id}
                           type="button"
                           onClick={() => setActiveSnippetTab(tab.id)}
-                          className={`px-2.5 py-1 text-[11px] font-semibold border ${
+                          className={`px-2.5 py-1 text-xs font-semibold border ${
                             activeSnippetTab === tab.id
                               ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500'
                               : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
@@ -4177,14 +4177,14 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                       <button
                         type="button"
                         onClick={() => copyText('int-snippet', activeCodeBlock)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
                       >
                         <Copy className="w-3 h-3" />
                         <span>{copiedKey === 'int-snippet' ? 'Copied!' : 'Copy Code'}</span>
                       </button>
                     </div>
                   </div>
-                  <pre className="p-3 font-mono text-[11px] leading-relaxed bg-slate-950 text-emerald-300 overflow-x-auto select-text">
+                  <pre className="p-3 tabular-nums text-xs leading-relaxed bg-slate-950 text-emerald-300 overflow-x-auto select-text">
                     {activeCodeBlock}
                   </pre>
                 </div>
@@ -4194,18 +4194,18 @@ es.addEventListener("manual.gui.broadcast", (e) => {
 
           {/* Live Pull / Benchmark Feedback Bar (visible across all tabs when triggered) */}
           {(pullStatus.message || benchmarkResult.message) && (
-            <div className="border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50 dark:bg-slate-950 space-y-2 text-xs font-mono">
+            <div className="border border-slate-200 dark:border-slate-800 p-3.5 bg-slate-50 dark:bg-slate-950 space-y-2 text-xs tabular-nums">
               {pullStatus.message && (
                 <div className="flex items-center justify-between gap-2 text-slate-800 dark:text-slate-200">
                   <span>
-                    <strong>[MODEL PULL]:</strong> {pullStatus.message}
+                    <strong>[Model pull]:</strong> {pullStatus.message}
                   </span>
                   <button
                     type="button"
                     onClick={() =>
                       copyText('pull-cmd', `ollama pull ${pullStatus.targetModel}`)
                     }
-                    className="px-2 py-0.5 text-[11px] bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
+                    className="px-2 py-0.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700"
                   >
                     {copiedKey === 'pull-cmd'
                       ? 'Copied!'
@@ -4220,7 +4220,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                     {benchmarkResult.message}
                   </div>
                   {benchmarkResult.sampleOutput && (
-                    <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px]">
+                    <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
                       Stance: <strong>{benchmarkResult.sampleOutput.stance}</strong> · Risk
                       Score: <strong>{benchmarkResult.sampleOutput.riskScore}</strong> ·{' '}
                       {benchmarkResult.sampleOutput.summary}
@@ -4251,7 +4251,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
             <button
               type="button"
               onClick={() => downloadFile('.env', customEnvContent)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-700 hover:bg-slate-100"
+              className="ui-btn inline-flex"
             >
               <Download className="w-3.5 h-3.5" />
               <span>Export GUI .env File</span>
@@ -4260,7 +4260,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
               type="button"
               onClick={() => handleSaveGuiConfigToServer(false)}
               disabled={serverSaveState.saving}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
               <span>
@@ -4274,7 +4274,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                   handleSaveGuiConfigToServer(true);
                   onClose();
                 }}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white"
+                className="ui-btn ui-btn-primary inline-flex"
               >
                 <Play className="w-3.5 h-3.5" />
                 <span>Save &amp; Run 9-Agent Council Now</span>

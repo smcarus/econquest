@@ -27,7 +27,7 @@ interface SupplyChainMatrixDeskProps {
   onOpenPortfolioDesk?: () => void;
 }
 
-const DEPLETION_COLORS = ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#a855f7'];
+const DEPLETION_COLORS = ['#f43f5e', '#f59e0b', '#3b82f6', '#10b981', '#3b82f6'];
 
 export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
   run,
@@ -125,7 +125,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
             <div className="text-xs text-blue-600 dark:text-blue-400 font-semibold">
               Sovereign Council Orchestrator of EconQuest · Supply Chain &amp; Leontief Input-Output Risk Engine
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {run.countryName} ({run.iso3}) — Institutional Supply Chain Matrix, Stockpile Depletion &amp; IB Sector Advisory
             </h2>
           </div>
@@ -149,14 +149,14 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
             <button
               type="button"
               onClick={() => applyPreset('chokepoint_siege')}
-              className="px-2.5 py-1.5 text-xs font-medium bg-orange-50 dark:bg-orange-950/50 border border-orange-300 dark:border-orange-800 text-orange-800 dark:text-orange-300 hover:bg-orange-100 transition-colors whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-xs font-medium bg-amber-50 dark:bg-amber-950/50 border border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300 hover:bg-amber-100 transition-colors whitespace-nowrap shrink-0"
             >
               LNG &amp; Fertilizer Siege (+26d)
             </button>
             <button
               type="button"
               onClick={() => applyPreset('full_supply_freeze')}
-              className="px-2.5 py-1.5 text-xs font-semibold bg-red-50 dark:bg-red-950/50 border border-red-300 dark:border-red-800 text-red-700 dark:text-red-300 hover:bg-red-100 transition-colors whitespace-nowrap shrink-0"
+              className="px-2.5 py-1.5 text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-100 transition-colors whitespace-nowrap shrink-0"
             >
               Full Strategic Supply Freeze
             </button>
@@ -164,7 +164,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
               <button
                 type="button"
                 onClick={onOpenGeopoliticalDesk}
-                className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors whitespace-nowrap shrink-0"
+                className="ui-btn ui-btn-primary inline-flex shrink-0"
               >
                 <span>GDELT Alerts Map</span>
                 <ArrowUpRight className="w-3.5 h-3.5" />
@@ -182,10 +182,10 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Sliders className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+                <Sliders className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>Upstream Export Quota Cut</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-red-600 dark:text-red-400">
+              <span className="tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                 -{shockParams.upstreamExportQuotaCutPct}%
               </span>
             </div>
@@ -201,9 +201,9 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                   upstreamExportQuotaCutPct: Number(e.target.value),
                 }))
               }
-              className="w-full accent-red-600 cursor-pointer"
+              className="w-full accent-rose-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0% Normal</span>
               <span>40% Quota</span>
               <span>80% Embargo</span>
@@ -216,7 +216,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                 <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
                 <span>Maritime Rerouting Lag</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400">
+              <span className="tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                 +{shockParams.maritimeRoutingDelayDays} Days
               </span>
             </div>
@@ -234,7 +234,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
               }
               className="w-full accent-amber-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0d Direct</span>
               <span>14d Cape</span>
               <span>30d Blockade</span>
@@ -244,10 +244,10 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
-                <Cpu className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+                <Cpu className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 <span>Inventory Burn Velocity</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-purple-600 dark:text-purple-400">
+              <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                 {shockParams.inventoryBurnMultiplier.toFixed(2)}x
               </span>
             </div>
@@ -263,9 +263,9 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                   inventoryBurnMultiplier: Number(e.target.value),
                 }))
               }
-              className="w-full accent-purple-600 cursor-pointer"
+              className="w-full accent-blue-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0.5x Rationed</span>
               <span>1.25x Base</span>
               <span>2.5x Surge</span>
@@ -278,7 +278,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                 <Network className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                 <span>Import Substitution Speed</span>
               </span>
-              <span className="font-mono tabular-nums font-bold text-emerald-600 dark:text-emerald-400">
+              <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                 {shockParams.importSubstitutionElasticityPct}%
               </span>
             </div>
@@ -296,7 +296,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
               }
               className="w-full accent-emerald-600 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] font-mono text-slate-400">
+            <div className="flex justify-between text-xs tabular-nums text-slate-400">
               <span>0% Rigid</span>
               <span>30% Dual-Source</span>
               <span>60% Reshored</span>
@@ -307,7 +307,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
         {/* Per-Input Embargo Toggles */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <AlertOctagon className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+            <AlertOctagon className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
             <span>Targeted Critical Input Embargo Toggles:</span>
           </span>
           {CRITICAL_INPUT_CATALOG.map((item) => {
@@ -317,10 +317,10 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => toggleEmbargoInput(item.id)}
-                className={`px-2.5 py-1 text-xs font-mono border transition-colors whitespace-nowrap shrink-0 ${
+                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors whitespace-nowrap shrink-0 ${
                   active
-                    ? 'bg-red-600 border-red-600 text-white font-bold'
-                    : 'bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-red-400'
+                    ? 'bg-rose-600 border-rose-600 text-white font-semibold'
+                    : 'bg-slate-50 dark:bg-slate-950 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-rose-400'
                 }`}
               >
                 {active ? `EMBARGOED: ${item.label}` : item.label}
@@ -332,79 +332,79 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
         {/* 6-KPI Telemetry Strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Mean Leontief (I − A)⁻¹
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-blue-600 dark:text-blue-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
               {suite.aggregateLeontiefMultiplier.toFixed(2)}x
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               6-Sector Inter-Industry
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Stressed GVA Contraction
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-red-600 dark:text-red-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-rose-600 dark:text-rose-400 mt-0.5">
               {suite.totalEconomyOutputContractionPctGdp}% GDP
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Cascade Output Loss
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Producer Price (PPI) Spike
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-amber-600 dark:text-amber-400 mt-0.5">
               +{suite.totalSupplyChainPpiPassThroughBps} bps
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Upstream Input Cost
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Earliest Factory Halt (T*)
             </div>
             <div
-              className={`text-lg font-mono tabular-nums font-bold mt-0.5 ${
+              className={`text-lg tabular-nums tabular-nums font-semibold mt-0.5 ${
                 suite.earliestProductionHaltDay <= 25
-                  ? 'text-red-600 dark:text-red-400'
+                  ? 'text-rose-600 dark:text-rose-400'
                   : 'text-amber-600 dark:text-amber-400'
               }`}
             >
               Day {suite.earliestProductionHaltDay}
             </div>
-            <div className="text-[11px] font-mono text-slate-500 truncate">
+            <div className="text-xs tabular-nums text-slate-500 truncate">
               {suite.mostVulnerableInputLabel}
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               IB Working-Capital Need
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               ${suite.totalIbWorkingCapitalNeedUsdMillions.toLocaleString()}M
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Buffer Inventory RCF
             </div>
           </div>
 
           <div className="p-3 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="text-xs text-slate-500 dark:text-slate-400">
               Active Input Embargoes
             </div>
-            <div className="text-lg font-mono tabular-nums font-bold text-purple-600 dark:text-purple-400 mt-0.5">
+            <div className="text-lg tabular-nums font-semibold text-blue-600 dark:text-blue-400 mt-0.5">
               {embargoedInputIds.length} / 5 Inputs
             </div>
-            <div className="text-[11px] font-mono text-slate-500">
+            <div className="text-xs tabular-nums text-slate-500">
               Sub Elasticity: {shockParams.importSubstitutionElasticityPct}%
             </div>
           </div>
@@ -425,7 +425,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                   Leontief Inverse (I − A)⁻¹ Inter-Industry Cascade Matrix (6 × 6 Domestic Sectors)
                 </span>
               </div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                 {suite.leontiefConclusionHeadline}
               </h3>
             </div>
@@ -434,7 +434,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-500">
+                <tr className="border-b border-slate-200 dark:border-slate-800 text-xs tabular-nums text-slate-500">
                   <th className="py-2 px-2">Supplier \ Consumer</th>
                   {leontiefSectors.map((s) => (
                     <th key={s.sectorId} className="py-2 px-2 text-center">
@@ -444,7 +444,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                   <th className="py-2 px-2 text-right">Fwd Lᵢ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs font-mono">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs tabular-nums">
                 {leontiefSectors.map((sup) => {
                   const isRowSelected = selectedSectorId === sup.sectorId;
                   return (
@@ -461,7 +461,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                     >
                       <td className="py-2 px-2 font-sans text-xs font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap">
                         {sup.shortCode}
-                        <span className="block text-[10px] font-normal text-slate-500">
+                        <span className="block text-xs font-normal text-slate-500">
                           Import: {sup.importedInputReliancePct}%
                         </span>
                       </td>
@@ -474,7 +474,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                         if (!cell) return <td key={con.sectorId} />;
                         const cellBg =
                           cell.tier === 'CRITICAL'
-                            ? 'bg-red-100/80 dark:bg-red-950/70 text-red-800 dark:text-red-200 border-red-300 dark:border-red-800'
+                            ? 'bg-rose-100/80 dark:bg-rose-950/70 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-800'
                             : cell.tier === 'HIGH'
                             ? 'bg-amber-100/70 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border-amber-300 dark:border-amber-800'
                             : cell.tier === 'MODERATE'
@@ -485,16 +485,16 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                             key={con.sectorId}
                             className={`p-1.5 text-center border ${cellBg}`}
                           >
-                            <div className="text-[11px] font-bold tabular-nums">
+                            <div className="text-xs font-semibold tabular-nums">
                               a={cell.directTechnicalCoeffAij.toFixed(2)}
                             </div>
-                            <div className="text-[9.5px] opacity-85 tabular-nums">
+                            <div className="text-xs opacity-85 tabular-nums">
                               L={cell.totalRequirementMultiplierLij.toFixed(2)}x
                             </div>
                           </td>
                         );
                       })}
-                      <td className="py-2 px-2 text-right font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                      <td className="py-2 px-2 text-right font-semibold text-blue-600 dark:text-blue-400 tabular-nums">
                         {sup.forwardLinkageMultiplier.toFixed(2)}x
                       </td>
                     </tr>
@@ -506,19 +506,19 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
 
           <ul className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs text-slate-600 dark:text-slate-300">
             <li className="flex items-start gap-2">
-              <span className="text-blue-600 dark:text-blue-400 font-bold">•</span>
+              <span className="text-blue-600 dark:text-blue-400 font-semibold">•</span>
               <span>
                 <strong>Forward Cascade Multipliers:</strong> Power Grid/Utilities and Refining/Logistics exhibit the highest forward Leontief multipliers, propagating upstream energy or transformer shortages across all downstream industries.
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+              <span className="text-rose-600 dark:text-rose-400 font-semibold">•</span>
               <span>
                 <strong>Imported Input Bottleneck:</strong> Tech/Semiconductors ({leontiefSectors[0].importedInputReliancePct}% import reliance) and Auto/Aerospace ({leontiefSectors[2].importedInputReliancePct}% import reliance) suffer the steepest GVA contraction under quota cuts.
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-600 dark:text-amber-400 font-bold">•</span>
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">•</span>
               <span>
                 <strong>Second-Round PPI Amplification:</strong> Indirect $(I - A)^{-1}$ requirements add +{suite.totalSupplyChainPpiPassThroughBps} bps to domestic producer prices.
               </span>
@@ -530,12 +530,12 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
         <div className="xl:col-span-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
           <div className="pb-3 border-b border-slate-200 dark:border-slate-800">
             <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-red-600 dark:text-red-400" />
+              <Clock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
               <span>
                 Stockpile Depletion Countdown &amp; Production Halt Horizon (Days 0 to 90)
               </span>
             </div>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               {suite.mostVulnerableInputLabel} breaches the 15-Day Operational Floor first, reaching complete buffer exhaustion by Day {suite.earliestProductionHaltDay}.
             </h3>
           </div>
@@ -552,7 +552,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
               y={floor15Y}
               width={plotW}
               height={padT + plotH - floor15Y}
-              fill="#ef4444"
+              fill="#f43f5e"
               fillOpacity={0.14}
             />
             <line
@@ -560,16 +560,16 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
               y1={floor15Y}
               x2={padL + plotW}
               y2={floor15Y}
-              stroke="#ef4444"
+              stroke="#f43f5e"
               strokeWidth={1.2}
               strokeDasharray="4 3"
             />
             <text
               x={padL + 6}
               y={floor15Y - 4}
-              className="text-[9px] font-mono font-bold fill-red-600 dark:fill-red-400"
+              className="text-xs tabular-nums font-semibold fill-rose-600 dark:fill-rose-400"
             >
-              15-DAY CRITICAL ASSEMBLY CURTAILMENT FLOOR
+              15-Day critical assembly curtailment floor
             </text>
 
             {/* Axes */}
@@ -605,7 +605,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                     x={x}
                     y={padT + plotH + 15}
                     textAnchor="middle"
-                    className="text-[9.5px] font-mono fill-slate-500"
+                    className="text-xs tabular-nums fill-slate-500"
                   >
                     D+{d}
                   </text>
@@ -640,7 +640,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
           </svg>
 
           {/* Legend & Depletion Day Badges */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs tabular-nums">
             {depletionTrajectories.map((series, idx) => (
               <div
                 key={series.inputId}
@@ -656,9 +656,9 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                   </span>
                 </span>
                 <span
-                  className={`font-bold shrink-0 ml-2 ${
+                  className={`font-semibold shrink-0 ml-2 ${
                     series.stressedDepletionHorizonDay <= 30
-                      ? 'text-red-600 dark:text-red-400'
+                      ? 'text-rose-600 dark:text-rose-400'
                       : 'text-slate-700 dark:text-slate-300'
                   }`}
                 >
@@ -670,19 +670,19 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
 
           <ul className="pt-2 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs text-slate-600 dark:text-slate-300">
             <li className="flex items-start gap-2">
-              <span className="text-red-600 dark:text-red-400 font-bold">•</span>
+              <span className="text-rose-600 dark:text-rose-400 font-semibold">•</span>
               <span>
                 <strong>Just-in-Time Semiconductor Fragility:</strong> Logic wafers (&lt;7nm) begin at 24 days of buffer and cross the 15-day curtailment floor within 2 weeks under an export freeze.
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-amber-600 dark:text-amber-400 font-bold">•</span>
+              <span className="text-amber-600 dark:text-amber-400 font-semibold">•</span>
               <span>
                 <strong>HV Grid Transformer Lead Times:</strong> Sub-station IGBT and HVDC transformer stocks deplete by Day {depletionTrajectories[2].stressedDepletionHorizonDay} with a 28–36 month replacement lag.
               </span>
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">•</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">•</span>
               <span>
                 <strong>Substitution Mitigation:</strong> Raising Import Substitution Elasticity via dual-sourcing extends production halt horizons by +12 to +22 days.
               </span>
@@ -703,11 +703,11 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                 Bilateral Country-to-Country Critical Input Dependency, Supplier HHI &amp; Export-Control Regime Matrix
               </span>
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Sovereign Bilateral Supply Corridors, Substitution Lag (Months) &amp; Counter-Retaliation Leverage ({run.countryName})
             </h3>
           </div>
-          <span className="text-xs font-mono text-slate-500 shrink-0">
+          <span className="text-xs tabular-nums text-slate-500 shrink-0">
             HHI &gt; 4,000 = Sovereign Monopoly Supplier Choke
           </span>
         </div>
@@ -715,7 +715,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <th className="py-2.5 px-3">Partner Country / Supplier Bloc</th>
                 <th className="py-2.5 px-3">Critical Inputs &amp; Export-Control Regime</th>
                 <th className="py-2.5 px-3 text-right">Import Share</th>
@@ -739,30 +739,30 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                     <div className="text-slate-800 dark:text-slate-200 font-medium">
                       {row.criticalInputsSupplied}
                     </div>
-                    <div className="text-[11px] font-mono text-slate-500">
+                    <div className="text-xs tabular-nums text-slate-500">
                       Regime: {row.exportControlRegime}
                     </div>
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-slate-900 dark:text-slate-100">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-slate-900 dark:text-slate-100">
                     {row.sovereignImportSharePct}%
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums text-amber-600 dark:text-amber-400 font-semibold">
+                  <td className="py-2.5 px-3 text-right tabular-nums text-amber-600 dark:text-amber-400 font-semibold">
                     {row.globalSupplierHhi.toLocaleString()}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums text-slate-700 dark:text-slate-300">
+                  <td className="py-2.5 px-3 text-right tabular-nums text-slate-700 dark:text-slate-300">
                     {row.domesticSubstitutionLagMonths} mos
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-blue-600 dark:text-blue-400">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     {row.bilateralRetaliationLeverageScore}/100
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-red-600 dark:text-red-400">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                     +${row.stressedAnnualImportBillDeltaUsdBn}B/yr
                   </td>
                   <td className="py-2.5 px-3 text-center">
                     <span
-                      className={`inline-block px-2 py-0.5 text-[10px] font-mono font-bold border ${
+                      className={`inline-block px-2 py-0.5 text-xs tabular-nums font-semibold border ${
                         row.riskClassification === 'MONOPOLY_CHOKE'
-                          ? 'bg-red-50 dark:bg-red-950/60 border-red-300 dark:border-red-800 text-red-700 dark:text-red-300'
+                          ? 'bg-rose-50 dark:bg-rose-950/60 border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300'
                           : row.riskClassification === 'STRATEGIC_DEPENDENCY'
                           ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300'
                           : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
@@ -790,7 +790,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                 Investment Banking &amp; Hedge Fund Sector Translation · Corporate Margin, HY/IG Credit Spread, EV/EBITDA &amp; M&amp;A Capex Advisory
               </span>
             </div>
-            <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 mt-0.5">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
               Sector-Level Corporate Credit, Valuation Multiple Compression &amp; Strategic M&amp;A / Nearshoring Mandates
             </h3>
           </div>
@@ -809,7 +809,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
         <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400">
+              <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
                 <th className="py-2.5 px-3">Domestic Industry Sector</th>
                 <th className="py-2.5 px-3 text-right">EBITDA Margin</th>
                 <th className="py-2.5 px-3 text-right">Corp Credit Spread</th>
@@ -827,16 +827,16 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                   <td className="py-2.5 px-3 font-semibold text-slate-900 dark:text-slate-100">
                     {row.sectorName}
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-red-600 dark:text-red-400">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                     -{row.ebitdaMarginCompressionBps} bps
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-amber-600 dark:text-amber-400">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-amber-600 dark:text-amber-400">
                     +{row.corporateCreditSpreadWideningBps} bps
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-semibold text-red-600 dark:text-red-400">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                     {row.evToEbitdaMultipleImpactPct}%
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono tabular-nums font-bold text-blue-600 dark:text-blue-400">
+                  <td className="py-2.5 px-3 text-right tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                     ${row.workingCapitalFacilityNeedUsdMillions}M
                   </td>
                   <td className="py-2.5 px-3 space-y-1">
@@ -844,7 +844,7 @@ export const SupplyChainMatrixDesk: React.FC<SupplyChainMatrixDeskProps> = ({
                       <strong className="text-blue-600 dark:text-blue-400">IB Advisory: </strong>
                       {row.ibCapexAndMaAdvisoryMandate}
                     </div>
-                    <div className="text-[11px] font-mono text-emerald-700 dark:text-emerald-400">
+                    <div className="text-xs tabular-nums text-emerald-700 dark:text-emerald-400">
                       <strong>HF Expression: </strong>
                       {row.hedgeFundTradeExpression}
                     </div>
