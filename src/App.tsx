@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AIRuntimeConfig,
   AnnotatedChartSpec,
@@ -88,44 +88,15 @@ import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
 import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
-import { AnnotatedChartsDeck } from './components/AnnotatedChartsDeck';
-import { StatisticalForecastingLab } from './components/StatisticalForecastingLab';
-import { GeopoliticalRiskDesk } from './components/GeopoliticalRiskDesk';
-import { PortfolioContagionDesk } from './components/PortfolioContagionDesk';
-import { CrisisBacktestDesk } from './components/CrisisBacktestDesk';
-import { PolicyDocumentAndCsvLab } from './components/PolicyDocumentAndCsvLab';
 import { ScenarioDeltaComparatorDrawer } from './components/ScenarioDeltaComparatorModal';
-import { InstitutionalRiskModules } from './components/InstitutionalRiskModules';
-import { CouncilHierarchyAndDebates } from './components/CouncilHierarchyAndDebates';
-import { CROCheckpointAndReports } from './components/CROCheckpointAndReports';
-import { SupplyChainMatrixDesk } from './components/SupplyChainMatrixDesk';
-import { GlobalLiquidityDesk } from './components/GlobalLiquidityDesk';
-import { MarketMakerAlphaDesk } from './components/MarketMakerAlphaDesk';
-import {
-  InstitutionalQuantDesk,
-  QuantSubWorkspaceId,
-} from './components/InstitutionalQuantDesk';
-import {
-  PortfolioAndFundingDesk,
-  PortfolioFundingSubTabId,
-} from './components/PortfolioAndFundingDesk';
-import {
-  DecisionCommandCenterDesk,
-  DecisionCommandSubTabId,
-} from './components/DecisionCommandCenterDesk';
-import {
-  SovereignRatingsFxAndIcDesk,
-  RatingsFxIcSubTabId,
-} from './components/SovereignRatingsFxAndIcDesk';
-import {
-  RestructuringMonetaryGeoDesk,
-  RestructuringMonetaryGeoSubTabId,
-} from './components/RestructuringMonetaryGeoDesk';
-import {
-  PersonaPlaybooksAndSignalDesk,
-  PersonaPlaybookSubTabId,
-} from './components/PersonaPlaybooksAndSignalDesk';
+import type { QuantSubWorkspaceId } from './components/InstitutionalQuantDesk';
+import type { PortfolioFundingSubTabId } from './components/PortfolioAndFundingDesk';
+import type { DecisionCommandSubTabId } from './components/DecisionCommandCenterDesk';
+import type { RatingsFxIcSubTabId } from './components/SovereignRatingsFxAndIcDesk';
+import type { RestructuringMonetaryGeoSubTabId } from './components/RestructuringMonetaryGeoDesk';
+import type { PersonaPlaybookSubTabId } from './components/PersonaPlaybooksAndSignalDesk';
 import { EconQuestLogo } from './components/EconQuestLogo';
+import { lazyNamed, DeskLoading } from './components/LazyDesk';
 import {
   DeskClaritySynthesisBanner,
   WorkspaceDensityMode,
@@ -151,7 +122,10 @@ import {
   DEFAULT_NSS_SHOCK_INPUTS,
   StagedTradeTicketSpec,
 } from './utils/nssYieldCurveAndCatalystEngine';
-import { exportSMCRPdfDossier } from './utils/smcrReportExporter';
+import type { CouncilAssessmentRun as RunForPdf } from './types/council';
+// The PDF library is large, so it loads only when someone exports a PDF.
+const exportSMCRPdfDossier = (r: RunForPdf) =>
+  import('./utils/smcrReportExporter').then((m) => m.exportSMCRPdfDossier(r));
 import {
   FileUp,
   Sun,
@@ -179,6 +153,27 @@ import {
   Settings2,
   Presentation,
 } from 'lucide-react';
+
+// Desks load on first use, so the first screen does not download all 41 of them.
+const AnnotatedChartsDeck = lazyNamed(() => import('./components/AnnotatedChartsDeck'), 'AnnotatedChartsDeck');
+const StatisticalForecastingLab = lazyNamed(() => import('./components/StatisticalForecastingLab'), 'StatisticalForecastingLab');
+const GeopoliticalRiskDesk = lazyNamed(() => import('./components/GeopoliticalRiskDesk'), 'GeopoliticalRiskDesk');
+const PortfolioContagionDesk = lazyNamed(() => import('./components/PortfolioContagionDesk'), 'PortfolioContagionDesk');
+const CrisisBacktestDesk = lazyNamed(() => import('./components/CrisisBacktestDesk'), 'CrisisBacktestDesk');
+const PolicyDocumentAndCsvLab = lazyNamed(() => import('./components/PolicyDocumentAndCsvLab'), 'PolicyDocumentAndCsvLab');
+const InstitutionalRiskModules = lazyNamed(() => import('./components/InstitutionalRiskModules'), 'InstitutionalRiskModules');
+const CouncilHierarchyAndDebates = lazyNamed(() => import('./components/CouncilHierarchyAndDebates'), 'CouncilHierarchyAndDebates');
+const CROCheckpointAndReports = lazyNamed(() => import('./components/CROCheckpointAndReports'), 'CROCheckpointAndReports');
+const SupplyChainMatrixDesk = lazyNamed(() => import('./components/SupplyChainMatrixDesk'), 'SupplyChainMatrixDesk');
+const GlobalLiquidityDesk = lazyNamed(() => import('./components/GlobalLiquidityDesk'), 'GlobalLiquidityDesk');
+const MarketMakerAlphaDesk = lazyNamed(() => import('./components/MarketMakerAlphaDesk'), 'MarketMakerAlphaDesk');
+const InstitutionalQuantDesk = lazyNamed(() => import('./components/InstitutionalQuantDesk'), 'InstitutionalQuantDesk');
+const PortfolioAndFundingDesk = lazyNamed(() => import('./components/PortfolioAndFundingDesk'), 'PortfolioAndFundingDesk');
+const DecisionCommandCenterDesk = lazyNamed(() => import('./components/DecisionCommandCenterDesk'), 'DecisionCommandCenterDesk');
+const SovereignRatingsFxAndIcDesk = lazyNamed(() => import('./components/SovereignRatingsFxAndIcDesk'), 'SovereignRatingsFxAndIcDesk');
+const RestructuringMonetaryGeoDesk = lazyNamed(() => import('./components/RestructuringMonetaryGeoDesk'), 'RestructuringMonetaryGeoDesk');
+const PersonaPlaybooksAndSignalDesk = lazyNamed(() => import('./components/PersonaPlaybooksAndSignalDesk'), 'PersonaPlaybooksAndSignalDesk');
+
 
 const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
@@ -2756,9 +2751,11 @@ export default function App() {
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
               renderDesk={(d) => (
-                <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
-                  {renderDeskBody(d as NavSectionId)}
-                </ViewportScrollBudgetContainer>
+                <Suspense key={d} fallback={<DeskLoading />}>
+                  <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
+                    {renderDeskBody(d as NavSectionId)}
+                  </ViewportScrollBudgetContainer>
+                </Suspense>
               )}
             />
           )}
@@ -2832,9 +2829,11 @@ export default function App() {
                     defaultAudience={userRole === 'UHNW' ? 'client' : 'ic'}
                   />
                 ) : (
-                  <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
-                    {renderDeskBody(d as NavSectionId)}
-                  </ViewportScrollBudgetContainer>
+                  <Suspense key={d} fallback={<DeskLoading />}>
+                    <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
+                      {renderDeskBody(d as NavSectionId)}
+                    </ViewportScrollBudgetContainer>
+                  </Suspense>
                 )
               }
             />
@@ -2861,13 +2860,16 @@ export default function App() {
 
           {/* MODE 1: CLEAN EXECUTIVE BRIEFING (DEFAULT) WRAPPED IN 1-2 SCREEN SCROLL BUDGET CONTAINER */}
           {layoutMode === 'executive_brief' && (
-            <ViewportScrollBudgetContainer activeNavSection={activeNavSection}>
-              {renderDeskBody(activeNavSection)}
-            </ViewportScrollBudgetContainer>
+            <Suspense key={activeNavSection} fallback={<DeskLoading />}>
+              <ViewportScrollBudgetContainer activeNavSection={activeNavSection}>
+                {renderDeskBody(activeNavSection)}
+              </ViewportScrollBudgetContainer>
+            </Suspense>
           )}
 
           {/* MODE 2: SPLIT DESK WORKBENCH (SIDE-BY-SIDE QUANT/ECONOMETRICS/GEOPOLITICAL/PORTFOLIO RISK + LIVE COUNCIL DEBATES) */}
           {layoutMode === 'split_workbench' && (
+            <Suspense fallback={<DeskLoading />}>
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
               <div className="xl:col-span-6 space-y-6">
                 <AnnotatedChartsDeck
@@ -3006,10 +3008,12 @@ export default function App() {
                 />
               </div>
             </div>
+            </Suspense>
           )}
 
           {/* MODE 3: FULL RESEARCH REPORT FLOW (CONTINUOUS VERTICAL INSTITUTIONAL DOSSIER) */}
           {layoutMode === 'full_report' && (
+            <Suspense fallback={<DeskLoading />}>
             <div className="space-y-8">
               <AnnotatedChartsDeck
                 run={run}
@@ -3141,6 +3145,7 @@ export default function App() {
                 onReverifyPipeline={handleRunCouncilPhase1And2}
               />
             </div>
+            </Suspense>
           )}
           </>
           )}
