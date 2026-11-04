@@ -167,6 +167,13 @@ test('watchlist: official yields carry a date, everything else says sample', asy
   assert.ok((byIso.get('ZAF')?.fxVol3mPct ?? 0) > 10);
   assert.equal(byIso.get('EGY')?.fxVol3mPct, undefined);
   assert.equal(byIso.get('ZAF')?.usFedFundsPct, 3.83);
+  // Trade shares for the scenario ranking: World Bank for Turkey and Egypt, WITS for Turkey.
+  assert.deepEqual(byIso.get('TUR')?.trade, {
+    fuelImportsPctMerch: 20, fuelExportsPctMerch: 5, importsPctGdp: 35, exportsPctGdp: 30, wbYear: '2025',
+    chinaExportSharePct: 2.5, russiaExportSharePct: 4, russiaImportSharePct: 12.5977, witsYear: '2023',
+  });
+  assert.equal(byIso.get('EGY')?.trade?.chinaExportSharePct, undefined);
+  assert.equal(byIso.get('BRA')?.trade, undefined);
   for (const it of items) {
     assert.ok(it.dataMode !== 'live', `${it.iso3} cannot be live with every macro feed down`);
   }

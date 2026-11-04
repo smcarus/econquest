@@ -474,6 +474,8 @@ export interface WatchlistItem {
   /** US effective federal funds rate (NY Fed), for carry. */
   usFedFundsPct?: number;
   usFedFundsDate?: string;
+  /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
+  trade?: import('../utils/scenarioExposure').TradeExposure;
 }
 
 export interface WatchlistGroup {

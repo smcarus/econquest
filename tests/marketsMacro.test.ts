@@ -70,7 +70,7 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
   assert.ok(b.sampleWarning);
   // Readings are grouped under the desk role that owns them.
-  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent']);
+  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'Global Spillover Agent']);
   assert.deepEqual(b.groups[3].rows.map((r) => r.label), ['5Y CDS against risk peers']);
 });
 

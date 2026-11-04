@@ -81,6 +81,20 @@ globalThis.fetch = async (input, init = {}) => {
       'FREQ,ADJUSTMENT,REF_AREA,COUNTERPART_AREA,REF_SECTOR,COUNTERPART_SECTOR,CONSOLIDATION,ACCOUNTING_ENTRY,STO,INSTR_ASSET,MATURITY,EXPENDITURE,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,PRICES,TRANSFORMATION,CUST_BREAKDOWN,TITLE,UNIT_MULT,TIME_PERIOD,OBS_VALUE,OBS_STATUS';
     return new Response(`${head}\nQ,N,ID,XW,S13,S1,N,L,LE,F3,T,_Z,USD,_T,N,V,N,_T,"Indonesia - Debt sec, issued by gen govt",9,2026-Q1,507.4643714097,A\n`, { status: 200 });
   }
+  // World Bank WDI trade shares (one call per indicator, all countries): Turkey and Egypt only.
+  if (url.includes('api.worldbank.org') && /\/indicator\/(TM\.VAL\.FUEL|TX\.VAL\.FUEL|NE\.IMP\.GNFS|NE\.EXP\.GNFS)/.test(url)) {
+    const code = url.match(/\/indicator\/([A-Z.]+)/)[1];
+    const v = { 'TM.VAL.FUEL.ZS.UN': [20, 15], 'TX.VAL.FUEL.ZS.UN': [5, 10], 'NE.IMP.GNFS.ZS': [35, 25], 'NE.EXP.GNFS.ZS': [30, 15] }[code];
+    const row = (iso, value) => ({ indicator: { id: code }, countryiso3code: iso, date: '2025', value });
+    return json([{ page: 1, pages: 1, total: 2 }, [row('TUR', v[0]), row('EGY', v[1])]]);
+  }
+  // WITS partner shares: Turkey 2023 only (China exports 2.5%, Russia exports 4%, Russia imports 12.6%).
+  if (url.includes('wits.worldbank.org')) {
+    const m = url.match(/reporter\/(\w+)\/year\/(\d+)\/partner\/(\w+)\/product\/all\/indicator\/([A-Z-]+)/);
+    const val = m && m[1] === 'tur' && m[2] === '2023' ? { 'chn:XPRT-PRTNR-SHR': '2.5', 'rus:XPRT-PRTNR-SHR': '4', 'rus:MPRT-PRTNR-SHR': '12.5977' }[`${m[3]}:${m[4]}`] : undefined;
+    if (!val) return new Response('not found', { status: 404 });
+    return new Response(`<message:StructureSpecificData><message:DataSet><Series FREQ="A" REPORTER="TUR"><Obs TIME_PERIOD="2023" OBS_VALUE="${val}" DATASOURCE="WITS-CMT" /></Series></message:DataSet></message:StructureSpecificData>`, { status: 200 });
+  }
   // BIS real effective exchange rates: South Africa only. 120 months at 100, latest month 85 (15% weak).
   if (url.includes('stats.bis.org') && url.includes('/WS_EER/M.R.B.ZA/')) {
     const head = 'FREQ,EER_TYPE,EER_BASKET,REF_AREA,UNIT_MEASURE,TIME_FORMAT,COLLECTION,TITLE_TS,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_CONF,OBS_PRE_BREAK';
