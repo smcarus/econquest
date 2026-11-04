@@ -42,7 +42,7 @@ npm test
 npm run build
 ```
 
-Every pull request runs the same three checks on GitHub (`.github/workflows/ci.yml`). Tests live in `tests/` and use Node's built-in test runner, so there is nothing extra to install.
+Every pull request runs the same three checks on GitHub (`.github/workflows/ci.yml`). Tests live in `tests/` and use Node's built-in test runner, so there is nothing extra to install. `tests/server.test.ts` starts the real server with the network replaced by fixtures (`tests/helpers/offline-fetch.mjs`), so the data endpoints are checked without touching the internet.
 
 ---
 
