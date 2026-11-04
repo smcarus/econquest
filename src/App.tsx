@@ -71,6 +71,15 @@ import {
   CountryTabId,
   findCountryTabForDesk,
 } from './components/CountryPage';
+import {
+  WorkspacePage,
+  PORTFOLIO_TABS,
+  REPORTS_TABS,
+  findTabForDesk,
+} from './components/WorkspacePage';
+import { PortfolioSummary } from './components/PortfolioSummary';
+
+type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
 import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
 import { AnnotatedChartsDeck } from './components/AnnotatedChartsDeck';
@@ -563,11 +572,32 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   // Top-level area: the PM's Today page, or the analysis desks.
-  const [appArea, setAppArea] = useState<'today' | 'country' | 'desks'>('today');
+  const [appArea, setAppArea] = useState<AppArea>('today');
   const [countryTab, setCountryTab] = useState<CountryTabId>('overview');
+  const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
+  const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
+  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
+  const openWorkspace = (area: 'portfolio' | 'reports', deskId?: string) => {
+    const tabs = area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
+    const current = area === 'portfolio' ? portfolioTab : reportsTab;
+    const tab = (deskId && findTabForDesk(tabs, deskId)) || tabs.find((t) => t.id === current) || tabs[0];
+    (area === 'portfolio' ? setPortfolioTab : setReportsTab)(tab.id);
+    const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
+    setActiveNavSection(desk as NavSectionId);
+    setAppArea(area);
+    window.scrollTo({ top: 0 });
+  };
   const openCountryPage = (deskId?: string) => {
+    if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(PORTFOLIO_TABS, deskId)) {
+      openWorkspace('portfolio', deskId);
+      return;
+    }
+    if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(REPORTS_TABS, deskId)) {
+      openWorkspace('reports', deskId);
+      return;
+    }
     if (deskId && !findCountryTabForDesk(deskId)) {
-      // Not part of a country tab (e.g. trade blotter): open it in the desk view.
+      // Not part of any workflow page: open it in the desk library.
       setLayoutMode('executive_brief');
       setActiveNavSection(deskId as NavSectionId);
       setAppArea('desks');
@@ -1998,100 +2028,96 @@ export default function App() {
                 : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
-            Country
+            Countries
           </button>
-          {ACTIVITY_PILLARS.map((pillar) => {
-            const activePillarInfo = findPillarForNavSection(activeNavSection);
-            const isPillarActive =
-              appArea === 'desks' &&
-              layoutMode === 'executive_brief' &&
-              activePillarInfo.pillar.id === pillar.id;
-            const isOpen = openPillarMenuId === pillar.id;
-
-            const activeBtnClass =
-              pillar.id === 'market_trading'
-                ? 'bg-blue-600 text-white border-blue-600 font-semibold '
-                : pillar.id === 'policy_research'
-                ? 'bg-blue-600 text-white border-blue-600 font-semibold '
-                : 'bg-blue-600 text-white border-blue-600 font-semibold ';
-
-            return (
-              <div
-                key={pillar.id}
-                className="relative"
-                onMouseEnter={() => setOpenPillarMenuId(pillar.id)}
-                onMouseLeave={() => setOpenPillarMenuId(null)}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLayoutMode('executive_brief');
-    setAppArea('desks');
-                    setActiveNavSection(pillar.defaultSection as NavSectionId);
-                    setOpenPillarMenuId(isOpen ? null : pillar.id);
-                  }}
-                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                    isPillarActive
-                      ? activeBtnClass
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <span>{pillar.shortTitle}</span>
-                  <ChevronDown className="w-3.5 h-3.5 opacity-80" />
-                </button>
-
-                {isOpen && (
-                  <div className="absolute left-0 top-full pt-1 w-[440px] z-50">
-                    <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-2.5">
-                      <div className="pb-2 border-b border-slate-100 dark:border-slate-800">
-                        <div className="text-xs font-semibold text-slate-900 dark:text-white">
-                          {pillar.shortTitle}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          {pillar.subtitle}
-                        </div>
-                      </div>
-                      {pillar.subGroups.map((sg) => (
-                        <div
-                          key={sg.groupId}
-                          className="p-2 border bg-slate-50/70 dark:bg-slate-950/60 border-slate-200/80 dark:border-slate-800"
-                        >
-                          <div className="text-xs tabular-nums font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-                            {sg.groupTitle}
-                          </div>
-                          <div className="flex flex-wrap gap-1.5">
-                            {sg.modules.map((mod) => {
-                              const isModSel = activeNavSection === mod.id;
-                              return (
+          <button
+            type="button"
+            onClick={() => openWorkspace('portfolio')}
+            aria-current={appArea === 'portfolio' ? 'page' : undefined}
+            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+              appArea === 'portfolio'
+                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            Portfolio
+          </button>
+          <button
+            type="button"
+            onClick={() => openWorkspace('reports')}
+            aria-current={appArea === 'reports' ? 'page' : undefined}
+            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+              appArea === 'reports'
+                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            Reports
+          </button>
+          <div
+            className="relative"
+            onMouseEnter={() => setIsToolsMenuOpen(true)}
+            onMouseLeave={() => setIsToolsMenuOpen(false)}
+          >
+            <button
+              type="button"
+              onClick={() => setIsToolsMenuOpen((v) => !v)}
+              aria-expanded={isToolsMenuOpen}
+              aria-current={appArea === 'desks' ? 'page' : undefined}
+              title="All 41 analysis desks"
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                appArea === 'desks'
+                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                  : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <span>Tools</span>
+              <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+            </button>
+            {isToolsMenuOpen && (
+              <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
+                <div className="ui-panel shadow-2xl p-3">
+                  <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
+                    The full desk library. Today, Countries, Portfolio and Reports group these desks by task.
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {ACTIVITY_PILLARS.map((pillar) => (
+                      <div key={pillar.id} className="min-w-0 space-y-2">
+                        <div className="ui-section-title">{pillar.shortTitle.replace(/^\d+\.\s*/, '')}</div>
+                        {pillar.subGroups.map((sg) => (
+                          <div key={sg.groupId}>
+                            <div className="ui-label mb-1">{sg.groupTitle}</div>
+                            <div className="flex flex-col">
+                              {sg.modules.map((mod) => (
                                 <button
                                   key={mod.id}
                                   type="button"
                                   onClick={() => {
                                     setLayoutMode('executive_brief');
-    setAppArea('desks');
+                                    setAppArea('desks');
                                     setActiveNavSection(mod.id as NavSectionId);
-                                    setOpenPillarMenuId(null);
+                                    setIsToolsMenuOpen(false);
                                   }}
                                   title={mod.description}
-                                  className={`px-2.5 py-1 text-xs border transition-colors text-left ${
-                                    isModSel
-                                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                                      : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                                  className={`text-left px-2 py-1 text-xs truncate hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                                    appArea === 'desks' && activeNavSection === mod.id
+                                      ? 'text-blue-700 dark:text-blue-300 font-semibold'
+                                      : 'text-slate-700 dark:text-slate-300'
                                   }`}
                                 >
                                   {mod.label}
                                 </button>
-                              );
-                            })}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                )}
+                </div>
               </div>
-            );
-          })}
+            )}
+          </div>
 
           {/* Global Command Palette Cmd+K Trigger */}
           <button
@@ -2517,31 +2543,44 @@ export default function App() {
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
               }`}
             >
-              Country
+              Countries
             </button>
-            {ACTIVITY_PILLARS.map((pillar) => {
-              const isAct =
-                appArea === 'desks' &&
-                findPillarForNavSection(activeNavSection).pillar.id === pillar.id;
-              return (
-                <button
-                  key={pillar.id}
-                  type="button"
-                  onClick={() => {
-                    setLayoutMode('executive_brief');
-    setAppArea('desks');
-                    setActiveNavSection(pillar.defaultSection as NavSectionId);
-                  }}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    isAct
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
-                >
-                  {pillar.shortTitle}
-                </button>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() => openWorkspace('portfolio')}
+              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                appArea === 'portfolio'
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              Portfolio
+            </button>
+            <button
+              type="button"
+              onClick={() => openWorkspace('reports')}
+              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                appArea === 'reports'
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              Reports
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setLayoutMode('executive_brief');
+                setAppArea('desks');
+              }}
+              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                appArea === 'desks'
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              Tools
+            </button>
           </div>
         </div>
       </section>
@@ -2650,6 +2689,58 @@ export default function App() {
               onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
+              renderDesk={(d) => (
+                <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
+                  {renderDeskBody(d as NavSectionId)}
+                </ViewportScrollBudgetContainer>
+              )}
+            />
+          )}
+
+          {(appArea === 'portfolio' || appArea === 'reports') && (
+            <WorkspacePage
+              key={appArea}
+              ariaLabel={appArea === 'portfolio' ? 'Portfolio sections' : 'Reports sections'}
+              title={appArea === 'portfolio' ? 'Portfolio' : 'Reports'}
+              subtitle={
+                appArea === 'portfolio'
+                  ? `The whole book across your watchlist: ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}`
+                  : `Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`
+              }
+              tabs={appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS}
+              activeTabId={appArea === 'portfolio' ? portfolioTab : reportsTab}
+              activeDesk={activeNavSection}
+              onChangeTab={(tabId) => {
+                const tabs = appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
+                (appArea === 'portfolio' ? setPortfolioTab : setReportsTab)(tabId);
+                const cfg = tabs.find((t) => t.id === tabId) || tabs[0];
+                setActiveNavSection(cfg.desks[0] as NavSectionId);
+              }}
+              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
+              actions={
+                <>
+                  <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
+                    IC tickets ({stagedTradeTickets.length})
+                  </button>
+                  {appArea === 'reports' && (
+                    <button type="button" className="ui-btn" onClick={() => setIsComparatorDrawerOpen(true)}>
+                      Compare countries
+                    </button>
+                  )}
+                </>
+              }
+              summary={
+                appArea === 'portfolio' ? (
+                  <PortfolioSummary
+                    watchlistItems={activeWatchlistItems}
+                    stagedTickets={stagedTradeTickets}
+                    onOpenCountry={(item) => {
+                      if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                      openCountryPage();
+                    }}
+                  />
+                ) : undefined
+              }
               renderDesk={(d) => (
                 <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
                   {renderDeskBody(d as NavSectionId)}

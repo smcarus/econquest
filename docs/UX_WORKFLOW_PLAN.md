@@ -6,7 +6,9 @@ Status: Sam chose the **institutional investor** as the first user (2026-11-04).
 - **Phase 0, data truth.** The country bar shows Live / Partly live / Sample data, not live / Source not verified, plus a "Prices: AI estimate | sample" chip. Provenance badges no longer show a fixed "200 OK" or a made-up latency.
 - **Phase 2, Today.** Today is the landing page, with a watchlist showing change since your last visit, signals with Why and Stage ticket, a two-week calendar of official central bank and statistics dates with source links (`src/data/officialCalendar.ts`), and staged IC tickets. Rows open the matching desk.
 - **Phase 3, Country page.** A Country button opens one page per sovereign: a picker, the key figures and data status in one row, then tabs (Overview, Debt & fiscal, Markets, Politics & geo, Scenarios, plus Restructuring when CDS is 400 bps or more or the alert is critical). Each tab holds the existing desks as sub-tabs, so nothing was removed. Overview pairs the executive brief with the official schedule for the next 120 days (`src/components/CountryPage.tsx`).
-- **Phase 1, partial.** A Today button is added and the desk-only control rows are hidden on Today. The three pillar menus stay as the way into the desks until the Country, Portfolio and Reports pages exist (Phases 3 to 5).
+- **Phase 1, frame.** The header is now the five workflow places: **Today · Countries · Portfolio · Reports · Tools**. The old three pillar menus live inside Tools as the full desk library (and Jump ⌘K still finds any desk).
+- **Phase 5 (part), Portfolio.** The book (watchlist at equal weight until a holdings import exists, and it says so), averages, each country's share of risk, staged ideas, then tabs Book, Risk & contagion, Stress tests, Ideas over the existing desks.
+- **Phase 4 (part), Reports.** Tabs IC memo & pitchbook, Risk sign-off, Council debate, Research & exports over the existing desks. Still to do: one report builder, role picker, Present mode, holdings import.
 
 The default persona is now Institution.
 

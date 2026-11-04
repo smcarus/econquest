@@ -940,7 +940,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
     const tables = Array.from(document.querySelectorAll('main table'));
     tables.forEach((tableEl) => {
       const htmlTable = tableEl as HTMLElement;
-      if (htmlTable.getAttribute('data-no-provenance-overlay') === 'true') return;
+      if (htmlTable.closest('[data-no-provenance-overlay="true"]')) return;
       const wrapper = (htmlTable.parentElement || htmlTable) as HTMLElement;
 
       // Update existing badge timestamp if already instrumented

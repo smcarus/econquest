@@ -59,7 +59,7 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
   {
     id: 'scenarios',
     label: 'Scenarios',
-    desks: ['quant_portfolio_stress_lab', 'decision_quadrant_stress', 'backtest_engine', 'quant_macro_surprise'],
+    desks: ['decision_quadrant_stress', 'backtest_engine', 'quant_macro_surprise'],
   },
   {
     id: 'restructuring',
