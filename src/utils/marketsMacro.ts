@@ -1,6 +1,6 @@
 /**
  * MarketEdge (Country tab and Today screen): what the economy is doing, what markets are pricing, and where the two
- * disagree. Every figure keeps its source tag; the readings in "The edge" are simple, stated rules
+ * disagree. Every figure keeps its source tag; the readings in the agent groups (Central Bank Watcher Agent, Relative Value Agent) are simple, stated rules
  * on those figures (tagged model), never data.
  */
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
@@ -34,6 +34,13 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
   BRA: { pct: 3, bandPts: 1.5, bank: 'BCB', url: 'https://www.bcb.gov.br/en/monetarypolicy/inflationtargeting', checked: false },
   MEX: { pct: 3, bandPts: 1, bank: 'Banxico', url: 'https://www.banxico.org.mx/monetary-policy/inflation-target.html', checked: false },
 };
+
+/**
+ * Desk roles that own the MarketEdge readings. Central Bank Watcher matches the council's
+ * agent of that name; Relative Value is the desk that compares a country's pricing with its peers.
+ * The readings are stated rules on sourced figures (tagged "model"), not AI output.
+ */
+export const EDGE_AGENTS = { cb: 'Central Bank Watcher', rv: 'Relative Value' } as const;
 
 export function targetSource(t: InflationTarget): string {
   return t.checked ? `${t.bank} stated target` : `${t.bank} published target, not re-checked`;
@@ -197,12 +204,18 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
           row(status, '2s10s curve slope', `${Math.round(open.yieldCurve.slope2s10sBps)} bps`, 'sample'),
         ],
       },
+      // The edge: readings by stated rules on the figures above, grouped by the desk role that owns them.
       {
-        title: 'The edge (model readings)',
+        title: `${EDGE_AGENTS.cb} Agent`,
         rows: [
           ...(gap !== undefined ? [model('Inflation against target', pts(gap))] : []),
           model('Real policy rate', pct(realPolicy)),
           model('Real 10Y yield', pct(real10Y)),
+        ],
+      },
+      {
+        title: `${EDGE_AGENTS.rv} Agent`,
+        rows: [
           rv && screen.fit
             ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
             : model('5Y CDS against risk peers', 'needs 4 or more countries with a CDS figure', 'model'),
