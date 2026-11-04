@@ -51,7 +51,7 @@ Every pull request runs the same three checks on GitHub (`.github/workflows/ci.y
 
 ## Core view (default)
 
-The app opens in a core view while the best workflows are settled: Today (watchlist and official calendar), Countries (Brief, Markets & macro, and Overview), Portfolio (holdings, book brief and summary) and Reports (the note builder with the country note, issuer note, sustainability assessment, portfolio review and client portfolio review). Every other desk, tab, report and button still works and comes back with **Menu > Show all tools**, which is remembered in this browser.
+The app opens in a core view while the best workflows are settled: Today (watchlist, MarketEdge screen and official calendar), Countries (Brief, MarketEdge, and Overview), Portfolio (holdings, book brief and summary) and Reports (the note builder with the country note, issuer note, sustainability assessment, portfolio review and client portfolio review). Every other desk, tab, report and button still works and comes back with **Menu > Show all tools**, which is remembered in this browser.
 
 ## 🏛️ Terminal Organization: 3 Primary Activity Pillars & 1–2 Screen Scroll Budget
 

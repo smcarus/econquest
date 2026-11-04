@@ -26,8 +26,8 @@ export interface CountryTabConfig {
 export const COUNTRY_TABS: CountryTabConfig[] = [
   // Role start view (economist, banker): figures with sources and a link to the report template. No desks.
   { id: 'brief', label: 'Brief', desks: [] },
-  // Markets & macro: the economy, market pricing and model readings of where they disagree. No desks.
-  { id: 'macro', label: 'Markets & macro', desks: [] },
+  // MarketEdge: the economy, market pricing and model readings of where they disagree. No desks.
+  { id: 'macro', label: 'MarketEdge', desks: [] },
   { id: 'overview', label: 'Overview', desks: ['charts_watchlists', 'risk_analytics'] },
   {
     id: 'debt',

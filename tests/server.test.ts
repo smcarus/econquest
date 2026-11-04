@@ -166,6 +166,22 @@ test('watchlist: official yields carry a date, everything else says sample', asy
   }
 });
 
+test('MarketEdge benchmarks: US, China, Russia, UK, EU, India, with sources or reasons', async () => {
+  const res = await fetch(`${base}/api/data/market-edge-anchors`);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  const by = Object.fromEntries(body.anchors.map((a: any) => [a.iso3, a]));
+  assert.deepEqual(Object.keys(by), ['USA', 'CHN', 'RUS', 'GBR', 'EUU', 'IND']);
+  assert.equal(by.USA.yield.seriesId, 'IRLTLT01USM156N');
+  assert.equal(by.EUU.yield.seriesId, 'IRLTLT01DEM156N');
+  assert.equal(by.IND.yield.seriesId, 'INDIRLTLT01STM');
+  assert.equal(by.CHN.yield, undefined);
+  assert.match(by.RUS.noYieldReason, /2018/);
+  assert.equal(body.us10Y.seriesId, 'IRLTLT01USM156N');
+  // The UK is a full country, so it comes with its live watchlist figures for the peer fit.
+  assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR']);
+});
+
 test('an unknown country does not crash the server', async () => {
   const res = await fetch(`${base}/api/data/sovereign-snapshot?iso3=ZZZ&refresh=1`);
   assert.ok(res.status === 200 || res.status === 500, `got ${res.status}`);

@@ -65,7 +65,7 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.equal(rows['Real policy rate'].source, 'model, from figures above');
   assert.equal(rows['Real 10Y yield'].value, '9.0%');
   assert.equal(rows['CPI inflation'].source, 'sample');
-  assert.match(rows['5Y CDS against risk peers'].source, /5 watchlist countries/);
+  assert.match(rows['5Y CDS against risk peers'].source, /across 5 countries/);
   assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
   assert.ok(b.sampleWarning);
@@ -77,6 +77,6 @@ test('brief: no US yield, no target, too few peers: says so instead of guessing'
   assert.equal(rows['Inflation target'].value, 'not on file');
   assert.equal(rows['US 10Y Treasury'].value, 'not available');
   assert.equal(rows['Spread over US 10Y'], undefined);
-  assert.equal(rows['5Y CDS against risk peers'].value, 'needs 4 or more watchlist countries');
+  assert.equal(rows['5Y CDS against risk peers'].value, 'needs 4 or more countries with a CDS figure');
   assert.match(b.judgements[0], /no inflation target on file/);
 });
