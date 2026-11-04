@@ -2588,11 +2588,11 @@ export default function App() {
           )}
 
           {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
-          <div className="order-first flex lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
+          <div className="order-first flex flex-wrap lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800">
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
+              className="inline-flex items-center gap-1 px-2.5 py-1 pointer-coarse:min-h-10 text-xs tabular-nums font-semibold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
             >
               <Search className="w-3 h-3" />
               <span>Jump</span>

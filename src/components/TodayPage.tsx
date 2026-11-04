@@ -208,7 +208,65 @@ export const TodayPage: React.FC<{
           </button>
         }
       >
-        <div className="overflow-x-auto -mx-4 px-4">
+        {/* Phones: one tappable card per country instead of a squeezed table. */}
+        <ul className="sm:hidden -mx-4 divide-y divide-slate-100 dark:divide-slate-800 [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true">
+          {rows.map((it) => {
+            const prev = lastVisit?.rows[it.iso3];
+            return (
+              <li key={it.iso3}>
+                <button
+                  type="button"
+                  onClick={() => onOpenCountry(it)}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
+                    it.iso3 === run.iso3 ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
+                  }`}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="font-medium text-sm text-slate-900 dark:text-white">{it.countryName}</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {it.iso3} · {it.currencyCode} · {DATA_MODE_LABEL[it.dataMode || 'sample']}
+                        </div>
+                      </div>
+                      <span className={`shrink-0 whitespace-nowrap px-1.5 py-0.5 text-xs font-medium border ${ALERT_CLASS[it.alertStatus]}`}>
+                        {ALERT_LABEL[it.alertStatus]} · {it.compositeRisk.toFixed(2)}
+                      </span>
+                    </div>
+                    <dl className="mt-1.5 grid grid-cols-2 gap-x-3 text-sm">
+                      <div>
+                        <dt className="text-xs text-slate-500 dark:text-slate-400">5Y CDS</dt>
+                        <dd className="font-medium text-slate-900 dark:text-white">
+                          {Math.round(it.cds5YBps)} bps
+                          {prev && (
+                            <span className="ml-1 text-xs font-normal">
+                              <Delta value={it.cds5YBps - prev.cds5YBps} unit="" />
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                      <div title={yieldSourceHelp(it)}>
+                        <dt className="text-xs text-slate-500 dark:text-slate-400">10Y yield</dt>
+                        <dd className="font-medium text-slate-900 dark:text-white">{it.yield10YPct.toFixed(2)}%</dd>
+                        <dd
+                          className={`text-xs ${
+                            it.yield10YSource === 'official'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {yieldSourceNote(it)}
+                        </dd>
+                      </div>
+                    </dl>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <div className="hidden sm:block overflow-x-auto -mx-4 px-4">
           <table className="w-full text-sm [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true">
             <thead>
               <tr className="text-left text-xs text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">

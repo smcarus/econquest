@@ -128,7 +128,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
           {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
         </div>
         {summary && <div className="mt-3">{summary}</div>}
-        <nav className="mt-3 flex gap-1 overflow-x-auto border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel}>
+        <nav className="mt-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel}>
           {tabs.map((t) => (
             <button
               key={t.id}

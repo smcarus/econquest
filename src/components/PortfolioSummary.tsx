@@ -156,7 +156,79 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 overflow-x-auto">
+        <div className="lg:col-span-2 min-w-0">
+          {/* Phones: one tappable card per country instead of a table that scrolls sideways. */}
+          <ul className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800 border-y border-slate-100 dark:border-slate-800">
+            {s.rows.map((r) => {
+              const body = (
+                <>
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-slate-900 dark:text-white">{r.countryName}</span>
+                    {r.item ? (
+                      <span className={ALERT_BADGE[r.item.alertStatus]}>
+                        {ALERT_LABEL[r.item.alertStatus]} · {r.item.compositeRisk.toFixed(2)}
+                      </span>
+                    ) : (
+                      <span className="ui-badge">No data</span>
+                    )}
+                  </div>
+                  <dl className="mt-1 grid grid-cols-3 gap-x-3 text-sm ui-num">
+                    <div>
+                      <dt className="ui-label">Weight</dt>
+                      <dd>{(r.weight * 100).toFixed(0)}%</dd>
+                    </div>
+                    <div>
+                      <dt className="ui-label">Share of risk</dt>
+                      <dd>{r.item ? `${(r.riskShare * 100).toFixed(0)}%` : '–'}</dd>
+                    </div>
+                    <div title={r.item ? yieldSourceHelp(r.item) : undefined}>
+                      <dt className="ui-label">10Y yield</dt>
+                      <dd>{r.item ? `${r.item.yield10YPct.toFixed(2)}%` : '–'}</dd>
+                      {r.item && (
+                        <dd
+                          className={`text-xs ${
+                            r.item.yield10YSource === 'official'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {yieldSourceNote(r.item)}
+                        </dd>
+                      )}
+                    </div>
+                    {hasHoldings && (
+                      <div className="mt-1">
+                        <dt className="ui-label">Net credit</dt>
+                        <dd>{signed(r.netCreditUsdMm ?? 0, fmtMm)}</dd>
+                      </div>
+                    )}
+                    {hasHoldings && (
+                      <div className="mt-1">
+                        <dt className="ui-label">DV01 ($k/bp)</dt>
+                        <dd>{signed(r.dv01UsdK ?? 0, (v) => v.toFixed(1))}</dd>
+                      </div>
+                    )}
+                  </dl>
+                </>
+              );
+              return (
+                <li key={r.iso3}>
+                  {r.item ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenCountry(r.item!)}
+                      className="w-full text-left py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/40"
+                    >
+                      {body}
+                    </button>
+                  ) : (
+                    <div className="py-2.5">{body}</div>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+          <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <caption className="sr-only">Where the book's risk sits</caption>
             <thead>
@@ -228,6 +300,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
               ))}
             </tbody>
           </table>
+          </div>
           <p className="ui-label mt-1">
             Share of risk = weight × the country's risk score, as a share of the book total.{' '}
             {(() => {
@@ -235,7 +308,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
               const official = items.filter((r) => r.item!.yield10YSource === 'official').length;
               return `${official} of ${items.length} yields are official figures; the rest are sample values or estimates.`;
             })()}{' '}
-            Click a row to open the country.
+            Tap or click a country to open it.
           </p>
         </div>
 

@@ -251,7 +251,7 @@ export const CountryPage: React.FC<{
         </div>
 
         {/* Tabs */}
-        <nav className="mt-3 -mb-3 flex gap-1 overflow-x-auto border-t border-slate-100 dark:border-slate-800" aria-label="Country sections">
+        <nav className="mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label="Country sections">
           {tabs.map((t) => {
             const isActive = t.id === tab.id;
             return (
