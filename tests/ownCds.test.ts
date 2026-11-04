@@ -139,5 +139,7 @@ test('watchlist and book: own CDS named per country and by weight', () => {
   const v = bookView([h('BRA', 30), h('MEX', 10)], wl, wl);
   const b = pmBookBrief(v, [], NOW);
   const row = b.groups.flatMap((g) => g.rows).find((r) => r.label === 'Weighted 5Y CDS')!;
-  assert.match(row.source, /^75% of weight on your own CDS data/);
+  // Only Brazil has your own CDS: the average is Brazil's, and the row says Mexico is missing.
+  assert.equal(row.value, '200 bps');
+  assert.match(row.source, /^your CDS data, 75% of the book; missing for MEX$/);
 });

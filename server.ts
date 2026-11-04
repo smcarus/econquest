@@ -69,6 +69,7 @@ import {
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
+import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import {
   FRED_10Y_SERIES,
@@ -2762,7 +2763,7 @@ async function startServer() {
       progress.start('data');
       const liveSnapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
       const liveCount = getSnapshotDataStatus(liveSnapshot).liveFeeds.length;
-      progress.finish('data', false, liveCount ? `${liveCount} live ${liveCount === 1 ? "source" : "sources"}` : 'No live source answered: sample figures');
+      progress.finish('data', false, liveCount ? `${liveCount} live ${liveCount === 1 ? "source" : "sources"}` : 'No live source answered: figures missing');
       const stage0Latency = Date.now() - stage0Start;
 
       const baseRun: CouncilAssessmentRun = buildDefaultAssessmentRun(iso3, liveSnapshot);
@@ -2790,6 +2791,7 @@ async function startServer() {
       const enableSearch = runtimeConfig.enableSearchGrounding !== false;
       const maxDebateRounds = Math.min(3, Math.max(1, Number(runtimeConfig.maxDebateRounds || 2)));
 
+      const councilIn = councilInputs(liveSnapshot);
       const sharedContextHeader = `Target Sovereign: ${baseRun.countryName} (${iso3})
 Scenario Directive: ${baseRun.scenarioPrompt}
 Policy Document (${baseRun.policyDocumentTitle || 'Primary Extract'}): ${
@@ -2797,23 +2799,16 @@ Policy Document (${baseRun.policyDocumentTitle || 'Primary Extract'}): ${
       }
 Debate Rounds Requested: ${maxDebateRounds}
 
-Verified Live Open-Data & Grounded Market Telemetry:
-- IMF Gross Debt/GDP: ${liveSnapshot.imfIndicators.debtToGdpPct}% (2027F: ${liveSnapshot.imfIndicators.debtToGdpForecast2027Pct}%)
-- IMF Primary Fiscal Balance: ${liveSnapshot.imfIndicators.primaryFiscalBalancePct}% GDP | (r - g) Stabilizing Gap: ${liveSnapshot.dsaAnalytics.fiscalConsolidationGapPct}% GDP
-- IMF Real GDP Growth: ${liveSnapshot.imfIndicators.realGdpGrowthPct}% | Headline CPI: ${liveSnapshot.imfIndicators.cpiInflationPct}%
-- World Bank FX Reserves Import Cover: ${liveSnapshot.worldBankIndicators.fxReservesMonthsImport} months (Greenspan-Guidotti: ${liveSnapshot.debtRollover.greenspanGuidottiRatioPct}%)
-- World Bank Current Account: ${liveSnapshot.worldBankIndicators.currentAccountPctGdp}% GDP | Political Stability: ${liveSnapshot.worldBankIndicators.politicalStabilityPercentile} pctl
-- Central Bank Policy Rate: ${liveSnapshot.monetaryAndMarket.policyRatePct}% (Ex-Post Real Rate: ${liveSnapshot.monetaryAndMarket.realPolicyRatePct}%)
-- 10Y Local Sovereign Yield: ${liveSnapshot.monetaryAndMarket.sovereign10YBondYieldPct}% | 5Y USD CDS: ${liveSnapshot.monetaryAndMarket.cds5YSpreadBps} bps | Spot FX: ${liveSnapshot.monetaryAndMarket.exchangeRatePerUsd} ${liveSnapshot.currencyCode}/USD
-- GDELT Conflict Index: ${liveSnapshot.gdeltMetrics.conflictIntensityIndex}/100 (Tone: ${liveSnapshot.gdeltMetrics.averageTone}) | Chokepoint Exposure: ${liveSnapshot.monetaryAndMarket.chokepointExposureIndex}/100
-- Polymarket Key Contract: ${liveSnapshot.polymarketContracts[0] ? `"${liveSnapshot.polymarketContracts[0].question}" (${liveSnapshot.polymarketContracts[0].probabilityPct}% odds)` : 'none found for this country'}
+Country figures (only live feeds, official series and your own data; nothing built in):
+${councilIn.lines.join('\n')}
+${MISSING_FIGURES_RULE}
 
-Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
+${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
 - [AG-1 / AG-2 / AG-3 Geopolitical Engine]: Composite GPR Z-Score = ${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ | Chokepoint CPI Pass-Through = +${geoDeskSuite.portfolioTransmission.propagatedForecastShocks.realRateShockBps} bps | G7 Freeze-Exposed Reserves = ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%
 - [AG-4 Fiscal Auditor]: Monte Carlo 2030 Debt Fan P50 = ${econometricSuite.stochasticDsa.medianDebt2030PctGdp}% (P95 Tail = ${econometricSuite.stochasticDsa.p95Debt2030PctGdp}%) | IMF SRDSF Gross Financing Needs (GFN) = ${econometricSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP (${econometricSuite.imfSrdsfGfn.srdsfRiskZone}) | Sovereign-Bank Doom Loop CET1 Depletion = -${econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps
 - [AG-5 External Balance]: Blanchard-Leeper Fiscal Dominance Reversal Rate r* = ${econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}% (${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps} bps headroom) | FXI Burn Velocity = $${econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B/mo (${econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach}M to 100% ARA Floor) | 5Y XCCY Swap Basis = ${xccyLegalSuite.fiveYearXccyBasisBps} bps
 - [AG-6 Political Will & Indentures]: Eurobond Restructuring NPV Recovery = ${restructuringSuite.restructuredNpvRecoveryCents}¢ | ICMA Single-Limb 75% CAC Share = ${restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct}% (Holdout Litigation Prob = ${restructuringSuite.cacGameTheory.holdoutLitigationProbPct}%)
-- [AG-7 / AG-8 / AG-9 Macro & Plumbing]: 5pct Growth-at-Risk (GaR) = ${econometricSuite.garFarTail.gdpGar5thPercentilePct}% | Nelson-Siegel 10Y Term Premium = +${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps | Kaminsky-Reinhart EWS Z-Score = ${econometricSuite.markovEws.compositeCrisisZScore}σ (${econometricSuite.markovEws.crisisProbability12MPct}% 12M crisis odds) | Global Dollar Plumbing Z = ${liquiditySuite.globalLiquidityStressIndexZScore}σ`;
+- [AG-7 / AG-8 / AG-9 Macro & Plumbing]: 5pct Growth-at-Risk (GaR) = ${econometricSuite.garFarTail.gdpGar5thPercentilePct}% | Nelson-Siegel 10Y Term Premium = +${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps | Kaminsky-Reinhart EWS Z-Score = ${econometricSuite.markovEws.compositeCrisisZScore}σ (${econometricSuite.markovEws.crisisProbability12MPct}% 12M crisis odds) | Global Dollar Plumbing Z = ${liquiditySuite.globalLiquidityStressIndexZScore}σ` : `Model desk outputs left out: they would run on missing inputs (${councilIn.missingDeskInputs.join(', ')}).`}`;
 
       const deskWorkerSchema = {
         type: Type.OBJECT,
@@ -4020,11 +4015,9 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
         prompt: `Analyze the following sovereign policy or legal document for ${snapshot.countryName} (${snapshot.iso3}):
 Title: ${documentTitle}
 Category: ${deterministicBaseline.documentCategory}
-Current Live Telemetry Anchor:
-- Policy Rate: ${snapshot.monetaryAndMarket.policyRatePct}% (Taylor Rule Implied: ${deterministicBaseline.taylorRuleImpliedPolicyRatePct}%)
-- Headline CPI: ${snapshot.imfIndicators.cpiInflationPct}% | Real GDP Growth: ${snapshot.imfIndicators.realGdpGrowthPct}%
-- Gross Debt/GDP: ${snapshot.imfIndicators.debtToGdpPct}% | Primary Balance: ${snapshot.imfIndicators.primaryFiscalBalancePct}% GDP
-- FX Reserves Import Cover: ${snapshot.worldBankIndicators.fxReservesMonthsImport} months | 5Y CDS: ${snapshot.monetaryAndMarket.cds5YSpreadBps} bps
+Country figures (only live feeds, official series and your own data; nothing built in):
+${councilInputs(snapshot).lines.join('\n')}
+${MISSING_FIGURES_RULE}
 
 Document Text:
 """

@@ -1692,6 +1692,8 @@ export default function App() {
     ...activeWatchlistItems,
     ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3)),
   ];
+  // Portfolio and Reports see only real figures: the catalogue's built-in values are stripped too.
+  const liveRiskLookup = useMemo(() => holdingsRiskLookup.map(toLive), [activeWatchlistItems]);
 
   const activeDomainHub =
     DOMAIN_HUBS.find((hub) => hub.subTabs.some((t) => t.id === activeNavSection)) ||
@@ -2933,8 +2935,8 @@ export default function App() {
                   <div className="space-y-4">
                   <BookBriefPanel
                     holdings={holdings}
-                    riskLookup={holdingsRiskLookup}
-                    watchlist={activeWatchlistItems}
+                    riskLookup={liveRiskLookup}
+                    watchlist={liveWatchlistItems}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     view="pm"
                     onWriteReport={(view) => {
@@ -2943,13 +2945,14 @@ export default function App() {
                     }}
                   />
                   <PortfolioSummary
-                    watchlistItems={activeWatchlistItems}
-                    riskLookup={holdingsRiskLookup}
+                    watchlistItems={liveWatchlistItems}
+                    riskLookup={liveRiskLookup}
                     holdings={holdings}
                     onManageHoldings={() => setIsHoldingsPanelOpen(true)}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
-                    onOpenCountry={(item) => {
-                      if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                    onOpenCountry={(live) => {
+                      const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
+                      if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
                       openCountryPage();
                     }}
                   />
@@ -2963,8 +2966,8 @@ export default function App() {
                     run={run}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     holdings={holdings}
-                    riskLookup={holdingsRiskLookup}
-                    peers={activeWatchlistItems}
+                    riskLookup={liveRiskLookup}
+                    peers={liveWatchlistItems}
                     defaultAudience={visibleReport(requestedReport || DEFAULT_REPORT, showAllTools)}
                     audiences={showAllTools ? undefined : CORE_REPORTS}
                   />
