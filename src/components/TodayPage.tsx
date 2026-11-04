@@ -8,6 +8,7 @@ import {
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
 import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
+import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 
 /**
  * Today: the institutional PM's morning view.
@@ -137,6 +138,7 @@ export const TodayPage: React.FC<{
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
+  const edgeAnchors = useMarketEdgeAnchors();
   useEffect(() => {
     const t = window.setTimeout(() => saveVisit(watchlistItems), 5000);
     return () => window.clearTimeout(t);
@@ -358,6 +360,14 @@ export const TodayPage: React.FC<{
           </table>
         </div>
       </Card>
+
+      <MarketEdgeScreen
+        watchlist={watchlistItems}
+        anchors={edgeAnchors}
+        highlightIso3={run.iso3}
+        onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+        intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
+      />
 
       <div className={coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
         {!coreOnly && (

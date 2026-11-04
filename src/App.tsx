@@ -649,6 +649,14 @@ export default function App() {
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (deskId?: string) => {
+    // A Country tab asked for by its id (e.g. 'macro' from the MarketEdge screen on Today).
+    const askedTab = deskId ? COUNTRY_TABS.find((t) => t.id === deskId && !t.desks.length) : undefined;
+    if (askedTab) {
+      setCountryTab(askedTab.id);
+      setAppArea('country');
+      window.scrollTo({ top: 0 });
+      return;
+    }
     if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(PORTFOLIO_TABS, deskId)) {
       openWorkspace('portfolio', deskId);
       return;

@@ -5,8 +5,8 @@
  *
  * Core set
  * - Top bar: Today, Countries, Portfolio, Reports, Menu.
- * - Today: watchlist and the official calendar.
- * - Country: Brief, Markets & macro, and Overview.
+ * - Today: watchlist, MarketEdge screen and the official calendar.
+ * - Country: Brief, MarketEdge, and Overview.
  * - Portfolio: holdings import, book brief and summary (no desk tabs).
  * - Reports: the note builder with the brief-based templates.
  */

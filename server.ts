@@ -9,6 +9,7 @@ import {
   parseOwnCdsCsv,
   type OwnCdsQuote,
 } from './src/utils/ownCds';
+import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -309,13 +310,29 @@ async function fetchFredLatest(seriesId: string): Promise<OfficialYieldObservati
   }
 }
 
-/** US 10Y (OECD monthly, via FRED): the benchmark for spreads in the Markets & macro tab. 12h cache. */
-let us10YCache: { at: number; value: OfficialYieldObservation | null } | null = null;
-async function fetchUs10YYield(): Promise<OfficialYieldObservation | null> {
-  if (us10YCache && Date.now() - us10YCache.at < (us10YCache.value ? 12 : 1) * 60 * 60 * 1000) return us10YCache.value;
-  const value = await fetchFredLatest(US_10Y_SERIES);
-  us10YCache = { at: Date.now(), value };
+/** A FRED yield series kept for 12 hours (1 hour after a miss). Used for MarketEdge benchmarks. */
+const fredSeriesCache = new Map<string, { at: number; value: OfficialYieldObservation | null }>();
+async function fetchFredCached(seriesId: string): Promise<OfficialYieldObservation | null> {
+  const hit = fredSeriesCache.get(seriesId);
+  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  const value = await fetchFredLatest(seriesId);
+  fredSeriesCache.set(seriesId, { at: Date.now(), value });
   return value;
+}
+
+/** US 10Y (OECD monthly, via FRED): the benchmark for spreads over Treasuries in MarketEdge. */
+function fetchUs10YYield(): Promise<OfficialYieldObservation | null> {
+  return fetchFredCached(US_10Y_SERIES);
+}
+
+/** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
+async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
+  const [ownCds, catalog, us10Y] = await Promise.all([loadOwnCds(), fetchLiveWatchlistCatalog(), fetchUs10YYield()]);
+  const anchors = await Promise.all(
+    MARKET_EDGE_ANCHORS.map(async (def) => buildAnchor(def, def.fredSeries ? await fetchFredCached(def.fredSeries) : null, ownCds.get(def.iso3)))
+  );
+  const peers = catalog.filter((c) => MARKET_EDGE_ANCHOR_ISO3.includes(c.iso3));
+  return { anchors, peers, ...(us10Y ? { us10Y } : {}), fetchedAt: new Date().toISOString() };
 }
 
 // Start-of-year USD FX anchors for computing live YTD currency performance
@@ -2074,6 +2091,15 @@ async function startServer() {
       res.json({ items, fetchedAt: new Date().toISOString() });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
+    }
+  });
+
+  // 1c. MarketEdge benchmarks (US, China, Russia, UK, EU, India), always shown on the MarketEdge screen
+  app.get('/api/data/market-edge-anchors', async (_req, res) => {
+    try {
+      res.json(await fetchMarketEdgeAnchors());
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Failed to load MarketEdge benchmarks' });
     }
   });
 

@@ -1,5 +1,5 @@
 /**
- * Markets & macro: what the economy is doing, what markets are pricing, and where the two
+ * MarketEdge (Country tab and Today screen): what the economy is doing, what markets are pricing, and where the two
  * disagree. Every figure keeps its source tag; the readings in "The edge" are simple, stated rules
  * on those figures (tagged model), never data.
  */
@@ -152,7 +152,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
   );
   if (rv && screen.fit) {
     j.push(
-      `At ${Math.round(mkt.cds5YSpreadBps)} bps, 5-year CDS ${RV_TEXT[rv.label]} (${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% against about ${Math.round(rv.fittedBps)} bps for its risk score, ${screen.fit.n} watchlist countries).`
+      `At ${Math.round(mkt.cds5YSpreadBps)} bps, 5-year CDS ${RV_TEXT[rv.label]} (${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% against about ${Math.round(rv.fittedBps)} bps for its risk score, ${screen.fit.n} countries in the MarketEdge screen).`
     );
   }
   j.push(`Growth is ${pct(imf.realGdpGrowthPct)}; the current account is ${pct(wb.currentAccountPctGdp)} of GDP and reserves cover ${wb.fxReservesMonthsImport.toFixed(1)} months of imports.`);
@@ -204,8 +204,8 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
           model('Real policy rate', pct(realPolicy)),
           model('Real 10Y yield', pct(real10Y)),
           rv && screen.fit
-            ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} watchlist countries`)
-            : model('5Y CDS against risk peers', 'needs 4 or more watchlist countries', 'model'),
+            ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
+            : model('5Y CDS against risk peers', 'needs 4 or more countries with a CDS figure', 'model'),
         ],
       },
     ],
