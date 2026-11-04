@@ -6,6 +6,7 @@ import { DataStatusBadge } from './DataStatusBadge';
 import { ExecutiveBriefScorecard } from './ExecutiveBriefScorecard';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
+import { isCoreCountryTab } from '../utils/simpleMode';
 import { CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 
 /**
@@ -134,6 +135,8 @@ export const CountryPage: React.FC<{
   renderDesk: (deskId: string) => React.ReactNode;
   briefView: BriefView;
   onWriteNote: (view: BriefView) => void;
+  /** Core view: Brief and Overview tabs only (see utils/simpleMode.ts). */
+  coreOnly?: boolean;
 }> = ({
   run,
   watchlistItems,
@@ -151,11 +154,14 @@ export const CountryPage: React.FC<{
   renderDesk,
   briefView,
   onWriteNote,
+  coreOnly = false,
 }) => {
   const item = watchlistItems.find((w) => w.iso3 === run.iso3);
   const showRestructuring = isRestructuringRelevant(item, run);
-  const tabs = COUNTRY_TABS.filter((t) => t.id !== 'restructuring' || showRestructuring || activeTab === 'restructuring');
-  const tab = COUNTRY_TABS.find((t) => t.id === activeTab) || DEFAULT_COUNTRY_TAB;
+  const tabs = COUNTRY_TABS.filter((t) => t.id !== 'restructuring' || showRestructuring || activeTab === 'restructuring').filter(
+    (t) => !coreOnly || isCoreCountryTab(t.id)
+  );
+  const tab = tabs.find((t) => t.id === activeTab) || tabs.find((t) => t.id === DEFAULT_COUNTRY_TAB.id) || tabs[0];
   const desk = tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0];
   const open = run.openData;
   const mkt = open.monetaryAndMarket;
@@ -235,22 +241,18 @@ export const CountryPage: React.FC<{
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing…' : 'Sync'}
             </button>
-            <button
-              type="button"
-              onClick={onCompare}
-              className="ui-btn inline-flex"
-            >
-              <GitCompare className="w-3 h-3" />
-              Compare
-            </button>
-            <button
-              type="button"
-              onClick={onOpenTickets}
-              className="ui-btn inline-flex"
-            >
-              <Ticket className="w-3 h-3" />
-              IC tickets{ticketCount > 0 ? ` (${ticketCount})` : ''}
-            </button>
+            {!coreOnly && (
+              <>
+                <button type="button" onClick={onCompare} className="ui-btn inline-flex">
+                  <GitCompare className="w-3 h-3" />
+                  Compare
+                </button>
+                <button type="button" onClick={onOpenTickets} className="ui-btn inline-flex">
+                  <Ticket className="w-3 h-3" />
+                  IC tickets{ticketCount > 0 ? ` (${ticketCount})` : ''}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -278,7 +280,7 @@ export const CountryPage: React.FC<{
           <div className="xl:col-span-2">
             <ExecutiveBriefScorecard run={run} isCompactByDefault={false} onSelectSection={(sec) => {
               const target = findCountryTabForDesk(sec);
-              if (target) {
+              if (target && (!coreOnly || isCoreCountryTab(target.id))) {
                 onChangeTab(target.id);
                 onChangeDesk(sec);
               }

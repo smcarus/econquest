@@ -88,6 +88,9 @@ import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { RolePicker } from './components/RolePicker';
 import { PresentMode } from './components/PresentMode';
 import { getRole, loadRole, saveRole, USER_ROLES, type ReportTemplate, type UserRoleId, type WorkflowArea } from './data/roles';
+import { CORE_REPORTS, loadShowAllTools, saveShowAllTools, visibleNav, visibleReport } from './utils/simpleMode';
+import type { WorkspaceTab } from './components/WorkspacePage';
+
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
@@ -527,6 +530,10 @@ const DOMAIN_HUBS: DomainHubConfig[] = [
   },
 ];
 
+
+/** Reports in the core view: the note builder alone. */
+const CORE_REPORTS_TABS: WorkspaceTab[] = [{ id: 'ic', label: 'Notes', hint: '', desks: ['ic_memo_builder'] }];
+
 export default function App() {
   // Hydrate any previously onboarded custom ISO-3 sovereigns into SOVEREIGN_CATALOG on boot
   const [customOnboardedSovereigns, setCustomOnboardedSovereigns] = useState<
@@ -594,6 +601,13 @@ export default function App() {
   const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
+  // Core view by default: everything outside the core set is behind Menu > Show all tools.
+  const [showAllTools, setShowAllTools] = useState<boolean>(() => loadShowAllTools());
+  useEffect(() => saveShowAllTools(showAllTools), [showAllTools]);
+  const navAreas = visibleNav(role.nav, showAllTools);
+  useEffect(() => {
+    if (!showAllTools && appArea === 'desks') setAppArea(role.home.area === 'desks' ? 'today' : role.home.area);
+  }, [showAllTools, appArea]);
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
   const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
   const setHoldings = (next: Holding[]) => {
@@ -941,14 +955,14 @@ export default function App() {
   // Global keyboard shortcut Cmd+K / Ctrl+K for Command Palette
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+      if (showAllTools && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setIsCommandPaletteOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+  }, [showAllTools]);
 
   // Pull live open data on initial mount for default sovereign & hydrate all watchlists
   useEffect(() => {
@@ -2086,7 +2100,7 @@ export default function App() {
 
         {/* Zone 2: 3 Primary Activity Pillars (Market & Trading | Policy Research | Macroeconomic Research) + Cmd+K Search */}
         <nav className="hidden lg:flex items-center gap-2 text-xs font-medium">
-          {role.nav.map((area) => (
+          {navAreas.map((area) => (
             <React.Fragment key={area}>
               {({
               today: (
@@ -2202,6 +2216,7 @@ export default function App() {
           ))}
 
           {/* Global Command Palette Cmd+K Trigger */}
+          {showAllTools && (
           <button
             type="button"
             onClick={() => setIsCommandPaletteOpen(true)}
@@ -2214,10 +2229,13 @@ export default function App() {
               ⌘K
             </kbd>
           </button>
+          )}
         </nav>
 
         {/* Zone 3: everyday actions stay visible; settings and tools live in one menu */}
         <div className="flex items-center gap-1.5 shrink-0">
+          {showAllTools && (
+          <>
           <button
             type="button"
             onClick={() => setIsPresentMode(true)}
@@ -2252,6 +2270,8 @@ export default function App() {
             <Download className="w-3.5 h-3.5" />
             <span>PDF</span>
           </button>
+          </>
+          )}
 
           <button
             type="button"
@@ -2334,6 +2354,34 @@ export default function App() {
                   </div>
                 </div>
 
+                <div>
+                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Tools</div>
+                  <button
+                    type="button"
+                    role="menuitemcheckbox"
+                    aria-checked={showAllTools}
+                    onClick={() => setShowAllTools((v) => !v)}
+                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
+                    data-show-all-tools="true"
+                  >
+                    <span>
+                      <span className="block text-slate-800 dark:text-slate-100">Show all tools</span>
+                      <span className="block text-slate-500 dark:text-slate-400">
+                        {showAllTools ? 'All desks, tabs and reports are shown.' : 'Off: the core view only. Nothing is removed.'}
+                      </span>
+                    </span>
+                    <span
+                      className={`shrink-0 px-1.5 py-0.5 font-semibold border ${
+                        showAllTools
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'
+                      }`}
+                    >
+                      {showAllTools ? 'On' : 'Off'}
+                    </span>
+                  </button>
+                </div>
+
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
                   {(
                     [
@@ -2399,7 +2447,9 @@ export default function App() {
                         className: 'xl:hidden',
                       },
                     ]
-                  ).map((item) => (
+                  )
+                    .filter((item) => showAllTools || !['qa', 'present', 'ab', 'pdf'].includes(item.key))
+                    .map((item) => (
                     <button
                       key={item.key}
                       type="button"
@@ -2424,6 +2474,7 @@ export default function App() {
             )}
           </div>
 
+          {showAllTools && (
           <button
             type="button"
             onClick={handleRunCouncilPhase1And2}
@@ -2437,6 +2488,7 @@ export default function App() {
               {isRunningPhase1And2 ? 'Running...' : 'Run Council'}
             </span>
           </button>
+          )}
         </div>
       </header>
 
@@ -2590,6 +2642,7 @@ export default function App() {
 
           {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
           <div className="order-first flex flex-wrap lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800">
+            {showAllTools && (
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
@@ -2598,7 +2651,8 @@ export default function App() {
               <Search className="w-3 h-3" />
               <span>Jump</span>
             </button>
-            {role.nav.map((area) => (
+            )}
+            {navAreas.map((area) => (
               <React.Fragment key={area}>
                 {({
               today: (
@@ -2747,6 +2801,7 @@ export default function App() {
               onStageTicket={handleStageTradeTicket}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
+              coreOnly={!showAllTools}
             />
           )}
 
@@ -2774,6 +2829,7 @@ export default function App() {
                 setRequestedReport(view);
                 openWorkspace('reports', 'ic_memo_builder');
               }}
+              coreOnly={!showAllTools}
               renderDesk={(d) => (
                 <Suspense key={d} fallback={<DeskLoading />}>
                   <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
@@ -2805,7 +2861,7 @@ export default function App() {
                     : `No holdings yet: showing your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}`
                   : `Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`
               }
-              tabs={appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS}
+              tabs={showAllTools ? (appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS) : appArea === 'portfolio' ? [] : CORE_REPORTS_TABS}
               activeTabId={appArea === 'portfolio' ? portfolioTab : reportsTab}
               activeDesk={activeNavSection}
               onChangeTab={(tabId) => {
@@ -2816,6 +2872,7 @@ export default function App() {
               }}
               onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
               actions={
+                showAllTools && (
                 <>
                   <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
                     IC tickets ({stagedTradeTickets.length})
@@ -2826,6 +2883,7 @@ export default function App() {
                     </button>
                   )}
                 </>
+                )
               }
               summary={
                 appArea === 'portfolio' ? (
@@ -2835,7 +2893,7 @@ export default function App() {
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
                     watchlist={activeWatchlistItems}
-                    stagedTickets={stagedTradeTickets}
+                    stagedTickets={showAllTools ? stagedTradeTickets : []}
                     view={userRole === 'UHNW' ? 'client' : 'pm'}
                     onWriteReport={(view) => {
                       setRequestedReport(view === 'client' ? 'client_review' : 'book');
@@ -2847,7 +2905,7 @@ export default function App() {
                     riskLookup={holdingsRiskLookup}
                     holdings={holdings}
                     onManageHoldings={() => setIsHoldingsPanelOpen(true)}
-                    stagedTickets={stagedTradeTickets}
+                    stagedTickets={showAllTools ? stagedTradeTickets : []}
                     onOpenCountry={(item) => {
                       if (item.iso3 !== run.iso3) handleSelectSovereign(item);
                       openCountryPage();
@@ -2861,11 +2919,12 @@ export default function App() {
                   <IcMemoBuilder
                     key={`${d}-${requestedReport || role.report}`}
                     run={run}
-                    stagedTickets={stagedTradeTickets}
+                    stagedTickets={showAllTools ? stagedTradeTickets : []}
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
                     peers={activeWatchlistItems}
-                    defaultAudience={requestedReport || role.report}
+                    defaultAudience={visibleReport(requestedReport || role.report, showAllTools)}
+                    audiences={showAllTools ? undefined : CORE_REPORTS}
                   />
                 ) : (
                   <Suspense key={d} fallback={<DeskLoading />}>

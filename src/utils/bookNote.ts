@@ -11,7 +11,7 @@ import { when, type BriefGroup, type BriefRow, type CountryBrief, type NoteSecti
  * at equal weight when nothing is imported, and say which.
  *
  * Every judgement is a stated rule on the figures shown. Risk scores are the app's model;
- * CDS levels are sample values or AI estimates; 10Y yields carry their own source.
+ * Each CDS level and 10Y yield carries its own source.
  */
 
 export interface BookLine {
@@ -270,7 +270,7 @@ export function buildBookSections(
   add('method', [
     'Share of risk = weight × the country’s composite risk score, as a share of the book total. The risk score is the app’s model, not a rating.',
     'CDS bands: under 200 bps investment grade-like, 200 to 400 high yield, 400 to 1,000 stressed, 1,000 and over distressed.',
-    'CDS levels are sample values or AI estimates; each 10Y yield names its source. Official dates come from the central bank and statistics calendars on file.',
+    'Each 5Y CDS and 10Y yield names its source: your own data, official, AI estimate or sample. Official dates come from the central bank and statistics calendars on file.',
     'Model output for discussion. Not investment advice, and not validated for client use.',
   ]);
   return out;

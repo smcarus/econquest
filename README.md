@@ -49,6 +49,10 @@ Every pull request runs the same three checks on GitHub (`.github/workflows/ci.y
 
 ---
 
+## Core view (default)
+
+The app opens in a core view while the best workflows are settled: Today (watchlist and official calendar), Countries (Brief and Overview), Portfolio (holdings, book brief and summary) and Reports (the note builder with the country note, issuer note, sustainability assessment, portfolio review and client portfolio review). Every other desk, tab, report and button still works and comes back with **Menu > Show all tools**, which is remembered in this browser.
+
 ## 🏛️ Terminal Organization: 3 Primary Activity Pillars & 1–2 Screen Scroll Budget
 
 To maximize usability and eliminate endless vertical scrolling, the terminal is organized into **3 Primary Activity Pillars** in the top navigation bar and enforces a **1–2 Screen Maximum Scroll Budget** on every desk via **Page 1 (Primary Workbench & Controls)** and **Page 2 (Deep-Dive Matrix & Diagnostics)** pagination:
