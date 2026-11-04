@@ -45,8 +45,8 @@ export const REPORTS_TABS: WorkspaceTab[] = [
   {
     id: 'ic',
     label: 'IC memo & pitchbook',
-    hint: 'Turn the view and staged tickets into a document for the investment committee.',
-    desks: ['ic_pitchbook_dossier_exporter', 'persona_guided_playbook_cockpit'],
+    hint: 'Turn the view, your holdings and staged tickets into a document for the investment committee.',
+    desks: ['ic_memo_builder', 'ic_pitchbook_dossier_exporter', 'persona_guided_playbook_cockpit'],
   },
   {
     id: 'signoff',
@@ -72,7 +72,13 @@ export function findTabForDesk(tabs: WorkspaceTab[], deskId: string): WorkspaceT
   return tabs.find((t) => t.desks.includes(deskId));
 }
 
+/** Pages that are not desks in the Tools library but live inside a workflow tab. */
+export const WORKFLOW_ONLY_DESKS: Record<string, string> = {
+  ic_memo_builder: 'Memo builder',
+};
+
 export function deskLabel(id: string): string {
+  if (WORKFLOW_ONLY_DESKS[id]) return WORKFLOW_ONLY_DESKS[id];
   try {
     const { moduleItem } = findPillarForNavSection(id);
     return moduleItem.id === id ? moduleItem.shortLabel || moduleItem.label : id;

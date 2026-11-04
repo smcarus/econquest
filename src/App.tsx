@@ -79,6 +79,7 @@ import {
 } from './components/WorkspacePage';
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { HoldingsPanel } from './components/HoldingsPanel';
+import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
@@ -2777,11 +2778,21 @@ export default function App() {
                   />
                 ) : undefined
               }
-              renderDesk={(d) => (
-                <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
-                  {renderDeskBody(d as NavSectionId)}
-                </ViewportScrollBudgetContainer>
-              )}
+              renderDesk={(d) =>
+                d === 'ic_memo_builder' ? (
+                  <IcMemoBuilder
+                    key={d}
+                    run={run}
+                    stagedTickets={stagedTradeTickets}
+                    holdings={holdings}
+                    riskLookup={holdingsRiskLookup}
+                  />
+                ) : (
+                  <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
+                    {renderDeskBody(d as NavSectionId)}
+                  </ViewportScrollBudgetContainer>
+                )
+              }
             />
           )}
 
