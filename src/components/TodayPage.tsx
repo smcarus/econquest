@@ -11,6 +11,7 @@ import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
 import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
+import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 
 /**
@@ -386,6 +387,8 @@ export const TodayPage: React.FC<{
         onOpenCountry={(item) => onOpenCountry(item, 'macro')}
         intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
       />
+
+      <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
 
       <div className={coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
         {!coreOnly && (

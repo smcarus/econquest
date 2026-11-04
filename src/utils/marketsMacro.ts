@@ -9,6 +9,7 @@ import { formatPeriod } from './officialYields';
 import { pct, pts, row, sampleWarning, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
+import { SCENARIOS, scenarioImpact } from './scenarioExposure';
 
 /**
  * Central bank inflation targets. "checked" = read on the central bank's own page on 2026-11-04.
@@ -41,7 +42,7 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
  * agent of that name; Relative Value is the desk that compares a country's pricing with its peers.
  * The readings are stated rules on sourced figures (tagged "model"), not AI output.
  */
-export const EDGE_AGENTS = { cb: 'Central Bank Watcher', rv: 'Relative Value' } as const;
+export const EDGE_AGENTS = { cb: 'Central Bank Watcher', rv: 'Relative Value', spill: 'Global Spillover' } as const;
 
 export function targetSource(t: InflationTarget): string {
   return t.checked ? `${t.bank} stated target` : `${t.bank} published target, not re-checked`;
@@ -236,6 +237,15 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
             ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
             : model('5Y CDS against risk peers', 'needs 4 or more countries with a CDS figure', 'model'),
         ],
+      },
+      {
+        title: `${EDGE_AGENTS.spill} Agent`,
+        rows: SCENARIOS.map((sc) => {
+          const imp = self?.trade ? scenarioImpact(sc.id, self.trade) : null;
+          return imp
+            ? model(sc.name, `${imp.pctGdp > 0 ? '+' : ''}${imp.pctGdp.toFixed(1)}% of GDP`, `model: ${sc.shock} Basis: ${imp.basis}`)
+            : model(sc.name, 'not available', 'World Bank or WITS trade figures did not answer');
+        }),
       },
     ],
   };

@@ -9,6 +9,7 @@ import {
   parseOwnCdsCsv,
   type OwnCdsQuote,
 } from './src/utils/ownCds';
+import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
@@ -372,6 +373,64 @@ async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
   }
   effrCache = { at: Date.now(), value };
   return value;
+}
+
+/**
+ * Trade exposure for the scenario ranking (src/utils/scenarioExposure.ts): World Bank fuel and
+ * trade shares, and WITS partner shares with China and Russia. Kept 24 hours (1 hour after a miss).
+ */
+let tradeExposureCache: { at: number; value: Map<string, TradeExposure>; pending?: Promise<Map<string, TradeExposure>> } | null = null;
+async function fetchTradeExposureUncached(iso3s: string[]): Promise<Map<string, TradeExposure>> {
+  const out = new Map<string, TradeExposure>(iso3s.map((i) => [i, {} as TradeExposure]));
+  await Promise.all(
+    (Object.entries(WB_TRADE_INDICATORS) as Array<[WbTradeKey, string]>).map(async ([key, code]) => {
+      try {
+        const res = await fetchWithTimeout(wbIndicatorUrl(iso3s, code), 8000);
+        if (!res.ok) return;
+        for (const [iso, v] of parseWbLatest(await res.json())) {
+          const t = out.get(iso);
+          if (!t) continue;
+          t[key] = Number(v.value.toFixed(2));
+          if (!t.wbYear || v.year < t.wbYear) t.wbYear = v.year; // the oldest year used, to be safe
+        }
+      } catch {
+        // leave the figure missing
+      }
+    })
+  );
+  const thisYear = new Date().getUTCFullYear();
+  const share = async (iso: string, partner: string, ind: WitsIndicator) => {
+    for (const year of [thisYear - 3, thisYear - 4]) {
+      const xml = await fetchTextWithTimeout(witsUrl(iso, partner, ind, year), 8000);
+      const v = parseWitsShare(xml);
+      if (v) return v;
+    }
+    return null;
+  };
+  await Promise.all(
+    iso3s.map(async (iso) => {
+      const [cn, rx, rm] = await Promise.all([share(iso, 'CHN', 'XPRT-PRTNR-SHR'), share(iso, 'RUS', 'XPRT-PRTNR-SHR'), share(iso, 'RUS', 'MPRT-PRTNR-SHR')]);
+      const t = out.get(iso)!;
+      if (cn) t.chinaExportSharePct = cn.pct;
+      if (rx) t.russiaExportSharePct = rx.pct;
+      if (rm) t.russiaImportSharePct = rm.pct;
+      const years = [cn, rx, rm].filter(Boolean).map((v) => v!.year).sort();
+      if (years.length) t.witsYear = years[0];
+    })
+  );
+  return out;
+}
+async function fetchTradeExposure(): Promise<Map<string, TradeExposure>> {
+  const c = tradeExposureCache;
+  const hasAny = c ? [...c.value.values()].some((t) => Object.keys(t).length > 0) : false;
+  if (c && Date.now() - c.at < (hasAny ? 24 : 1) * 60 * 60 * 1000) return c.value;
+  if (c?.pending) return c.pending;
+  const pending = fetchTradeExposureUncached(SOVEREIGN_CATALOG.map((x) => x.iso3)).then((value) => {
+    tradeExposureCache = { at: Date.now(), value };
+    return value;
+  });
+  tradeExposureCache = { at: c?.at ?? 0, value: c?.value ?? new Map(), pending };
+  return pending;
 }
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
@@ -1140,7 +1199,10 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const effr = await fetchEffr();
+  const [effr, tradeAll] = await Promise.all([
+    fetchEffr(),
+    Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
+  ]);
   const items = await Promise.all(
     SOVEREIGN_CATALOG.map(async (catItem) => {
       try {
@@ -1174,6 +1236,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
           ...(fx.vol ? { fxVol3mPct: fx.vol.volPct, fxVolTo: fx.vol.to } : {}),
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
+          ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,
           macroRisk: mac,
