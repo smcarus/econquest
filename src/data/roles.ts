@@ -7,7 +7,7 @@ import type { UserPersonaId } from '../types/council';
 export type UserRoleId = 'PM' | 'ECONOMIST' | 'BANKER' | 'MULTILATERAL' | 'UHNW';
 export type WorkflowArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 /** Which report template opens first on Reports > Memos and notes. */
-export type ReportTemplate = 'ic' | 'client' | 'economist';
+export type ReportTemplate = 'ic' | 'client' | 'economist' | 'banker';
 
 export interface UserRole {
   id: UserRoleId;
@@ -42,10 +42,10 @@ export const USER_ROLES: UserRole[] = [
   {
     id: 'BANKER',
     label: 'Investment banker',
-    description: 'Start with a country’s debt, ratings and restructuring, then a pitch.',
+    description: 'Start with an issuer brief: market access, financing need, timing and peers, then an issuer note.',
     persona: 'INSTITUTIONAL_PM_IC',
-    home: { area: 'country', countryTab: 'debt', reportsTab: 'ic' },
-    report: 'ic',
+    home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
+    report: 'banker',
     nav: ['country', 'reports', 'today', 'portfolio', 'desks'],
   },
   {

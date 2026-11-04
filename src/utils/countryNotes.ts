@@ -39,7 +39,8 @@ export interface NoteSection {
   lines: string[];
 }
 
-type Kind = 'imf' | 'worldbank' | 'market' | 'yield' | 'model';
+export type SourceKind = 'imf' | 'worldbank' | 'market' | 'yield' | 'model' | 'sample';
+type Kind = SourceKind;
 
 export function sourceTag(status: SnapshotDataStatus, kind: Kind): { source: string; verified: boolean } {
   switch (kind) {
@@ -55,19 +56,22 @@ export function sourceTag(status: SnapshotDataStatus, kind: Kind): { source: str
         : sourceTag(status, 'market');
     case 'model':
       return { source: 'model, from figures above', verified: false };
+    case 'sample':
+      // Built-in values that no connected feed replaces (debt maturity profile, rollover figures).
+      return { source: 'sample', verified: false };
   }
 }
 
-const when = (e: { date: string; daysUntil: number }) =>
+export const when = (e: { date: string; daysUntil: number }) =>
   `${formatPeriod(e.date)}, ${e.daysUntil === 0 ? 'today' : e.daysUntil === 1 ? 'tomorrow' : `in ${e.daysUntil} days`}`;
-const pct = (v: number, d = 1) => `${v.toFixed(d)}%`;
-const pts = (v: number, d = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(d)} pts`;
+export const pct = (v: number, d = 1) => `${v.toFixed(d)}%`;
+export const pts = (v: number, d = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(d)} pts`;
 
-function row(status: SnapshotDataStatus, label: string, value: string, kind: Kind): BriefRow {
+export function row(status: SnapshotDataStatus, label: string, value: string, kind: Kind): BriefRow {
   return { label, value, ...sourceTag(status, kind) };
 }
 
-function sampleWarning(status: SnapshotDataStatus, countryName: string): string | undefined {
+export function sampleWarning(status: SnapshotDataStatus, countryName: string): string | undefined {
   if (status.mode === 'live') return undefined;
   const which = status.mode === 'partial' ? 'Some' : 'Most';
   return `${which} figures for ${countryName} are sample values, not published data. Check the source next to each figure, or sync the country, before relying on them.`;
@@ -169,7 +173,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
           row(status, 'Current account', `${pct(wb.currentAccountPctGdp)} of GDP`, 'worldbank'),
           row(status, 'FX reserves', `${wb.fxReservesMonthsImport.toFixed(1)} months of imports`, 'worldbank'),
           row(status, 'External debt', `${pct(wb.externalDebtPctGni, 0)} of GNI`, 'worldbank'),
-          row(status, 'Reserves / short-term external debt', pct(roll.greenspanGuidottiRatioPct, 0), 'model'),
+          row(status, 'Reserves / short-term external debt', pct(roll.greenspanGuidottiRatioPct, 0), 'sample'),
         ],
       },
     ],
@@ -182,11 +186,11 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
 
 const clean = (t: string) => t.replace(/\s*\(Ref:[^)]*\)/g, '').trim();
 
-function groupLines(g: BriefGroup): string[] {
+export function groupLines(g: BriefGroup): string[] {
   return g.rows.map((r) => `- ${r.label}: ${r.value} (${r.source})`);
 }
 
-function sourcesSection(run: CouncilAssessmentRun, purpose: string): NoteSection {
+export function sourcesSection(run: CouncilAssessmentRun, purpose: string): NoteSection {
   const status = getSnapshotDataStatus(run.openData);
   return {
     id: 'sources',
@@ -199,7 +203,7 @@ function sourcesSection(run: CouncilAssessmentRun, purpose: string): NoteSection
   };
 }
 
-function calendarSection(run: CouncilAssessmentRun, heading: string, now: Date): NoteSection {
+export function calendarSection(run: CouncilAssessmentRun, heading: string, now: Date): NoteSection {
   const events = upcomingOfficialEvents([run.iso3], 90, now);
   return {
     id: 'calendar',

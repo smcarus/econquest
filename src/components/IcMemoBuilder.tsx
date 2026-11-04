@@ -8,6 +8,7 @@ import { summariseBook, type Holding } from '../utils/holdings';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
 import { buildEconomistSections, ECONOMIST_SECTIONS } from '../utils/countryNotes';
+import { buildBankerSections, BANKER_SECTIONS } from '../utils/bankerNote';
 
 /**
  * One builder for the investment committee memo. It pulls the current country view,
@@ -20,6 +21,8 @@ export interface IcMemoBuilderProps {
   stagedTickets: StagedTradeTicketSpec[];
   holdings: Holding[];
   riskLookup: WatchlistItem[];
+  /** The watchlist, for the issuer note's peer comparison. Defaults to riskLookup. */
+  peers?: WatchlistItem[];
   /** Which version opens first. Private wealth advisers start on the client note. */
   defaultAudience?: MemoAudience;
 }
@@ -28,7 +31,7 @@ export interface IcMemoBuilderProps {
  * 'ic' = internal investment committee memo; 'client' = plain-language note for a private client;
  * 'economist' = country economic note (growth, policy, fiscal, external).
  */
-export type MemoAudience = 'ic' | 'client' | 'economist';
+export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker';
 
 export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; heading: string; file: string; help: string }> = {
   ic: { tab: 'Investment committee memo', title: 'IC memo', heading: 'Memo', file: 'ic-memo', help: 'Internal memo with trades, risk figures and kill switches.' },
@@ -39,6 +42,13 @@ export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; h
     heading: 'Country note',
     file: 'country-note',
     help: 'Economist’s note: growth, inflation and policy, the fiscal path and the external position. Every figure names its source.',
+  },
+  banker: {
+    tab: 'Issuer note',
+    title: 'issuer note',
+    heading: 'Issuer note',
+    file: 'issuer-note',
+    help: 'Banker’s note on the sovereign as an issuer: market access, financing need, execution window and pricing against peers.',
   },
 };
 
@@ -69,7 +79,9 @@ export const CLIENT_SECTION_LABEL: Partial<Record<SectionId, string>> = {
 export const sectionLabels = (audience: MemoAudience): Record<string, string> =>
   audience === 'economist'
     ? ECONOMIST_SECTIONS
-    : ((audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL) as Record<string, string>);
+    : audience === 'banker'
+      ? BANKER_SECTIONS
+      :((audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL) as Record<string, string>);
 
 /** Sections for any audience. `include` lists sections switched off as false; anything absent is on. */
 export function buildReportSections(
@@ -80,6 +92,7 @@ export function buildReportSections(
 ): Array<{ heading: string; lines: string[] }> {
   const on = (id: string) => include[id] !== false;
   if (audience === 'economist') return buildEconomistSections(p.run, on);
+  if (audience === 'banker') return buildBankerSections(p.run, p.peers ?? p.riskLookup, on);
   const all = Object.fromEntries((Object.keys(SECTION_LABEL) as SectionId[]).map((id) => [id, on(id)])) as Record<SectionId, boolean>;
   return buildSections(p, all, ticketScope, audience);
 }
@@ -390,7 +403,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const generated = useMemo(
     () => toMarkdown(memoTitle, author.trim(), buildReportSections(props, include, ticketScope, audience)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [props.run, props.stagedTickets, props.holdings, props.riskLookup, include, ticketScope, memoTitle, author, audience]
+    [props.run, props.stagedTickets, props.holdings, props.riskLookup, props.peers, include, ticketScope, memoTitle, author, audience]
   );
   const switchAudience = (a: MemoAudience) => {
     setAudience(a);

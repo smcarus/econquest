@@ -1,28 +1,42 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FileText } from 'lucide-react';
-import type { CouncilAssessmentRun } from '../types/council';
+import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { economistBrief, type CountryBrief } from '../utils/countryNotes';
+import { bankerBrief } from '../utils/bankerNote';
 
-export type BriefView = 'economist';
+export type BriefView = 'economist' | 'banker';
 
-const VIEW_INFO: Record<BriefView, { label: string; note: string; cta: string }> = {
+const VIEW_INFO: Record<BriefView, { label: string; title: string; note: string; cta: string }> = {
   economist: {
-    label: 'Economist',
+    label: 'Economy',
+    title: 'Economist brief',
     note: 'Growth, inflation and policy, the fiscal path and the external position.',
     cta: 'Write the country note',
+  },
+  banker: {
+    label: 'Issuer',
+    title: 'Issuer brief',
+    note: 'Market access, financing need, when to go to market, and pricing against peers.',
+    cta: 'Write the issuer note',
   },
 };
 
 /**
  * The start view for a role on the Country page: the figures that role works from, each with
  * its source, a few plain observations, and a button into the matching report template.
+ * The role picks the view that opens first; either can be switched to.
  */
 export const CountryBriefPanel: React.FC<{
   run: CouncilAssessmentRun;
+  peers: WatchlistItem[];
   view: BriefView;
   onWriteNote: (view: BriefView) => void;
-}> = ({ run, view, onWriteNote }) => {
-  const brief: CountryBrief = useMemo(() => economistBrief(run), [run]);
+}> = ({ run, peers, view: initialView, onWriteNote }) => {
+  const [view, setView] = useState<BriefView>(initialView);
+  const brief: CountryBrief = useMemo(
+    () => (view === 'banker' ? bankerBrief(run, peers) : economistBrief(run)),
+    [run, peers, view]
+  );
   const info = VIEW_INFO[view];
 
   return (
@@ -30,12 +44,21 @@ export const CountryBriefPanel: React.FC<{
       <section className="ui-panel">
         <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
           <div>
-            <h2 className="ui-section-title">{info.label} brief</h2>
+            <h2 className="ui-section-title">{info.title}</h2>
             <p className="ui-label">{info.note}</p>
           </div>
-          <button type="button" className="ui-btn ui-btn-primary" onClick={() => onWriteNote(view)}>
-            <FileText className="w-3.5 h-3.5" /> {info.cta}
-          </button>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <div role="tablist" aria-label="Brief view" className="flex gap-1">
+              {(Object.keys(VIEW_INFO) as BriefView[]).map((v) => (
+                <button key={v} type="button" role="tab" aria-selected={view === v} className="ui-pill" onClick={() => setView(v)}>
+                  {VIEW_INFO[v].label}
+                </button>
+              ))}
+            </div>
+            <button type="button" className="ui-btn ui-btn-primary" onClick={() => onWriteNote(view)}>
+              <FileText className="w-3.5 h-3.5" /> {info.cta}
+            </button>
+          </div>
         </header>
         <div className="p-4 space-y-2">
           <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
@@ -63,19 +86,19 @@ export const CountryBriefPanel: React.FC<{
               <caption className="sr-only">{g.title}</caption>
               <tbody>
                 {g.rows.map((r) => (
-                  <tr key={r.label} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <th scope="row" className="w-2/5 px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
+                  <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
                       {r.label}
+                      <span
+                        className={`block text-xs ${
+                          r.verified ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                        }`}
+                      >
+                        {r.source}
+                      </span>
                     </th>
-                    <td className="px-2 py-1.5 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                    <td className="px-4 py-1.5 text-right align-top font-medium text-slate-900 dark:text-white [font-variant-numeric:tabular-nums]">
                       {r.value}
-                    </td>
-                    <td
-                      className={`px-4 py-1.5 text-right text-xs ${
-                        r.verified ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
-                      }`}
-                    >
-                      {r.source}
                     </td>
                   </tr>
                 ))}
