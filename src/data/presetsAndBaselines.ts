@@ -513,13 +513,9 @@ export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
     region: item.region,
     currencyCode: item.currencyCode,
     fetchedAt: new Date().toISOString(),
-    liveApiSourcesActive: [
-      'IMF DataMapper WEO v1 (GGXWDG_NGDP, PCPIPCH)',
-      'World Bank Open Data v2 (FI.RES.TOTL.MO, BN.CAB.XOKA.GD.ZS)',
-      'Polymarket Gamma Markets API',
-      'GDELT 2.0 Global Conflict & Tone API',
-      'US Treasury Fiscal Data Exchange Rates API',
-    ],
+    // Built-in sample values: no feed has answered yet, so nothing is labelled live.
+    liveApiSourcesActive: [],
+    dataStatus: { verifiedLiveSources: [], checkedAt: new Date().toISOString() },
     imfIndicators: imf,
     worldBankIndicators: wb,
     monetaryAndMarket: mkt,

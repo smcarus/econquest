@@ -313,6 +313,14 @@ export interface OpenDataSnapshot {
   currencyCode: string;
   fetchedAt: string;
   liveApiSourcesActive: string[];
+  /**
+   * Set by the server: the feeds that actually answered on the last pull. Absent on
+   * snapshots saved by older versions (treated as unverified). See utils/dataStatus.ts.
+   */
+  dataStatus?: {
+    verifiedLiveSources: string[];
+    checkedAt: string;
+  };
   imfIndicators: {
     debtToGdpPct: number;
     debtToGdpForecast2027Pct: number;

@@ -663,7 +663,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
         yield2YOverride = grounded.yield2Y;
         yield5YOverride = grounded.yield5Y;
         yield30YOverride = grounded.yield30Y;
-        activeSources.push('Gemini Search Grounding (Live Yields, Policy Rate & CDS)');
+        activeSources.push('Gemini web search (AI-estimated yields, policy rate & CDS)');
       }
     })(),
   ]);
@@ -680,10 +680,11 @@ async function fetchLiveOpenDataSnapshotNetwork(
     shortTermDebtPctReserves: liveShortTermDebtPctReserves,
   });
 
-  if (activeSources.length > 0) {
-    baseline.liveApiSourcesActive = Array.from(new Set(activeSources));
-  }
+  // Only feeds that actually answered count as live; never inherit the sample list.
+  const verifiedLiveSources = Array.from(new Set(activeSources));
+  baseline.liveApiSourcesActive = verifiedLiveSources;
   baseline.fetchedAt = new Date().toISOString();
+  baseline.dataStatus = { verifiedLiveSources, checkedAt: baseline.fetchedAt };
   return baseline;
 }
 

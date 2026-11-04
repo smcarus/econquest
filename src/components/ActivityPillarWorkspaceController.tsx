@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { DataStatusBadge } from './DataStatusBadge';
 import {
   TrendingUp,
   Landmark,
@@ -624,6 +625,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             <span className="opacity-75">·</span>
             <span>{run.countryName}</span>
           </span>
+
+          <DataStatusBadge snapshot={run.openData} />
 
           <div className="flex flex-wrap items-center gap-2.5 font-mono text-[11px] text-slate-600 dark:text-slate-300">
             <span>

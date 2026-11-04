@@ -16,6 +16,7 @@ import {
   BookOpen,
 } from 'lucide-react';
 import { CouncilAssessmentRun, ProvenanceTier } from '../types/council';
+import { DataFeedKey, getSnapshotDataStatus } from '../utils/dataStatus';
 import {
   detectStatisticalTermInText,
   resolveStatRefDefinition,
@@ -40,6 +41,8 @@ export interface ResolvedDataProvenanceSpec {
   primaryEndpointUri: string;
   httpMethod: 'GET' | 'POST';
   httpStatus: string;
+  /** True only when the feed behind this panel actually answered on the last pull. */
+  isLive: boolean;
   handshakeTimestampIso: string;
   handshakeLatencyMs: number;
   provenanceTier: ProvenanceTier;
@@ -60,10 +63,17 @@ const PROVENANCE_TIER_LABELS: Record<ProvenanceTier, string> = {
   TIER_4_MODEL_ESTIMATE: 'Tier-4 Structural Econometric Engine (Seeded by Tier-1 API)',
 };
 
+const PROVENANCE_FEED_BY_SPEC: Record<string, DataFeedKey[]> = {
+  prov_nyfed_sofr_liquidity: ['nyfed'],
+  prov_gdelt_polymarket_osint: ['gdelt', 'polymarket'],
+  prov_worldbank_external_reserves: ['worldbank'],
+  prov_treasury_cds_yield_quant: ['ai_market'],
+  prov_imf_weo_macro_fiscal: ['imf'],
+};
+
 /**
- * Resolves the exact API source, REST endpoint URI, handshake timestamp, and JSON field mappings
- * for any chart, table, or data point across the 10-hub terminal based on its contextual title/headers
- * and the active sovereign's live `OpenDataSnapshot`.
+ * Describes the intended source of a panel and, honestly, whether that source answered.
+ * Status text comes from the snapshot's verified feed list, never from a fixed "200 OK".
  */
 export function resolveDataProvenanceForContext(
   run: CouncilAssessmentRun,
@@ -73,6 +83,41 @@ export function resolveDataProvenanceForContext(
   clickedDataPointValue?: string,
   overrideTimestampIso?: string
 ): ResolvedDataProvenanceSpec {
+  const spec = resolveDataProvenanceForContextUnchecked(
+    run,
+    contextText,
+    containerKind,
+    clickedDataPointLabel,
+    clickedDataPointValue,
+    overrideTimestampIso
+  );
+  const status = getSnapshotDataStatus(run.openData);
+  const feeds = PROVENANCE_FEED_BY_SPEC[spec.id] || [];
+  const isLive = feeds.some((f) => status.isFeedLive(f));
+  const isAiEstimate = feeds.includes('ai_market') && isLive;
+  const httpStatus = isAiEstimate
+    ? 'AI estimate (Gemini web search), not a market price'
+    : isLive
+    ? 'Fetched from source on last pull'
+    : status.mode === 'unverified'
+    ? 'Not verified: press Sync to refresh'
+    : 'Not live: built-in sample value';
+  return { ...spec, httpStatus, handshakeLatencyMs: 0, isLive };
+}
+
+/**
+ * Resolves the exact API source, REST endpoint URI, handshake timestamp, and JSON field mappings
+ * for any chart, table, or data point across the 10-hub terminal based on its contextual title/headers
+ * and the active sovereign's live `OpenDataSnapshot`.
+ */
+function resolveDataProvenanceForContextUnchecked(
+  run: CouncilAssessmentRun,
+  contextText: string,
+  containerKind: 'CHART' | 'TABLE' | 'DATA_POINT' = 'CHART',
+  clickedDataPointLabel?: string,
+  clickedDataPointValue?: string,
+  overrideTimestampIso?: string
+): Omit<ResolvedDataProvenanceSpec, 'isLive'> {
   const iso3 = run.iso3 || 'BRA';
   const ccy = run.openData.currencyCode || 'BRL';
   const lower = `${contextText} ${clickedDataPointLabel || ''}`.toLowerCase();
@@ -469,6 +514,27 @@ export function resolveDataProvenanceForContext(
   };
 }
 
+function provenanceBarLabel(spec: ResolvedDataProvenanceSpec, fetchedTime: string): string {
+  const source = spec.primarySourceAuthority.split('&')[0].split('(')[0].trim();
+  if (!spec.isLive) return `SAMPLE DATA · NOT LIVE · intended source: ${source}`;
+  if (spec.id === 'prov_treasury_cds_yield_quant') return `AI ESTIMATE · ${fetchedTime}`;
+  return `SOURCE · ${source} · ${fetchedTime}`;
+}
+
+function provenanceBarClass(isLive: boolean): string {
+  return isLive
+    ? 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-mono text-[10px] font-semibold cursor-pointer shrink-0 transition-colors'
+    : 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 font-mono text-[10px] font-semibold cursor-pointer shrink-0 transition-colors';
+}
+
+function provenanceChartBadgeClass(isLive: boolean): string {
+  return `absolute top-1.5 right-1.5 z-20 inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/95 dark:bg-slate-900/95 shadow-sm font-mono text-[10px] font-semibold cursor-pointer transition-colors border ${
+    isLive
+      ? 'hover:bg-emerald-50 dark:hover:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800'
+      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'
+  }`;
+}
+
 function formatHandshakeAge(isoString: string): {
   utcFormatted: string;
   localFormatted: string;
@@ -542,8 +608,7 @@ export const DataProvenanceBadge: React.FC<{
       if (onRefreshLiveOpenData) {
         onRefreshLiveOpenData();
       }
-      await new Promise((r) => setTimeout(r, 260));
-      setLocalHandshakeIso(new Date().toISOString());
+      // The refreshed snapshot carries its own fetch time; don't invent one here.
     } finally {
       setIsPinging(false);
     }
@@ -557,7 +622,7 @@ export const DataProvenanceBadge: React.FC<{
       `Last API Handshake (UTC): ${utcFormatted}`,
       `Primary Authority: ${spec.primarySourceAuthority}`,
       `Endpoint URI: ${spec.primaryEndpointUri}`,
-      `HTTP Status: ${spec.httpStatus} (${spec.handshakeLatencyMs} ms)`,
+      `Status: ${spec.httpStatus}`,
       `cURL: ${spec.curlSnippet}`,
     ].join('\n');
     if (navigator.clipboard?.writeText) {
@@ -577,16 +642,18 @@ export const DataProvenanceBadge: React.FC<{
         }}
         title="Click to inspect real-time API handshake timestamp, source authority & REST endpoint URI"
         className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] font-mono tabular-nums border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-          isOpen
+          !spec.isLive
+            ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300'
+            : isOpen
             ? 'bg-emerald-600 text-white border-emerald-600 font-semibold'
             : 'bg-emerald-50/90 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800/90 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/70'
         } ${className}`}
       >
         <ShieldCheck className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />
         <span>
-          {compact
-            ? `API PROVENANCE · ${localFormatted}`
-            : `LIVE API PROVENANCE · 200 OK · ${localFormatted}`}
+          {spec.isLive
+            ? `SOURCE · ${localFormatted}`
+            : 'SAMPLE DATA · NOT LIVE'}
         </span>
       </button>
 
@@ -641,13 +708,13 @@ export const DataProvenanceBadge: React.FC<{
                 <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                   <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <Activity className="w-3 h-3 text-blue-500" />
-                    <span>Handshake Status &amp; RTT</span>
+                    <span>Status</span>
                   </div>
-                  <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                  <div className={`text-xs font-mono font-bold mt-1 ${spec.isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                     {spec.httpStatus}
                   </div>
                   <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
-                    Method: {spec.httpMethod} · RTT Latency: {spec.handshakeLatencyMs} ms
+                    Method: {spec.httpMethod}
                   </div>
                 </div>
 
@@ -900,10 +967,12 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       if (existingBadge) {
         existingBadge.setAttribute('data-prov-context', contextStr);
         const labelSpan = existingBadge.querySelector('[data-prov-label="true"]');
-        const nextLabel = `PROVENANCE · ${spec.primarySourceAuthority.split('&')[0].trim()} · Handshake ${fetchedTime}`;
+        const nextLabel = provenanceBarLabel(spec, fetchedTime);
         if (labelSpan && labelSpan.textContent !== nextLabel) {
           labelSpan.textContent = nextLabel;
         }
+        const trigger = existingBadge.querySelector('[data-prov-trigger="true"]');
+        if (trigger) trigger.className = provenanceBarClass(spec.isLive);
         return;
       }
 
@@ -917,11 +986,11 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
 
       bar.innerHTML = `
         <span class="truncate text-[10px] text-slate-500 dark:text-slate-400">
-          <strong class="text-slate-700 dark:text-slate-300">TABLE FEED:</strong> ${spec.primaryEndpointUri.replace(/^https?:\/\//, '').slice(0, 58)}... · Click any cell or badge for endpoint audit
+          <strong class="text-slate-700 dark:text-slate-300">Source:</strong> ${spec.primarySourceAuthority.split('&')[0].trim()} · click the badge for details
         </span>
-        <button type="button" data-prov-trigger="true" class="inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-mono text-[10px] font-semibold cursor-pointer shrink-0 transition-colors">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span data-prov-label="true">PROVENANCE · ${spec.primarySourceAuthority.split('&')[0].trim()} · Handshake ${fetchedTime}</span>
+        <button type="button" data-prov-trigger="true" class="${provenanceBarClass(spec.isLive)}">
+          <span class="w-1.5 h-1.5 rounded-full ${spec.isLive ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+          <span data-prov-label="true">${provenanceBarLabel(spec, fetchedTime)}</span>
         </button>
       `;
 
@@ -956,10 +1025,11 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       if (existingOverlay) {
         existingOverlay.setAttribute('data-prov-context', title);
         const span = existingOverlay.querySelector('[data-prov-label="true"]');
-        const nextLabel = `API PROVENANCE · ${spec.primarySourceAuthority.split(' ')[0]} · ${fetchedTime}`;
+        const nextLabel = provenanceBarLabel(spec, fetchedTime);
         if (span && span.textContent !== nextLabel) {
           span.textContent = nextLabel;
         }
+        existingOverlay.className = provenanceChartBadgeClass(spec.isLive);
         return;
       }
 
@@ -975,12 +1045,11 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       badge.setAttribute('data-prov-kind', 'CHART');
       badge.setAttribute('data-prov-context', title);
       badge.title =
-        'Click to inspect last successful API handshake timestamp & exact source/endpoint URI';
-      badge.className =
-        'absolute top-1.5 right-1.5 z-20 inline-flex items-center gap-1.5 px-2 py-0.5 bg-white/95 dark:bg-slate-900/95 hover:bg-emerald-50 dark:hover:bg-emerald-950/90 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-sm font-mono text-[10px] font-semibold cursor-pointer transition-colors';
+        'Click to see where this figure comes from and whether that source answered';
+      badge.className = provenanceChartBadgeClass(spec.isLive);
       badge.innerHTML = `
-        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-        <span data-prov-label="true">API PROVENANCE · ${spec.primarySourceAuthority.split(' ')[0]} · ${fetchedTime}</span>
+        <span class="w-1.5 h-1.5 rounded-full ${spec.isLive ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
+        <span data-prov-label="true">${provenanceBarLabel(spec, fetchedTime)}</span>
       `;
       container.appendChild(badge);
     });
@@ -1173,15 +1242,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
     setIsPinging(true);
     try {
       onRefreshLiveOpenData();
-      await new Promise((r) => setTimeout(r, 260));
-      const nowIso = new Date().toISOString();
-      setLocalHandshakeIso(nowIso);
-      if (activeProvenanceSpec) {
-        setActiveProvenanceSpec({
-          ...activeProvenanceSpec,
-          handshakeTimestampIso: nowIso,
-        });
-      }
+      // The refreshed snapshot carries its own fetch time; don't invent one here.
     } finally {
       setIsPinging(false);
     }
@@ -1244,13 +1305,13 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
                   <div className="p-2.5 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
                     <div className="text-[10px] font-mono uppercase text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <Server className="w-3 h-3 text-blue-500" />
-                      <span>HTTP Status &amp; Latency</span>
+                      <span>Status</span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 mt-1 tabular-nums">
+                    <div className={`text-xs font-mono font-bold mt-1 ${activeProvenanceSpec.isLive ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
                       {activeProvenanceSpec.httpStatus}
                     </div>
                     <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
-                      Method: {activeProvenanceSpec.httpMethod} · RTT: {activeProvenanceSpec.handshakeLatencyMs} ms
+                      Method: {activeProvenanceSpec.httpMethod}
                     </div>
                   </div>
 
