@@ -1468,7 +1468,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                             : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                         }`}
                       >
-                        {tr.isIncludedInPerimeter ? 'IN RESTRUCTURING PERIMETER' : 'EXEMPT / PROTECTED'}
+                        {tr.isIncludedInPerimeter ? 'In restructuring perimeter' : 'Exempt or protected'}
                       </span>
                     </td>
                     <td className="py-2.5 px-3 font-sans text-xs text-slate-600 dark:text-slate-400">
@@ -2755,8 +2755,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <table className="w-full text-xs tabular-nums border-collapse">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-                      <th className="py-2 px-2 text-left">SOVEREIGN</th>
-                      <th className="py-2 px-1.5 text-right">SPREAD</th>
+                      <th className="py-2 px-2 text-left">Sovereign</th>
+                      <th className="py-2 px-1.5 text-right">Spread</th>
                       <th className="py-2 px-1.5 text-right">VOL (σ)</th>
                       {alphaCorrSuite.matrixRows.map((colHeader) => (
                         <th
@@ -3119,7 +3119,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <table className="w-full text-xs tabular-nums">
                   <thead>
                     <tr className="border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
-                      <th className="py-2 px-2 text-left">SOVEREIGN</th>
+                      <th className="py-2 px-2 text-left">Sovereign</th>
                       <th className="py-2 px-2 text-right">Spread / σ</th>
                       <th className="py-2 px-2 text-right">AVG ρ</th>
                       <th className="py-2 px-2 text-right">EMBI bench %</th>
@@ -3188,10 +3188,10 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                             }`}
                           >
                             {w.allocationRecommendation === 'CORE_OVERWEIGHT_DIVERSIFIER'
-                              ? 'OVERWEIGHT DIVERSIFIER'
+                              ? 'Overweight diversifier'
                               : w.allocationRecommendation === 'UNDERWEIGHT_BETA_CROWDED'
-                              ? 'UNDERWEIGHT BETA'
-                              : 'NEUTRAL CARRY'}
+                              ? 'Underweight beta'
+                              : 'Neutral carry'}
                           </span>
                         </td>
                       </tr>
@@ -3550,7 +3550,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             <table className="w-full text-xs tabular-nums">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
-                  <th className="py-2 px-3 text-left">TENOR</th>
+                  <th className="py-2 px-3 text-left">Tenor</th>
                   <th className="py-2 px-3 text-right">Market spot %</th>
                   <th className="py-2 px-3 text-right">NSS fitted %</th>
                   <th className="py-2 px-3 text-right">CHEAP / RICH (bps)</th>
@@ -3774,12 +3774,12 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <table className="w-full text-xs tabular-nums">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-xs text-slate-500">
-                    <th className="py-2 px-2.5 text-left">COUNTDOWN</th>
+                    <th className="py-2 px-2.5 text-left">Countdown</th>
                     <th className="py-2 px-2.5 text-left">Sovereign / event</th>
-                    <th className="py-2 px-2.5 text-right">CONSENSUS</th>
+                    <th className="py-2 px-2.5 text-right">Consensus</th>
                     <th className="py-2 px-2.5 text-right">Econquest model</th>
                     <th className="py-2 px-2.5 text-right">1D implied vol</th>
-                    <th className="py-2 px-2.5 text-right">ACTION</th>
+                    <th className="py-2 px-2.5 text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">
@@ -4366,7 +4366,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
             <table className="w-full text-xs tabular-nums">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 text-xs text-slate-500">
-                  <th className="py-2 px-2.5 text-left">SOVEREIGN</th>
+                  <th className="py-2 px-2.5 text-left">Sovereign</th>
                   <th className="py-2 px-2 text-right">Book wt %</th>
                   <th className="py-2 px-2 text-right">Mod dur</th>
                   <th className="py-2 px-2 text-right">β_CRED / β_FX</th>
@@ -4514,7 +4514,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   <th className="py-2 px-2 text-right">Carry offset</th>
                   <th className="py-2 px-2 text-right">Net book p&l (% NAV)</th>
                   <th className="py-2 px-2 text-right">Worst sovereign</th>
-                  <th className="py-2 px-2 text-right">ACTION</th>
+                  <th className="py-2 px-2 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200/70 dark:divide-slate-800/70">

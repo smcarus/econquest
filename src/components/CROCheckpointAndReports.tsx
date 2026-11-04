@@ -157,7 +157,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                 Pipeline Status:{' '}
                 {run.stage === 'AWAITING_CRO_APPROVAL'
                   ? 'PAUSED BEFORE SUPREME COUNCIL — AWAITING CRO APPROVAL'
-                  : 'CRO VERIFIED & SUPREME COUNCIL SYNTHESIZED'}
+                  : 'CRO verified and council synthesised'}
               </span>
             </div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
@@ -644,7 +644,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               {/* Policy Researcher Structural Report */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50/40 dark:bg-slate-950/40">
                 <div className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
-                  FOR THE POLICY RESEARCHER &amp; CENTRAL BANK / IMF STAFF
+                  For the policy researcher and central bank or IMF staff
                 </div>
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Structural Vulnerabilities &amp; Institutional Policy Recommendations

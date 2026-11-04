@@ -1256,7 +1256,7 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 tabular-nums text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
               <GitBranch className="w-3 h-3" />
-              {docsPayload?.gitReady ? 'GIT REPO INITIALIZED (main)' : 'GIT SYNC READY'}
+              {docsPayload?.gitReady ? 'Git repo initialised (main)' : 'Git sync ready'}
             </span>
             <span className="text-slate-600 dark:text-slate-400 tabular-nums text-xs">
               Active File: <strong className="text-slate-900 dark:text-white">{activeFile.path}</strong> ({activeFile.lines} lines · {(activeFile.bytes / 1024).toFixed(1)} KB)
@@ -2295,7 +2295,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   >
                     <span>
                       <strong>
-                        {ollamaStatus.connected ? 'CONNECTED TO LOCAL OLLAMA' : 'CLOUD PREVIEW / OFFLINE NOTE'}:
+                        {ollamaStatus.connected ? 'Connected to local Ollama' : 'Cloud preview or offline note'}:
                       </strong>{' '}
                       {ollamaStatus.message}
                     </span>
@@ -3355,7 +3355,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                                     : 'text-blue-600 dark:text-blue-400 font-semibold'
                                 }
                               >
-                                {conn.networkScope === 'internal_host' ? 'INTERNAL HOST' : 'EXTERNAL API'}
+                                {conn.networkScope === 'internal_host' ? 'Internal host' : 'External API'}
                               </span>
                               <span>·</span>
                               <span>

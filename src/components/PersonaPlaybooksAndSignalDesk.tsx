@@ -322,7 +322,7 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300">
-                      #{sig.rank} TOP {sig.personaId === 'INDIVIDUAL_TRADER' ? 'TRADER ALPHA' : sig.personaId === 'INSTITUTIONAL_PM_IC' ? 'INSTITUTIONAL IC' : 'POLICY RESEARCH'} SIGNAL
+                      #{sig.rank} top {sig.personaId === 'INDIVIDUAL_TRADER' ? 'trader' : sig.personaId === 'INSTITUTIONAL_PM_IC' ? 'institutional IC' : 'policy research'} signal
                     </span>
                     <span className="text-xs tabular-nums font-semibold text-blue-600 dark:text-blue-400">
                       Conviction: {sig.convictionScore}/100

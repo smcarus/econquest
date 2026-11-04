@@ -185,10 +185,10 @@ export const MultiSovereignComparatorDrawer: React.FC<
           <div className="p-4 border border-emerald-200 dark:border-emerald-900/70 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-400">
-                AUTOMATED HEAD-TO-HEAD RELATIVE-VALUE PAIR VERDICT · WINNER:{' '}
+                Head-to-head relative value verdict · winner:{' '}
                 {comparisonSuite.overallRelativeValueWinnerIso} (
                 {comparisonSuite.winCountByIso[comparisonSuite.overallRelativeValueWinnerIso]}{' '}
-                BENCHMARK WINS)
+                benchmark wins)
               </div>
               <p className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed">
                 {comparisonSuite.pairTradeVerdictSummary}
@@ -389,17 +389,17 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
 
   const handleExportTearSheetMarkdown = () => {
     const lines = [
-      `# ECONQUEST SOVEREIGN EXECUTIVE TEAR-SHEET & IC TRADE TICKET DOSSIER`,
+      `# EconQuest sovereign tear sheet and IC trade tickets`,
       `Generated: ${new Date().toISOString()}`,
       ``,
-      `## 1. SOVEREIGN EXECUTIVE TEAR-SHEET: ${activeRun.countryName.toUpperCase()} (${activeRun.iso3})`,
+      `## 1. Sovereign tear sheet: ${activeRun.countryName} (${activeRun.iso3})`,
       `- **Executive Stance**: ${activeRun.supremeCouncil?.marketTranslationLayer.regimeStance || 'Hold & Monitor'} (Composite Risk: ${Math.round((activeRun.supremeCouncil?.compositeRiskScore ?? 0.58) * 100)}/100, Coherence: ${Math.round((activeRun.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100)}%)`,
       `- **Debt & DSA Solvency**: Debt/GDP ${activeRun.openData.imfIndicators.debtToGdpPct.toFixed(1)}% | Primary Balance ${activeRun.openData.imfIndicators.primaryFiscalBalancePct.toFixed(2)}% GDP vs. Stabilizing pb* ${activeRun.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct.toFixed(2)}% GDP (Gap: ${activeRun.openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% GDP)`,
       `- **NSS Yield Curve & Carry+Roll**: 2s10s Slope ${nssSuite.slope2s10sBps > 0 ? '+' : ''}${nssSuite.slope2s10sBps} bps | 2s5s10s Butterfly ${nssSuite.butterfly2s5s10sBps > 0 ? '+' : ''}${nssSuite.butterfly2s5s10sBps} bps | Optimal Carry+Roll Tenor: ${nssSuite.optimalCarryRollTenor.tenorLabel} (+${nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps/yr, Breakeven +${nssSuite.optimalCarryRollTenor.breakevenCushionBps} bps/yr)`,
       `- **Credit & External Buffers**: 5Y CDS ${activeRun.openData.monetaryAndMarket.cds5YSpreadBps} bps | 10Y Yield ${activeRun.openData.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}% | FX Reserves ${activeRun.openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports`,
       `- **Next Macro Catalyst**: ${nextSovCatalyst.eventTitle} in ${nextSovCatalyst.daysUntilEvent}d (${nextSovCatalyst.eventDateLabel}) · Implied 1D Event Vol ±${nextSovCatalyst.implied1DayYieldVolBps} bps`,
       ``,
-      `## 2. STAGED INVESTMENT COMMITTEE (IC) TRADE TICKET BOOK (${stagedTickets.length} TICKETS)`,
+      `## 2. Staged IC trade tickets (${stagedTickets.length})`,
       ...stagedTickets.flatMap((t, idx) => [
         `### Ticket ${idx + 1}: ${t.strategyTitle} (${t.ticketId})`,
         `- **Sovereign**: ${t.countryName} (${t.iso3}${t.secondaryIso3 ? ` vs. ${t.secondaryIso3}` : ''}) · **Direction**: ${t.direction}`,
@@ -759,7 +759,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                       </span>
                     </div>
                     <div>
-                      <span className="text-xs text-slate-500 block">STOP-LOSS</span>
+                      <span className="text-xs text-slate-500 block">Stop-loss</span>
                       <span className="font-semibold text-rose-600 dark:text-rose-400">
                         {ticket.stopLossSpreadOrYieldBps} bps
                       </span>

@@ -15,6 +15,9 @@ Status: Sam chose the **institutional investor** as the first user (2026-11-04).
 - **Roles.** First visit asks which of five roles you are (portfolio manager, economist, investment banker, multilateral, private wealth adviser). The role sets the landing page and menu order; Menu → My role changes it.
 - **Present mode.** Header → Present: the same content as full-screen slides, with the data status on every slide.
 - **Design system, desks.** 92 desk toggle buttons now use the shared pill style.
+- **Holdings everywhere in Portfolio.** The EMBI pair book takes its active weights from imported holdings (sliders paused, with a note), and the trade blotter has "Add my <country> holdings", which loads your positions in the current country with DV01, CS01 and FX delta.
+- **Client note.** The memo builder has a second version, Client note: plain-language sections (our view, why, what it means for your portfolio, key numbers, what could go wrong, dates to watch, important information) with no trade levels, scores or DV01. It opens first for the private wealth adviser role.
+- **Labels.** The remaining all-caps labels and export headings in built-in text are now sentence case.
 
 The default persona is now Institution.
 

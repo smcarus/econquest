@@ -1701,7 +1701,7 @@ export const DecisionCommandCenterDesk: React.FC<DecisionCommandCenterDeskProps>
                         </div>
                         <div className="text-xs tabular-nums text-slate-500">
                           {c.tickerOrSlug} · {c.category.replace(/_/g, ' ')} ·{' '}
-                          {c.isLiveApiSourced ? 'LIVE API' : 'PARITY ANCHOR'}
+                          {c.isLiveApiSourced ? 'Live API' : 'Parity anchor'}
                         </div>
                       </td>
                       <td className="py-2.5 px-2 text-right font-semibold">

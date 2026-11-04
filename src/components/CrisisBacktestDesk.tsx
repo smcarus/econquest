@@ -267,10 +267,10 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                 }`}
               >
                 {currentStep.isActualCrisisWindow
-                  ? 'REGIME 2: ACUTE CRISIS BREAK'
+                  ? 'Regime 2: acute crisis break'
                   : currentStep.isAlertTriggered
                   ? 'REGIME 1: EARLY WARNING ALERT ACTIVE (≥35%)'
-                  : 'REGIME 0: PRE-ALERT BUILD-UP'}
+                  : 'Regime 0: pre-alert build-up'}
               </span>
             </div>
 
@@ -505,7 +505,7 @@ export const CrisisBacktestDesk: React.FC<CrisisBacktestDeskProps> = ({
                 ) : (
                   <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>PRE-THRESHOLD</span>
+                    <span>Pre-threshold</span>
                   </span>
                 )}
               </div>

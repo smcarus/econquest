@@ -752,7 +752,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                           {tier.spCode} <span className="text-slate-400">({tier.moodysCode})</span>
                         </td>
                         <td className="py-2 px-3 text-xs text-slate-600 dark:text-slate-300">
-                          {tier.rank === 7 ? 'BBB- IG CLIFF THRESHOLD' : tier.bucket}
+                          {tier.rank === 7 ? 'BBB- investment grade cliff' : tier.bucket.replace(/_/g, ' ').toLowerCase().replace(/^./, (c) => c.toUpperCase()).replace(/\b(ig|hy)\b/g, (m) => m.toUpperCase())}
                         </td>
                         <td className="py-2 px-3 tabular-nums text-right text-slate-700 dark:text-slate-300">
                           {tier.typicalCdsBps} bps

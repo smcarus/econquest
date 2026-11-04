@@ -208,7 +208,7 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
           {isPinned ? (
             <>
               <Pin className="w-2.5 h-2.5 fill-current" />
-              <span>PINNED</span>
+              <span>Pinned</span>
             </>
           ) : (
             <span className="hidden sm:inline">[Formula &amp; Source]</span>

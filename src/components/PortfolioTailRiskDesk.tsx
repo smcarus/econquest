@@ -488,7 +488,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                       {row.creditCs01UsdThousands >= 0 ? '+' : ''}
                       ${row.creditCs01UsdThousands.toFixed(1)}k
                       {row.breachesSingleCountryCs01 && (
-                        <span className="block text-xs text-rose-500">BREACH</span>
+                        <span className="block text-xs text-rose-500">Breach</span>
                       )}
                     </td>
 

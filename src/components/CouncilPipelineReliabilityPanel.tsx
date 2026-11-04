@@ -133,13 +133,13 @@ export const CouncilPipelineReliabilityPanel: React.FC<
   const formatStatusLabel = (status: PipelineStageTelemetry['status']) => {
     switch (status) {
       case 'VERIFIED_AI':
-        return 'SCHEMA & ANCHOR VERIFIED';
+        return 'Schema and anchor verified';
       case 'RETRY_RECOVERED':
-        return 'RETRY RECOVERED';
+        return 'Recovered on retry';
       case 'QUANT_ANCHOR_FALLBACK':
-        return 'QUANT ANCHOR FAILOVER';
+        return 'Quant anchor failover';
       case 'AWAITING_GATE':
-        return 'PAUSED AT CRO GATE';
+        return 'Paused at CRO gate';
     }
   };
 

@@ -267,7 +267,7 @@ export const ScenarioDeltaComparatorDrawer: React.FC<ScenarioDeltaComparatorDraw
                           : 'text-amber-600 dark:text-amber-400'
                       }
                     >
-                      {d.isLiveApi ? `LIVE (${d.observationYear})` : 'FALLBACK'}
+                      {d.isLiveApi ? `Live (${d.observationYear})` : 'Fallback'}
                     </span>
                   </div>
                   <div className="font-semibold text-slate-800 dark:text-slate-200 mt-0.5">

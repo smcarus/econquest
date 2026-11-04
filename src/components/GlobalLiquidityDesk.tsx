@@ -127,22 +127,22 @@ export const GlobalLiquidityDesk: React.FC<GlobalLiquidityDeskProps> = ({
     switch (status) {
       case 'ACUTE_DOLLAR_SHORTAGE':
         return {
-          label: 'ACUTE DOLLAR SHORTAGE',
+          label: 'Acute dollar shortage',
           classes: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
         };
       case 'FUNDING_SQUEEZE':
         return {
-          label: 'FUNDING SQUEEZE',
+          label: 'Funding squeeze',
           classes: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
         };
       case 'TURN_PRESSURE':
         return {
-          label: 'TURN PRESSURE',
+          label: 'Turn pressure',
           classes: 'bg-blue-500/15 text-blue-300 border-blue-500/30',
         };
       default:
         return {
-          label: 'AMPLE LIQUIDITY',
+          label: 'Ample liquidity',
           classes: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
         };
     }
@@ -264,10 +264,10 @@ export const GlobalLiquidityDesk: React.FC<GlobalLiquidityDeskProps> = ({
             </span>
             <span className="text-xs tabular-nums px-1.5 py-0.5 bg-slate-800 text-slate-300 border border-slate-700">
               {suite.globalLiquidityStressIndexZScore >= 2.2
-                ? 'CRISIS SQUEEZE'
+                ? 'Crisis squeeze'
                 : suite.globalLiquidityStressIndexZScore >= 1.0
-                ? 'TURN TENSION'
-                : 'NORMAL PLUMBING'}
+                ? 'Turn tension'
+                : 'Normal plumbing'}
             </span>
           </div>
           <div className="text-xs tabular-nums text-slate-400">
@@ -375,7 +375,7 @@ export const GlobalLiquidityDesk: React.FC<GlobalLiquidityDeskProps> = ({
             </h3>
             <span className="text-xs tabular-nums px-2 py-0.5 bg-blue-500/10 text-blue-300 border border-blue-500/30">
               {stressParams.presetId === 'custom'
-                ? 'CUSTOM STRESS SCENARIO'
+                ? 'Custom stress scenario'
                 : LIQUIDITY_CRISIS_PRESETS[stressParams.presetId].shortBadge}
             </span>
           </div>

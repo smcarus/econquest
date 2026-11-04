@@ -744,7 +744,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
                   }`}
                 >
-                  {propagateGeoShocks ? 'LIVE TRANSMISSION ACTIVE' : 'STANDALONE MODE'}
+                  {propagateGeoShocks ? 'Live transmission on' : 'Standalone mode'}
                 </span>
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
@@ -1634,12 +1634,12 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   </span>
                   <span className="text-xs tabular-nums px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-semibold">
                     {selectedEventObj
-                      ? 'GDELT/OSINT NODE'
+                      ? 'GDELT / OSINT node'
                       : selectedChokepointObj
-                      ? 'MARITIME CHOKEPOINT'
+                      ? 'Maritime chokepoint'
                       : selectedChainObj
-                      ? 'SUPPLY CHAIN HUB'
-                      : 'DEFAULT OVERVIEW'}
+                      ? 'Supply chain hub'
+                      : 'Default overview'}
                   </span>
                 </div>
 
@@ -2303,7 +2303,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
                           }`}
                         >
-                          {node.isExportBanActive ? 'BAN ACTIVE' : 'NORMAL FLOW'}
+                          {node.isExportBanActive ? 'Ban active' : 'Normal flow'}
                         </button>
                       </td>
                     </tr>
@@ -3177,7 +3177,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300'
                           }`}
                         >
-                          {tr.frozen ? 'IMMOBILIZED / FROZEN' : 'LIQUID / ACCESSIBLE'}
+                          {tr.frozen ? 'Immobilised or frozen' : 'Liquid and accessible'}
                         </span>
                       </td>
                     </tr>
@@ -3495,7 +3495,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       {pil.score}/100
                     </span>
                     <span className="text-xs text-slate-400">
-                      {pil.score < 45 ? 'FRAGILE' : pil.score < 65 ? 'WATCH' : 'RESILIENT'}
+                      {pil.score < 45 ? 'Fragile' : pil.score < 65 ? 'Watch' : 'Resilient'}
                     </span>
                   </div>
                   <div className="h-2 bg-slate-200 dark:bg-slate-800 overflow-hidden">
