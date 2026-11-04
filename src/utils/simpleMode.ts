@@ -10,7 +10,7 @@
  * - Portfolio: holdings import, book brief and summary (no desk tabs).
  * - Reports: the note builder with the brief-based templates.
  */
-import type { ReportTemplate, WorkflowArea } from '../data/roles';
+import type { ReportTemplate, WorkflowArea } from '../data/navigation';
 
 export const SHOW_ALL_TOOLS_KEY = 'econquest.showAllTools.v1';
 

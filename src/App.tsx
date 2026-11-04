@@ -86,9 +86,8 @@ import { PortfolioSummary } from './components/PortfolioSummary';
 import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
-import { RolePicker } from './components/RolePicker';
 import { PresentMode } from './components/PresentMode';
-import { getRole, loadRole, saveRole, USER_ROLES, type ReportTemplate, type UserRoleId, type WorkflowArea } from './data/roles';
+import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
 import { CORE_REPORTS, loadShowAllTools, saveShowAllTools, visibleNav, visibleReport } from './utils/simpleMode';
 import type { WorkspaceTab } from './components/WorkspacePage';
 
@@ -588,18 +587,12 @@ export default function App() {
     useState<ActivityPillarId | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
-  // Top-level area: the PM's Today page, or the analysis desks.
-  const [userRole, setUserRole] = useState<UserRoleId | null>(() => loadRole());
-  const [isRolePromptDismissed, setIsRolePromptDismissed] = useState<boolean>(false);
-  const role = getRole(userRole);
-  // Workspace is the default page for every role (Sam, 2026-11-04).
+  // Top-level area. The app always opens on Workspace; there are no roles (Sam, 2026-11-04).
   const [appArea, setAppArea] = useState<AppArea>('today');
-  const [countryTab, setCountryTab] = useState<CountryTabId>(
-    () => ((userRole && role.home.countryTab) as CountryTabId) || 'overview'
-  );
-  const [portfolioTab, setPortfolioTab] = useState<string>(() => (userRole && role.home.portfolioTab) || PORTFOLIO_TABS[0].id);
-  const [reportsTab, setReportsTab] = useState<string>(() => (userRole && role.home.reportsTab) || REPORTS_TABS[0].id);
-  // Report template asked for from a Country brief; otherwise the role's own template.
+  const [countryTab, setCountryTab] = useState<CountryTabId>(DEFAULT_COUNTRY_TAB_ID as CountryTabId);
+  const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
+  const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
+  // Report template asked for from a brief or Workspace; otherwise the council brief.
   const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
   // Bumped when Today sends a new council brief, so Reports rebuilds from it.
   const [reportNonce, setReportNonce] = useState(0);
@@ -612,9 +605,9 @@ export default function App() {
   // Core view by default: everything outside the core set is behind Menu > Show all tools.
   const [showAllTools, setShowAllTools] = useState<boolean>(() => loadShowAllTools());
   useEffect(() => saveShowAllTools(showAllTools), [showAllTools]);
-  const navAreas = visibleNav(role.nav, showAllTools);
+  const navAreas = visibleNav(NAV, showAllTools);
   useEffect(() => {
-    if (!showAllTools && appArea === 'desks') setAppArea(role.home.area === 'desks' ? 'today' : role.home.area);
+    if (!showAllTools && appArea === 'desks') setAppArea('today');
   }, [showAllTools, appArea]);
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
   const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
@@ -630,22 +623,6 @@ export default function App() {
     const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
     setActiveNavSection(desk as NavSectionId);
     setAppArea(area);
-    window.scrollTo({ top: 0 });
-  };
-  const applyRole = (id: UserRoleId) => {
-    const r = getRole(id);
-    saveRole(id);
-    setUserRole(id);
-    setRequestedReport(null);
-    setActivePersona(r.persona);
-    if (r.home.reportsTab) setReportsTab(r.home.reportsTab);
-    if (r.home.portfolioTab) setPortfolioTab(r.home.portfolioTab);
-    // The role picks which tab each page opens on; the app itself stays on Workspace.
-    if (r.home.countryTab) {
-      const tab = COUNTRY_TABS.find((t) => t.id === r.home.countryTab) || DEFAULT_COUNTRY_TAB;
-      setCountryTab(tab.id);
-    }
-    setAppArea(r.home.area);
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (deskId?: string) => {
@@ -673,9 +650,9 @@ export default function App() {
       window.scrollTo({ top: 0 });
       return;
     }
-    // No desk asked for: open on the role's own start tab (the Brief for economists and bankers).
-    const roleTab = userRole && role.home.area === 'country' ? COUNTRY_TABS.find((t) => t.id === role.home.countryTab) : undefined;
-    const tab = (deskId && findCountryTabForDesk(deskId)) || roleTab || DEFAULT_COUNTRY_TAB;
+    // No desk asked for: open on the Brief.
+    const briefTab = COUNTRY_TABS.find((t) => t.id === DEFAULT_COUNTRY_TAB_ID);
+    const tab = (deskId && findCountryTabForDesk(deskId)) || briefTab || DEFAULT_COUNTRY_TAB;
     setCountryTab(tab.id);
     if (tab.desks.length) setActiveNavSection((deskId && tab.desks.includes(deskId) ? deskId : tab.desks[0]) as NavSectionId);
     setAppArea('country');
@@ -2345,28 +2322,6 @@ export default function App() {
                 </div>
 
                 <div>
-                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-                    My role
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    {USER_ROLES.map((r) => (
-                      <button
-                        key={r.id}
-                        type="button"
-                        onClick={() => {
-                          applyRole(r.id);
-                          setIsHeaderMenuOpen(false);
-                        }}
-                        aria-pressed={userRole === r.id}
-                        className="ui-pill text-left"
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
                   <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Tools</div>
                   <button
                     type="button"
@@ -2812,9 +2767,6 @@ export default function App() {
               }}
             />
           )}
-          {!userRole && !isRolePromptDismissed && (
-            <RolePicker current={userRole} onPick={applyRole} onSkip={() => setIsRolePromptDismissed(true)} />
-          )}
 
           {appArea === 'today' && (
             <TodayPage
@@ -2874,7 +2826,7 @@ export default function App() {
               onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
-              briefView={userRole === 'BANKER' ? 'banker' : userRole === 'MULTILATERAL' ? 'official' : 'economist'}
+              briefView="economist"
               onWriteNote={(view) => {
                 setRequestedReport(view);
                 openWorkspace('reports', 'ic_memo_builder');
@@ -2939,12 +2891,11 @@ export default function App() {
                 appArea === 'portfolio' ? (
                   <div className="space-y-4">
                   <BookBriefPanel
-                    key={userRole === 'UHNW' ? 'client' : 'pm'}
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
                     watchlist={activeWatchlistItems}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
-                    view={userRole === 'UHNW' ? 'client' : 'pm'}
+                    view="pm"
                     onWriteReport={(view) => {
                       setRequestedReport(view === 'client' ? 'client_review' : 'book');
                       openWorkspace('reports', 'ic_memo_builder');
@@ -2967,13 +2918,13 @@ export default function App() {
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
                   <IcMemoBuilder
-                    key={`${d}-${requestedReport || role.report}-${reportNonce}`}
+                    key={`${d}-${requestedReport || DEFAULT_REPORT}-${reportNonce}`}
                     run={run}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
                     peers={activeWatchlistItems}
-                    defaultAudience={visibleReport(requestedReport || role.report, showAllTools)}
+                    defaultAudience={visibleReport(requestedReport || DEFAULT_REPORT, showAllTools)}
                     audiences={showAllTools ? undefined : CORE_REPORTS}
                   />
                 ) : (
