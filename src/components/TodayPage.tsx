@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowDownRight, ArrowUpRight, CalendarClock, ChevronRight, Radar, Ticket } from 'lucide-react';
+import { CalendarClock, ExternalLink, Radar, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import {
   buildMorningAlphaAndCatalystRadar,
@@ -7,13 +7,14 @@ import {
 } from '../utils/nssYieldCurveAndCatalystEngine';
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { rankDivergences } from '../utils/divergences';
-import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
-import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
+import { formatAsOf } from '../utils/dataStatus';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
+import { ColumnPicker, ColumnsButton, WatchlistTable } from './WatchlistTable';
+import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView } from '../utils/watchlistView';
 
 /**
  * Today: the institutional PM's morning view.
@@ -57,43 +58,6 @@ function saveVisit(items: WatchlistItem[]) {
   }
 }
 
-const ALERT_CLASS: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
-  ELEVATED: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
-  STABLE: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-};
-
-const ALERT_LABEL: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'High',
-  ELEVATED: 'Elevated',
-  STABLE: 'Stable',
-};
-
-const Delta: React.FC<{ value: number | null; unit: string; digits?: number; higherIsWorse?: boolean }> = ({
-  value,
-  unit,
-  digits = 0,
-  higherIsWorse = true,
-}) => {
-  if (value === null || Math.abs(value) < Math.pow(10, -digits) / 2) {
-    return <span className="text-slate-400 dark:text-slate-500">–</span>;
-  }
-  const worse = higherIsWorse ? value > 0 : value < 0;
-  const Icon = value > 0 ? ArrowUpRight : ArrowDownRight;
-  return (
-    <span
-      className={`inline-flex items-center gap-0.5 ${
-        worse ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
-      }`}
-    >
-      <Icon className="w-3 h-3" />
-      {value > 0 ? '+' : ''}
-      {value.toFixed(digits)}
-      {unit}
-    </span>
-  );
-};
-
 const Card: React.FC<{
   title: string;
   icon: React.ReactNode;
@@ -122,6 +86,8 @@ const Card: React.FC<{
 export const TodayPage: React.FC<{
   run: CouncilAssessmentRun;
   watchlistName: string;
+  /** The list shown, so the pop-out opens on the same one. */
+  watchlistId?: string;
   watchlistItems: WatchlistItem[];
   stagedTickets: StagedTradeTicketSpec[];
   onOpenCountry: (item: WatchlistItem, sectionId?: string) => void;
@@ -137,6 +103,7 @@ export const TodayPage: React.FC<{
 }> = ({
   run,
   watchlistName,
+  watchlistId,
   watchlistItems,
   stagedTickets,
   onOpenCountry,
@@ -156,10 +123,25 @@ export const TodayPage: React.FC<{
     return () => window.clearTimeout(t);
   }, [watchlistItems]);
 
-  const rows = useMemo(
-    () => [...watchlistItems].sort((a, b) => b.compositeRisk - a.compositeRisk),
-    [watchlistItems]
-  );
+  // Columns and sort, shared with the pop-out window through this browser's storage.
+  const [view, setView] = useState<WatchlistView>(() => loadView());
+  const [showColumns, setShowColumns] = useState(false);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === WATCHLIST_VIEW_KEY) setView(loadView());
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+  const changeView = (v: WatchlistView) => {
+    setView(v);
+    saveView(v);
+  };
+  const popOut = () => {
+    // The pop-out starts on the list shown here.
+    changeView({ ...view, watchlistId });
+    window.open(POP_OUT_URL, 'econquest-watchlist', 'popup,width=1100,height=720');
+  };
 
   const radar = useMemo(
     () => buildMorningAlphaAndCatalystRadar(run, watchlistItems),
@@ -227,165 +209,43 @@ export const TodayPage: React.FC<{
         icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
         note={
           lastVisit
-            ? `Change since your last visit (${formatAsOf(lastVisit.savedAt)}). Sorted by composite risk.`
-            : 'Sorted by composite risk. Changes since your last visit will show from your next visit.'
+            ? `Change since your last visit (${formatAsOf(lastVisit.savedAt)}). Click a heading to sort.`
+            : 'Click a heading to sort. Changes since your last visit will show from your next visit.'
         }
         action={
-          <button
-            type="button"
-            onClick={onOpenWatchlistManager}
-            className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-          >
-            Edit watchlist
-          </button>
+          <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1">
+            <ColumnsButton open={showColumns} onClick={() => setShowColumns((o) => !o)} />
+            <button
+              type="button"
+              onClick={popOut}
+              title="Open the watchlist in its own window, e.g. for a second screen"
+              className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Pop out
+            </button>
+            <button
+              type="button"
+              onClick={onOpenWatchlistManager}
+              className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
+            >
+              Edit watchlist
+            </button>
+          </div>
         }
       >
-        {/* Phones: one tappable card per country instead of a squeezed table. */}
-        <ul className="sm:hidden -mx-4 divide-y divide-slate-100 dark:divide-slate-800 [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true">
-          {rows.map((it) => {
-            const prev = lastVisit?.rows[it.iso3];
-            return (
-              <li key={it.iso3}>
-                <button
-                  type="button"
-                  onClick={() => onOpenCountry(it)}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
-                    it.iso3 === run.iso3 ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="font-medium text-sm text-slate-900 dark:text-white">{it.countryName}</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400">
-                          {it.iso3} · {it.currencyCode} · {DATA_MODE_LABEL[it.dataMode || 'sample']}
-                        </div>
-                      </div>
-                      <span className={`shrink-0 whitespace-nowrap px-1.5 py-0.5 text-xs font-medium border ${ALERT_CLASS[it.alertStatus]}`}>
-                        {ALERT_LABEL[it.alertStatus]} · {it.compositeRisk.toFixed(2)}
-                      </span>
-                    </div>
-                    <dl className="mt-1.5 grid grid-cols-2 gap-x-3 text-sm">
-                      <div>
-                        <dt className="text-xs text-slate-500 dark:text-slate-400">5Y CDS</dt>
-                        <dd className="font-medium text-slate-900 dark:text-white">
-                          {Math.round(it.cds5YBps)} bps
-                          {prev && (
-                            <span className="ml-1 text-xs font-normal">
-                              <Delta value={it.cds5YBps - prev.cds5YBps} unit="" />
-                            </span>
-                          )}
-                          <div className={`text-xs font-normal ${it.cds5YSource === 'own' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                            {cdsSourceNote(it)}
-                          </div>
-                        </dd>
-                      </div>
-                      <div title={yieldSourceHelp(it)}>
-                        <dt className="text-xs text-slate-500 dark:text-slate-400">10Y yield</dt>
-                        <dd className="font-medium text-slate-900 dark:text-white">{it.yield10YPct.toFixed(2)}%</dd>
-                        <dd
-                          className={`text-xs ${
-                            it.yield10YSource === 'official'
-                              ? 'text-emerald-700 dark:text-emerald-400'
-                              : 'text-slate-500 dark:text-slate-400'
-                          }`}
-                        >
-                          {yieldSourceNote(it)}
-                        </dd>
-                      </div>
-                    </dl>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" aria-hidden="true" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <div className="hidden sm:block overflow-x-auto -mx-4 px-4">
-          <table className="w-full text-sm [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true">
-            <thead>
-              <tr className="text-left text-xs text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                <th className="py-2 pr-3 font-medium">Country</th>
-                <th className="py-2 pr-3 font-medium">Risk</th>
-                <th className="py-2 pr-3 font-medium text-right">5Y CDS (bps)</th>
-                <th className="hidden md:table-cell py-2 pr-3 font-medium text-right">Change</th>
-                <th className="py-2 pr-3 font-medium text-right">10Y yield</th>
-                <th className="hidden md:table-cell py-2 pr-3 font-medium text-right">Change</th>
-                <th className="hidden md:table-cell py-2 pr-3 font-medium text-right">Debt/GDP</th>
-                <th className="hidden md:table-cell py-2 pr-3 font-medium text-right">Reserves (mo)</th>
-                <th className="hidden md:table-cell py-2 pr-3 font-medium">Data</th>
-                <th className="py-2" />
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((it) => {
-                const prev = lastVisit?.rows[it.iso3];
-                const isActive = it.iso3 === run.iso3;
-                return (
-                  <tr
-                    key={it.iso3}
-                    onClick={() => onOpenCountry(it)}
-                    className={`border-b border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${
-                      isActive ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''
-                    }`}
-                  >
-                    <td className="py-2 pr-3">
-                      <div className="font-medium text-slate-900 dark:text-white">{it.countryName}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {it.iso3} · {it.currencyCode}
-                      </div>
-                    </td>
-                    <td className="py-2 pr-3">
-                      <span className={`inline-block px-1.5 py-0.5 text-xs font-medium border ${ALERT_CLASS[it.alertStatus]}`}>
-                        {ALERT_LABEL[it.alertStatus]} · {it.compositeRisk.toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-3 text-right">
-                      <div className="font-medium">{Math.round(it.cds5YBps)}</div>
-                      <div className={`text-xs whitespace-nowrap ${it.cds5YSource === 'own' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
-                        {cdsSourceNote(it)}
-                      </div>
-                    </td>
-                    <td className="hidden md:table-cell py-2 pr-3 text-right text-xs">
-                      <Delta value={prev ? it.cds5YBps - prev.cds5YBps : null} unit="" />
-                    </td>
-                    <td className="py-2 pr-3 text-right" title={yieldSourceHelp(it)}>
-                      <div className="font-medium">{it.yield10YPct.toFixed(2)}%</div>
-                      <div
-                        className={`text-xs whitespace-nowrap ${
-                          it.yield10YSource === 'official'
-                            ? 'text-emerald-700 dark:text-emerald-400'
-                            : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        {yieldSourceNote(it)}
-                      </div>
-                    </td>
-                    <td className="hidden md:table-cell py-2 pr-3 text-right text-xs">
-                      {/* A change is only shown when both figures come from the same kind of source. */}
-                      <Delta
-                        value={
-                          prev && (prev.yieldSource || 'sample') === (it.yield10YSource || 'sample')
-                            ? (it.yield10YPct - prev.yield10YPct) * 100
-                            : null
-                        }
-                        unit=" bp"
-                      />
-                    </td>
-                    <td className="hidden md:table-cell py-2 pr-3 text-right">{it.debtToGdpPct.toFixed(1)}%</td>
-                    <td className="hidden md:table-cell py-2 pr-3 text-right">{it.fxReservesMonths.toFixed(1)}</td>
-                    <td className="hidden md:table-cell py-2 pr-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {DATA_MODE_LABEL[it.dataMode || 'sample']}
-                    </td>
-                    <td className="py-2 text-right">
-                      <ChevronRight className="w-4 h-4 text-slate-400 inline" />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        {showColumns && (
+          <div className="mb-3">
+            <ColumnPicker view={view} onChange={changeView} onClose={() => setShowColumns(false)} />
+          </div>
+        )}
+        <WatchlistTable
+          items={watchlistItems}
+          view={view}
+          onChangeView={changeView}
+          lastLook={lastVisit?.rows}
+          highlightIso3={run.iso3}
+          onOpen={(it) => onOpenCountry(it)}
+        />
       </Card>
 
       <DivergenceList
