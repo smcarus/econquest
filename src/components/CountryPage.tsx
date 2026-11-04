@@ -5,7 +5,7 @@ import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
 import { DataStatusBadge } from './DataStatusBadge';
 import { ExecutiveBriefScorecard } from './ExecutiveBriefScorecard';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
-import { formatPeriod } from '../utils/officialYields';
+import { describeOfficialYield } from '../utils/officialYields';
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
@@ -193,11 +193,11 @@ export const CountryPage: React.FC<{
             <Figure label="Debt / GDP" value={`${open.imfIndicators.debtToGdpPct.toFixed(1)}%`} />
             <Figure label="5Y CDS" value={`${Math.round(mkt.cds5YSpreadBps)} bps`} />
             <Figure
-              label={open.official10YYield ? `10Y yield, ${formatPeriod(open.official10YYield.period)} avg` : '10Y yield'}
+              label={open.official10YYield ? `10Y yield, ${describeOfficialYield(open.official10YYield).when}` : '10Y yield'}
               value={`${mkt.sovereign10YBondYieldPct.toFixed(2)}%`}
               title={
                 open.official10YYield
-                  ? `Official monthly average from ${open.official10YYield.source} (${open.official10YYield.seriesId}).`
+                  ? `Official figure: ${describeOfficialYield(open.official10YYield).long}.`
                   : 'No official free source for this country; AI estimate or sample value.'
               }
             />

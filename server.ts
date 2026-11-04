@@ -61,6 +61,9 @@ import {
   fredCsvUrl,
   parseFredApiLatest,
   parseFredCsvLatest,
+  parseTesouroDiretoLatest,
+  TESOURO_DIRETO_CSV_URL,
+  TESOURO_YIELD_SOURCE_LABEL,
   type OfficialYieldObservation,
 } from './src/utils/officialYields.ts';
 
@@ -95,7 +98,26 @@ async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response
  * Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable.
  * Uses the official FRED API when FRED_API_KEY is set, and falls back to the no-key CSV download.
  */
+/**
+ * Brazil: the Treasury's Tesouro Direto CSV holds the whole history (several MB), so the parsed
+ * result is kept for 6 hours rather than downloaded on every snapshot.
+ */
+let tesouroCache: { at: number; obs: OfficialYieldObservation | null } | null = null;
+async function fetchTesouroDiretoYield(): Promise<OfficialYieldObservation | null> {
+  if (tesouroCache && Date.now() - tesouroCache.at < 6 * 60 * 60 * 1000) return tesouroCache.obs;
+  try {
+    const res = await fetchWithTimeout(TESOURO_DIRETO_CSV_URL, 20000);
+    if (!res.ok) return null;
+    const obs = parseTesouroDiretoLatest(await res.text());
+    tesouroCache = { at: Date.now(), obs };
+    return obs;
+  } catch {
+    return null;
+  }
+}
+
 async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObservation | null> {
+  if (iso3 === 'BRA') return fetchTesouroDiretoYield();
   const seriesId = FRED_10Y_SERIES[iso3];
   if (!seriesId) return null;
   const apiKey = (process.env.FRED_API_KEY || '').trim();
@@ -707,13 +729,13 @@ async function fetchLiveOpenDataSnapshotNetwork(
     })(),
   ]);
 
-  // 6b. Official 10Y yield (OECD via FRED). A published monthly average beats an AI estimate,
-  // so it replaces the Gemini figure when both exist; the month is kept so the UI can show it.
+  // 6b. Official 10Y yield (OECD via FRED, or Brazil's Treasury). A published figure beats an AI
+  // estimate, so it replaces the Gemini figure when both exist; the date is kept for the labels.
   const officialYield = await fetchOfficial10YYield(normalizedIso);
   if (officialYield) {
     baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct;
     baseline.official10YYield = officialYield;
-    activeSources.push(OFFICIAL_YIELD_SOURCE_LABEL);
+    activeSources.push(officialYield.frequency === 'daily' ? TESOURO_YIELD_SOURCE_LABEL : OFFICIAL_YIELD_SOURCE_LABEL);
   }
 
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
