@@ -12,6 +12,7 @@ import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchl
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
+import { AskCouncilPanel } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 
 /**
@@ -127,6 +128,8 @@ export const TodayPage: React.FC<{
   onStageTicket: (ticket: StagedTradeTicketSpec) => void;
   onOpenTickets: () => void;
   onOpenWatchlistManager: () => void;
+  /** Opens Reports on the council brief just saved. */
+  onSendCouncilToReports?: () => void;
   /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
   coreOnly?: boolean;
 }> = ({
@@ -138,6 +141,7 @@ export const TodayPage: React.FC<{
   onStageTicket,
   onOpenTickets,
   onOpenWatchlistManager,
+  onSendCouncilToReports,
   coreOnly = false,
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
@@ -207,6 +211,12 @@ export const TodayPage: React.FC<{
             : `Live data for ${liveCount} of ${watchlistItems.length} countries`}
         </p>
       </div>
+
+      <AskCouncilPanel
+        items={edgeItems}
+        onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+        onSendToReports={() => onSendCouncilToReports?.()}
+      />
 
       <Card
         title="Watchlist"

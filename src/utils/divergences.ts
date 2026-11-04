@@ -60,11 +60,11 @@ function make(d: Omit<Divergence, 'score'>): Divergence {
   return { ...d, size: Number(d.size.toFixed(3)), score: Number((d.size * QUALITY_WEIGHT[d.quality]).toFixed(3)) };
 }
 
-const cpiTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const cpiTag = (it: WatchlistItem): { q: Quality; src: string } =>
   it.cpiSource === 'live' ? { q: 'live', src: 'IMF, live' } : { q: 'sample', src: 'sample' };
-const policyTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const policyTag = (it: WatchlistItem): { q: Quality; src: string } =>
   it.policyRateSource === 'ai_estimate' ? { q: 'estimate', src: 'AI estimate' } : { q: 'sample', src: 'sample' };
-const yieldTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const yieldTag = (it: WatchlistItem): { q: Quality; src: string } =>
   it.yield10YSource === 'official' && it.yield10YPeriod
     ? { q: 'live', src: `official, ${formatPeriod(it.yield10YPeriod)}` }
     : it.yield10YSource === 'ai_estimate'
@@ -72,7 +72,7 @@ const yieldTag = (it: WatchlistItem): { q: Quality; src: string } =>
       : it.yield10YSource === 'uploaded'
         ? { q: 'live', src: 'your upload' }
         : { q: 'sample', src: 'sample' };
-const cdsTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const cdsTag = (it: WatchlistItem): { q: Quality; src: string } =>
   it.cds5YSource === 'own'
     ? { q: 'live', src: `your ${it.cds5YProvider || 'data'}${it.cds5YDate ? `, ${formatPeriod(it.cds5YDate)}` : ''}` }
     : it.cds5YSource === 'ai_estimate'
