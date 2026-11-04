@@ -2130,7 +2130,7 @@ export default function App() {
                   aria-pressed={appArea === 'today'}
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  Today
+                  Workspace
                 </button>
               ),
               country: (
@@ -2189,7 +2189,7 @@ export default function App() {
                     <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
                       <div className="ui-panel shadow-2xl p-3">
                         <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
-                          The full desk library. Today, Countries, Portfolio and Reports group these desks by task.
+                          The full desk library. Workspace, Countries, Portfolio and Reports group these desks by task.
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           {ACTIVITY_PILLARS.map((pillar) => (
@@ -2681,7 +2681,7 @@ export default function App() {
                   aria-pressed={appArea === 'today'}
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  Today
+                  Workspace
                 </button>
               ),
               country: (

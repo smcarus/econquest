@@ -196,7 +196,7 @@ export const TodayPage: React.FC<{
     <div className="space-y-4" data-no-stat-ref="true">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Today</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Workspace</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {today} · {watchlistName} · {watchlistItems.length} countries
           </p>
