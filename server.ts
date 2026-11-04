@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -135,8 +136,8 @@ async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObserva
 }
 
 /**
- * Government external debt falling due (QEDS quarterly schedule, IDS yearly projections), both from
- * the World Bank API with no key. These change quarterly at most, so answers are kept for 12 hours
+ * Government external debt falling due (QEDS quarterly schedule, IDS yearly projections) from the
+ * World Bank API, and government debt securities outstanding from the BIS API, all with no key. These change quarterly at most, so answers are kept for 12 hours
  * and misses for an hour. Each source is tried on its own; either can be missing.
  */
 const debtScheduleCache = new Map<string, { at: number; value: DebtSchedule | null }>();
@@ -149,14 +150,34 @@ async function fetchJsonWithTimeout(url: string, ms = 8000): Promise<unknown | n
     return null;
   }
 }
+async function fetchTextWithTimeout(url: string, ms = 8000): Promise<string | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
+    if (!res.ok) return null;
+    return await res.text();
+  } catch {
+    return null;
+  }
+}
 async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
   const hit = debtScheduleCache.get(iso3);
   if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const [qedsJson, idsJson] = await Promise.all([fetchJsonWithTimeout(qedsUrl(iso3)), fetchJsonWithTimeout(idsUrl(iso3))]);
+  const iso2 = BIS_ISO2[iso3];
+  const [qedsJson, idsJson, bisIntlCsv, bisAllCsv] = await Promise.all([
+    fetchJsonWithTimeout(qedsUrl(iso3)),
+    fetchJsonWithTimeout(idsUrl(iso3)),
+    iso2 ? fetchTextWithTimeout(bisIntlUrl(iso2)) : Promise.resolve(null),
+    iso2 ? fetchTextWithTimeout(bisAllMarketsUrl(iso2)) : Promise.resolve(null),
+  ]);
   const qeds = qedsJson ? parseQeds(qedsJson) : null;
   const ids = idsJson ? parseIds(idsJson, new Date().getUTCFullYear()) : null;
+  const intl = bisIntlCsv ? parseBisIntl(bisIntlCsv) : null;
+  const all = bisAllCsv ? parseBisAllMarkets(bisAllCsv) : null;
+  const bis = intl || all ? { ...(intl ? { intl } : {}), ...(all ? { all } : {}) } : null;
   const value: DebtSchedule | null =
-    qeds || ids ? { ...(qeds ? { qeds } : {}), ...(ids ? { ids } : {}), fetchedAt: new Date().toISOString() } : null;
+    qeds || ids || bis
+      ? { ...(qeds ? { qeds } : {}), ...(ids ? { ids } : {}), ...(bis ? { bis } : {}), fetchedAt: new Date().toISOString() }
+      : null;
   debtScheduleCache.set(iso3, { at: Date.now(), value });
   return value;
 }
@@ -826,6 +847,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
     baseline.debtSchedule = debtSchedule;
     if (debtSchedule.qeds) activeSources.push(`${QEDS_LABEL} (government external debt due by quarter)`);
     if (debtSchedule.ids) activeSources.push(`${IDS_LABEL} (public external debt service by year)`);
+    if (debtSchedule.bis) activeSources.push(`${BIS_LABEL} (government debt securities outstanding)`);
   }
 
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors

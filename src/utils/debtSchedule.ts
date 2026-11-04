@@ -48,6 +48,8 @@ export interface DebtSchedule {
   ids?: {
     years: Array<{ year: number; principalUsdBn?: number; debtServiceUsdBn?: number }>;
   };
+  /** Government debt securities outstanding (BIS): international markets and all markets. */
+  bis?: import('./bisDebtSecurities').BisDebtSecurities;
   fetchedAt: string;
 }
 

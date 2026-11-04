@@ -82,6 +82,11 @@ test('Indonesia: QEDS and IDS debt falling due are attached and named as live so
   assert.deepEqual(s.debtSchedule?.ids?.years.map((y) => y.year), [2027, 2028]);
   const live = s.dataStatus?.verifiedLiveSources || [];
   assert.ok(live.some((x) => /QEDS/.test(x)) && live.some((x) => /IDS/.test(x)));
+  // BIS: international bonds and all-markets debt securities.
+  assert.equal(s.debtSchedule?.bis?.intl?.outstandingUsdBn.toFixed(3), '88.044');
+  assert.equal(s.debtSchedule?.bis?.intl?.dueWithin1yUsdBn?.toFixed(3), '3.615');
+  assert.equal(s.debtSchedule?.bis?.all?.valuation, 'nominal');
+  assert.ok(live.some((x) => /BIS debt securities/.test(x)));
   // These feeds alone do not make the IMF or World Bank indicator feeds count as live.
   const st = getSnapshotDataStatus(s);
   assert.equal(st.isFeedLive('worldbank'), false);
