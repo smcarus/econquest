@@ -54,6 +54,13 @@ import {
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
+import {
+  FRED_10Y_SERIES,
+  OFFICIAL_YIELD_SOURCE_LABEL,
+  fredCsvUrl,
+  parseFredCsvLatest,
+  type OfficialYieldObservation,
+} from './src/utils/officialYields.ts';
 
 dotenv.config();
 
@@ -79,6 +86,19 @@ async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response
     });
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/** Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable. */
+async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObservation | null> {
+  const seriesId = FRED_10Y_SERIES[iso3];
+  if (!seriesId) return null;
+  try {
+    const res = await fetchWithTimeout(fredCsvUrl(seriesId), 6000);
+    if (!res.ok) return null;
+    return parseFredCsvLatest(await res.text(), seriesId);
+  } catch {
+    return null;
   }
 }
 
@@ -669,6 +689,15 @@ async function fetchLiveOpenDataSnapshotNetwork(
       }
     })(),
   ]);
+
+  // 6b. Official 10Y yield (OECD via FRED). A published monthly average beats an AI estimate,
+  // so it replaces the Gemini figure when both exist; the month is kept so the UI can show it.
+  const officialYield = await fetchOfficial10YYield(normalizedIso);
+  if (officialYield) {
+    baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct;
+    baseline.official10YYield = officialYield;
+    activeSources.push(OFFICIAL_YIELD_SOURCE_LABEL);
+  }
 
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
   await applyGuiMacroConnectorsToSnapshot(baseline, normalizedIso, activeSources);
