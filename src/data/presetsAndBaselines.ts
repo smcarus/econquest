@@ -1206,8 +1206,12 @@ export function buildOfficialCatalystCalendar(
         ? 'CENTRAL_BANK_MPC'
         : ev.category === 'INFLATION_REPORT'
         ? 'CENTRAL_BANK_REPORT'
+        : ev.category === 'IMF_PROGRAMME' || ev.category === 'BUDGET'
+        ? 'IMF_FISCAL_REVIEW'
+        : ev.category === 'ELECTION'
+        ? 'GEOPOLITICAL_DEADLINE'
         : 'DATA_RELEASE',
-    title: ev.title,
+    title: ev.dateKind === 'legal_deadline' ? `${ev.title} (latest date in law)` : ev.title,
     consensusExpectation:
       ev.category === 'MPC_DECISION'
         ? `Policy rate now ${policyRatePct.toFixed(2)}% (no consensus feed)`

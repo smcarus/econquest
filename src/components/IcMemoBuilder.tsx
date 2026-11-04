@@ -269,7 +269,7 @@ export function buildSections(
       id: 'calendar',
       heading: SECTION_LABEL.calendar,
       lines: events.length
-        ? events.map((e) => `- ${e.date}: ${e.title} (source: ${e.sourceName})`)
+        ? events.map((e) => `- ${e.date}: ${e.title}${e.dateKind === 'legal_deadline' ? ' (latest date in law)' : ''} (source: ${e.sourceName})`)
         : [`No official dates on file for ${run.countryName} in the next 90 days.`],
     });
   }
@@ -370,7 +370,7 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
       id: 'calendar',
       heading: L.calendar,
       lines: events.length
-        ? events.slice(0, 5).map((e) => `- ${e.date}: ${e.title}`)
+        ? events.slice(0, 5).map((e) => `- ${e.date}: ${e.title}${e.dateKind === 'legal_deadline' ? ' (latest date in law)' : ''}`)
         : [`No scheduled official dates for ${run.countryName} in the next three months.`],
     });
   }

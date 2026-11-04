@@ -13,7 +13,10 @@
  *   - CPI release calendars: only Mexico's INPC dates were found (secondary source).
  */
 
-export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'INFLATION_REPORT';
+export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'INFLATION_REPORT' | 'ELECTION' | 'BUDGET' | 'IMF_PROGRAMME';
+
+/** Elections, budgets and IMF programme dates: the political and fiscal calendar. */
+export const POLITICAL_FISCAL_CATEGORIES: OfficialEventCategory[] = ['ELECTION', 'BUDGET', 'IMF_PROGRAMME'];
 
 export interface OfficialCalendarEvent {
   iso3: string;
@@ -26,6 +29,11 @@ export interface OfficialCalendarEvent {
   /** True when the date comes from the issuing institution's own page or document. */
   primarySource: boolean;
   retrieved: string;
+  /**
+   * How firm the date is. Missing = a fixed, announced date. 'legal_deadline' = the latest date
+   * the law allows (the event can come earlier).
+   */
+  dateKind?: 'legal_deadline';
 }
 
 const RETRIEVED = '2026-11-04';
@@ -74,7 +82,7 @@ const BOE_SRC = {
 
 type Row = [iso3: string, category: OfficialEventCategory, title: string, date: string];
 
-function rows(src: Omit<OfficialCalendarEvent, 'iso3' | 'category' | 'title' | 'date' | 'retrieved'>, list: Row[]) {
+function rows(src: Omit<OfficialCalendarEvent, 'iso3' | 'category' | 'title' | 'date' | 'retrieved'>, list: Row[]): OfficialCalendarEvent[] {
   return list.map(([iso3, category, title, date]) => ({ iso3, category, title, date, ...src, retrieved: RETRIEVED }));
 }
 
@@ -86,7 +94,43 @@ const BI = 'Bank Indonesia BI-Rate decision (Board of Governors meeting, day 2)'
 const BOJ = 'BoJ Monetary Policy Meeting decision';
 const BOE = 'BoE MPC Bank Rate decision';
 
+/*
+ * Elections, budgets and IMF programmes. Checked 2026-11-04. Budget rows are the deadline the
+ * constitution sets for sending next year's budget to parliament, so they are "no later than"
+ * dates. Brazil's deadline (ADCT art. 35) is not listed: its source page could not be read.
+ */
+const PF = (sourceName: string, sourceUrl: string, primarySource: boolean, dateKind?: 'legal_deadline') => ({
+  sourceName,
+  sourceUrl,
+  primarySource,
+  ...(dateKind ? { dateKind } : {}),
+});
+const POLITICAL_FISCAL: OfficialCalendarEvent[] = [
+  ...rows(PF('Government Gazette, via SAnews', 'https://www.sanews.gov.za/south-africa/minister-gazettes-date-local-government-elections', true), [
+    ['ZAF', 'ELECTION', 'Local government elections', '2026-11-04'],
+  ]),
+  ...rows(PF('The National, 29 Oct 2026 (final review targeted for mid-December)', 'https://www.thenationalnews.com/news/us/2026/10/29/imf-sets-december-target-to-clear-egypts-last-programme-review/', false), [
+    ['EGY', 'IMF_PROGRAMME', 'IMF EFF arrangement ends; final review due before', '2026-12-15'],
+  ]),
+  ...rows(PF('Constitution of Egypt, Art. 124 (90 days before the 1 July fiscal year)', 'https://ictpolicyafrica.org/en/document/m48snpc5dgn?page=34', true, 'legal_deadline'), [
+    ['EGY', 'BUDGET', 'FY2027/28 budget due in parliament', '2027-04-02'],
+  ]),
+  ...rows(PF('Constitution of Mexico, Art. 74 IV (by 8 September)', 'https://leyes-mx.com/constitucion/74.htm', true, 'legal_deadline'), [
+    ['MEX', 'BUDGET', '2028 budget package (Paquete Económico) due in Congress', '2027-09-08'],
+  ]),
+  ...rows(PF('Constitution of Poland, Art. 222 (3 months before the fiscal year)', 'https://www.senat.gov.pl/en/about-the-senate/konstytucja/chapter-x/', true, 'legal_deadline'), [
+    ['POL', 'BUDGET', 'Draft 2028 budget due in the Sejm', '2027-09-30'],
+  ]),
+  ...rows(PF('Constitution of Chile, Art. 67 (3 months before the fiscal year)', 'https://iura.cl/cpr/67', true, 'legal_deadline'), [
+    ['CHL', 'BUDGET', '2028 budget bill due in Congress', '2027-09-30'],
+  ]),
+  ...rows(PF('Constitution of Turkey (75 days before the fiscal year)', 'https://constitution.org/1-Constitution/cons/turkey/part4.htm', true, 'legal_deadline'), [
+    ['TUR', 'BUDGET', '2028 budget bill due in the Grand National Assembly', '2027-10-18'],
+  ]),
+];
+
 export const OFFICIAL_CALENDAR: OfficialCalendarEvent[] = [
+  ...POLITICAL_FISCAL,
   ...rows(BCB_SRC, [
     ['BRA', 'MPC_DECISION', COPOM, '2026-11-04'],
     ['BRA', 'MPC_DECISION', COPOM, '2026-12-09'],
@@ -190,6 +234,12 @@ export function upcomingOfficialEvents(
     .sort((a, b) => a.daysUntil - b.daysUntil || a.iso3.localeCompare(b.iso3));
 }
 
+/** True when central bank or statistics dates are on file (elections and budgets don't count). */
 export function hasOfficialSchedule(iso3: string): boolean {
-  return OFFICIAL_CALENDAR.some((e) => e.iso3 === iso3);
+  return OFFICIAL_CALENDAR.some((e) => e.iso3 === iso3 && !POLITICAL_FISCAL_CATEGORIES.includes(e.category));
+}
+
+/** Short label for how firm a date is, for display next to it. */
+export function dateKindLabel(e: Pick<OfficialCalendarEvent, 'dateKind'>): string | undefined {
+  return e.dateKind === 'legal_deadline' ? 'latest date in law' : undefined;
 }

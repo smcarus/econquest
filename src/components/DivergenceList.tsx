@@ -58,7 +58,7 @@ export const DivergenceList: React.FC<{
                     <p className="text-sm text-slate-600 dark:text-slate-300">{c.top.soWhat}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {[
-                        c.catalyst ? `Next: ${c.catalyst.title}, ${formatPeriod(c.catalyst.date)} (${c.catalyst.daysUntil === 0 ? 'today' : c.catalyst.daysUntil === 1 ? 'tomorrow' : `in ${c.catalyst.daysUntil} days`})` : 'No official date in the next 60 days',
+                        c.catalyst ? `Next: ${c.catalyst.title}, ${c.catalyst.legalDeadline ? 'by ' : ''}${formatPeriod(c.catalyst.date)} (${c.catalyst.daysUntil === 0 ? 'today' : c.catalyst.daysUntil === 1 ? 'tomorrow' : `in ${c.catalyst.daysUntil} days`})` : 'No official date in the next 60 days',
                         c.change,
                         c.others.length ? `Also: ${c.others.map((o) => o.label).join(', ')}` : undefined,
                       ]

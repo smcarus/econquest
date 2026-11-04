@@ -5,7 +5,8 @@ import {
   buildMorningAlphaAndCatalystRadar,
   StagedTradeTicketSpec,
 } from '../utils/nssYieldCurveAndCatalystEngine';
-import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
+import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
+import { rankDivergences } from '../utils/divergences';
 import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
 import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
@@ -158,6 +159,14 @@ export const TodayPage: React.FC<{
   );
   const watchIsos = useMemo(() => watchlistItems.map((w) => w.iso3), [watchlistItems]);
   const upcoming = useMemo(() => upcomingOfficialEvents(watchIsos, 14), [watchIsos]);
+  const flaggedIsos = useMemo(() => new Set(rankDivergences(edgeItems, lastVisit?.rows).map((r) => r.iso3)), [edgeItems, lastVisit]);
+  const politicalFiscal = useMemo(
+    () =>
+      upcomingOfficialEvents(watchIsos, 365)
+        .filter((e) => POLITICAL_FISCAL_CATEGORIES.includes(e.category))
+        .sort((a, b) => Number(flaggedIsos.has(b.iso3)) - Number(flaggedIsos.has(a.iso3)) || a.daysUntil - b.daysUntil),
+    [watchIsos, flaggedIsos]
+  );
   const noSchedule = useMemo(
     () => watchlistItems.filter((w) => !hasOfficialSchedule(w.iso3)),
     [watchlistItems]
@@ -430,7 +439,7 @@ export const TodayPage: React.FC<{
         <Card
           title="Next two weeks"
           icon={<CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-          note="Official central bank and statistics schedules. Each row links to its source."
+          note="Official central bank, statistics and election dates. Each row links to its source."
         >
           {upcoming.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -477,6 +486,52 @@ export const TodayPage: React.FC<{
               No official schedule on file for {noSchedule.map((w) => w.countryName).join(', ')}.
             </p>
           )}
+          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800" data-political-fiscal="true">
+            <h4 className="text-sm font-medium text-slate-900 dark:text-white">Elections, budgets and IMF, next 12 months</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Countries on the ranked list above come first. Budget dates are the latest the constitution allows.
+            </p>
+            {politicalFiscal.length === 0 ? (
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">None on file for this watchlist.</p>
+            ) : (
+              <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
+                {politicalFiscal.map((ev) => (
+                  <li key={`pf-${ev.iso3}-${ev.date}-${ev.title}`} data-pf-event={ev.iso3} className="py-2 flex items-start justify-between gap-3">
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => openIso(ev.iso3)}
+                        className="text-left text-sm text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
+                      </button>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">On the ranked list · </span>}
+                        <a
+                          href={ev.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                          title={ev.primarySource ? 'Official source' : 'Secondary source'}
+                        >
+                          {ev.sourceName}
+                        </a>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0 text-xs">
+                      <div className="font-medium text-slate-900 dark:text-white">
+                        {ev.dateKind === 'legal_deadline' ? 'By ' : ''}
+                        {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </div>
+                      <div className="text-slate-500 dark:text-slate-400">
+                        {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
         </Card>
       </div>
 

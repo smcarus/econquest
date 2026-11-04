@@ -306,7 +306,10 @@ export const CountryPage: React.FC<{
                   {events.slice(0, 6).map((ev) => (
                     <li key={`${ev.date}-${ev.title}`} className="py-2 flex items-start justify-between gap-3">
                       <div>
-                        <div className="text-sm text-slate-900 dark:text-white">{ev.title}</div>
+                        <div className="text-sm text-slate-900 dark:text-white">
+                          {ev.title}
+                          {ev.dateKind === 'legal_deadline' && <span className="text-xs text-slate-500 dark:text-slate-400"> · latest date in law</span>}
+                        </div>
                         <a
                           href={ev.sourceUrl}
                           target="_blank"
