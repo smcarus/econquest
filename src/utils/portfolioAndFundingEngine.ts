@@ -31,8 +31,11 @@ export function computeEmbiPortfolioAndPairBook(
     shortIso3: string;
     instrumentType: '5Y_USD_CDS' | '10Y_USD_EUROBOND' | '5Y_LOCAL_LCY_BOND';
     longWeightPct?: number;
-  }
+  },
+  /** % weights per ISO3 from the user's imported holdings; replaces the model's active tilts. */
+  holdingsWeightsPct?: Record<string, number>
 ): EmbiPortfolioAndPairBookResult {
+  const useHoldings = !!holdingsWeightsPct && Object.keys(holdingsWeightsPct).length > 0;
   const activeCode = activeSnapshot.iso3.toUpperCase();
 
   // Build universe directly from live watchlistItems + SOVEREIGN_CATALOG (ensuring active sovereign is included)
@@ -45,7 +48,15 @@ export function computeEmbiPortfolioAndPairBook(
     }
   });
 
-  const universeItems = Array.from(mergedMap.values()).slice(0, 8);
+  let universeItems = Array.from(mergedMap.values()).slice(0, 8);
+  if (useHoldings) {
+    // Held countries first, so none of them drop out of the 8-name universe.
+    const held = Object.keys(holdingsWeightsPct!)
+      .map((iso) => mergedMap.get(iso) || SOVEREIGN_CATALOG.find((c) => c.iso3 === iso))
+      .filter((x): x is WatchlistItem => !!x);
+    const rest = Array.from(mergedMap.values()).filter((x) => !held.some((h) => h.iso3 === x.iso3));
+    universeItems = [...held, ...rest].slice(0, Math.max(8, held.length));
+  }
   if (!universeItems.some((u) => u.iso3.toUpperCase() === activeCode)) {
     universeItems[0] = {
       iso3: activeCode,
@@ -110,7 +121,9 @@ export function computeEmbiPortfolioAndPairBook(
         ? activeTiltOverridesBps[item.iso3]
         : defaultTiltBps;
 
-    const rawActiveWeight = Math.max(1.0, embiBenchmarkWeightPct + requestedTiltBps / 100);
+    const rawActiveWeight = useHoldings
+      ? holdingsWeightsPct![item.iso3] || 0
+      : Math.max(1.0, embiBenchmarkWeightPct + requestedTiltBps / 100);
     return {
       item,
       snap,

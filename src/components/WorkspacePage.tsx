@@ -18,7 +18,7 @@ export const PORTFOLIO_TABS: WorkspaceTab[] = [
   {
     id: 'book',
     label: 'Book',
-    hint: 'Pair trades and risk sensitivities. These two desks still use their own model book, not your imported holdings.',
+    hint: 'Pair trades and risk sensitivities. The EMBI book uses your imported holdings as its weights, and the blotter can add your positions in the current country.',
     desks: ['embi_portfolio_pair_book', 'quant_trade_blotter'],
   },
   {

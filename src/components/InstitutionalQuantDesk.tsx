@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { holdingGreeks, ASSET_CLASS_LABEL, type Holding } from '../utils/holdings';
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -81,6 +82,8 @@ interface InstitutionalQuantDeskProps {
   onStageTradeTicket?: (ticket: StagedTradeTicketSpec) => void;
   /** % weights per ISO3 from imported holdings; enables the "Your holdings" book weighting. */
   holdingsWeightsPct?: Record<string, number>;
+  /** Imported holdings, so the blotter can load the user's positions in this country. */
+  holdings?: Holding[];
 }
 
 export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
@@ -91,6 +94,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
   onSelectSubTab,
   onStageTradeTicket,
   holdingsWeightsPct,
+  holdings = [],
 }) => {
   const [internalTab, setInternalTab] = useState<QuantSubWorkspaceId>('quant_cds_basis');
   const currentTab = activeSubTab ?? internalTab;
@@ -213,6 +217,54 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
     setNewTicketName('');
     setShowNewTicketForm(false);
   };
+
+  const countryHoldings = holdings.filter((h) => h.iso3 === run.iso3);
+  const handleLoadHoldingsIntoBlotter = () => {
+    const tickets: InstitutionalTradeTicket[] = countryHoldings.map((h) => {
+      const g = holdingGreeks(h);
+      return {
+        ticketId: `HOLD_${h.id}`,
+        strategyName: `Holding: ${h.instrument}`,
+        structureCategory:
+          h.assetClass === 'CDS' ? 'CREDIT_CURVE' : h.assetClass === 'FX' ? 'FX_MACRO_HEDGE' : h.assetClass === 'LC_BOND' ? 'RATES_CURVE' : 'CUSTOM_TICKET',
+        direction: g.cs01 > 0 || (g.cs01 === 0 && g.dv01 > 0) ? 'SHORT_RISK' : 'LONG_RISK',
+        leg1Description: `${ASSET_CLASS_LABEL[h.assetClass]}, ${h.side === 'LONG' ? 'long' : 'short'} $${h.notionalUsdMm}mm`,
+        leg2Description: h.durationYears
+          ? `Duration ${h.durationYears.toFixed(1)}y`
+          : 'No duration given: rate and credit sensitivity not computed',
+        notionalUsdMillions: h.notionalUsdMm,
+        entryLevelLabel: 'Imported holding',
+        targetLevelLabel: '–',
+        stopLossLevelLabel: '–',
+        modifiedDurationYears: h.durationYears || 0,
+        dv01UsdPerBp: Math.round(g.dv01),
+        slopeDv01UsdPerBp: 0,
+        cs01UsdPerBp: Math.round(g.cs01),
+        basis01UsdPerBp: 0,
+        fxDeltaUsdPer1Pct: Math.round(g.fxDeltaPer1Pct),
+        convexity: 0,
+        carry90DBps: 0,
+        rollDown90DBps: 0,
+        total90DCushionBps: 0,
+        expectedCarryRoll90DUsdThousands: 0,
+        annualizedVolBps: 45,
+        carryToVolRatio: 0,
+        breakevenWideningBps: 0,
+        stressedPnlBreakdown: {
+          ratesPnlUsdK: 0,
+          creditSpreadPnlUsdK: 0,
+          basisPnlUsdK: 0,
+          fxPnlUsdK: 0,
+          carryRollPnlUsdK: 0,
+          convexityPnlUsdK: 0,
+          netStressedPnlUsdK: 0,
+        },
+        isCustom: true,
+      };
+    });
+    setCustomTickets((prev) => [...prev.filter((t) => !t.ticketId.startsWith('HOLD_')), ...tickets]);
+  };
+  const holdingsLoaded = customTickets.some((t) => t.ticketId.startsWith('HOLD_'));
 
   const handleExportBlotterCsv = () => {
     const headers = [
@@ -1797,6 +1849,19 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Custom Ticket</span>
               </button>
+              {countryHoldings.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleLoadHoldingsIntoBlotter}
+                  className="ui-btn"
+                  title="Add your imported positions in this country to the blotter (carry is not modelled for them)"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>
+                    {holdingsLoaded ? 'Reload' : 'Add'} my {run.countryName} holdings ({countryHoldings.length})
+                  </span>
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleExportBlotterCsv}

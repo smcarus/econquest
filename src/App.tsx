@@ -1944,6 +1944,7 @@ export default function App() {
                 sec === 'quant_portfolio_stress_lab') && (
                 <InstitutionalQuantDesk
                   holdingsWeightsPct={holdingsStressWeights}
+                  holdings={holdings}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   isDark={darkMode}
@@ -1961,6 +1962,7 @@ export default function App() {
                 sec === 'dmo_treasury_auction_sim' ||
                 sec === 'mpc_imf_document_ai') && (
                 <PortfolioAndFundingDesk
+                  holdingsWeightsPct={holdingsStressWeights}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   runtimeConfig={runtimeConfig}
@@ -2926,11 +2928,13 @@ export default function App() {
                 />
                 <InstitutionalQuantDesk
                   holdingsWeightsPct={holdingsStressWeights}
+                  holdings={holdings}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   isDark={darkMode}
                 />
                 <PortfolioAndFundingDesk
+                  holdingsWeightsPct={holdingsStressWeights}
                   run={run}
                   watchlistItems={activeWatchlistItems}
                   runtimeConfig={runtimeConfig}

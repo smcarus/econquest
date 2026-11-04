@@ -60,6 +60,8 @@ interface PortfolioAndFundingDeskProps {
     docTitle: string,
     docText: string
   ) => void;
+  /** % weights per ISO3 from imported holdings; when set, they are the book's active weights. */
+  holdingsWeightsPct?: Record<string, number>;
 }
 
 export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = ({
@@ -71,7 +73,9 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
   onSelectSubTab,
   onSelectSovereign,
   onApplyCalibratedDocumentShock,
+  holdingsWeightsPct,
 }) => {
+  const usingHoldings = !!holdingsWeightsPct && Object.keys(holdingsWeightsPct).length > 0;
   const [internalSubTab, setInternalSubTab] =
     useState<PortfolioFundingSubTabId>('embi_portfolio_pair_book');
   const activeTab = controlledSubTab || internalSubTab;
@@ -113,7 +117,8 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
           shortIso3: pairShortIso,
           instrumentType: pairInstrument,
           longWeightPct: pairLongWeightPct,
-        }
+        },
+        holdingsWeightsPct
       ),
     [
       run.openData,
@@ -123,6 +128,7 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
       pairShortIso,
       pairInstrument,
       pairLongWeightPct,
+      holdingsWeightsPct,
     ]
   );
 
@@ -284,6 +290,11 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
       ========================================================================== */}
       {activeTab === 'embi_portfolio_pair_book' && (
         <div className="p-5 space-y-6">
+          {usingHoldings && (
+            <p className="ui-badge ui-badge-accent">
+              Active weights are your imported holdings (by gross notional). The tilt sliders have no effect while holdings are loaded.
+            </p>
+          )}
           {/* Top Headline Banner */}
           <div className="p-3.5 bg-slate-50 dark:bg-slate-950 border-l-4 border-blue-600 text-xs text-slate-700 dark:text-slate-300 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>

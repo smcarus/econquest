@@ -360,3 +360,29 @@ export function holdingsToContagionBook(
   }
   return { positions, navUsdMm: Math.max(1, Math.round(gross)), skipped };
 }
+
+/**
+ * First-order sensitivities of one holding, in USD per 1 bp (rates, credit) and USD per
+ * 1% local-currency depreciation (FX). Sign convention: P&L when the factor rises.
+ * Without a duration, rate and credit sensitivities are zero (and the caller says so).
+ */
+export function holdingGreeks(h: Holding): { dv01: number; cs01: number; fxDeltaPer1Pct: number } {
+  const n = h.notionalUsdMm;
+  const d = h.durationYears || 0;
+  const pv01 = n * d * 100; // USD per bp for n USD mm at duration d
+  const s = h.side === 'LONG' ? 1 : -1;
+  switch (h.assetClass) {
+    case 'HC_BOND':
+      return { dv01: -s * pv01, cs01: -s * pv01, fxDeltaPer1Pct: 0 };
+    case 'LC_BOND':
+      return { dv01: -s * pv01, cs01: 0, fxDeltaPer1Pct: -s * n * 10000 };
+    case 'CDS':
+      // Long = bought protection: gains when spreads widen.
+      return { dv01: 0, cs01: s * pv01, fxDeltaPer1Pct: 0 };
+    case 'FX':
+      // Long = long the local currency: loses when it depreciates.
+      return { dv01: 0, cs01: 0, fxDeltaPer1Pct: -s * n * 10000 };
+    default:
+      return { dv01: 0, cs01: 0, fxDeltaPer1Pct: 0 };
+  }
+}
