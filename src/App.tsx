@@ -28,6 +28,9 @@ import {
 import {
   DEFAULT_WATCHLISTS,
   SOVEREIGN_CATALOG,
+  addNewDefaultWatchlists,
+  loadSeenDefaultWatchlists,
+  saveSeenDefaultWatchlists,
   buildAnnotatedChartsForSovereign,
   buildDefaultAssessmentRun,
   recomputeDerivedOpenDataAnalytics,
@@ -687,19 +690,26 @@ export default function App() {
 
   // Persistent Custom Watchlists
   const [watchlists, setWatchlists] = useState<WatchlistGroup[]>(() => {
+    let saved: WatchlistGroup[] | null = null;
     if (savedSessionOnBoot?.watchlists && savedSessionOnBoot.watchlists.length > 0) {
-      return savedSessionOnBoot.watchlists;
-    }
-    try {
-      const saved = localStorage.getItem(WATCHLIST_STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      saved = savedSessionOnBoot.watchlists;
+    } else {
+      try {
+        const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (Array.isArray(parsed) && parsed.length > 0) saved = parsed;
+      } catch {
+        // Fallback to defaults
       }
-    } catch {
-      // Fallback to defaults
     }
-    return DEFAULT_WATCHLISTS;
+    if (!saved) {
+      saveSeenDefaultWatchlists(DEFAULT_WATCHLISTS.map((g) => g.id));
+      return DEFAULT_WATCHLISTS;
+    }
+    // Groups added in a later release (e.g. official 10Y yields) appear once for existing users.
+    const { groups, seen } = addNewDefaultWatchlists(saved, loadSeenDefaultWatchlists());
+    saveSeenDefaultWatchlists(seen);
+    return groups;
   });
 
   const [activeWatchlistId, setActiveWatchlistId] = useState<string>(

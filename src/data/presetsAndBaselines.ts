@@ -221,7 +221,42 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     fxReservesMonths: 3.1,
     alertStatus: 'STABLE',
   },
+  {
+    iso3: 'POL',
+    countryName: 'Poland',
+    region: 'CEE / Europe',
+    currencyCode: 'PLN',
+    focusTheme: 'Defence Spending and the EU Deficit Procedure, NBP Easing Path & Frontline Geopolitical Premium',
+    geopoliticalRisk: 0.47,
+    sovereignRisk: 0.41,
+    macroRisk: 0.43,
+    compositeRisk: 0.44,
+    yield10YPct: 5.45,
+    cds5YBps: 72,
+    debtToGdpPct: 58.2,
+    fxReservesMonths: 7.4,
+    alertStatus: 'STABLE',
+  },
+  {
+    iso3: 'CHL',
+    countryName: 'Chile',
+    region: 'Latin America',
+    currencyCode: 'CLP',
+    focusTheme: 'Fiscal Rule Credibility, Copper Terms-of-Trade & BCCh Easing Room',
+    geopoliticalRisk: 0.22,
+    sovereignRisk: 0.34,
+    macroRisk: 0.39,
+    compositeRisk: 0.32,
+    yield10YPct: 5.6,
+    cds5YBps: 64,
+    debtToGdpPct: 42.1,
+    fxReservesMonths: 5.8,
+    alertStatus: 'STABLE',
+  },
 ];
+
+/** ISO-3 codes that have a free official 10Y yield feed (FRED, Brazil Treasury). Turkey needs a key. */
+const OFFICIAL_YIELD_GROUP_ISO3 = ['BRA', 'MEX', 'ZAF', 'POL', 'CHL', 'GBR', 'JPN'];
 
 export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
   {
@@ -261,7 +296,52 @@ export const DEFAULT_WATCHLISTS: WatchlistGroup[] = [
       SOVEREIGN_CATALOG[5], // IDN
     ],
   },
+  {
+    id: 'wl_official_yields',
+    name: 'Official 10Y Yields',
+    description: 'Countries whose 10-year government bond yield comes from a free official source (FRED or the Brazil Treasury), not a sample figure.',
+    isCustom: false,
+    items: OFFICIAL_YIELD_GROUP_ISO3.map((iso3) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)!),
+  },
 ];
+
+const SEEN_DEFAULTS_KEY = 'econquest.watchlistDefaults.seen.v1';
+
+/**
+ * Add default watchlist groups that shipped after the user's watchlists were saved.
+ * A group is offered once: if the user deletes it, `seenIds` remembers it and it stays gone.
+ * Groups the user already has are never touched.
+ */
+export function addNewDefaultWatchlists(
+  saved: WatchlistGroup[],
+  seenIds: string[] | null,
+  defaults: WatchlistGroup[] = DEFAULT_WATCHLISTS
+): { groups: WatchlistGroup[]; seen: string[] } {
+  const have = new Set(saved.map((g) => g.id));
+  // First run of this check: treat the groups that existed before it as already seen.
+  const seen = new Set(seenIds ?? ['wl_em_sovereign_core', 'wl_chokepoint_geopol', 'wl_g10_em_spillover']);
+  const added = defaults.filter((g) => !have.has(g.id) && !seen.has(g.id));
+  defaults.forEach((g) => seen.add(g.id));
+  return { groups: [...saved, ...added], seen: [...seen] };
+}
+
+export function loadSeenDefaultWatchlists(): string[] | null {
+  try {
+    const raw = window.localStorage.getItem(SEEN_DEFAULTS_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return Array.isArray(parsed) ? parsed.filter((x) => typeof x === 'string') : null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveSeenDefaultWatchlists(ids: string[]): void {
+  try {
+    window.localStorage.setItem(SEEN_DEFAULTS_KEY, JSON.stringify(ids));
+  } catch {
+    /* storage blocked */
+  }
+}
 
 export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
   const item = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3) || SOVEREIGN_CATALOG[0];
