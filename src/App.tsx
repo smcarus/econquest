@@ -90,7 +90,10 @@ import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { PresentMode } from './components/PresentMode';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
-import { CORE_REPORTS, loadShowAllTools, saveShowAllTools, visibleNav, visibleReport } from './utils/simpleMode';
+import { CORE_REPORTS, visibleNav, visibleReport } from './utils/simpleMode';
+
+/** Off: the desks behind the old "Show all tools" switch run only on built-in figures. */
+const SHOW_BUILT_IN_DESKS = false;
 import type { WorkspaceTab } from './components/WorkspacePage';
 
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
@@ -604,8 +607,9 @@ export default function App() {
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   // Core view by default: everything outside the core set is behind Menu > Show all tools.
-  const [showAllTools, setShowAllTools] = useState<boolean>(() => loadShowAllTools());
-  useEffect(() => saveShowAllTools(showAllTools), [showAllTools]);
+  // The old desks all compute from built-in figures, so they are hidden until each runs on live
+  // inputs (Sam, 2026-11-04: no built-in figures). Their code stays; flip this to bring them back.
+  const showAllTools = SHOW_BUILT_IN_DESKS;
   const navAreas = visibleNav(NAV, showAllTools);
   useEffect(() => {
     if (!showAllTools && appArea === 'desks') setAppArea('today');
@@ -2363,30 +2367,9 @@ export default function App() {
 
                 <div>
                   <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Tools</div>
-                  <button
-                    type="button"
-                    role="menuitemcheckbox"
-                    aria-checked={showAllTools}
-                    onClick={() => setShowAllTools((v) => !v)}
-                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
-                    data-show-all-tools="true"
-                  >
-                    <span>
-                      <span className="block text-slate-800 dark:text-slate-100">Show all tools</span>
-                      <span className="block text-slate-500 dark:text-slate-400">
-                        {showAllTools ? 'All desks, tabs and reports are shown.' : 'Off: the core view only. Nothing is removed.'}
-                      </span>
-                    </span>
-                    <span
-                      className={`shrink-0 px-1.5 py-0.5 font-semibold border ${
-                        showAllTools
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'
-                      }`}
-                    >
-                      {showAllTools ? 'On' : 'Off'}
-                    </span>
-                  </button>
+                  <p className="text-slate-500 dark:text-slate-400" data-show-all-tools="true">
+                    The older desks are hidden: they ran on built-in figures, not live data. Each comes back once it has a live source.
+                  </p>
                 </div>
 
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
