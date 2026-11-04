@@ -9,6 +9,7 @@ import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
 import { buildEconomistSections, ECONOMIST_SECTIONS } from '../utils/countryNotes';
 import { buildBankerSections, BANKER_SECTIONS } from '../utils/bankerNote';
+import { buildOfficialSections, OFFICIAL_SECTIONS } from '../utils/officialNote';
 
 /**
  * One builder for the investment committee memo. It pulls the current country view,
@@ -31,7 +32,7 @@ export interface IcMemoBuilderProps {
  * 'ic' = internal investment committee memo; 'client' = plain-language note for a private client;
  * 'economist' = country economic note (growth, policy, fiscal, external).
  */
-export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker';
+export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker' | 'official';
 
 export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; heading: string; file: string; help: string }> = {
   ic: { tab: 'Investment committee memo', title: 'IC memo', heading: 'Memo', file: 'ic-memo', help: 'Internal memo with trades, risk figures and kill switches.' },
@@ -49,6 +50,13 @@ export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; h
     heading: 'Issuer note',
     file: 'issuer-note',
     help: 'Banker’s note on the sovereign as an issuer: market access, financing need, execution window and pricing against peers.',
+  },
+  official: {
+    tab: 'Sustainability assessment',
+    title: 'debt sustainability assessment',
+    heading: 'Debt sustainability assessment',
+    file: 'dsa',
+    help: 'Official-sector assessment: debt path, five-year projection with standard shocks, fiscal adjustment, external position, and the method used.',
   },
 };
 
@@ -92,6 +100,7 @@ export function buildReportSections(
 ): Array<{ heading: string; lines: string[] }> {
   const on = (id: string) => include[id] !== false;
   if (audience === 'economist') return buildEconomistSections(p.run, on);
+  if (audience === 'official') return buildOfficialSections(p.run, on);
   if (audience === 'banker') return buildBankerSections(p.run, p.peers ?? p.riskLookup, on);
   const all = Object.fromEntries((Object.keys(SECTION_LABEL) as SectionId[]).map((id) => [id, on(id)])) as Record<SectionId, boolean>;
   return buildSections(p, all, ticketScope, audience);

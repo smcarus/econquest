@@ -3,8 +3,9 @@ import { FileText } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { economistBrief, type CountryBrief } from '../utils/countryNotes';
 import { bankerBrief } from '../utils/bankerNote';
+import { officialBrief } from '../utils/officialNote';
 
-export type BriefView = 'economist' | 'banker';
+export type BriefView = 'economist' | 'banker' | 'official';
 
 const VIEW_INFO: Record<BriefView, { label: string; title: string; note: string; cta: string }> = {
   economist: {
@@ -18,6 +19,12 @@ const VIEW_INFO: Record<BriefView, { label: string; title: string; note: string;
     title: 'Issuer brief',
     note: 'Market access, financing need, when to go to market, and pricing against peers.',
     cta: 'Write the issuer note',
+  },
+  official: {
+    label: 'Sustainability',
+    title: 'Debt sustainability brief',
+    note: 'Debt path, a five-year projection with standard shocks, the adjustment that would stabilise debt, and the external position.',
+    cta: 'Write the assessment',
   },
 };
 
@@ -34,7 +41,7 @@ export const CountryBriefPanel: React.FC<{
 }> = ({ run, peers, view: initialView, onWriteNote }) => {
   const [view, setView] = useState<BriefView>(initialView);
   const brief: CountryBrief = useMemo(
-    () => (view === 'banker' ? bankerBrief(run, peers) : economistBrief(run)),
+    () => (view === 'banker' ? bankerBrief(run, peers) : view === 'official' ? officialBrief(run) : economistBrief(run)),
     [run, peers, view]
   );
   const info = VIEW_INFO[view];
