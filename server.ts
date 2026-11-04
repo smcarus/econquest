@@ -2176,6 +2176,58 @@ async function executeResilientLlmStep<T>(options: {
   };
 }
 
+/* ------------------------------------------------------------------------------------------
+ * Council progress: the browser passes a progressId and polls /api/council/progress/:id, so
+ * the agent network on screen shows each step as it actually starts and finishes.
+ * ------------------------------------------------------------------------------------------ */
+type CouncilStepStatus = 'waiting' | 'running' | 'done' | 'fallback' | 'skipped' | 'failed';
+interface CouncilStepProgress {
+  status: CouncilStepStatus;
+  ms?: number;
+  note?: string;
+}
+const councilProgress = new Map<string, { steps: Record<string, CouncilStepProgress>; started: Record<string, number>; updatedAt: number }>();
+
+function progressTracker(id: unknown) {
+  const key = typeof id === 'string' && /^[\w-]{6,64}$/.test(id) ? id : null;
+  const now = Date.now();
+  for (const [k, v] of councilProgress) if (now - v.updatedAt > 10 * 60_000) councilProgress.delete(k);
+  if (key && !councilProgress.has(key)) councilProgress.set(key, { steps: {}, started: {}, updatedAt: now });
+  const entry = key ? councilProgress.get(key)! : null;
+  const set = (step: string, status: CouncilStepStatus, note?: string) => {
+    if (!entry) return;
+    if (status === 'running') entry.started[step] = Date.now();
+    const t0 = entry.started[step];
+    entry.steps[step] = { status, ...(t0 && status !== 'running' ? { ms: Date.now() - t0 } : {}), ...(note ? { note } : {}) };
+    entry.updatedAt = Date.now();
+  };
+  return {
+    start: (step: string) => set(step, 'running'),
+    /** Done with a model, or on the built-in figures when no model answered. */
+    finish: (step: string, usedFallback = false, note?: string) => {
+      if (entry?.steps[step]?.status === 'failed') return; // a failure already recorded stands
+      set(step, usedFallback ? 'fallback' : 'done', note ?? (usedFallback ? 'No model answered: built-in figures used' : undefined));
+    },
+    skip: (step: string, note: string) => set(step, 'skipped', note),
+    fail: (step: string, note: string) => set(step, 'failed', note),
+  };
+}
+
+/** Marks a step done (or on built-in figures) when its model call settles. */
+function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeof progressTracker>, step: string, p: Promise<T>): Promise<T> {
+  progress.start(step);
+  return p.then(
+    (v) => {
+      progress.finish(step, v.usedFallback);
+      return v;
+    },
+    (e) => {
+      progress.fail(step, 'The model call failed');
+      throw e;
+    }
+  );
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -2672,8 +2724,14 @@ async function startServer() {
   });
 
   // 3. Phase 1 (9 Sub-Agents + Devil's Advocate Debates + Minority Dissent) & Phase 2 (Cross-Desk Cascade)
+  app.get('/api/council/progress/:id', (req, res) => {
+    const entry = councilProgress.get(String(req.params.id));
+    res.json({ steps: entry?.steps || {} });
+  });
+
   app.post('/api/council/phase1-and-cascade', async (req, res) => {
     const pipelineStartMs = Date.now();
+    const progress = progressTracker(req.body?.progressId);
     try {
       const {
         iso3 = 'BRA',
@@ -2688,7 +2746,10 @@ async function startServer() {
 
       // Stage 0: Refresh live institutional & grounded market data first
       const stage0Start = Date.now();
+      progress.start('data');
       const liveSnapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
+      const liveCount = getSnapshotDataStatus(liveSnapshot).liveFeeds.length;
+      progress.finish('data', false, liveCount ? `${liveCount} live ${liveCount === 1 ? "source" : "sources"}` : 'No live source answered: sample figures');
       const stage0Latency = Date.now() - stage0Start;
 
       const baseRun: CouncilAssessmentRun = buildDefaultAssessmentRun(iso3, liveSnapshot);
@@ -2816,7 +2877,7 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
 
       // Stage 1: Execute 3 Parallel Desk Synthesis Workers + 1 Web Search Grounding Worker
       const [geoSettled, sovSettled, macroSettled, searchSettled] = await Promise.allSettled([
-        executeResilientLlmStep<any>({
+        tracked(progress, 'geo', executeResilientLlmStep<any>({
           stepName: 'STAGE_1_GEO_DESK',
           providerMode,
           runtimeConfig,
@@ -2843,8 +2904,8 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
             round1ChallengerCounter: baseRun.deskDebates.geopolitical.rounds[0]?.counterThesis,
             round1Resolution: baseRun.deskDebates.geopolitical.rounds[0]?.deskLeadResolution,
           },
-        }),
-        executeResilientLlmStep<any>({
+        })),
+        tracked(progress, 'sov', executeResilientLlmStep<any>({
           stepName: 'STAGE_1_SOV_DESK',
           providerMode,
           runtimeConfig,
@@ -2874,8 +2935,8 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
             minorityEarlyWarningTrigger: baseRun.deskDebates.sovereign.minorityDissents[0]?.earlyWarningTrigger,
             minorityFalsificationThreshold: baseRun.deskDebates.sovereign.minorityDissents[0]?.falsificationThreshold,
           },
-        }),
-        executeResilientLlmStep<any>({
+        })),
+        tracked(progress, 'macro', executeResilientLlmStep<any>({
           stepName: 'STAGE_1_MACRO_DESK',
           providerMode,
           runtimeConfig,
@@ -2902,9 +2963,13 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
             round1ChallengerCounter: baseRun.deskDebates.macro.rounds[0]?.counterThesis,
             round1Resolution: baseRun.deskDebates.macro.rounds[0]?.deskLeadResolution,
           },
-        }),
+        })),
         (async () => {
-          if (!enableSearch || !process.env.GEMINI_API_KEY) return [];
+          if (!enableSearch || !process.env.GEMINI_API_KEY) {
+            progress.skip('search', !enableSearch ? 'Web search is turned off' : 'Needs a Gemini key');
+            return [];
+          }
+          progress.start('search');
           try {
             const searchResp = await ai.models.generateContent({
               model: 'gemini-3.8-flash',
@@ -2924,6 +2989,7 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
                 sourceType: 'Google Search Grounding',
               }));
           } catch {
+            progress.fail('search', 'Web search did not answer');
             return [];
           }
         })(),
@@ -2936,6 +3002,9 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
         searchSettled.status === 'fulfilled' && Array.isArray(searchSettled.value)
           ? searchSettled.value
           : [];
+      if (enableSearch && process.env.GEMINI_API_KEY && searchSettled.status === 'fulfilled') {
+        progress.finish('search', false, `${searchGroundingLinks.length} source links`);
+      }
 
       // Helper to apply desk worker output to its 3 sub-agents and debate rounds
       const applyDeskWorkerToRun = (
@@ -3265,6 +3334,7 @@ Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG
       }
 
       // Stage 2: Dedicated Cross-Desk Contagion Cascade Pass (Geopolitical -> Macro -> Sovereign)
+      progress.start('cascade');
       const cascadeRes = await executeResilientLlmStep<any>({
         stepName: 'STAGE_2_CONTAGION_CASCADE',
         providerMode,
@@ -3512,6 +3582,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         stages,
       };
 
+      progress.finish('cascade', cascadeRes.usedFallback);
       // Pause at Human-in-the-Loop CRO Checkpoint before Supreme Council
       baseRun.stage = 'AWAITING_CRO_APPROVAL';
       latestRunsByIso3.set(baseRun.iso3, baseRun);
@@ -3579,7 +3650,8 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
       let baseOutput: SupremeCouncilOutput =
         targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
 
-      const supremeStep = await executeResilientLlmStep<any>({
+      const progress = progressTracker(req.body?.progressId);
+      const supremeStep = await tracked(progress, 'supreme', executeResilientLlmStep<any>({
         stepName: 'STAGE_3_SUPREME_COUNCIL',
         providerMode: runtimeConfig.providerMode || 'gemini',
         runtimeConfig,
@@ -3630,7 +3702,7 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
           factorCrowdingWarning:
             baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
         },
-      });
+      }));
 
       const parsed = supremeStep.data || {};
       const validVerdicts = ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'];

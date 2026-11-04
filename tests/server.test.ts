@@ -250,3 +250,22 @@ test('council synthesis: a model brief keeps traceable sentences and drops inven
   assert.deepEqual(body.brief.points, ['Inflation is 34.0%, from live IMF data.']);
   assert.deepEqual(body.removed, ['Inflation should fall to 21% next year.']);
 });
+
+test('council progress: each step reports as it finishes, honestly marked when no model answered', async () => {
+  const progressId = 'test-progress-1';
+  const run = await fetch(`${base}/api/council/phase1-and-cascade`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ iso3: 'ZAF', countryName: 'South Africa', progressId }),
+  });
+  assert.equal(run.status, 200);
+  const { steps } = await (await fetch(`${base}/api/council/progress/${progressId}`)).json();
+  assert.equal(steps.data.status, 'done');
+  for (const desk of ['geo', 'sov', 'macro', 'cascade']) {
+    assert.equal(steps[desk].status, 'fallback', desk); // no Gemini key in tests
+    assert.match(steps[desk].note, /No model answered/);
+  }
+  assert.equal(steps.search.status, 'skipped');
+  // An unknown id answers with no steps rather than an error.
+  assert.deepEqual((await (await fetch(`${base}/api/council/progress/nope-nope`)).json()).steps, {});
+});

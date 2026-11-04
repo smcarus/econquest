@@ -604,6 +604,8 @@ export default function App() {
   const [reportNonce, setReportNonce] = useState(0);
   // The run whose final council report was written in this session (not the built-in example).
   const [councilReportRunId, setCouncilReportRunId] = useState<string | null>(null);
+  // Ties the browser to one council run's step-by-step progress on the server (the agent network).
+  const [councilProgressId, setCouncilProgressId] = useState<string | null>(null);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   // Core view by default: everything outside the core set is behind Menu > Show all tools.
@@ -1574,6 +1576,8 @@ export default function App() {
 
   // Run Phase 1 (Sub-Agents + Devil's Advocate Debates) & Phase 2 (Cross-Desk Cascade), then pause at CRO Checkpoint
   const handleRunCouncilPhase1And2 = async () => {
+    const progressId = `run-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    setCouncilProgressId(progressId);
     setIsRunningPhase1And2(true);
     setStatusBanner({
       type: 'info',
@@ -1587,6 +1591,7 @@ export default function App() {
         body: JSON.stringify({
           iso3: run.iso3,
           countryName: run.countryName,
+          progressId,
           scenarioPrompt: scenarioInput,
           policyDocumentTitle: policyDocTitle,
           policyDocumentText: policyDocText,
@@ -1634,6 +1639,7 @@ export default function App() {
         body: JSON.stringify({
           run,
           croOverrideState: croDraft,
+          progressId: councilProgressId,
           runtimeConfig,
           geopoliticalWargameParams,
           liquidityStressParams,
@@ -2841,6 +2847,7 @@ export default function App() {
                   run.supremeCouncil && run.runId === councilReportRunId
                     ? { reportId: run.supremeCouncil.reportId, verdict: run.supremeCouncil.decisionVerdict, summary: run.supremeCouncil.executiveSummary }
                     : undefined,
+                progressId: councilProgressId,
                 onRun: handleRunCouncilPhase1And2,
                 onApprove: handleApproveAndConveneSupremeCouncil,
                 onChangeDraft: setCroDraft,

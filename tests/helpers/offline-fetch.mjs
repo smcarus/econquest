@@ -21,6 +21,7 @@ globalThis.fetch = async (input, init = {}) => {
 
   // A stand-in Ollama for the council synthesis test: one traceable sentence, one invented number.
   if (url.startsWith('http://fake-ollama.test:11434/api/chat')) {
+    await new Promise((r) => setTimeout(r, 900)); // long enough to see a step running
     const brief = {
       headline: 'Turkey looks behind the curve.',
       points: ['Inflation is 34.0%, from live IMF data.', 'Inflation should fall to 21% next year.'],
