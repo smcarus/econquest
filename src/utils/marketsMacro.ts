@@ -8,6 +8,7 @@ import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
 import { pct, pts, row, sampleWarning, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
+import { carryToVol, reerLabel } from './fxValuation';
 
 /**
  * Central bank inflation targets. "checked" = read on the central bank's own page on 2026-11-04.
@@ -144,6 +145,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
   const screen = peerScreen(peers, us?.valuePct);
   const self = peers.find((p) => p.iso3 === run.iso3);
   const rv = screen.fit && self ? cdsVsPeers(mkt.cds5YSpreadBps, self.compositeRisk, screen.fit) : undefined;
+  const cv = self?.fxVol3mPct !== undefined && self.usFedFundsPct !== undefined ? carryToVol(mkt.policyRatePct, self.usFedFundsPct, self.fxVol3mPct) : null;
   const model = (label: string, value: string, how = 'model, from figures above'): BriefRow => ({ label, value, source: how, verified: false });
 
   const j: string[] = [];
@@ -202,6 +204,17 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
             ...(status.isFeedLive('fx') ? { source: 'live FX feed', verified: true } : { source: 'sample', verified: false }),
           },
           row(status, '2s10s curve slope', `${Math.round(open.yieldCurve.slope2s10sBps)} bps`, 'sample'),
+          self?.reerGapPct !== undefined
+            ? {
+                label: 'Real exchange rate vs 10-year average',
+                value: `${self.reerGapPct >= 0 ? '+' : ''}${self.reerGapPct.toFixed(1)}% (${reerLabel(self.reerGapPct)})`,
+                source: `official, BIS${self.reerPeriod ? `, ${formatPeriod(self.reerPeriod)}` : ''}`,
+                verified: true,
+              }
+            : { label: 'Real exchange rate vs 10-year average', value: 'not available', source: 'BIS did not answer', verified: false },
+          self?.fxVol3mPct !== undefined
+            ? { label: 'FX volatility against USD, 3 months', value: pct(self.fxVol3mPct), source: 'ECB reference rates, live', verified: true }
+            : { label: 'FX volatility against USD, 3 months', value: 'not available', source: 'no ECB rate for this currency, or no answer', verified: false },
         ],
       },
       // The edge: readings by stated rules on the figures above, grouped by the desk role that owns them.
@@ -216,6 +229,9 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
       {
         title: `${EDGE_AGENTS.rv} Agent`,
         rows: [
+          ...(cv && self?.usFedFundsPct !== undefined
+            ? [model('Carry over US per unit of FX volatility', `${cv.ratio.toFixed(2)} (${cv.carryPts.toFixed(1)} pts over fed funds ${pct(self.usFedFundsPct, 2)})`, 'model: policy rate minus US fed funds, over 3-month volatility')]
+            : []),
           rv && screen.fit
             ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
             : model('5Y CDS against risk peers', 'needs 4 or more countries with a CDS figure', 'model'),

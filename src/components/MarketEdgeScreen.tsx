@@ -77,6 +77,9 @@ export const MarketEdgeScreen: React.FC<{
               </th>
               <th className="px-3 py-2 text-right font-normal">5Y CDS</th>
               <th className="hidden sm:table-cell px-3 py-2 text-right font-normal">Risk score</th>
+              <th className="hidden lg:table-cell px-3 py-2 text-right font-normal" title="BIS real broad effective exchange rate against its 10-year average">
+                Real FX vs 10y avg
+              </th>
               <th className="px-4 py-2 text-right font-normal">CDS vs peers</th>
             </tr>
           </thead>
@@ -108,6 +111,10 @@ export const MarketEdgeScreen: React.FC<{
                     <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{r.cdsNote}</div>
                   </td>
                   <td className="hidden sm:table-cell px-3 py-2 text-right tabular-nums">{r.risk.toFixed(2)}</td>
+                  <td className="hidden lg:table-cell px-3 py-2 text-right">
+                    <div className="tabular-nums">{item?.reerGapPct !== undefined ? `${item.reerGapPct >= 0 ? '+' : ''}${item.reerGapPct.toFixed(0)}%` : '–'}</div>
+                    {item?.reerPeriod && <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">BIS, {formatPeriod(item.reerPeriod)}</div>}
+                  </td>
                   <td className={`px-4 py-2 text-right whitespace-nowrap ${r.rv ? RV_CLASS[r.rv.label] : ''}`}>
                     {r.rv ? `${r.rv.gapPct >= 0 ? '+' : ''}${r.rv.gapPct.toFixed(0)}% ${r.rv.label}` : '–'}
                   </td>
@@ -116,7 +123,7 @@ export const MarketEdgeScreen: React.FC<{
             })}
             {bench.length > 0 && (
               <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                <td colSpan={6} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <td colSpan={7} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
                   Benchmarks, always shown. No risk score in the app yet, so they are not in the cheap or rich fit.
                 </td>
               </tr>
@@ -136,6 +143,7 @@ export const MarketEdgeScreen: React.FC<{
                   <div className="text-xs text-slate-500 dark:text-slate-400">{b.cdsNote}</div>
                 </td>
                 <td className="hidden sm:table-cell px-3 py-2 text-right">–</td>
+                <td className="hidden lg:table-cell px-3 py-2 text-right">–</td>
                 <td className="px-4 py-2 text-right text-slate-500 dark:text-slate-400">–</td>
               </tr>
             ))}

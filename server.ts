@@ -9,6 +9,7 @@ import {
   parseOwnCdsCsv,
   type OwnCdsQuote,
 } from './src/utils/ownCds';
+import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
@@ -323,6 +324,54 @@ async function fetchFredCached(seriesId: string): Promise<OfficialYieldObservati
 /** US 10Y (OECD monthly, via FRED): the benchmark for spreads over Treasuries in MarketEdge. */
 function fetchUs10YYield(): Promise<OfficialYieldObservation | null> {
   return fetchFredCached(US_10Y_SERIES);
+}
+
+/**
+ * FX valuation per currency (see src/utils/fxValuation.ts): BIS real exchange rate gap and
+ * three-month realised volatility against the dollar. Kept 12 hours (1 hour after a miss).
+ */
+type FxValuation = { reer: ReerGap | null; vol: FxVol | null };
+const fxValuationCache = new Map<string, { at: number; value: FxValuation; pending?: Promise<FxValuation> }>();
+async function fetchFxValuationUncached(iso3: string, ccy: string): Promise<FxValuation> {
+  const iso2 = BIS_ISO2[iso3];
+  const [reerText, volRes] = await Promise.all([
+    iso2 ? fetchTextWithTimeout(reerUrl(iso2), 8000) : Promise.resolve(null),
+    fetchWithTimeout(frankfurterSeriesUrl(ccy), 6000).catch(() => null),
+  ]);
+  let vol: FxVol | null = null;
+  try {
+    if (volRes?.ok) vol = parseFxVol(await volRes.json(), ccy);
+  } catch {
+    vol = null;
+  }
+  return { reer: parseReer(reerText), vol };
+}
+async function fetchFxValuation(iso3: string, ccy: string): Promise<FxValuation> {
+  const hit = fxValuationCache.get(iso3);
+  const fresh = hit && Date.now() - hit.at < (hit.value.reer || hit.value.vol ? 12 : 1) * 60 * 60 * 1000;
+  if (fresh) return hit!.value;
+  if (hit?.pending) return hit.pending;
+  const pending = fetchFxValuationUncached(iso3, ccy).then((value) => {
+    fxValuationCache.set(iso3, { at: Date.now(), value });
+    return value;
+  });
+  fxValuationCache.set(iso3, { at: hit?.at ?? 0, value: hit?.value ?? { reer: null, vol: null }, pending });
+  return pending;
+}
+
+/** US effective federal funds rate (NY Fed), the dollar leg of carry. 6h cache. */
+let effrCache: { at: number; value: { pct: number; date: string } | null } | null = null;
+async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
+  if (effrCache && Date.now() - effrCache.at < (effrCache.value ? 6 : 1) * 60 * 60 * 1000) return effrCache.value;
+  let value: { pct: number; date: string } | null = null;
+  try {
+    const res = await fetchWithTimeout('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json', 4000);
+    if (res.ok) value = parseEffr(await res.json());
+  } catch {
+    value = null;
+  }
+  effrCache = { at: Date.now(), value };
+  return value;
 }
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
@@ -1091,6 +1140,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
+  const effr = await fetchEffr();
   const items = await Promise.all(
     SOVEREIGN_CATALOG.map(async (catItem) => {
       try {
@@ -1114,8 +1164,16 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
                 new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
               ])
             : null;
+        // FX valuation: don't hold the watchlist for slow feeds; the fetch fills the cache for next time.
+        const fx = await Promise.race([
+          fetchFxValuation(catItem.iso3, catItem.currencyCode),
+          new Promise<FxValuation>((resolve) => setTimeout(() => resolve({ reer: null, vol: null }), 8000)),
+        ]);
         return {
           ...catItem,
+          ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
+          ...(fx.vol ? { fxVol3mPct: fx.vol.volPct, fxVolTo: fx.vol.to } : {}),
+          ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,
           macroRisk: mac,

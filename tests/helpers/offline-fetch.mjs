@@ -81,5 +81,26 @@ globalThis.fetch = async (input, init = {}) => {
       'FREQ,ADJUSTMENT,REF_AREA,COUNTERPART_AREA,REF_SECTOR,COUNTERPART_SECTOR,CONSOLIDATION,ACCOUNTING_ENTRY,STO,INSTR_ASSET,MATURITY,EXPENDITURE,UNIT_MEASURE,CURRENCY_DENOM,VALUATION,PRICES,TRANSFORMATION,CUST_BREAKDOWN,TITLE,UNIT_MULT,TIME_PERIOD,OBS_VALUE,OBS_STATUS';
     return new Response(`${head}\nQ,N,ID,XW,S13,S1,N,L,LE,F3,T,_Z,USD,_T,N,V,N,_T,"Indonesia - Debt sec, issued by gen govt",9,2026-Q1,507.4643714097,A\n`, { status: 200 });
   }
+  // BIS real effective exchange rates: South Africa only. 120 months at 100, latest month 85 (15% weak).
+  if (url.includes('stats.bis.org') && url.includes('/WS_EER/M.R.B.ZA/')) {
+    const head = 'FREQ,EER_TYPE,EER_BASKET,REF_AREA,UNIT_MEASURE,TIME_FORMAT,COLLECTION,TITLE_TS,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_CONF,OBS_PRE_BREAK';
+    const lines = [];
+    for (let i = 0; i < 120; i++) {
+      const y = 2016 + Math.floor((i + 9) / 12);
+      const m = ((i + 9) % 12) + 1;
+      lines.push(`M,R,B,ZA,882,,A,South Africa - Real - Broad (64 economies),${y}-${String(m).padStart(2, '0')},${i === 119 ? '85' : '100'},A,F,`);
+    }
+    return new Response([head, ...lines].join('\n'), { status: 200 });
+  }
+  // Frankfurter (ECB reference rates): USD/ZAR alternating 18.0 and 18.18 over 60 trading days.
+  if (url.includes('api.frankfurter.dev') && url.includes('to=ZAR')) {
+    const rates = {};
+    for (let i = 0; i < 60; i++) rates[`2026-${String(8 + Math.floor(i / 21)).padStart(2, '0')}-${String((i % 21) + 1).padStart(2, '0')}`] = { ZAR: i % 2 ? 18.18 : 18.0 };
+    return json({ amount: 1, base: 'USD', start_date: '2026-08-01', end_date: '2026-10-21', rates });
+  }
+  // NY Fed effective federal funds rate.
+  if (url.includes('markets.newyorkfed.org') && url.includes('/effr/')) {
+    return json({ refRates: [{ effectiveDate: '2026-11-03', type: 'EFFR', percentRate: 3.83 }] });
+  }
   throw new TypeError(`offline: ${new URL(url).host}`);
 };
