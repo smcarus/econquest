@@ -192,3 +192,77 @@ export function parseTesouroDiretoLatest(csv: string): OfficialYieldObservation 
     instrument: `NTN-F ${best.maturity.slice(0, 4)}, midpoint of buy and sell rates`,
   };
 }
+
+/* ------------------------------------------------------------------------------------------
+ * Turkey: the central bank's EVDS data service (free, needs a personal key).
+ * EVDS3 contract (checked 2026-11-04 against open-source clients that moved to it in late 2025):
+ * base https://evds3.tcmb.gov.tr/igmevdsms-dis/, parameters appended to the path (no "?"),
+ * dates DD-MM-YYYY, the key sent only in a "key" HTTP header, and a JSON reply of
+ * { items: [{ Tarih, TP_X_Y: "12.34" | null, ... }] } where dots in the series code become
+ * underscores. The bond series code is set by the user (EVDS_TR10Y_SERIES), because we could not
+ * confirm one from public pages; nothing is shown for Turkey until both settings are present
+ * and the service answers.
+ * ------------------------------------------------------------------------------------------ */
+
+export const EVDS_BASE_URL = 'https://evds3.tcmb.gov.tr/igmevdsms-dis/';
+export const EVDS_YIELD_SOURCE_LABEL = 'CBRT EVDS (Turkey) 10Y government bond yield';
+
+function ddmmyyyy(d: Date): string {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getUTCDate())}-${p(d.getUTCMonth() + 1)}-${d.getUTCFullYear()}`;
+}
+
+/** EVDS series codes are letters, digits, dots and underscores (e.g. TP.DK.USD.A.YTL). */
+export function isValidEvdsSeriesCode(code: string): boolean {
+  return /^TP\.[A-Z0-9_.]+$/i.test(code.trim());
+}
+
+/** Request URL for the last 90 days of a series. The key is NOT part of the URL. */
+export function evdsSeriesUrl(seriesCode: string, now = new Date()): string {
+  const start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  return `${EVDS_BASE_URL}series=${seriesCode.trim()}&startDate=${ddmmyyyy(start)}&endDate=${ddmmyyyy(now)}&type=json`;
+}
+
+/** "30-10-2026" -> "2026-10-30"; "2026-9" or "2026-09" -> "2026-09". Anything else -> null. */
+function evdsPeriod(tarih: string): { period: string; daily: boolean } | null {
+  const t = tarih.trim();
+  let m = t.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+  if (m) return { period: `${m[3]}-${m[2].padStart(2, '0')}-${m[1].padStart(2, '0')}`, daily: true };
+  m = t.match(/^(\d{4})-(\d{1,2})$/);
+  if (m) return { period: `${m[1]}-${m[2].padStart(2, '0')}`, daily: false };
+  return null;
+}
+
+/** Latest numeric observation of one series in an EVDS JSON reply, or null. */
+export function parseEvdsLatest(json: unknown, seriesCode: string): OfficialYieldObservation | null {
+  const items = (json as { items?: Array<Record<string, unknown>> })?.items;
+  if (!Array.isArray(items)) return null;
+  const column = seriesCode.trim().replace(/\./g, '_');
+  let best: { period: string; daily: boolean; value: number } | null = null;
+  for (const row of items) {
+    const raw = row?.[column];
+    if (raw === null || raw === undefined || String(raw).trim() === '') continue;
+    const value = Number(String(raw).replace(',', '.'));
+    if (!Number.isFinite(value)) continue;
+    const p = evdsPeriod(String(row.Tarih ?? ''));
+    if (!p) continue;
+    if (!best || p.period > best.period) best = { ...p, value };
+  }
+  if (!best) return null;
+  if (best.value <= -5 || best.value > 70) return null;
+  return {
+    valuePct: Number(best.value.toFixed(2)),
+    period: best.period,
+    source: 'Central Bank of Turkey, EVDS',
+    seriesId: seriesCode.trim(),
+    url: 'https://evds3.tcmb.gov.tr/',
+    frequency: best.daily ? 'daily' : 'monthly',
+  };
+}
+
+/** The data-source label recorded on a snapshot when this observation was used. */
+export function officialYieldFeedLabel(o: OfficialYieldObservation): string {
+  if (/EVDS/.test(o.source)) return EVDS_YIELD_SOURCE_LABEL;
+  if (/Brazil|Tesouro/.test(o.source)) return TESOURO_YIELD_SOURCE_LABEL;
+  return OFFICIAL_YIELD_SOURCE_LABEL;
+}

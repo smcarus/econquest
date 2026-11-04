@@ -27,7 +27,7 @@ const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   gdelt: /GDELT/i,
   treasury: /US Treasury/i,
   ai_market: /Gemini/i,
-  official_yield: /FRED|Tesouro Direto/i,
+  official_yield: /FRED|Tesouro Direto|CBRT EVDS/i,
 };
 
 export type SnapshotDataMode = 'live' | 'partial' | 'sample' | 'unverified';
