@@ -1,5 +1,10 @@
 import { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { buildDefaultAssessmentRun, SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
+import { nextOfficialEvent } from '../data/officialCalendar';
+
+// IMF review / rating / auction events have no official dated source yet, so they are
+// not shown. (They used to be placed on generated dates.)
+const UNSCHEDULED_REVIEW_EVENTS_ENABLED = false;
 
 // ============================================================================
 // 1. SHARED STAGED IC TRADE TICKET & TEAR-SHEET TYPES
@@ -467,6 +472,9 @@ export interface MacroCatalystEvent {
   eventTitle: string;
   daysUntilEvent: number;
   eventDateLabel: string;
+  /** Where the date comes from (official calendar row). */
+  sourceName?: string;
+  sourceUrl?: string;
   consensusEstimateLabel: string;
   econQuestModelForecastLabel: string;
   surpriseVectorLabel: string;
@@ -490,6 +498,41 @@ export interface MacroCatalystCalendarSuite {
   highestVolCatalyst: MacroCatalystEvent;
   nextImminentCatalyst: MacroCatalystEvent;
   headlineConclusion: string;
+}
+
+function emptyCatalystSuite(activeRun: CouncilAssessmentRun): MacroCatalystCalendarSuite {
+  const none: MacroCatalystEvent = {
+    eventId: 'EVT-NONE',
+    iso3: activeRun.iso3,
+    countryName: activeRun.countryName,
+    currencyCode: activeRun.openData.currencyCode,
+    category: 'MPC_DECISION',
+    categoryBadge: 'NO DATE ON FILE',
+    eventTitle: 'No official scheduled event on file for this watchlist',
+    daysUntilEvent: 0,
+    eventDateLabel: '',
+    consensusEstimateLabel: '–',
+    econQuestModelForecastLabel: '–',
+    surpriseVectorLabel: '–',
+    surpriseDirection: 'NEUTRAL_ANCHOR',
+    implied1DayYieldVolBps: 0,
+    implied1DayCdsVolBps: 0,
+    dovishScenarioSpreadDeltaBps: 0,
+    baselineScenarioSpreadDeltaBps: 0,
+    hawkishScenarioSpreadDeltaBps: 0,
+    positioningSkewLabel: '–',
+    actionablePlaybookText: 'Add the central bank schedule to src/data/officialCalendar.ts.',
+  } as MacroCatalystEvent;
+  return {
+    activeIso3: activeRun.iso3,
+    activeCountryName: activeRun.countryName,
+    events: [],
+    activeSovereignEvents: [],
+    averageImpliedEventVolBps: 0,
+    highestVolCatalyst: none,
+    nextImminentCatalyst: none,
+    headlineConclusion: 'No official scheduled events on file for these countries.',
+  };
 }
 
 function formatFutureDateLabel(daysAhead: number): string {
@@ -519,7 +562,9 @@ export function computeMacroCatalystEventVolatilitySuite(
     const seed = deterministicHash(iso3);
 
     // 1. Central Bank MPC Rate Decision
-    const mpcDays = 3 + ((seed + idx * 5) % 19);
+    // Real scheduled date from the official calendar; no row means no event.
+    const mpcOfficial = nextOfficialEvent(iso3, 'MPC_DECISION');
+    const mpcDays = mpcOfficial?.daysUntil ?? 0;
     const taylorDiffBps = Math.round((cpi * 1.45 + 1.5 - pol) * 100);
     const mpcModelMoveBps = taylorDiffBps > 45 ? 25 : taylorDiffBps < -65 ? -25 : 0;
     const mpcVolBps = Math.round(14 + Math.min(34, cds * 0.045 + Math.abs(taylorDiffBps) * 0.06));
@@ -558,17 +603,19 @@ export function computeMacroCatalystEventVolatilitySuite(
       thesisRationale: `EconQuest Taylor model projects ${mpcModelMoveBps > 0 ? `+${mpcModelMoveBps} bps hike bias` : mpcModelMoveBps < 0 ? `${mpcModelMoveBps} bps cut window` : 'on-hold stance'} with ±${mpcVolBps} bps 1-day event volatility.`,
     };
 
-    allEvents.push({
+    if (mpcOfficial) allEvents.push({
       eventId: `EVT-MPC-${iso3}`,
       iso3,
       countryName: sovRun.countryName,
       currencyCode: open.currencyCode,
       category: 'MPC_DECISION',
       categoryBadge: 'MPC RATE DECISION',
-      eventTitle: `${sovRun.countryName} Central Bank MPC Policy Rate Decision & Forward Guidance`,
+      eventTitle: mpcOfficial.title,
       daysUntilEvent: mpcDays,
-      eventDateLabel: formatFutureDateLabel(mpcDays),
-      consensusEstimateLabel: `${pol.toFixed(2)}% (Hold)`,
+      eventDateLabel: mpcOfficial.date,
+      sourceName: mpcOfficial.sourceName,
+      sourceUrl: mpcOfficial.sourceUrl,
+      consensusEstimateLabel: `${pol.toFixed(2)}% current`,
       econQuestModelForecastLabel: `${(pol + mpcModelMoveBps / 100).toFixed(2)}% (${mpcModelMoveBps === 0 ? 'Hold' : mpcModelMoveBps > 0 ? `+${mpcModelMoveBps}bp` : `${mpcModelMoveBps}bp`})`,
       surpriseVectorLabel:
         mpcModelMoveBps === 0
@@ -592,8 +639,10 @@ export function computeMacroCatalystEventVolatilitySuite(
     });
 
     // 2. Monthly CPI Inflation Print
-    const cpiDays = 6 + ((seed + idx * 7) % 24);
-    const cpiSurprisePp = Number((((seed % 9) - 4) * 0.12).toFixed(2));
+    const cpiOfficial = nextOfficialEvent(iso3, 'CPI_RELEASE');
+    const cpiDays = cpiOfficial?.daysUntil ?? 0;
+    // No consensus or nowcast feed yet: no invented surprise.
+    const cpiSurprisePp = 0;
     const cpiVolBps = Math.round(12 + Math.min(28, cpi * 1.1 + Math.abs(cpiSurprisePp) * 20));
     const cpiDirection: MacroCatalystEvent['surpriseDirection'] =
       cpiSurprisePp < -0.1
@@ -630,17 +679,19 @@ export function computeMacroCatalystEventVolatilitySuite(
       thesisRationale: `High-frequency food & FX pass-through tracker models headline CPI at ${(cpi + cpiSurprisePp).toFixed(2)}% vs. ${cpi.toFixed(2)}% consensus (±${cpiVolBps} bps 1D yield vol).`,
     };
 
-    allEvents.push({
+    if (cpiOfficial) allEvents.push({
       eventId: `EVT-CPI-${iso3}`,
       iso3,
       countryName: sovRun.countryName,
       currencyCode: open.currencyCode,
       category: 'CPI_RELEASE',
       categoryBadge: 'CPI INFLATION PRINT',
-      eventTitle: `${sovRun.countryName} Headline & Core CPI Inflation Release (YoY %)`,
+      eventTitle: cpiOfficial.title,
       daysUntilEvent: cpiDays,
-      eventDateLabel: formatFutureDateLabel(cpiDays),
-      consensusEstimateLabel: `${cpi.toFixed(2)}% YoY`,
+      eventDateLabel: cpiOfficial.date,
+      sourceName: cpiOfficial.sourceName,
+      sourceUrl: cpiOfficial.sourceUrl,
+      consensusEstimateLabel: `${cpi.toFixed(2)}% YoY latest`,
       econQuestModelForecastLabel: `${(cpi + cpiSurprisePp).toFixed(2)}% YoY`,
       surpriseVectorLabel: `${cpiSurprisePp >= 0 ? '+' : ''}${Math.round(cpiSurprisePp * 100)} bps CPI Surprise`,
       surpriseDirection: cpiDirection,
@@ -697,7 +748,7 @@ export function computeMacroCatalystEventVolatilitySuite(
       thesisRationale: `Evaluates primary balance (${pb.toFixed(2)}% GDP) against stabilizing pb* (${pbStar.toFixed(2)}% GDP); implied 1D CDS event move is ±${imfVolBps} bps.`,
     };
 
-    allEvents.push({
+    if (UNSCHEDULED_REVIEW_EVENTS_ENABLED) allEvents.push({
       eventId: `EVT-IMF-${iso3}`,
       iso3,
       countryName: sovRun.countryName,
@@ -731,6 +782,9 @@ export function computeMacroCatalystEventVolatilitySuite(
   });
 
   const sortedEvents = [...allEvents].sort((a, b) => a.daysUntilEvent - b.daysUntilEvent);
+  if (sortedEvents.length === 0) {
+    return emptyCatalystSuite(activeRun);
+  }
   const activeSovereignEvents = sortedEvents.filter((e) => e.iso3 === activeRun.iso3);
   const highestVolCatalyst = [...sortedEvents].sort(
     (a, b) => b.implied1DayCdsVolBps - a.implied1DayCdsVolBps

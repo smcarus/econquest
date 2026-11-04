@@ -289,8 +289,18 @@ export interface InstitutionalCatalystEvent {
   eventId: string;
   dateLabel: string;
   daysOut: number;
-  category: 'CENTRAL_BANK_MPC' | 'IMF_FISCAL_REVIEW' | 'CREDIT_RATING_WINDOW' | 'BOND_REDEMPTION_WALL' | 'GEOPOLITICAL_DEADLINE';
+  category:
+    | 'CENTRAL_BANK_MPC'
+    | 'CENTRAL_BANK_REPORT'
+    | 'DATA_RELEASE'
+    | 'IMF_FISCAL_REVIEW'
+    | 'CREDIT_RATING_WINDOW'
+    | 'BOND_REDEMPTION_WALL'
+    | 'GEOPOLITICAL_DEADLINE';
   title: string;
+  /** Official schedule this date was read from (src/data/officialCalendar.ts). */
+  sourceName?: string;
+  sourceUrl?: string;
   consensusExpectation: string;
   tailRiskScenario: string;
   impliedVolatilityImpact: string;

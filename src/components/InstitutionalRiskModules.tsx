@@ -1526,6 +1526,11 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               </div>
 
               <div className="divide-y divide-slate-200 dark:divide-slate-800">
+                {open.catalystCalendar.length === 0 && (
+                  <div className="py-3 text-xs text-slate-500 dark:text-slate-400">
+                    No official schedule on file for {run.countryName}.
+                  </div>
+                )}
                 {open.catalystCalendar.map((ev) => (
                   <div key={ev.eventId} className="py-3 first:pt-1 last:pb-0 space-y-1 text-xs">
                     <div className="flex items-center justify-between gap-2">
@@ -1537,11 +1542,23 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                       </span>
                     </div>
                     <div className="text-slate-600 dark:text-slate-300">
-                      <strong>Consensus:</strong> {ev.consensusExpectation}
+                      <strong>Now:</strong> {ev.consensusExpectation}
                     </div>
-                    <div className="text-red-600 dark:text-red-400">
-                      <strong>Tail Risk Scenario:</strong> {ev.tailRiskScenario}
-                    </div>
+                    {ev.tailRiskScenario && (
+                      <div className="text-red-600 dark:text-red-400">
+                        <strong>Tail Risk Scenario:</strong> {ev.tailRiskScenario}
+                      </div>
+                    )}
+                    {ev.sourceUrl && (
+                      <a
+                        href={ev.sourceUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-blue-600 dark:text-blue-400 hover:underline"
+                      >
+                        Source: {ev.sourceName}
+                      </a>
+                    )}
                   </div>
                 ))}
               </div>

@@ -11,6 +11,7 @@ import {
   buildAnnotatedChartsForSovereign,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
+  buildOfficialCatalystCalendar,
   computeQuantitativeAnchorScores,
   recomputeDerivedOpenDataAnalytics,
 } from './src/data/presetsAndBaselines.ts';
@@ -759,7 +760,9 @@ async function fetchLiveOpenDataSnapshot(
     if (Date.now() - stored.pulledAt > SNAPSHOT_REFRESH_MS) {
       void refreshStoredSnapshot(key, countryNameHint);
     }
-    return countryNameHint ? { ...stored.snapshot, countryName: countryNameHint } : stored.snapshot;
+    // Saved snapshots may predate the official calendar; always rebuild it from today.
+    const snap = withOfficialCalendar(stored.snapshot);
+    return countryNameHint ? { ...snap, countryName: countryNameHint } : snap;
   }
   if (opts.cacheOnly) {
     void refreshStoredSnapshot(key, countryNameHint);
@@ -772,6 +775,16 @@ async function fetchLiveOpenDataSnapshot(
   const baseline = buildBaselineOpenData(key);
   if (countryNameHint) baseline.countryName = countryNameHint;
   return baseline;
+}
+
+function withOfficialCalendar(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  return {
+    ...snapshot,
+    catalystCalendar: buildOfficialCatalystCalendar(
+      snapshot.iso3,
+      snapshot.monetaryAndMarket.policyRatePct
+    ),
+  };
 }
 
 async function refreshStaleSnapshots(force = false): Promise<void> {

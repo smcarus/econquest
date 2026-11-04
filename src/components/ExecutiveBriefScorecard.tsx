@@ -306,17 +306,17 @@ export const ExecutiveBriefScorecard: React.FC<ExecutiveBriefScorecardProps> = (
         <div className="p-4 bg-slate-50/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800 flex flex-col justify-between">
           <div>
             <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-              4. Next Market-Moving Event ({nextCatalyst?.dateLabel || 'In 9 Days'})
+              4. Next Market-Moving Event ({nextCatalyst?.dateLabel || 'none on file'})
             </div>
             <div className="text-sm font-bold text-slate-900 dark:text-slate-100 mt-1 line-clamp-1">
-              {nextCatalyst?.title || 'Central Bank Interest Rate Decision'}
+              {nextCatalyst?.title || 'No official scheduled event on file'}
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
-              Expected Baseline: {nextCatalyst?.consensusExpectation}
+              {nextCatalyst ? `Now: ${nextCatalyst.consensusExpectation}` : ''}
             </p>
             <div className="mt-2 pt-1.5 border-t border-slate-200/70 dark:border-slate-800">
               <StatRefBadge
-                refText={`Ref: Policy = ${open.monetaryAndMarket.policyRatePct}% · CPI = ${open.imfIndicators.cpiInflationPct}% · Implied Vol Move = ${nextCatalyst?.impliedVolatilityImpact || '±38 bps'}`}
+                refText={`Ref: Policy = ${open.monetaryAndMarket.policyRatePct}% · CPI = ${open.imfIndicators.cpiInflationPct}% · Implied Vol Move = ${nextCatalyst?.impliedVolatilityImpact || 'not estimated'}`}
               />
             </div>
           </div>
