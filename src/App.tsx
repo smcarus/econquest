@@ -80,6 +80,8 @@ import {
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
+import { RolePicker } from './components/RolePicker';
+import { getRole, loadRole, saveRole, USER_ROLES, type UserRoleId, type WorkflowArea } from './data/roles';
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
@@ -575,10 +577,15 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   // Top-level area: the PM's Today page, or the analysis desks.
-  const [appArea, setAppArea] = useState<AppArea>('today');
-  const [countryTab, setCountryTab] = useState<CountryTabId>('overview');
-  const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
-  const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
+  const [userRole, setUserRole] = useState<UserRoleId | null>(() => loadRole());
+  const [isRolePromptDismissed, setIsRolePromptDismissed] = useState<boolean>(false);
+  const role = getRole(userRole);
+  const [appArea, setAppArea] = useState<AppArea>(() => (userRole ? role.home.area : 'today'));
+  const [countryTab, setCountryTab] = useState<CountryTabId>(
+    () => ((userRole && role.home.countryTab) as CountryTabId) || 'overview'
+  );
+  const [portfolioTab, setPortfolioTab] = useState<string>(() => (userRole && role.home.portfolioTab) || PORTFOLIO_TABS[0].id);
+  const [reportsTab, setReportsTab] = useState<string>(() => (userRole && role.home.reportsTab) || REPORTS_TABS[0].id);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
   const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
@@ -594,6 +601,29 @@ export default function App() {
     const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
     setActiveNavSection(desk as NavSectionId);
     setAppArea(area);
+    window.scrollTo({ top: 0 });
+  };
+  const applyRole = (id: UserRoleId) => {
+    const r = getRole(id);
+    saveRole(id);
+    setUserRole(id);
+    setActivePersona(r.persona);
+    if (r.home.reportsTab) setReportsTab(r.home.reportsTab);
+    if (r.home.portfolioTab) setPortfolioTab(r.home.portfolioTab);
+    if (r.home.area === 'country') {
+      const tab = COUNTRY_TABS.find((t) => t.id === r.home.countryTab) || COUNTRY_TABS[0];
+      setCountryTab(tab.id);
+      setActiveNavSection(tab.desks[0] as NavSectionId);
+      setAppArea('country');
+    } else if (r.home.area === 'portfolio' || r.home.area === 'reports') {
+      const tabs = r.home.area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
+      const tabId = r.home.area === 'portfolio' ? r.home.portfolioTab : r.home.reportsTab;
+      const tab = tabs.find((t) => t.id === tabId) || tabs[0];
+      setActiveNavSection(tab.desks[0] as NavSectionId);
+      setAppArea(r.home.area);
+    } else {
+      setAppArea(r.home.area);
+    }
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (deskId?: string) => {
@@ -2028,119 +2058,135 @@ export default function App() {
 
         {/* Zone 2: 3 Primary Activity Pillars (Market & Trading | Policy Research | Macroeconomic Research) + Cmd+K Search */}
         <nav className="hidden lg:flex items-center gap-2 text-xs font-medium">
-          <button
-            type="button"
-            onClick={() => setAppArea('today')}
-            aria-current={appArea === 'today' ? 'page' : undefined}
-            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-              appArea === 'today'
-                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Today
-          </button>
-          <button
-            type="button"
-            onClick={returnToCountryPage}
-            aria-current={appArea === 'country' ? 'page' : undefined}
-            title={`Country page: ${run.countryName}`}
-            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-              appArea === 'country'
-                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Countries
-          </button>
-          <button
-            type="button"
-            onClick={() => openWorkspace('portfolio')}
-            aria-current={appArea === 'portfolio' ? 'page' : undefined}
-            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-              appArea === 'portfolio'
-                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Portfolio
-          </button>
-          <button
-            type="button"
-            onClick={() => openWorkspace('reports')}
-            aria-current={appArea === 'reports' ? 'page' : undefined}
-            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-              appArea === 'reports'
-                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            Reports
-          </button>
-          <div
-            className="relative"
-            onMouseEnter={() => setIsToolsMenuOpen(true)}
-            onMouseLeave={() => setIsToolsMenuOpen(false)}
-          >
-            <button
-              type="button"
-              onClick={() => setIsToolsMenuOpen((v) => !v)}
-              aria-expanded={isToolsMenuOpen}
-              aria-current={appArea === 'desks' ? 'page' : undefined}
-              title="All 41 analysis desks"
-              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                appArea === 'desks'
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                  : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
-            >
-              <span>Tools</span>
-              <ChevronDown className="w-3.5 h-3.5 opacity-80" />
-            </button>
-            {isToolsMenuOpen && (
-              <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
-                <div className="ui-panel shadow-2xl p-3">
-                  <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
-                    The full desk library. Today, Countries, Portfolio and Reports group these desks by task.
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {ACTIVITY_PILLARS.map((pillar) => (
-                      <div key={pillar.id} className="min-w-0 space-y-2">
-                        <div className="ui-section-title">{pillar.shortTitle.replace(/^\d+\.\s*/, '')}</div>
-                        {pillar.subGroups.map((sg) => (
-                          <div key={sg.groupId}>
-                            <div className="ui-label mb-1">{sg.groupTitle}</div>
-                            <div className="flex flex-col">
-                              {sg.modules.map((mod) => (
-                                <button
-                                  key={mod.id}
-                                  type="button"
-                                  onClick={() => {
-                                    setLayoutMode('executive_brief');
-                                    setAppArea('desks');
-                                    setActiveNavSection(mod.id as NavSectionId);
-                                    setIsToolsMenuOpen(false);
-                                  }}
-                                  title={mod.description}
-                                  className={`text-left px-2 py-1 text-xs truncate hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                                    appArea === 'desks' && activeNavSection === mod.id
-                                      ? 'text-blue-700 dark:text-blue-300 font-semibold'
-                                      : 'text-slate-700 dark:text-slate-300'
-                                  }`}
-                                >
-                                  {mod.label}
-                                </button>
+          {role.nav.map((area) => (
+            <React.Fragment key={area}>
+              {({
+              today: (
+                <button
+                  type="button"
+                  onClick={() => setAppArea('today')}
+                  aria-current={appArea === 'today' ? 'page' : undefined}
+                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                    appArea === 'today'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Today
+                </button>
+              ),
+              country: (
+                <button
+                  type="button"
+                  onClick={returnToCountryPage}
+                  aria-current={appArea === 'country' ? 'page' : undefined}
+                  title={`Country page: ${run.countryName}`}
+                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                    appArea === 'country'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Countries
+                </button>
+              ),
+              portfolio: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('portfolio')}
+                  aria-current={appArea === 'portfolio' ? 'page' : undefined}
+                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                    appArea === 'portfolio'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Portfolio
+                </button>
+              ),
+              reports: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('reports')}
+                  aria-current={appArea === 'reports' ? 'page' : undefined}
+                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                    appArea === 'reports'
+                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  Reports
+                </button>
+              ),
+              desks: (
+                <div
+                  className="relative"
+                  onMouseEnter={() => setIsToolsMenuOpen(true)}
+                  onMouseLeave={() => setIsToolsMenuOpen(false)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setIsToolsMenuOpen((v) => !v)}
+                    aria-expanded={isToolsMenuOpen}
+                    aria-current={appArea === 'desks' ? 'page' : undefined}
+                    title="All 41 analysis desks"
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+                      appArea === 'desks'
+                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                        : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <span>Tools</span>
+                    <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                  </button>
+                  {isToolsMenuOpen && (
+                    <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
+                      <div className="ui-panel shadow-2xl p-3">
+                        <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
+                          The full desk library. Today, Countries, Portfolio and Reports group these desks by task.
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          {ACTIVITY_PILLARS.map((pillar) => (
+                            <div key={pillar.id} className="min-w-0 space-y-2">
+                              <div className="ui-section-title">{pillar.shortTitle.replace(/^\d+\.\s*/, '')}</div>
+                              {pillar.subGroups.map((sg) => (
+                                <div key={sg.groupId}>
+                                  <div className="ui-label mb-1">{sg.groupTitle}</div>
+                                  <div className="flex flex-col">
+                                    {sg.modules.map((mod) => (
+                                      <button
+                                        key={mod.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setLayoutMode('executive_brief');
+                                          setAppArea('desks');
+                                          setActiveNavSection(mod.id as NavSectionId);
+                                          setIsToolsMenuOpen(false);
+                                        }}
+                                        title={mod.description}
+                                        className={`text-left px-2 py-1 text-xs truncate hover:bg-slate-100 dark:hover:bg-slate-800 ${
+                                          appArea === 'desks' && activeNavSection === mod.id
+                                            ? 'text-blue-700 dark:text-blue-300 font-semibold'
+                                            : 'text-slate-700 dark:text-slate-300'
+                                        }`}
+                                      >
+                                        {mod.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
                               ))}
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
-          </div>
+              )
+              } as Record<WorkflowArea, React.ReactNode>)[area]}
+            </React.Fragment>
+          ))}
 
           {/* Global Command Palette Cmd+K Trigger */}
           <button
@@ -2255,27 +2301,25 @@ export default function App() {
 
                 <div>
                   <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-                    I am a
+                    My role
                   </div>
-                  <div className="grid grid-cols-3 gap-1">
-                    {(
-                      [
-                        { id: 'INDIVIDUAL_TRADER', short: 'Trader' },
-                        { id: 'INSTITUTIONAL_PM_IC', short: 'Institution' },
-                        { id: 'POLICY_RESEARCHER', short: 'Researcher' },
-                      ] as const
-                    ).map((p) => (
+                  <div className="flex flex-col gap-1">
+                    {USER_ROLES.map((r) => (
                       <button
-                        key={p.id}
+                        key={r.id}
                         type="button"
-                        onClick={() => setActivePersona(p.id)}
-                        className={`px-2 py-1.5 border font-semibold transition-colors ${
-                          activePersona === p.id
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                        onClick={() => {
+                          applyRole(r.id);
+                          setIsHeaderMenuOpen(false);
+                        }}
+                        aria-pressed={userRole === r.id}
+                        className={`text-left px-2 py-1.5 border transition-colors ${
+                          userRole === r.id
+                            ? 'bg-blue-600 text-white border-blue-600 font-semibold'
+                            : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
                         }`}
                       >
-                        {p.short}
+                        {r.label}
                       </button>
                     ))}
                   </div>
@@ -2546,64 +2590,80 @@ export default function App() {
               <Search className="w-3 h-3" />
               <span>Jump</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setAppArea('today')}
-              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                appArea === 'today'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Today
-            </button>
-            <button
-              type="button"
-              onClick={returnToCountryPage}
-              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                appArea === 'country'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Countries
-            </button>
-            <button
-              type="button"
-              onClick={() => openWorkspace('portfolio')}
-              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                appArea === 'portfolio'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Portfolio
-            </button>
-            <button
-              type="button"
-              onClick={() => openWorkspace('reports')}
-              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                appArea === 'reports'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Reports
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setLayoutMode('executive_brief');
-                setAppArea('desks');
-              }}
-              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                appArea === 'desks'
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-              }`}
-            >
-              Tools
-            </button>
+            {role.nav.map((area) => (
+              <React.Fragment key={area}>
+                {({
+              today: (
+                <button
+                  type="button"
+                  onClick={() => setAppArea('today')}
+                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                    appArea === 'today'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Today
+                </button>
+              ),
+              country: (
+                <button
+                  type="button"
+                  onClick={returnToCountryPage}
+                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                    appArea === 'country'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Countries
+                </button>
+              ),
+              portfolio: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('portfolio')}
+                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                    appArea === 'portfolio'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Portfolio
+                </button>
+              ),
+              reports: (
+                <button
+                  type="button"
+                  onClick={() => openWorkspace('reports')}
+                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                    appArea === 'reports'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Reports
+                </button>
+              ),
+              desks: (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLayoutMode('executive_brief');
+                    setAppArea('desks');
+                  }}
+                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                    appArea === 'desks'
+                      ? 'bg-blue-600 text-white font-semibold'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                  }`}
+                >
+                  Tools
+                </button>
+              )
+                } as Record<WorkflowArea, React.ReactNode>)[area]}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </section>
@@ -2677,6 +2737,10 @@ export default function App() {
 
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
         <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
+          {!userRole && !isRolePromptDismissed && (
+            <RolePicker current={userRole} onPick={applyRole} onSkip={() => setIsRolePromptDismissed(true)} />
+          )}
+
           {appArea === 'today' && (
             <TodayPage
               run={run}
