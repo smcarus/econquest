@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   BacktestBenchmarkId,
   BacktestConfigState,
@@ -680,7 +681,7 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                   </td>
                   <td className="py-3 px-3">
                     <div className="font-semibold text-slate-900 dark:text-slate-100">
-                      [{t.direction}] {t.instrument}
+                      [{toDisplayCase(t.direction)}] {t.instrument}
                     </div>
                     <div className="text-xs text-slate-500">
                       Weight: {t.sizingWeightPct}% NAV · {t.regimeContext}

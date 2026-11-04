@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   AIRuntimeConfig,
   CommandPaletteItem,
@@ -418,7 +419,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                   {backendSweep.totalChecks} Passed · {backendSweep.totalLatencyMs}ms)
                 </h3>
                 <span className="px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                  {backendSweep.status}
+                  {toDisplayCase(backendSweep.status)}
                 </span>
               </div>
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
@@ -458,7 +459,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                         <td className="py-2 px-3 whitespace-nowrap">
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                             <CheckCircle2 className="w-3 h-3" />
-                            {item.status}
+                            {toDisplayCase(item.status)}
                           </span>
                         </td>
                       </tr>
@@ -533,7 +534,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                           ) : (
                             <AlertTriangle className="w-3 h-3" />
                           )}
-                          {chk.status}
+                          {toDisplayCase(chk.status)}
                         </span>
                       </td>
                     </tr>
@@ -572,7 +573,7 @@ export const ModelIntegrityAuditModal: React.FC<ModelIntegrityAuditModalProps> =
                       </td>
                       <td className="py-2 px-3 tabular-nums text-xs">
                         <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-semibold">
-                          {feed.status}
+                          {toDisplayCase(feed.status)}
                         </span>
                       </td>
                     </tr>
@@ -4179,7 +4180,7 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                   </div>
                   {benchmarkResult.sampleOutput && (
                     <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                      Stance: <strong>{benchmarkResult.sampleOutput.stance}</strong> · Risk
+                      Stance: <strong>{toDisplayCase(benchmarkResult.sampleOutput.stance)}</strong> · Risk
                       Score: <strong>{benchmarkResult.sampleOutput.riskScore}</strong> ·{' '}
                       {benchmarkResult.sampleOutput.summary}
                     </div>

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   AIRuntimeConfig,
   CouncilAssessmentRun,
@@ -379,7 +380,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                               {agent.agentCode}
                             </span>
                             <span className="tabular-nums text-slate-600 dark:text-slate-400">
-                              {agent.stance} · Risk {agent.riskScore.toFixed(2)} · Calib {(agent.brierCalibrationWeight * 100).toFixed(0)}%
+                              {toDisplayCase(agent.stance)} · Risk {agent.riskScore.toFixed(2)} · Calib {(agent.brierCalibrationWeight * 100).toFixed(0)}%
                             </span>
                           </div>
                           <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   CouncilAssessmentRun,
   GeopoliticalWargameParams,
@@ -379,7 +380,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                           : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
                       }`}
                     >
-                      {hoveredCountry.watchlistItem.alertStatus}
+                      {toDisplayCase(hoveredCountry.watchlistItem.alertStatus)}
                     </span>
                   )}
                 </div>
@@ -787,7 +788,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                           : 'text-blue-600 dark:text-blue-400'
                       }`}
                     >
-                      {selectedChokepoint.vulnerabilityStatus}
+                      {toDisplayCase(selectedChokepoint.vulnerabilityStatus)}
                     </span>
                   </div>
                   <div className="text-slate-600 dark:text-slate-300">

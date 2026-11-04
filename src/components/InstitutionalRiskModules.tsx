@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import {
   ShieldAlert,
@@ -638,7 +639,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                 </span>
               </span>
               <span className="text-xs text-slate-400 block mt-0.5">
-                Tier Bucket: {ratingAnalytics.agencySpec.bucket}
+                Tier Bucket: {toDisplayCase(ratingAnalytics.agencySpec.bucket)}
               </span>
             </div>
 
@@ -699,7 +700,7 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
                   <div key={entry.bucket} className="space-y-1 text-xs">
                     <div className="flex items-center justify-between tabular-nums">
                       <span className="font-semibold text-slate-800 dark:text-slate-200">
-                        {entry.bucket}
+                        {toDisplayCase(entry.bucket)}
                       </span>
                       <span className="font-semibold tabular-nums text-slate-900 dark:text-slate-100">
                         {entry.probabilityPct}%

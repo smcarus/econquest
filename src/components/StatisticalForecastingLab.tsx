@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   CouncilAssessmentRun,
   ForecastingShockInputs,
@@ -1151,7 +1152,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                             : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
-                        {f.status}
+                        {toDisplayCase(f.status)}
                       </td>
                     </tr>
                   ))}
@@ -1312,7 +1313,7 @@ export const StatisticalForecastingLab: React.FC<StatisticalForecastingLabProps>
                             : 'text-emerald-600 dark:text-emerald-400'
                         }`}
                       >
-                        {pt.regime}
+                        {toDisplayCase(pt.regime)}
                       </td>
                     </tr>
                   ))}

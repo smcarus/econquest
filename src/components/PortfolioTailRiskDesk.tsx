@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   CouncilAssessmentRun,
   GeopoliticalWargameParams,
@@ -1555,7 +1556,7 @@ export const PortfolioTailRiskDesk: React.FC<PortfolioTailRiskDeskProps> = ({
                     <div className="font-sans font-semibold text-slate-900 dark:text-slate-100">
                       {t.instrument}
                     </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400">{t.direction}</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">{toDisplayCase(t.direction)}</div>
                   </td>
                   <td className="py-2.5 px-3 text-right text-slate-700 dark:text-slate-300">
                     {t.brierCalibratedWinProbPct}% / {t.rewardToRiskPayoffRatio}x

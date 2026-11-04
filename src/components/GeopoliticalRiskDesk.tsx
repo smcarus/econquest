@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   CouncilAssessmentRun,
   GeopoliticalWargameParams,
@@ -1269,7 +1270,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               : 'bg-emerald-500/20 text-emerald-700 dark:text-emerald-300'
                           }`}
                         >
-                          {hoveredCountry.watchlistItem.alertStatus}
+                          {toDisplayCase(hoveredCountry.watchlistItem.alertStatus)}
                         </span>
                       )}
                     </div>
@@ -2892,7 +2893,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                             : 'bg-blue-50 dark:bg-blue-950/60 border-blue-300 dark:border-blue-800 text-blue-700 dark:text-blue-300'
                         }`}
                       >
-                        {vec.vulnerabilityTier}
+                        {toDisplayCase(vec.vulnerabilityTier)}
                       </span>
                     </td>
                   </tr>
@@ -3638,7 +3639,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                               : 'bg-amber-50 dark:bg-amber-950/60 border-amber-300 dark:border-amber-800 text-amber-700 dark:text-amber-300'
                           }`}
                         >
-                          {v.mobilizationPriority}
+                          {toDisplayCase(v.mobilizationPriority)}
                         </span>
                       </td>
                     </tr>
