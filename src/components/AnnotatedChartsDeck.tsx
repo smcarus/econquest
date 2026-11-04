@@ -72,7 +72,7 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
           <div>
             <div className="text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center gap-y-1">
               <span className="font-semibold text-emerald-700 dark:text-emerald-400">
-                Live Institutional Telemetry
+                Country data
               </span>
               <span className="mx-2" aria-hidden="true">·</span>
               <span>Target: {run.countryName} ({run.iso3})</span>
@@ -95,7 +95,7 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
               Sovereign, Macroeconomic &amp; Geopolitical Horizon Charts (With Plain-English Guides)
             </h2>
           </div>
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
             {onOpenForecastingLab && (
               <button
                 type="button"
@@ -111,7 +111,7 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
               disabled={isFetchingData}
               className="px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
             >
-              {isFetchingData ? 'Syncing IMF / WB / FX / Grounding...' : 'Refresh Live Data Feeds'}
+              {isFetchingData ? 'Refreshing IMF / World Bank / FX…' : 'Refresh data'}
             </button>
           </div>
         </div>

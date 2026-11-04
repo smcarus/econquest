@@ -65,6 +65,12 @@ import {
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { TodayPage } from './components/TodayPage';
+import {
+  COUNTRY_TABS,
+  CountryPage,
+  CountryTabId,
+  findCountryTabForDesk,
+} from './components/CountryPage';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
 import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
 import { AnnotatedChartsDeck } from './components/AnnotatedChartsDeck';
@@ -557,7 +563,28 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   // Top-level area: the PM's Today page, or the analysis desks.
-  const [appArea, setAppArea] = useState<'today' | 'desks'>('today');
+  const [appArea, setAppArea] = useState<'today' | 'country' | 'desks'>('today');
+  const [countryTab, setCountryTab] = useState<CountryTabId>('overview');
+  const openCountryPage = (deskId?: string) => {
+    if (deskId && !findCountryTabForDesk(deskId)) {
+      // Not part of a country tab (e.g. trade blotter): open it in the desk view.
+      setLayoutMode('executive_brief');
+      setActiveNavSection(deskId as NavSectionId);
+      setAppArea('desks');
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    const tab = (deskId && findCountryTabForDesk(deskId)) || COUNTRY_TABS[0];
+    setCountryTab(tab.id);
+    setActiveNavSection((deskId && tab.desks.includes(deskId) ? deskId : tab.desks[0]) as NavSectionId);
+    setAppArea('country');
+    window.scrollTo({ top: 0 });
+  };
+  const returnToCountryPage = () => {
+    const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || COUNTRY_TABS[0];
+    if (!tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
+    setAppArea('country');
+  };
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!isHeaderMenuOpen) return;
@@ -1664,6 +1691,267 @@ export default function App() {
     }
   };
 
+  // One desk's content, by section id. Used by the desk view and by the Country page tabs.
+  const renderDeskBody = (sec: NavSectionId) => (
+    <>
+              {sec === 'charts_watchlists' && (
+                <MacroOverviewTabbedWorkspace
+                  countryName={run.countryName}
+                  iso3={run.iso3}
+                  mapCard={
+                    <HeroGeopoliticalMapCard
+                      run={run}
+                      watchlistItems={activeWatchlistItems}
+                      wargameParams={geopoliticalWargameParams}
+                      onChangeWargameParams={setGeopoliticalWargameParams}
+                      onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                      onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
+                      onSelectSovereign={handleSelectSovereign}
+                    />
+                  }
+                  chartsDeck={
+                    <AnnotatedChartsDeck
+                      run={run}
+                      onRefreshLiveOpenData={() =>
+                        handlePullLiveOpenData(run.iso3, run.countryName, false)
+                      }
+                      isFetchingData={isFetchingOpenData}
+                      onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
+                    />
+                  }
+                />
+              )}
+
+              {sec === 'forecasting_lab' && (
+                <StatisticalForecastingLab
+                  run={run}
+                  propagatedGeoWargameParams={geopoliticalWargameParams}
+                  isGeoPropagationActive={propagateGeoShocks}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                  externalShocks={forecastShocks}
+                  onChangeExternalShocks={setForecastShocks}
+                />
+              )}
+
+              {sec === 'geopolitical_desk' && (
+                <GeopoliticalRiskDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  wargameParams={geopoliticalWargameParams}
+                  onChangeWargameParams={setGeopoliticalWargameParams}
+                  propagateGeoShocks={propagateGeoShocks}
+                  onTogglePropagateGeoShocks={setPropagateGeoShocks}
+                  onSelectSovereign={handleSelectSovereign}
+                  onJumpToCouncilDebates={() => setActiveNavSection('council_debates')}
+                  onJumpToPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                  onJumpToForecastingLab={() => setActiveNavSection('forecasting_lab')}
+                  onOpenSupplyChainMatrixDesk={() => setActiveNavSection('supply_chain_matrix')}
+                />
+              )}
+
+              {sec === 'supply_chain_matrix' && (
+                <SupplyChainMatrixDesk
+                  run={run}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                />
+              )}
+
+              {sec === 'global_liquidity' && (
+                <GlobalLiquidityDesk
+                  run={run}
+                  stressParams={liquidityStressParams}
+                  onChangeStressParams={setLiquidityStressParams}
+                  onOpenMarketMakerDesk={() => setActiveNavSection('market_maker_alpha')}
+                />
+              )}
+
+              {sec === 'market_maker_alpha' && (
+                <MarketMakerAlphaDesk
+                  run={run}
+                  stressParams={liquidityStressParams}
+                  onChangeStressParams={setLiquidityStressParams}
+                  onOpenGlobalLiquidityDesk={() => setActiveNavSection('global_liquidity')}
+                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                />
+              )}
+
+              {sec === 'portfolio_risk_desk' && (
+                <PortfolioContagionDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  onSelectSovereign={handleSelectSovereign}
+                  propagatedGeoWargameParams={geopoliticalWargameParams}
+                  isGeoPropagationActive={propagateGeoShocks}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                />
+              )}
+
+              {sec === 'backtest_engine' && (
+                <CrisisBacktestDesk
+                  run={run}
+                  customEpisodes={customBacktestEpisodes}
+                  initialSelectedEpisodeId={selectedBacktestEpisodeId}
+                  onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
+                  onOpenCsvLab={() => setActiveNavSection('policy_doc_lab')}
+                />
+              )}
+
+              {sec === 'risk_analytics' && (
+                <InstitutionalRiskModules
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  onSelectSovereign={handleSelectSovereign}
+                  onOpenPortfolioRiskDesk={() => setActiveNavSection('portfolio_risk_desk')}
+                />
+              )}
+
+              {sec === 'council_debates' && (
+                <CouncilHierarchyAndDebates
+                  run={run}
+                  onJumpToCROGate={() => setActiveNavSection('cro_reports')}
+                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
+                  isRunningPhase1And2={isRunningPhase1And2}
+                  onReverifyPipeline={handleRunCouncilPhase1And2}
+                  runtimeConfig={runtimeConfig}
+                  onUpdateRuntimeConfig={setRuntimeConfig}
+                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
+                />
+              )}
+
+              {sec === 'cro_reports' && (
+                <CROCheckpointAndReports
+                  run={run}
+                  croDraft={croDraft}
+                  runtimeConfig={runtimeConfig}
+                  isRunningPhase1And2={isRunningPhase1And2}
+                  isRunningPhase3={isRunningPhase3}
+                  onUpdateCroDraft={setCroDraft}
+                  onUpdateRuntimeConfig={setRuntimeConfig}
+                  onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
+                  onReverifyPipeline={handleRunCouncilPhase1And2}
+                />
+              )}
+
+              {sec === 'policy_doc_lab' && (
+                <PolicyDocumentAndCsvLab
+                  run={run}
+                  policyDocTitle={policyDocTitle}
+                  policyDocText={policyDocText}
+                  onChangePolicyDocTitle={setPolicyDocTitle}
+                  onChangePolicyDocText={setPolicyDocText}
+                  onDocumentFileUpload={handleDocumentFileUpload}
+                  onRunCouncilWithDocument={handleRunCouncilPhase1And2}
+                  onApplyCsvToLiveState={handleApplyCsvToLiveState}
+                  onRegisterCustomCrisisBacktest={handleRegisterCustomCrisisBacktest}
+                />
+              )}
+
+              {(sec === 'institutional_quant_desk' ||
+                sec === 'quant_cds_basis' ||
+                sec === 'quant_restructuring_npv' ||
+                sec === 'quant_matrix_econometrics' ||
+                sec === 'quant_trade_blotter' ||
+                sec === 'quant_macro_surprise' ||
+                sec === 'quant_alpha_correlation' ||
+                sec === 'quant_nss_yield_curve' ||
+                sec === 'quant_macro_catalyst_calendar' ||
+                sec === 'quant_portfolio_stress_lab') && (
+                <InstitutionalQuantDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={
+                    sec === 'institutional_quant_desk'
+                      ? 'quant_cds_basis'
+                      : (sec as QuantSubWorkspaceId)
+                  }
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onStageTradeTicket={handleStageTradeTicket}
+                />
+              )}
+
+              {(sec === 'embi_portfolio_pair_book' ||
+                sec === 'dmo_treasury_auction_sim' ||
+                sec === 'mpc_imf_document_ai') && (
+                <PortfolioAndFundingDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  runtimeConfig={runtimeConfig}
+                  isDark={darkMode}
+                  activeSubTab={sec as PortfolioFundingSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
+                />
+              )}
+
+              {(sec === 'decision_dislocation_screener' ||
+                sec === 'decision_premortem_killswitch' ||
+                sec === 'decision_ledger_brier' ||
+                sec === 'decision_quadrant_stress' ||
+                sec === 'decision_prediction_markets') && (
+                <DecisionCommandCenterDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={sec as DecisionCommandSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyConditionalEventShock={handleApplyConditionalEventShock}
+                />
+              )}
+
+              {(sec === 'ratings_shadow_fallen_angel' ||
+                sec === 'fx_beer_feer_equilibrium' ||
+                sec === 'debt_investor_base_doom_loop' ||
+                sec === 'ic_pitchbook_dossier_exporter') && (
+                <SovereignRatingsFxAndIcDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={sec as RatingsFxIcSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
+                />
+              )}
+
+              {(sec === 'restructuring_npv_cac_waterfall' ||
+                sec === 'taylor_rule_fiscal_dominance' ||
+                sec === 'geopolitical_reserves_chokepoints' ||
+                sec === 'ngfs_climate_slb_greenium') && (
+                <RestructuringMonetaryGeoDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  isDark={darkMode}
+                  activeSubTab={sec as RestructuringMonetaryGeoSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
+                />
+              )}
+
+              {(sec === 'persona_cross_hub_signal_scanner' ||
+                sec === 'persona_guided_playbook_cockpit' ||
+                sec === 'persona_strategy_backtester_lab' ||
+                sec === 'persona_academic_latex_csv_exporter') && (
+                <PersonaPlaybooksAndSignalDesk
+                  run={run}
+                  watchlistItems={activeWatchlistItems}
+                  activePersona={activePersona}
+                  onChangePersona={setActivePersona}
+                  isDark={darkMode}
+                  activeSubTab={sec as PersonaPlaybookSubTabId}
+                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
+                  onJumpToNavSection={(sec) => setActiveNavSection(sec as NavSectionId)}
+                  onSelectSovereign={handleSelectSovereign}
+                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
+                />
+              )}
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col">
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
@@ -1698,6 +1986,19 @@ export default function App() {
             }`}
           >
             Today
+          </button>
+          <button
+            type="button"
+            onClick={returnToCountryPage}
+            aria-current={appArea === 'country' ? 'page' : undefined}
+            title={`Country page: ${run.countryName}`}
+            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+              appArea === 'country'
+                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            Country
           </button>
           {ACTIVITY_PILLARS.map((pillar) => {
             const activePillarInfo = findPillarForNavSection(activeNavSection);
@@ -2030,7 +2331,7 @@ export default function App() {
       </header>
 
       {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
-      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea === 'today' ? 'lg:hidden' : ''}`}>
+      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea !== 'desks' ? 'lg:hidden' : ''}`}>
         <div className="max-w-[1600px] mx-auto flex flex-col gap-2">
           {appArea === 'desks' && (
           <>
@@ -2207,6 +2508,17 @@ export default function App() {
             >
               Today
             </button>
+            <button
+              type="button"
+              onClick={returnToCountryPage}
+              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                appArea === 'country'
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              Country
+            </button>
             {ACTIVITY_PILLARS.map((pillar) => {
               const isAct =
                 appArea === 'desks' &&
@@ -2311,14 +2623,38 @@ export default function App() {
               stagedTickets={stagedTradeTickets}
               onOpenCountry={(item, sectionId) => {
                 if (item.iso3 !== run.iso3) handleSelectSovereign(item);
-                setLayoutMode('executive_brief');
-                setActiveNavSection((sectionId as NavSectionId) || 'charts_watchlists');
-                setAppArea('desks');
-                window.scrollTo({ top: 0 });
+                openCountryPage(sectionId);
               }}
               onStageTicket={handleStageTradeTicket}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
+            />
+          )}
+
+          {appArea === 'country' && (
+            <CountryPage
+              run={run}
+              watchlistItems={activeWatchlistItems}
+              activeTab={countryTab}
+              activeDesk={activeNavSection}
+              onChangeTab={(tab) => {
+                setCountryTab(tab);
+                const cfg = COUNTRY_TABS.find((t) => t.id === tab) || COUNTRY_TABS[0];
+                setActiveNavSection(cfg.desks[0] as NavSectionId);
+              }}
+              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
+              onSelectCountry={handleSelectSovereign}
+              onAddCountry={() => setIsCustomSovereignModalOpen(true)}
+              onSync={handleSyncLiveWorldBankAndTreasury}
+              isSyncing={isSyncingLiveMacro}
+              onCompare={() => setIsComparatorDrawerOpen(true)}
+              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
+              ticketCount={stagedTradeTickets.length}
+              renderDesk={(d) => (
+                <ViewportScrollBudgetContainer key={d} activeNavSection={d as NavSectionId}>
+                  {renderDeskBody(d as NavSectionId)}
+                </ViewportScrollBudgetContainer>
+              )}
             />
           )}
 
@@ -2344,261 +2680,7 @@ export default function App() {
           {/* MODE 1: CLEAN EXECUTIVE BRIEFING (DEFAULT) WRAPPED IN 1-2 SCREEN SCROLL BUDGET CONTAINER */}
           {layoutMode === 'executive_brief' && (
             <ViewportScrollBudgetContainer activeNavSection={activeNavSection}>
-              {activeNavSection === 'charts_watchlists' && (
-                <MacroOverviewTabbedWorkspace
-                  countryName={run.countryName}
-                  iso3={run.iso3}
-                  mapCard={
-                    <HeroGeopoliticalMapCard
-                      run={run}
-                      watchlistItems={activeWatchlistItems}
-                      wargameParams={geopoliticalWargameParams}
-                      onChangeWargameParams={setGeopoliticalWargameParams}
-                      onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                      onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
-                      onSelectSovereign={handleSelectSovereign}
-                    />
-                  }
-                  chartsDeck={
-                    <AnnotatedChartsDeck
-                      run={run}
-                      onRefreshLiveOpenData={() =>
-                        handlePullLiveOpenData(run.iso3, run.countryName, false)
-                      }
-                      isFetchingData={isFetchingOpenData}
-                      onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                    />
-                  }
-                />
-              )}
-
-              {activeNavSection === 'forecasting_lab' && (
-                <StatisticalForecastingLab
-                  run={run}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  externalShocks={forecastShocks}
-                  onChangeExternalShocks={setForecastShocks}
-                />
-              )}
-
-              {activeNavSection === 'geopolitical_desk' && (
-                <GeopoliticalRiskDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  wargameParams={geopoliticalWargameParams}
-                  onChangeWargameParams={setGeopoliticalWargameParams}
-                  propagateGeoShocks={propagateGeoShocks}
-                  onTogglePropagateGeoShocks={setPropagateGeoShocks}
-                  onSelectSovereign={handleSelectSovereign}
-                  onJumpToCouncilDebates={() => setActiveNavSection('council_debates')}
-                  onJumpToPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                  onJumpToForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                  onOpenSupplyChainMatrixDesk={() => setActiveNavSection('supply_chain_matrix')}
-                />
-              )}
-
-              {activeNavSection === 'supply_chain_matrix' && (
-                <SupplyChainMatrixDesk
-                  run={run}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {activeNavSection === 'global_liquidity' && (
-                <GlobalLiquidityDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                  onOpenMarketMakerDesk={() => setActiveNavSection('market_maker_alpha')}
-                />
-              )}
-
-              {activeNavSection === 'market_maker_alpha' && (
-                <MarketMakerAlphaDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                  onOpenGlobalLiquidityDesk={() => setActiveNavSection('global_liquidity')}
-                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {activeNavSection === 'portfolio_risk_desk' && (
-                <PortfolioContagionDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                />
-              )}
-
-              {activeNavSection === 'backtest_engine' && (
-                <CrisisBacktestDesk
-                  run={run}
-                  customEpisodes={customBacktestEpisodes}
-                  initialSelectedEpisodeId={selectedBacktestEpisodeId}
-                  onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
-                  onOpenCsvLab={() => setActiveNavSection('policy_doc_lab')}
-                />
-              )}
-
-              {activeNavSection === 'risk_analytics' && (
-                <InstitutionalRiskModules
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  onOpenPortfolioRiskDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {activeNavSection === 'council_debates' && (
-                <CouncilHierarchyAndDebates
-                  run={run}
-                  onJumpToCROGate={() => setActiveNavSection('cro_reports')}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                  runtimeConfig={runtimeConfig}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
-                />
-              )}
-
-              {activeNavSection === 'cro_reports' && (
-                <CROCheckpointAndReports
-                  run={run}
-                  croDraft={croDraft}
-                  runtimeConfig={runtimeConfig}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  isRunningPhase3={isRunningPhase3}
-                  onUpdateCroDraft={setCroDraft}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                />
-              )}
-
-              {activeNavSection === 'policy_doc_lab' && (
-                <PolicyDocumentAndCsvLab
-                  run={run}
-                  policyDocTitle={policyDocTitle}
-                  policyDocText={policyDocText}
-                  onChangePolicyDocTitle={setPolicyDocTitle}
-                  onChangePolicyDocText={setPolicyDocText}
-                  onDocumentFileUpload={handleDocumentFileUpload}
-                  onRunCouncilWithDocument={handleRunCouncilPhase1And2}
-                  onApplyCsvToLiveState={handleApplyCsvToLiveState}
-                  onRegisterCustomCrisisBacktest={handleRegisterCustomCrisisBacktest}
-                />
-              )}
-
-              {(activeNavSection === 'institutional_quant_desk' ||
-                activeNavSection === 'quant_cds_basis' ||
-                activeNavSection === 'quant_restructuring_npv' ||
-                activeNavSection === 'quant_matrix_econometrics' ||
-                activeNavSection === 'quant_trade_blotter' ||
-                activeNavSection === 'quant_macro_surprise' ||
-                activeNavSection === 'quant_alpha_correlation' ||
-                activeNavSection === 'quant_nss_yield_curve' ||
-                activeNavSection === 'quant_macro_catalyst_calendar' ||
-                activeNavSection === 'quant_portfolio_stress_lab') && (
-                <InstitutionalQuantDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={
-                    activeNavSection === 'institutional_quant_desk'
-                      ? 'quant_cds_basis'
-                      : (activeNavSection as QuantSubWorkspaceId)
-                  }
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onStageTradeTicket={handleStageTradeTicket}
-                />
-              )}
-
-              {(activeNavSection === 'embi_portfolio_pair_book' ||
-                activeNavSection === 'dmo_treasury_auction_sim' ||
-                activeNavSection === 'mpc_imf_document_ai') && (
-                <PortfolioAndFundingDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  runtimeConfig={runtimeConfig}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as PortfolioFundingSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
-                />
-              )}
-
-              {(activeNavSection === 'decision_dislocation_screener' ||
-                activeNavSection === 'decision_premortem_killswitch' ||
-                activeNavSection === 'decision_ledger_brier' ||
-                activeNavSection === 'decision_quadrant_stress' ||
-                activeNavSection === 'decision_prediction_markets') && (
-                <DecisionCommandCenterDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as DecisionCommandSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyConditionalEventShock={handleApplyConditionalEventShock}
-                />
-              )}
-
-              {(activeNavSection === 'ratings_shadow_fallen_angel' ||
-                activeNavSection === 'fx_beer_feer_equilibrium' ||
-                activeNavSection === 'debt_investor_base_doom_loop' ||
-                activeNavSection === 'ic_pitchbook_dossier_exporter') && (
-                <SovereignRatingsFxAndIcDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as RatingsFxIcSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-
-              {(activeNavSection === 'restructuring_npv_cac_waterfall' ||
-                activeNavSection === 'taylor_rule_fiscal_dominance' ||
-                activeNavSection === 'geopolitical_reserves_chokepoints' ||
-                activeNavSection === 'ngfs_climate_slb_greenium') && (
-                <RestructuringMonetaryGeoDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as RestructuringMonetaryGeoSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-
-              {(activeNavSection === 'persona_cross_hub_signal_scanner' ||
-                activeNavSection === 'persona_guided_playbook_cockpit' ||
-                activeNavSection === 'persona_strategy_backtester_lab' ||
-                activeNavSection === 'persona_academic_latex_csv_exporter') && (
-                <PersonaPlaybooksAndSignalDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  activePersona={activePersona}
-                  onChangePersona={setActivePersona}
-                  isDark={darkMode}
-                  activeSubTab={activeNavSection as PersonaPlaybookSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onJumpToNavSection={(sec) => setActiveNavSection(sec as NavSectionId)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
+              {renderDeskBody(activeNavSection)}
             </ViewportScrollBudgetContainer>
           )}
 

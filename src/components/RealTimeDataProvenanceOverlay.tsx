@@ -523,8 +523,8 @@ function provenanceBarLabel(spec: ResolvedDataProvenanceSpec, fetchedTime: strin
 
 function provenanceBarClass(isLive: boolean): string {
   return isLive
-    ? 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-mono text-[10px] font-semibold cursor-pointer shrink-0 transition-colors'
-    : 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 font-mono text-[10px] font-semibold cursor-pointer shrink-0 transition-colors';
+    ? 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/80 hover:bg-emerald-100 dark:hover:bg-emerald-900 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-mono text-[10px] font-semibold cursor-pointer min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap transition-colors'
+    : 'inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 font-mono text-[10px] font-semibold cursor-pointer min-w-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap transition-colors';
 }
 
 function provenanceChartBadgeClass(isLive: boolean): string {
@@ -982,15 +982,15 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       bar.setAttribute('data-prov-kind', 'TABLE');
       bar.setAttribute('data-prov-context', contextStr);
       bar.className =
-        'flex items-center justify-between gap-2 px-2.5 py-1 bg-slate-100/90 dark:bg-slate-900/95 border border-b-0 border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400';
+        'flex items-center justify-between gap-2 max-w-full min-w-0 px-2.5 py-1 bg-slate-100/90 dark:bg-slate-900/95 border border-b-0 border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-400';
 
       bar.innerHTML = `
-        <span class="truncate text-[10px] text-slate-500 dark:text-slate-400">
+        <span class="min-w-0 flex-1 truncate text-[10px] text-slate-500 dark:text-slate-400">
           <strong class="text-slate-700 dark:text-slate-300">Source:</strong> ${spec.primarySourceAuthority.split('&')[0].trim()} · click the badge for details
         </span>
         <button type="button" data-prov-trigger="true" class="${provenanceBarClass(spec.isLive)}">
           <span class="w-1.5 h-1.5 rounded-full ${spec.isLive ? 'bg-emerald-500' : 'bg-slate-400'}"></span>
-          <span data-prov-label="true">${provenanceBarLabel(spec, fetchedTime)}</span>
+          <span data-prov-label="true" class="truncate">${provenanceBarLabel(spec, fetchedTime)}</span>
         </button>
       `;
 
