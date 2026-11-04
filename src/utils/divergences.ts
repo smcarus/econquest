@@ -12,7 +12,7 @@
  * show, but below a smaller one built on live data, and every line says which it is.
  */
 import type { WatchlistItem } from '../types/council';
-import { upcomingOfficialEvents } from '../data/officialCalendar';
+import { POLITICAL_FISCAL_CATEGORIES, upcomingOfficialEvents } from '../data/officialCalendar';
 import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk } from './marketsMacro';
 import { formatPeriod } from './officialYields';
 
@@ -42,7 +42,7 @@ export interface CountryDivergence {
   countryName: string;
   top: Divergence;
   others: Divergence[];
-  catalyst?: { date: string; title: string; daysUntil: number };
+  catalyst?: { date: string; title: string; daysUntil: number; legalDeadline?: boolean };
   /** e.g. "10Y +12 bps, CDS -5 bps since your last look". */
   change?: string;
 }
@@ -220,13 +220,17 @@ export function rankDivergences(items: WatchlistItem[], lastLook?: LastLook | nu
       .sort((a, b) => b.score - a.score);
     if (!all.length) continue;
     const mine = events.filter((e) => e.iso3 === it.iso3);
-    const ev = (all[0].kind === 'policy' && mine.find((e) => e.category === 'MPC_DECISION')) || mine[0];
+    // Policy gaps resolve at rate decisions; the others at elections, budgets and IMF dates.
+    const ev =
+      (all[0].kind === 'policy'
+        ? mine.find((e) => e.category === 'MPC_DECISION')
+        : mine.find((e) => POLITICAL_FISCAL_CATEGORIES.includes(e.category))) || mine[0];
     out.push({
       iso3: it.iso3,
       countryName: it.countryName,
       top: all[0],
       others: all.slice(1),
-      ...(ev ? { catalyst: { date: ev.date, title: ev.title, daysUntil: ev.daysUntil } } : {}),
+      ...(ev ? { catalyst: { date: ev.date, title: ev.title, daysUntil: ev.daysUntil, ...(ev.dateKind ? { legalDeadline: true } : {}) } } : {}),
       change: changeSince(it, lastLook),
     });
   }
