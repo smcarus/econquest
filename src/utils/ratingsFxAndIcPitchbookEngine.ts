@@ -1,4 +1,3 @@
-import { jsPDF } from 'jspdf';
 import {
   BoardroomICPitchbookDossier,
   CouncilAssessmentRun,
@@ -876,7 +875,9 @@ export function buildBoardroomICPitchbookDossier(
 /**
  * Exports a Multi-Page Institutional PDF Investment Committee Pitchbook Dossier
  */
-export function exportICPitchbookPdfDossier(dossier: BoardroomICPitchbookDossier): void {
+export async function exportICPitchbookPdfDossier(dossier: BoardroomICPitchbookDossier): Promise<void> {
+  // The PDF library is large, so it loads only when someone exports.
+  const { jsPDF } = await import('jspdf');
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
   let y = 16;

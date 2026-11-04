@@ -5,7 +5,8 @@ interface EconQuestLogoProps {
   size?: number;
 }
 
-import logoUrl from '../assets/images/econquest_logo.png';
+// 96px copy for the header (shown at up to 38px); the full-size logo stays for the favicon and docs.
+import logoUrl from '../assets/images/econquest_logo_96.png';
 
 export const ECONQUEST_LOGO_ASSET_PATH = logoUrl;
 
