@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AIRuntimeConfig,
   AnnotatedChartSpec,
@@ -154,6 +154,7 @@ import {
   Briefcase,
   BookOpen,
   Cpu,
+  Settings2,
 } from 'lucide-react';
 
 const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
@@ -553,6 +554,25 @@ export default function App() {
   const [openPillarMenuId, setOpenPillarMenuId] =
     useState<ActivityPillarId | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
+  const headerMenuRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (!isHeaderMenuOpen) return;
+    const onPointerDown = (e: MouseEvent) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(e.target as Node)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsHeaderMenuOpen(false);
+    };
+    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [isHeaderMenuOpen]);
   const [isIntegrityAuditOpen, setIsIntegrityAuditOpen] = useState<boolean>(false);
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
     useState<boolean>(false);
@@ -1009,6 +1029,8 @@ export default function App() {
     () => computeScenarioDeltaComparison(pinnedScenarioA, liveScenarioBSnapshot),
     [pinnedScenarioA, liveScenarioBSnapshot]
   );
+  const scenarioChangeCount =
+    scenarioComparisonSuite.deteriorationCount + scenarioComparisonSuite.improvementCount;
 
   const handlePinCurrentAsScenarioA = () => {
     const pinned = captureScenarioSnapshot(
@@ -1639,7 +1661,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col">
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
-      <header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
+      <header className="flex items-center justify-between gap-3 min-w-0 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         {/* Zone 1: EconQuest Crest Logo + Sovereign Council Orchestrator Identity */}
         <a
           href="#top"
@@ -1652,11 +1674,8 @@ export default function App() {
         >
           <EconQuestLogo size={34} />
           <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-              Sovereign Council Orchestrator
-            </span>
-            <span className="hidden 2xl:block text-[10px] font-mono text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              3 Activity Pillars · 1–2 Screen Scroll Cap · Live API Provenance
+            <span className="hidden sm:inline lg:hidden xl:inline text-sm font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+              EconQuest
             </span>
           </div>
         </a>
@@ -1768,149 +1787,43 @@ export default function App() {
           </button>
         </nav>
 
-        {/* Zone 3: Simple/Pro Density Switcher + Persona Mode Switcher + QA Audit + Session I/O + Scenario A/B + Theme + Run Council */}
+        {/* Zone 3: everyday actions stay visible; settings and tools live in one menu */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {/* Global Simple Brief vs. Pro Quant Density Switcher */}
-          <div
-            className="hidden sm:inline-flex items-center border border-blue-200 dark:border-blue-800/80 bg-blue-50/50 dark:bg-blue-950/30 p-0.5"
-            title="Switch Desk Clarity Mode: Simple Brief (3-pillar plain-English desk guide) vs. Pro Quant (compact econometric bar)"
-          >
-            <button
-              type="button"
-              onClick={() => setDensityMode('SIMPLE_BRIEF')}
-              className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
-                densityMode === 'SIMPLE_BRIEF'
-                  ? 'bg-blue-600 text-white shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Simple Brief
-            </button>
-            <button
-              type="button"
-              onClick={() => setDensityMode('PRO_QUANT')}
-              className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
-                densityMode === 'PRO_QUANT'
-                  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-2xs'
-                  : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Pro Quant
-            </button>
-          </div>
-
-          {/* Top Header 3-Persona Mode Switcher (Updates Persona Lens In-Place Without Leaving Active Desk) */}
-          <div
-            className="hidden md:inline-flex items-center border border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/30 p-0.5"
-            title="Switch Active Persona Lens In-Place (Individual Trader / Institutional PM & IC / Policy Researcher)"
-          >
-            {(
-              [
-                { id: 'INDIVIDUAL_TRADER', short: 'Trader' },
-                { id: 'INSTITUTIONAL_PM_IC', short: 'Institution' },
-                { id: 'POLICY_RESEARCHER', short: 'Researcher' },
-              ] as const
-            ).map((p) => {
-              const isSel = activePersona === p.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => {
-                    setActivePersona(p.id);
-                  }}
-                  className={`px-2 py-1 text-[11px] font-mono font-semibold transition-colors ${
-                    isSel
-                      ? 'bg-emerald-600 text-white shadow-2xs'
-                      : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                  }`}
-                >
-                  {p.short}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Pre-Flight Model Integrity & Full-Stack Sweep Auditor */}
-          <button
-            type="button"
-            onClick={() => setIsIntegrityAuditOpen(true)}
-            title="Open Full-Stack Backend, Quant Engine & Model Integrity Sweep Auditor"
-            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors whitespace-nowrap shrink-0"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>{liveIntegrityAuditReport.readinessScorePct}% QA</span>
-          </button>
-
-          {/* 1-Click Local Ollama, External/Internal API Hosts & Docker Self-Host Runtime Switcher */}
-          <button
-            type="button"
-            onClick={() => setIsRuntimeModalOpen(true)}
-            title="Open 4-Tab GUI Studio: Global AI Models, 12-Agent Matrix, Docker Self-Host Builder & External/Internal API Host Connectors"
-            className={`inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-mono font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-              runtimeConfig.providerMode === 'ollama' ||
-              runtimeConfig.providerMode === 'hybrid'
-                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 border-emerald-300 dark:border-emerald-700'
-                : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-700'
-            }`}
-          >
-            <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span className="hidden sm:inline">
-              {runtimeConfig.providerMode === 'ollama'
-                ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
-                : runtimeConfig.providerMode === 'hybrid'
-                ? 'Hybrid Ollama'
-                : 'AI / APIs / Docker'}
-            </span>
-          </button>
-
-          {/* 1-Click User Manual & GitHub Docs Viewer */}
-          <button
-            type="button"
-            onClick={() => setIsManualModalOpen(true)}
-            title="Open Sovereign Council Orchestrator User Manual (docs/USER_MANUAL.md) & README.md"
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors whitespace-nowrap shrink-0"
-          >
-            <BookOpen className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Manual & Docs</span>
-          </button>
-
-          {/* Session Persistence Manager */}
-          <button
-            type="button"
-            onClick={() => setIsSessionModalOpen(true)}
-            title="Workspace Session Save / Export / Restore (.json)"
-            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap shrink-0"
-          >
-            <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Session</span>
-          </button>
-
           <button
             type="button"
             onClick={() => setIsScenarioDrawerOpen((v) => !v)}
-            title="Open Side-by-Side Scenario A vs. Scenario B Delta Attribution Comparator"
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
+            title="Compare scenario A with scenario B"
+            className={`hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
               isScenarioDrawerOpen
                 ? 'bg-blue-600 text-white border-blue-600'
                 : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
             }`}
           >
             <GitCompare className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">A vs B</span>
-            {(scenarioComparisonSuite.deteriorationCount > 0 ||
-              scenarioComparisonSuite.improvementCount > 0) && (
-              <span className="px-1.5 py-0.2 text-[10px] font-mono font-bold bg-amber-500 text-slate-950">
-                Δ{scenarioComparisonSuite.deteriorationCount + scenarioComparisonSuite.improvementCount}
+            <span>A vs B</span>
+            {scenarioChangeCount > 0 && (
+              <span className="px-1.5 text-[10px] font-mono font-bold bg-amber-500 text-slate-950">
+                {scenarioChangeCount}
               </span>
             )}
           </button>
 
           <button
             type="button"
+            onClick={() => exportSMCRPdfDossier(run)}
+            title="Download the PDF report for this country"
+            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>PDF</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setDarkMode(!darkMode)}
-            title={darkMode ? 'Switch to Crisp Editorial Light Mode' : 'Switch to Dark Terminal Mode'}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap shrink-0"
+            title={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            className="inline-flex items-center px-2 py-1.5 text-xs text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors"
           >
             {darkMode ? (
               <Sun className="w-3.5 h-3.5 text-amber-400" />
@@ -1919,24 +1832,177 @@ export default function App() {
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => exportSMCRPdfDossier(run)}
-            title="Export Standardized SMCR-1.0 PDF Dossier"
-            className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap shrink-0"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden 2xl:inline">PDF</span>
-          </button>
+          <div className="relative" ref={headerMenuRef}>
+            <button
+              type="button"
+              onClick={() => setIsHeaderMenuOpen((v) => !v)}
+              aria-label="Menu"
+              aria-haspopup="menu"
+              aria-expanded={isHeaderMenuOpen}
+              title="View settings, AI and data connections, manual, saved sessions"
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
+                isHeaderMenuOpen
+                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100'
+                  : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
+              }`}
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Menu</span>
+              <ChevronDown className="w-3 h-3 opacity-70" />
+            </button>
+
+            {isHeaderMenuOpen && (
+              <div
+                role="menu"
+                className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-3 text-xs"
+              >
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    Detail level
+                  </div>
+                  <div className="grid grid-cols-2 gap-1">
+                    {(
+                      [
+                        { id: 'SIMPLE_BRIEF', label: 'Plain English' },
+                        { id: 'PRO_QUANT', label: 'Full detail' },
+                      ] as const
+                    ).map((d) => (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => setDensityMode(d.id)}
+                        className={`px-2 py-1.5 border font-semibold transition-colors ${
+                          densityMode === d.id
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
+                        }`}
+                      >
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">
+                    I am a
+                  </div>
+                  <div className="grid grid-cols-3 gap-1">
+                    {(
+                      [
+                        { id: 'INDIVIDUAL_TRADER', short: 'Trader' },
+                        { id: 'INSTITUTIONAL_PM_IC', short: 'Institution' },
+                        { id: 'POLICY_RESEARCHER', short: 'Researcher' },
+                      ] as const
+                    ).map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        onClick={() => setActivePersona(p.id)}
+                        className={`px-2 py-1.5 border font-semibold transition-colors ${
+                          activePersona === p.id
+                            ? 'bg-emerald-600 text-white border-emerald-600'
+                            : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-emerald-400'
+                        }`}
+                      >
+                        {p.short}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
+                  {(
+                    [
+                      {
+                        key: 'runtime',
+                        icon: <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
+                        label: 'AI model and data connections',
+                        hint:
+                          runtimeConfig.providerMode === 'ollama'
+                            ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
+                            : runtimeConfig.providerMode === 'hybrid'
+                            ? 'Hybrid Ollama'
+                            : 'Gemini',
+                        onClick: () => setIsRuntimeModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'qa',
+                        icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
+                        label: 'Model health check',
+                        hint: `${liveIntegrityAuditReport.readinessScorePct}%`,
+                        onClick: () => setIsIntegrityAuditOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'session',
+                        icon: <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Save or restore session',
+                        hint: '',
+                        onClick: () => setIsSessionModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'manual',
+                        icon: <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'User manual',
+                        hint: '',
+                        onClick: () => setIsManualModalOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'ab',
+                        icon: <GitCompare className="w-3.5 h-3.5" />,
+                        label: 'Compare scenario A vs B',
+                        hint: scenarioChangeCount > 0 ? String(scenarioChangeCount) : '',
+                        onClick: () => setIsScenarioDrawerOpen((v) => !v),
+                        className: 'xl:hidden',
+                      },
+                      {
+                        key: 'pdf',
+                        icon: <Download className="w-3.5 h-3.5" />,
+                        label: 'Download PDF report',
+                        hint: '',
+                        onClick: () => exportSMCRPdfDossier(run),
+                        className: 'xl:hidden',
+                      },
+                    ]
+                  ).map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setIsHeaderMenuOpen(false);
+                        item.onClick();
+                      }}
+                      className={`flex items-center gap-2 px-2 py-1.5 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${item.className}`}
+                    >
+                      {item.icon}
+                      <span className="flex-1">{item.label}</span>
+                      {item.hint && (
+                        <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                          {item.hint}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <button
             type="button"
             onClick={handleRunCouncilPhase1And2}
             disabled={isRunningPhase1And2}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap shrink-0"
+            title="Run the AI council assessment for the selected country"
+            aria-label="Run Council"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 transition-colors whitespace-nowrap"
           >
             <Play className="w-3.5 h-3.5" />
-            <span>
+            <span className="hidden sm:inline">
               {isRunningPhase1And2 ? 'Running...' : 'Run Council'}
             </span>
           </button>
@@ -1944,8 +2010,8 @@ export default function App() {
       </header>
 
       {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
-      <section className="bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-6 py-2">
-        <div className="max-w-[1600px] mx-auto space-y-2">
+      <section className="bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2">
+        <div className="max-w-[1600px] mx-auto flex flex-col gap-2">
           {/* Row 1: Contextual Sub-Groups & Modules for Active Activity Pillar */}
           <PillarSubNavigationStrip
             activeNavSection={activeNavSection}
@@ -2095,14 +2161,14 @@ export default function App() {
           </div>
 
           {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
-          <div className="flex lg:hidden items-center gap-1.5 pt-2 border-t border-slate-200 dark:border-slate-800 overflow-x-auto">
+          <div className="order-first flex lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
             <button
               type="button"
               onClick={() => setIsCommandPaletteOpen(true)}
               className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
             >
               <Search className="w-3 h-3" />
-              <span>⌘K Jump</span>
+              <span>Jump</span>
             </button>
             {ACTIVITY_PILLARS.map((pillar) => {
               const isAct =

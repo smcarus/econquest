@@ -619,7 +619,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 font-semibold">
-              DOMAIN HUB 5 · BUY-SIDE EM SOVEREIGN CREDIT & RELATIVE-VALUE QUANT DESK
+              EM SOVEREIGN CREDIT & RELATIVE-VALUE DESK
             </span>
             <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
               {run.countryName} ({run.iso3}) · Currency: {run.openData.currencyCode}
