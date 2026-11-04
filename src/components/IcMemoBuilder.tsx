@@ -13,16 +13,16 @@ import { toDisplayCase } from '../utils/displayCase';
  * edit, then copy, download as Markdown, or print to PDF. Every figure carries its data status.
  */
 
-interface IcMemoBuilderProps {
+export interface IcMemoBuilderProps {
   run: CouncilAssessmentRun;
   stagedTickets: StagedTradeTicketSpec[];
   holdings: Holding[];
   riskLookup: WatchlistItem[];
 }
 
-type SectionId = 'recommendation' | 'figures' | 'thesis' | 'trades' | 'portfolio' | 'risks' | 'calendar' | 'sources';
+export type SectionId = 'recommendation' | 'figures' | 'thesis' | 'trades' | 'portfolio' | 'risks' | 'calendar' | 'sources';
 
-const SECTION_LABEL: Record<SectionId, string> = {
+export const SECTION_LABEL: Record<SectionId, string> = {
   recommendation: 'Recommendation',
   figures: 'Key figures',
   thesis: 'Thesis',
@@ -39,13 +39,13 @@ const VERDICT_LABEL: Record<string, string> = {
   HOLD_AND_MONITOR: 'Hold and monitor',
 };
 
-interface MemoSection {
+export interface MemoSection {
   id: SectionId;
   heading: string;
   lines: string[]; // each line is a paragraph, or a bullet when it starts with "- "
 }
 
-function buildSections(
+export function buildSections(
   p: IcMemoBuilderProps,
   include: Record<SectionId, boolean>,
   ticketScope: 'country' | 'all'
@@ -76,7 +76,7 @@ function buildSections(
       heading: SECTION_LABEL.figures,
       lines: [
         `- Debt / GDP: ${open.imfIndicators.debtToGdpPct.toFixed(1)}%${sampleNote}`,
-        `- FX reserves: ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports${sampleNote}`,
+        `- FX reserves, months of imports: ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)}${sampleNote}`,
         `- 5Y CDS: ${Math.round(mkt.cds5YSpreadBps)} bps${priceNote}`,
         `- 10Y yield: ${mkt.sovereign10YBondYieldPct.toFixed(2)}%${priceNote}`,
         `- Policy rate: ${mkt.policyRatePct.toFixed(2)}%${priceNote}`,

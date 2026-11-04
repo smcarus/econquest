@@ -81,6 +81,7 @@ import { PortfolioSummary } from './components/PortfolioSummary';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { RolePicker } from './components/RolePicker';
+import { PresentMode } from './components/PresentMode';
 import { getRole, loadRole, saveRole, USER_ROLES, type UserRoleId, type WorkflowArea } from './data/roles';
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
@@ -176,6 +177,7 @@ import {
   BookOpen,
   Cpu,
   Settings2,
+  Presentation,
 } from 'lucide-react';
 
 const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
@@ -587,6 +589,7 @@ export default function App() {
   const [portfolioTab, setPortfolioTab] = useState<string>(() => (userRole && role.home.portfolioTab) || PORTFOLIO_TABS[0].id);
   const [reportsTab, setReportsTab] = useState<string>(() => (userRole && role.home.reportsTab) || REPORTS_TABS[0].id);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
+  const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
   const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
   const setHoldings = (next: Holding[]) => {
@@ -2037,6 +2040,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col">
+      {isPresentMode && (
+        <PresentMode
+          run={run}
+          stagedTickets={stagedTradeTickets}
+          holdings={holdings}
+          riskLookup={holdingsRiskLookup}
+          onClose={() => setIsPresentMode(false)}
+        />
+      )}
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
       <header className="flex items-center justify-between gap-3 min-w-0 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         {/* Zone 1: EconQuest Crest Logo + Sovereign Council Orchestrator Identity */}
@@ -2207,6 +2219,15 @@ export default function App() {
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             type="button"
+            onClick={() => setIsPresentMode(true)}
+            title="Present this country and your book full screen (Esc to leave)"
+            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
+          >
+            <Presentation className="w-3.5 h-3.5" />
+            <span>Present</span>
+          </button>
+          <button
+            type="button"
             onClick={() => setIsScenarioDrawerOpen((v) => !v)}
             title="Compare scenario A with scenario B"
             className={`hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
@@ -2364,6 +2385,14 @@ export default function App() {
                         hint: '',
                         onClick: () => setIsManualModalOpen(true),
                         className: '',
+                      },
+                      {
+                        key: 'present',
+                        icon: <Presentation className="w-3.5 h-3.5" />,
+                        label: 'Present (full screen)',
+                        hint: '',
+                        onClick: () => setIsPresentMode(true),
+                        className: 'xl:hidden',
                       },
                       {
                         key: 'ab',
