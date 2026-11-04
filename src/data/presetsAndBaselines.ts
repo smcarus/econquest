@@ -343,6 +343,16 @@ export function saveSeenDefaultWatchlists(ids: string[]): void {
   }
 }
 
+/** News metrics for a country with no sample headlines: neutral tone, no articles, no headlines. */
+export function noNewsMetrics(geopoliticalRisk: number): OpenDataSnapshot['gdeltMetrics'] {
+  return {
+    conflictIntensityIndex: Math.round(geopoliticalRisk * 100),
+    averageTone: 0,
+    articleCount24h: 0,
+    topHeadlines: [],
+  };
+}
+
 export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
   const item = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3) || SOVEREIGN_CATALOG[0];
 
@@ -601,8 +611,11 @@ export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
     imfIndicators: imf,
     worldBankIndicators: wb,
     monetaryAndMarket: mkt,
-    polymarketContracts: specific.polymarketContracts || snapshots.BRA!.polymarketContracts!,
-    gdeltMetrics: specific.gdeltMetrics || snapshots.BRA!.gdeltMetrics!,
+    // Countries without their own sample snapshot get no prediction-market contracts and no
+    // headlines (the live pull fills both when Polymarket and GDELT answer). The conflict index
+    // is the catalog's geopolitical score, like the other fallback fields above.
+    polymarketContracts: specific.polymarketContracts || [],
+    gdeltMetrics: specific.gdeltMetrics || noNewsMetrics(item.geopoliticalRisk),
     dsaAnalytics: {
       effectiveRealInterestRatePct: rEff,
       realGdpGrowthRatePct: gReal,
@@ -767,6 +780,8 @@ export function buildAnnotatedChartsForSovereign(snapshot: OpenDataSnapshot): An
   const basePolicyRate = snapshot.monetaryAndMarket.policyRatePct;
   const baseCpi = snapshot.imfIndicators.cpiInflationPct;
   const baseConflict = snapshot.gdeltMetrics.conflictIntensityIndex;
+  const hasPolyContract = snapshot.polymarketContracts.length > 0;
+  // Without a contract the odds line is an illustrative base level, and the chart labels it so.
   const basePolyProb = snapshot.polymarketContracts[0]?.probabilityPct ?? 62;
 
   return [
@@ -968,14 +983,16 @@ export function buildAnnotatedChartsForSovereign(snapshot: OpenDataSnapshot): An
       categoryKicker: 'Geopolitical Risk Desk · High-Frequency Event & Prediction Odds',
       title: `Geopolitical Conflict Velocity & Market-Implied Policy Odds (${snapshot.countryName})`,
       conclusionHeadline:
-        baseConflict >= 65 || basePolyProb >= 65
+        !hasPolyContract
+          ? `Global News Tension (${baseConflict}/100) ${baseConflict >= 65 ? 'Is Above' : 'Stays Below'} the Red-Alert Level; No Polymarket Contract on File for ${snapshot.countryName} (Ref: GDELT Conflict Index = ${baseConflict}/100 | Trigger = 65)`
+          : baseConflict >= 65 || basePolyProb >= 65
           ? `Real-Time News & Prediction Markets Signal High Risk of Trade or Shipping Disruptions (Ref: Polymarket Adverse Odds = ${basePolyProb}% | GDELT Conflict Index = ${baseConflict}/100 | Escalation Trigger = 65)`
           : `Global News Tension (${baseConflict}/100) Stays Below the Red-Alert Level Despite ${basePolyProb}% Market Odds of Policy Friction (Ref: GDELT Conflict Index = ${baseConflict}/100 | Polymarket Odds = ${basePolyProb}% | Trigger = 65)`,
       subtitle: 'GDELT Conflict & Tone Stress Index (0–100) vs. Polymarket Adverse Regime Probability (%)',
       deskOwner: 'geopolitical',
       primarySeriesLabel: 'GDELT Conflict & Tone Index',
       primaryUnit: 'Index',
-      secondarySeriesLabel: 'Polymarket Adverse Odds',
+      secondarySeriesLabel: hasPolyContract ? 'Polymarket Adverse Odds' : 'Illustrative odds (no Polymarket contract)',
       secondaryUnit: '% Prob',
       thresholdLabel: 'Acute Spillover Escalation Trigger (65)',
       thresholdValue: 65,
@@ -1212,6 +1229,10 @@ export function buildDefaultAssessmentRun(
     : recomputeDerivedOpenDataAnalytics(buildBaselineOpenData(iso3));
   const charts = buildAnnotatedChartsForSovereign(openData);
   const catalogItem = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3) || SOVEREIGN_CATALOG[0];
+  // Prediction-market contracts, when there are any. Without one, the text says so rather than
+  // quoting made-up odds.
+  const pmPolicy = openData.polymarketContracts[0];
+  const pmFiscal = openData.polymarketContracts[1];
 
   // Dynamically calibrate sovereign, macro, and geopolitical risk scores from live openData
   const anchors = computeQuantitativeAnchorScores(openData);
@@ -1351,10 +1372,10 @@ export function buildDefaultAssessmentRun(
         keyMetrics: [
           {
             label: 'Polymarket Adverse Policy Odds',
-            value: `${openData.polymarketContracts[0]?.probabilityPct ?? 65}%`,
-            numericValue: openData.polymarketContracts[0]?.probabilityPct ?? 65,
+            value: pmPolicy ? `${pmPolicy.probabilityPct}%` : 'No contract',
+            numericValue: pmPolicy?.probabilityPct ?? 0,
             unit: '% Prob',
-            change: '+9% in 14D',
+            change: pmPolicy ? '+9% in 14D' : 'No Polymarket contract on file',
             source: 'Polymarket Gamma API',
             provenanceTier: 'TIER_2_PREDICTION_EVENT',
           },
@@ -1368,18 +1389,16 @@ export function buildDefaultAssessmentRun(
             provenanceTier: 'TIER_3_SEARCH_POLICY_DOC',
           },
         ],
-        findingsSummary: `Real-money prediction markets see a ${openData.polymarketContracts[0]?.probabilityPct ?? 65}% chance of new tariffs or policy friction soon, making cross-border trade and investment more expensive (Ref: Polymarket Adverse Policy Probability = ${openData.polymarketContracts[0]?.probabilityPct ?? 65}% · Regulatory Friction Score = 0.62).`,
+        findingsSummary: pmPolicy
+          ? `Real-money prediction markets see a ${pmPolicy.probabilityPct}% chance of new tariffs or policy friction soon, making cross-border trade and investment more expensive (Ref: Polymarket Adverse Policy Probability = ${pmPolicy.probabilityPct}% · Regulatory Friction Score = 0.62).`
+          : `No Polymarket contract on ${item.countryName} is on file, so policy friction is judged from sanctions and tariff lists only (Ref: Regulatory Friction Score = 0.62).`,
         structuredPayload: {
-          polymarket_implied_prob_pct: openData.polymarketContracts[0]?.probabilityPct ?? 65,
+          ...(pmPolicy ? { polymarket_implied_prob_pct: pmPolicy.probabilityPct } : {}),
           capital_restriction_risk: 0.42,
         },
-        groundingSources: [
-          {
-            title: openData.polymarketContracts[0]?.question || 'Polymarket Macro Contract',
-            uri: 'https://polymarket.com',
-            sourceType: 'Polymarket Gamma API',
-          },
-        ],
+        groundingSources: pmPolicy
+          ? [{ title: pmPolicy.question, uri: pmPolicy.url || 'https://polymarket.com', sourceType: 'Polymarket Gamma API' }]
+          : [],
       },
       {
         agentId: 'ag4_fiscal_auditor',
@@ -1495,27 +1514,25 @@ export function buildDefaultAssessmentRun(
           },
           {
             label: 'Fiscal Target Achievement Odds',
-            value: `${openData.polymarketContracts[1]?.probabilityPct ?? 28}%`,
-            numericValue: openData.polymarketContracts[1]?.probabilityPct ?? 28,
+            value: pmFiscal ? `${pmFiscal.probabilityPct}%` : 'No contract',
+            numericValue: pmFiscal?.probabilityPct ?? 0,
             unit: '% Prob',
-            change: 'Skeptical market pricing',
+            change: pmFiscal ? 'Skeptical market pricing' : 'No Polymarket contract on file',
             source: 'Polymarket Gamma API',
             provenanceTier: 'TIER_2_PREDICTION_EVENT',
           },
         ],
-        findingsSummary: `Upcoming political and election pressures make unpopular budget cuts unlikely, and prediction markets give only a ${openData.polymarketContracts[1]?.probabilityPct ?? 28}% chance that the government hits its official budget target (Ref: WGI Political Stability = ${openData.worldBankIndicators.politicalStabilityPercentile.toFixed(1)} pctl · Polymarket Fiscal Target Odds = ${openData.polymarketContracts[1]?.probabilityPct ?? 28}%).`,
+        findingsSummary: pmFiscal
+          ? `Upcoming political and election pressures make unpopular budget cuts unlikely, and prediction markets give only a ${pmFiscal.probabilityPct}% chance that the government hits its official budget target (Ref: WGI Political Stability = ${openData.worldBankIndicators.politicalStabilityPercentile.toFixed(1)} pctl · Polymarket Fiscal Target Odds = ${pmFiscal.probabilityPct}%).`
+          : `Upcoming political and election pressures make unpopular budget cuts unlikely; there is no Polymarket contract on the budget target to check this against (Ref: WGI Political Stability = ${openData.worldBankIndicators.politicalStabilityPercentile.toFixed(1)} pctl).`,
         structuredPayload: {
           political_stability_percentile: openData.worldBankIndicators.politicalStabilityPercentile,
           willingness_to_tighten_index: 41,
           fiscal_slippage_risk_high: true,
         },
-        groundingSources: [
-          {
-            title: openData.polymarketContracts[1]?.question || 'Sovereign Fiscal Anchor Contract',
-            uri: 'https://polymarket.com',
-            sourceType: 'Polymarket Gamma API',
-          },
-        ],
+        groundingSources: pmFiscal
+          ? [{ title: pmFiscal.question, uri: pmFiscal.url || 'https://polymarket.com', sourceType: 'Polymarket Gamma API' }]
+          : [],
       },
       {
         agentId: 'ag7_hf_nowcaster',
@@ -1667,7 +1684,7 @@ export function buildDefaultAssessmentRun(
             thesis: `Political news around ${item.countryName} remains mostly regional talk, and existing trade agreements are still intact (Ref: GDELT Conflict Index = ${openData.gdeltMetrics.conflictIntensityIndex}/100).`,
             challengerAgent: 'Transmission Mapping & Sanctions Analysts',
             challengerStance: 'BEARISH',
-            counterThesis: `Calm diplomatic words hide real shipping delays and a ${openData.polymarketContracts[0]?.probabilityPct ?? 65}% market probability of tariff or policy disruptions, which directly raise imported fuel and freight costs by 15% (Ref: Chokepoint Exposure = ${openData.monetaryAndMarket.chokepointExposureIndex}/100 · Polymarket Odds = ${openData.polymarketContracts[0]?.probabilityPct ?? 65}%).`,
+            counterThesis: `Calm diplomatic words hide real shipping delays${pmPolicy ? ` and a ${pmPolicy.probabilityPct}% market probability of tariff or policy disruptions` : ''}, which directly raise imported fuel and freight costs by 15% (Ref: Chokepoint Exposure = ${openData.monetaryAndMarket.chokepointExposureIndex}/100${pmPolicy ? ` · Polymarket Odds = ${pmPolicy.probabilityPct}%` : ''}).`,
             deskLeadResolution:
               'Prioritized real-world shipping costs and prediction-market pricing over diplomatic statements; raised the desk risk score by +0.06.',
             riskScoreAdjustment: 0.06,
@@ -1692,7 +1709,7 @@ export function buildDefaultAssessmentRun(
             thesis: `The central bank has plenty of US dollars in reserve—enough for ${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports—so the country will not default on its foreign-currency bonds anytime soon (Ref: Import Cover = ${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} mos · Greenspan-Guidotti = ${openData.debtRollover.greenspanGuidottiRatioPct}%).`,
             challengerAgent: 'Political Will & Fiscal Auditor Analysts',
             challengerStance: 'BEARISH',
-            counterThesis: `While US dollar reserves protect foreign bondholders, total government debt is ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% of GDP and growing because politicians are unlikely to pass the ${openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% of GDP in budget cuts needed to stabilize it (Ref: Debt/GDP = ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% · Fiscal Gap = ${openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% GDP · Polymarket Target Odds = ${openData.polymarketContracts[1]?.probabilityPct ?? 24}%).`,
+            counterThesis: `While US dollar reserves protect foreign bondholders, total government debt is ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% of GDP and growing because politicians are unlikely to pass the ${openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% of GDP in budget cuts needed to stabilize it (Ref: Debt/GDP = ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% · Fiscal Gap = ${openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% GDP${pmFiscal ? ` · Polymarket Target Odds = ${pmFiscal.probabilityPct}%` : ''}).`,
             deskLeadResolution:
               'Agreed that foreign-currency default risk is low due to strong reserves, but local-currency bond risk is high because of budget deficits; logged a formal Political Will warning.',
             riskScoreAdjustment: 0.08,
