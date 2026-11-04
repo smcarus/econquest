@@ -499,7 +499,7 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
 };
 
 export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: string) => boolean): Array<{ heading: string; lines: string[] }> {
-  if (!b) return [{ heading: 'No council brief yet', lines: ['Ask the council a question on Today, then choose "Send to Reports".'] }];
+  if (!b) return [{ heading: 'No council brief yet', lines: ['Ask the council a question on Workspace, then choose "Send to Reports".'] }];
   const out: Array<{ heading: string; lines: string[] }> = [];
   const s = b.synthesis?.brief;
   if (on('question')) out.push({ heading: COUNCIL_SECTIONS.question, lines: [b.question, `Asked ${b.askedAt.slice(0, 16).replace('T', ' ')} UTC about ${b.scopeNote}.`] });

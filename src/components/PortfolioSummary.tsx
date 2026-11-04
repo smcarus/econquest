@@ -315,7 +315,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
         <div>
           <div className="ui-section-title mb-1">Staged trade ideas</div>
           {stagedTickets.length === 0 ? (
-            <p className="ui-label">None yet. Stage a ticket from Today or any desk.</p>
+            <p className="ui-label">None yet. Stage a ticket from Workspace or any desk.</p>
           ) : (
             <ul className="divide-y divide-slate-100 dark:divide-slate-800">
               {stagedTickets.slice(0, 5).map((t) => (

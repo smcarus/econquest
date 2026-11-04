@@ -69,7 +69,7 @@ export const USER_ROLES: UserRole[] = [
 ];
 
 export const NAV_LABEL: Record<WorkflowArea, string> = {
-  today: 'Today',
+  today: 'Workspace',
   country: 'Countries',
   portfolio: 'Portfolio',
   reports: 'Reports',

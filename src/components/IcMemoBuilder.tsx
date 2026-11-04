@@ -86,7 +86,7 @@ export const AUDIENCE_INFO: Record<
     title: 'Council brief',
     heading: 'Council brief',
     file: 'council-brief',
-    help: 'The last question you asked the council on Today: the agents’ answers with their sources, and the synthesis agent’s summary if a model is set up.',
+    help: 'The last question you asked the council on Workspace: the agents’ answers with their sources, and the synthesis agent’s summary if a model is set up.',
     bookLevel: true,
   },
 };
@@ -502,7 +502,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
           <h2 className="ui-section-title">Build the report</h2>
           <p className="ui-label">
             {audience === 'council'
-              ? 'Pulls the last council brief you sent from Today.'
+              ? 'Pulls the last council brief you sent from Workspace.'
               : info.bookLevel
               ? 'Pulls your holdings (or the watchlist at equal weight), staged tickets and the official calendar.'
               : 'Pulls the current country, your tickets, holdings and the official calendar.'}
