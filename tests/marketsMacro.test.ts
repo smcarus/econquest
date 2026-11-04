@@ -1,0 +1,82 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { cdsVsPeers, fitCdsOnRisk, INFLATION_TARGETS, marketsMacroBrief, peerScreen, policyStance } from '../src/utils/marketsMacro.ts';
+import { buildBaselineOpenData } from '../src/data/presetsAndBaselines.ts';
+import type { CouncilAssessmentRun, WatchlistItem } from '../src/types/council.ts';
+
+const NOW = '2026-11-04T12:00:00Z';
+const peer = (iso3: string, risk: number, cds: number, y = 10): WatchlistItem =>
+  ({ iso3, countryName: iso3, compositeRisk: risk, cds5YBps: cds, yield10YPct: y }) as unknown as WatchlistItem;
+
+test('peer fit: needs four countries with some spread in risk', () => {
+  assert.equal(fitCdsOnRisk([peer('A', 0.3, 100), peer('B', 0.5, 200), peer('C', 0.7, 400)]), null);
+  assert.equal(fitCdsOnRisk([peer('A', 0.5, 100), peer('B', 0.5, 200), peer('C', 0.5, 400), peer('D', 0.5, 300)]), null);
+  // Exact exponential: CDS doubles every 0.2 of risk, so every country is in line.
+  const exact = [peer('A', 0.3, 100), peer('B', 0.5, 200), peer('C', 0.7, 400), peer('D', 0.9, 800)];
+  const fit = fitCdsOnRisk(exact)!;
+  assert.equal(fit.n, 4);
+  for (const p of exact) assert.ok(Math.abs(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit).gapPct) < 1e-6);
+});
+
+test('peer fit: wider than the fit is cheap, tighter is rich; sorted cheapest first', () => {
+  const ps = [peer('A', 0.3, 100), peer('B', 0.5, 300), peer('C', 0.7, 400), peer('D', 0.9, 500), peer('E', 0.6, 150)];
+  const { rows, fit } = peerScreen(ps, 4.1);
+  assert.ok(fit);
+  assert.equal(rows[0].iso3, 'B');
+  assert.equal(rows[0].rv!.label, 'cheap');
+  assert.equal(rows[rows.length - 1].rv!.label, 'rich');
+  assert.equal(rows.find((r) => r.iso3 === 'A')!.spreadBps, 590);
+});
+
+test('policy stance rules read as stated', () => {
+  assert.match(policyStance(6, 0.5), /room to cut/);
+  assert.match(policyStance(6, 4), /still above target/);
+  assert.match(policyStance(-1, 2), /loose/);
+  assert.match(policyStance(1, 0.2), /neutral/);
+  assert.match(policyStance(5, undefined), /high real rate/);
+});
+
+test('targets: checked ones name the bank page; Brazil and Mexico say they were not re-checked; Egypt not on file', () => {
+  for (const iso of ['ZAF', 'TUR', 'IDN', 'POL', 'CHL', 'GBR', 'JPN']) assert.equal(INFLATION_TARGETS[iso].checked, true, iso);
+  assert.equal(INFLATION_TARGETS.BRA.checked, false);
+  assert.equal(INFLATION_TARGETS.EGY, undefined);
+});
+
+function run(iso3: string, us = true): CouncilAssessmentRun {
+  const openData = buildBaselineOpenData(iso3);
+  openData.dataStatus = { verifiedLiveSources: [], checkedAt: NOW };
+  openData.imfIndicators.cpiInflationPct = 4.5;
+  openData.monetaryAndMarket.policyRatePct = 11.75;
+  openData.monetaryAndMarket.sovereign10YBondYieldPct = 13.5;
+  openData.monetaryAndMarket.cds5YSpreadBps = 300;
+  if (us) openData.us10YYield = { valuePct: 4.1, period: '2026-09', source: 'OECD via FRED', seriesId: 'IRLTLT01USM156N', url: 'x' };
+  return { iso3, countryName: iso3 === 'BRA' ? 'Brazil' : iso3, openData } as unknown as CouncilAssessmentRun;
+}
+
+test('brief: figures keep their sources, model readings are tagged model, judgements tie to them', () => {
+  const peers = [peer('BRA', 0.52, 163), peer('MEX', 0.5, 117), peer('ZAF', 0.51, 205), peer('TUR', 0.67, 264), peer('EGY', 0.82, 540)];
+  const b = marketsMacroBrief(run('BRA'), peers);
+  const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
+  assert.equal(rows['Inflation target'].value, '3.0% ± 1.5');
+  assert.match(rows['Inflation target'].source, /not re-checked/);
+  assert.equal(rows['US 10Y Treasury'].verified, true);
+  assert.equal(rows['Spread over US 10Y'].value, '940 bps');
+  assert.equal(rows['Real policy rate'].value, '7.3%');
+  assert.equal(rows['Real policy rate'].source, 'model, from figures above');
+  assert.equal(rows['Real 10Y yield'].value, '9.0%');
+  assert.equal(rows['CPI inflation'].source, 'sample');
+  assert.match(rows['5Y CDS against risk peers'].source, /5 watchlist countries/);
+  assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
+  assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
+  assert.ok(b.sampleWarning);
+});
+
+test('brief: no US yield, no target, too few peers: says so instead of guessing', () => {
+  const b = marketsMacroBrief(run('EGY', false), [peer('EGY', 0.8, 500)]);
+  const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
+  assert.equal(rows['Inflation target'].value, 'not on file');
+  assert.equal(rows['US 10Y Treasury'].value, 'not available');
+  assert.equal(rows['Spread over US 10Y'], undefined);
+  assert.equal(rows['5Y CDS against risk peers'].value, 'needs 4 or more watchlist countries');
+  assert.match(b.judgements[0], /no inflation target on file/);
+});

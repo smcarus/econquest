@@ -68,6 +68,7 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import {
   FRED_10Y_SERIES,
+  US_10Y_SERIES,
   evdsSeriesUrl,
   fredApiUrl,
   fredCsvUrl,
@@ -282,6 +283,11 @@ async function fetchOfficial10YYieldUncached(iso3: string): Promise<OfficialYiel
   if (iso3 === 'TUR') return fetchEvdsTurkeyYield();
   const seriesId = FRED_10Y_SERIES[iso3];
   if (!seriesId) return null;
+  return fetchFredLatest(seriesId);
+}
+
+/** Latest observation of a FRED yield series: the API when FRED_API_KEY is set, else the CSV. */
+async function fetchFredLatest(seriesId: string): Promise<OfficialYieldObservation | null> {
   const apiKey = (process.env.FRED_API_KEY || '').trim();
   if (apiKey) {
     try {
@@ -301,6 +307,15 @@ async function fetchOfficial10YYieldUncached(iso3: string): Promise<OfficialYiel
   } catch {
     return null;
   }
+}
+
+/** US 10Y (OECD monthly, via FRED): the benchmark for spreads in the Markets & macro tab. 12h cache. */
+let us10YCache: { at: number; value: OfficialYieldObservation | null } | null = null;
+async function fetchUs10YYield(): Promise<OfficialYieldObservation | null> {
+  if (us10YCache && Date.now() - us10YCache.at < (us10YCache.value ? 12 : 1) * 60 * 60 * 1000) return us10YCache.value;
+  const value = await fetchFredLatest(US_10Y_SERIES);
+  us10YCache = { at: Date.now(), value };
+  return value;
 }
 
 // Start-of-year USD FX anchors for computing live YTD currency performance
@@ -899,6 +914,12 @@ async function fetchLiveOpenDataSnapshotNetwork(
     baseline.official10YYield = officialYield;
     activeSources.push(officialYieldFeedLabel(officialYield));
   }
+
+  // 6b''. US 10Y benchmark, for the spread over Treasuries. It carries its own source and date and
+  // is not counted as a live feed for the country.
+  const us10Y = await fetchUs10YYield();
+  if (us10Y) baseline.us10YYield = us10Y;
+  else delete baseline.us10YYield;
 
   // 6b'. Own-account 5Y CDS. The user's licensed quote beats an AI estimate or the sample value.
   const ownCds = (await loadOwnCds()).get(normalizedIso);

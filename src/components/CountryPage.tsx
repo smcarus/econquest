@@ -8,13 +8,14 @@ import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCal
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { isCoreCountryTab } from '../utils/simpleMode';
 import { CountryBriefPanel, type BriefView } from './CountryBriefPanel';
+import { MarketsMacroPanel } from './MarketsMacroPanel';
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
  * Each tab is a short list of existing desks; one desk shows at a time.
  */
 
-export type CountryTabId = 'brief' | 'overview' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
+export type CountryTabId = 'brief' | 'macro' | 'overview' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
 
 export interface CountryTabConfig {
   id: CountryTabId;
@@ -25,6 +26,8 @@ export interface CountryTabConfig {
 export const COUNTRY_TABS: CountryTabConfig[] = [
   // Role start view (economist, banker): figures with sources and a link to the report template. No desks.
   { id: 'brief', label: 'Brief', desks: [] },
+  // Markets & macro: the economy, market pricing and model readings of where they disagree. No desks.
+  { id: 'macro', label: 'Markets & macro', desks: [] },
   { id: 'overview', label: 'Overview', desks: ['charts_watchlists', 'risk_analytics'] },
   {
     id: 'debt',
@@ -337,6 +340,7 @@ export const CountryPage: React.FC<{
         </div>
       )}
 
+      {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} />}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 
       {/* Desk picker for this tab */}
