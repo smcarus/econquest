@@ -3,7 +3,8 @@
  * the pop-out window (?view=watchlist). Choices are kept in this browser's storage, so a change in
  * one window shows in the other.
  */
-import type { WatchlistGroup, WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem, WatchlistGroup, WatchlistItem } from '../types/council';
+import { missingReason, type FigureKey, type MissingReason } from './liveFigures';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 
 export const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
@@ -13,7 +14,7 @@ export const WATCHLIST_CHANNEL = 'econquest-watchlist';
 export type WatchlistMessage = { type: 'open-country'; iso3: string };
 
 /** What the previous visit recorded, for the change columns. */
-export type LastLook = Record<string, { cds5YBps: number; yield10YPct: number; compositeRisk: number; yieldSource?: string }>;
+export type LastLook = Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; compositeRisk?: number; yieldSource?: string }>;
 
 export type ColumnId =
   | 'risk'
@@ -36,20 +37,22 @@ export interface ColumnDef {
   help: string;
   align: 'left' | 'right';
   /** Sort key; undefined sorts last. */
-  value: (it: WatchlistItem, last?: LastLook) => number | string | undefined;
+  value: (it: LiveWatchlistItem, last?: LastLook) => number | string | undefined;
   /** Shown value; '–' when there is no figure. */
-  text: (it: WatchlistItem, last?: LastLook) => string;
+  text: (it: LiveWatchlistItem, last?: LastLook) => string;
   /** Where the figure came from, shown under it. */
-  note?: (it: WatchlistItem) => string | undefined;
+  note?: (it: LiveWatchlistItem) => string | undefined;
+  /** When the figure is missing: which source, and whether it needs setting up. */
+  figure?: FigureKey;
   /** For colouring changes. */
   higherIsWorse?: boolean;
   isChange?: boolean;
 }
 
-const DATA_LABEL: Record<NonNullable<WatchlistItem['dataMode']>, string> = {
+const DATA_LABEL: Record<NonNullable<LiveWatchlistItem['dataMode']>, string> = {
   live: 'Live',
   partial: 'Partly live',
-  sample: 'Sample',
+  sample: 'No live feed',
   unverified: 'Not checked',
 };
 
@@ -57,43 +60,46 @@ const num = (v: number | undefined, digits: number, unit = '') => (v === undefin
 const signed = (v: number | undefined, digits: number, unit = '') =>
   v === undefined || Math.abs(v) < Math.pow(10, -digits) / 2 ? '–' : `${v > 0 ? '+' : ''}${v.toFixed(digits)}${unit}`;
 
-export function cdsChange(it: WatchlistItem, last?: LastLook): number | undefined {
+export function cdsChange(it: LiveWatchlistItem, last?: LastLook): number | undefined {
   const prev = last?.[it.iso3];
-  return prev ? it.cds5YBps - prev.cds5YBps : undefined;
+  // Only between two real figures from the same kind of source.
+  return prev?.cds5YBps !== undefined && it.cds5YBps !== undefined && prev.cdsSource === it.cds5YSource ? it.cds5YBps - prev.cds5YBps : undefined;
 }
 
 /** A yield change only when both figures come from the same kind of source, in basis points. */
-export function yieldChangeBp(it: WatchlistItem, last?: LastLook): number | undefined {
+export function yieldChangeBp(it: LiveWatchlistItem, last?: LastLook): number | undefined {
   const prev = last?.[it.iso3];
-  if (!prev || (prev.yieldSource || 'sample') !== (it.yield10YSource || 'sample')) return undefined;
+  if (!prev || prev.yield10YPct === undefined || it.yield10YPct === undefined || (prev.yieldSource || 'sample') !== (it.yield10YSource || 'sample')) return undefined;
   return (it.yield10YPct - prev.yield10YPct) * 100;
 }
 
 export const COLUMNS: ColumnDef[] = [
-  { id: 'risk', label: 'Risk', help: 'Composite risk score, 0 to 1', align: 'left', value: (it) => it.compositeRisk, text: (it) => it.compositeRisk.toFixed(2) },
-  { id: 'cds', label: '5Y CDS (bps)', help: 'Five-year credit default swap spread', align: 'right', value: (it) => it.cds5YBps, text: (it) => String(Math.round(it.cds5YBps)), note: (it) => cdsSourceNote(it) },
+  { id: 'risk', label: 'Risk', help: 'Composite risk score, 0 to 1, from the app’s model on live inputs', align: 'left', figure: 'risk', value: (it) => it.compositeRisk, text: (it) => num(it.compositeRisk, 2) },
+  { id: 'cds', label: '5Y CDS (bps)', help: 'Five-year credit default swap spread', align: 'right', figure: 'cds', value: (it) => it.cds5YBps, text: (it) => num(it.cds5YBps, 0), note: (it) => (it.cds5YBps === undefined ? undefined : cdsSourceNote(it)) },
   { id: 'cdsChange', label: 'CDS change', help: 'Since your last visit', align: 'right', value: cdsChange, text: (it, l) => signed(cdsChange(it, l), 0), higherIsWorse: true, isChange: true },
-  { id: 'yield', label: '10Y yield', help: 'Ten-year government bond yield', align: 'right', value: (it) => it.yield10YPct, text: (it) => num(it.yield10YPct, 2, '%'), note: (it) => yieldSourceNote(it) },
+  { id: 'yield', label: '10Y yield', help: 'Ten-year government bond yield', align: 'right', figure: 'yield', value: (it) => it.yield10YPct, text: (it) => num(it.yield10YPct, 2, '%'), note: (it) => (it.yield10YPct === undefined ? undefined : yieldSourceNote(it)) },
   { id: 'yieldChange', label: 'Yield change', help: 'Since your last visit, same kind of source only', align: 'right', value: yieldChangeBp, text: (it, l) => signed(yieldChangeBp(it, l), 0, ' bp'), higherIsWorse: true, isChange: true },
-  { id: 'debt', label: 'Debt/GDP', help: 'Government debt as a share of GDP', align: 'right', value: (it) => it.debtToGdpPct, text: (it) => num(it.debtToGdpPct, 1, '%') },
-  { id: 'reserves', label: 'Reserves (mo)', help: 'FX reserves in months of imports', align: 'right', value: (it) => it.fxReservesMonths, text: (it) => num(it.fxReservesMonths, 1) },
+  { id: 'debt', label: 'Debt/GDP', help: 'Government debt as a share of GDP', align: 'right', figure: 'debt', value: (it) => it.debtToGdpPct, text: (it) => num(it.debtToGdpPct, 1, '%'), note: (it) => (it.debtToGdpPct === undefined ? undefined : 'Live, IMF') },
+  { id: 'reserves', label: 'Reserves (mo)', help: 'FX reserves in months of imports', align: 'right', figure: 'reserves', value: (it) => it.fxReservesMonths, text: (it) => num(it.fxReservesMonths, 1), note: (it) => (it.fxReservesMonths === undefined ? undefined : 'Live, World Bank') },
   {
     id: 'cpi',
     label: 'Inflation',
     help: 'CPI inflation, IMF',
     align: 'right',
+    figure: 'cpi',
     value: (it) => it.cpiInflationPct,
     text: (it) => num(it.cpiInflationPct, 1, '%'),
-    note: (it) => (it.cpiInflationPct === undefined ? undefined : it.cpiSource === 'live' ? 'Live, IMF' : 'Sample'),
+    note: (it) => (it.cpiInflationPct === undefined ? undefined : 'Live, IMF'),
   },
   {
     id: 'policy',
     label: 'Policy rate',
     help: 'Central bank policy rate',
     align: 'right',
+    figure: 'policy',
     value: (it) => it.policyRatePct,
     text: (it) => num(it.policyRatePct, 2, '%'),
-    note: (it) => (it.policyRatePct === undefined ? undefined : it.policyRateSource === 'ai_estimate' ? 'AI estimate' : 'Sample'),
+    note: (it) => (it.policyRatePct === undefined ? undefined : 'AI estimate'),
   },
   {
     id: 'reer',
@@ -115,6 +121,12 @@ export const COLUMNS: ColumnDef[] = [
   },
   { id: 'data', label: 'Data', help: 'Whether the row came from live feeds', align: 'left', value: (it) => DATA_LABEL[it.dataMode || 'sample'], text: (it) => DATA_LABEL[it.dataMode || 'sample'] },
 ];
+
+/** Why a cell is empty, when its figure has a known source that did not fill it. */
+export function cellMissing(col: ColumnDef, it: LiveWatchlistItem): MissingReason | undefined {
+  if (!col.figure || col.value(it) !== undefined) return undefined;
+  return missingReason(col.figure, it.iso3);
+}
 
 export const COLUMN_BY_ID = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColumnId, ColumnDef>;
 
@@ -185,9 +197,9 @@ export function sortBy(view: WatchlistView, key: SortKey): WatchlistView {
 }
 
 /** Rows in the chosen order; a row with no figure for the key always goes last. */
-export function sortRows(items: WatchlistItem[], view: WatchlistView, last?: LastLook): WatchlistItem[] {
+export function sortRows(items: LiveWatchlistItem[], view: WatchlistView, last?: LastLook): LiveWatchlistItem[] {
   const { key, dir } = view.sort;
-  const get = (it: WatchlistItem) => (key === 'country' ? it.countryName : COLUMN_BY_ID[key].value(it, last));
+  const get = (it: LiveWatchlistItem) => (key === 'country' ? it.countryName : COLUMN_BY_ID[key].value(it, last));
   const sign = dir === 'asc' ? 1 : -1;
   return [...items].sort((a, b) => {
     const va = get(a);

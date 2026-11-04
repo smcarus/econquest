@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
 import { QUALITY_LABEL, rankDivergences, type LastLook, type Quality } from '../utils/divergences';
 import { formatPeriod } from '../utils/officialYields';
 
@@ -15,9 +15,9 @@ const QUALITY_CLASS: Record<Quality, string> = {
  * figures behind it, what it could mean, the next official date and the change since last look.
  */
 export const DivergenceList: React.FC<{
-  items: WatchlistItem[];
+  items: LiveWatchlistItem[];
   lastLook?: LastLook | null;
-  onOpenCountry: (item: WatchlistItem) => void;
+  onOpenCountry: (item: LiveWatchlistItem) => void;
   limit?: number;
 }> = ({ items, lastLook, onOpenCountry, limit = 8 }) => {
   const ranked = useMemo(() => rankDivergences(items, lastLook), [items, lastLook]);
@@ -28,7 +28,7 @@ export const DivergenceList: React.FC<{
       <header className="ui-panel-header">
         <h3 className="ui-section-title">Where data and price disagree</h3>
         <p className="ui-label">
-          One line per country, biggest gap first. Gaps built on live data rank above gaps built on sample or AI-estimated figures.
+          One line per country, biggest gap first. Gaps built on live data rank above gaps built on AI-estimated figures. Missing figures are left out, never filled in.
         </p>
       </header>
       {shown.length === 0 ? (

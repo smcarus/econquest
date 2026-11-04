@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Copy, FileText } from 'lucide-react';
-import type { CouncilAssessmentRun, CROOverrideState, WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
@@ -80,8 +80,8 @@ function toMarkdown(b: SavedCouncilBrief): string {
  * rules), each answers from the app's own figures, then the synthesis agent may summarise.
  */
 export const AskCouncilPanel: React.FC<{
-  items: WatchlistItem[];
-  onOpenCountry: (item: WatchlistItem) => void;
+  items: LiveWatchlistItem[];
+  onOpenCountry: (item: LiveWatchlistItem) => void;
   onSendToReports: () => void;
   fullCouncil?: FullCouncilStep;
 }> = ({ items, onOpenCountry, onSendToReports, fullCouncil }) => {

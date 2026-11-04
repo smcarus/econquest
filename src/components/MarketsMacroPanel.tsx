@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
+import { toLive } from '../utils/liveFigures';
+import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { marketsMacroBrief } from '../utils/marketsMacro';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { BriefGroups, BriefSummary } from './CountryBriefPanel';
@@ -15,7 +17,9 @@ export const MarketsMacroPanel: React.FC<{
   onOpenCountry: (item: WatchlistItem) => void;
 }> = ({ run, peers, onOpenCountry }) => {
   const anchors = useMarketEdgeAnchors();
-  const allPeers = useMemo(() => marketEdgePeers(peers, anchors?.peers || []), [peers, anchors]);
+  // Peers without their built-in figures (utils/liveFigures.ts).
+  const livePeers = useMemo(() => peers.map(toLive), [peers]);
+  const allPeers = useMemo(() => marketEdgePeers(livePeers, anchors?.peers || []), [livePeers, anchors]);
   const brief = useMemo(() => marketsMacroBrief(run, allPeers), [run, allPeers]);
 
   return (
@@ -31,10 +35,13 @@ export const MarketsMacroPanel: React.FC<{
 
       <MarketEdgeScreen
         title="Peer screen"
-        watchlist={peers}
+        watchlist={livePeers}
         anchors={anchors}
         highlightIso3={run.iso3}
-        onOpenCountry={onOpenCountry}
+        onOpenCountry={(it) => {
+          const stored = peers.find((p) => p.iso3 === it.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === it.iso3);
+          if (stored) onOpenCountry(stored);
+        }}
         intro="Your watchlist plus the markets always shown."
       />
     </div>

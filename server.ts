@@ -69,6 +69,7 @@ import {
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
+import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import {
   FRED_10Y_SERIES,
@@ -707,6 +708,11 @@ async function fetchLiveOpenDataSnapshotNetwork(
   }
 
   const activeSources: string[] = [];
+  // Which figures a live feed actually filled, by path; everything else is the built-in value.
+  baseline.liveFields = {};
+  const markLive = (path: string, source: string) => {
+    baseline.liveFields![path] = source;
+  };
   let liveReservesUsdBn: number | undefined;
   let liveShortTermDebtPctReserves: number | undefined;
   let yield2YOverride: number | undefined;
@@ -745,19 +751,19 @@ async function fetchLiveOpenDataSnapshotNetwork(
         if (row.date && String(row.date) > latestWbYear) latestWbYear = String(row.date);
 
         if (ind === 'FI.RES.TOTL.MO') {
-          baseline.worldBankIndicators.fxReservesMonthsImport = Number(val.toFixed(2));
+          baseline.worldBankIndicators.fxReservesMonthsImport = Number(val.toFixed(2)); markLive('wb.fxReservesMonthsImport', `World Bank, ${row.date}`);
         } else if (ind === 'FI.RES.TOTL.CD' && val > 1e8) {
           liveReservesUsdBn = Number((val / 1e9).toFixed(1));
         } else if (ind === 'BN.CAB.XOKA.GD.ZS') {
-          baseline.worldBankIndicators.currentAccountPctGdp = Number(val.toFixed(2));
+          baseline.worldBankIndicators.currentAccountPctGdp = Number(val.toFixed(2)); markLive('wb.currentAccountPctGdp', `World Bank, ${row.date}`);
         } else if (ind === 'DT.DOD.DECT.GN.ZS') {
-          baseline.worldBankIndicators.externalDebtPctGni = Number(val.toFixed(1));
+          baseline.worldBankIndicators.externalDebtPctGni = Number(val.toFixed(1)); markLive('wb.externalDebtPctGni', `World Bank, ${row.date}`);
         } else if (ind === 'DT.DOD.DSTC.IR.ZS' && val > 0) {
           liveShortTermDebtPctReserves = Number(val.toFixed(1));
         } else if (ind === 'PV.EST') {
           // Convert WGI estimate (-2.5 to +2.5) into 0-100 percentile scale
           const pctl = Math.max(2, Math.min(98, ((val + 2.5) / 5.0) * 100));
-          baseline.worldBankIndicators.politicalStabilityPercentile = Number(pctl.toFixed(1));
+          baseline.worldBankIndicators.politicalStabilityPercentile = Number(pctl.toFixed(1)); markLive('wb.politicalStabilityPercentile', `World Bank WGI, ${row.date}`);
         }
       }
       if (latestWbYear) {
@@ -787,28 +793,28 @@ async function fetchLiveOpenDataSnapshotNetwork(
           const cur = getLatestImfValue(series, ['2025', '2026', '2024']);
           const f2027 = getLatestImfValue(series, ['2027', '2028', '2026']);
           if (typeof cur === 'number') {
-            baseline.imfIndicators.debtToGdpPct = Number(cur.toFixed(1));
+            baseline.imfIndicators.debtToGdpPct = Number(cur.toFixed(1)); markLive('imf.debtToGdpPct', 'IMF WEO');
             imfHit = true;
           }
           if (typeof f2027 === 'number') {
-            baseline.imfIndicators.debtToGdpForecast2027Pct = Number(f2027.toFixed(1));
+            baseline.imfIndicators.debtToGdpForecast2027Pct = Number(f2027.toFixed(1)); markLive('imf.debtToGdpForecast2027Pct', 'IMF WEO forecast');
           }
         } else if (metric === 'PCPIPCH') {
           const cpi = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof cpi === 'number') {
-            baseline.imfIndicators.cpiInflationPct = Number(cpi.toFixed(2));
+            baseline.imfIndicators.cpiInflationPct = Number(cpi.toFixed(2)); markLive('imf.cpiInflationPct', 'IMF WEO');
             imfHit = true;
           }
         } else if (metric === 'NGDP_RPCH') {
           const gdp = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof gdp === 'number') {
-            baseline.imfIndicators.realGdpGrowthPct = Number(gdp.toFixed(2));
+            baseline.imfIndicators.realGdpGrowthPct = Number(gdp.toFixed(2)); markLive('imf.realGdpGrowthPct', 'IMF WEO');
             imfHit = true;
           }
         } else if (metric === 'GGXONLB_NGDP') {
           const pb = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof pb === 'number') {
-            baseline.imfIndicators.primaryFiscalBalancePct = Number(pb.toFixed(2));
+            baseline.imfIndicators.primaryFiscalBalancePct = Number(pb.toFixed(2)); markLive('imf.primaryFiscalBalancePct', 'IMF WEO');
             imfHit = true;
           }
         }
@@ -924,12 +930,12 @@ async function fetchLiveOpenDataSnapshotNetwork(
               recent.reduce((acc: number, pt: any) => acc + Number(pt?.value || 0), 0) / recent.length;
             if (!Number.isNaN(avg) && avg !== 0) {
               liveTone = Number(avg.toFixed(2));
-              baseline.gdeltMetrics.averageTone = liveTone;
+              baseline.gdeltMetrics.averageTone = liveTone; markLive('gdelt.averageTone', 'GDELT');
               // Scale negative GDELT tone (-8..+2) into 0..100 conflict intensity index
               const computedIntensity = Math.round(
                 Math.max(18, Math.min(94, 42 + Math.max(0, -liveTone) * 9.5))
               );
-              baseline.gdeltMetrics.conflictIntensityIndex = computedIntensity;
+              baseline.gdeltMetrics.conflictIntensityIndex = computedIntensity; markLive('gdelt.conflictIntensityIndex', 'GDELT');
             }
           }
         } catch {
@@ -983,12 +989,12 @@ async function fetchLiveOpenDataSnapshotNetwork(
       if (typeof liveFx === 'number' && liveFx > 0) {
         baseline.monetaryAndMarket.exchangeRatePerUsd = Number(
           liveFx.toFixed(liveFx > 100 ? 1 : liveFx > 10 ? 2 : 3)
-        );
+        ); markLive('market.exchangeRatePerUsd', 'Live FX');
         const soyAnchor = FX_SOY_ANCHORS_PER_USD[ccy];
         if (typeof soyAnchor === 'number' && soyAnchor > 0) {
           // Positive fxYtdChangePct = local currency appreciation vs USD; negative = depreciation vs USD
           const ytdPct = ((soyAnchor - liveFx) / soyAnchor) * 100;
-          baseline.monetaryAndMarket.fxYtdChangePct = Number(ytdPct.toFixed(2));
+          baseline.monetaryAndMarket.fxYtdChangePct = Number(ytdPct.toFixed(2)); markLive('market.fxYtdChangePct', 'Live FX');
         }
       }
       baseline.livePlumbingOverrides = {
@@ -1010,16 +1016,16 @@ async function fetchLiveOpenDataSnapshotNetwork(
       );
       if (grounded) {
         if (typeof grounded.policyRatePct === 'number') {
-          baseline.monetaryAndMarket.policyRatePct = grounded.policyRatePct;
+          baseline.monetaryAndMarket.policyRatePct = grounded.policyRatePct; markLive('market.policyRatePct', 'AI estimate');
         }
         if (typeof grounded.sovereign10YBondYieldPct === 'number') {
-          baseline.monetaryAndMarket.sovereign10YBondYieldPct = grounded.sovereign10YBondYieldPct;
+          baseline.monetaryAndMarket.sovereign10YBondYieldPct = grounded.sovereign10YBondYieldPct; markLive('market.sovereign10YBondYieldPct', 'AI estimate');
         }
         if (typeof grounded.cds5YSpreadBps === 'number') {
-          baseline.monetaryAndMarket.cds5YSpreadBps = grounded.cds5YSpreadBps;
+          baseline.monetaryAndMarket.cds5YSpreadBps = grounded.cds5YSpreadBps; markLive('market.cds5YSpreadBps', 'AI estimate');
         }
         if (grounded.creditRating) {
-          baseline.liveCreditRating = grounded.creditRating;
+          baseline.liveCreditRating = grounded.creditRating; markLive('market.creditRating', 'AI estimate');
         }
         if (grounded.citations.length > 0) {
           baseline.groundingCitations = grounded.citations;
@@ -1036,7 +1042,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
   // estimate, so it replaces the Gemini figure when both exist; the date is kept for the labels.
   const officialYield = await fetchOfficial10YYield(normalizedIso);
   if (officialYield) {
-    baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct;
+    baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct; markLive('market.sovereign10YBondYieldPct', 'Official');
     baseline.official10YYield = officialYield;
     activeSources.push(officialYieldFeedLabel(officialYield));
   }
@@ -1050,7 +1056,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
   // 6b'. Own-account 5Y CDS. The user's licensed quote beats an AI estimate or the sample value.
   const ownCds = (await loadOwnCds()).get(normalizedIso);
   if (ownCds) {
-    baseline.monetaryAndMarket.cds5YSpreadBps = Math.round(ownCds.bps);
+    baseline.monetaryAndMarket.cds5YSpreadBps = Math.round(ownCds.bps); markLive('market.cds5YSpreadBps', `Your data, ${ownCds.source}`);
     baseline.ownCds5Y = { bps: ownCds.bps, date: ownCds.date, source: ownCds.source };
     activeSources.push(`${OWN_CDS_LABEL} (${ownCds.source}, 5Y CDS)`);
   } else {
@@ -1195,6 +1201,9 @@ async function refreshStaleSnapshots(force = false): Promise<void> {
 
 let cachedWatchlistLive: { timestamp: number; items: WatchlistItem[] } | null = null;
 
+/** Inputs the risk scores lean on most; without all of them live, the score is not shown. */
+const RISK_INPUTS = ['imf.debtToGdpPct', 'imf.cpiInflationPct', 'imf.realGdpGrowthPct', 'wb.fxReservesMonthsImport', 'wb.politicalStabilityPercentile', 'gdelt.averageTone'];
+
 async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
   if (cachedWatchlistLive && Date.now() - cachedWatchlistLive.timestamp < 4 * 60 * 1000) {
     return cachedWatchlistLive.items;
@@ -1218,6 +1227,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const mac = run.croState.macroRiskScore;
         const comp = Number(((geo + sov + mac) / 3).toFixed(2));
         const status = getSnapshotDataStatus(snap);
+        const lf = snap.liveFields || {};
         const fetchedOfficial =
           !status.officialYield && hasOfficial10YSource(catItem.iso3)
             ? // Brazil's file is large; don't hold the whole watchlist for it. The fetch keeps
@@ -1244,14 +1254,18 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           compositeRisk: comp,
           ...watchlistYieldFields(snap, fetchedOfficial),
           cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
-          cds5YSource: status.ownCds ? 'own' : status.marketSource,
+          cds5YSource: status.ownCds ? 'own' : lf['market.cds5YSpreadBps'] ? 'ai_estimate' : 'sample',
           ...(status.ownCds ? { cds5YDate: status.ownCds.date, cds5YProvider: status.ownCds.source } : {}),
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           policyRatePct: snap.monetaryAndMarket.policyRatePct,
-          cpiSource: status.isFeedLive('imf') ? 'live' : 'sample',
-          policyRateSource: status.marketSource,
+          cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
+          policyRateSource: lf['market.policyRatePct'] ? 'ai_estimate' : 'sample',
+          debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
+          reservesSource: lf['wb.fxReservesMonthsImport'] ? 'live' : 'sample',
+          // The risk scores are a model on the snapshot; they count only when its main inputs are live.
+          riskSource: RISK_INPUTS.every((k) => lf[k]) ? 'live' : 'sample',
           ...(snap.debtSchedule?.bis?.intl
             ? {
                 intlBondsUsdBn: snap.debtSchedule.bis.intl.outstandingUsdBn,
@@ -2749,7 +2763,7 @@ async function startServer() {
       progress.start('data');
       const liveSnapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
       const liveCount = getSnapshotDataStatus(liveSnapshot).liveFeeds.length;
-      progress.finish('data', false, liveCount ? `${liveCount} live ${liveCount === 1 ? "source" : "sources"}` : 'No live source answered: sample figures');
+      progress.finish('data', false, liveCount ? `${liveCount} live ${liveCount === 1 ? "source" : "sources"}` : 'No live source answered: figures missing');
       const stage0Latency = Date.now() - stage0Start;
 
       const baseRun: CouncilAssessmentRun = buildDefaultAssessmentRun(iso3, liveSnapshot);
@@ -2777,6 +2791,7 @@ async function startServer() {
       const enableSearch = runtimeConfig.enableSearchGrounding !== false;
       const maxDebateRounds = Math.min(3, Math.max(1, Number(runtimeConfig.maxDebateRounds || 2)));
 
+      const councilIn = councilInputs(liveSnapshot);
       const sharedContextHeader = `Target Sovereign: ${baseRun.countryName} (${iso3})
 Scenario Directive: ${baseRun.scenarioPrompt}
 Policy Document (${baseRun.policyDocumentTitle || 'Primary Extract'}): ${
@@ -2784,23 +2799,16 @@ Policy Document (${baseRun.policyDocumentTitle || 'Primary Extract'}): ${
       }
 Debate Rounds Requested: ${maxDebateRounds}
 
-Verified Live Open-Data & Grounded Market Telemetry:
-- IMF Gross Debt/GDP: ${liveSnapshot.imfIndicators.debtToGdpPct}% (2027F: ${liveSnapshot.imfIndicators.debtToGdpForecast2027Pct}%)
-- IMF Primary Fiscal Balance: ${liveSnapshot.imfIndicators.primaryFiscalBalancePct}% GDP | (r - g) Stabilizing Gap: ${liveSnapshot.dsaAnalytics.fiscalConsolidationGapPct}% GDP
-- IMF Real GDP Growth: ${liveSnapshot.imfIndicators.realGdpGrowthPct}% | Headline CPI: ${liveSnapshot.imfIndicators.cpiInflationPct}%
-- World Bank FX Reserves Import Cover: ${liveSnapshot.worldBankIndicators.fxReservesMonthsImport} months (Greenspan-Guidotti: ${liveSnapshot.debtRollover.greenspanGuidottiRatioPct}%)
-- World Bank Current Account: ${liveSnapshot.worldBankIndicators.currentAccountPctGdp}% GDP | Political Stability: ${liveSnapshot.worldBankIndicators.politicalStabilityPercentile} pctl
-- Central Bank Policy Rate: ${liveSnapshot.monetaryAndMarket.policyRatePct}% (Ex-Post Real Rate: ${liveSnapshot.monetaryAndMarket.realPolicyRatePct}%)
-- 10Y Local Sovereign Yield: ${liveSnapshot.monetaryAndMarket.sovereign10YBondYieldPct}% | 5Y USD CDS: ${liveSnapshot.monetaryAndMarket.cds5YSpreadBps} bps | Spot FX: ${liveSnapshot.monetaryAndMarket.exchangeRatePerUsd} ${liveSnapshot.currencyCode}/USD
-- GDELT Conflict Index: ${liveSnapshot.gdeltMetrics.conflictIntensityIndex}/100 (Tone: ${liveSnapshot.gdeltMetrics.averageTone}) | Chokepoint Exposure: ${liveSnapshot.monetaryAndMarket.chokepointExposureIndex}/100
-- Polymarket Key Contract: ${liveSnapshot.polymarketContracts[0] ? `"${liveSnapshot.polymarketContracts[0].question}" (${liveSnapshot.polymarketContracts[0].probabilityPct}% odds)` : 'none found for this country'}
+Country figures (only live feeds, official series and your own data; nothing built in):
+${councilIn.lines.join('\n')}
+${MISSING_FIGURES_RULE}
 
-Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
+${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
 - [AG-1 / AG-2 / AG-3 Geopolitical Engine]: Composite GPR Z-Score = ${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ | Chokepoint CPI Pass-Through = +${geoDeskSuite.portfolioTransmission.propagatedForecastShocks.realRateShockBps} bps | G7 Freeze-Exposed Reserves = ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%
 - [AG-4 Fiscal Auditor]: Monte Carlo 2030 Debt Fan P50 = ${econometricSuite.stochasticDsa.medianDebt2030PctGdp}% (P95 Tail = ${econometricSuite.stochasticDsa.p95Debt2030PctGdp}%) | IMF SRDSF Gross Financing Needs (GFN) = ${econometricSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP (${econometricSuite.imfSrdsfGfn.srdsfRiskZone}) | Sovereign-Bank Doom Loop CET1 Depletion = -${econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps
 - [AG-5 External Balance]: Blanchard-Leeper Fiscal Dominance Reversal Rate r* = ${econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}% (${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps} bps headroom) | FXI Burn Velocity = $${econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B/mo (${econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach}M to 100% ARA Floor) | 5Y XCCY Swap Basis = ${xccyLegalSuite.fiveYearXccyBasisBps} bps
 - [AG-6 Political Will & Indentures]: Eurobond Restructuring NPV Recovery = ${restructuringSuite.restructuredNpvRecoveryCents}¢ | ICMA Single-Limb 75% CAC Share = ${restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct}% (Holdout Litigation Prob = ${restructuringSuite.cacGameTheory.holdoutLitigationProbPct}%)
-- [AG-7 / AG-8 / AG-9 Macro & Plumbing]: 5pct Growth-at-Risk (GaR) = ${econometricSuite.garFarTail.gdpGar5thPercentilePct}% | Nelson-Siegel 10Y Term Premium = +${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps | Kaminsky-Reinhart EWS Z-Score = ${econometricSuite.markovEws.compositeCrisisZScore}σ (${econometricSuite.markovEws.crisisProbability12MPct}% 12M crisis odds) | Global Dollar Plumbing Z = ${liquiditySuite.globalLiquidityStressIndexZScore}σ`;
+- [AG-7 / AG-8 / AG-9 Macro & Plumbing]: 5pct Growth-at-Risk (GaR) = ${econometricSuite.garFarTail.gdpGar5thPercentilePct}% | Nelson-Siegel 10Y Term Premium = +${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps | Kaminsky-Reinhart EWS Z-Score = ${econometricSuite.markovEws.compositeCrisisZScore}σ (${econometricSuite.markovEws.crisisProbability12MPct}% 12M crisis odds) | Global Dollar Plumbing Z = ${liquiditySuite.globalLiquidityStressIndexZScore}σ` : `Model desk outputs left out: they would run on missing inputs (${councilIn.missingDeskInputs.join(', ')}).`}`;
 
       const deskWorkerSchema = {
         type: Type.OBJECT,
@@ -4007,11 +4015,9 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
         prompt: `Analyze the following sovereign policy or legal document for ${snapshot.countryName} (${snapshot.iso3}):
 Title: ${documentTitle}
 Category: ${deterministicBaseline.documentCategory}
-Current Live Telemetry Anchor:
-- Policy Rate: ${snapshot.monetaryAndMarket.policyRatePct}% (Taylor Rule Implied: ${deterministicBaseline.taylorRuleImpliedPolicyRatePct}%)
-- Headline CPI: ${snapshot.imfIndicators.cpiInflationPct}% | Real GDP Growth: ${snapshot.imfIndicators.realGdpGrowthPct}%
-- Gross Debt/GDP: ${snapshot.imfIndicators.debtToGdpPct}% | Primary Balance: ${snapshot.imfIndicators.primaryFiscalBalancePct}% GDP
-- FX Reserves Import Cover: ${snapshot.worldBankIndicators.fxReservesMonthsImport} months | 5Y CDS: ${snapshot.monetaryAndMarket.cds5YSpreadBps} bps
+Country figures (only live feeds, official series and your own data; nothing built in):
+${councilInputs(snapshot).lines.join('\n')}
+${MISSING_FIGURES_RULE}
 
 Document Text:
 """

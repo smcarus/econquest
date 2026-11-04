@@ -1,13 +1,22 @@
 import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
-import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from '../utils/dataStatus';
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { summariseBook, type Holding } from '../utils/holdings';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
-import { buildEconomistSections, ECONOMIST_SECTIONS } from '../utils/countryNotes';
+import { buildEconomistSections, ECONOMIST_SECTIONS, pathMissing } from '../utils/countryNotes';
+import { councilInputs } from '../utils/councilInputs';
+
+const PATH_LABEL: Record<string, string> = {
+  'imf.debtToGdpPct': 'debt/GDP',
+  'imf.realGdpGrowthPct': 'growth',
+  'imf.cpiInflationPct': 'inflation',
+  'imf.primaryFiscalBalancePct': 'primary balance',
+  'wb.fxReservesMonthsImport': 'reserves',
+};
 import { buildBankerSections, BANKER_SECTIONS } from '../utils/bankerNote';
 import { buildOfficialSections, OFFICIAL_SECTIONS } from '../utils/officialNote';
 import { COUNCIL_SECTIONS, councilBriefSections, loadCouncilBrief } from '../utils/askCouncil';
@@ -23,9 +32,9 @@ export interface IcMemoBuilderProps {
   run: CouncilAssessmentRun;
   stagedTickets: StagedTradeTicketSpec[];
   holdings: Holding[];
-  riskLookup: WatchlistItem[];
+  riskLookup: LiveWatchlistItem[];
   /** The watchlist, for the issuer note's peer comparison. Defaults to riskLookup. */
-  peers?: WatchlistItem[];
+  peers?: LiveWatchlistItem[];
   /** Which version opens first. Private wealth advisers start on the client note. */
   defaultAudience?: MemoAudience;
   /** Templates to offer. Defaults to all of them. */
@@ -181,12 +190,14 @@ export function buildSections(
   if (audience === 'client') return buildClientSections(p, include);
   const { run, stagedTickets, holdings, riskLookup } = p;
   const open = run.openData;
-  const mkt = open.monetaryAndMarket;
   const sc = run.supremeCouncil;
   const status = getSnapshotDataStatus(open);
-  const sampleNote = status.mode === 'live' ? '' : ` (${DATA_MODE_LABEL[status.mode].toLowerCase()})`;
-  const priceNote = status.isFeedLive('ai_market') ? ' (AI estimate from web search)' : sampleNote;
-  const yieldNote = yieldSourceNote(status, priceNote);
+  // Only real figures: anything else is named as missing, with the reason.
+  const fig = (label: string, path: string, fmt: (v: number) => string, note = '') => {
+    const v = status.live(path);
+    return v === undefined ? `- ${label}: Missing (${pathMissing(status, path).short})` : `- ${label}: ${fmt(v)}${note}`;
+  };
+  const inputs = councilInputs(open);
   const tickets = ticketScope === 'country' ? stagedTickets.filter((t) => t.iso3 === run.iso3) : stagedTickets;
   const out: MemoSection[] = [];
 
@@ -194,7 +205,9 @@ export function buildSections(
     const lines = sc
       ? [
           `**${VERDICT_LABEL[sc.decisionVerdict] || sc.decisionVerdict}.** Stance: ${toDisplayCase(sc.marketTranslationLayer.regimeStance)}.`,
-          `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${(sc.globalCoherenceScore * 100).toFixed(0)}%. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`,
+          inputs.deskEnginesLive
+            ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${(sc.globalCoherenceScore * 100).toFixed(0)}%. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`
+            : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Sync and re-run before taking this to committee.`,
         ]
       : ['No council run yet for this country. Run the council before taking this memo to committee.'];
     out.push({ id: 'recommendation', heading: SECTION_LABEL.recommendation, lines });
@@ -205,11 +218,11 @@ export function buildSections(
       id: 'figures',
       heading: SECTION_LABEL.figures,
       lines: [
-        `- Debt / GDP: ${open.imfIndicators.debtToGdpPct.toFixed(1)}%${sampleNote}`,
-        `- FX reserves, months of imports: ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)}${sampleNote}`,
-        `- 5Y CDS: ${Math.round(mkt.cds5YSpreadBps)} bps${priceNote}`,
-        `- 10Y yield: ${mkt.sovereign10YBondYieldPct.toFixed(2)}%${yieldNote}`,
-        `- Policy rate: ${mkt.policyRatePct.toFixed(2)}%${priceNote}`,
+        fig('Debt / GDP', 'imf.debtToGdpPct', (v) => `${v.toFixed(1)}%`, ' (IMF WEO)'),
+        fig('FX reserves, months of imports', 'wb.fxReservesMonthsImport', (v) => v.toFixed(1), ' (World Bank)'),
+        fig('5Y CDS', 'market.cds5YSpreadBps', (v) => `${Math.round(v)} bps`, ` (${open.liveFields?.['market.cds5YSpreadBps'] || 'your data'})`),
+        fig('10Y yield', 'market.sovereign10YBondYieldPct', (v) => `${v.toFixed(2)}%`, yieldSourceNote(status, '')),
+        fig('Policy rate', 'market.policyRatePct', (v) => `${v.toFixed(2)}%`),
       ],
     });
   }
@@ -255,7 +268,7 @@ export function buildSections(
         lines: [
           `Book: $${book.grossUsdMm.toFixed(0)}mm gross, $${book.netCreditUsdMm.toFixed(0)}mm net credit, credit DV01 $${book.dv01UsdK.toFixed(1)}k per bp.`,
           row
-            ? `${run.countryName}: $${row.grossUsdMm.toFixed(1)}mm gross (${(row.weight * 100).toFixed(0)}% of the book), $${row.netCreditUsdMm.toFixed(1)}mm net credit, DV01 $${row.dv01UsdK.toFixed(1)}k per bp, ${(row.riskShare * 100).toFixed(0)}% of book risk.`
+            ? `${run.countryName}: $${row.grossUsdMm.toFixed(1)}mm gross (${(row.weight * 100).toFixed(0)}% of the book), $${row.netCreditUsdMm.toFixed(1)}mm net credit, DV01 $${row.dv01UsdK.toFixed(1)}k per bp, ${row.riskShare !== undefined ? `${(row.riskShare * 100).toFixed(0)}% of book risk` : 'share of book risk missing (no live risk score)'}.`
             : `No current holdings in ${run.countryName}.`,
         ],
       });
@@ -292,7 +305,8 @@ export function buildSections(
       heading: SECTION_LABEL.sources,
       lines: [
         `Data status: ${DATA_MODE_LABEL[status.mode]}${status.asOf ? `, as of ${formatAsOf(status.asOf)}` : ''}.`,
-        status.liveFeeds.length ? `Live feeds: ${status.liveFeeds.join('; ')}.` : 'No live feeds answered; figures are built-in sample values.',
+        status.liveFeeds.length ? `Live feeds: ${status.liveFeeds.join('; ')}.` : 'No live feeds answered, so the figures above read Missing.',
+        'Only live feeds, official series and your own data are used. A missing figure is named, never filled in with a built-in or estimated value.',
         'Model output for discussion. Not investment advice, and not validated for client use.',
       ],
     });
@@ -304,7 +318,6 @@ export function buildSections(
 function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, boolean>): MemoSection[] {
   const { run, holdings, riskLookup } = p;
   const open = run.openData;
-  const mkt = open.monetaryAndMarket;
   const sc = run.supremeCouncil;
   const status = getSnapshotDataStatus(open);
   const L = CLIENT_SECTION_LABEL as Record<SectionId, string>;
@@ -342,7 +355,7 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
       lines = row
         ? [
             `About ${(row.weight * 100).toFixed(0)}% of your emerging market holdings are linked to ${run.countryName} (around $${row.grossUsdMm.toFixed(1)} million).`,
-            `It accounts for roughly ${(row.riskShare * 100).toFixed(0)}% of the risk in that part of your portfolio.`,
+            ...(row.riskShare !== undefined ? [`It accounts for roughly ${(row.riskShare * 100).toFixed(0)}% of the risk in that part of your portfolio.`] : []),
           ]
         : [`You do not currently hold anything linked to ${run.countryName}, so this view does not change your portfolio today.`];
     }
@@ -350,22 +363,28 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
   }
 
   if (include.figures) {
-    const note = status.mode === 'live' ? '' : ` (${DATA_MODE_LABEL[status.mode].toLowerCase()})`;
-    const priceNote = status.isFeedLive('ai_market') ? ' (estimate)' : note;
-    out.push({
-      id: 'figures',
-      heading: L.figures,
-      lines: [
-        `- Government debt is ${open.imfIndicators.debtToGdpPct.toFixed(0)}% of the size of the economy${note}.`,
-        `- Foreign currency savings would cover about ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports${note}.`,
-        `- The central bank’s interest rate is ${mkt.policyRatePct.toFixed(2)}%${priceNote}.`,
-        `- The government pays about ${mkt.sovereign10YBondYieldPct.toFixed(1)}% a year to borrow for 10 years${
-          status.officialYield
-            ? ` (official figure, ${status.officialYield.frequency === 'daily' ? `rate on ${formatPeriod(status.officialYield.period)}` : `${formatPeriod(status.officialYield.period)} average`})`
-            : priceNote
-        }.`,
-      ],
-    });
+    // Plain language, real figures only: a figure without a source is left out and named.
+    const debt = status.live('imf.debtToGdpPct');
+    const reserves = status.live('wb.fxReservesMonthsImport');
+    const policy = status.live('market.policyRatePct');
+    const y10 = status.live('market.sovereign10YBondYieldPct');
+    const lines: string[] = [];
+    const notYet: string[] = [];
+    if (debt !== undefined) lines.push(`- Government debt is ${debt.toFixed(0)}% of the size of the economy.`);
+    else notYet.push('government debt');
+    if (reserves !== undefined) lines.push(`- Foreign currency savings would cover about ${reserves.toFixed(1)} months of imports.`);
+    else notYet.push('foreign currency savings');
+    if (policy !== undefined) lines.push(`- The central bank’s interest rate is ${policy.toFixed(2)}%.`);
+    else notYet.push('the central bank’s interest rate');
+    if (y10 !== undefined && status.officialYield)
+      lines.push(
+        `- The government pays about ${y10.toFixed(1)}% a year to borrow for 10 years (official figure, ${
+          status.officialYield.frequency === 'daily' ? `rate on ${formatPeriod(status.officialYield.period)}` : `${formatPeriod(status.officialYield.period)} average`
+        }).`
+      );
+    else notYet.push('the 10-year borrowing cost');
+    if (notYet.length) lines.push(`We do not yet have up-to-date figures for ${notYet.join(', ')}, so they are left out.`);
+    out.push({ id: 'figures', heading: L.figures, lines });
   }
 
   if (include.risks) {
@@ -392,7 +411,7 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
       id: 'sources',
       heading: L.sources,
       lines: [
-        `Figures ${status.mode === 'live' ? 'come from public data sources' : 'are partly sample or estimated values'}${status.asOf ? `, as of ${formatAsOf(status.asOf)}` : ''}.`,
+        `Figures come from public data sources${status.asOf ? `, as of ${formatAsOf(status.asOf)}` : ''}; any we could not get are left out rather than estimated.`,
         'This note is for discussion with your adviser. It is not a personal recommendation to buy or sell, and the value of investments can go down as well as up.',
       ],
     });

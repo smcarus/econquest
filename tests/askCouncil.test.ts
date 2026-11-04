@@ -72,9 +72,9 @@ test('agents answer only from figures on hand, each figure tagged, and say what 
   assert.match(by.spill.findings[0].reading, /Strait of Hormuz closure/);
   assert.equal(by.spill.findings[0].figures.length, 1);
   assert.ok(by.calendar.findings.length + by.calendar.missing.length > 0);
-  // Egypt has no inflation figure: the central bank agent says so instead of guessing.
+  // Egypt has no inflation or policy rate figure: the central bank agent says which source is missing.
   const wide = runCouncil('inflation', planCouncil('inflation', ALL), ALL);
-  assert.ok(wide[0].missing.some((m) => /Egypt.*no inflation or policy rate figure/.test(m)));
+  assert.ok(wide[0].missing.some((m) => /Egypt.*missing inflation \(IMF did not answer\) and policy rate \(No source yet\)/.test(m)));
 });
 
 test('number check: a sentence survives only when its numbers trace back to an agent figure', () => {

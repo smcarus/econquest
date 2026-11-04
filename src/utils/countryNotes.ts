@@ -2,6 +2,7 @@ import type { CouncilAssessmentRun } from '../types/council';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from './dataStatus';
 import { describeOfficialYield, formatPeriod } from './officialYields';
 import { nextOfficialEvent, upcomingOfficialEvents } from '../data/officialCalendar';
+import { missingReason, type MissingReason } from './liveFigures';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -16,6 +17,10 @@ export interface BriefRow {
   source: string;
   /** True when the figure is a published official or live-feed value (shown in green). */
   verified: boolean;
+  /** No real source filled this figure: value reads Missing and source says why. */
+  missing?: boolean;
+  /** What to do about a missing figure. */
+  help?: string;
 }
 
 export interface BriefGroup {
@@ -29,7 +34,7 @@ export interface CountryBrief {
   /** Short plain-language observations, each tied to the figures shown. */
   judgements: string[];
   groups: BriefGroup[];
-  /** Set when most figures are sample values, so the reader is warned up front. */
+  /** Set when figures are missing, so the reader is told up front. */
   sampleWarning?: string;
 }
 
@@ -42,27 +47,83 @@ export interface NoteSection {
 export type SourceKind = 'imf' | 'worldbank' | 'market' | 'yield' | 'cds' | 'model' | 'sample';
 type Kind = SourceKind;
 
+/** Where a figure path comes from, for its source tag. */
+function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAssessmentRun['openData']): string {
+  if (path === 'market.sovereign10YBondYieldPct' && status.officialYield) return `official, ${describeOfficialYield(status.officialYield).when}`;
+  if (path === 'market.cds5YSpreadBps' && status.ownCds) return `your ${status.ownCds.source} data, ${formatPeriod(status.ownCds.date)}`;
+  const tag = open?.liveFields?.[path];
+  if (path.startsWith('imf.')) return tag || 'IMF WEO';
+  if (path.startsWith('wb.')) return tag || 'World Bank';
+  if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx')) return 'live FX';
+  return tag || 'live feed';
+}
+
+/** Why a figure path is missing, and what would fill it. */
+export function pathMissing(status: SnapshotDataStatus, path: string): MissingReason {
+  if (path === 'market.sovereign10YBondYieldPct') return missingReason('yield', status.iso3);
+  if (path === 'market.cds5YSpreadBps') return missingReason('cds', status.iso3);
+  if (path === 'market.policyRatePct') return missingReason('policy', status.iso3);
+  if (path.startsWith('imf.'))
+    return status.isFeedLive('imf')
+      ? { kind: 'unreachable', short: 'Not in IMF data', help: 'The IMF feed answered but has no figure for this country.' }
+      : missingReason('debt', status.iso3);
+  if (path.startsWith('wb.'))
+    return status.isFeedLive('worldbank')
+      ? { kind: 'unreachable', short: 'Not in World Bank data', help: 'The World Bank feed answered but has no recent figure for this country.' }
+      : missingReason('reserves', status.iso3);
+  if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx'))
+    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The free exchange-rate feed did not answer. Press Sync.' };
+  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'The free GDELT news feed did not answer. Press Sync.' };
+  return { kind: 'setup', short: 'No source yet', help: 'No live or official source is connected for this figure yet.' };
+}
+
+export function missingRow(label: string, reason: MissingReason): BriefRow {
+  return { label, value: 'Missing', source: reason.short, verified: false, missing: true, help: reason.help };
+}
+
+/** A figure from one path: shown only when a real source filled it. */
+export function liveRow(status: SnapshotDataStatus, label: string, path: string, fmt: (v: number) => string, open?: CouncilAssessmentRun['openData']): BriefRow {
+  const v = status.live(path);
+  return v === undefined ? missingRow(label, pathMissing(status, path)) : { label, value: fmt(v), source: pathSource(status, path, open), verified: true };
+}
+
+const PATH_NAME: Record<string, string> = {
+  'market.policyRatePct': 'a policy rate',
+  'market.sovereign10YBondYieldPct': 'an official 10Y yield',
+  'market.cds5YSpreadBps': 'your CDS',
+  'imf.cpiInflationPct': 'live inflation',
+  'imf.debtToGdpPct': 'live debt/GDP',
+  'imf.realGdpGrowthPct': 'live growth',
+  'imf.primaryFiscalBalancePct': 'a live primary balance',
+};
+
+/** A figure worked out here from other figures: shown only when every input is live. */
+export function modelRow(status: SnapshotDataStatus, label: string, inputs: string[], value: () => string, how = 'model, from figures above'): BriefRow {
+  const gap = inputs.find((p) => !status.isLive(p));
+  return gap ? missingRow(label, { ...pathMissing(status, gap), short: `Needs ${PATH_NAME[gap] || 'live inputs'}` }) : { label, value: value(), source: how, verified: false };
+}
+
+/** A built-in figure with no connected source (debt maturity profile, rollover figures). */
+export const noSourceRow = (label: string, help = 'No live or official source is connected for this figure yet.'): BriefRow =>
+  missingRow(label, { kind: 'setup', short: 'No source yet', help });
+
+/** Old-style tag by kind. Built-in and AI-estimated figures are never tagged as data. */
 export function sourceTag(status: SnapshotDataStatus, kind: Kind): { source: string; verified: boolean } {
   switch (kind) {
     case 'imf':
-      return status.isFeedLive('imf') ? { source: 'IMF WEO', verified: true } : { source: 'sample', verified: false };
+      return status.isFeedLive('imf') ? { source: 'IMF WEO', verified: true } : { source: 'missing', verified: false };
     case 'worldbank':
-      return status.isFeedLive('worldbank') ? { source: 'World Bank', verified: true } : { source: 'sample', verified: false };
+      return status.isFeedLive('worldbank') ? { source: 'World Bank', verified: true } : { source: 'missing', verified: false };
     case 'market':
-      return { source: status.marketSource === 'ai_estimate' ? 'AI estimate' : 'sample', verified: false };
+      return { source: 'missing', verified: false };
     case 'yield':
-      return status.officialYield
-        ? { source: `official, ${describeOfficialYield(status.officialYield).when}`, verified: true }
-        : sourceTag(status, 'market');
+      return status.officialYield ? { source: `official, ${describeOfficialYield(status.officialYield).when}`, verified: true } : { source: 'missing', verified: false };
     case 'cds':
-      return status.ownCds
-        ? { source: `your ${status.ownCds.source} data, ${formatPeriod(status.ownCds.date)}`, verified: true }
-        : sourceTag(status, 'market');
+      return status.ownCds ? { source: `your ${status.ownCds.source} data, ${formatPeriod(status.ownCds.date)}`, verified: true } : { source: 'missing', verified: false };
     case 'model':
       return { source: 'model, from figures above', verified: false };
     case 'sample':
-      // Built-in values that no connected feed replaces (debt maturity profile, rollover figures).
-      return { source: 'sample', verified: false };
+      return { source: 'missing', verified: false };
   }
 }
 
@@ -71,14 +132,12 @@ export const when = (e: { date: string; daysUntil: number }) =>
 export const pct = (v: number, d = 1) => `${v.toFixed(d)}%`;
 export const pts = (v: number, d = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(d)} pts`;
 
-export function row(status: SnapshotDataStatus, label: string, value: string, kind: Kind): BriefRow {
-  return { label, value, ...sourceTag(status, kind) };
-}
-
-export function sampleWarning(status: SnapshotDataStatus, countryName: string): string | undefined {
-  if (status.mode === 'live') return undefined;
-  const which = status.mode === 'partial' ? 'Some' : 'Most';
-  return `${which} figures for ${countryName} are sample values, not published data. Check the source next to each figure, or sync the country, before relying on them.`;
+/** Count the missing figures in a brief and say so up front. */
+export function missingNote(groups: BriefGroup[], countryName: string): string | undefined {
+  const rows = groups.flatMap((g) => g.rows);
+  const missing = rows.filter((r) => r.missing).length;
+  if (!missing) return undefined;
+  return `${missing} of ${rows.length} figures for ${countryName} are missing because their source is not connected or did not answer. They read Missing; no built-in values are shown.`;
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -87,101 +146,142 @@ export function sampleWarning(status: SnapshotDataStatus, countryName: string): 
 
 export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()): CountryBrief {
   const open = run.openData;
-  const imf = open.imfIndicators;
-  const wb = open.worldBankIndicators;
-  const mkt = open.monetaryAndMarket;
-  const dsa = open.dsaAnalytics;
-  const roll = open.debtRollover;
   const status = getSnapshotDataStatus(open);
-  const realRate = mkt.policyRatePct - imf.cpiInflationPct;
-  const debtChange = imf.debtToGdpForecast2027Pct - imf.debtToGdpPct;
+  const L = status.live;
+  const g = L('imf.realGdpGrowthPct');
+  const cpi = L('imf.cpiInflationPct');
+  const policy = L('market.policyRatePct');
+  const debt = L('imf.debtToGdpPct');
+  const debt27 = L('imf.debtToGdpForecast2027Pct');
+  const pb = L('imf.primaryFiscalBalancePct');
+  const ca = L('wb.currentAccountPctGdp');
+  const res = L('wb.fxReservesMonthsImport');
+  const realRate = policy !== undefined && cpi !== undefined ? policy - cpi : undefined;
+  const debtChange = debt !== undefined && debt27 !== undefined ? debt27 - debt : undefined;
   const nextMeeting = nextOfficialEvent(run.iso3, 'MPC_DECISION', now);
   const nextCpi = nextOfficialEvent(run.iso3, 'CPI_RELEASE', now);
 
+  // Each observation only from live figures; none is written from a missing one.
   const j: string[] = [];
-  const g = imf.realGdpGrowthPct;
-  j.push(
-    `Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year, with inflation at ${pct(imf.cpiInflationPct)}.`
-  );
-  j.push(
-    realRate > 2
-      ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.`
-      : realRate >= 0
-        ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.`
-        : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.`
-  );
-  j.push(
-    `Government debt is ${pct(imf.debtToGdpPct, 0)} of GDP and is forecast to ${
-      Math.abs(debtChange) < 1 ? 'stay roughly flat' : debtChange > 0 ? `rise by ${debtChange.toFixed(0)} pts` : `fall by ${Math.abs(debtChange).toFixed(0)} pts`
-    } by 2027.`
-  );
-  if (dsa.fiscalConsolidationGapPct > 0.25) {
+  if (g !== undefined)
+    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}.`);
+  else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}.`);
+  if (realRate !== undefined)
     j.push(
-      `The primary balance is ${dsa.fiscalConsolidationGapPct.toFixed(1)} pts of GDP short of the level that would keep debt stable (interest rate minus growth: ${pts(dsa.rMinusGDifferentialPct)}).`
+      realRate > 2
+        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.`
+        : realRate >= 0
+          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.`
+          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.`
     );
-  } else {
-    j.push(`The primary balance is at or above the level that keeps debt stable (interest rate minus growth: ${pts(dsa.rMinusGDifferentialPct)}).`);
-  }
+  if (debt !== undefined)
+    j.push(
+      `Government debt is ${pct(debt, 0)} of GDP${
+        debtChange === undefined ? '' : ` and is forecast to ${Math.abs(debtChange) < 1 ? 'stay roughly flat' : debtChange > 0 ? `rise by ${debtChange.toFixed(0)} pts` : `fall by ${Math.abs(debtChange).toFixed(0)} pts`} by 2027`
+      }.`
+    );
+  if (pb !== undefined) j.push(`The primary balance is ${pct(pb)} of GDP.`);
   const ext: string[] = [];
-  if (wb.currentAccountPctGdp < -4) ext.push(`a current account deficit of ${pct(Math.abs(wb.currentAccountPctGdp))} of GDP`);
-  if (wb.fxReservesMonthsImport < 3) ext.push(`reserves below the usual three-month import floor`);
-  if (roll.greenspanGuidottiRatioPct < 100) ext.push(`reserves that do not fully cover short-term external debt`);
-  j.push(ext.length ? `External weak points: ${ext.join(', ')}.` : 'The external position looks comfortable on reserves and the current account.');
+  if (ca !== undefined && ca < -4) ext.push(`a current account deficit of ${pct(Math.abs(ca))} of GDP`);
+  if (res !== undefined && res < 3) ext.push('reserves below the usual three-month import floor');
+  if (ca !== undefined || res !== undefined)
+    j.push(ext.length ? `External weak points: ${ext.join(', ')}.` : `The external position looks comfortable on ${[res !== undefined ? 'reserves' : '', ca !== undefined ? 'the current account' : ''].filter(Boolean).join(' and ')}.`);
 
-  const headline = `${run.countryName}: ${g >= 2 ? 'growing' : 'slow growth'}, inflation ${pct(imf.cpiInflationPct)}, debt ${
-    debtChange > 1 ? 'rising' : debtChange < -1 ? 'falling' : 'stable'
-  } at ${pct(imf.debtToGdpPct, 0)} of GDP.`;
+  const parts = [
+    g !== undefined ? (g >= 2 ? 'growing' : 'slow growth') : '',
+    cpi !== undefined ? `inflation ${pct(cpi)}` : '',
+    debt !== undefined ? `debt ${debtChange === undefined ? '' : debtChange > 1 ? 'rising ' : debtChange < -1 ? 'falling ' : 'stable '}at ${pct(debt, 0)} of GDP` : '',
+  ].filter(Boolean);
+  const headline = parts.length ? `${run.countryName}: ${parts.join(', ')}.` : `${run.countryName}: no live economic figures yet.`;
 
-  return {
-    headline,
-    judgements: j,
-    sampleWarning: sampleWarning(status, run.countryName),
-    groups: [
-      {
-        title: 'Growth and inflation',
-        rows: [
-          row(status, 'Real GDP growth', pct(g), 'imf'),
-          row(status, 'CPI inflation', pct(imf.cpiInflationPct), 'imf'),
-        ],
-      },
-      {
-        title: 'Monetary policy',
-        rows: [
-          row(status, 'Policy rate', pct(mkt.policyRatePct, 2), 'market'),
-          row(status, 'Real policy rate', pct(realRate), 'model'),
-          {
-            label: 'Next rate decision',
-            value: nextMeeting ? when(nextMeeting) : 'not on file',
-            source: nextMeeting ? nextMeeting.sourceName : 'no official schedule loaded',
-            verified: Boolean(nextMeeting),
-          },
-          ...(nextCpi
-            ? [{ label: 'Next CPI release', value: when(nextCpi), source: nextCpi.sourceName, verified: true }]
-            : []),
-        ],
-      },
-      {
-        title: 'Fiscal and debt',
-        rows: [
-          row(status, 'Debt / GDP', pct(imf.debtToGdpPct), 'imf'),
-          row(status, 'Debt / GDP, 2027 forecast', pct(imf.debtToGdpForecast2027Pct), 'imf'),
-          row(status, 'Primary balance', `${pct(imf.primaryFiscalBalancePct)} of GDP`, 'imf'),
-          row(status, 'Balance that keeps debt stable', `${pct(dsa.debtStabilizingPrimaryBalancePct)} of GDP`, 'model'),
-          row(status, 'Interest rate minus growth', pts(dsa.rMinusGDifferentialPct), 'model'),
-          row(status, '10Y government yield', pct(mkt.sovereign10YBondYieldPct, 2), 'yield'),
-        ],
-      },
-      {
-        title: 'External position',
-        rows: [
-          row(status, 'Current account', `${pct(wb.currentAccountPctGdp)} of GDP`, 'worldbank'),
-          row(status, 'FX reserves', `${wb.fxReservesMonthsImport.toFixed(1)} months of imports`, 'worldbank'),
-          row(status, 'External debt', `${pct(wb.externalDebtPctGni, 0)} of GNI`, 'worldbank'),
-          row(status, 'Reserves / short-term external debt', pct(roll.greenspanGuidottiRatioPct, 0), 'sample'),
-        ],
-      },
-    ],
-  };
+  const groups: BriefGroup[] = [
+    {
+      title: 'Growth and inflation',
+      rows: [liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open), liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open)],
+    },
+    {
+      title: 'Monetary policy',
+      rows: [
+        liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
+        modelRow(status, 'Real policy rate', ['market.policyRatePct', 'imf.cpiInflationPct'], () => pct(realRate as number)),
+        {
+          label: 'Next rate decision',
+          value: nextMeeting ? when(nextMeeting) : 'not on file',
+          source: nextMeeting ? nextMeeting.sourceName : 'no official schedule loaded',
+          verified: Boolean(nextMeeting),
+        },
+        ...(nextCpi ? [{ label: 'Next CPI release', value: when(nextCpi), source: nextCpi.sourceName, verified: true }] : []),
+      ],
+    },
+    {
+      title: 'Fiscal and debt',
+      rows: [
+        liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
+        liveRow(status, 'Debt / GDP, 2027 forecast', 'imf.debtToGdpForecast2027Pct', (v) => pct(v), open),
+        liveRow(status, 'Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`, open),
+        noSourceRow('Balance that keeps debt stable', 'Needs the average interest rate on government debt, which no connected source provides yet.'),
+        liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
+      ],
+    },
+    {
+      title: 'External position',
+      rows: [
+        liveRow(status, 'Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`, open),
+        liveRow(status, 'FX reserves', 'wb.fxReservesMonthsImport', (v) => `${v.toFixed(1)} months of imports`, open),
+        liveRow(status, 'External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`, open),
+      ],
+    },
+  ];
+  return { headline, judgements: j, sampleWarning: missingNote(groups, run.countryName), groups };
+}
+
+/**
+ * Every figure the country pages lean on, with its source or why it is missing. Used by the Overview
+ * tab so the user can see at a glance what is live and what needs setting up.
+ */
+export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
+  const open = run.openData;
+  const status = getSnapshotDataStatus(open);
+  const r = (label: string, path: string, fmt: (v: number) => string) => liveRow(status, label, path, fmt, open);
+  const ds = open.debtSchedule;
+  return [
+    {
+      title: 'IMF (free, no key)',
+      rows: [
+        r('Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v)),
+        r('CPI inflation', 'imf.cpiInflationPct', (v) => pct(v)),
+        r('Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v)),
+        r('Debt / GDP, 2027 forecast', 'imf.debtToGdpForecast2027Pct', (v) => pct(v)),
+        r('Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`),
+      ],
+    },
+    {
+      title: 'World Bank (free, no key)',
+      rows: [
+        r('FX reserves', 'wb.fxReservesMonthsImport', (v) => `${v.toFixed(1)} months of imports`),
+        r('Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`),
+        r('External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`),
+        r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
+        ds?.qeds
+          ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
+          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free QEDS feed did not answer, or does not cover this country. Press Sync.' }),
+      ],
+    },
+    {
+      title: 'Markets',
+      rows: [
+        r('10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2)),
+        r('5Y CDS', 'market.cds5YSpreadBps', (v) => `${Math.round(v)} bps`),
+        r('Policy rate', 'market.policyRatePct', (v) => pct(v, 2)),
+        r(`Spot FX (${open.currencyCode} per USD)`, 'market.exchangeRatePerUsd', (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(v >= 10 ? 2 : 4))),
+        noSourceRow('Credit rating', 'Needs a ratings feed (licensed); AI estimates are not used.'),
+      ],
+    },
+    {
+      title: 'News',
+      rows: [r('News tone (GDELT)', 'gdelt.averageTone', (v) => v.toFixed(1))],
+    },
+  ];
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -200,7 +300,7 @@ export function sourcesSection(run: CouncilAssessmentRun, purpose: string): Note
     id: 'sources',
     heading: 'Data and sources',
     lines: [
-      `Data status: ${DATA_MODE_LABEL[status.mode]}${status.asOf ? `, as of ${formatAsOf(status.asOf)}` : ''}. Each figure above names its source; "sample" means a built-in placeholder, not published data, and "model" means calculated here from the other figures.`,
+      `Data status: ${DATA_MODE_LABEL[status.mode]}${status.asOf ? `, as of ${formatAsOf(status.asOf)}` : ''}. Each figure above names its source. "Missing" means no live or official source filled it, and no built-in value is used instead; "model" means calculated here from live figures.`,
       status.liveFeeds.length ? `Feeds that answered: ${status.liveFeeds.join('; ')}.` : 'No live feeds answered on the last sync.',
       purpose,
     ],
@@ -244,9 +344,6 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
     ['external', 'External position'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: ECONOMIST_SECTIONS[id], lines: groupLines(byTitle(title)) });
-  if (include('fiscal') && run.openData.dsaAnalytics.dsaInterpretation) {
-    out.find((s) => s.id === 'fiscal')!.lines.push(clean(run.openData.dsaAnalytics.dsaInterpretation));
-  }
   if (include('risks')) {
     const vul = run.supremeCouncil?.policyResearcherReport.structuralVulnerabilities || [];
     out.push({

@@ -3,10 +3,11 @@
  * disagree. Every figure keeps its source tag; the readings in the agent groups (Central Bank Watcher Agent, Relative Value Agent) are simple, stated rules
  * on those figures (tagged model), never data.
  */
-import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, LiveWatchlistItem, WatchlistItem } from '../types/council';
+import { missingReason } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
-import { pct, pts, row, sampleWarning, type BriefRow, type CountryBrief } from './countryNotes';
+import { liveRow, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
@@ -60,8 +61,9 @@ export interface PeerFit {
 }
 
 /** Least squares of log(CDS) on the risk score. Needs four peers and some spread in risk. */
-export function fitCdsOnRisk(items: Pick<WatchlistItem, 'cds5YBps' | 'compositeRisk'>[]): PeerFit | null {
-  const pts = items.filter((i) => i.cds5YBps > 0 && Number.isFinite(i.compositeRisk));
+export function fitCdsOnRisk(items: Partial<Pick<WatchlistItem, 'cds5YBps' | 'compositeRisk'>>[]): PeerFit | null {
+  // Only rows where both figures exist; a missing figure is never filled in.
+  const pts = items.filter((i): i is Pick<WatchlistItem, 'cds5YBps' | 'compositeRisk'> => (i.cds5YBps ?? 0) > 0 && Number.isFinite(i.compositeRisk));
   if (pts.length < 4) return null;
   const xs = pts.map((p) => p.compositeRisk);
   const ys = pts.map((p) => Math.log(p.cds5YBps));
@@ -91,27 +93,31 @@ const RV_TEXT: Record<RvLabel, string> = {
 export interface PeerScreenRow {
   iso3: string;
   countryName: string;
-  yield10YPct: number;
+  /** Missing when no real source filled it; never a built-in value. */
+  yield10YPct?: number;
   yieldNote: string;
   spreadBps?: number;
-  cdsBps: number;
+  cdsBps?: number;
   cdsNote: string;
-  risk: number;
+  risk?: number;
   rv?: { gapPct: number; label: RvLabel };
 }
 
-export function peerScreen(peers: WatchlistItem[], us10YPct?: number): { rows: PeerScreenRow[]; fit: PeerFit | null } {
+export function peerScreen(peers: LiveWatchlistItem[], us10YPct?: number): { rows: PeerScreenRow[]; fit: PeerFit | null } {
   const fit = fitCdsOnRisk(peers);
   const rows = peers.map((p) => ({
     iso3: p.iso3,
     countryName: p.countryName,
     yield10YPct: p.yield10YPct,
-    yieldNote: yieldSourceNote(p),
-    spreadBps: us10YPct !== undefined ? Math.round((p.yield10YPct - us10YPct) * 100) : undefined,
+    yieldNote: p.yield10YPct === undefined ? `Missing: ${missingReason('yield', p.iso3).short}` : yieldSourceNote(p),
+    spreadBps: us10YPct !== undefined && p.yield10YPct !== undefined ? Math.round((p.yield10YPct - us10YPct) * 100) : undefined,
     cdsBps: p.cds5YBps,
-    cdsNote: cdsSourceNote(p),
+    cdsNote: p.cds5YBps === undefined ? `Missing: ${missingReason('cds', p.iso3).short}` : cdsSourceNote(p),
     risk: p.compositeRisk,
-    rv: fit ? (({ gapPct, label }) => ({ gapPct, label }))(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit)) : undefined,
+    rv:
+      fit && p.cds5YBps !== undefined && p.compositeRisk !== undefined
+        ? (({ gapPct, label }) => ({ gapPct, label }))(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit))
+        : undefined,
   }));
   return { rows: rows.sort((a, b) => (b.rv?.gapPct ?? -1e9) - (a.rv?.gapPct ?? -1e9)), fit };
 }
@@ -131,122 +137,127 @@ export function policyStance(realRatePct: number, inflationGapPts: number | unde
   return 'close to neutral with inflation near target';
 }
 
-export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistItem[]): CountryBrief & { screen: ReturnType<typeof peerScreen> } {
+export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlistItem[]): CountryBrief & { screen: ReturnType<typeof peerScreen> } {
   const open = run.openData;
-  const imf = open.imfIndicators;
-  const wb = open.worldBankIndicators;
-  const mkt = open.monetaryAndMarket;
   const status = getSnapshotDataStatus(open);
+  const L = status.live;
+  const cpi = L('imf.cpiInflationPct');
+  const policy = L('market.policyRatePct');
+  const y10 = L('market.sovereign10YBondYieldPct');
+  const cds = L('market.cds5YSpreadBps');
+  const growth = L('imf.realGdpGrowthPct');
+  const ca = L('wb.currentAccountPctGdp');
+  const res = L('wb.fxReservesMonthsImport');
   const target = INFLATION_TARGETS[run.iso3];
-  const gap = target ? imf.cpiInflationPct - target.pct : undefined;
-  const realPolicy = mkt.policyRatePct - imf.cpiInflationPct;
-  const real10Y = mkt.sovereign10YBondYieldPct - imf.cpiInflationPct;
+  const gap = target && cpi !== undefined ? cpi - target.pct : undefined;
+  const realPolicy = policy !== undefined && cpi !== undefined ? policy - cpi : undefined;
+  const real10Y = y10 !== undefined && cpi !== undefined ? y10 - cpi : undefined;
   const us = open.us10YYield;
-  const spreadBps = us ? Math.round((mkt.sovereign10YBondYieldPct - us.valuePct) * 100) : undefined;
+  const spreadBps = us && y10 !== undefined ? Math.round((y10 - us.valuePct) * 100) : undefined;
   const screen = peerScreen(peers, us?.valuePct);
   const self = peers.find((p) => p.iso3 === run.iso3);
-  const rv = screen.fit && self ? cdsVsPeers(mkt.cds5YSpreadBps, self.compositeRisk, screen.fit) : undefined;
-  const cv = self?.fxVol3mPct !== undefined && self.usFedFundsPct !== undefined ? carryToVol(mkt.policyRatePct, self.usFedFundsPct, self.fxVol3mPct) : null;
+  const rv = screen.fit && self?.compositeRisk !== undefined && cds !== undefined ? cdsVsPeers(cds, self.compositeRisk, screen.fit) : undefined;
+  const cv = policy !== undefined && self?.fxVol3mPct !== undefined && self.usFedFundsPct !== undefined ? carryToVol(policy, self.usFedFundsPct, self.fxVol3mPct) : null;
   const model = (label: string, value: string, how = 'model, from figures above'): BriefRow => ({ label, value, source: how, verified: false });
+  const needs = (label: string, what: string) => missingRow(label, { kind: 'setup', short: `Needs ${what}`, help: `Worked out from ${what}, which is missing.` });
 
   const j: string[] = [];
-  j.push(
-    `Inflation is ${pct(imf.cpiInflationPct)}${
-      target && gap !== undefined ? `, ${Math.abs(gap).toFixed(1)} pts ${gap >= 0 ? 'above' : 'below'} the ${pct(target.pct)} target` : ' (no inflation target on file)'
-    }; with the policy rate at ${pct(mkt.policyRatePct, 2)}, the real rate is ${pct(realPolicy)}, so policy looks ${policyStance(realPolicy, gap)}.`
-  );
-  j.push(
-    `The 10-year yields ${pct(mkt.sovereign10YBondYieldPct, 2)}, ${pct(real10Y)} after inflation${
-      us && spreadBps !== undefined ? `, and ${spreadBps} bps over US Treasuries (US 10Y ${pct(us.valuePct, 2)}, ${formatPeriod(us.period)})` : ''
-    }.`
-  );
-  if (rv && screen.fit) {
+  if (cpi !== undefined)
     j.push(
-      `At ${Math.round(mkt.cds5YSpreadBps)} bps, 5-year CDS ${RV_TEXT[rv.label]} (${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% against about ${Math.round(rv.fittedBps)} bps for its risk score, ${screen.fit.n} countries in the MarketEdge screen).`
+      `Inflation is ${pct(cpi)}${target && gap !== undefined ? `, ${Math.abs(gap).toFixed(1)} pts ${gap >= 0 ? 'above' : 'below'} the ${pct(target.pct)} target` : ' (no inflation target on file)'}${
+        realPolicy !== undefined && policy !== undefined ? `; with the policy rate at ${pct(policy, 2)}, the real rate is ${pct(realPolicy)}, so policy looks ${policyStance(realPolicy, gap)}` : ''
+      }.`
     );
-  }
-  j.push(`Growth is ${pct(imf.realGdpGrowthPct)}; the current account is ${pct(wb.currentAccountPctGdp)} of GDP and reserves cover ${wb.fxReservesMonthsImport.toFixed(1)} months of imports.`);
+  if (y10 !== undefined)
+    j.push(
+      `The 10-year yields ${pct(y10, 2)}${real10Y !== undefined ? `, ${pct(real10Y)} after inflation` : ''}${
+        us && spreadBps !== undefined ? `, and ${spreadBps} bps over US Treasuries (US 10Y ${pct(us.valuePct, 2)}, ${formatPeriod(us.period)})` : ''
+      }.`
+    );
+  if (rv && screen.fit && cds !== undefined)
+    j.push(`At ${Math.round(cds)} bps, 5-year CDS ${RV_TEXT[rv.label]} (${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% against about ${Math.round(rv.fittedBps)} bps for its risk score, ${screen.fit.n} countries in the MarketEdge screen).`);
+  const macro = [growth !== undefined ? `growth is ${pct(growth)}` : '', ca !== undefined ? `the current account is ${pct(ca)} of GDP` : '', res !== undefined ? `reserves cover ${res.toFixed(1)} months of imports` : ''].filter(Boolean);
+  if (macro.length) j.push(`${macro.join('; ').replace(/^./, (c) => c.toUpperCase())}.`);
 
+  const head = [cpi !== undefined ? `inflation ${pct(cpi)}${target ? ` against a ${pct(target.pct)} target` : ''}` : '', realPolicy !== undefined ? `real policy rate ${pct(realPolicy)}` : '', y10 !== undefined ? `10Y ${pct(y10, 2)}` : '', rv ? `CDS ${rv.label} against peers` : ''].filter(Boolean);
+  const fx = L('market.exchangeRatePerUsd');
+  const groups = [
+    {
+      title: 'Macro now',
+      rows: [
+        liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open),
+        liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open),
+        target
+          ? { label: 'Inflation target', value: `${pct(target.pct)}${target.bandPts ? ` ± ${target.bandPts}` : ''}`, source: targetSource(target), verified: target.checked }
+          : noSourceRow('Inflation target', 'No official inflation target on file for this country.'),
+        liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
+        liveRow(status, 'Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`, open),
+        liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
+        liveRow(status, 'Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`, open),
+        liveRow(status, 'FX reserves', 'wb.fxReservesMonthsImport', (v) => `${v.toFixed(1)} months of imports`, open),
+      ],
+    },
+    {
+      title: 'Market pricing',
+      rows: [
+        liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
+        us
+          ? { label: 'US 10Y Treasury', value: pct(us.valuePct, 2), source: `official, OECD via FRED, ${formatPeriod(us.period)} avg`, verified: true }
+          : missingRow('US 10Y Treasury', { kind: 'unreachable', short: 'FRED did not answer', help: 'The free FRED feed did not answer. Press Sync, or set FRED_API_KEY in .env.' }),
+        ...(spreadBps !== undefined ? [model('Spread over US 10Y', `${spreadBps} bps`, 'from the two yields above')] : []),
+        liveRow(status, '5Y CDS', 'market.cds5YSpreadBps', (v) => `${Math.round(v)} bps`, open),
+        fx !== undefined
+          ? { label: `Spot FX (${open.currencyCode} per USD)`, value: fx >= 100 ? fx.toFixed(0) : fx.toFixed(fx >= 10 ? 2 : 4), source: 'live FX feed', verified: true }
+          : liveRow(status, `Spot FX (${open.currencyCode} per USD)`, 'market.exchangeRatePerUsd', (v) => String(v), open),
+        noSourceRow('2s10s curve slope', 'Needs official 2-year and 10-year yields, which are not connected yet.'),
+        self?.reerGapPct !== undefined
+          ? {
+              label: 'Real exchange rate vs 10-year average',
+              value: `${self.reerGapPct >= 0 ? '+' : ''}${self.reerGapPct.toFixed(1)}% (${reerLabel(self.reerGapPct)})`,
+              source: `official, BIS${self.reerPeriod ? `, ${formatPeriod(self.reerPeriod)}` : ''}`,
+              verified: true,
+            }
+          : missingRow('Real exchange rate vs 10-year average', { kind: 'unreachable', short: 'BIS did not answer', help: 'The free BIS feed did not answer, or does not cover this currency. Press Sync.' }),
+        self?.fxVol3mPct !== undefined
+          ? { label: 'FX volatility against USD, 3 months', value: pct(self.fxVol3mPct), source: 'ECB reference rates, live', verified: true }
+          : missingRow('FX volatility against USD, 3 months', { kind: 'unreachable', short: 'No ECB rate', help: 'The ECB publishes no reference rate for this currency, or the feed did not answer.' }),
+      ],
+    },
+    // The edge: readings by stated rules on the figures above, grouped by the desk role that owns them.
+    {
+      title: `${EDGE_AGENTS.cb} Agent`,
+      rows: [
+        gap !== undefined ? model('Inflation against target', pts(gap)) : needs('Inflation against target', cpi === undefined ? 'live inflation' : 'an inflation target'),
+        realPolicy !== undefined ? model('Real policy rate', pct(realPolicy)) : needs('Real policy rate', policy === undefined ? 'a policy rate' : 'live inflation'),
+        real10Y !== undefined ? model('Real 10Y yield', pct(real10Y)) : needs('Real 10Y yield', y10 === undefined ? 'an official 10Y yield' : 'live inflation'),
+      ],
+    },
+    {
+      title: `${EDGE_AGENTS.rv} Agent`,
+      rows: [
+        cv && self?.usFedFundsPct !== undefined
+          ? model('Carry over US per unit of FX volatility', `${cv.ratio.toFixed(2)} (${cv.carryPts.toFixed(1)} pts over fed funds ${pct(self.usFedFundsPct, 2)})`, 'model: policy rate minus US fed funds, over 3-month volatility')
+          : needs('Carry over US per unit of FX volatility', policy === undefined ? 'a policy rate' : 'FX volatility and fed funds'),
+        rv && screen.fit
+          ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
+          : needs('5Y CDS against risk peers', '4 or more countries with your CDS and a live risk score'),
+      ],
+    },
+    {
+      title: `${EDGE_AGENTS.spill} Agent`,
+      rows: SCENARIOS.map((sc) => {
+        const imp = self?.trade ? scenarioImpact(sc.id, self.trade) : null;
+        return imp
+          ? model(sc.name, `${imp.pctGdp > 0 ? '+' : ''}${imp.pctGdp.toFixed(1)}% of GDP`, `model: ${sc.shock} Basis: ${imp.basis}`)
+          : missingRow(sc.name, { kind: 'unreachable', short: 'Trade figures did not answer', help: 'The free World Bank or WITS trade feed did not answer. Press Sync.' });
+      }),
+    },
+  ];
   return {
-    headline: `${run.countryName}: inflation ${pct(imf.cpiInflationPct)}${target ? ` against a ${pct(target.pct)} target` : ''}, real policy rate ${pct(realPolicy)}, 10Y ${pct(mkt.sovereign10YBondYieldPct, 2)}${
-      rv ? `, CDS ${rv.label} against peers` : ''
-    }.`,
+    headline: head.length ? `${run.countryName}: ${head.join(', ')}.` : `${run.countryName}: no live market or macro figures yet.`,
     judgements: j,
-    sampleWarning: sampleWarning(status, run.countryName),
+    sampleWarning: missingNote(groups, run.countryName),
     screen,
-    groups: [
-      {
-        title: 'Macro now',
-        rows: [
-          row(status, 'Real GDP growth', pct(imf.realGdpGrowthPct), 'imf'),
-          row(status, 'CPI inflation', pct(imf.cpiInflationPct), 'imf'),
-          target
-            ? { label: 'Inflation target', value: `${pct(target.pct)}${target.bandPts ? ` ± ${target.bandPts}` : ''}`, source: targetSource(target), verified: target.checked }
-            : { label: 'Inflation target', value: 'not on file', source: 'central bank page not reachable', verified: false },
-          row(status, 'Policy rate', pct(mkt.policyRatePct, 2), 'market'),
-          row(status, 'Primary balance', `${pct(imf.primaryFiscalBalancePct)} of GDP`, 'imf'),
-          row(status, 'Debt / GDP', pct(imf.debtToGdpPct), 'imf'),
-          row(status, 'Current account', `${pct(wb.currentAccountPctGdp)} of GDP`, 'worldbank'),
-          row(status, 'FX reserves', `${wb.fxReservesMonthsImport.toFixed(1)} months of imports`, 'worldbank'),
-        ],
-      },
-      {
-        title: 'Market pricing',
-        rows: [
-          row(status, '10Y government yield', pct(mkt.sovereign10YBondYieldPct, 2), 'yield'),
-          us
-            ? { label: 'US 10Y Treasury', value: pct(us.valuePct, 2), source: `official, OECD via FRED, ${formatPeriod(us.period)} avg`, verified: true }
-            : { label: 'US 10Y Treasury', value: 'not available', source: 'FRED did not answer', verified: false },
-          ...(spreadBps !== undefined ? [model('Spread over US 10Y', `${spreadBps} bps`, 'from the two yields above')] : []),
-          row(status, '5Y CDS', `${Math.round(mkt.cds5YSpreadBps)} bps`, 'cds'),
-          {
-            label: `Spot FX (${run.openData.currencyCode} per USD)`,
-            value: mkt.exchangeRatePerUsd >= 100 ? mkt.exchangeRatePerUsd.toFixed(0) : mkt.exchangeRatePerUsd.toFixed(mkt.exchangeRatePerUsd >= 10 ? 2 : 4),
-            ...(status.isFeedLive('fx') ? { source: 'live FX feed', verified: true } : { source: 'sample', verified: false }),
-          },
-          row(status, '2s10s curve slope', `${Math.round(open.yieldCurve.slope2s10sBps)} bps`, 'sample'),
-          self?.reerGapPct !== undefined
-            ? {
-                label: 'Real exchange rate vs 10-year average',
-                value: `${self.reerGapPct >= 0 ? '+' : ''}${self.reerGapPct.toFixed(1)}% (${reerLabel(self.reerGapPct)})`,
-                source: `official, BIS${self.reerPeriod ? `, ${formatPeriod(self.reerPeriod)}` : ''}`,
-                verified: true,
-              }
-            : { label: 'Real exchange rate vs 10-year average', value: 'not available', source: 'BIS did not answer', verified: false },
-          self?.fxVol3mPct !== undefined
-            ? { label: 'FX volatility against USD, 3 months', value: pct(self.fxVol3mPct), source: 'ECB reference rates, live', verified: true }
-            : { label: 'FX volatility against USD, 3 months', value: 'not available', source: 'no ECB rate for this currency, or no answer', verified: false },
-        ],
-      },
-      // The edge: readings by stated rules on the figures above, grouped by the desk role that owns them.
-      {
-        title: `${EDGE_AGENTS.cb} Agent`,
-        rows: [
-          ...(gap !== undefined ? [model('Inflation against target', pts(gap))] : []),
-          model('Real policy rate', pct(realPolicy)),
-          model('Real 10Y yield', pct(real10Y)),
-        ],
-      },
-      {
-        title: `${EDGE_AGENTS.rv} Agent`,
-        rows: [
-          ...(cv && self?.usFedFundsPct !== undefined
-            ? [model('Carry over US per unit of FX volatility', `${cv.ratio.toFixed(2)} (${cv.carryPts.toFixed(1)} pts over fed funds ${pct(self.usFedFundsPct, 2)})`, 'model: policy rate minus US fed funds, over 3-month volatility')]
-            : []),
-          rv && screen.fit
-            ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
-            : model('5Y CDS against risk peers', 'needs 4 or more countries with a CDS figure', 'model'),
-        ],
-      },
-      {
-        title: `${EDGE_AGENTS.spill} Agent`,
-        rows: SCENARIOS.map((sc) => {
-          const imp = self?.trade ? scenarioImpact(sc.id, self.trade) : null;
-          return imp
-            ? model(sc.name, `${imp.pctGdp > 0 ? '+' : ''}${imp.pctGdp.toFixed(1)}% of GDP`, `model: ${sc.shock} Basis: ${imp.basis}`)
-            : model(sc.name, 'not available', 'World Bank or WITS trade figures did not answer');
-        }),
-      },
-    ],
+    groups,
   };
 }

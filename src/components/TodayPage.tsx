@@ -1,10 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarClock, ExternalLink, Radar, Ticket } from 'lucide-react';
-import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
-import {
-  buildMorningAlphaAndCatalystRadar,
-  StagedTradeTicketSpec,
-} from '../utils/nssYieldCurveAndCatalystEngine';
+import { CalendarClock, ExternalLink, Ticket } from 'lucide-react';
+import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
+import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
@@ -13,7 +10,7 @@ import { DivergenceList } from './DivergenceList';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
-import { ColumnPicker, ColumnsButton, WatchlistTable } from './WatchlistTable';
+import { ColumnPicker, ColumnsButton, MissingSources, WatchlistTable } from './WatchlistTable';
 import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView } from '../utils/watchlistView';
 
 /**
@@ -22,11 +19,12 @@ import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView
  * in the next two weeks, and what is waiting for me. Every row links into the desk that explains it.
  */
 
-const LAST_VISIT_KEY = 'econquest_today_last_visit_v1';
+// v2: only figures from real sources are recorded (v1 held built-in values, so it is ignored).
+const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
 
 type VisitSnapshot = {
   savedAt: string;
-  rows: Record<string, { cds5YBps: number; yield10YPct: number; compositeRisk: number; yieldSource?: string }>;
+  rows: Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; compositeRisk?: number; yieldSource?: string }>;
 };
 
 function loadLastVisit(): VisitSnapshot | null {
@@ -38,12 +36,13 @@ function loadLastVisit(): VisitSnapshot | null {
   }
 }
 
-function saveVisit(items: WatchlistItem[]) {
+function saveVisit(items: LiveWatchlistItem[]) {
   try {
     const rows: VisitSnapshot['rows'] = {};
     items.forEach((it) => {
       rows[it.iso3] = {
         cds5YBps: it.cds5YBps,
+        cdsSource: it.cds5YBps !== undefined ? it.cds5YSource : undefined,
         yield10YPct: it.yield10YPct,
         compositeRisk: it.compositeRisk,
         yieldSource: it.yield10YSource || 'sample',
@@ -88,9 +87,9 @@ export const TodayPage: React.FC<{
   watchlistName: string;
   /** The list shown, so the pop-out opens on the same one. */
   watchlistId?: string;
-  watchlistItems: WatchlistItem[];
+  watchlistItems: LiveWatchlistItem[];
   stagedTickets: StagedTradeTicketSpec[];
-  onOpenCountry: (item: WatchlistItem, sectionId?: string) => void;
+  onOpenCountry: (item: LiveWatchlistItem, sectionId?: string) => void;
   onStageTicket: (ticket: StagedTradeTicketSpec) => void;
   onOpenTickets: () => void;
   onOpenWatchlistManager: () => void;
@@ -143,10 +142,6 @@ export const TodayPage: React.FC<{
     window.open(POP_OUT_URL, 'econquest-watchlist', 'popup,width=1100,height=720');
   };
 
-  const radar = useMemo(
-    () => buildMorningAlphaAndCatalystRadar(run, watchlistItems),
-    [run, watchlistItems]
-  );
   const watchIsos = useMemo(() => watchlistItems.map((w) => w.iso3), [watchlistItems]);
   const upcoming = useMemo(() => upcomingOfficialEvents(watchIsos, 14), [watchIsos]);
   const flaggedIsos = useMemo(() => new Set(rankDivergences(edgeItems, lastVisit?.rows).map((r) => r.iso3)), [edgeItems, lastVisit]);
@@ -192,7 +187,7 @@ export const TodayPage: React.FC<{
           title="A country counts as live when at least one public data feed answered on its last pull."
         >
           {liveCount === 0
-            ? 'No live data yet: figures below are built-in sample values'
+            ? 'No live data yet: figures read Missing until a source answers'
             : `Live data for ${liveCount} of ${watchlistItems.length} countries`}
         </p>
       </div>
@@ -238,6 +233,7 @@ export const TodayPage: React.FC<{
             <ColumnPicker view={view} onChange={changeView} onClose={() => setShowColumns(false)} />
           </div>
         )}
+        <MissingSources items={watchlistItems} />
         <WatchlistTable
           items={watchlistItems}
           view={view}
@@ -265,53 +261,6 @@ export const TodayPage: React.FC<{
       <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
 
       <div className={coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
-        {!coreOnly && (
-        <Card
-          title="Signals"
-          icon={<Radar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
-          note="Model output: best 12-month carry and roll-down on each curve. Not trade advice."
-        >
-          {radar.topAlphaSignals.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">No signals for this watchlist.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              {radar.topAlphaSignals.map((sig) => (
-                <li key={sig.signalId} className="py-2.5 flex items-start justify-between gap-3">
-                  <button
-                    type="button"
-                    onClick={() => openIso(sig.iso3, sig.targetSectionId)}
-                    className="text-left group"
-                  >
-                    <div className="text-sm font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
-                      {sig.countryName}: {sig.headlineMetricBps}
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">{sig.subText}</div>
-                  </button>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => openIso(sig.iso3, sig.targetSectionId)}
-                      className="ui-btn"
-                    >
-                      Why
-                    </button>
-                    {sig.ticketSpec && (
-                      <button
-                        type="button"
-                        onClick={() => onStageTicket(sig.ticketSpec)}
-                        className="ui-btn ui-btn-primary"
-                      >
-                        Stage ticket
-                      </button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-
-        )}
 
         <Card
           title="Next two weeks"
@@ -431,7 +380,7 @@ export const TodayPage: React.FC<{
       >
         {stagedTickets.length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            No staged tickets. Use “Stage ticket” on a signal to start one.
+            No staged tickets.
           </p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">

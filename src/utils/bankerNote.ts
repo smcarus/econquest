@@ -1,4 +1,5 @@
-import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
+import { toLive } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
 import { yieldSourceNote } from './watchlistYield';
@@ -9,9 +10,10 @@ import {
   groupLines,
   pct,
   pts,
-  row,
-  sampleWarning,
-  sourceTag,
+  liveRow,
+  missingNote,
+  noSourceRow,
+  missingRow,
   sourcesSection,
   when,
   type CountryBrief,
@@ -41,17 +43,17 @@ const EVENT_SHORT: Record<string, string> = {
   INFLATION_REPORT: 'inflation report',
 };
 
-export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], now: Date = new Date()): CountryBrief {
+export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistItem[], now: Date = new Date()): CountryBrief {
+  const peers = peersIn.map(toLive);
   const open = run.openData;
-  const imf = open.imfIndicators;
-  const wb = open.worldBankIndicators;
-  const mkt = open.monetaryAndMarket;
-  const roll = open.debtRollover;
-  const dsa = open.dsaAnalytics;
   const status = getSnapshotDataStatus(open);
-  const band = accessBand(mkt.cds5YSpreadBps);
-  const next12m = roll.buckets.slice(0, 4).reduce((a, b) => a + b.totalUsdBn, 0);
-  const peak = roll.buckets.reduce((a, b) => (b.totalUsdBn > a.totalUsdBn ? b : a), roll.buckets[0]);
+  const L = status.live;
+  const cds = L('market.cds5YSpreadBps');
+  const y10 = L('market.sovereign10YBondYieldPct');
+  const res = L('wb.fxReservesMonthsImport');
+  const debt = L('imf.debtToGdpPct');
+  const debt27 = L('imf.debtToGdpForecast2027Pct');
+  const band = cds !== undefined ? accessBand(cds) : undefined;
   const events = upcomingOfficialEvents([run.iso3], 60, now);
   const ds = open.debtSchedule;
   const qeds = ds?.qeds;
@@ -96,40 +98,32 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
   ];
 
   // Distress signals, each a simple stated threshold.
+  // Only tests whose figures are live are run; the rest are named as not checked.
   const signals: string[] = [];
-  if (mkt.cds5YSpreadBps >= 1000) signals.push('5Y CDS above 1,000 bps');
-  if (roll.greenspanGuidottiRatioPct < 100) signals.push('reserves below short-term external debt');
-  if (wb.fxReservesMonthsImport < 3) signals.push('reserves under three months of imports');
-  if (imf.debtToGdpPct > 90 && imf.debtToGdpForecast2027Pct > imf.debtToGdpPct) signals.push('debt above 90% of GDP and rising');
-  if (dsa.fiscalConsolidationGapPct > 3) signals.push('a fiscal gap of more than 3 pts of GDP to stabilise debt');
+  const unchecked: string[] = [];
+  if (cds !== undefined) { if (cds >= 1000) signals.push('5Y CDS above 1,000 bps'); } else unchecked.push('CDS');
+  if (res !== undefined) { if (res < 3) signals.push('reserves under three months of imports'); } else unchecked.push('reserves');
+  if (debt !== undefined && debt27 !== undefined) { if (debt > 90 && debt27 > debt) signals.push('debt above 90% of GDP and rising'); } else unchecked.push('debt path');
 
   // Watchlist peers, highest 10Y yield first, with this issuer placed among them.
-  const others = peers.filter((p) => p.iso3 !== run.iso3);
-  const cheaperThan = others.filter((p) => p.yield10YPct < mkt.sovereign10YBondYieldPct).length;
-  const mixedSources = new Set([...others.map((p) => p.yield10YSource || 'sample'), status.yieldSource]).size > 1;
-  const self = { self: true, name: `${run.countryName} (this issuer)`, y: mkt.sovereign10YBondYieldPct, ...sourceTag(status, 'yield') };
+  // Only peers with a real 10Y yield are compared.
+  const others = peers.filter((p): p is LiveWatchlistItem & { yield10YPct: number } => p.iso3 !== run.iso3 && p.yield10YPct !== undefined);
+  const cheaperThan = y10 !== undefined ? others.filter((p) => p.yield10YPct < y10).length : 0;
   const peerRows = [
-    self,
-    ...others.map((p) => ({
-      self: false,
-      name: p.countryName,
-      y: p.yield10YPct,
-      source: yieldSourceNote(p).replace(/^Official/, 'official').replace(/^Sample$/, 'sample'),
-      verified: p.yield10YSource === 'official',
-    })),
+    ...(y10 !== undefined && status.officialYield
+      ? [{ name: `${run.countryName} (this issuer)`, y: y10, source: `official, ${formatPeriod(status.officialYield.period)}`, verified: true }]
+      : []),
+    ...others.map((p) => ({ name: p.countryName, y: p.yield10YPct, source: yieldSourceNote(p).replace(/^Official/, 'official'), verified: true })),
   ].sort((a, b) => b.y - a.y);
 
   const j: string[] = [];
-  j.push(`Market access is ${band.label} (5Y CDS ${Math.round(mkt.cds5YSpreadBps)} bps, 10Y yield ${pct(mkt.sovereign10YBondYieldPct, 2)}).`);
+  if (band && cds !== undefined) j.push(`Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}).`);
+  else if (y10 !== undefined) j.push(`The 10Y yield is ${pct(y10, 2)}. Market access is not judged without a CDS figure.`);
   if (qeds && qedsPeak) {
     j.push(
       `Government external debt due in the 12 months from the end of ${quarterLabel(qeds.asOf)} is $${qeds.next12mUsdBn.toFixed(1)} bn (QEDS); the heaviest quarter is ${
         qedsPeak.label === 'Next 3 months' ? 'the first three months' : `${qedsPeak.label} ahead`
       } ($${qedsPeak.usdBn.toFixed(1)} bn).`
-    );
-  } else {
-    j.push(
-      `About $${next12m.toFixed(0)} bn falls due in the next 12 months against $${roll.liquidFxReservesUsdBn.toFixed(0)} bn of liquid reserves (sample maturity profile). The heaviest period is ${peak.periodLabel} ($${peak.totalUsdBn.toFixed(0)} bn).`
     );
   }
   if (idsYear?.debtServiceUsdBn !== undefined)
@@ -159,38 +153,33 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
           .join(', ')}.`
       : 'No official rate decisions or data releases on file in the next 60 days.'
   );
-  if (others.length) {
-    j.push(
-      `It pays more than ${cheaperThan} of ${others.length} watchlist peers on the 10-year${
-        mixedSources ? ', though the yields compared mix official, estimated and sample values' : ''
-      }.`
-    );
-  }
+  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield.`);
   j.push(
     signals.length
-      ? `Signs of distress: ${signals.join('; ')}.`
-      : 'No signs of distress on the simple tests (CDS, reserves, debt path, fiscal gap).'
+      ? `Signs of distress: ${signals.join('; ')}.${unchecked.length ? ` Not checked, figures missing: ${unchecked.join(', ')}.` : ''}`
+      : unchecked.length === 3
+        ? 'Distress tests not run: CDS, reserves and debt path are all missing.'
+        : `No signs of distress on the tests that could be run.${unchecked.length ? ` Not checked, figures missing: ${unchecked.join(', ')}.` : ''}`
   );
 
-  return {
-    headline: `${run.countryName}: market access ${band.open ? 'open' : 'likely closed'}, ${
-      qeds ? `$${qeds.next12mUsdBn.toFixed(1)} bn of government external debt due in 12 months` : `about $${next12m.toFixed(0)} bn due in 12 months (sample)`
-    }, ${
-      signals.length ? `${signals.length} sign${signals.length > 1 ? 's' : ''} of distress` : 'no signs of distress'
-    }.`,
+  const brief: CountryBrief = {
+    headline: `${run.countryName}: ${[
+      band ? `market access ${band.open ? 'open' : 'likely closed'}` : '',
+      qeds ? `$${qeds.next12mUsdBn.toFixed(1)} bn of government external debt due in 12 months` : '',
+      signals.length ? `${signals.length} sign${signals.length > 1 ? 's' : ''} of distress` : '',
+    ]
+      .filter(Boolean)
+      .join(', ') || 'not enough live figures for an issuer reading yet'}.`,
     judgements: j,
-    sampleWarning: sampleWarning(status, run.countryName),
     groups: [
       {
         title: 'Market access',
         rows: [
-          row(status, '10Y government yield', pct(mkt.sovereign10YBondYieldPct, 2), 'yield'),
-          row(status, '5Y CDS', `${Math.round(mkt.cds5YSpreadBps)} bps`, 'cds'),
-          row(status, '2s10s curve slope', `${Math.round(open.yieldCurve.slope2s10sBps)} bps`, 'sample'),
-          open.liveCreditRating
-            ? { label: 'Credit rating', value: open.liveCreditRating, source: 'AI estimate', verified: false }
-            : { label: 'Credit rating', value: 'not available', source: 'needs an AI key or a ratings feed', verified: false },
-          row(status, 'Policy rate', pct(mkt.policyRatePct, 2), 'market'),
+          liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
+          liveRow(status, '5Y CDS', 'market.cds5YSpreadBps', (v) => `${Math.round(v)} bps`, open),
+          noSourceRow('2s10s curve slope', 'Needs official 2-year and 10-year yields, which are not connected yet.'),
+          noSourceRow('Credit rating', 'Needs a ratings feed (licensed); AI estimates are not used.'),
+          liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
         ],
       },
       {
@@ -215,13 +204,11 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
               ]
             : []),
           ...bisRows,
-          row(status, qeds ? 'All debt due in 12 months, incl. domestic' : 'Due in next 12 months', `$${next12m.toFixed(1)} bn`, 'sample'),
-          row(status, 'Heaviest period', `${peak.periodLabel}, $${peak.totalUsdBn.toFixed(1)} bn`, 'sample'),
-          row(status, 'Average maturity', `${roll.weightedAvgMaturityYears.toFixed(1)} years`, 'sample'),
-          row(status, 'Floating-rate share', pct(roll.floatingRateDebtSharePct, 0), 'sample'),
-          row(status, 'Foreign holders', pct(roll.foreignHoldingsSharePct, 0), 'sample'),
-          row(status, 'Liquid FX reserves', `$${roll.liquidFxReservesUsdBn.toFixed(0)} bn`, 'sample'),
-          row(status, 'Debt / GDP', pct(imf.debtToGdpPct), 'imf'),
+          ...(qeds
+            ? []
+            : [missingRow('Government external debt due, next 12 months', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free World Bank QEDS feed did not answer, or does not cover this country. Press Sync.' })]),
+          noSourceRow('Full maturity profile, incl. domestic debt', 'Needs a debt management office feed or your own file; not connected yet.'),
+          liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
         ],
       },
       {
@@ -232,10 +219,14 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
       },
       {
         title: 'Peers by 10Y yield',
-        rows: peerRows.map((p) => ({ label: p.name, value: pct(p.y, 2), source: p.source, verified: p.verified })),
+        rows: peerRows.length
+          ? peerRows.map((p) => ({ label: p.name, value: pct(p.y, 2), source: p.source, verified: p.verified }))
+          : [noSourceRow('Peers', 'No watchlist country has an official 10Y yield yet.')],
       },
     ],
   };
+  brief.sampleWarning = missingNote(brief.groups, run.countryName);
+  return brief;
 }
 
 /** Section ids and headings for the banker's issuer note, in order. */
@@ -252,7 +243,7 @@ export const BANKER_SECTIONS: Record<string, string> = {
 
 export function buildBankerSections(
   run: CouncilAssessmentRun,
-  peers: WatchlistItem[],
+  peers: LiveWatchlistItem[],
   include: (id: string) => boolean,
   now: Date = new Date()
 ): NoteSection[] {

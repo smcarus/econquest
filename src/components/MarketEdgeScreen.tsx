@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
+import { missingReason } from '../utils/liveFigures';
 import { peerScreen, type RvLabel } from '../utils/marketsMacro';
 import { benchmarkRows, marketEdgePeers, type MarketEdgeAnchorsReply } from '../utils/marketEdgeAnchors';
 import { formatPeriod } from '../utils/officialYields';
@@ -37,11 +38,11 @@ export function useMarketEdgeAnchors(): MarketEdgeAnchorsReply | null {
  * then the benchmarks that are always shown. Used on Today and on the Country page.
  */
 export const MarketEdgeScreen: React.FC<{
-  watchlist: WatchlistItem[];
+  watchlist: LiveWatchlistItem[];
   anchors: MarketEdgeAnchorsReply | null;
   /** The country open on the Country page, highlighted. */
   highlightIso3?: string;
-  onOpenCountry: (item: WatchlistItem) => void;
+  onOpenCountry: (item: LiveWatchlistItem) => void;
   title?: string;
   /** Shown under the title before the model note. */
   intro?: string;
@@ -102,15 +103,15 @@ export const MarketEdgeScreen: React.FC<{
                     )}
                   </td>
                   <td className="px-3 py-2 text-right">
-                    <div className="tabular-nums">{r.yield10YPct.toFixed(2)}%</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{r.yieldNote}</div>
+                    <div className={`tabular-nums ${r.yield10YPct === undefined ? 'text-slate-400 dark:text-slate-500' : ''}`}>{r.yield10YPct !== undefined ? `${r.yield10YPct.toFixed(2)}%` : '–'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title={r.yield10YPct === undefined ? missingReason('yield', r.iso3).help : undefined}>{r.yieldNote}</div>
                   </td>
                   <td className="hidden md:table-cell px-3 py-2 text-right tabular-nums">{r.spreadBps !== undefined ? `${r.spreadBps} bps` : '–'}</td>
                   <td className="px-3 py-2 text-right">
-                    <div className="tabular-nums">{Math.round(r.cdsBps)} bps</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{r.cdsNote}</div>
+                    <div className={`tabular-nums ${r.cdsBps === undefined ? 'text-slate-400 dark:text-slate-500' : ''}`}>{r.cdsBps !== undefined ? `${Math.round(r.cdsBps)} bps` : '–'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title={r.cdsBps === undefined ? missingReason('cds', r.iso3).help : undefined}>{r.cdsNote}</div>
                   </td>
-                  <td className="hidden sm:table-cell px-3 py-2 text-right tabular-nums">{r.risk.toFixed(2)}</td>
+                  <td className="hidden sm:table-cell px-3 py-2 text-right tabular-nums">{r.risk !== undefined ? r.risk.toFixed(2) : <span className="text-slate-400 dark:text-slate-500" title={missingReason('risk', r.iso3).help}>–</span>}</td>
                   <td className="hidden lg:table-cell px-3 py-2 text-right">
                     <div className="tabular-nums">{item?.reerGapPct !== undefined ? `${item.reerGapPct >= 0 ? '+' : ''}${item.reerGapPct.toFixed(0)}%` : '–'}</div>
                     {item?.reerPeriod && <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">BIS, {formatPeriod(item.reerPeriod)}</div>}

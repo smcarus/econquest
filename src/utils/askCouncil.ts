@@ -10,9 +10,10 @@
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
 import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar';
 import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk, policyStance, targetSource } from './marketsMacro';
+import { missingReason } from './liveFigures';
 import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
@@ -97,14 +98,14 @@ const baseName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '').trim();
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 export interface CouncilPlan {
-  countries: WatchlistItem[];
+  countries: LiveWatchlistItem[];
   /** How the countries were picked, in words. */
   scopeNote: string;
   agents: Array<{ id: AgentId; why: string }>;
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
-export function countriesInQuestion(question: string, items: WatchlistItem[]): WatchlistItem[] {
+export function countriesInQuestion(question: string, items: LiveWatchlistItem[]): LiveWatchlistItem[] {
   return items.filter((it) => {
     const names = [baseName(it.countryName), ...(ALIASES[it.iso3] || [])];
     if (names.some((n) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}($|[^\\p{L}])`, 'iu').test(question))) return true;
@@ -113,7 +114,7 @@ export function countriesInQuestion(question: string, items: WatchlistItem[]): W
 }
 
 /** Which agents answer and for which countries. `scopeIso3` = a country picked in the box, overriding the question. */
-export function planCouncil(question: string, items: WatchlistItem[], scopeIso3?: string): CouncilPlan {
+export function planCouncil(question: string, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const picked = scopeIso3 ? items.filter((i) => i.iso3 === scopeIso3) : [];
   const named = picked.length ? [] : countriesInQuestion(question, items);
   const countries = picked.length ? picked : named.length ? named : items;
@@ -141,12 +142,16 @@ const p2 = (v: number) => `${v.toFixed(2)}%`;
 const sgn = (v: number, d = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(d)}`;
 const MAX_FINDINGS = 6;
 
-function cbAgent(countries: WatchlistItem[]): Omit<AgentAnswer, 'why'> {
+function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
   for (const it of countries) {
     if (it.cpiInflationPct === undefined || it.policyRatePct === undefined) {
-      missing.push(`${it.countryName}: no inflation or policy rate figure`);
+      const why = [
+        it.cpiInflationPct === undefined ? `inflation (${missingReason('cpi', it.iso3).short})` : '',
+        it.policyRatePct === undefined ? `policy rate (${missingReason('policy', it.iso3).short})` : '',
+      ].filter(Boolean);
+      missing.push(`${it.countryName}: missing ${why.join(' and ')}`);
       continue;
     }
     const c = cpiTag(it);
@@ -154,7 +159,7 @@ function cbAgent(countries: WatchlistItem[]): Omit<AgentAnswer, 'why'> {
     const t = INFLATION_TARGETS[it.iso3];
     const gap = t ? it.cpiInflationPct - t.pct : undefined;
     const real = it.policyRatePct - it.cpiInflationPct;
-    const real10 = it.yield10YPct - it.cpiInflationPct;
+    const real10 = it.yield10YPct !== undefined ? it.yield10YPct - it.cpiInflationPct : undefined;
     const sig = policySignal(it);
     const y = yieldTag(it);
     const figures: AgentFigure[] = [
@@ -164,7 +169,9 @@ function cbAgent(countries: WatchlistItem[]): Omit<AgentAnswer, 'why'> {
         : { label: 'Inflation target', value: 'not on file', source: 'central bank page not reachable', tag: 'sample' },
       { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: pr.q },
       { label: 'Real policy rate', value: p1(real), source: 'policy rate minus inflation', tag: 'model' },
-      { label: 'Real 10Y yield', value: p1(real10), source: `10Y yield ${p2(it.yield10YPct)} (${y.src}) minus inflation`, tag: 'model' },
+      ...(real10 !== undefined && it.yield10YPct !== undefined
+        ? [{ label: 'Real 10Y yield', value: p1(real10), source: `10Y yield ${p2(it.yield10YPct)} (${y.src}) minus inflation`, tag: 'model' as const }]
+        : []),
     ];
     findings.push({
       iso3: it.iso3,
@@ -177,7 +184,7 @@ function cbAgent(countries: WatchlistItem[]): Omit<AgentAnswer, 'why'> {
   return { id: 'cb', name: COUNCIL_AGENTS.cb.name, findings, missing };
 }
 
-function rvAgent(countries: WatchlistItem[], all: WatchlistItem[]): Omit<AgentAnswer, 'why'> {
+function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
   const fit = fitCdsOnRisk(all);
   const cdsSig = cdsSignals(all);
   const findings: AgentFinding[] = [];
@@ -185,12 +192,13 @@ function rvAgent(countries: WatchlistItem[], all: WatchlistItem[]): Omit<AgentAn
   for (const it of countries) {
     const c = cdsTag(it);
     const y = yieldTag(it);
-    const figures: AgentFigure[] = [
-      { label: '10Y government yield', value: p2(it.yield10YPct), source: y.src, tag: y.q },
-      { label: '5Y CDS', value: `${Math.round(it.cds5YBps)} bps`, source: c.src, tag: c.q },
-    ];
+    const figures: AgentFigure[] = [];
+    if (it.yield10YPct !== undefined) figures.push({ label: '10Y government yield', value: p2(it.yield10YPct), source: y.src, tag: y.q });
+    else missing.push(`${it.countryName}: 10Y yield missing (${missingReason('yield', it.iso3).short})`);
+    if (it.cds5YBps !== undefined) figures.push({ label: '5Y CDS', value: `${Math.round(it.cds5YBps)} bps`, source: c.src, tag: c.q });
+    else missing.push(`${it.countryName}: 5Y CDS missing (${missingReason('cds', it.iso3).short})`);
     const parts: string[] = [];
-    if (fit) {
+    if (fit && it.cds5YBps !== undefined && it.compositeRisk !== undefined) {
       const rv = cdsVsPeers(it.cds5YBps, it.compositeRisk, fit);
       figures.push(
         { label: 'Risk score', value: it.compositeRisk.toFixed(2), source: "the app's risk model", tag: 'model' },
@@ -229,7 +237,7 @@ function rvAgent(countries: WatchlistItem[], all: WatchlistItem[]): Omit<AgentAn
   return { id: 'rv', name: COUNCIL_AGENTS.rv.name, findings, missing };
 }
 
-function fxAgent(countries: WatchlistItem[]): Omit<AgentAnswer, 'why'> {
+function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
   for (const it of countries) {
@@ -273,7 +281,7 @@ export function scenariosInQuestion(question: string): ScenarioId[] {
 
 const SCENARIO_PHRASE: Record<ScenarioId, string> = { hormuz: 'a Strait of Hormuz closure', taiwan: 'a Taiwan Strait crisis', russia: 'a Russia escalation' };
 
-function spillAgent(countries: WatchlistItem[], question: string): Omit<AgentAnswer, 'why'> {
+function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<AgentAnswer, 'why'> {
   const ids = scenariosInQuestion(question);
   const scs = SCENARIOS.filter((s) => ids.includes(s.id));
   const findings: AgentFinding[] = [];
@@ -308,7 +316,7 @@ function spillAgent(countries: WatchlistItem[], question: string): Omit<AgentAns
 
 export const CALENDAR_HORIZON_DAYS = 120;
 
-function calendarAgent(countries: WatchlistItem[], now: Date): Omit<AgentAnswer, 'why'> {
+function calendarAgent(countries: LiveWatchlistItem[], now: Date): Omit<AgentAnswer, 'why'> {
   const events = upcomingOfficialEvents(countries.map((c) => c.iso3), CALENDAR_HORIZON_DAYS, now);
   const findings: AgentFinding[] = [];
   const none: string[] = [];
@@ -342,7 +350,7 @@ function calendarAgent(countries: WatchlistItem[], now: Date): Omit<AgentAnswer,
 }
 
 /** Run the planned agents. `all` is the whole watchlist, for peer comparisons. */
-export function runCouncil(question: string, plan: CouncilPlan, all: WatchlistItem[], now: Date = new Date()): AgentAnswer[] {
+export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchlistItem[], now: Date = new Date()): AgentAnswer[] {
   return plan.agents.map(({ id, why }) => {
     const a =
       id === 'cb'

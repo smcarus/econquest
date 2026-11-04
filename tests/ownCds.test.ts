@@ -95,13 +95,15 @@ function run(own: boolean): CouncilAssessmentRun {
   return { iso3: 'BRA', countryName: 'Brazil', openData } as unknown as CouncilAssessmentRun;
 }
 
-test('brief: own CDS is labelled with provider and date; without the switch it stays sample', () => {
+test('brief: own CDS is labelled with provider and date; without the switch it reads Missing and says how to connect it', () => {
   const cds = (r: CouncilAssessmentRun) => bankerBrief(r, [], NOW).groups.find((g) => g.title === 'Market access')!.rows.find((x) => x.label === '5Y CDS')!;
   const own = cds(run(true));
   assert.equal(own.value, '168 bps');
   assert.equal(own.source, 'your LSEG data, 3 Nov 2026');
   assert.equal(own.verified, true);
-  assert.equal(cds(run(false)).source, 'sample');
+  const none = cds(run(false));
+  assert.equal(none.value, 'Missing');
+  assert.match(none.help || '', /CDS_FEED=csv/);
   // Own CDS alone does not make the snapshot "live" (that needs IMF and World Bank).
   assert.notEqual(getSnapshotDataStatus(run(true).openData).mode, 'live');
 });
@@ -137,5 +139,7 @@ test('watchlist and book: own CDS named per country and by weight', () => {
   const v = bookView([h('BRA', 30), h('MEX', 10)], wl, wl);
   const b = pmBookBrief(v, [], NOW);
   const row = b.groups.flatMap((g) => g.rows).find((r) => r.label === 'Weighted 5Y CDS')!;
-  assert.match(row.source, /^75% of weight on your own CDS data/);
+  // Only Brazil has your own CDS: the average is Brazil's, and the row says Mexico is missing.
+  assert.equal(row.value, '200 bps');
+  assert.match(row.source, /^your CDS data, 75% of the book; missing for MEX$/);
 });

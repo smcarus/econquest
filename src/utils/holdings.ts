@@ -3,7 +3,8 @@
  * saved in this browser only (localStorage). Nothing here is sent to the server.
  */
 
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
+import { toLive } from './liveFigures';
 
 export type HoldingAssetClass = 'HC_BOND' | 'LC_BOND' | 'CDS' | 'FX' | 'OTHER';
 export type HoldingSide = 'LONG' | 'SHORT';
@@ -227,13 +228,14 @@ export function creditSign(h: Holding): number {
 export interface BookCountryRow {
   iso3: string;
   countryName: string;
-  item?: WatchlistItem;
+  item?: LiveWatchlistItem;
   grossUsdMm: number;
   netCreditUsdMm: number;
   /** Credit DV01 in USD thousands per bp (net), where durations are given. */
   dv01UsdK: number;
   weight: number;
-  riskShare: number;
+  /** Share of weight x risk score. Left out when this country's risk score is not live. */
+  riskShare?: number;
   positions: number;
 }
 
@@ -246,11 +248,26 @@ export interface BookSummary {
   uncovered: string[];
 }
 
-export function summariseBook(holdings: Holding[], lookup: WatchlistItem[]): BookSummary {
+/**
+ * Share of weight x risk score, among the rows whose risk score is live. Rows without one get no
+ * share: a built-in score is never used to fill the gap.
+ */
+export function setRiskShares<T extends { weight: number; riskShare?: number; item?: { compositeRisk?: number } }>(rows: T[]): T[] {
+  const total = rows.reduce((a, r) => a + (r.item?.compositeRisk !== undefined ? r.weight * r.item.compositeRisk : 0), 0);
+  for (const r of rows) {
+    if (r.item?.compositeRisk !== undefined && total > 0) r.riskShare = (r.weight * r.item.compositeRisk) / total;
+    else delete r.riskShare;
+  }
+  return rows;
+}
+
+export function summariseBook(holdings: Holding[], lookup: LiveWatchlistItem[]): BookSummary {
   const byIso = new Map<string, BookCountryRow>();
   let missingDuration = 0;
   for (const h of holdings) {
-    const item = lookup.find((w) => w.iso3 === h.iso3);
+    const found = lookup.find((w) => w.iso3 === h.iso3);
+    // Built-in figures never reach the book, whoever calls this.
+    const item = found && toLive(found);
     const row =
       byIso.get(h.iso3) ||
       ({
@@ -261,7 +278,6 @@ export function summariseBook(holdings: Holding[], lookup: WatchlistItem[]): Boo
         netCreditUsdMm: 0,
         dv01UsdK: 0,
         weight: 0,
-        riskShare: 0,
         positions: 0,
       } as BookCountryRow);
     const sign = creditSign(h);
@@ -277,9 +293,8 @@ export function summariseBook(holdings: Holding[], lookup: WatchlistItem[]): Boo
   const rows = [...byIso.values()];
   const gross = rows.reduce((a, r) => a + r.grossUsdMm, 0) || 1;
   rows.forEach((r) => (r.weight = r.grossUsdMm / gross));
-  const riskTotal = rows.reduce((a, r) => a + r.weight * (r.item?.compositeRisk ?? 0), 0) || 1;
-  rows.forEach((r) => (r.riskShare = (r.weight * (r.item?.compositeRisk ?? 0)) / riskTotal));
-  rows.sort((a, b) => b.riskShare - a.riskShare || b.grossUsdMm - a.grossUsdMm);
+  setRiskShares(rows);
+  rows.sort((a, b) => (b.riskShare ?? -1) - (a.riskShare ?? -1) || b.grossUsdMm - a.grossUsdMm);
   return {
     grossUsdMm: rows.reduce((a, r) => a + r.grossUsdMm, 0),
     netCreditUsdMm: rows.reduce((a, r) => a + r.netCreditUsdMm, 0),

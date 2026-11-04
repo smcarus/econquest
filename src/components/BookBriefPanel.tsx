@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { FileText } from 'lucide-react';
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import type { Holding } from '../utils/holdings';
 import { bookView, clientBrief, pmBookBrief } from '../utils/bookNote';
@@ -30,8 +30,8 @@ const VIEW_INFO: Record<BookBriefView, { label: string; title: string; note: str
  */
 export const BookBriefPanel: React.FC<{
   holdings: Holding[];
-  riskLookup: WatchlistItem[];
-  watchlist: WatchlistItem[];
+  riskLookup: LiveWatchlistItem[];
+  watchlist: LiveWatchlistItem[];
   stagedTickets: StagedTradeTicketSpec[];
   view: BookBriefView;
   onWriteReport: (view: BookBriefView) => void;

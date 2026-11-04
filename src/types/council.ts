@@ -331,6 +331,11 @@ export interface OpenDataSnapshot {
     verifiedLiveSources: string[];
     checkedAt: string;
   };
+  /**
+   * Figures a live feed actually filled, by path (e.g. 'imf.debtToGdpPct'), with a short source
+   * label. Any figure not listed is a built-in value and must not be shown as data.
+   */
+  liveFields?: Record<string, string>;
   imfIndicators: {
     debtToGdpPct: number;
     debtToGdpForecast2027Pct: number;
@@ -461,6 +466,11 @@ export interface WatchlistItem {
   cpiSource?: 'live' | 'sample';
   /** Policy rate from the AI market prompt or the sample. */
   policyRateSource?: 'ai_estimate' | 'sample';
+  /** 'live' when the IMF filled debt/GDP, or the World Bank filled reserves; else built-in. */
+  debtSource?: 'live' | 'sample';
+  reservesSource?: 'live' | 'sample';
+  /** 'live' when the risk model's main inputs (IMF, World Bank, GDELT) were all live. */
+  riskSource?: 'live' | 'sample';
   /** BIS international government bonds: outstanding and due within a year, USD bn. */
   intlBondsUsdBn?: number;
   intlBondsDue1yUsdBn?: number;
@@ -477,6 +487,21 @@ export interface WatchlistItem {
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }
+
+/** Built-in figures on a watchlist row; LiveWatchlistItem leaves each out unless a live source filled it. */
+export type BuiltInWatchlistField =
+  | 'compositeRisk'
+  | 'geopoliticalRisk'
+  | 'sovereignRisk'
+  | 'macroRisk'
+  | 'alertStatus'
+  | 'yield10YPct'
+  | 'cds5YBps'
+  | 'debtToGdpPct'
+  | 'fxReservesMonths';
+
+/** A watchlist row with only figures from live, official, your own or AI-search sources (utils/liveFigures.ts). */
+export type LiveWatchlistItem = Omit<WatchlistItem, BuiltInWatchlistField> & Partial<Pick<WatchlistItem, BuiltInWatchlistField>>;
 
 export interface WatchlistGroup {
   id: string;

@@ -4,6 +4,7 @@ import { buildEconomistSections, economistBrief, sourceTag, ECONOMIST_SECTIONS }
 import { getSnapshotDataStatus } from '../src/utils/dataStatus.ts';
 import { buildBaselineOpenData } from '../src/data/presetsAndBaselines.ts';
 import type { CouncilAssessmentRun, OpenDataSnapshot } from '../src/types/council.ts';
+import { FEED_PATHS, markLive } from './helpers/live.ts';
 
 const NOW = new Date('2026-11-04T12:00:00Z');
 
@@ -14,9 +15,9 @@ function runFor(iso3: string, sources: string[], tweak: (s: OpenDataSnapshot) =>
   return { iso3, countryName: openData.countryName, openData } as unknown as CouncilAssessmentRun;
 }
 
-test('source tags: sample unless the feed answered; official yield names its date', () => {
-  const sample = getSnapshotDataStatus(runFor('MEX', []).openData);
-  assert.deepEqual(sourceTag(sample, 'imf'), { source: 'sample', verified: false });
+test('source tags: missing unless the feed answered; official yield names its date', () => {
+  const none = getSnapshotDataStatus(runFor('MEX', []).openData);
+  assert.deepEqual(sourceTag(none, 'imf'), { source: 'missing', verified: false });
   const live = runFor('MEX', ['IMF DataMapper WEO', 'World Bank Open Data v2', 'FRED / OECD 10Y government yield (monthly average)'], (s) => {
     s.official10YYield = { valuePct: 9.35, period: '2026-09', source: 'OECD via FRED', seriesId: 'S', url: 'u', frequency: 'monthly' };
   }).openData;
@@ -26,16 +27,39 @@ test('source tags: sample unless the feed answered; official yield names its dat
   assert.equal(sourceTag(st, 'market').verified, false);
 });
 
-test('the brief warns when figures are sample values and every row has a source', () => {
+test('no built-in figures: without live feeds every figure reads Missing with a reason, and the brief says so', () => {
   const b = economistBrief(runFor('BRA', []), NOW);
-  assert.match(b.sampleWarning || '', /sample values/);
-  for (const g of b.groups) for (const r of g.rows) assert.ok(r.source.length > 0, `${r.label} has no source`);
-  assert.equal(economistBrief(runFor('BRA', ['IMF DataMapper WEO', 'World Bank Open Data v2']), NOW).sampleWarning, undefined);
+  assert.match(b.sampleWarning || '', /missing/);
+  assert.match(b.headline, /no live economic figures yet/);
+  assert.equal(b.judgements.length, 0, 'no observation is written from a missing figure');
+  const rows = b.groups.flatMap((g) => g.rows).filter((r) => r.label !== 'Next rate decision' && r.label !== 'Next CPI release');
+  for (const r of rows) {
+    assert.equal(r.value, 'Missing', r.label);
+    assert.ok(r.help && r.source, `${r.label} says why`);
+  }
+  // A figure the server marked live shows; the rest stay missing.
+  const live = economistBrief(runFor('BRA', [], (s) => markLive(s)), NOW);
+  const debt = live.groups.flatMap((g) => g.rows).find((r) => r.label === 'Debt / GDP')!;
+  assert.equal(debt.verified, true);
+  assert.notEqual(debt.value, 'Missing');
+  const policy = live.groups.flatMap((g) => g.rows).find((r) => r.label === 'Policy rate')!;
+  assert.equal(policy.value, 'Missing');
+  assert.equal(policy.source, 'No source yet');
 });
 
-test('judgements follow the stated rules', () => {
+test('AI web-search estimates count as missing', () => {
+  const r = runFor('BRA', ['Gemini search grounding'], (s) => {
+    s.liveFields = { 'market.policyRatePct': 'AI estimate', 'market.cds5YSpreadBps': 'AI estimate' };
+  });
+  const st = getSnapshotDataStatus(r.openData);
+  assert.equal(st.isLive('market.policyRatePct'), false);
+  assert.equal(st.live('market.cds5YSpreadBps'), undefined);
+});
+
+test('judgements follow the stated rules, on live figures only', () => {
   const tight = economistBrief(
     runFor('BRA', [], (s) => {
+      markLive(s);
       s.imfIndicators.cpiInflationPct = 4;
       s.monetaryAndMarket.policyRatePct = 15;
       s.imfIndicators.realGdpGrowthPct = 1.2;
@@ -44,10 +68,18 @@ test('judgements follow the stated rules', () => {
     NOW
   );
   assert.ok(tight.judgements.some((j) => j.startsWith('Growth is weak at 1.2%')));
-  assert.ok(tight.judgements.some((j) => j.startsWith('Monetary policy is tight: the policy rate is 11.0% above inflation')));
+  // The policy rate has no real source, so there is no reading on policy.
+  assert.ok(!tight.judgements.some((j) => /Monetary policy|Real interest/.test(j)));
   assert.ok(tight.judgements.some((j) => j.includes('reserves below the usual three-month import floor')));
-  const loose = economistBrief(runFor('TUR', [], (s) => { s.imfIndicators.cpiInflationPct = 40; s.monetaryAndMarket.policyRatePct = 30; }), NOW);
-  assert.ok(loose.judgements.some((j) => j.startsWith('Real interest rates are negative (-10.0%)')));
+  const withRate = economistBrief(
+    runFor('TUR', [], (s) => {
+      markLive(s, [...FEED_PATHS, 'market.policyRatePct']);
+      s.imfIndicators.cpiInflationPct = 40;
+      s.monetaryAndMarket.policyRatePct = 30;
+    }),
+    NOW
+  );
+  assert.ok(withRate.judgements.some((j) => j.startsWith('Real interest rates are negative (-10.0%)')));
 });
 
 test('the next official rate decision comes from the calendar', () => {
@@ -61,9 +93,9 @@ test('country note: all sections by default, switched-off sections left out', ()
   const run = runFor('ZAF', []);
   const all = buildEconomistSections(run, () => true, NOW);
   assert.deepEqual(all.map((s) => s.id), Object.keys(ECONOMIST_SECTIONS));
-  assert.ok(all[0].lines.some((l) => l.startsWith('**Note:**')), 'sample warning is in the summary');
+  assert.ok(all[0].lines.some((l) => l.startsWith('**Note:**')), 'missing-figures note is in the summary');
   const some = buildEconomistSections(run, (id) => id !== 'external' && id !== 'risks', NOW);
   assert.ok(!some.some((s) => s.id === 'external' || s.id === 'risks'));
   const fiscal = all.find((s) => s.id === 'fiscal')!;
-  assert.ok(fiscal.lines.every((l, i) => i >= 6 || /\((IMF WEO|sample|model, from figures above|AI estimate|official, .+)\)$/.test(l)));
+  assert.ok(fiscal.lines.every((l) => /: Missing \(.+\)$|\((IMF WEO|model, from figures above|official, .+)\)$/.test(l)), fiscal.lines.join('\n'));
 });

@@ -88,7 +88,7 @@ export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
         <li key={j}>{j}</li>
       ))}
     </ul>
-    <p className="ui-label">These observations are simple rules on the figures below, not a forecast.</p>
+    <p className="ui-label">These observations are simple rules on the live figures below, not a forecast. Missing figures are left out of them. Hover a missing figure for what would fill it.</p>
   </div>
 );
 
@@ -104,18 +104,18 @@ export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
           <caption className="sr-only">{g.title}</caption>
           <tbody>
             {g.rows.map((r) => (
-              <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+              <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
                 <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
                   {r.label}
                   <span
                     className={`block text-xs ${
-                      r.verified ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                      r.verified ? 'text-emerald-700 dark:text-emerald-400' : r.missing ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
                     }`}
                   >
                     {r.source}
                   </span>
                 </th>
-                <td className="px-4 py-1.5 text-right align-top font-medium text-slate-900 dark:text-white [font-variant-numeric:tabular-nums]">
+                <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
                   {r.value}
                 </td>
               </tr>

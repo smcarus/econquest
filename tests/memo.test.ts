@@ -40,9 +40,14 @@ test('IC memo has every section, with trades and the kill switch', () => {
   assert.doesNotMatch(t, /\(Ref:/);
 });
 
-test('the default sample data is labelled in the memo', () => {
+test('no built-in figures: without live feeds the memo names each missing figure and drops the council score', () => {
   const t = text(buildSections(props, all, 'country'));
-  assert.match(t, /Debt \/ GDP: [\d.]+%.*\(/);
+  assert.match(t, /Debt \/ GDP: Missing \(/);
+  assert.match(t, /5Y CDS: Missing \(Needs setup\)/);
+  assert.doesNotMatch(t, /Composite risk score/);
+  const client = text(buildSections(props, all, 'country', 'client'));
+  assert.match(client, /do not yet have up-to-date figures for government debt/);
+  assert.doesNotMatch(client, /Government debt is \d/);
 });
 
 test('client note leaves out trade levels, scores and desk terms', () => {

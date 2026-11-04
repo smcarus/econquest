@@ -67,6 +67,7 @@ import {
   syncLiveWorldBankAndTreasuryData,
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
+import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
 import { TodayPage } from './components/TodayPage';
 import { CouncilApprovalCard } from './components/CouncilApprovalCard';
@@ -89,7 +90,10 @@ import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { PresentMode } from './components/PresentMode';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
-import { CORE_REPORTS, loadShowAllTools, saveShowAllTools, visibleNav, visibleReport } from './utils/simpleMode';
+import { CORE_REPORTS, visibleNav, visibleReport } from './utils/simpleMode';
+
+/** Off: the desks behind the old "Show all tools" switch run only on built-in figures. */
+const SHOW_BUILT_IN_DESKS = false;
 import type { WorkspaceTab } from './components/WorkspacePage';
 
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
@@ -603,8 +607,9 @@ export default function App() {
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   // Core view by default: everything outside the core set is behind Menu > Show all tools.
-  const [showAllTools, setShowAllTools] = useState<boolean>(() => loadShowAllTools());
-  useEffect(() => saveShowAllTools(showAllTools), [showAllTools]);
+  // The old desks all compute from built-in figures, so they are hidden until each runs on live
+  // inputs (Sam, 2026-11-04: no built-in figures). Their code stays; flip this to bring them back.
+  const showAllTools = SHOW_BUILT_IN_DESKS;
   const navAreas = visibleNav(NAV, showAllTools);
   useEffect(() => {
     if (!showAllTools && appArea === 'desks') setAppArea('today');
@@ -1678,6 +1683,8 @@ export default function App() {
 
   const activeWatchlistItems =
     watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
+  const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
   // Imported holdings, shaped for the stress lab (weights) and the contagion desk (positions).
   const holdingsStressWeights = useMemo(
     () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
@@ -1689,6 +1696,8 @@ export default function App() {
     ...activeWatchlistItems,
     ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3)),
   ];
+  // Portfolio and Reports see only real figures: the catalogue's built-in values are stripped too.
+  const liveRiskLookup = useMemo(() => holdingsRiskLookup.map(toLive), [activeWatchlistItems]);
 
   const activeDomainHub =
     DOMAIN_HUBS.find((hub) => hub.subTabs.some((t) => t.id === activeNavSection)) ||
@@ -2358,30 +2367,9 @@ export default function App() {
 
                 <div>
                   <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Tools</div>
-                  <button
-                    type="button"
-                    role="menuitemcheckbox"
-                    aria-checked={showAllTools}
-                    onClick={() => setShowAllTools((v) => !v)}
-                    className="w-full flex items-center justify-between gap-2 px-2 py-1.5 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-left"
-                    data-show-all-tools="true"
-                  >
-                    <span>
-                      <span className="block text-slate-800 dark:text-slate-100">Show all tools</span>
-                      <span className="block text-slate-500 dark:text-slate-400">
-                        {showAllTools ? 'All desks, tabs and reports are shown.' : 'Off: the core view only. Nothing is removed.'}
-                      </span>
-                    </span>
-                    <span
-                      className={`shrink-0 px-1.5 py-0.5 font-semibold border ${
-                        showAllTools
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-600'
-                      }`}
-                    >
-                      {showAllTools ? 'On' : 'Off'}
-                    </span>
-                  </button>
+                  <p className="text-slate-500 dark:text-slate-400" data-show-all-tools="true">
+                    The older desks are hidden: they ran on built-in figures, not live data. Each comes back once it has a live source.
+                  </p>
                 </div>
 
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
@@ -2808,10 +2796,12 @@ export default function App() {
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}
-              watchlistItems={activeWatchlistItems}
+              watchlistItems={liveWatchlistItems}
               stagedTickets={stagedTradeTickets}
               onOpenCountry={(item, sectionId) => {
-                if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                // Select the stored row (the live view drops built-in figures but keeps the country).
+                const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
+                if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
                 openCountryPage(sectionId);
               }}
               onStageTicket={handleStageTradeTicket}
@@ -2928,8 +2918,8 @@ export default function App() {
                   <div className="space-y-4">
                   <BookBriefPanel
                     holdings={holdings}
-                    riskLookup={holdingsRiskLookup}
-                    watchlist={activeWatchlistItems}
+                    riskLookup={liveRiskLookup}
+                    watchlist={liveWatchlistItems}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     view="pm"
                     onWriteReport={(view) => {
@@ -2938,13 +2928,14 @@ export default function App() {
                     }}
                   />
                   <PortfolioSummary
-                    watchlistItems={activeWatchlistItems}
-                    riskLookup={holdingsRiskLookup}
+                    watchlistItems={liveWatchlistItems}
+                    riskLookup={liveRiskLookup}
                     holdings={holdings}
                     onManageHoldings={() => setIsHoldingsPanelOpen(true)}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
-                    onOpenCountry={(item) => {
-                      if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                    onOpenCountry={(live) => {
+                      const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
+                      if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
                       openCountryPage();
                     }}
                   />
@@ -2958,8 +2949,8 @@ export default function App() {
                     run={run}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     holdings={holdings}
-                    riskLookup={holdingsRiskLookup}
-                    peers={activeWatchlistItems}
+                    riskLookup={liveRiskLookup}
+                    peers={liveWatchlistItems}
                     defaultAudience={visibleReport(requestedReport || DEFAULT_REPORT, showAllTools)}
                     audiences={showAllTools ? undefined : CORE_REPORTS}
                   />

@@ -13,7 +13,7 @@
  * figures count fully, AI estimates 0.7, sample values 0.5. A gap built on sample data can still
  * show, but below a smaller one built on live data, and every line says which it is.
  */
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
 import { POLITICAL_FISCAL_CATEGORIES, upcomingOfficialEvents } from '../data/officialCalendar';
 import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk } from './marketsMacro';
 import { formatPeriod } from './officialYields';
@@ -50,7 +50,7 @@ export interface CountryDivergence {
   change?: string;
 }
 
-export type LastLook = Record<string, { cds5YBps: number; yield10YPct: number; yieldSource?: string }>;
+export type LastLook = Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; yieldSource?: string }>;
 
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const worst = (...q: Quality[]): Quality => (q.includes('sample') ? 'sample' : q.includes('estimate') ? 'estimate' : 'live');
@@ -60,11 +60,11 @@ function make(d: Omit<Divergence, 'score'>): Divergence {
   return { ...d, size: Number(d.size.toFixed(3)), score: Number((d.size * QUALITY_WEIGHT[d.quality]).toFixed(3)) };
 }
 
-export const cpiTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const cpiTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.cpiSource === 'live' ? { q: 'live', src: 'IMF, live' } : { q: 'sample', src: 'sample' };
-export const policyTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const policyTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.policyRateSource === 'ai_estimate' ? { q: 'estimate', src: 'AI estimate' } : { q: 'sample', src: 'sample' };
-export const yieldTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const yieldTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.yield10YSource === 'official' && it.yield10YPeriod
     ? { q: 'live', src: `official, ${formatPeriod(it.yield10YPeriod)}` }
     : it.yield10YSource === 'ai_estimate'
@@ -72,7 +72,7 @@ export const yieldTag = (it: WatchlistItem): { q: Quality; src: string } =>
       : it.yield10YSource === 'uploaded'
         ? { q: 'live', src: 'your upload' }
         : { q: 'sample', src: 'sample' };
-export const cdsTag = (it: WatchlistItem): { q: Quality; src: string } =>
+export const cdsTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.cds5YSource === 'own'
     ? { q: 'live', src: `your ${it.cds5YProvider || 'data'}${it.cds5YDate ? `, ${formatPeriod(it.cds5YDate)}` : ''}` }
     : it.cds5YSource === 'ai_estimate'
@@ -80,7 +80,7 @@ export const cdsTag = (it: WatchlistItem): { q: Quality; src: string } =>
       : { q: 'sample', src: 'sample' };
 
 /** Real policy rate against inflation and target. */
-export function policySignal(it: WatchlistItem): Divergence | null {
+export function policySignal(it: LiveWatchlistItem): Divergence | null {
   if (it.cpiInflationPct === undefined || it.policyRatePct === undefined) return null;
   const real = it.policyRatePct - it.cpiInflationPct;
   const target = INFLATION_TARGETS[it.iso3];
@@ -118,8 +118,10 @@ export function policySignal(it: WatchlistItem): Divergence | null {
 }
 
 /** Real 10Y yields against the median of the countries on screen. */
-export function realYieldSignals(items: WatchlistItem[]): Map<string, Divergence> {
-  const withCpi = items.filter((i) => i.cpiInflationPct !== undefined);
+export function realYieldSignals(items: LiveWatchlistItem[]): Map<string, Divergence> {
+  const withCpi = items.filter(
+    (i): i is LiveWatchlistItem & { cpiInflationPct: number; yield10YPct: number } => i.cpiInflationPct !== undefined && i.yield10YPct !== undefined
+  );
   const out = new Map<string, Divergence>();
   if (withCpi.length < 4) return out;
   const reals = withCpi.map((i) => i.yield10YPct - (i.cpiInflationPct as number)).sort((a, b) => a - b);
@@ -153,11 +155,12 @@ export function realYieldSignals(items: WatchlistItem[]): Map<string, Divergence
 }
 
 /** CDS against what peers with the same risk score pay. */
-export function cdsSignals(items: WatchlistItem[]): Map<string, Divergence> {
+export function cdsSignals(items: LiveWatchlistItem[]): Map<string, Divergence> {
   const fit = fitCdsOnRisk(items);
   const out = new Map<string, Divergence>();
   if (!fit) return out;
   for (const it of items) {
+    if (it.cds5YBps === undefined || it.compositeRisk === undefined) continue;
     const rv = cdsVsPeers(it.cds5YBps, it.compositeRisk, fit);
     if (rv.label === 'in line') continue;
     const c = cdsTag(it);
@@ -184,7 +187,7 @@ export function cdsSignals(items: WatchlistItem[]): Map<string, Divergence> {
 }
 
 /** International government bonds falling due within a year, as a share of those outstanding (BIS). */
-export function refinancingSignal(it: WatchlistItem): Divergence | null {
+export function refinancingSignal(it: LiveWatchlistItem): Divergence | null {
   if (!it.intlBondsUsdBn || it.intlBondsDue1yUsdBn === undefined) return null;
   const share = it.intlBondsDue1yUsdBn / it.intlBondsUsdBn;
   if (share < 0.1) return null;
@@ -200,7 +203,7 @@ export function refinancingSignal(it: WatchlistItem): Divergence | null {
 }
 
 /** Real exchange rate more than 10% from its 10-year average (BIS). */
-export function fxValueSignal(it: WatchlistItem): Divergence | null {
+export function fxValueSignal(it: LiveWatchlistItem): Divergence | null {
   if (it.reerGapPct === undefined) return null;
   const label = reerLabel(it.reerGapPct);
   if (label === 'near average') return null;
@@ -219,7 +222,7 @@ export function fxValueSignal(it: WatchlistItem): Divergence | null {
 }
 
 /** Carry over the US rate per unit of three-month volatility: high means the carry pays well for the swings. */
-export function carrySignal(it: WatchlistItem): Divergence | null {
+export function carrySignal(it: LiveWatchlistItem): Divergence | null {
   if (it.policyRatePct === undefined || it.usFedFundsPct === undefined || it.fxVol3mPct === undefined) return null;
   const cv = carryToVol(it.policyRatePct, it.usFedFundsPct, it.fxVol3mPct);
   if (!cv || cv.ratio < 0.5) return null;
@@ -239,20 +242,20 @@ export function carrySignal(it: WatchlistItem): Divergence | null {
   });
 }
 
-function changeSince(it: WatchlistItem, last: LastLook | null | undefined): string | undefined {
+function changeSince(it: LiveWatchlistItem, last: LastLook | null | undefined): string | undefined {
   const prev = last?.[it.iso3];
   if (!prev) return undefined;
   const parts: string[] = [];
   const sameYieldSource = (prev.yieldSource || 'sample') === (it.yield10YSource || 'sample');
-  const dy = Math.round((it.yield10YPct - prev.yield10YPct) * 100);
+  const dy = it.yield10YPct === undefined || prev.yield10YPct === undefined ? 0 : Math.round((it.yield10YPct - prev.yield10YPct) * 100);
   if (sameYieldSource && dy !== 0) parts.push(`10Y ${dy > 0 ? '+' : ''}${dy} bps`);
-  const dc = Math.round(it.cds5YBps - prev.cds5YBps);
+  const dc = it.cds5YBps === undefined || prev.cds5YBps === undefined || prev.cdsSource !== it.cds5YSource ? 0 : Math.round(it.cds5YBps - prev.cds5YBps);
   if (dc !== 0) parts.push(`CDS ${dc > 0 ? '+' : ''}${dc} bps`);
   return parts.length ? `${parts.join(', ')} since your last look` : 'No change since your last look';
 }
 
 /** One line per country with at least one signal, strongest first. */
-export function rankDivergences(items: WatchlistItem[], lastLook?: LastLook | null, now: Date = new Date()): CountryDivergence[] {
+export function rankDivergences(items: LiveWatchlistItem[], lastLook?: LastLook | null, now: Date = new Date()): CountryDivergence[] {
   const cds = cdsSignals(items);
   const realY = realYieldSignals(items);
   const events = upcomingOfficialEvents(items.map((i) => i.iso3), 60, now);

@@ -11,7 +11,9 @@ import {
   sortRows,
   toggleColumn,
   yieldChangeBp,
+  cellMissing,
 } from '../src/utils/watchlistView.ts';
+import { toLive } from '../src/utils/liveFigures.ts';
 import type { WatchlistGroup, WatchlistItem } from '../src/types/council.ts';
 
 const it = (iso3: string, countryName: string, o: Partial<WatchlistItem> = {}): WatchlistItem =>
@@ -53,13 +55,16 @@ test('sorting: a header flips direction; text starts A to Z; rows with no figure
   assert.deepEqual(sortRows([POL, ZAF, TUR], v).map((r) => r.iso3), ['ZAF', 'TUR', 'POL']);
 });
 
-test('figures keep their source labels; missing figures show a dash, not a number', () => {
+test('figures keep their source labels; a missing figure shows a dash and why, never a number', () => {
   assert.equal(COLUMN_BY_ID.cpi.note!(TUR), 'Live, IMF');
-  assert.equal(COLUMN_BY_ID.cpi.note!(ZAF), 'Sample');
-  assert.equal(COLUMN_BY_ID.cpi.text(POL), '–');
-  assert.equal(COLUMN_BY_ID.cpi.note!(POL), undefined);
+  const zaf = toLive(ZAF); // inflation with no live source: dropped
+  assert.equal(zaf.cpiInflationPct, undefined);
+  assert.equal(COLUMN_BY_ID.cpi.text(zaf), '–');
+  assert.equal(cellMissing(COLUMN_BY_ID.cpi, zaf)?.short, 'IMF did not answer');
+  assert.equal(cellMissing(COLUMN_BY_ID.cds, zaf)?.kind, 'setup');
+  assert.equal(cellMissing(COLUMN_BY_ID.cpi, TUR), undefined);
   assert.equal(COLUMN_BY_ID.policy.note!(it('A', 'A', { policyRatePct: 5, policyRateSource: 'ai_estimate' })), 'AI estimate');
-  assert.equal(COLUMN_BY_ID.data.text(POL), 'Sample');
+  assert.equal(COLUMN_BY_ID.data.text(POL), 'No live feed');
 });
 
 test('yield change only between figures of the same kind of source', () => {
@@ -67,6 +72,9 @@ test('yield change only between figures of the same kind of source', () => {
   assert.equal(yieldChangeBp(now, { TUR: { cds5YBps: 300, yield10YPct: 28, compositeRisk: 0.7, yieldSource: 'official' } }), 50);
   assert.equal(yieldChangeBp(now, { TUR: { cds5YBps: 300, yield10YPct: 28, compositeRisk: 0.7 } }), undefined);
   assert.equal(COLUMN_BY_ID.cdsChange.text(TUR, { TUR: { cds5YBps: 280, yield10YPct: 28, compositeRisk: 0.7 } }), '+20');
+  // A CDS change only between figures of the same kind of source.
+  const own = it('TUR', 'Turkey', { cds5YBps: 300, cds5YSource: 'own' });
+  assert.equal(COLUMN_BY_ID.cdsChange.text(own, { TUR: { cds5YBps: 280, cdsSource: 'ai_estimate' } }), '–');
 });
 
 test('pop-out add and remove change only the chosen list, without duplicates', () => {
