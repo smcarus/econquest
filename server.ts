@@ -1126,6 +1126,17 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(status.ownCds ? { cds5YDate: status.ownCds.date, cds5YProvider: status.ownCds.source } : {}),
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
+          cpiInflationPct: snap.imfIndicators.cpiInflationPct,
+          policyRatePct: snap.monetaryAndMarket.policyRatePct,
+          cpiSource: status.isFeedLive('imf') ? 'live' : 'sample',
+          policyRateSource: status.marketSource,
+          ...(snap.debtSchedule?.bis?.intl
+            ? {
+                intlBondsUsdBn: snap.debtSchedule.bis.intl.outstandingUsdBn,
+                intlBondsDue1yUsdBn: snap.debtSchedule.bis.intl.dueWithin1yUsdBn,
+                intlBondsAsOf: snap.debtSchedule.bis.intl.asOf,
+              }
+            : {}),
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
           dataMode: status.mode,
           dataAsOf: status.asOf,
