@@ -57,7 +57,9 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import {
   FRED_10Y_SERIES,
   OFFICIAL_YIELD_SOURCE_LABEL,
+  fredApiUrl,
   fredCsvUrl,
+  parseFredApiLatest,
   parseFredCsvLatest,
   type OfficialYieldObservation,
 } from './src/utils/officialYields.ts';
@@ -89,10 +91,25 @@ async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response
   }
 }
 
-/** Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable. */
+/**
+ * Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable.
+ * Uses the official FRED API when FRED_API_KEY is set, and falls back to the no-key CSV download.
+ */
 async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObservation | null> {
   const seriesId = FRED_10Y_SERIES[iso3];
   if (!seriesId) return null;
+  const apiKey = (process.env.FRED_API_KEY || '').trim();
+  if (apiKey) {
+    try {
+      const res = await fetchWithTimeout(fredApiUrl(seriesId, apiKey), 6000);
+      if (res.ok) {
+        const obs = parseFredApiLatest(await res.json(), seriesId);
+        if (obs) return obs;
+      }
+    } catch {
+      // fall through to the CSV download
+    }
+  }
   try {
     const res = await fetchWithTimeout(fredCsvUrl(seriesId), 6000);
     if (!res.ok) return null;

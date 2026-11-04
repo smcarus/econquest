@@ -21,6 +21,7 @@
 ### Prerequisites
 - **Node.js** `>= 20.x` (or **Bun** `>= 1.1.x`)
 - Optional: `GEMINI_API_KEY` in `.env` for live AI Council Phase 1–3 synthesis and MPC/IMF Article IV Document AI parsing (deterministic econometric engines and multilateral open-data APIs run out-of-the-box).
+- Optional: `FRED_API_KEY` in `.env` (free from fred.stlouisfed.org) to fetch official OECD 10-year yields through the FRED API. Without it the app uses FRED's public CSV download for the same figures.
 
 ### Installation & Startup
 
