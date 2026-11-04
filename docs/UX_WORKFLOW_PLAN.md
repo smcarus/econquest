@@ -8,7 +8,8 @@ Status: Sam chose the **institutional investor** as the first user (2026-11-04).
 - **Phase 3, Country page.** A Country button opens one page per sovereign: a picker, the key figures and data status in one row, then tabs (Overview, Debt & fiscal, Markets, Politics & geo, Scenarios, plus Restructuring when CDS is 400 bps or more or the alert is critical). Each tab holds the existing desks as sub-tabs, so nothing was removed. Overview pairs the executive brief with the official schedule for the next 120 days (`src/components/CountryPage.tsx`).
 - **Phase 1, frame.** The header is now the five workflow places: **Today · Countries · Portfolio · Reports · Tools**. The old three pillar menus live inside Tools as the full desk library (and Jump ⌘K still finds any desk).
 - **Phase 5 (part), Portfolio.** The book (watchlist at equal weight until a holdings import exists, and it says so), averages, each country's share of risk, staged ideas, then tabs Book, Risk & contagion, Stress tests, Ideas over the existing desks.
-- **Phase 4 (part), Reports.** Tabs IC memo & pitchbook, Risk sign-off, Council debate, Research & exports over the existing desks. Still to do: one report builder, role picker, Present mode, holdings import.
+- **Phase 4 (part), Reports.** Tabs IC memo & pitchbook, Risk sign-off, Council debate, Research & exports over the existing desks. Still to do: one report builder, role picker, Present mode.
+- **Holdings import.** Portfolio → Import holdings: upload or paste a CSV (country, instrument, type, side, notional_usd_mm, duration) or add rows by hand; saved in the browser only. The summary then shows gross and net credit exposure, credit DV01, notional-weighted CDS and each country's share of risk. The desks under Portfolio still run on their own model book; wiring them to holdings is next.
 
 The default persona is now Institution.
 

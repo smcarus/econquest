@@ -78,6 +78,8 @@ import {
   findTabForDesk,
 } from './components/WorkspacePage';
 import { PortfolioSummary } from './components/PortfolioSummary';
+import { HoldingsPanel } from './components/HoldingsPanel';
+import { loadHoldings, saveHoldings, type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
@@ -577,6 +579,12 @@ export default function App() {
   const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
   const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
+  const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
+  const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
+  const setHoldings = (next: Holding[]) => {
+    setHoldingsState(next);
+    saveHoldings(next);
+  };
   const openWorkspace = (area: 'portfolio' | 'reports', deskId?: string) => {
     const tabs = area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
     const current = area === 'portfolio' ? portfolioTab : reportsTab;
@@ -1584,6 +1592,11 @@ export default function App() {
 
   const activeWatchlistItems =
     watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
+  const holdingsRiskLookup = [
+    ...activeWatchlistItems,
+    ...SOVEREIGN_CATALOG.filter((c) => !activeWatchlistItems.some((w) => w.iso3 === c.iso3)),
+  ];
 
   const activeDomainHub =
     DOMAIN_HUBS.find((hub) => hub.subTabs.some((t) => t.id === activeNavSection)) ||
@@ -2697,6 +2710,15 @@ export default function App() {
             />
           )}
 
+          {appArea === 'portfolio' && isHoldingsPanelOpen && (
+            <HoldingsPanel
+              holdings={holdings}
+              countries={holdingsRiskLookup}
+              onChange={setHoldings}
+              onClose={() => setIsHoldingsPanelOpen(false)}
+            />
+          )}
+
           {(appArea === 'portfolio' || appArea === 'reports') && (
             <WorkspacePage
               key={appArea}
@@ -2704,7 +2726,9 @@ export default function App() {
               title={appArea === 'portfolio' ? 'Portfolio' : 'Reports'}
               subtitle={
                 appArea === 'portfolio'
-                  ? `The whole book across your watchlist: ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}`
+                  ? holdings.length
+                    ? 'Your book, from the holdings you imported'
+                    : `No holdings yet: showing your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}`
                   : `Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`
               }
               tabs={appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS}
@@ -2733,6 +2757,9 @@ export default function App() {
                 appArea === 'portfolio' ? (
                   <PortfolioSummary
                     watchlistItems={activeWatchlistItems}
+                    riskLookup={holdingsRiskLookup}
+                    holdings={holdings}
+                    onManageHoldings={() => setIsHoldingsPanelOpen(true)}
                     stagedTickets={stagedTradeTickets}
                     onOpenCountry={(item) => {
                       if (item.iso3 !== run.iso3) handleSelectSovereign(item);
