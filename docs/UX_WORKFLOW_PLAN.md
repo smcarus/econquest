@@ -10,6 +10,11 @@ Status: Sam chose the **institutional investor** as the first user (2026-11-04).
 - **Phase 5 (part), Portfolio.** The book (watchlist at equal weight until a holdings import exists, and it says so), averages, each country's share of risk, staged ideas, then tabs Book, Risk & contagion, Stress tests, Ideas over the existing desks.
 - **Phase 4 (part), Reports.** Tabs IC memo & pitchbook, Risk sign-off, Council debate, Research & exports over the existing desks. Still to do: one report builder, role picker, Present mode.
 - **Holdings import.** Portfolio → Import holdings: upload or paste a CSV (country, instrument, type, side, notional_usd_mm, duration) or add rows by hand; saved in the browser only. The summary then shows gross and net credit exposure, credit DV01, notional-weighted CDS and each country's share of risk. The desks under Portfolio still run on their own model book; wiring them to holdings is next.
+- **Holdings drive the book.** The stress lab ("Your holdings" weighting) and the contagion desk ("Your holdings" basket) use imported holdings and select them by default.
+- **Reports, memo builder.** Reports → IC memo & pitchbook → Memo builder drafts an editable IC memo (verdict, key figures with data status, thesis, trades, portfolio impact, risks, coming up, sources). Copy, Markdown or print/PDF.
+- **Roles.** First visit asks which of five roles you are (portfolio manager, economist, investment banker, multilateral, private wealth adviser). The role sets the landing page and menu order; Menu → My role changes it.
+- **Present mode.** Header → Present: the same content as full-screen slides, with the data status on every slide.
+- **Design system, desks.** 92 desk toggle buttons now use the shared pill style.
 
 The default persona is now Institution.
 
