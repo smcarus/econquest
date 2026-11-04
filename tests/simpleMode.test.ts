@@ -26,3 +26,13 @@ test('core view: every role opens a report template that is shown', () => {
 test('switch is off when nothing is saved (or storage is missing)', () => {
   assert.equal(loadShowAllTools(), false);
 });
+
+test('every role opens on Workspace, and Workspace leads the navigation (Sam, 2026-11-04)', async () => {
+  const { USER_ROLES, NAV_LABEL } = await import('../src/data/roles.ts');
+  for (const r of USER_ROLES) {
+    assert.equal(r.home.area, 'today', r.id);
+    assert.equal(r.nav[0], 'today', r.id);
+  }
+  assert.equal(NAV_LABEL.today, 'Workspace');
+  assert.equal(NAV_LABEL.country, 'Country Research');
+});

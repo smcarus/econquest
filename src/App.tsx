@@ -592,7 +592,8 @@ export default function App() {
   const [userRole, setUserRole] = useState<UserRoleId | null>(() => loadRole());
   const [isRolePromptDismissed, setIsRolePromptDismissed] = useState<boolean>(false);
   const role = getRole(userRole);
-  const [appArea, setAppArea] = useState<AppArea>(() => (userRole ? role.home.area : 'today'));
+  // Workspace is the default page for every role (Sam, 2026-11-04).
+  const [appArea, setAppArea] = useState<AppArea>('today');
   const [countryTab, setCountryTab] = useState<CountryTabId>(
     () => ((userRole && role.home.countryTab) as CountryTabId) || 'overview'
   );
@@ -639,20 +640,12 @@ export default function App() {
     setActivePersona(r.persona);
     if (r.home.reportsTab) setReportsTab(r.home.reportsTab);
     if (r.home.portfolioTab) setPortfolioTab(r.home.portfolioTab);
-    if (r.home.area === 'country') {
+    // The role picks which tab each page opens on; the app itself stays on Workspace.
+    if (r.home.countryTab) {
       const tab = COUNTRY_TABS.find((t) => t.id === r.home.countryTab) || DEFAULT_COUNTRY_TAB;
       setCountryTab(tab.id);
-      if (tab.desks[0]) setActiveNavSection(tab.desks[0] as NavSectionId);
-      setAppArea('country');
-    } else if (r.home.area === 'portfolio' || r.home.area === 'reports') {
-      const tabs = r.home.area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
-      const tabId = r.home.area === 'portfolio' ? r.home.portfolioTab : r.home.reportsTab;
-      const tab = tabs.find((t) => t.id === tabId) || tabs[0];
-      setActiveNavSection(tab.desks[0] as NavSectionId);
-      setAppArea(r.home.area);
-    } else {
-      setAppArea(r.home.area);
     }
+    setAppArea(r.home.area);
     window.scrollTo({ top: 0 });
   };
   const openCountryPage = (deskId?: string) => {
@@ -2138,11 +2131,11 @@ export default function App() {
                   type="button"
                   onClick={returnToCountryPage}
                   aria-current={appArea === 'country' ? 'page' : undefined}
-                  title={`Country page: ${run.countryName}`}
+                  title={`Country Research: ${run.countryName}`}
                   aria-pressed={appArea === 'country'}
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  Countries
+                  Country Research
                 </button>
               ),
               portfolio: (
@@ -2189,7 +2182,7 @@ export default function App() {
                     <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
                       <div className="ui-panel shadow-2xl p-3">
                         <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
-                          The full desk library. Workspace, Countries, Portfolio and Reports group these desks by task.
+                          The full desk library. Workspace, Country Research, Portfolio and Reports group these desks by task.
                         </div>
                         <div className="grid grid-cols-3 gap-3">
                           {ACTIVITY_PILLARS.map((pillar) => (
@@ -2691,7 +2684,7 @@ export default function App() {
                   aria-pressed={appArea === 'country'}
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  Countries
+                  Country Research
                 </button>
               ),
               portfolio: (

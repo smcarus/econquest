@@ -4,7 +4,7 @@
  * hidden behind one switch, "Show all tools", in Menu. The switch is saved in this browser only.
  *
  * Core set
- * - Top bar: Today, Countries, Portfolio, Reports, Menu.
+ * - Top bar: Workspace, Country Research, Portfolio, Reports, Menu.
  * - Today: watchlist, MarketEdge screen and the official calendar.
  * - Country: Brief, MarketEdge, and Overview.
  * - Portfolio: holdings import, book brief and summary (no desk tabs).
