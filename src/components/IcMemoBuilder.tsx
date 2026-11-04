@@ -10,6 +10,7 @@ import { toDisplayCase } from '../utils/displayCase';
 import { buildEconomistSections, ECONOMIST_SECTIONS } from '../utils/countryNotes';
 import { buildBankerSections, BANKER_SECTIONS } from '../utils/bankerNote';
 import { buildOfficialSections, OFFICIAL_SECTIONS } from '../utils/officialNote';
+import { COUNCIL_SECTIONS, councilBriefSections, loadCouncilBrief } from '../utils/askCouncil';
 import { BOOK_SECTIONS, bookView, buildBookSections, buildClientReviewSections, CLIENT_REVIEW_SECTIONS } from '../utils/bookNote';
 
 /**
@@ -35,7 +36,7 @@ export interface IcMemoBuilderProps {
  * 'ic' = internal investment committee memo; 'client' = plain-language note for a private client;
  * 'economist' = country economic note (growth, policy, fiscal, external).
  */
-export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker' | 'official' | 'book' | 'client_review';
+export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker' | 'official' | 'book' | 'client_review' | 'council';
 
 export const AUDIENCE_INFO: Record<
   MemoAudience,
@@ -80,6 +81,14 @@ export const AUDIENCE_INFO: Record<
     help: 'The client’s whole portfolio in plain language: what they hold, what could go wrong and dates to watch. No trade levels or scores.',
     bookLevel: true,
   },
+  council: {
+    tab: 'Council brief',
+    title: 'Council brief',
+    heading: 'Council brief',
+    file: 'council-brief',
+    help: 'The last question you asked the council on Today: the agents’ answers with their sources, and the synthesis agent’s summary if a model is set up.',
+    bookLevel: true,
+  },
 };
 
 export type SectionId = 'recommendation' | 'figures' | 'thesis' | 'trades' | 'portfolio' | 'risks' | 'calendar' | 'sources';
@@ -117,6 +126,8 @@ export const sectionLabels = (audience: MemoAudience): Record<string, string> =>
           ? BOOK_SECTIONS
           : audience === 'client_review'
             ? CLIENT_REVIEW_SECTIONS
+            : audience === 'council'
+              ? COUNCIL_SECTIONS
             : ((audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL) as Record<string, string>);
 
 /** Sections for any audience. `include` lists sections switched off as false; anything absent is on. */
@@ -127,6 +138,7 @@ export function buildReportSections(
   audience: MemoAudience
 ): Array<{ heading: string; lines: string[] }> {
   const on = (id: string) => include[id] !== false;
+  if (audience === 'council') return councilBriefSections(loadCouncilBrief(), on);
   if (audience === 'economist') return buildEconomistSections(p.run, on);
   if (audience === 'official') return buildOfficialSections(p.run, on);
   if (audience === 'banker') return buildBankerSections(p.run, p.peers ?? p.riskLookup, on);
@@ -489,7 +501,9 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
         <header className="ui-panel-header">
           <h2 className="ui-section-title">Build the report</h2>
           <p className="ui-label">
-            {info.bookLevel
+            {audience === 'council'
+              ? 'Pulls the last council brief you sent from Today.'
+              : info.bookLevel
               ? 'Pulls your holdings (or the watchlist at equal weight), staged tickets and the official calendar.'
               : 'Pulls the current country, your tickets, holdings and the official calendar.'}
           </p>

@@ -33,7 +33,7 @@ export function saveShowAllTools(on: boolean): void {
 export const CORE_COUNTRY_TABS = ['brief', 'macro', 'overview'] as const;
 
 /** Report templates in the core view: the ones built on the role briefs. */
-export const CORE_REPORTS: ReportTemplate[] = ['economist', 'banker', 'official', 'book', 'client_review'];
+export const CORE_REPORTS: ReportTemplate[] = ['economist', 'banker', 'official', 'book', 'client_review', 'council'];
 
 export function visibleNav(nav: WorkflowArea[], showAll: boolean): WorkflowArea[] {
   return showAll ? nav : nav.filter((a) => a !== 'desks');

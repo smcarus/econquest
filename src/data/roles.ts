@@ -7,7 +7,7 @@ import type { UserPersonaId } from '../types/council';
 export type UserRoleId = 'PM' | 'ECONOMIST' | 'BANKER' | 'MULTILATERAL' | 'UHNW';
 export type WorkflowArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
 /** Which report template opens first on Reports > Memos and notes. */
-export type ReportTemplate = 'ic' | 'client' | 'economist' | 'banker' | 'official' | 'book' | 'client_review';
+export type ReportTemplate = 'ic' | 'client' | 'economist' | 'banker' | 'official' | 'book' | 'client_review' | 'council';
 
 export interface UserRole {
   id: UserRoleId;

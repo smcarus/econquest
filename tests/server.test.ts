@@ -201,3 +201,52 @@ test('an unknown country does not crash the server', async () => {
   const again = await fetch(`${base}/api/ai/runtime-defaults`);
   assert.equal(again.status, 200);
 });
+
+test('council synthesis: no model means no summary, said plainly; a bad request is refused', async () => {
+  const bad = await fetch(`${base}/api/council/synthesise`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  assert.equal(bad.status, 400);
+  const answers = [
+    {
+      id: 'cb',
+      name: 'Central Bank Watcher',
+      why: 'the question mentions "inflation"',
+      findings: [{ iso3: 'TUR', countryName: 'Turkey', reading: 'Policy looks loose.', figures: [{ label: 'CPI inflation', value: '34.0%', source: 'IMF, live', tag: 'live' }], weight: 0.5 }],
+      missing: [],
+    },
+  ];
+  const res = await fetch(`${base}/api/council/synthesise`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question: 'Is Turkey behind the curve on inflation?', answers }),
+  });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.brief, null);
+  assert.match(body.reason, /No AI model answered/);
+});
+
+test('council synthesis: a model brief keeps traceable sentences and drops invented numbers', async () => {
+  const answers = [
+    {
+      id: 'cb',
+      name: 'Central Bank Watcher',
+      why: 'the question mentions "inflation"',
+      findings: [{ iso3: 'TUR', countryName: 'Turkey', reading: 'Policy looks loose.', figures: [{ label: 'CPI inflation', value: '34.0%', source: 'IMF, live', tag: 'live' }], weight: 0.5 }],
+      missing: [],
+    },
+  ];
+  const res = await fetch(`${base}/api/council/synthesise`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question: 'Is Turkey behind the curve on inflation?',
+      answers,
+      runtimeConfig: { providerMode: 'ollama', ollamaBaseUrl: 'http://fake-ollama.test:11434' },
+    }),
+  });
+  const body = await res.json();
+  assert.match(body.provider, /Ollama/);
+  assert.equal(body.brief.headline, 'Turkey looks behind the curve.');
+  assert.deepEqual(body.brief.points, ['Inflation is 34.0%, from live IMF data.']);
+  assert.deepEqual(body.removed, ['Inflation should fall to 21% next year.']);
+});

@@ -599,6 +599,8 @@ export default function App() {
   const [reportsTab, setReportsTab] = useState<string>(() => (userRole && role.home.reportsTab) || REPORTS_TABS[0].id);
   // Report template asked for from a Country brief; otherwise the role's own template.
   const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
+  // Bumped when Today sends a new council brief, so Reports rebuilds from it.
+  const [reportNonce, setReportNonce] = useState(0);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   // Core view by default: everything outside the core set is behind Menu > Show all tools.
@@ -2809,6 +2811,11 @@ export default function App() {
               onStageTicket={handleStageTradeTicket}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
+              onSendCouncilToReports={() => {
+                setRequestedReport('council');
+                setReportNonce((n) => n + 1);
+                openWorkspace('reports', 'ic_memo_builder');
+              }}
               coreOnly={!showAllTools}
             />
           )}
@@ -2925,7 +2932,7 @@ export default function App() {
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
                   <IcMemoBuilder
-                    key={`${d}-${requestedReport || role.report}`}
+                    key={`${d}-${requestedReport || role.report}-${reportNonce}`}
                     run={run}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     holdings={holdings}

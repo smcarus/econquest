@@ -19,6 +19,16 @@ globalThis.fetch = async (input, init = {}) => {
   const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
   process.stderr.write(`[offline-fetch] ${url} key=${headers.has('key') ? 'present' : 'missing'}\n`);
 
+  // A stand-in Ollama for the council synthesis test: one traceable sentence, one invented number.
+  if (url.startsWith('http://fake-ollama.test:11434/api/chat')) {
+    const brief = {
+      headline: 'Turkey looks behind the curve.',
+      points: ['Inflation is 34.0%, from live IMF data.', 'Inflation should fall to 21% next year.'],
+      disagreements: [],
+      gaps: ['No CDS reading was asked for.'],
+    };
+    return json({ message: { role: 'assistant', content: JSON.stringify(brief) } });
+  }
   // FRED API: answers for Mexico only, refuses South Africa so the CSV fallback is exercised.
   if (url.includes('api.stlouisfed.org')) {
     if (url.includes('IRLTLT01MXM156N')) {
