@@ -5,8 +5,11 @@ import {
   groupLines,
   pct,
   pts,
-  row,
-  sampleWarning,
+  liveRow,
+  missingNote,
+  missingRow,
+  noSourceRow,
+  pathMissing,
   sourcesSection,
   type CountryBrief,
   type NoteSection,
@@ -82,20 +85,24 @@ export function standardScenarios(input: DebtPathInput, years = PROJECTION_YEARS
 
 export type SignalLevel = 'low' | 'moderate' | 'high';
 
-/** Count of simple warning signs, mapped to a level. Not an official risk rating. */
-export function sustainabilitySignals(run: CouncilAssessmentRun, scenarios: Scenario[]): { level: SignalLevel; signs: string[] } {
-  const open = run.openData;
-  const base = scenarios.find((s) => s.id === 'baseline')!.path;
-  const combined = scenarios.find((s) => s.id === 'combined')!.path;
+/** Count of simple warning signs, mapped to a level. Not an official risk rating. Runs only on live figures. */
+export function sustainabilitySignals(run: CouncilAssessmentRun, scenarios: Scenario[], gapPts?: number, rMinusG?: number): { level: SignalLevel; signs: string[] } {
+  const status = getSnapshotDataStatus(run.openData);
   const signs: string[] = [];
-  if (open.imfIndicators.debtToGdpPct > EM_DEBT_BENCHMARK_PCT) signs.push(`debt above the ${EM_DEBT_BENCHMARK_PCT}% of GDP emerging-market benchmark`);
-  if (base[base.length - 1] > base[0] + 1) signs.push('debt still rising at the end of the baseline projection');
-  if (combined[combined.length - 1] > EM_DEBT_BENCHMARK_PCT && combined[combined.length - 1] > base[base.length - 1] + 10)
-    signs.push(`debt above ${EM_DEBT_BENCHMARK_PCT}% and 10 pts above baseline in the combined shock`);
-  if (open.dsaAnalytics.rMinusGDifferentialPct > 0 && open.dsaAnalytics.fiscalConsolidationGapPct > 1)
-    signs.push('interest rates above growth with a primary balance short of the stabilising level');
-  if (open.worldBankIndicators.fxReservesMonthsImport < 3) signs.push('reserves under three months of imports');
-  if (open.worldBankIndicators.externalDebtPctGni > 60) signs.push('external debt above 60% of GNI');
+  const debt = status.live('imf.debtToGdpPct');
+  if (debt !== undefined && debt > EM_DEBT_BENCHMARK_PCT) signs.push(`debt above the ${EM_DEBT_BENCHMARK_PCT}% of GDP emerging-market benchmark`);
+  if (scenarios.length) {
+    const base = scenarios.find((s) => s.id === 'baseline')!.path;
+    const combined = scenarios.find((s) => s.id === 'combined')!.path;
+    if (base[base.length - 1] > base[0] + 1) signs.push('debt still rising at the end of the baseline projection');
+    if (combined[combined.length - 1] > EM_DEBT_BENCHMARK_PCT && combined[combined.length - 1] > base[base.length - 1] + 10)
+      signs.push(`debt above ${EM_DEBT_BENCHMARK_PCT}% and 10 pts above baseline in the combined shock`);
+  }
+  if (rMinusG !== undefined && gapPts !== undefined && rMinusG > 0 && gapPts > 1) signs.push('interest rates above growth with a primary balance short of the stabilising level');
+  const res = status.live('wb.fxReservesMonthsImport');
+  if (res !== undefined && res < 3) signs.push('reserves under three months of imports');
+  const ext = status.live('wb.externalDebtPctGni');
+  if (ext !== undefined && ext > 60) signs.push('external debt above 60% of GNI');
   const level: SignalLevel = signs.length >= 3 ? 'high' : signs.length >= 1 ? 'moderate' : 'low';
   return { level, signs };
 }
@@ -106,56 +113,71 @@ const LEVEL_TEXT: Record<SignalLevel, string> = {
   high: 'many warning signs',
 };
 
-function inputsFor(run: CouncilAssessmentRun): DebtPathInput {
-  const dsa = run.openData.dsaAnalytics;
-  return { debtPct: run.openData.imfIndicators.debtToGdpPct, r: dsa.effectiveRealInterestRatePct, g: dsa.realGdpGrowthRatePct, pb: run.openData.imfIndicators.primaryFiscalBalancePct };
+/** Figures the debt projection needs; without every one of them live, there is no projection. */
+export const DSA_INPUTS = ['imf.debtToGdpPct', 'imf.primaryFiscalBalancePct', 'imf.realGdpGrowthPct', 'imf.cpiInflationPct', 'market.sovereign10YBondYieldPct'];
+
+/** Debt dynamics on live figures only: the real rate is the official 10Y yield minus three-quarters of inflation. */
+export function liveDsa(run: CouncilAssessmentRun): { input: DebtPathInput; rMinusG: number; pbStar: number; gap: number } | { missing: string[] } {
+  const status = getSnapshotDataStatus(run.openData);
+  const missing = DSA_INPUTS.filter((p) => !status.isLive(p));
+  if (missing.length) return { missing };
+  const L = (p: string) => status.live(p) as number;
+  const debt = L('imf.debtToGdpPct');
+  const pb = L('imf.primaryFiscalBalancePct');
+  const g = L('imf.realGdpGrowthPct');
+  const r = Math.max(0.8, L('market.sovereign10YBondYieldPct') - L('imf.cpiInflationPct') * 0.75);
+  const pbStar = ((r - g) / (100 + g)) * debt;
+  return { input: { debtPct: debt, r, g, pb }, rMinusG: r - g, pbStar, gap: pbStar - pb };
 }
+
+const INPUT_LABEL: Record<string, string> = {
+  'imf.debtToGdpPct': 'debt/GDP',
+  'imf.primaryFiscalBalancePct': 'primary balance',
+  'imf.realGdpGrowthPct': 'growth',
+  'imf.cpiInflationPct': 'inflation',
+  'market.sovereign10YBondYieldPct': 'official 10Y yield',
+};
 
 export function officialBrief(run: CouncilAssessmentRun, now: Date = new Date()): CountryBrief & { scenarios: Scenario[]; level: SignalLevel; startYear: number } {
   const open = run.openData;
-  const imf = open.imfIndicators;
-  const wb = open.worldBankIndicators;
-  const dsa = open.dsaAnalytics;
   const status = getSnapshotDataStatus(open);
-  const input = inputsFor(run);
-  const scenarios = standardScenarios(input);
-  const base = scenarios[0].path;
-  const end = base[base.length - 1];
-  const worst = scenarios.reduce((a, s) => (s.path[s.path.length - 1] > a.path[a.path.length - 1] ? s : a), scenarios[0]);
-  const { level, signs } = sustainabilitySignals(run, scenarios);
+  const dsa = liveDsa(run);
+  const ok = 'input' in dsa;
+  const scenarios = ok ? standardScenarios(dsa.input) : [];
+  const { level, signs } = sustainabilitySignals(run, scenarios, ok ? dsa.gap : undefined, ok ? dsa.rMinusG : undefined);
   const startYear = now.getFullYear();
+  const debt27 = status.live('imf.debtToGdpForecast2027Pct');
 
   const j: string[] = [];
-  j.push(
-    `On current figures, debt moves from ${pct(base[0], 0)} to ${pct(end, 0)} of GDP by ${startYear + PROJECTION_YEARS} (${
-      end > base[0] + 1 ? 'rising' : end < base[0] - 1 ? 'falling' : 'roughly flat'
-    }).`
-  );
-  j.push(
-    dsa.fiscalConsolidationGapPct > 0.25
-      ? `Stabilising debt needs a primary balance of ${pct(dsa.debtStabilizingPrimaryBalancePct)} of GDP, ${dsa.fiscalConsolidationGapPct.toFixed(1)} pts above today's ${pct(imf.primaryFiscalBalancePct)}.`
-      : `Today's primary balance of ${pct(imf.primaryFiscalBalancePct)} of GDP is enough to keep debt stable (needed: ${pct(dsa.debtStabilizingPrimaryBalancePct)}).`
-  );
-  j.push(`The hardest standard shock is "${worst.label.toLowerCase()}", which takes debt to ${pct(worst.path[worst.path.length - 1], 0)} of GDP by ${startYear + PROJECTION_YEARS}.`);
-  // Cross-check against the IMF's own 2027 forecast. The projection uses a marginal interest rate,
-  // so when it runs well above the IMF path it should be read as an upper bound.
-  const idx2027 = 2027 - startYear;
-  if (idx2027 >= 1 && idx2027 < base.length) {
-    const gap = base[idx2027] - imf.debtToGdpForecast2027Pct;
-    if (gap > 3) {
-      j.push(
-        `This mechanical projection reaches ${pct(base[idx2027], 0)} in 2027, above the IMF forecast of ${pct(imf.debtToGdpForecast2027Pct, 0)}. It prices all debt at today's market rate, so treat it as an upper bound.`
-      );
-    } else if (gap < -3) {
-      j.push(`This mechanical projection reaches ${pct(base[idx2027], 0)} in 2027, below the IMF forecast of ${pct(imf.debtToGdpForecast2027Pct, 0)}.`);
+  if (ok) {
+    const base = scenarios[0].path;
+    const end = base[base.length - 1];
+    const worst = scenarios.reduce((a, s) => (s.path[s.path.length - 1] > a.path[a.path.length - 1] ? s : a), scenarios[0]);
+    j.push(`On current figures, debt moves from ${pct(base[0], 0)} to ${pct(end, 0)} of GDP by ${startYear + PROJECTION_YEARS} (${end > base[0] + 1 ? 'rising' : end < base[0] - 1 ? 'falling' : 'roughly flat'}).`);
+    j.push(
+      dsa.gap > 0.25
+        ? `Stabilising debt needs a primary balance of ${pct(dsa.pbStar)} of GDP, ${dsa.gap.toFixed(1)} pts above today's ${pct(dsa.input.pb)}.`
+        : `Today's primary balance of ${pct(dsa.input.pb)} of GDP is enough to keep debt stable (needed: ${pct(dsa.pbStar)}).`
+    );
+    j.push(`The hardest standard shock is "${worst.label.toLowerCase()}", which takes debt to ${pct(worst.path[worst.path.length - 1], 0)} of GDP by ${startYear + PROJECTION_YEARS}.`);
+    const idx2027 = 2027 - startYear;
+    if (debt27 !== undefined && idx2027 >= 1 && idx2027 < base.length) {
+      const gap = base[idx2027] - debt27;
+      if (gap > 3)
+        j.push(`This mechanical projection reaches ${pct(base[idx2027], 0)} in 2027, above the IMF forecast of ${pct(debt27, 0)}. It prices all debt at today's market rate, so treat it as an upper bound.`);
+      else if (gap < -3) j.push(`This mechanical projection reaches ${pct(base[idx2027], 0)} in 2027, below the IMF forecast of ${pct(debt27, 0)}.`);
     }
+  } else {
+    j.push(`No debt projection: it needs live ${dsa.missing.map((p) => INPUT_LABEL[p] || p).join(', ')}.`);
   }
-  j.push(signs.length ? `Warning signs: ${signs.join('; ')}.` : 'No warning signs on the simple tests below.');
+  j.push(signs.length ? `Warning signs: ${signs.join('; ')}.` : 'No warning signs on the tests that could be run with live figures.');
 
-  return {
-    headline: `${run.countryName}: ${LEVEL_TEXT[level]} on debt sustainability. Debt is ${pct(base[0], 0)} of GDP; the IMF forecasts ${pct(imf.debtToGdpForecast2027Pct, 0)} for 2027.`,
+  const debt = status.live('imf.debtToGdpPct');
+  const brief = {
+    headline: ok
+      ? `${run.countryName}: ${LEVEL_TEXT[level]} on debt sustainability. Debt is ${pct(dsa.input.debtPct, 0)} of GDP${debt27 !== undefined ? `; the IMF forecasts ${pct(debt27, 0)} for 2027` : ''}.`
+      : `${run.countryName}: ${debt !== undefined ? `debt is ${pct(debt, 0)} of GDP; ` : ''}no sustainability reading until the missing figures are live.`,
     judgements: j,
-    sampleWarning: sampleWarning(status, run.countryName),
     scenarios,
     level,
     startYear,
@@ -163,35 +185,42 @@ export function officialBrief(run: CouncilAssessmentRun, now: Date = new Date())
       {
         title: 'Debt path',
         rows: [
-          row(status, 'Debt / GDP', pct(imf.debtToGdpPct), 'imf'),
-          row(status, 'Debt / GDP, 2027 forecast', pct(imf.debtToGdpForecast2027Pct), 'imf'),
-          row(status, 'Primary balance', `${pct(imf.primaryFiscalBalancePct)} of GDP`, 'imf'),
-          row(status, 'Real GDP growth', pct(imf.realGdpGrowthPct), 'imf'),
-          row(status, 'Real interest rate (approx.)', pct(dsa.effectiveRealInterestRatePct), 'model'),
-          row(status, 'Interest rate minus growth', pts(dsa.rMinusGDifferentialPct), 'model'),
-          row(status, 'Balance that keeps debt stable', `${pct(dsa.debtStabilizingPrimaryBalancePct)} of GDP`, 'model'),
+          liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
+          liveRow(status, 'Debt / GDP, 2027 forecast', 'imf.debtToGdpForecast2027Pct', (v) => pct(v), open),
+          liveRow(status, 'Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`, open),
+          liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open),
+          ...(ok
+            ? [
+                { label: 'Real interest rate (approx.)', value: pct(dsa.input.r), source: 'model: official 10Y yield minus ¾ of inflation', verified: false },
+                { label: 'Interest rate minus growth', value: pts(dsa.rMinusG), source: 'model, from figures above', verified: false },
+                { label: 'Balance that keeps debt stable', value: `${pct(dsa.pbStar)} of GDP`, source: 'model, from figures above', verified: false },
+              ]
+            : [missingRow('Real interest rate, r minus g, stabilising balance', { ...pathMissing(status, dsa.missing[0]), short: `Needs live ${INPUT_LABEL[dsa.missing[0]] || 'inputs'}` })]),
         ],
       },
       {
         title: `Projection to ${startYear + PROJECTION_YEARS}, % of GDP`,
-        rows: scenarios.map((s) => ({
-          label: s.label,
-          value: `${pct(s.path[s.path.length - 1], 0)} (peak ${pct(Math.max(...s.path), 0)})`,
-          source: s.id === 'baseline' ? 'model: current figures' : `model: ${lowerFirst(s.shock)}`,
-          verified: false,
-        })),
+        rows: ok
+          ? scenarios.map((s) => ({
+              label: s.label,
+              value: `${pct(s.path[s.path.length - 1], 0)} (peak ${pct(Math.max(...s.path), 0)})`,
+              source: s.id === 'baseline' ? 'model: current figures' : `model: ${lowerFirst(s.shock)}`,
+              verified: false,
+            }))
+          : [missingRow('Projection and stress tests', { ...pathMissing(status, dsa.missing[0]), short: 'Needs live inputs' })],
       },
       {
         title: 'External sustainability',
         rows: [
-          row(status, 'Current account', `${pct(wb.currentAccountPctGdp)} of GDP`, 'worldbank'),
-          row(status, 'External debt', `${pct(wb.externalDebtPctGni, 0)} of GNI`, 'worldbank'),
-          row(status, 'FX reserves', `${wb.fxReservesMonthsImport.toFixed(1)} months of imports`, 'worldbank'),
-          row(status, 'Reserves / short-term external debt', pct(open.debtRollover.greenspanGuidottiRatioPct, 0), 'sample'),
+          liveRow(status, 'Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`, open),
+          liveRow(status, 'External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`, open),
+          liveRow(status, 'FX reserves', 'wb.fxReservesMonthsImport', (v) => `${v.toFixed(1)} months of imports`, open),
+          noSourceRow('Reserves / short-term external debt', 'Needs short-term external debt, which no connected source provides yet.'),
         ],
       },
     ],
   };
+  return { ...brief, sampleWarning: missingNote(brief.groups, run.countryName) };
 }
 
 export const OFFICIAL_SECTIONS: Record<string, string> = {
@@ -208,9 +237,9 @@ export const OFFICIAL_SECTIONS: Record<string, string> = {
 
 export function buildOfficialSections(run: CouncilAssessmentRun, include: (id: string) => boolean, now: Date = new Date()): NoteSection[] {
   const b = officialBrief(run, now);
-  const dsa = run.openData.dsaAnalytics;
+  const dsa = liveDsa(run);
   const out: NoteSection[] = [];
-  const years = b.scenarios[0].path.map((_, i) => b.startYear + i);
+  const years = (b.scenarios[0]?.path || []).map((_, i) => b.startYear + i);
   if (include('summary')) {
     out.push({
       id: 'summary',
@@ -223,10 +252,9 @@ export function buildOfficialSections(run: CouncilAssessmentRun, include: (id: s
     out.push({
       id: 'projection',
       heading: OFFICIAL_SECTIONS.projection,
-      lines: [
-        `Debt, % of GDP, ${years[0]} to ${years[years.length - 1]}:`,
-        ...b.scenarios.map((s) => `- **${s.label}** (${lowerFirst(s.shock)}): ${s.path.map((v) => v.toFixed(0)).join(' → ')}`),
-      ],
+      lines: b.scenarios.length
+        ? [`Debt, % of GDP, ${years[0]} to ${years[years.length - 1]}:`, ...b.scenarios.map((s) => `- **${s.label}** (${lowerFirst(s.shock)}): ${s.path.map((v) => v.toFixed(0)).join(' → ')}`)]
+        : ['No projection: its inputs are not all live. See Debt path for what is missing.'],
     });
   }
   if (include('adjustment')) {
@@ -234,9 +262,11 @@ export function buildOfficialSections(run: CouncilAssessmentRun, include: (id: s
       id: 'adjustment',
       heading: OFFICIAL_SECTIONS.adjustment,
       lines: [
-        dsa.fiscalConsolidationGapPct > 0.25
-          ? `Holding debt at today's ratio would need the primary balance to improve by about ${dsa.fiscalConsolidationGapPct.toFixed(1)} pts of GDP, to ${pct(dsa.debtStabilizingPrimaryBalancePct)}.`
-          : `No adjustment is needed to hold debt at today's ratio on current figures.`,
+        !('input' in dsa)
+          ? 'No adjustment figure: the debt projection needs live inputs.'
+          : dsa.gap > 0.25
+            ? `Holding debt at today's ratio would need the primary balance to improve by about ${dsa.gap.toFixed(1)} pts of GDP, to ${pct(dsa.pbStar)}.`
+            : `No adjustment is needed to hold debt at today's ratio on current figures.`,
         'Write the recommended measures and their timing here.',
       ],
     });

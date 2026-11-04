@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { cdsVsPeers, fitCdsOnRisk, INFLATION_TARGETS, marketsMacroBrief, peerScreen, policyStance } from '../src/utils/marketsMacro.ts';
 import { buildBaselineOpenData } from '../src/data/presetsAndBaselines.ts';
 import type { CouncilAssessmentRun, WatchlistItem } from '../src/types/council.ts';
+import { FEED_PATHS, markLive } from './helpers/live.ts';
 
 const NOW = '2026-11-04T12:00:00Z';
 const peer = (iso3: string, risk: number, cds: number, y = 10): WatchlistItem =>
@@ -42,13 +43,20 @@ test('targets: checked ones name the bank page; Brazil and Mexico say they were 
   assert.equal(INFLATION_TARGETS.EGY, undefined);
 });
 
-function run(iso3: string, us = true): CouncilAssessmentRun {
+function run(iso3: string, us = true, live = true): CouncilAssessmentRun {
   const openData = buildBaselineOpenData(iso3);
   openData.dataStatus = { verifiedLiveSources: [], checkedAt: NOW };
   openData.imfIndicators.cpiInflationPct = 4.5;
   openData.monetaryAndMarket.policyRatePct = 11.75;
   openData.monetaryAndMarket.sovereign10YBondYieldPct = 13.5;
   openData.monetaryAndMarket.cds5YSpreadBps = 300;
+  if (live) {
+    // Every figure from a real source: IMF and World Bank feeds, an official yield, your CDS and an official policy rate.
+    markLive(openData, [...FEED_PATHS, 'market.policyRatePct']);
+    openData.official10YYield = { valuePct: 13.5, period: '2026-10-30', source: 'Tesouro Direto', seriesId: 'x', url: 'u', frequency: 'daily' };
+    openData.ownCds5Y = { bps: 300, date: '2026-11-03', source: 'LSEG' };
+    openData.dataStatus!.verifiedLiveSources.push('Tesouro Direto', 'Own CDS data (LSEG, 5Y CDS)');
+  }
   if (us) openData.us10YYield = { valuePct: 4.1, period: '2026-09', source: 'OECD via FRED', seriesId: 'IRLTLT01USM156N', url: 'x' };
   return { iso3, countryName: iso3 === 'BRA' ? 'Brazil' : iso3, openData } as unknown as CouncilAssessmentRun;
 }
@@ -64,22 +72,32 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.equal(rows['Real policy rate'].value, '7.3%');
   assert.equal(rows['Real policy rate'].source, 'model, from figures above');
   assert.equal(rows['Real 10Y yield'].value, '9.0%');
-  assert.equal(rows['CPI inflation'].source, 'sample');
+  assert.equal(rows['CPI inflation'].source, 'IMF WEO');
   assert.match(rows['5Y CDS against risk peers'].source, /across 5 countries/);
   assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
-  assert.ok(b.sampleWarning);
   // Readings are grouped under the desk role that owns them.
   assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'Global Spillover Agent']);
-  assert.deepEqual(b.groups[3].rows.map((r) => r.label), ['5Y CDS against risk peers']);
+  assert.deepEqual(b.groups[3].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
 });
 
 test('brief: no US yield, no target, too few peers: says so instead of guessing', () => {
   const b = marketsMacroBrief(run('EGY', false), [peer('EGY', 0.8, 500)]);
   const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
-  assert.equal(rows['Inflation target'].value, 'not on file');
-  assert.equal(rows['US 10Y Treasury'].value, 'not available');
+  assert.equal(rows['Inflation target'].value, 'Missing');
+  assert.equal(rows['US 10Y Treasury'].value, 'Missing');
+  assert.equal(rows['US 10Y Treasury'].source, 'FRED did not answer');
   assert.equal(rows['Spread over US 10Y'], undefined);
-  assert.equal(rows['5Y CDS against risk peers'].value, 'needs 4 or more countries with a CDS figure');
+  assert.equal(rows['5Y CDS against risk peers'].value, 'Missing');
   assert.match(b.judgements[0], /no inflation target on file/);
+});
+
+test('brief: with no live feeds, nothing is shown from built-in values and readings say what they need', () => {
+  const b = marketsMacroBrief(run('BRA', true, false), []);
+  const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
+  for (const k of ['CPI inflation', 'Policy rate', '10Y government yield', '5Y CDS', 'Debt / GDP', 'FX reserves', 'Real policy rate', 'Real 10Y yield'])
+    assert.equal(rows[k].value, 'Missing', k);
+  assert.equal(rows['Real policy rate'].source, 'Needs a policy rate');
+  assert.match(b.headline, /no live market or macro figures/);
+  assert.match(b.sampleWarning || '', /missing/);
 });

@@ -95,13 +95,15 @@ function run(own: boolean): CouncilAssessmentRun {
   return { iso3: 'BRA', countryName: 'Brazil', openData } as unknown as CouncilAssessmentRun;
 }
 
-test('brief: own CDS is labelled with provider and date; without the switch it stays sample', () => {
+test('brief: own CDS is labelled with provider and date; without the switch it reads Missing and says how to connect it', () => {
   const cds = (r: CouncilAssessmentRun) => bankerBrief(r, [], NOW).groups.find((g) => g.title === 'Market access')!.rows.find((x) => x.label === '5Y CDS')!;
   const own = cds(run(true));
   assert.equal(own.value, '168 bps');
   assert.equal(own.source, 'your LSEG data, 3 Nov 2026');
   assert.equal(own.verified, true);
-  assert.equal(cds(run(false)).source, 'sample');
+  const none = cds(run(false));
+  assert.equal(none.value, 'Missing');
+  assert.match(none.help || '', /CDS_FEED=csv/);
   // Own CDS alone does not make the snapshot "live" (that needs IMF and World Bank).
   assert.notEqual(getSnapshotDataStatus(run(true).openData).mode, 'live');
 });

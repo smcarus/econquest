@@ -82,19 +82,20 @@ function run(withSchedule: boolean): CouncilAssessmentRun {
   return { iso3: 'BRA', countryName: 'Brazil', openData } as unknown as CouncilAssessmentRun;
 }
 
-test('banker brief: with QEDS and IDS the figures are official and named; without, they say sample', () => {
+test('banker brief: with QEDS and IDS the figures are official and named; without, they read Missing', () => {
   const b = bankerBrief(run(true), [], NOW);
   const need = b.groups.find((g) => g.title === 'Financing need')!;
   const due = need.rows.find((r) => r.label === 'Government external debt due, next 12 months')!;
   assert.equal(due.value, '$11.0 bn');
   assert.ok(due.verified && /QEDS \(World Bank\/IMF\), as of end of Q2 2026/.test(due.source));
   assert.ok(need.rows.some((r) => r.label === 'Public external debt service, 2027' && r.verified && /IDS/.test(r.source)));
-  assert.ok(need.rows.some((r) => r.label === 'All debt due in 12 months, incl. domestic' && r.source === 'sample'));
+  assert.ok(need.rows.some((r) => r.label === 'Full maturity profile, incl. domestic debt' && r.value === 'Missing'));
   assert.match(b.headline, /\$11\.0 bn of government external debt due in 12 months/);
   assert.ok(b.judgements.some((j) => /12 months from the end of Q2 2026 is \$11\.0 bn .*heaviest quarter is 6 to 9 months ahead \(\$5\.0 bn\)/.test(j)));
 
   const plain = bankerBrief(run(false), [], NOW);
-  assert.match(plain.headline, /due in 12 months \(sample\)/);
+  assert.doesNotMatch(plain.headline, /due in 12 months/);
+  assert.equal(plain.groups.find((g) => g.title === 'Financing need')!.rows.find((r) => r.label === 'Government external debt due, next 12 months')!.value, 'Missing');
   assert.ok(!plain.groups.find((g) => g.title === 'Financing need')!.rows.some((r) => r.verified));
 });
 

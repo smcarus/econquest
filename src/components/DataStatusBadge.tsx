@@ -32,11 +32,6 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
   const feedList = status.liveFeeds.length
     ? `\n\nFeeds that answered:\n• ${status.liveFeeds.join('\n• ')}`
     : '';
-  const marketHelp =
-    status.marketSource === 'ai_estimate'
-      ? 'Policy rate, bond yields, CDS and rating are estimates from an AI web search (Gemini), not market prices. Check them against a market data terminal before trading.'
-      : 'Policy rate, bond yields, CDS and rating are built-in sample values, not market prices.';
-
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <span
@@ -48,14 +43,6 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
         {status.mode !== 'unverified' && asOf && (
           <span className="font-normal opacity-80">· as of {asOf}</span>
         )}
-      </span>
-      <span
-        title={marketHelp}
-        className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold border ${
-          status.marketSource === 'ai_estimate' ? MODE_CLASS.partial : MODE_CLASS.sample
-        }`}
-      >
-        Prices: {status.marketSource === 'ai_estimate' ? 'AI estimate' : 'sample'}
       </span>
       {status.officialYield && (
         <span

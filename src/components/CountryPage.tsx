@@ -3,11 +3,13 @@ import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
 import { DataStatusBadge } from './DataStatusBadge';
-import { ExecutiveBriefScorecard } from './ExecutiveBriefScorecard';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
+import { getSnapshotDataStatus } from '../utils/dataStatus';
+import { countryDataSources, pathMissing } from '../utils/countryNotes';
+import { toLive } from '../utils/liveFigures';
 import { isCoreCountryTab } from '../utils/simpleMode';
-import { CountryBriefPanel, type BriefView } from './CountryBriefPanel';
+import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 import { MarketsMacroPanel } from './MarketsMacroPanel';
 
 /**
@@ -28,7 +30,8 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
   { id: 'brief', label: 'Brief', desks: [] },
   // MarketEdge: the economy, market pricing and model readings of where they disagree. No desks.
   { id: 'macro', label: 'MarketEdge', desks: [] },
-  { id: 'overview', label: 'Overview', desks: ['charts_watchlists', 'risk_analytics'] },
+  // Overview: what is live for this country. Its old chart desks ran on built-in figures and were removed (Sam, 2026-11-04).
+  { id: 'overview', label: 'Overview', desks: [] },
   {
     id: 'debt',
     label: 'Debt & fiscal',
@@ -81,8 +84,9 @@ export const DEFAULT_COUNTRY_TAB: CountryTabConfig = COUNTRY_TABS.find((t) => t.
 
 /** Restructuring is only relevant for stressed credits. */
 export function isRestructuringRelevant(item: WatchlistItem | undefined, run: CouncilAssessmentRun): boolean {
-  const cds = run.openData.monetaryAndMarket.cds5YSpreadBps;
-  return cds >= 400 || item?.alertStatus === 'CRITICAL';
+  // Only real figures decide this: your own CDS, or a risk score built on live inputs.
+  const cds = getSnapshotDataStatus(run.openData).live('market.cds5YSpreadBps');
+  return (cds !== undefined && cds >= 400) || (item ? toLive(item).alertStatus === 'CRITICAL' : false);
 }
 
 /** The tab (and desk) that holds a given desk id, for links from Today and elsewhere. */
@@ -112,14 +116,24 @@ const ALERT_LABEL: Record<WatchlistItem['alertStatus'], string> = {
   STABLE: 'Stable',
 };
 
-const Figure: React.FC<{ label: string; value: string; title?: string }> = ({ label, value, title }) => (
-  <div className="min-w-0" title={title}>
+const Figure: React.FC<{ label: string; value: string; title?: string; missing?: string }> = ({ label, value, title, missing }) => (
+  <div className="min-w-0" title={title} data-missing={missing ? 'true' : undefined}>
     <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</div>
-    <div className="text-sm font-semibold text-slate-900 dark:text-white whitespace-nowrap [font-variant-numeric:tabular-nums]">
+    <div className={`text-sm whitespace-nowrap [font-variant-numeric:tabular-nums] ${missing ? 'text-slate-400 dark:text-slate-500' : 'font-semibold text-slate-900 dark:text-white'}`}>
       {value}
     </div>
+    {missing && <div className="text-xs text-amber-700 dark:text-amber-400 whitespace-nowrap">{missing}</div>}
   </div>
 );
+
+/** The header's key figures, each shown only from a real source. */
+const HEADER_FIGURES: Array<{ path: string; label: string; fmt: (v: number) => string }> = [
+  { path: 'imf.debtToGdpPct', label: 'Debt / GDP', fmt: (v) => `${v.toFixed(1)}%` },
+  { path: 'market.cds5YSpreadBps', label: '5Y CDS', fmt: (v) => `${Math.round(v)} bps` },
+  { path: 'market.sovereign10YBondYieldPct', label: '10Y yield', fmt: (v) => `${v.toFixed(2)}%` },
+  { path: 'market.policyRatePct', label: 'Policy rate', fmt: (v) => `${v.toFixed(2)}%` },
+  { path: 'wb.fxReservesMonthsImport', label: 'Reserves', fmt: (v) => `${v.toFixed(1)} mo` },
+];
 
 export const CountryPage: React.FC<{
   run: CouncilAssessmentRun;
@@ -167,9 +181,10 @@ export const CountryPage: React.FC<{
   const tab = tabs.find((t) => t.id === activeTab) || tabs.find((t) => t.id === DEFAULT_COUNTRY_TAB.id) || tabs[0];
   const desk = tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0];
   const open = run.openData;
-  const mkt = open.monetaryAndMarket;
+  const status = useMemo(() => getSnapshotDataStatus(open), [open]);
   const events = useMemo(() => upcomingOfficialEvents([run.iso3], 120), [run.iso3]);
-  const alert = item?.alertStatus;
+  // The risk badge only when the score rests on live inputs.
+  const alert = item ? toLive(item).alertStatus : undefined;
 
   return (
     <div className="space-y-3" data-country-page="true">
@@ -209,27 +224,19 @@ export const CountryPage: React.FC<{
           </div>
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
-            <Figure label="Debt / GDP" value={`${open.imfIndicators.debtToGdpPct.toFixed(1)}%`} />
-            <Figure
-              label={open.ownCds5Y ? `5Y CDS, ${formatPeriod(open.ownCds5Y.date)}` : '5Y CDS'}
-              value={`${Math.round(mkt.cds5YSpreadBps)} bps`}
-              title={open.ownCds5Y ? `Your own ${open.ownCds5Y.source} quote.` : undefined}
-            />
-            <Figure
-              label={open.official10YYield ? `10Y yield, ${describeOfficialYield(open.official10YYield).when}` : '10Y yield'}
-              value={`${mkt.sovereign10YBondYieldPct.toFixed(2)}%`}
-              title={
-                open.official10YYield
-                  ? `Official figure: ${describeOfficialYield(open.official10YYield).long}.`
-                  : 'No official free source for this country; AI estimate or sample value.'
-              }
-            />
-            <Figure label="Policy rate" value={`${mkt.policyRatePct.toFixed(2)}%`} />
-            <Figure
-              label="Reserves"
-              value={`${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} mo`}
-              title="FX reserves in months of imports"
-            />
+            {HEADER_FIGURES.map((f) => {
+              const v = status.live(f.path);
+              const why = v === undefined ? pathMissing(status, f.path) : undefined;
+              return (
+                <Figure
+                  key={f.path}
+                  label={f.path === 'market.cds5YSpreadBps' && status.ownCds ? `5Y CDS, ${formatPeriod(status.ownCds.date)}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `10Y yield, ${describeOfficialYield(status.officialYield).when}` : f.label}
+                  value={v === undefined ? 'Missing' : f.fmt(v)}
+                  missing={why?.short}
+                  title={why ? why.help : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `Official figure: ${describeOfficialYield(status.officialYield).long}.` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `Your own ${status.ownCds.source} quote.` : undefined}
+                />
+              );
+            })}
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 ml-auto">
@@ -280,14 +287,14 @@ export const CountryPage: React.FC<{
 
       {tab.id === 'overview' && (
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-no-stat-ref="true">
-          <div className="xl:col-span-2">
-            <ExecutiveBriefScorecard run={run} isCompactByDefault={false} onSelectSection={(sec) => {
-              const target = findCountryTabForDesk(sec);
-              if (target && (!coreOnly || isCoreCountryTab(target.id))) {
-                onChangeTab(target.id);
-                onChangeDesk(sec);
-              }
-            }} />
+          <div className="xl:col-span-2 space-y-2" data-no-provenance-overlay="true">
+            <section className="ui-panel">
+              <header className="ui-panel-header">
+                <h2 className="ui-section-title">What is live for {run.countryName}</h2>
+                <p className="ui-label">Every figure the country pages use, with its source, or why it is missing and what would fill it. No built-in values are shown.</p>
+              </header>
+            </section>
+            <BriefGroups brief={{ headline: '', judgements: [], groups: countryDataSources(run) }} />
           </div>
           <section className="ui-panel">
             <header className="ui-panel-header">
