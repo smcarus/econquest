@@ -45,6 +45,13 @@ export function yieldSourceNote(item: Pick<WatchlistItem, 'yield10YSource' | 'yi
   return 'Sample';
 }
 
+/** Short source note for a CDS figure: "Your LSEG, 3 Nov 2026", "AI estimate" or "Sample". */
+export function cdsSourceNote(item: Pick<WatchlistItem, 'cds5YSource' | 'cds5YDate' | 'cds5YProvider'>): string {
+  if (item.cds5YSource === 'own') return `Your ${item.cds5YProvider || 'data'}${item.cds5YDate ? `, ${formatPeriod(item.cds5YDate)}` : ''}`;
+  if (item.cds5YSource === 'ai_estimate') return 'AI estimate';
+  return 'Sample';
+}
+
 /** Longer explanation for a tooltip. */
 export function yieldSourceHelp(item: Pick<WatchlistItem, 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency'>): string {
   if (item.yield10YSource === 'official') {

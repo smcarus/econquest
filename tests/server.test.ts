@@ -6,7 +6,7 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +22,8 @@ let log = '';
 
 before(async () => {
   dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-server-test-'));
+  // Own-account CDS switched on with a user file that covers Mexico only.
+  writeFileSync(path.join(dataDir, 'cds.csv'), 'iso3,date,cds5y_bps,source\nMEX,2026-11-02,119.0,Bloomberg\nMEX,2026-11-03,117.4,Bloomberg\n');
   server = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts')], {
     cwd: root,
     env: {
@@ -34,6 +36,8 @@ before(async () => {
       EVDS_API_KEY: 'test-evds-key',
       EVDS_TR10Y_SERIES: 'TP.TEST.Y10',
       GEMINI_API_KEY: '',
+      CDS_FEED: 'csv',
+      CDS_CSV_PATH: path.join(dataDir, 'cds.csv'),
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -69,6 +73,7 @@ async function snapshot(iso3: string): Promise<OpenDataSnapshot> {
 test('with every feed down, a country without an official yield is plainly sample data', async () => {
   const s = await snapshot('EGY');
   assert.deepEqual(s.dataStatus?.verifiedLiveSources, []);
+  assert.equal(s.ownCds5Y, undefined); // not in the CDS file
   assert.equal(s.official10YYield, undefined);
   const status = getSnapshotDataStatus(s);
   assert.equal(status.mode, 'sample');
@@ -99,6 +104,10 @@ test('Mexico: the FRED API answers and its value replaces the sample yield', asy
   assert.equal(s.official10YYield?.period, '2026-09');
   assert.equal(s.monetaryAndMarket.sovereign10YBondYieldPct, 9.35);
   assert.equal(getSnapshotDataStatus(s).yieldSource, 'official');
+  // Own CDS file: latest row used, named with its provider and date.
+  assert.equal(s.monetaryAndMarket.cds5YSpreadBps, 117);
+  assert.deepEqual(s.ownCds5Y, { bps: 117.4, date: '2026-11-03', source: 'Bloomberg' });
+  assert.equal(getSnapshotDataStatus(s).ownCds?.source, 'Bloomberg');
   // Only the yield feed answered, so the snapshot as a whole is not called live.
   assert.notEqual(getSnapshotDataStatus(s).mode, 'live');
 });
@@ -146,6 +155,9 @@ test('watchlist: official yields carry a date, everything else says sample', asy
     assert.equal(byIso.get(iso)?.yield10YSource, 'sample', `${iso} has no official source`);
     assert.equal(byIso.get(iso)?.yield10YPeriod, undefined);
   }
+  assert.equal(byIso.get('MEX')?.cds5YSource, 'own');
+  assert.equal(byIso.get('MEX')?.cds5YDate, '2026-11-03');
+  assert.equal(byIso.get('BRA')?.cds5YSource, 'sample');
   for (const it of items) {
     assert.ok(it.dataMode !== 'live', `${it.iso3} cannot be live with every macro feed down`);
   }

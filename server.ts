@@ -1,5 +1,14 @@
 import crypto from 'crypto';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
+import {
+  OWN_CDS_LABEL,
+  lsegSnapshotUrl,
+  lsegTokenRequest,
+  ownCdsSettings,
+  parseLsegSnapshot,
+  parseOwnCdsCsv,
+  type OwnCdsQuote,
+} from './src/utils/ownCds';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -180,6 +189,57 @@ async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
       : null;
   debtScheduleCache.set(iso3, { at: Date.now(), value });
   return value;
+}
+
+/**
+ * Own-account 5Y CDS (off unless CDS_FEED is set in .env; see src/utils/ownCds.ts). The CSV is
+ * re-read when the file changes; LSEG answers are kept for 15 minutes and its token until expiry.
+ * The credentials never leave the server and are never logged.
+ */
+let ownCdsCache: { key: string; at: number; quotes: Map<string, OwnCdsQuote> } | null = null;
+let lsegToken: { token: string; until: number } | null = null;
+async function loadOwnCds(): Promise<Map<string, OwnCdsQuote>> {
+  const cfg = ownCdsSettings(process.env);
+  if (!cfg) return new Map();
+  try {
+    if (cfg.provider === 'csv' && cfg.csvPath) {
+      const stat = fs.statSync(cfg.csvPath);
+      const key = `csv:${cfg.csvPath}:${stat.mtimeMs}`;
+      if (ownCdsCache?.key === key) return ownCdsCache.quotes;
+      const quotes = parseOwnCdsCsv(fs.readFileSync(cfg.csvPath, 'utf8'));
+      ownCdsCache = { key, at: Date.now(), quotes };
+      return quotes;
+    }
+    if (cfg.provider === 'lseg' && cfg.lseg) {
+      const key = `lseg:${Object.entries(cfg.lseg.rics).join(',')}`;
+      if (ownCdsCache?.key === key && Date.now() - ownCdsCache.at < 15 * 60 * 1000) return ownCdsCache.quotes;
+      if (!lsegToken || Date.now() > lsegToken.until) {
+        const req = lsegTokenRequest(cfg.lseg);
+        const res = await fetch(req.url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: req.body,
+          signal: AbortSignal.timeout(10000),
+        });
+        if (!res.ok) throw new Error(`LSEG sign-in refused (${res.status})`);
+        const tok = (await res.json()) as { access_token?: string; expires_in?: string | number };
+        if (!tok.access_token) throw new Error('LSEG sign-in gave no token');
+        lsegToken = { token: tok.access_token, until: Date.now() + (Number(tok.expires_in) || 300) * 1000 - 30000 };
+      }
+      const res = await fetch(lsegSnapshotUrl(cfg.lseg), {
+        headers: { Authorization: `Bearer ${lsegToken.token}` },
+        signal: AbortSignal.timeout(10000),
+      });
+      if (res.status === 401) lsegToken = null;
+      if (!res.ok) throw new Error(`LSEG pricing snapshot refused (${res.status})`);
+      const quotes = parseLsegSnapshot(await res.json(), cfg.lseg.rics, new Date().toISOString().slice(0, 10));
+      ownCdsCache = { key, at: Date.now(), quotes };
+      return quotes;
+    }
+  } catch (e) {
+    console.warn(`[own CDS] ${cfg.provider}: ${e instanceof Error ? e.message : 'failed'}`);
+  }
+  return new Map();
 }
 
 /** Turkey's EVDS feed is on only when the user has set both a key and a series code. */
@@ -840,6 +900,16 @@ async function fetchLiveOpenDataSnapshotNetwork(
     activeSources.push(officialYieldFeedLabel(officialYield));
   }
 
+  // 6b'. Own-account 5Y CDS. The user's licensed quote beats an AI estimate or the sample value.
+  const ownCds = (await loadOwnCds()).get(normalizedIso);
+  if (ownCds) {
+    baseline.monetaryAndMarket.cds5YSpreadBps = Math.round(ownCds.bps);
+    baseline.ownCds5Y = { bps: ownCds.bps, date: ownCds.date, source: ownCds.source };
+    activeSources.push(`${OWN_CDS_LABEL} (${ownCds.source}, 5Y CDS)`);
+  } else {
+    delete baseline.ownCds5Y;
+  }
+
   // 6c. Government external debt falling due (QEDS, IDS). Replaces nothing: the brief shows these
   // beside the sample maturity profile, which stays labelled sample.
   const debtSchedule = await fetchDebtSchedule(normalizedIso);
@@ -1014,6 +1084,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           compositeRisk: comp,
           ...watchlistYieldFields(snap, fetchedOfficial),
           cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
+          cds5YSource: status.ownCds ? 'own' : status.marketSource,
+          ...(status.ownCds ? { cds5YDate: status.ownCds.date, cds5YProvider: status.ownCds.source } : {}),
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',

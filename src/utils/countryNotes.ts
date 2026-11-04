@@ -39,7 +39,7 @@ export interface NoteSection {
   lines: string[];
 }
 
-export type SourceKind = 'imf' | 'worldbank' | 'market' | 'yield' | 'model' | 'sample';
+export type SourceKind = 'imf' | 'worldbank' | 'market' | 'yield' | 'cds' | 'model' | 'sample';
 type Kind = SourceKind;
 
 export function sourceTag(status: SnapshotDataStatus, kind: Kind): { source: string; verified: boolean } {
@@ -53,6 +53,10 @@ export function sourceTag(status: SnapshotDataStatus, kind: Kind): { source: str
     case 'yield':
       return status.officialYield
         ? { source: `official, ${describeOfficialYield(status.officialYield).when}`, verified: true }
+        : sourceTag(status, 'market');
+    case 'cds':
+      return status.ownCds
+        ? { source: `your ${status.ownCds.source} data, ${formatPeriod(status.ownCds.date)}`, verified: true }
         : sourceTag(status, 'market');
     case 'model':
       return { source: 'model, from figures above', verified: false };

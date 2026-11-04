@@ -71,6 +71,14 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
           10Y yield: official, {formatPeriod(status.officialYield.period)}
         </span>
       )}
+      {status.ownCds && (
+        <span
+          title={`The 5-year CDS is your own ${status.ownCds.source} quote of ${formatPeriod(status.ownCds.date)}, switched on in your settings. It is licensed data: check your licence before sending it on.`}
+          className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold border ${MODE_CLASS.live}`}
+        >
+          5Y CDS: your {status.ownCds.source}, {formatPeriod(status.ownCds.date)}
+        </span>
+      )}
     </span>
   );
 };

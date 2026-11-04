@@ -379,6 +379,8 @@ export interface OpenDataSnapshot {
     instrument?: string;
   };
   groundingCitations?: Array<{ title: string; uri: string }>;
+  /** 5Y CDS from the user's own licensed data, when the own-account switch is on (utils/ownCds.ts). */
+  ownCds5Y?: { bps: number; date: string; source: string };
   /** Government external debt falling due, when QEDS or IDS answered (see utils/debtSchedule.ts). */
   debtSchedule?: import('../utils/debtSchedule').DebtSchedule;
   livePlumbingOverrides?: {
@@ -443,6 +445,10 @@ export interface WatchlistItem {
   dataAsOf?: string;
   /** Where yield10YPct came from (see utils/watchlistYield.ts). Absent = sample. */
   yield10YSource?: 'official' | 'ai_estimate' | 'sample' | 'uploaded';
+  /** Where cds5YBps came from: the user's own data, an AI estimate, or the sample. Absent = sample. */
+  cds5YSource?: 'own' | 'ai_estimate' | 'sample';
+  cds5YDate?: string;
+  cds5YProvider?: string;
   /** Official figures only: YYYY-MM (monthly average) or YYYY-MM-DD (daily rate). */
   yield10YPeriod?: string;
   yield10YFrequency?: 'monthly' | 'daily';
