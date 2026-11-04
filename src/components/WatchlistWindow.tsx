@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Plus } from 'lucide-react';
-import type { WatchlistGroup, WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem, WatchlistGroup } from '../types/council';
+import { toLive } from '../utils/liveFigures';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import {
   WATCHLIST_CHANNEL,
@@ -16,7 +17,7 @@ import {
   type WatchlistMessage,
   type WatchlistView,
 } from '../utils/watchlistView';
-import { ColumnPicker, ColumnsButton, WatchlistTable } from './WatchlistTable';
+import { ColumnPicker, ColumnsButton, MissingSources, WatchlistTable } from './WatchlistTable';
 
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v1';
 const THEME_KEY = 'econquest_theme_dark_v1';
@@ -69,9 +70,11 @@ export const WatchlistWindow: React.FC = () => {
     setGroups(next);
     saveWatchlists(next);
   };
+  // Never a built-in figure: only what a real source filled.
+  const liveItems = useMemo(() => (list ? list.items.map(toLive) : []), [list]);
   const addable = useMemo(() => SOVEREIGN_CATALOG.filter((c) => !list?.items.some((i) => i.iso3 === c.iso3)).sort((a, b) => a.countryName.localeCompare(b.countryName)), [list]);
 
-  const open = (item: WatchlistItem) => {
+  const open = (item: LiveWatchlistItem) => {
     const msg: WatchlistMessage = { type: 'open-country', iso3: item.iso3 };
     let sent = false;
     try {
@@ -138,7 +141,7 @@ export const WatchlistWindow: React.FC = () => {
               if (!item) return;
               changeGroups(addToList(groups, list.id, item));
               setAdding('');
-              setNotice(`Added ${item.countryName}. Its figures fill in when the main window next refreshes.`);
+              setNotice(`Added ${item.countryName}. Its figures show once the main window next fetches them; until then they read Missing.`);
             }}
           >
             <select aria-label="Add a country" value={adding} onChange={(e) => setAdding(e.target.value)} className="px-1.5 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white max-w-[16rem]" disabled={addable.length === 0}>
@@ -161,8 +164,9 @@ export const WatchlistWindow: React.FC = () => {
               {notice}
             </p>
           )}
+          <MissingSources items={liveItems} />
           <WatchlistTable
-            items={list.items}
+            items={liveItems}
             view={view}
             onChangeView={changeView}
             lastLook={last.rows}

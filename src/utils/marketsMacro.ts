@@ -3,7 +3,8 @@
  * disagree. Every figure keeps its source tag; the readings in the agent groups (Central Bank Watcher Agent, Relative Value Agent) are simple, stated rules
  * on those figures (tagged model), never data.
  */
-import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, LiveWatchlistItem, WatchlistItem } from '../types/council';
+import { missingReason } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
 import { pct, pts, row, sampleWarning, type BriefRow, type CountryBrief } from './countryNotes';
@@ -60,8 +61,9 @@ export interface PeerFit {
 }
 
 /** Least squares of log(CDS) on the risk score. Needs four peers and some spread in risk. */
-export function fitCdsOnRisk(items: Pick<WatchlistItem, 'cds5YBps' | 'compositeRisk'>[]): PeerFit | null {
-  const pts = items.filter((i) => i.cds5YBps > 0 && Number.isFinite(i.compositeRisk));
+export function fitCdsOnRisk(items: Partial<Pick<WatchlistItem, 'cds5YBps' | 'compositeRisk'>>[]): PeerFit | null {
+  // Only rows where both figures exist; a missing figure is never filled in.
+  const pts = items.filter((i): i is Pick<WatchlistItem, 'cds5YBps' | 'compositeRisk'> => (i.cds5YBps ?? 0) > 0 && Number.isFinite(i.compositeRisk));
   if (pts.length < 4) return null;
   const xs = pts.map((p) => p.compositeRisk);
   const ys = pts.map((p) => Math.log(p.cds5YBps));
@@ -91,27 +93,31 @@ const RV_TEXT: Record<RvLabel, string> = {
 export interface PeerScreenRow {
   iso3: string;
   countryName: string;
-  yield10YPct: number;
+  /** Missing when no real source filled it; never a built-in value. */
+  yield10YPct?: number;
   yieldNote: string;
   spreadBps?: number;
-  cdsBps: number;
+  cdsBps?: number;
   cdsNote: string;
-  risk: number;
+  risk?: number;
   rv?: { gapPct: number; label: RvLabel };
 }
 
-export function peerScreen(peers: WatchlistItem[], us10YPct?: number): { rows: PeerScreenRow[]; fit: PeerFit | null } {
+export function peerScreen(peers: LiveWatchlistItem[], us10YPct?: number): { rows: PeerScreenRow[]; fit: PeerFit | null } {
   const fit = fitCdsOnRisk(peers);
   const rows = peers.map((p) => ({
     iso3: p.iso3,
     countryName: p.countryName,
     yield10YPct: p.yield10YPct,
-    yieldNote: yieldSourceNote(p),
-    spreadBps: us10YPct !== undefined ? Math.round((p.yield10YPct - us10YPct) * 100) : undefined,
+    yieldNote: p.yield10YPct === undefined ? `Missing: ${missingReason('yield', p.iso3).short}` : yieldSourceNote(p),
+    spreadBps: us10YPct !== undefined && p.yield10YPct !== undefined ? Math.round((p.yield10YPct - us10YPct) * 100) : undefined,
     cdsBps: p.cds5YBps,
-    cdsNote: cdsSourceNote(p),
+    cdsNote: p.cds5YBps === undefined ? `Missing: ${missingReason('cds', p.iso3).short}` : cdsSourceNote(p),
     risk: p.compositeRisk,
-    rv: fit ? (({ gapPct, label }) => ({ gapPct, label }))(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit)) : undefined,
+    rv:
+      fit && p.cds5YBps !== undefined && p.compositeRisk !== undefined
+        ? (({ gapPct, label }) => ({ gapPct, label }))(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit))
+        : undefined,
   }));
   return { rows: rows.sort((a, b) => (b.rv?.gapPct ?? -1e9) - (a.rv?.gapPct ?? -1e9)), fit };
 }
@@ -131,7 +137,7 @@ export function policyStance(realRatePct: number, inflationGapPts: number | unde
   return 'close to neutral with inflation near target';
 }
 
-export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistItem[]): CountryBrief & { screen: ReturnType<typeof peerScreen> } {
+export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlistItem[]): CountryBrief & { screen: ReturnType<typeof peerScreen> } {
   const open = run.openData;
   const imf = open.imfIndicators;
   const wb = open.worldBankIndicators;
@@ -145,7 +151,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: WatchlistIte
   const spreadBps = us ? Math.round((mkt.sovereign10YBondYieldPct - us.valuePct) * 100) : undefined;
   const screen = peerScreen(peers, us?.valuePct);
   const self = peers.find((p) => p.iso3 === run.iso3);
-  const rv = screen.fit && self ? cdsVsPeers(mkt.cds5YSpreadBps, self.compositeRisk, screen.fit) : undefined;
+  const rv = screen.fit && self && self.compositeRisk !== undefined ? cdsVsPeers(mkt.cds5YSpreadBps, self.compositeRisk, screen.fit) : undefined;
   const cv = self?.fxVol3mPct !== undefined && self.usFedFundsPct !== undefined ? carryToVol(mkt.policyRatePct, self.usFedFundsPct, self.fxVol3mPct) : null;
   const model = (label: string, value: string, how = 'model, from figures above'): BriefRow => ({ label, value, source: how, verified: false });
 

@@ -67,6 +67,7 @@ import {
   syncLiveWorldBankAndTreasuryData,
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
+import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
 import { TodayPage } from './components/TodayPage';
 import { CouncilApprovalCard } from './components/CouncilApprovalCard';
@@ -1678,6 +1679,8 @@ export default function App() {
 
   const activeWatchlistItems =
     watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
+  // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
+  const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
   // Imported holdings, shaped for the stress lab (weights) and the contagion desk (positions).
   const holdingsStressWeights = useMemo(
     () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
@@ -2808,10 +2811,12 @@ export default function App() {
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}
-              watchlistItems={activeWatchlistItems}
+              watchlistItems={liveWatchlistItems}
               stagedTickets={stagedTradeTickets}
               onOpenCountry={(item, sectionId) => {
-                if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                // Select the stored row (the live view drops built-in figures but keeps the country).
+                const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
+                if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
                 openCountryPage(sectionId);
               }}
               onStageTicket={handleStageTradeTicket}

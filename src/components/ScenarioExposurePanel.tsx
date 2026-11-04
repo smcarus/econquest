@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
 import { SCENARIOS, rankScenario } from '../utils/scenarioExposure';
 
 /**
@@ -7,8 +7,8 @@ import { SCENARIOS, rankScenario } from '../utils/scenarioExposure';
  * gains most, as a first-round current account effect in % of GDP from official trade shares.
  */
 export const ScenarioExposurePanel: React.FC<{
-  items: WatchlistItem[];
-  onOpenCountry: (item: WatchlistItem) => void;
+  items: LiveWatchlistItem[];
+  onOpenCountry: (item: LiveWatchlistItem) => void;
 }> = ({ items, onOpenCountry }) => {
   const ranked = useMemo(() => SCENARIOS.map((sc) => ({ sc, rows: rankScenario(sc.id, items) })), [items]);
   const any = ranked.some((r) => r.rows.length > 0);

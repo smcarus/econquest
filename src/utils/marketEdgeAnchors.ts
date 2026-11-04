@@ -16,7 +16,8 @@
  * - India: INDIRLTLT01STM (OECD, monthly; latest Sep 2026).
  * - China: no free official 10Y source is wired in yet.
  */
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
+import { toLive } from './liveFigures';
 import { FRED_10Y_SERIES, US_10Y_SERIES, describeOfficialYield, type OfficialYieldObservation } from './officialYields';
 import type { OwnCdsQuote } from './ownCds';
 import { formatPeriod } from './officialYields';
@@ -63,7 +64,7 @@ export interface MarketEdgeAnchor {
 export interface MarketEdgeAnchorsReply {
   anchors: MarketEdgeAnchor[];
   /** Benchmarks that are full countries in the app (the UK), with their live watchlist figures. */
-  peers: WatchlistItem[];
+  peers: LiveWatchlistItem[];
   us10Y?: OfficialYieldObservation;
   fetchedAt: string;
 }
@@ -109,7 +110,8 @@ export function benchmarkRows(anchors: MarketEdgeAnchor[], peerIso3: string[], u
 }
 
 /** Watchlist plus the benchmarks that are full countries, without duplicates. */
-export function marketEdgePeers(watchlist: WatchlistItem[], anchorPeers: WatchlistItem[]): WatchlistItem[] {
+export function marketEdgePeers(watchlist: LiveWatchlistItem[], anchorPeers: LiveWatchlistItem[]): LiveWatchlistItem[] {
   const have = new Set(watchlist.map((w) => w.iso3));
-  return [...watchlist, ...anchorPeers.filter((p) => !have.has(p.iso3))];
+  // Benchmark rows arrive raw from the server: drop their built-in figures too.
+  return [...watchlist, ...anchorPeers.filter((p) => !have.has(p.iso3)).map(toLive)];
 }

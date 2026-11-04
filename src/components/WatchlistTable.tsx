@@ -1,8 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronRight, Columns3, X } from 'lucide-react';
-import type { WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
+import { FIGURE_LABEL, missingSummary } from '../utils/liveFigures';
 import {
   COLUMN_BY_ID,
+  cellMissing,
   COLUMNS,
   DEFAULT_VIEW,
   moveColumn,
@@ -15,18 +17,27 @@ import {
   type WatchlistView,
 } from '../utils/watchlistView';
 
-const RISK_CLASS: Record<WatchlistItem['alertStatus'], string> = {
+type Alert = NonNullable<LiveWatchlistItem['alertStatus']>;
+const RISK_CLASS: Record<Alert, string> = {
   CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
   ELEVATED: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
   STABLE: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
 };
-const RISK_LABEL: Record<WatchlistItem['alertStatus'], string> = { CRITICAL: 'High', ELEVATED: 'Elevated', STABLE: 'Stable' };
+const RISK_LABEL: Record<Alert, string> = { CRITICAL: 'High', ELEVATED: 'Elevated', STABLE: 'Stable' };
 
 // Published or your own data shows green; sample and AI estimates stay grey.
 const GOOD_NOTE = /^(Official|Own|Your|Live|BIS|ECB)/;
 
-function Cell({ col, it, last }: { col: ColumnDef; it: WatchlistItem; last?: LastLook }) {
-  if (col.id === 'risk')
+function Cell({ col, it, last }: { col: ColumnDef; it: LiveWatchlistItem; last?: LastLook }) {
+  const missing = cellMissing(col, it);
+  if (missing)
+    return (
+      <span title={missing.help} className="inline-block text-left" data-missing={missing.kind}>
+        <div className="text-slate-400 dark:text-slate-500">Missing</div>
+        <div className={`text-xs whitespace-nowrap ${missing.kind === 'setup' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>{missing.short}</div>
+      </span>
+    );
+  if (col.id === 'risk' && it.alertStatus && it.compositeRisk !== undefined)
     return (
       <span className={`inline-block whitespace-nowrap px-1.5 py-0.5 text-xs font-medium border ${RISK_CLASS[it.alertStatus]}`}>
         {RISK_LABEL[it.alertStatus]} · {it.compositeRisk.toFixed(2)}
@@ -91,6 +102,33 @@ export const ColumnPicker: React.FC<{ view: WatchlistView; onChange: (v: Watchli
   </div>
 );
 
+/**
+ * What is missing across the list and what would fill it: setup items first (the user can act on
+ * them), then free feeds that did not answer.
+ */
+export const MissingSources: React.FC<{ items: LiveWatchlistItem[] }> = ({ items }) => {
+  const rows = missingSummary(items).sort((a, b) => Number(b.reason.kind === 'setup') - Number(a.reason.kind === 'setup'));
+  if (!rows.length || !items.length) return null;
+  return (
+    <details className="mb-3 border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 px-3 py-2 text-sm" data-missing-sources="true">
+      <summary className="cursor-pointer text-amber-900 dark:text-amber-200">
+        Some figures are missing: {rows.map((r) => FIGURE_LABEL[r.key]).join(', ')}. No built-in values are shown in their place. What to set up
+      </summary>
+      <ul className="mt-2 space-y-1.5">
+        {rows.map((r) => (
+          <li key={r.key} className="text-slate-700 dark:text-slate-300">
+            <span className="font-medium">{FIGURE_LABEL[r.key]}</span>, missing for {r.count} of {items.length}
+            <span className={`ml-1 text-xs px-1 border ${r.reason.kind === 'setup' ? 'border-amber-300 text-amber-800 dark:border-amber-800 dark:text-amber-300' : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-400'}`}>
+              {r.reason.kind === 'setup' ? 'Needs setup' : 'Feed did not answer'}
+            </span>
+            <div className="text-xs text-slate-600 dark:text-slate-400">{r.reason.help}</div>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+};
+
 export const ColumnsButton: React.FC<{ open: boolean; onClick: () => void }> = ({ open, onClick }) => (
   <button type="button" onClick={onClick} aria-expanded={open} className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap">
     <Columns3 className="w-3.5 h-3.5" /> Columns
@@ -102,12 +140,12 @@ export const ColumnsButton: React.FC<{ open: boolean; onClick: () => void }> = (
  * Click a header to sort by it.
  */
 export const WatchlistTable: React.FC<{
-  items: WatchlistItem[];
+  items: LiveWatchlistItem[];
   view: WatchlistView;
   onChangeView: (v: WatchlistView) => void;
   lastLook?: LastLook;
   highlightIso3?: string;
-  onOpen: (item: WatchlistItem) => void;
+  onOpen: (item: LiveWatchlistItem) => void;
   /** Pop-out only: a remove button on each row. */
   onRemove?: (iso3: string) => void;
 }> = ({ items, view, onChangeView, lastLook, highlightIso3, onOpen, onRemove }) => {
