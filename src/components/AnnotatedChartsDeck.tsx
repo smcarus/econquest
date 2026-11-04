@@ -198,7 +198,7 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
               {run.openData.gdeltMetrics.conflictIntensityIndex}/100
             </div>
             <div className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
-              Odds: {run.openData.polymarketContracts[0]?.probabilityPct ?? 65}%
+              {run.openData.polymarketContracts[0] ? `Odds: ${run.openData.polymarketContracts[0].probabilityPct}%` : 'No Polymarket contract'}
             </div>
           </div>
         </div>

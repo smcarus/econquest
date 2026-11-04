@@ -2421,7 +2421,7 @@ Verified Live Open-Data & Grounded Market Telemetry:
 - Central Bank Policy Rate: ${liveSnapshot.monetaryAndMarket.policyRatePct}% (Ex-Post Real Rate: ${liveSnapshot.monetaryAndMarket.realPolicyRatePct}%)
 - 10Y Local Sovereign Yield: ${liveSnapshot.monetaryAndMarket.sovereign10YBondYieldPct}% | 5Y USD CDS: ${liveSnapshot.monetaryAndMarket.cds5YSpreadBps} bps | Spot FX: ${liveSnapshot.monetaryAndMarket.exchangeRatePerUsd} ${liveSnapshot.currencyCode}/USD
 - GDELT Conflict Index: ${liveSnapshot.gdeltMetrics.conflictIntensityIndex}/100 (Tone: ${liveSnapshot.gdeltMetrics.averageTone}) | Chokepoint Exposure: ${liveSnapshot.monetaryAndMarket.chokepointExposureIndex}/100
-- Polymarket Key Contract: "${liveSnapshot.polymarketContracts[0]?.question}" (${liveSnapshot.polymarketContracts[0]?.probabilityPct}% odds)
+- Polymarket Key Contract: ${liveSnapshot.polymarketContracts[0] ? `"${liveSnapshot.polymarketContracts[0].question}" (${liveSnapshot.polymarketContracts[0].probabilityPct}% odds)` : 'none found for this country'}
 
 Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
 - [AG-1 / AG-2 / AG-3 Geopolitical Engine]: Composite GPR Z-Score = ${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ | Chokepoint CPI Pass-Through = +${geoDeskSuite.portfolioTransmission.propagatedForecastShocks.realRateShockBps} bps | G7 Freeze-Exposed Reserves = ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%
