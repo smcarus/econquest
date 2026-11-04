@@ -15,7 +15,8 @@ export type DataFeedKey =
   | 'polymarket'
   | 'gdelt'
   | 'treasury'
-  | 'ai_market';
+  | 'ai_market'
+  | 'official_yield';
 
 const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   imf: /IMF/i,
@@ -26,6 +27,7 @@ const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   gdelt: /GDELT/i,
   treasury: /Treasury/i,
   ai_market: /Gemini/i,
+  official_yield: /FRED/i,
 };
 
 export type SnapshotDataMode = 'live' | 'partial' | 'sample' | 'unverified';
@@ -36,6 +38,9 @@ export interface SnapshotDataStatus {
   /** Policy rate, yields, CDS and rating: AI web-search estimate, or built-in sample. */
   marketSource: 'ai_estimate' | 'sample';
   asOf: string;
+  /** Where the 10Y yield came from. 'official' = OECD via FRED, monthly average for `yieldPeriod`. */
+  yieldSource: 'official' | 'ai_estimate' | 'sample';
+  yieldPeriod?: string;
   isFeedLive: (key: DataFeedKey) => boolean;
 }
 
@@ -53,6 +58,13 @@ export function getSnapshotDataStatus(snapshot: OpenDataSnapshot): SnapshotDataS
     liveFeeds,
     marketSource: isFeedLive('ai_market') ? 'ai_estimate' : 'sample',
     asOf: verified?.checkedAt || snapshot.fetchedAt,
+    yieldSource:
+      snapshot.official10YYield && isFeedLive('official_yield')
+        ? 'official'
+        : isFeedLive('ai_market')
+          ? 'ai_estimate'
+          : 'sample',
+    yieldPeriod: snapshot.official10YYield?.period,
     isFeedLive,
   };
 }

@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
-import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
+import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from '../utils/dataStatus';
+import { formatPeriod } from '../utils/officialYields';
 import { summariseBook, type Holding } from '../utils/holdings';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
@@ -70,6 +71,12 @@ export interface MemoSection {
   lines: string[]; // each line is a paragraph, or a bullet when it starts with "- "
 }
 
+function yieldSourceNote(status: SnapshotDataStatus, fallback: string): string {
+  return status.yieldSource === 'official' && status.yieldPeriod
+    ? ` (OECD via FRED, ${formatPeriod(status.yieldPeriod)} monthly average)`
+    : fallback;
+}
+
 export function buildSections(
   p: IcMemoBuilderProps,
   include: Record<SectionId, boolean>,
@@ -84,6 +91,7 @@ export function buildSections(
   const status = getSnapshotDataStatus(open);
   const sampleNote = status.mode === 'live' ? '' : ` (${DATA_MODE_LABEL[status.mode].toLowerCase()})`;
   const priceNote = status.isFeedLive('ai_market') ? ' (AI estimate from web search)' : sampleNote;
+  const yieldNote = yieldSourceNote(status, priceNote);
   const tickets = ticketScope === 'country' ? stagedTickets.filter((t) => t.iso3 === run.iso3) : stagedTickets;
   const out: MemoSection[] = [];
 
@@ -105,7 +113,7 @@ export function buildSections(
         `- Debt / GDP: ${open.imfIndicators.debtToGdpPct.toFixed(1)}%${sampleNote}`,
         `- FX reserves, months of imports: ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)}${sampleNote}`,
         `- 5Y CDS: ${Math.round(mkt.cds5YSpreadBps)} bps${priceNote}`,
-        `- 10Y yield: ${mkt.sovereign10YBondYieldPct.toFixed(2)}%${priceNote}`,
+        `- 10Y yield: ${mkt.sovereign10YBondYieldPct.toFixed(2)}%${yieldNote}`,
         `- Policy rate: ${mkt.policyRatePct.toFixed(2)}%${priceNote}`,
       ],
     });
@@ -256,7 +264,9 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
         `- Government debt is ${open.imfIndicators.debtToGdpPct.toFixed(0)}% of the size of the economy${note}.`,
         `- Foreign currency savings would cover about ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports${note}.`,
         `- The central bank’s interest rate is ${mkt.policyRatePct.toFixed(2)}%${priceNote}.`,
-        `- The government pays about ${mkt.sovereign10YBondYieldPct.toFixed(1)}% a year to borrow for 10 years${priceNote}.`,
+        `- The government pays about ${mkt.sovereign10YBondYieldPct.toFixed(1)}% a year to borrow for 10 years${
+          status.yieldSource === 'official' && status.yieldPeriod ? ` (official figure, ${formatPeriod(status.yieldPeriod)} average)` : priceNote
+        }.`,
       ],
     });
   }
