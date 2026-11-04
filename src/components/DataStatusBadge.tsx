@@ -6,6 +6,7 @@ import {
   formatAsOf,
   getSnapshotDataStatus,
 } from '../utils/dataStatus';
+import { formatPeriod } from '../utils/officialYields';
 
 const MODE_CLASS = {
   live: 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
@@ -56,6 +57,14 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
       >
         Prices: {status.marketSource === 'ai_estimate' ? 'AI estimate' : 'sample'}
       </span>
+      {status.yieldSource === 'official' && status.yieldPeriod && (
+        <span
+          title="The 10-year government bond yield is the official OECD monthly average, published on FRED. It is usually one to two months behind."
+          className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold border ${MODE_CLASS.live}`}
+        >
+          10Y yield: official, {formatPeriod(status.yieldPeriod)}
+        </span>
+      )}
     </span>
   );
 };

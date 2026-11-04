@@ -368,6 +368,14 @@ export interface OpenDataSnapshot {
   catalystCalendar: InstitutionalCatalystEvent[];
   factorBetas: FactorSensitivityRow[];
   liveCreditRating?: string;
+  /** Official 10Y yield (OECD via FRED, monthly average) when the country is covered and the feed answered. */
+  official10YYield?: {
+    valuePct: number;
+    period: string;
+    source: string;
+    seriesId: string;
+    url: string;
+  };
   groundingCitations?: Array<{ title: string; uri: string }>;
   livePlumbingOverrides?: {
     usSofrRatePct?: number;

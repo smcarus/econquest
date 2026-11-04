@@ -54,6 +54,15 @@ import {
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
+import {
+  FRED_10Y_SERIES,
+  OFFICIAL_YIELD_SOURCE_LABEL,
+  fredApiUrl,
+  fredCsvUrl,
+  parseFredApiLatest,
+  parseFredCsvLatest,
+  type OfficialYieldObservation,
+} from './src/utils/officialYields.ts';
 
 dotenv.config();
 
@@ -79,6 +88,34 @@ async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response
     });
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/**
+ * Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable.
+ * Uses the official FRED API when FRED_API_KEY is set, and falls back to the no-key CSV download.
+ */
+async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObservation | null> {
+  const seriesId = FRED_10Y_SERIES[iso3];
+  if (!seriesId) return null;
+  const apiKey = (process.env.FRED_API_KEY || '').trim();
+  if (apiKey) {
+    try {
+      const res = await fetchWithTimeout(fredApiUrl(seriesId, apiKey), 6000);
+      if (res.ok) {
+        const obs = parseFredApiLatest(await res.json(), seriesId);
+        if (obs) return obs;
+      }
+    } catch {
+      // fall through to the CSV download
+    }
+  }
+  try {
+    const res = await fetchWithTimeout(fredCsvUrl(seriesId), 6000);
+    if (!res.ok) return null;
+    return parseFredCsvLatest(await res.text(), seriesId);
+  } catch {
+    return null;
   }
 }
 
@@ -669,6 +706,15 @@ async function fetchLiveOpenDataSnapshotNetwork(
       }
     })(),
   ]);
+
+  // 6b. Official 10Y yield (OECD via FRED). A published monthly average beats an AI estimate,
+  // so it replaces the Gemini figure when both exist; the month is kept so the UI can show it.
+  const officialYield = await fetchOfficial10YYield(normalizedIso);
+  if (officialYield) {
+    baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct;
+    baseline.official10YYield = officialYield;
+    activeSources.push(OFFICIAL_YIELD_SOURCE_LABEL);
+  }
 
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
   await applyGuiMacroConnectorsToSnapshot(baseline, normalizedIso, activeSources);
