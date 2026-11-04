@@ -40,7 +40,7 @@ test('yield source: official beats AI estimate only when FRED answered', () => {
 
 test('Brazil: a Tesouro Direto daily rate counts as official', () => {
   const obs = { valuePct: 15.29, period: '2026-10-30', source: 'Brazil Treasury, Tesouro Direto', seriesId: 'NTN-F 2037', url: 'u', frequency: 'daily' as const };
-  const s = getSnapshotDataStatus(withSources(['Tesouro Direto (Brazil Treasury) NTN-F daily rate'], { official10YYield: obs }));
+  const s = getSnapshotDataStatus(withSources(['Tesouro Direto (Brazil) NTN-F daily rate'], { official10YYield: obs }));
   assert.equal(s.yieldSource, 'official');
   assert.equal(s.officialYield?.frequency, 'daily');
 });
