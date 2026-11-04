@@ -5,7 +5,7 @@ import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
 import { DataStatusBadge } from './DataStatusBadge';
 import { ExecutiveBriefScorecard } from './ExecutiveBriefScorecard';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
-import { describeOfficialYield } from '../utils/officialYields';
+import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 
 /**
@@ -201,7 +201,11 @@ export const CountryPage: React.FC<{
 
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <Figure label="Debt / GDP" value={`${open.imfIndicators.debtToGdpPct.toFixed(1)}%`} />
-            <Figure label="5Y CDS" value={`${Math.round(mkt.cds5YSpreadBps)} bps`} />
+            <Figure
+              label={open.ownCds5Y ? `5Y CDS, ${formatPeriod(open.ownCds5Y.date)}` : '5Y CDS'}
+              value={`${Math.round(mkt.cds5YSpreadBps)} bps`}
+              title={open.ownCds5Y ? `Your own ${open.ownCds5Y.source} quote.` : undefined}
+            />
             <Figure
               label={open.official10YYield ? `10Y yield, ${describeOfficialYield(open.official10YYield).when}` : '10Y yield'}
               value={`${mkt.sovereign10YBondYieldPct.toFixed(2)}%`}

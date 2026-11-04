@@ -16,7 +16,8 @@ export type DataFeedKey =
   | 'gdelt'
   | 'treasury'
   | 'ai_market'
-  | 'official_yield';
+  | 'official_yield'
+  | 'own_cds';
 
 const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   imf: /IMF/i,
@@ -28,6 +29,7 @@ const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   treasury: /US Treasury/i,
   ai_market: /Gemini/i,
   official_yield: /FRED|Tesouro Direto|CBRT EVDS/i,
+  own_cds: /Own CDS/i,
 };
 
 export type SnapshotDataMode = 'live' | 'partial' | 'sample' | 'unverified';
@@ -43,6 +45,8 @@ export interface SnapshotDataStatus {
   yieldPeriod?: string;
   /** The official observation itself, when yieldSource is 'official'. */
   officialYield?: OpenDataSnapshot['official10YYield'];
+  /** 5Y CDS from the user's own licensed data, when the own-account switch is on and covers the country. */
+  ownCds?: OpenDataSnapshot['ownCds5Y'];
   isFeedLive: (key: DataFeedKey) => boolean;
 }
 
@@ -68,6 +72,7 @@ export function getSnapshotDataStatus(snapshot: OpenDataSnapshot): SnapshotDataS
           : 'sample',
     yieldPeriod: snapshot.official10YYield?.period,
     officialYield: snapshot.official10YYield && isFeedLive('official_yield') ? snapshot.official10YYield : undefined,
+    ownCds: snapshot.ownCds5Y && isFeedLive('own_cds') ? snapshot.ownCds5Y : undefined,
     isFeedLive,
   };
 }

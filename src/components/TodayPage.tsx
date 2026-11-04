@@ -7,7 +7,7 @@ import {
 } from '../utils/nssYieldCurveAndCatalystEngine';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
-import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
+import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 
 /**
  * Today: the institutional PM's morning view.
@@ -243,6 +243,9 @@ export const TodayPage: React.FC<{
                               <Delta value={it.cds5YBps - prev.cds5YBps} unit="" />
                             </span>
                           )}
+                          <div className={`text-xs font-normal ${it.cds5YSource === 'own' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                            {cdsSourceNote(it)}
+                          </div>
                         </dd>
                       </div>
                       <div title={yieldSourceHelp(it)}>
@@ -305,7 +308,12 @@ export const TodayPage: React.FC<{
                         {ALERT_LABEL[it.alertStatus]} · {it.compositeRisk.toFixed(2)}
                       </span>
                     </td>
-                    <td className="py-2 pr-3 text-right font-medium">{Math.round(it.cds5YBps)}</td>
+                    <td className="py-2 pr-3 text-right">
+                      <div className="font-medium">{Math.round(it.cds5YBps)}</div>
+                      <div className={`text-xs whitespace-nowrap ${it.cds5YSource === 'own' ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {cdsSourceNote(it)}
+                      </div>
+                    </td>
                     <td className="hidden md:table-cell py-2 pr-3 text-right text-xs">
                       <Delta value={prev ? it.cds5YBps - prev.cds5YBps : null} unit="" />
                     </td>

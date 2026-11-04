@@ -185,7 +185,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
         title: 'Market access',
         rows: [
           row(status, '10Y government yield', pct(mkt.sovereign10YBondYieldPct, 2), 'yield'),
-          row(status, '5Y CDS', `${Math.round(mkt.cds5YSpreadBps)} bps`, 'market'),
+          row(status, '5Y CDS', `${Math.round(mkt.cds5YSpreadBps)} bps`, 'cds'),
           row(status, '2s10s curve slope', `${Math.round(open.yieldCurve.slope2s10sBps)} bps`, 'sample'),
           open.liveCreditRating
             ? { label: 'Credit rating', value: open.liveCreditRating, source: 'AI estimate', verified: false }

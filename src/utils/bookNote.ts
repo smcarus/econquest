@@ -1,7 +1,7 @@
 import type { WatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from './nssYieldCurveAndCatalystEngine';
 import { summariseBook, type Holding } from './holdings';
-import { yieldSourceNote } from './watchlistYield';
+import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { when, type BriefGroup, type BriefRow, type CountryBrief, type NoteSection } from './countryNotes';
 
@@ -77,6 +77,7 @@ const pct0 = (v: number) => `${(v * 100).toFixed(0)}%`;
 const usd = (v: number) => `$${v.toLocaleString(undefined, { maximumFractionDigits: v >= 100 ? 0 : 1 })}mm`;
 const signedUsd = (v: number) => (v < 0 ? `−${usd(-v)}` : usd(v));
 const CDS_SOURCE = 'sample or AI estimate';
+const cdsNote = (i: WatchlistItem) => (i.cds5YSource === 'own' ? cdsSourceNote(i).replace(/^Your/, 'your') : CDS_SOURCE);
 const MODEL = 'model';
 
 interface BookFacts {
@@ -89,6 +90,7 @@ interface BookFacts {
   overweightRisk: BookLine[];
   stressedWeight: number;
   officialYieldWeight: number;
+  ownCdsWeight: number;
   events: Array<{ date: string; daysUntil: number; title: string; iso3: string; sourceName: string; weight: number }>;
 }
 
@@ -109,6 +111,7 @@ function facts(v: BookView, now: Date): BookFacts {
     overweightRisk: covered.filter((l) => l.riskShare > l.weight * 1.3 && l.riskShare >= 0.1),
     stressedWeight: covered.filter((l) => l.item!.cds5YBps >= 400).reduce((a, l) => a + l.weight, 0),
     officialYieldWeight: covered.filter((l) => l.item!.yield10YSource === 'official').reduce((a, l) => a + l.weight, 0),
+    ownCdsWeight: covered.filter((l) => l.item!.cds5YSource === 'own').reduce((a, l) => a + l.weight, 0),
     events: upcomingOfficialEvents(
       v.lines.map((l) => l.iso3),
       30,
@@ -180,7 +183,12 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
       : []),
     { label: 'Effective number of countries', value: f.eff.toFixed(1), source: 'from the weights', verified: false },
     { label: 'Three largest positions', value: pct0(f.top3Weight), source: 'share of the book', verified: false },
-    { label: 'Weighted 5Y CDS', value: `${f.avg((i) => i.cds5YBps).toFixed(0)} bps`, source: CDS_SOURCE, verified: false },
+    {
+      label: 'Weighted 5Y CDS',
+      value: `${f.avg((i) => i.cds5YBps).toFixed(0)} bps`,
+      source: f.ownCdsWeight > 0 ? `${pct0(f.ownCdsWeight / f.wCovered)} of weight on your own CDS data, rest ${CDS_SOURCE}` : CDS_SOURCE,
+      verified: false,
+    },
     { label: 'Weighted 10Y yield', value: `${f.avg((i) => i.yield10YPct).toFixed(2)}%`, source: `${pct0(f.officialYieldWeight / f.wCovered)} of weight on official yields`, verified: false },
     { label: 'Weighted risk score', value: f.avg((i) => i.compositeRisk).toFixed(2), source: MODEL, verified: false },
   ];
@@ -243,7 +251,7 @@ export function buildBookSections(
     'risk',
     v.lines.map((l) =>
       l.item
-        ? `- ${l.countryName}: ${pct0(l.weight)} of the book, ${pct0(l.riskShare)} of the risk. Risk score ${l.item.compositeRisk.toFixed(2)} (model), 5Y CDS ${Math.round(l.item.cds5YBps)} bps (${CDS_SOURCE}, ${cdsBand(l.item.cds5YBps)}), 10Y ${l.item.yield10YPct.toFixed(2)}% (${yieldSourceNote(l.item)}).`
+        ? `- ${l.countryName}: ${pct0(l.weight)} of the book, ${pct0(l.riskShare)} of the risk. Risk score ${l.item.compositeRisk.toFixed(2)} (model), 5Y CDS ${Math.round(l.item.cds5YBps)} bps (${cdsNote(l.item)}, ${cdsBand(l.item.cds5YBps)}), 10Y ${l.item.yield10YPct.toFixed(2)}% (${yieldSourceNote(l.item)}).`
         : `- ${l.countryName}: ${pct0(l.weight)} of the book, no risk data.`
     )
   );
