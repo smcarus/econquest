@@ -9,6 +9,8 @@ import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCal
 import { DATA_MODE_LABEL, formatAsOf } from '../utils/dataStatus';
 import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
+import { DivergenceList } from './DivergenceList';
+import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 
 /**
  * Today: the institutional PM's morning view.
@@ -139,6 +141,7 @@ export const TodayPage: React.FC<{
   // Read the previous visit once, then record this one after the figures settle.
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
   const edgeAnchors = useMarketEdgeAnchors();
+  const edgeItems = useMemo(() => marketEdgePeers(watchlistItems, edgeAnchors?.peers || []), [watchlistItems, edgeAnchors]);
   useEffect(() => {
     const t = window.setTimeout(() => saveVisit(watchlistItems), 5000);
     return () => window.clearTimeout(t);
@@ -360,6 +363,12 @@ export const TodayPage: React.FC<{
           </table>
         </div>
       </Card>
+
+      <DivergenceList
+        items={edgeItems}
+        lastLook={lastVisit?.rows}
+        onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+      />
 
       <MarketEdgeScreen
         watchlist={watchlistItems}

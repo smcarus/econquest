@@ -454,6 +454,17 @@ export interface WatchlistItem {
   /** Official figures only: YYYY-MM (monthly average) or YYYY-MM-DD (daily rate). */
   yield10YPeriod?: string;
   yield10YFrequency?: 'monthly' | 'daily';
+  /** Macro figures for the ranked divergence list (utils/divergences.ts). Set by the live watchlist. */
+  cpiInflationPct?: number;
+  policyRatePct?: number;
+  /** 'live' when the IMF feed answered for this country's CPI, else 'sample'. */
+  cpiSource?: 'live' | 'sample';
+  /** Policy rate from the AI market prompt or the sample. */
+  policyRateSource?: 'ai_estimate' | 'sample';
+  /** BIS international government bonds: outstanding and due within a year, USD bn. */
+  intlBondsUsdBn?: number;
+  intlBondsDue1yUsdBn?: number;
+  intlBondsAsOf?: string;
 }
 
 export interface WatchlistGroup {
