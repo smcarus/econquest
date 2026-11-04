@@ -157,8 +157,8 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               <span>
                 Pipeline Status:{' '}
                 {run.stage === 'AWAITING_CRO_APPROVAL'
-                  ? 'PAUSED BEFORE SUPREME COUNCIL — AWAITING CRO APPROVAL'
-                  : 'CRO verified and council synthesised'}
+                  ? 'Paused: waiting for your approval before the final report'
+                  : 'Approved, final report written'}
               </span>
             </div>
             <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mt-1">
@@ -191,10 +191,10 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               className="ui-btn ui-btn-primary shrink-0"
             >
               {isRunningPhase3
-                ? 'Convening Supreme Council (Deep Think)...'
+                ? 'Writing the final report…'
                 : run.stage === 'AWAITING_CRO_APPROVAL'
-                ? 'Approve Assumptions & Convene Supreme Council'
-                : 'Re-Run Supreme Council with CRO Overrides'}
+                ? 'Approve and write the final report'
+                : 'Rewrite the final report with these assumptions'}
             </button>
           </div>
         </div>
@@ -467,7 +467,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   croDraft.counterfactualShocks.domesticFiscalSlippagePctGdp * 0.02
                 ).toFixed(2)}
               </span>
-              . Click <strong>Approve Assumptions &amp; Convene Supreme Council</strong> to re-synthesize all trade tickets and policy recommendations.
+              . Choose <strong>Approve and write the final report</strong> to rebuild the trade tickets and policy recommendations on these assumptions.
             </div>
           </div>
         </div>

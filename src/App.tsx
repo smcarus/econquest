@@ -68,6 +68,7 @@ import {
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { TodayPage } from './components/TodayPage';
+import { CouncilApprovalCard } from './components/CouncilApprovalCard';
 import {
   COUNTRY_TABS,
   DEFAULT_COUNTRY_TAB,
@@ -601,6 +602,8 @@ export default function App() {
   const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
   // Bumped when Today sends a new council brief, so Reports rebuilds from it.
   const [reportNonce, setReportNonce] = useState(0);
+  // The run whose final council report was written in this session (not the built-in example).
+  const [councilReportRunId, setCouncilReportRunId] = useState<string | null>(null);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   // Core view by default: everything outside the core set is behind Menu > Show all tools.
@@ -1574,7 +1577,7 @@ export default function App() {
     setIsRunningPhase1And2(true);
     setStatusBanner({
       type: 'info',
-      message: `Executing Phase 1 (9 Sub-Agents & Devil's Advocate Debates) + Phase 2 (Cross-Desk Dependency Cascade) for ${run.countryName} (${run.iso3})...`,
+      message: `The nine desk agents are debating ${run.countryName}. The council will pause for your approval before the final report.`,
     });
 
     try {
@@ -1602,10 +1605,9 @@ export default function App() {
         if (layoutMode === 'executive_brief') {
           setActiveNavSection('cro_reports');
         }
-        setStatusBanner({
-          type: 'warning',
-          message: `Phase 1 (Desk Debates) & Phase 2 (Dependency Cascade) complete. Pipeline paused at Human-in-the-Loop CRO Checkpoint — review or override assumptions below and click "Approve Assumptions & Convene Supreme Council".`,
-        });
+        // The approval card at the top of the page is the notice now; a banner would repeat it.
+        setStatusBanner(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } catch (err: any) {
       setStatusBanner({
@@ -1622,7 +1624,7 @@ export default function App() {
     setIsRunningPhase3(true);
     setStatusBanner({
       type: 'info',
-      message: `CRO Gate Approved. Convening Supreme Council Orchestrator (Deep Think Synthesis) to generate standardized SMCR-1.0 Report...`,
+      message: `Assumptions approved. Writing the final council report…`,
     });
 
     try {
@@ -1644,12 +1646,13 @@ export default function App() {
       if (data?.run) {
         setRun(data.run);
         setCroDraft(data.run.croState);
+        setCouncilReportRunId(data.run.runId);
         if (layoutMode === 'executive_brief') {
           setActiveNavSection('cro_reports');
         }
         setStatusBanner({
           type: 'success',
-          message: `Supreme Council synthesis complete (${data.run.supremeCouncil?.reportId}). Standardized SMCR-1.0 PDF, YAML-Markdown, and JSON-Schema reports are ready for export.`,
+          message: `Final council report written (${data.run.supremeCouncil?.reportId}).`,
         });
       }
     } catch (err: any) {
@@ -2794,6 +2797,22 @@ export default function App() {
 
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
         <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
+          {/* On Today the pause sits inside Ask the council; elsewhere it shows here so it is never missed. */}
+          {run.stage === 'AWAITING_CRO_APPROVAL' && appArea !== 'today' && (
+            <CouncilApprovalCard
+              countryName={run.countryName}
+              deskState={run.croState}
+              draft={croDraft}
+              isApproving={isRunningPhase3}
+              onApprove={handleApproveAndConveneSupremeCouncil}
+              onChangeDraft={setCroDraft}
+              onOpenFullReview={showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined}
+              onOpenConversation={() => {
+                setAppArea('today');
+                window.scrollTo({ top: 0 });
+              }}
+            />
+          )}
           {!userRole && !isRolePromptDismissed && (
             <RolePicker current={userRole} onPick={applyRole} onSkip={() => setIsRolePromptDismissed(true)} />
           )}
@@ -2811,6 +2830,22 @@ export default function App() {
               onStageTicket={handleStageTradeTicket}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
+              fullCouncil={{
+                countryName: run.countryName,
+                stage: run.stage,
+                isRunning: isRunningPhase1And2,
+                isApproving: isRunningPhase3,
+                deskState: run.croState,
+                draft: croDraft,
+                result:
+                  run.supremeCouncil && run.runId === councilReportRunId
+                    ? { reportId: run.supremeCouncil.reportId, verdict: run.supremeCouncil.decisionVerdict, summary: run.supremeCouncil.executiveSummary }
+                    : undefined,
+                onRun: handleRunCouncilPhase1And2,
+                onApprove: handleApproveAndConveneSupremeCouncil,
+                onChangeDraft: setCroDraft,
+                onOpenFullReview: showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined,
+              }}
               onSendCouncilToReports={() => {
                 setRequestedReport('council');
                 setReportNonce((n) => n + 1);

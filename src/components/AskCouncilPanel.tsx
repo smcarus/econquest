@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Copy, FileText } from 'lucide-react';
-import type { WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, CROOverrideState, WatchlistItem } from '../types/council';
+import { CouncilApprovalCard } from './CouncilApprovalCard';
 import {
   councilBriefSections,
   planCouncil,
@@ -31,6 +32,28 @@ const TAG_CLASS: Record<FigureTag, string> = {
   model: 'text-blue-700 dark:text-blue-300',
 };
 
+/** The full nine-agent council on the country open now, run from the conversation. */
+export interface FullCouncilStep {
+  countryName: string;
+  stage: CouncilAssessmentRun['stage'];
+  isRunning: boolean;
+  isApproving: boolean;
+  deskState: CROOverrideState;
+  draft: CROOverrideState;
+  /** Set only for a report written in this session, never for the built-in example run. */
+  result?: { reportId: string; verdict: string; summary: string };
+  onRun: () => void;
+  onApprove: () => void;
+  onChangeDraft: (next: CROOverrideState) => void;
+  onOpenFullReview?: () => void;
+}
+
+const VERDICT: Record<string, string> = {
+  EXECUTE_TRADES: 'Act on the trade ideas',
+  DEFENSIVE_HEDGE: 'Hedge the exposure',
+  HOLD_AND_MONITOR: 'Hold and keep watching',
+};
+
 const EXAMPLES = [
   'Which central banks look behind the curve?',
   'Who is most exposed to a Hormuz closure?',
@@ -56,7 +79,8 @@ export const AskCouncilPanel: React.FC<{
   items: WatchlistItem[];
   onOpenCountry: (item: WatchlistItem) => void;
   onSendToReports: () => void;
-}> = ({ items, onOpenCountry, onSendToReports }) => {
+  fullCouncil?: FullCouncilStep;
+}> = ({ items, onOpenCountry, onSendToReports, fullCouncil }) => {
   const [question, setQuestion] = useState('');
   const [scope, setScope] = useState('');
   const [asked, setAsked] = useState<{ question: string; plan: CouncilPlan; answers: AgentAnswer[]; askedAt: string } | null>(null);
@@ -276,6 +300,51 @@ export const AskCouncilPanel: React.FC<{
             </button>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">Hover a figure for its source. For discussion, not investment advice.</p>
+        </div>
+      )}
+
+      {fullCouncil && (
+        <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 space-y-2" data-full-council={fullCouncil.stage}>
+          {fullCouncil.stage === 'AWAITING_CRO_APPROVAL' ? (
+            <CouncilApprovalCard
+              countryName={fullCouncil.countryName}
+              deskState={fullCouncil.deskState}
+              draft={fullCouncil.draft}
+              isApproving={fullCouncil.isApproving}
+              onApprove={fullCouncil.onApprove}
+              onChangeDraft={fullCouncil.onChangeDraft}
+              onOpenFullReview={fullCouncil.onOpenFullReview}
+            />
+          ) : fullCouncil.isRunning ? (
+            <p className="text-sm text-slate-700 dark:text-slate-300">The nine desk agents are debating {fullCouncil.countryName}. They will pause here for your approval before the final report.</p>
+          ) : fullCouncil.isApproving ? (
+            <p className="text-sm text-slate-700 dark:text-slate-300">Assumptions approved. Writing the final {fullCouncil.countryName} report…</p>
+          ) : (
+            <>
+              {fullCouncil.result && (
+                <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-full-council-result="true">
+                  <div className="ui-label">Full council, final report {fullCouncil.result.reportId}</div>
+                  <p className="text-sm font-medium text-slate-900 dark:text-white">
+                    {fullCouncil.countryName}: {VERDICT[fullCouncil.result.verdict] || fullCouncil.result.verdict}
+                  </p>
+                  <p className="text-sm text-slate-800 dark:text-slate-200">{fullCouncil.result.summary}</p>
+                  {fullCouncil.onOpenFullReview && (
+                    <button type="button" className="ui-btn" onClick={fullCouncil.onOpenFullReview}>
+                      Open the full report
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-slate-700 dark:text-slate-300">
+                  {fullCouncil.result ? 'Run it again with fresh figures?' : 'Want the full council’s view?'} Nine desk agents debate {fullCouncil.countryName} (the country open now), then it pauses here for your approval before the final report.
+                </p>
+                <button type="button" className="ui-btn" onClick={fullCouncil.onRun}>
+                  Run the full council on {fullCouncil.countryName}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       )}
     </section>
