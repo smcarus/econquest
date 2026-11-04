@@ -35,10 +35,13 @@ cp .env.example .env
 # 3. Launch full-stack Express + Vite development server on port 3000
 npm run dev
 
-# 4. Type-check & build production bundle
+# 4. Type-check, run the tests & build production bundle
 npm run lint
+npm test
 npm run build
 ```
+
+Every pull request runs the same three checks on GitHub (`.github/workflows/ci.yml`). Tests live in `tests/` and use Node's built-in test runner, so there is nothing extra to install.
 
 ---
 

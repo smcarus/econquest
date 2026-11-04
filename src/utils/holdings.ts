@@ -119,6 +119,8 @@ function parseNumber(v: string): number | null {
     s = s.slice(1, -1);
   }
   s = s.replace(/,(?=\d{3}(\D|$))/g, '');
+  // A remaining single comma with no dot is a decimal comma, as in European Excel exports ("12,5").
+  if (/^-?\d+,\d+$/.test(s)) s = s.replace(',', '.');
   const n = Number(s);
   if (!Number.isFinite(n)) return null;
   return neg ? -n : n;
@@ -371,7 +373,13 @@ export function holdingGreeks(h: Holding): { dv01: number; cs01: number; fxDelta
   const d = h.durationYears || 0;
   const pv01 = n * d * 100; // USD per bp for n USD mm at duration d
   const s = h.side === 'LONG' ? 1 : -1;
-  switch (h.assetClass) {
+  const g = rawGreeks(h.assetClass, s, pv01, n);
+  // "|| 0" turns -0 into 0 so a position with no duration never shows "-0".
+  return { dv01: g.dv01 || 0, cs01: g.cs01 || 0, fxDeltaPer1Pct: g.fxDeltaPer1Pct || 0 };
+}
+
+function rawGreeks(assetClass: HoldingAssetClass, s: number, pv01: number, n: number) {
+  switch (assetClass) {
     case 'HC_BOND':
       return { dv01: -s * pv01, cs01: -s * pv01, fxDeltaPer1Pct: 0 };
     case 'LC_BOND':
