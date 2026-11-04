@@ -416,6 +416,9 @@ export interface WatchlistItem {
   debtToGdpPct: number;
   fxReservesMonths: number;
   alertStatus: 'CRITICAL' | 'ELEVATED' | 'STABLE';
+  /** Whether this row's figures came from live feeds (see utils/dataStatus.ts). Absent = sample. */
+  dataMode?: 'live' | 'partial' | 'sample' | 'unverified';
+  dataAsOf?: string;
 }
 
 export interface WatchlistGroup {

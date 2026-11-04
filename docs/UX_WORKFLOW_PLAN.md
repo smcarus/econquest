@@ -1,6 +1,13 @@
 # EconQuest terminal: who uses it, how, and the UI that follows
 
-Status: draft for Sam's review, 2026-11-04. Builds on UI pass 1 (PR #1).
+Status: Sam chose the **institutional investor** as the first user (2026-11-04). Builds on UI pass 1 (PR #1).
+
+**Done so far:**
+- **Phase 0, data truth.** The country bar shows Live / Partly live / Sample data, not live / Source not verified, plus a "Prices: AI estimate | sample" chip. Provenance badges no longer show a fixed "200 OK" or a made-up latency.
+- **Phase 2, Today.** Today is the landing page, with a watchlist showing change since your last visit, signals with Why and Stage ticket, a 7-day calendar labelled as illustrative, and staged IC tickets. Rows open the matching desk.
+- **Phase 1, partial.** A Today button is added and the desk-only control rows are hidden on Today. The three pillar menus stay as the way into the desks until the Country, Portfolio and Reports pages exist (Phases 3 to 5).
+
+The default persona is now Institution.
 
 ## 1. The short version
 

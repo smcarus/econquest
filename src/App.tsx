@@ -64,6 +64,7 @@ import {
   syncLiveWorldBankAndTreasuryData,
 } from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
+import { TodayPage } from './components/TodayPage';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
 import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
 import { AnnotatedChartsDeck } from './components/AnnotatedChartsDeck';
@@ -540,7 +541,7 @@ export default function App() {
     () => (savedSessionOnBoot?.activeNavSection as NavSectionId) || 'quant_nss_yield_curve'
   );
   const [activePersona, setActivePersona] = useState<UserPersonaId>(
-    () => savedSessionOnBoot?.activePersona || 'INDIVIDUAL_TRADER'
+    () => savedSessionOnBoot?.activePersona || 'INSTITUTIONAL_PM_IC'
   );
 
   // Collapse Watchlist sidebar by default to maximize 1-2 screen canvas density
@@ -555,6 +556,8 @@ export default function App() {
     useState<ActivityPillarId | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
+  // Top-level area: the PM's Today page, or the analysis desks.
+  const [appArea, setAppArea] = useState<'today' | 'desks'>('today');
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     if (!isHeaderMenuOpen) return;
@@ -1132,6 +1135,7 @@ export default function App() {
     setSelectedBacktestEpisodeId(customEpisode.id);
     if (navigateImmediately) {
       setLayoutMode('executive_brief');
+    setAppArea('desks');
       setActiveNavSection('backtest_engine');
     }
     setStatusBanner({
@@ -1613,6 +1617,7 @@ export default function App() {
     setActivePersona('INDIVIDUAL_TRADER');
     setActiveNavSection('charts_watchlists');
     setLayoutMode('executive_brief');
+    setAppArea('today');
     setForecastShocks(DEFAULT_FORECAST_SHOCKS);
     setGeopoliticalWargameParams(DEFAULT_WARGAME_PARAMS);
     setLiquidityStressParams(DEFAULT_LIQUIDITY_STRESS_PARAMS);
@@ -1629,6 +1634,7 @@ export default function App() {
   const handleSelectCommandPaletteItem = (item: CommandPaletteItem) => {
     if (item.targetNavSection) {
       setLayoutMode('executive_brief');
+    setAppArea('desks');
       setActiveNavSection(item.targetNavSection as NavSectionId);
       return;
     }
@@ -1667,8 +1673,7 @@ export default function App() {
           href="#top"
           onClick={(e) => {
             e.preventDefault();
-            setLayoutMode('executive_brief');
-            setActiveNavSection('charts_watchlists');
+            setAppArea('today');
           }}
           className="flex items-center gap-2.5 shrink-0 group"
         >
@@ -1682,9 +1687,22 @@ export default function App() {
 
         {/* Zone 2: 3 Primary Activity Pillars (Market & Trading | Policy Research | Macroeconomic Research) + Cmd+K Search */}
         <nav className="hidden lg:flex items-center gap-2 text-xs font-medium">
+          <button
+            type="button"
+            onClick={() => setAppArea('today')}
+            aria-current={appArea === 'today' ? 'page' : undefined}
+            className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
+              appArea === 'today'
+                ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
+                : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            Today
+          </button>
           {ACTIVITY_PILLARS.map((pillar) => {
             const activePillarInfo = findPillarForNavSection(activeNavSection);
             const isPillarActive =
+              appArea === 'desks' &&
               layoutMode === 'executive_brief' &&
               activePillarInfo.pillar.id === pillar.id;
             const isOpen = openPillarMenuId === pillar.id;
@@ -1707,6 +1725,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection(pillar.defaultSection as NavSectionId);
                     setOpenPillarMenuId(isOpen ? null : pillar.id);
                   }}
@@ -1748,6 +1767,7 @@ export default function App() {
                                   type="button"
                                   onClick={() => {
                                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                                     setActiveNavSection(mod.id as NavSectionId);
                                     setOpenPillarMenuId(null);
                                   }}
@@ -2010,13 +2030,16 @@ export default function App() {
       </header>
 
       {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
-      <section className="bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2">
+      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea === 'today' ? 'lg:hidden' : ''}`}>
         <div className="max-w-[1600px] mx-auto flex flex-col gap-2">
+          {appArea === 'desks' && (
+          <>
           {/* Row 1: Contextual Sub-Groups & Modules for Active Activity Pillar */}
           <PillarSubNavigationStrip
             activeNavSection={activeNavSection}
             onSelectNavSection={(sec) => {
               setLayoutMode('executive_brief');
+    setAppArea('desks');
               setActiveNavSection(sec as NavSectionId);
             }}
           />
@@ -2160,6 +2183,9 @@ export default function App() {
             )}
           </div>
 
+          </>
+          )}
+
           {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
           <div className="order-first flex lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800 overflow-x-auto">
             <button
@@ -2170,8 +2196,20 @@ export default function App() {
               <Search className="w-3 h-3" />
               <span>Jump</span>
             </button>
+            <button
+              type="button"
+              onClick={() => setAppArea('today')}
+              className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
+                appArea === 'today'
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+              }`}
+            >
+              Today
+            </button>
             {ACTIVITY_PILLARS.map((pillar) => {
               const isAct =
+                appArea === 'desks' &&
                 findPillarForNavSection(activeNavSection).pillar.id === pillar.id;
               return (
                 <button
@@ -2179,6 +2217,7 @@ export default function App() {
                   type="button"
                   onClick={() => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection(pillar.defaultSection as NavSectionId);
                   }}
                   className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
@@ -2264,6 +2303,27 @@ export default function App() {
 
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
         <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
+          {appArea === 'today' && (
+            <TodayPage
+              run={run}
+              watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
+              watchlistItems={activeWatchlistItems}
+              stagedTickets={stagedTradeTickets}
+              onOpenCountry={(item, sectionId) => {
+                if (item.iso3 !== run.iso3) handleSelectSovereign(item);
+                setLayoutMode('executive_brief');
+                setActiveNavSection((sectionId as NavSectionId) || 'charts_watchlists');
+                setAppArea('desks');
+                window.scrollTo({ top: 0 });
+              }}
+              onStageTicket={handleStageTradeTicket}
+              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
+              onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
+            />
+          )}
+
+          {appArea === 'desks' && (
+          <>
           {/* CONSOLIDATED 1-LINE STATUS BAR WITH SLIDE-OVER DRAWERS (MORNING RADAR, EXECUTIVE BLUF, DESK GUIDE) */}
           <CompactTopStatusAndDrawersBar
             run={run}
@@ -2275,6 +2335,7 @@ export default function App() {
             onSelectSovereign={handleSelectSovereign}
             onSelectNavSection={(sec) => {
               setLayoutMode('executive_brief');
+    setAppArea('desks');
               setActiveNavSection(sec as NavSectionId);
             }}
             onStageTradeTicket={handleStageTradeTicket}
@@ -2593,6 +2654,7 @@ export default function App() {
                   onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
                   onOpenCsvLab={() => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection('policy_doc_lab');
                   }}
                 />
@@ -2643,6 +2705,7 @@ export default function App() {
                   isDark={darkMode}
                   onJumpToNavSection={(sec) => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection(sec as NavSectionId);
                   }}
                   onSelectSovereign={handleSelectSovereign}
@@ -2654,6 +2717,7 @@ export default function App() {
                   run={run}
                   onJumpToCROGate={() => {
                     setLayoutMode('executive_brief');
+    setAppArea('desks');
                     setActiveNavSection('cro_reports');
                   }}
                   isRunningPhase1And2={isRunningPhase1And2}
@@ -2728,6 +2792,7 @@ export default function App() {
                 onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
                 onOpenCsvLab={() => {
                   setLayoutMode('executive_brief');
+    setAppArea('desks');
                   setActiveNavSection('policy_doc_lab');
                 }}
               />
@@ -2778,6 +2843,7 @@ export default function App() {
                 isDark={darkMode}
                 onJumpToNavSection={(sec) => {
                   setLayoutMode('executive_brief');
+    setAppArea('desks');
                   setActiveNavSection(sec as NavSectionId);
                 }}
                 onSelectSovereign={handleSelectSovereign}
@@ -2787,6 +2853,7 @@ export default function App() {
                 run={run}
                 onJumpToCROGate={() => {
                   setLayoutMode('executive_brief');
+    setAppArea('desks');
                   setActiveNavSection('cro_reports');
                 }}
                 isRunningPhase1And2={isRunningPhase1And2}
@@ -2807,6 +2874,8 @@ export default function App() {
                 onReverifyPipeline={handleRunCouncilPhase1And2}
               />
             </div>
+          )}
+          </>
           )}
         </section>
       </main>
@@ -2885,6 +2954,7 @@ export default function App() {
         onRemoveTicket={handleRemoveTradeTicket}
         onNavigateToSection={(sec) => {
           setLayoutMode('executive_brief');
+    setAppArea('desks');
           setActiveNavSection(sec as NavSectionId);
         }}
       />

@@ -1062,6 +1062,7 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
       const el = node as HTMLElement;
       if (
         el.getAttribute('data-stat-ref-instrumented') === 'true' ||
+        el.closest('[data-no-stat-ref="true"]') ||
         el.closest('[role="button"][title*="mathematical definition"]') ||
         el.closest('[data-econquest-provenance-bar="true"]') ||
         el.closest('[data-econquest-chart-prov="true"]')

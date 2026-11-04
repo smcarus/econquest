@@ -52,6 +52,7 @@ import {
 } from './src/utils/institutionalRiskDeskEngine.ts';
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
+import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 
 dotenv.config();
 
@@ -813,6 +814,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
+          dataMode: getSnapshotDataStatus(snap).mode,
+          dataAsOf: getSnapshotDataStatus(snap).asOf,
         } as WatchlistItem;
       } catch {
         return catItem;
