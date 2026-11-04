@@ -122,6 +122,8 @@ export const TodayPage: React.FC<{
   onStageTicket: (ticket: StagedTradeTicketSpec) => void;
   onOpenTickets: () => void;
   onOpenWatchlistManager: () => void;
+  /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
+  coreOnly?: boolean;
 }> = ({
   run,
   watchlistName,
@@ -131,6 +133,7 @@ export const TodayPage: React.FC<{
   onStageTicket,
   onOpenTickets,
   onOpenWatchlistManager,
+  coreOnly = false,
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
@@ -356,7 +359,8 @@ export const TodayPage: React.FC<{
         </div>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className={coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+        {!coreOnly && (
         <Card
           title="Signals"
           icon={<Radar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />}
@@ -401,6 +405,8 @@ export const TodayPage: React.FC<{
             </ul>
           )}
         </Card>
+
+        )}
 
         <Card
           title="Next two weeks"
@@ -455,6 +461,7 @@ export const TodayPage: React.FC<{
         </Card>
       </div>
 
+      {!coreOnly && (
       <Card
         title="Waiting for you"
         icon={<Ticket className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
@@ -497,6 +504,7 @@ export const TodayPage: React.FC<{
           </ul>
         )}
       </Card>
+      )}
     </div>
   );
 };

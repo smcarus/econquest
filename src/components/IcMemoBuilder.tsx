@@ -27,6 +27,8 @@ export interface IcMemoBuilderProps {
   peers?: WatchlistItem[];
   /** Which version opens first. Private wealth advisers start on the client note. */
   defaultAudience?: MemoAudience;
+  /** Templates to offer. Defaults to all of them. */
+  audiences?: MemoAudience[];
 }
 
 /**
@@ -494,7 +496,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
         </header>
         <div className="p-4 space-y-4">
           <div role="tablist" aria-label="Memo type" className="flex flex-wrap gap-1.5">
-            {(Object.keys(AUDIENCE_INFO) as MemoAudience[]).map((a) => (
+            {(props.audiences?.length ? props.audiences : (Object.keys(AUDIENCE_INFO) as MemoAudience[])).map((a) => (
               <button key={a} type="button" role="tab" aria-selected={audience === a} className="ui-pill" onClick={() => switchAudience(a)}>
                 {AUDIENCE_INFO[a].tab}
               </button>

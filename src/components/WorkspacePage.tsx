@@ -114,8 +114,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
   summary,
   ariaLabel,
 }) => {
-  const tab = tabs.find((t) => t.id === activeTabId) || tabs[0];
-  const desk = tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0];
+  const tab: WorkspaceTab | undefined = tabs.find((t) => t.id === activeTabId) || tabs[0];
+  const desk = tab ? (tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0]) : undefined;
 
   return (
     <div className="space-y-3" data-workspace-page={ariaLabel}>
@@ -128,6 +128,7 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
           {actions && <div className="flex flex-wrap items-center gap-1.5">{actions}</div>}
         </div>
         {summary && <div className="mt-3">{summary}</div>}
+        {tabs.length > 1 && tab && (
         <nav className="mt-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel}>
           {tabs.map((t) => (
             <button
@@ -141,10 +142,14 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
             </button>
           ))}
         </nav>
+        )}
+        {!(tabs.length > 1) && <div className="pb-3" />}
       </div>
 
+      {tab && desk && (
+      <>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <p className="ui-label">{tab.hint}</p>
+        {tabs.length > 1 && <p className="ui-label">{tab.hint}</p>}
         {tab.desks.length > 1 && (
           <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={`${tab.label} tools`}>
             {tab.desks.map((d) => (
@@ -164,6 +169,8 @@ export const WorkspacePage: React.FC<WorkspacePageProps> = ({
       </div>
 
       {renderDesk(desk)}
+      </>
+      )}
     </div>
   );
 };
