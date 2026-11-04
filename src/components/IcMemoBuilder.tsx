@@ -10,6 +10,7 @@ import { toDisplayCase } from '../utils/displayCase';
 import { buildEconomistSections, ECONOMIST_SECTIONS } from '../utils/countryNotes';
 import { buildBankerSections, BANKER_SECTIONS } from '../utils/bankerNote';
 import { buildOfficialSections, OFFICIAL_SECTIONS } from '../utils/officialNote';
+import { BOOK_SECTIONS, bookView, buildBookSections, buildClientReviewSections, CLIENT_REVIEW_SECTIONS } from '../utils/bookNote';
 
 /**
  * One builder for the investment committee memo. It pulls the current country view,
@@ -32,9 +33,12 @@ export interface IcMemoBuilderProps {
  * 'ic' = internal investment committee memo; 'client' = plain-language note for a private client;
  * 'economist' = country economic note (growth, policy, fiscal, external).
  */
-export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker' | 'official';
+export type MemoAudience = 'ic' | 'client' | 'economist' | 'banker' | 'official' | 'book' | 'client_review';
 
-export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; heading: string; file: string; help: string }> = {
+export const AUDIENCE_INFO: Record<
+  MemoAudience,
+  { tab: string; title: string; heading: string; file: string; help: string; /** Covers the whole book, not the current country. */ bookLevel?: boolean }
+> = {
   ic: { tab: 'Investment committee memo', title: 'IC memo', heading: 'Memo', file: 'ic-memo', help: 'Internal memo with trades, risk figures and kill switches.' },
   client: { tab: 'Client note', title: 'client note', heading: 'Client note', file: 'client-note', help: 'Plain language for a private client. No trade levels, scores or desk terms.' },
   economist: {
@@ -57,6 +61,22 @@ export const AUDIENCE_INFO: Record<MemoAudience, { tab: string; title: string; h
     heading: 'Debt sustainability assessment',
     file: 'dsa',
     help: 'Official-sector assessment: debt path, five-year projection with standard shocks, fiscal adjustment, external position, and the method used.',
+  },
+  book: {
+    tab: 'Portfolio review',
+    title: 'Portfolio review',
+    heading: 'Portfolio review',
+    file: 'portfolio-review',
+    help: 'Internal review of the whole book: concentration, where the risk sits, official events in the next 30 days and staged ideas.',
+    bookLevel: true,
+  },
+  client_review: {
+    tab: 'Client portfolio review',
+    title: 'Client portfolio review',
+    heading: 'Client portfolio review',
+    file: 'client-portfolio-review',
+    help: 'The client’s whole portfolio in plain language: what they hold, what could go wrong and dates to watch. No trade levels or scores.',
+    bookLevel: true,
   },
 };
 
@@ -89,7 +109,13 @@ export const sectionLabels = (audience: MemoAudience): Record<string, string> =>
     ? ECONOMIST_SECTIONS
     : audience === 'banker'
       ? BANKER_SECTIONS
-      :((audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL) as Record<string, string>);
+      : audience === 'official'
+        ? OFFICIAL_SECTIONS
+        : audience === 'book'
+          ? BOOK_SECTIONS
+          : audience === 'client_review'
+            ? CLIENT_REVIEW_SECTIONS
+            : ((audience === 'client' ? CLIENT_SECTION_LABEL : SECTION_LABEL) as Record<string, string>);
 
 /** Sections for any audience. `include` lists sections switched off as false; anything absent is on. */
 export function buildReportSections(
@@ -102,6 +128,10 @@ export function buildReportSections(
   if (audience === 'economist') return buildEconomistSections(p.run, on);
   if (audience === 'official') return buildOfficialSections(p.run, on);
   if (audience === 'banker') return buildBankerSections(p.run, p.peers ?? p.riskLookup, on);
+  if (audience === 'book' || audience === 'client_review') {
+    const v = bookView(p.holdings, p.riskLookup, p.peers ?? p.riskLookup);
+    return audience === 'book' ? buildBookSections(v, p.stagedTickets, on) : buildClientReviewSections(v, on);
+  }
   const all = Object.fromEntries((Object.keys(SECTION_LABEL) as SectionId[]).map((id) => [id, on(id)])) as Record<SectionId, boolean>;
   return buildSections(p, all, ticketScope, audience);
 }
@@ -406,7 +436,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const [copied, setCopied] = useState(false);
 
   const info = AUDIENCE_INFO[audience];
-  const defaultTitle = `${run.countryName}: ${info.title}`;
+  const defaultTitle = info.bookLevel ? info.title : `${run.countryName}: ${info.title}`;
   const memoTitle = title.trim() || defaultTitle;
   const labels = sectionLabels(audience);
   const generated = useMemo(
@@ -426,7 +456,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${run.iso3}-${info.file}-${new Date().toISOString().slice(0, 10)}.md`;
+    a.download = `${info.bookLevel ? 'book' : run.iso3}-${info.file}-${new Date().toISOString().slice(0, 10)}.md`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -456,7 +486,11 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
       <section className="ui-panel" aria-label="Memo settings">
         <header className="ui-panel-header">
           <h2 className="ui-section-title">Build the report</h2>
-          <p className="ui-label">Pulls the current country, your tickets, holdings and the official calendar.</p>
+          <p className="ui-label">
+            {info.bookLevel
+              ? 'Pulls your holdings (or the watchlist at equal weight), staged tickets and the official calendar.'
+              : 'Pulls the current country, your tickets, holdings and the official calendar.'}
+          </p>
         </header>
         <div className="p-4 space-y-4">
           <div role="tablist" aria-label="Memo type" className="flex flex-wrap gap-1.5">
