@@ -6,6 +6,8 @@
  * - CDS against risk peers: the MarketEdge fit of log CDS on the app's risk score.
  * - Real 10Y yield against the median of the countries on screen.
  * - Refinancing: BIS international government bonds falling due within a year.
+ * - FX: BIS real exchange rate against its 10-year average, and carry over the US rate per unit
+ *   of three-month volatility.
  *
  * Rank = size of the gap (0 to 1) times how much the figures can be trusted: live or official
  * figures count fully, AI estimates 0.7, sample values 0.5. A gap built on sample data can still
@@ -15,12 +17,13 @@ import type { WatchlistItem } from '../types/council';
 import { POLITICAL_FISCAL_CATEGORIES, upcomingOfficialEvents } from '../data/officialCalendar';
 import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk } from './marketsMacro';
 import { formatPeriod } from './officialYields';
+import { carryToVol, reerLabel } from './fxValuation';
 
 export type Quality = 'live' | 'estimate' | 'sample';
 export const QUALITY_WEIGHT: Record<Quality, number> = { live: 1, estimate: 0.7, sample: 0.5 };
 export const QUALITY_LABEL: Record<Quality, string> = { live: 'Live data', estimate: 'AI estimate', sample: 'Sample data' };
 
-export type DivergenceKind = 'policy' | 'cds' | 'real_yield' | 'refinancing';
+export type DivergenceKind = 'policy' | 'cds' | 'real_yield' | 'refinancing' | 'fx_value' | 'carry';
 
 export interface Divergence {
   kind: DivergenceKind;
@@ -196,6 +199,46 @@ export function refinancingSignal(it: WatchlistItem): Divergence | null {
   });
 }
 
+/** Real exchange rate more than 10% from its 10-year average (BIS). */
+export function fxValueSignal(it: WatchlistItem): Divergence | null {
+  if (it.reerGapPct === undefined) return null;
+  const label = reerLabel(it.reerGapPct);
+  if (label === 'near average') return null;
+  return make({
+    kind: 'fx_value',
+    label: label === 'strong' ? 'Currency strong for its history' : 'Currency weak for its history',
+    headline: `Real exchange rate ${Math.abs(it.reerGapPct).toFixed(0)}% ${it.reerGapPct > 0 ? 'above' : 'below'} its 10-year average${it.reerPeriod ? ` (${formatPeriod(it.reerPeriod)})` : ''}.`,
+    evidence: [{ text: 'BIS real broad effective exchange rate', source: 'official' }],
+    soWhat:
+      label === 'strong'
+        ? 'Dear against its own past: exporters lose ground and the currency has room to give back. Real rates can trend, so this is a yardstick, not a fair value.'
+        : 'Cheap against its own past: a cushion for buyers of the currency. Real rates can trend, so this is a yardstick, not a fair value.',
+    size: clamp((Math.abs(it.reerGapPct) - 5) / 30),
+    quality: 'live',
+  });
+}
+
+/** Carry over the US rate per unit of three-month volatility: high means the carry pays well for the swings. */
+export function carrySignal(it: WatchlistItem): Divergence | null {
+  if (it.policyRatePct === undefined || it.usFedFundsPct === undefined || it.fxVol3mPct === undefined) return null;
+  const cv = carryToVol(it.policyRatePct, it.usFedFundsPct, it.fxVol3mPct);
+  if (!cv || cv.ratio < 0.5) return null;
+  const pr = policyTag(it);
+  return make({
+    kind: 'carry',
+    label: 'Carry pays for the swings',
+    headline: `Policy rate ${cv.carryPts.toFixed(1)} pts over the US, ${cv.ratio.toFixed(2)} times the currency's ${it.fxVol3mPct.toFixed(1)}% three-month volatility.`,
+    evidence: [
+      { text: `Policy rate ${it.policyRatePct.toFixed(2)}%`, source: pr.src },
+      { text: `US fed funds ${it.usFedFundsPct.toFixed(2)}%`, source: 'NY Fed, live' },
+      { text: `Volatility ${it.fxVol3mPct.toFixed(1)}%`, source: 'ECB rates, live' },
+    ],
+    soWhat: 'Holding the currency earns more than its recent swings would usually take away. Carry can unwind fast when markets turn.',
+    size: clamp((cv.ratio - 0.3) / 1.2),
+    quality: worst(pr.q, 'live'),
+  });
+}
+
 function changeSince(it: WatchlistItem, last: LastLook | null | undefined): string | undefined {
   const prev = last?.[it.iso3];
   if (!prev) return undefined;
@@ -215,7 +258,7 @@ export function rankDivergences(items: WatchlistItem[], lastLook?: LastLook | nu
   const events = upcomingOfficialEvents(items.map((i) => i.iso3), 60, now);
   const out: CountryDivergence[] = [];
   for (const it of items) {
-    const all = [policySignal(it), cds.get(it.iso3), realY.get(it.iso3), refinancingSignal(it)]
+    const all = [policySignal(it), cds.get(it.iso3), realY.get(it.iso3), refinancingSignal(it), fxValueSignal(it), carrySignal(it)]
       .filter((d): d is Divergence => Boolean(d) && (d as Divergence).score > 0)
       .sort((a, b) => b.score - a.score);
     if (!all.length) continue;

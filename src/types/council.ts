@@ -465,6 +465,15 @@ export interface WatchlistItem {
   intlBondsUsdBn?: number;
   intlBondsDue1yUsdBn?: number;
   intlBondsAsOf?: string;
+  /** BIS real effective exchange rate against its 10-year average, percent (utils/fxValuation.ts). */
+  reerGapPct?: number;
+  reerPeriod?: string;
+  /** Three-month realised volatility against the US dollar, annualised percent (ECB rates). */
+  fxVol3mPct?: number;
+  fxVolTo?: string;
+  /** US effective federal funds rate (NY Fed), for carry. */
+  usFedFundsPct?: number;
+  usFedFundsDate?: string;
 }
 
 export interface WatchlistGroup {

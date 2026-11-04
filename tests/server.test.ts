@@ -161,6 +161,12 @@ test('watchlist: official yields carry a date, everything else says sample', asy
   assert.equal(byIso.get('MEX')?.cds5YSource, 'own');
   assert.equal(byIso.get('MEX')?.cds5YDate, '2026-11-03');
   assert.equal(byIso.get('BRA')?.cds5YSource, 'sample');
+  // FX valuation: BIS real exchange rate gap and ECB-rate volatility where they answered (South Africa).
+  assert.equal(byIso.get('ZAF')?.reerGapPct, -14.9);
+  assert.equal(byIso.get('ZAF')?.reerPeriod, '2026-09');
+  assert.ok((byIso.get('ZAF')?.fxVol3mPct ?? 0) > 10);
+  assert.equal(byIso.get('EGY')?.fxVol3mPct, undefined);
+  assert.equal(byIso.get('ZAF')?.usFedFundsPct, 3.83);
   for (const it of items) {
     assert.ok(it.dataMode !== 'live', `${it.iso3} cannot be live with every macro feed down`);
   }
