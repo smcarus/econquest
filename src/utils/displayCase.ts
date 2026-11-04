@@ -10,7 +10,8 @@ export function toDisplayCase(text: string | undefined | null): string {
   if (!text) return '';
   if (/[a-z]/.test(text)) return text;
   let first = true;
-  return text.replace(/[A-Za-z0-9][A-Za-z0-9.']*/g, (word) => {
+  // Data codes such as HY_SPECULATIVE or HOLD_AND_MONITOR read as words.
+  return text.replace(/_+/g, ' ').replace(/[A-Za-z0-9][A-Za-z0-9.']*/g, (word) => {
     const out = ACRONYMS.has(word) || /\d/.test(word)
       ? word
       : word === 'BPS'

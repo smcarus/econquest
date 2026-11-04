@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import { holdingGreeks, ASSET_CLASS_LABEL, type Holding } from '../utils/holdings';
 import {
   ResponsiveContainer,
@@ -1606,7 +1607,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
           <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
             <div className="px-3 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums">
               <span className="font-semibold text-slate-800 dark:text-slate-200">
-                DEPENDENT VARIABLE: {econometricsSuite.dependentVariableLabel} ({econometricsSuite.dependentVariableUnit})
+                Dependent variable: {econometricsSuite.dependentVariableLabel} ({econometricsSuite.dependentVariableUnit})
               </span>
               <div className="flex flex-wrap items-center gap-4 text-xs">
                 <span>R² = {(econometricsSuite.rSquared * 100).toFixed(1)}%</span>
@@ -2240,7 +2241,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   Standardized consensus surprise z-score & bayesian regime posterior engine
                 </span>
                 <span className="text-xs tabular-nums px-2 py-0.5 bg-blue-500/15 text-blue-600 dark:text-blue-300 font-semibold">
-                  QUADRANT: {macroSurpriseSuite.macroQuadrantRegime.replace(/_/g, ' ')}
+                  Quadrant: {toDisplayCase(macroSurpriseSuite.macroQuadrantRegime)}
                 </span>
               </div>
               <p className="text-xs sm:text-sm font-medium text-slate-800 dark:text-slate-200">
@@ -3651,7 +3652,7 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               >
                 <div className="space-y-1">
                   <div className="flex items-center justify-between text-xs tabular-nums text-blue-600 dark:text-blue-400 font-semibold">
-                    <span>{ticket.direction}</span>
+                    <span>{toDisplayCase(ticket.direction)}</span>
                     <span>CONVICTION {ticket.convictionScore0To100}/100</span>
                   </div>
                   <h4 className="text-xs font-semibold text-slate-900 dark:text-white">

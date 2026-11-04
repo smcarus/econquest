@@ -670,7 +670,7 @@ export const DecisionCommandCenterDesk: React.FC<DecisionCommandCenterDeskProps>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs tabular-nums font-semibold px-2 py-0.5 bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300">
-                      CONDITIONAL WEIGHT: {br.conditionalProbabilityPct}%
+                      Conditional weight: {br.conditionalProbabilityPct}%
                     </span>
                     <span className="text-xs tabular-nums font-semibold text-rose-600 dark:text-rose-400">
                       5Y CDS +{br.projected5YCdsWideningBps}bp

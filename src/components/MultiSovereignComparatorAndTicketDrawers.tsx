@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import {
   buildMultiSovereignHeadToHeadComparison,
@@ -614,12 +615,12 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                       }
                       className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white tabular-nums"
                     >
-                      <option value="LONG_CARRY_ROLL">LONG_CARRY_ROLL</option>
-                      <option value="CURVE_STEEPENER">CURVE_STEEPENER</option>
-                      <option value="CURVE_FLATTENER">CURVE_FLATTENER</option>
-                      <option value="BELLY_BUTTERFLY">BELLY_BUTTERFLY</option>
-                      <option value="PAIR_RELATIVE_VALUE">PAIR_RELATIVE_VALUE</option>
-                      <option value="CATALYST_VOL_HEDGE">CATALYST_VOL_HEDGE</option>
+                      <option value="LONG_CARRY_ROLL">Long carry and roll</option>
+                      <option value="CURVE_STEEPENER">Curve steepener</option>
+                      <option value="CURVE_FLATTENER">Curve flattener</option>
+                      <option value="BELLY_BUTTERFLY">Belly butterfly</option>
+                      <option value="PAIR_RELATIVE_VALUE">Pair relative value</option>
+                      <option value="CATALYST_VOL_HEDGE">Catalyst volatility hedge</option>
                     </select>
                   </div>
                 </div>
@@ -696,7 +697,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                           {ticket.secondaryIso3 ? ` vs ${ticket.secondaryIso3}` : ''}
                         </span>
                         <span aria-hidden="true">·</span>
-                        <span className="text-slate-500">{ticket.direction}</span>
+                        <span className="text-slate-500">{toDisplayCase(ticket.direction)}</span>
                         <span aria-hidden="true">·</span>
                         <span className="text-slate-500">Source: {ticket.sourceModuleLabel}</span>
                       </div>

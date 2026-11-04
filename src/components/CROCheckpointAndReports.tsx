@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import {
   AIRuntimeConfig,
   CROOverrideState,
@@ -575,8 +576,8 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs tabular-nums">
                 <span className="text-blue-400">Supreme council decision verdict</span>
                 <span>
-                  VERDICT: <strong className="text-amber-400">{sc.decisionVerdict}</strong> · COMPOSITE RISK:{' '}
-                  <strong>{sc.compositeRiskScore.toFixed(2)} / 1.00</strong> · COHERENCE:{' '}
+                  Verdict: <strong className="text-amber-400">{toDisplayCase(sc.decisionVerdict)}</strong> · Composite risk:{' '}
+                  <strong>{sc.compositeRiskScore.toFixed(2)} / 1.00</strong> · Coherence:{' '}
                   <strong>{(sc.globalCoherenceScore * 100).toFixed(0)}%</strong>
                 </span>
               </div>
@@ -630,7 +631,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                           {dp.requiredActionIfTriggered}
                         </td>
                         <td className="py-2.5 px-3 tabular-nums font-semibold text-amber-600 dark:text-amber-400 whitespace-nowrap">
-                          {dp.urgency}
+                          {toDisplayCase(dp.urgency)}
                         </td>
                       </tr>
                     ))}
@@ -666,7 +667,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                       <div className="flex items-center justify-between font-semibold text-slate-900 dark:text-slate-100">
                         <span>{rec.authority}</span>
                         <span className="tabular-nums text-xs text-blue-600 dark:text-blue-400">
-                          {rec.priority}
+                          {toDisplayCase(rec.priority)}
                         </span>
                       </div>
                       <p className="text-slate-600 dark:text-slate-300">
@@ -684,7 +685,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               <div className="border border-slate-200 dark:border-slate-800 p-4 space-y-3 bg-slate-50/40 dark:bg-slate-950/40">
                 <div className="flex items-center justify-between text-xs tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">
                   <span>FOR THE ASSET MANAGER &amp; MACRO TRADER</span>
-                  <span>STANCE: {sc.marketTranslationLayer.regimeStance}</span>
+                  <span>Stance: {toDisplayCase(sc.marketTranslationLayer.regimeStance)}</span>
                 </div>
                 <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                   Portfolio Trade Execution Tickets &amp; Risk Guardian Audit
@@ -698,7 +699,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
-                          {trd.ticketId} · [{trd.direction}] {trd.instrument}
+                          {trd.ticketId} · [{toDisplayCase(trd.direction)}] {trd.instrument}
                         </span>
                         <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 shrink-0">
                           Weight: {trd.sizingWeightPct}% ({trd.targetHorizon})
@@ -724,7 +725,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <div className="flex items-center justify-between tabular-nums font-semibold text-emerald-400">
                     <span className="inline-flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Risk Guardian Portfolio Audit: {sc.marketTranslationLayer.riskGuardianCheck.approvalStatus}</span>
+                      <span>Risk Guardian Portfolio Audit: {toDisplayCase(sc.marketTranslationLayer.riskGuardianCheck.approvalStatus)}</span>
                     </span>
                     <span>
                       Max DD Est: -{sc.marketTranslationLayer.riskGuardianCheck.maxDrawdownEstimatePct}% | Haircut:{' '}

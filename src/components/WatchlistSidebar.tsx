@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { toDisplayCase } from '../utils/displayCase';
 import { WatchlistGroup, WatchlistItem } from '../types/council';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import { Plus, Trash2, ArrowUpRight, FolderPlus, Search } from 'lucide-react';
@@ -383,7 +384,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                           : 'text-emerald-600 dark:text-emerald-400'
                       }`}
                     >
-                      {item.alertStatus} · {(item.compositeRisk * 100).toFixed(0)}
+                      {toDisplayCase(item.alertStatus)} · {(item.compositeRisk * 100).toFixed(0)}
                     </span>
                     {activeList.items.length > 1 && (
                       <button
