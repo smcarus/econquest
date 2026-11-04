@@ -82,6 +82,7 @@ import {
   findTabForDesk,
 } from './components/WorkspacePage';
 import { PortfolioSummary } from './components/PortfolioSummary';
+import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { RolePicker } from './components/RolePicker';
@@ -2828,6 +2829,19 @@ export default function App() {
               }
               summary={
                 appArea === 'portfolio' ? (
+                  <div className="space-y-4">
+                  <BookBriefPanel
+                    key={userRole === 'UHNW' ? 'client' : 'pm'}
+                    holdings={holdings}
+                    riskLookup={holdingsRiskLookup}
+                    watchlist={activeWatchlistItems}
+                    stagedTickets={stagedTradeTickets}
+                    view={userRole === 'UHNW' ? 'client' : 'pm'}
+                    onWriteReport={(view) => {
+                      setRequestedReport(view === 'client' ? 'client_review' : 'book');
+                      openWorkspace('reports', 'ic_memo_builder');
+                    }}
+                  />
                   <PortfolioSummary
                     watchlistItems={activeWatchlistItems}
                     riskLookup={holdingsRiskLookup}
@@ -2839,6 +2853,7 @@ export default function App() {
                       openCountryPage();
                     }}
                   />
+                  </div>
                 ) : undefined
               }
               renderDesk={(d) =>

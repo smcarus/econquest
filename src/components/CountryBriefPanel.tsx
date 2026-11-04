@@ -67,53 +67,62 @@ export const CountryBriefPanel: React.FC<{
             </button>
           </div>
         </header>
-        <div className="p-4 space-y-2">
-          <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
-          {brief.sampleWarning && (
-            <p className="text-xs px-2 py-1.5 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
-              {brief.sampleWarning}
-            </p>
-          )}
-          <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
-            {brief.judgements.map((j) => (
-              <li key={j}>{j}</li>
-            ))}
-          </ul>
-          <p className="ui-label">These observations are simple rules on the figures below, not a forecast.</p>
-        </div>
+        <BriefSummary brief={brief} />
       </section>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {brief.groups.map((g) => (
-          <section key={g.title} className="ui-panel">
-            <header className="ui-panel-header">
-              <h3 className="ui-section-title">{g.title}</h3>
-            </header>
-            <table className="w-full text-sm">
-              <caption className="sr-only">{g.title}</caption>
-              <tbody>
-                {g.rows.map((r) => (
-                  <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
-                    <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
-                      {r.label}
-                      <span
-                        className={`block text-xs ${
-                          r.verified ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
-                        }`}
-                      >
-                        {r.source}
-                      </span>
-                    </th>
-                    <td className="px-4 py-1.5 text-right align-top font-medium text-slate-900 dark:text-white [font-variant-numeric:tabular-nums]">
-                      {r.value}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-        ))}
-      </div>
+      <BriefGroups brief={brief} />
     </div>
   );
 };
+
+/** Headline, sample warning and observations, inside a brief panel. */
+export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
+  <div className="p-4 space-y-2">
+    <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
+    {brief.sampleWarning && (
+      <p className="text-xs px-2 py-1.5 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
+        {brief.sampleWarning}
+      </p>
+    )}
+    <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+      {brief.judgements.map((j) => (
+        <li key={j}>{j}</li>
+      ))}
+    </ul>
+    <p className="ui-label">These observations are simple rules on the figures below, not a forecast.</p>
+  </div>
+);
+
+/** The figure tables of a brief, each row with its source under the label. */
+export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    {brief.groups.map((g) => (
+      <section key={g.title} className="ui-panel">
+        <header className="ui-panel-header">
+          <h3 className="ui-section-title">{g.title}</h3>
+        </header>
+        <table className="w-full text-sm">
+          <caption className="sr-only">{g.title}</caption>
+          <tbody>
+            {g.rows.map((r) => (
+              <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
+                  {r.label}
+                  <span
+                    className={`block text-xs ${
+                      r.verified ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                    }`}
+                  >
+                    {r.source}
+                  </span>
+                </th>
+                <td className="px-4 py-1.5 text-right align-top font-medium text-slate-900 dark:text-white [font-variant-numeric:tabular-nums]">
+                  {r.value}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+    ))}
+  </div>
+);
