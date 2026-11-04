@@ -12,7 +12,7 @@ import { cdsSourceNote, yieldSourceHelp, yieldSourceNote } from '../utils/watchl
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
-import { AskCouncilPanel } from './AskCouncilPanel';
+import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 
 /**
@@ -130,6 +130,8 @@ export const TodayPage: React.FC<{
   onOpenWatchlistManager: () => void;
   /** Opens Reports on the council brief just saved. */
   onSendCouncilToReports?: () => void;
+  /** The full council on the open country, run and approved inside Ask the council. */
+  fullCouncil?: FullCouncilStep;
   /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
   coreOnly?: boolean;
 }> = ({
@@ -142,6 +144,7 @@ export const TodayPage: React.FC<{
   onOpenTickets,
   onOpenWatchlistManager,
   onSendCouncilToReports,
+  fullCouncil,
   coreOnly = false,
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
@@ -216,6 +219,7 @@ export const TodayPage: React.FC<{
         items={edgeItems}
         onOpenCountry={(item) => onOpenCountry(item, 'macro')}
         onSendToReports={() => onSendCouncilToReports?.()}
+        fullCouncil={fullCouncil}
       />
 
       <Card
