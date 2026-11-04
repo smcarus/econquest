@@ -2758,7 +2758,7 @@ export default function App() {
               onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
-              briefView="economist"
+              briefView={userRole === 'BANKER' ? 'banker' : 'economist'}
               onWriteNote={(view) => {
                 setRequestedReport(view);
                 openWorkspace('reports', 'ic_memo_builder');
@@ -2839,6 +2839,7 @@ export default function App() {
                     stagedTickets={stagedTradeTickets}
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
+                    peers={activeWatchlistItems}
                     defaultAudience={requestedReport || role.report}
                   />
                 ) : (

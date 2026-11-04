@@ -331,7 +331,7 @@ export const CountryPage: React.FC<{
         </div>
       )}
 
-      {tab.id === 'brief' && <CountryBriefPanel run={run} view={briefView} onWriteNote={onWriteNote} />}
+      {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 
       {/* Desk picker for this tab */}
       {tab.desks.length > 1 && (
