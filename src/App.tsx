@@ -67,6 +67,7 @@ import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { TodayPage } from './components/TodayPage';
 import {
   COUNTRY_TABS,
+  DEFAULT_COUNTRY_TAB,
   CountryPage,
   CountryTabId,
   findCountryTabForDesk,
@@ -82,7 +83,7 @@ import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { RolePicker } from './components/RolePicker';
 import { PresentMode } from './components/PresentMode';
-import { getRole, loadRole, saveRole, USER_ROLES, type UserRoleId, type WorkflowArea } from './data/roles';
+import { getRole, loadRole, saveRole, USER_ROLES, type ReportTemplate, type UserRoleId, type WorkflowArea } from './data/roles';
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
@@ -585,6 +586,8 @@ export default function App() {
   );
   const [portfolioTab, setPortfolioTab] = useState<string>(() => (userRole && role.home.portfolioTab) || PORTFOLIO_TABS[0].id);
   const [reportsTab, setReportsTab] = useState<string>(() => (userRole && role.home.reportsTab) || REPORTS_TABS[0].id);
+  // Report template asked for from a Country brief; otherwise the role's own template.
+  const [requestedReport, setRequestedReport] = useState<ReportTemplate | null>(null);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
@@ -607,13 +610,14 @@ export default function App() {
     const r = getRole(id);
     saveRole(id);
     setUserRole(id);
+    setRequestedReport(null);
     setActivePersona(r.persona);
     if (r.home.reportsTab) setReportsTab(r.home.reportsTab);
     if (r.home.portfolioTab) setPortfolioTab(r.home.portfolioTab);
     if (r.home.area === 'country') {
-      const tab = COUNTRY_TABS.find((t) => t.id === r.home.countryTab) || COUNTRY_TABS[0];
+      const tab = COUNTRY_TABS.find((t) => t.id === r.home.countryTab) || DEFAULT_COUNTRY_TAB;
       setCountryTab(tab.id);
-      setActiveNavSection(tab.desks[0] as NavSectionId);
+      if (tab.desks[0]) setActiveNavSection(tab.desks[0] as NavSectionId);
       setAppArea('country');
     } else if (r.home.area === 'portfolio' || r.home.area === 'reports') {
       const tabs = r.home.area === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
@@ -643,15 +647,17 @@ export default function App() {
       window.scrollTo({ top: 0 });
       return;
     }
-    const tab = (deskId && findCountryTabForDesk(deskId)) || COUNTRY_TABS[0];
+    // No desk asked for: open on the role's own start tab (the Brief for economists and bankers).
+    const roleTab = userRole && role.home.area === 'country' ? COUNTRY_TABS.find((t) => t.id === role.home.countryTab) : undefined;
+    const tab = (deskId && findCountryTabForDesk(deskId)) || roleTab || DEFAULT_COUNTRY_TAB;
     setCountryTab(tab.id);
-    setActiveNavSection((deskId && tab.desks.includes(deskId) ? deskId : tab.desks[0]) as NavSectionId);
+    if (tab.desks.length) setActiveNavSection((deskId && tab.desks.includes(deskId) ? deskId : tab.desks[0]) as NavSectionId);
     setAppArea('country');
     window.scrollTo({ top: 0 });
   };
   const returnToCountryPage = () => {
-    const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || COUNTRY_TABS[0];
-    if (!tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
+    const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || DEFAULT_COUNTRY_TAB;
+    if (tab.desks.length && !tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
     setAppArea('country');
   };
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
@@ -2741,8 +2747,8 @@ export default function App() {
               activeDesk={activeNavSection}
               onChangeTab={(tab) => {
                 setCountryTab(tab);
-                const cfg = COUNTRY_TABS.find((t) => t.id === tab) || COUNTRY_TABS[0];
-                setActiveNavSection(cfg.desks[0] as NavSectionId);
+                const cfg = COUNTRY_TABS.find((t) => t.id === tab) || DEFAULT_COUNTRY_TAB;
+                if (cfg.desks[0]) setActiveNavSection(cfg.desks[0] as NavSectionId);
               }}
               onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
               onSelectCountry={handleSelectSovereign}
@@ -2752,6 +2758,11 @@ export default function App() {
               onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
+              briefView="economist"
+              onWriteNote={(view) => {
+                setRequestedReport(view);
+                openWorkspace('reports', 'ic_memo_builder');
+              }}
               renderDesk={(d) => (
                 <Suspense key={d} fallback={<DeskLoading />}>
                   <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
@@ -2823,12 +2834,12 @@ export default function App() {
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
                   <IcMemoBuilder
-                    key={d}
+                    key={`${d}-${requestedReport || role.report}`}
                     run={run}
                     stagedTickets={stagedTradeTickets}
                     holdings={holdings}
                     riskLookup={holdingsRiskLookup}
-                    defaultAudience={userRole === 'UHNW' ? 'client' : 'ic'}
+                    defaultAudience={requestedReport || role.report}
                   />
                 ) : (
                   <Suspense key={d} fallback={<DeskLoading />}>

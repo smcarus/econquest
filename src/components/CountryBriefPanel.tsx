@@ -1,0 +1,89 @@
+import React, { useMemo } from 'react';
+import { FileText } from 'lucide-react';
+import type { CouncilAssessmentRun } from '../types/council';
+import { economistBrief, type CountryBrief } from '../utils/countryNotes';
+
+export type BriefView = 'economist';
+
+const VIEW_INFO: Record<BriefView, { label: string; note: string; cta: string }> = {
+  economist: {
+    label: 'Economist',
+    note: 'Growth, inflation and policy, the fiscal path and the external position.',
+    cta: 'Write the country note',
+  },
+};
+
+/**
+ * The start view for a role on the Country page: the figures that role works from, each with
+ * its source, a few plain observations, and a button into the matching report template.
+ */
+export const CountryBriefPanel: React.FC<{
+  run: CouncilAssessmentRun;
+  view: BriefView;
+  onWriteNote: (view: BriefView) => void;
+}> = ({ run, view, onWriteNote }) => {
+  const brief: CountryBrief = useMemo(() => economistBrief(run), [run]);
+  const info = VIEW_INFO[view];
+
+  return (
+    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+      <section className="ui-panel">
+        <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <h2 className="ui-section-title">{info.label} brief</h2>
+            <p className="ui-label">{info.note}</p>
+          </div>
+          <button type="button" className="ui-btn ui-btn-primary" onClick={() => onWriteNote(view)}>
+            <FileText className="w-3.5 h-3.5" /> {info.cta}
+          </button>
+        </header>
+        <div className="p-4 space-y-2">
+          <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
+          {brief.sampleWarning && (
+            <p className="text-xs px-2 py-1.5 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
+              {brief.sampleWarning}
+            </p>
+          )}
+          <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
+            {brief.judgements.map((j) => (
+              <li key={j}>{j}</li>
+            ))}
+          </ul>
+          <p className="ui-label">These observations are simple rules on the figures below, not a forecast.</p>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {brief.groups.map((g) => (
+          <section key={g.title} className="ui-panel">
+            <header className="ui-panel-header">
+              <h3 className="ui-section-title">{g.title}</h3>
+            </header>
+            <table className="w-full text-sm">
+              <caption className="sr-only">{g.title}</caption>
+              <tbody>
+                {g.rows.map((r) => (
+                  <tr key={r.label} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
+                    <th scope="row" className="w-2/5 px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
+                      {r.label}
+                    </th>
+                    <td className="px-2 py-1.5 text-right font-medium text-slate-900 dark:text-white whitespace-nowrap [font-variant-numeric:tabular-nums]">
+                      {r.value}
+                    </td>
+                    <td
+                      className={`px-4 py-1.5 text-right text-xs ${
+                        r.verified ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'
+                      }`}
+                    >
+                      {r.source}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+};

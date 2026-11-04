@@ -6,6 +6,8 @@ import type { UserPersonaId } from '../types/council';
 
 export type UserRoleId = 'PM' | 'ECONOMIST' | 'BANKER' | 'MULTILATERAL' | 'UHNW';
 export type WorkflowArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
+/** Which report template opens first on Reports > Memos and notes. */
+export type ReportTemplate = 'ic' | 'client' | 'economist';
 
 export interface UserRole {
   id: UserRoleId;
@@ -14,6 +16,7 @@ export interface UserRole {
   description: string;
   persona: UserPersonaId;
   home: { area: WorkflowArea; countryTab?: string; portfolioTab?: string; reportsTab?: string };
+  report: ReportTemplate;
   nav: WorkflowArea[];
 }
 
@@ -24,14 +27,16 @@ export const USER_ROLES: UserRole[] = [
     description: 'Start with what changed overnight, then the book and the IC memo.',
     persona: 'INSTITUTIONAL_PM_IC',
     home: { area: 'today', reportsTab: 'ic' },
+    report: 'ic',
     nav: ['today', 'country', 'portfolio', 'reports', 'desks'],
   },
   {
     id: 'ECONOMIST',
     label: 'Economist',
-    description: 'Start with a country: debt dynamics, policy and forecasts.',
+    description: 'Start with a country brief: growth, policy, the fiscal path and the external position, then a country note.',
     persona: 'POLICY_RESEARCHER',
-    home: { area: 'country', countryTab: 'debt', reportsTab: 'research' },
+    home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
+    report: 'economist',
     nav: ['country', 'today', 'reports', 'desks', 'portfolio'],
   },
   {
@@ -40,6 +45,7 @@ export const USER_ROLES: UserRole[] = [
     description: 'Start with a country’s debt, ratings and restructuring, then a pitch.',
     persona: 'INSTITUTIONAL_PM_IC',
     home: { area: 'country', countryTab: 'debt', reportsTab: 'ic' },
+    report: 'ic',
     nav: ['country', 'reports', 'today', 'portfolio', 'desks'],
   },
   {
@@ -47,7 +53,8 @@ export const USER_ROLES: UserRole[] = [
     label: 'Multilateral or official sector',
     description: 'Start with debt sustainability and policy, then the written assessment.',
     persona: 'POLICY_RESEARCHER',
-    home: { area: 'country', countryTab: 'debt', reportsTab: 'research' },
+    home: { area: 'country', countryTab: 'brief', reportsTab: 'ic' },
+    report: 'economist',
     nav: ['country', 'reports', 'today', 'desks', 'portfolio'],
   },
   {
@@ -56,6 +63,7 @@ export const USER_ROLES: UserRole[] = [
     description: 'Start with the client’s holdings and what could hurt them, then a client note.',
     persona: 'INSTITUTIONAL_PM_IC',
     home: { area: 'portfolio', portfolioTab: 'book', reportsTab: 'ic' },
+    report: 'client',
     nav: ['portfolio', 'today', 'country', 'reports', 'desks'],
   },
 ];

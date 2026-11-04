@@ -44,8 +44,8 @@ export const PORTFOLIO_TABS: WorkspaceTab[] = [
 export const REPORTS_TABS: WorkspaceTab[] = [
   {
     id: 'ic',
-    label: 'IC memo & pitchbook',
-    hint: 'Turn the view, your holdings and staged tickets into a document for the investment committee.',
+    label: 'Memos and notes',
+    hint: 'Turn the current view into a document: IC memo, client note or country note. Every figure names its source.',
     desks: ['ic_memo_builder', 'ic_pitchbook_dossier_exporter', 'persona_guided_playbook_cockpit'],
   },
   {
