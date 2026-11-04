@@ -60,9 +60,11 @@ export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snap
       {status.officialYield && (
         <span
           title={
-            status.officialYield.frequency === 'daily'
-              ? `The 10-year yield is ${describeOfficialYield(status.officialYield).long}. It is the Treasury's own offer rate on that bond, used because Brazil has no free benchmark series.`
-              : 'The 10-year government bond yield is the official OECD monthly average, published on FRED. It is usually one to two months behind.'
+            /EVDS/.test(status.officialYield.source)
+              ? `The 10-year yield is ${describeOfficialYield(status.officialYield).long}, series ${status.officialYield.seriesId}, from the central bank's data service.`
+              : status.officialYield.frequency === 'daily'
+                ? `The 10-year yield is ${describeOfficialYield(status.officialYield).long}. It is the Treasury's own offer rate on that bond, used because Brazil has no free benchmark series.`
+                : 'The 10-year government bond yield is the official OECD monthly average, published on FRED. It is usually one to two months behind.'
           }
           className={`inline-flex items-center px-2 py-0.5 text-xs font-semibold border ${MODE_CLASS.live}`}
         >

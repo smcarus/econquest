@@ -49,8 +49,8 @@ export function yieldSourceNote(item: Pick<WatchlistItem, 'yield10YSource' | 'yi
 export function yieldSourceHelp(item: Pick<WatchlistItem, 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency'>): string {
   if (item.yield10YSource === 'official') {
     return item.yield10YFrequency === 'daily'
-      ? `Official Treasury rate on a named 10-year bond, ${yieldSourceNote(item).replace('Official, ', '')}.`
-      : `Official OECD monthly average 10-year government bond yield, published on FRED (${yieldSourceNote(item).replace('Official, ', '')}).`;
+      ? `Official daily 10-year rate from the government or central bank, ${yieldSourceNote(item).replace('Official, ', '')}. Open the country for the exact series.`
+      : `Official monthly average 10-year government bond yield (${yieldSourceNote(item).replace('Official, ', '')}). Open the country for the exact series.`;
   }
   if (item.yield10YSource === 'ai_estimate') return 'Estimate from an AI web search, not a market price.';
   if (item.yield10YSource === 'uploaded') return 'From a file you uploaded.';

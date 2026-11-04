@@ -57,14 +57,16 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import {
   FRED_10Y_SERIES,
-  OFFICIAL_YIELD_SOURCE_LABEL,
+  evdsSeriesUrl,
   fredApiUrl,
   fredCsvUrl,
   parseFredApiLatest,
   parseFredCsvLatest,
   parseTesouroDiretoLatest,
   TESOURO_DIRETO_CSV_URL,
-  TESOURO_YIELD_SOURCE_LABEL,
+  isValidEvdsSeriesCode,
+  officialYieldFeedLabel,
+  parseEvdsLatest,
   type OfficialYieldObservation,
 } from './src/utils/officialYields.ts';
 
@@ -131,13 +133,44 @@ async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObserva
   return obs;
 }
 
-/** Countries with a free official 10Y source wired in. */
+/** Turkey's EVDS feed is on only when the user has set both a key and a series code. */
+function evdsSettings(): { key: string; series: string } | null {
+  const key = (process.env.EVDS_API_KEY || '').trim();
+  const series = (process.env.EVDS_TR10Y_SERIES || '').trim();
+  return key && isValidEvdsSeriesCode(series) ? { key, series } : null;
+}
+
+async function fetchEvdsTurkeyYield(): Promise<OfficialYieldObservation | null> {
+  const cfg = evdsSettings();
+  if (!cfg) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 8000);
+  try {
+    // The key goes only in the "key" header, never in the URL (EVDS returns 403 otherwise).
+    const res = await fetch(evdsSeriesUrl(cfg.series), {
+      signal: controller.signal,
+      headers: { key: cfg.key, Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      console.warn(`[EVDS] Turkey 10Y request failed with HTTP ${res.status}`);
+      return null;
+    }
+    return parseEvdsLatest(await res.json(), cfg.series);
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Countries with an official 10Y source wired in (Turkey only once EVDS is set up). */
 function hasOfficial10YSource(iso3: string): boolean {
-  return iso3 === 'BRA' || Boolean(FRED_10Y_SERIES[iso3]);
+  return iso3 === 'BRA' || Boolean(FRED_10Y_SERIES[iso3]) || (iso3 === 'TUR' && evdsSettings() !== null);
 }
 
 async function fetchOfficial10YYieldUncached(iso3: string): Promise<OfficialYieldObservation | null> {
   if (iso3 === 'BRA') return fetchTesouroDiretoYield();
+  if (iso3 === 'TUR') return fetchEvdsTurkeyYield();
   const seriesId = FRED_10Y_SERIES[iso3];
   if (!seriesId) return null;
   const apiKey = (process.env.FRED_API_KEY || '').trim();
@@ -755,7 +788,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
   if (officialYield) {
     baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct;
     baseline.official10YYield = officialYield;
-    activeSources.push(officialYield.frequency === 'daily' ? TESOURO_YIELD_SOURCE_LABEL : OFFICIAL_YIELD_SOURCE_LABEL);
+    activeSources.push(officialYieldFeedLabel(officialYield));
   }
 
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
