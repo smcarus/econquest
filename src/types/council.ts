@@ -379,6 +379,8 @@ export interface OpenDataSnapshot {
     instrument?: string;
   };
   groundingCitations?: Array<{ title: string; uri: string }>;
+  /** Government external debt falling due, when QEDS or IDS answered (see utils/debtSchedule.ts). */
+  debtSchedule?: import('../utils/debtSchedule').DebtSchedule;
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;

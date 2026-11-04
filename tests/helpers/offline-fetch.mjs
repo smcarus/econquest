@@ -38,5 +38,36 @@ globalThis.fetch = async (input, init = {}) => {
     if (!headers.has('key') || /[?&]key=/i.test(url)) return json({ error: "Required request header 'key' is not present" }, 403);
     return json({ totalCount: 2, items: [{ Tarih: '29-10-2026', TP_TEST_Y10: '31.85' }, { Tarih: '30-10-2026', TP_TEST_Y10: '31.92' }] });
   }
+  // World Bank QEDS (source 22) and IDS (source 6): answer for Indonesia only.
+  if (url.includes('api.worldbank.org') && url.includes('/IDN/')) {
+    if (url.includes('source=22')) {
+      const v = { '03': 3.1e9, '36': 2.4e9, '69': 4.0e9, '0912': 1.5e9 };
+      return json([
+        { page: 1, pages: 1, per_page: 200, total: 8 },
+        ...[Object.entries(v).flatMap(([k, val]) => [
+          { indicator: { id: `DT.AMT.DECT.CD.GG.${k}` }, countryiso3code: 'IDN', date: '2026Q2', value: val },
+          { indicator: { id: `DT.AMT.DECT.CD.GG.${k}` }, countryiso3code: 'IDN', date: '2026Q1', value: val / 2 },
+        ])],
+      ]);
+    }
+    if (url.includes('/sources/6/')) {
+      const rec = (series, year, value) => ({
+        variable: [
+          { concept: 'Country', id: 'IDN' },
+          { concept: 'Series', id: series },
+          { concept: 'Counterpart-Area', id: 'WLD' },
+          { concept: 'Time', id: `YR${year}` },
+        ],
+        value,
+      });
+      return json({
+        page: 1,
+        source: {
+          id: '6',
+          data: [rec('DT.TDS.DPPG.CD', 2027, 25276253138.8), rec('DT.AMT.DPPG.CD', 2027, 17e9), rec('DT.TDS.DPPG.CD', 2028, 29924084687.9)],
+        },
+      });
+    }
+  }
   throw new TypeError(`offline: ${new URL(url).host}`);
 };

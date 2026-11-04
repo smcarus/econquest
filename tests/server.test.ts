@@ -75,6 +75,19 @@ test('with every feed down, a country without an official yield is plainly sampl
   assert.equal(status.yieldSource, 'sample');
 });
 
+test('Indonesia: QEDS and IDS debt falling due are attached and named as live sources', async () => {
+  const s = await snapshot('IDN');
+  assert.equal(s.debtSchedule?.qeds?.asOf, '2026Q2');
+  assert.equal(s.debtSchedule?.qeds?.next12mUsdBn.toFixed(1), '11.0');
+  assert.deepEqual(s.debtSchedule?.ids?.years.map((y) => y.year), [2027, 2028]);
+  const live = s.dataStatus?.verifiedLiveSources || [];
+  assert.ok(live.some((x) => /QEDS/.test(x)) && live.some((x) => /IDS/.test(x)));
+  // These feeds alone do not make the IMF or World Bank indicator feeds count as live.
+  const st = getSnapshotDataStatus(s);
+  assert.equal(st.isFeedLive('worldbank'), false);
+  assert.equal(st.isFeedLive('imf'), false);
+});
+
 test('Mexico: the FRED API answers and its value replaces the sample yield', async () => {
   const s = await snapshot('MEX');
   assert.equal(s.official10YYield?.valuePct, 9.35);

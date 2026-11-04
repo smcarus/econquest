@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
@@ -131,6 +132,33 @@ async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObserva
   const obs = await fetchOfficial10YYieldUncached(iso3);
   officialYieldCache.set(iso3, { at: Date.now(), obs });
   return obs;
+}
+
+/**
+ * Government external debt falling due (QEDS quarterly schedule, IDS yearly projections), both from
+ * the World Bank API with no key. These change quarterly at most, so answers are kept for 12 hours
+ * and misses for an hour. Each source is tried on its own; either can be missing.
+ */
+const debtScheduleCache = new Map<string, { at: number; value: DebtSchedule | null }>();
+async function fetchJsonWithTimeout(url: string, ms = 8000): Promise<unknown | null> {
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
+  const hit = debtScheduleCache.get(iso3);
+  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  const [qedsJson, idsJson] = await Promise.all([fetchJsonWithTimeout(qedsUrl(iso3)), fetchJsonWithTimeout(idsUrl(iso3))]);
+  const qeds = qedsJson ? parseQeds(qedsJson) : null;
+  const ids = idsJson ? parseIds(idsJson, new Date().getUTCFullYear()) : null;
+  const value: DebtSchedule | null =
+    qeds || ids ? { ...(qeds ? { qeds } : {}), ...(ids ? { ids } : {}), fetchedAt: new Date().toISOString() } : null;
+  debtScheduleCache.set(iso3, { at: Date.now(), value });
+  return value;
 }
 
 /** Turkey's EVDS feed is on only when the user has set both a key and a series code. */
@@ -789,6 +817,15 @@ async function fetchLiveOpenDataSnapshotNetwork(
     baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct;
     baseline.official10YYield = officialYield;
     activeSources.push(officialYieldFeedLabel(officialYield));
+  }
+
+  // 6c. Government external debt falling due (QEDS, IDS). Replaces nothing: the brief shows these
+  // beside the sample maturity profile, which stays labelled sample.
+  const debtSchedule = await fetchDebtSchedule(normalizedIso);
+  if (debtSchedule) {
+    baseline.debtSchedule = debtSchedule;
+    if (debtSchedule.qeds) activeSources.push(`${QEDS_LABEL} (government external debt due by quarter)`);
+    if (debtSchedule.ids) activeSources.push(`${IDS_LABEL} (public external debt service by year)`);
   }
 
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors

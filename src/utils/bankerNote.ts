@@ -3,6 +3,7 @@ import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
 import { yieldSourceNote } from './watchlistYield';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
+import { quarterLabel } from './debtSchedule';
 import {
   calendarSection,
   groupLines,
@@ -20,8 +21,9 @@ import {
 /**
  * Banker's view of a sovereign issuer: can it issue, how much does it need, when to go,
  * and how it prices against peers. Same source-tag rules as the economist brief.
- * The debt maturity profile is a built-in sample for every country (no free feed), and is
- * labelled so.
+ * Government external debt falling due comes from QEDS (quarterly schedule) and IDS (yearly
+ * projections) when those answered; the full maturity profile, domestic debt included, is a
+ * built-in sample for every country and is labelled so.
  */
 
 /** CDS bands used for the market-access reading. */
@@ -50,6 +52,15 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
   const next12m = roll.buckets.slice(0, 4).reduce((a, b) => a + b.totalUsdBn, 0);
   const peak = roll.buckets.reduce((a, b) => (b.totalUsdBn > a.totalUsdBn ? b : a), roll.buckets[0]);
   const events = upcomingOfficialEvents([run.iso3], 60, now);
+  const ds = open.debtSchedule;
+  const qeds = ds?.qeds;
+  const qedsPeak = qeds ? qeds.buckets.reduce((a, b) => (b.usdBn > a.usdBn ? b : a), qeds.buckets[0]) : undefined;
+  const thisYear = now.getUTCFullYear();
+  const idsYear =
+    ds?.ids?.years.find((y) => y.year > thisYear && y.debtServiceUsdBn !== undefined) ||
+    ds?.ids?.years.find((y) => y.debtServiceUsdBn !== undefined);
+  const QEDS_SRC = qeds ? `QEDS (World Bank/IMF), as of end of ${quarterLabel(qeds.asOf)}` : '';
+  const IDS_SRC = 'World Bank IDS projection';
 
   // Distress signals, each a simple stated threshold.
   const signals: string[] = [];
@@ -77,9 +88,23 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
 
   const j: string[] = [];
   j.push(`Market access is ${band.label} (5Y CDS ${Math.round(mkt.cds5YSpreadBps)} bps, 10Y yield ${pct(mkt.sovereign10YBondYieldPct, 2)}).`);
-  j.push(
-    `About $${next12m.toFixed(0)} bn falls due in the next 12 months against $${roll.liquidFxReservesUsdBn.toFixed(0)} bn of liquid reserves. The heaviest period is ${peak.periodLabel} ($${peak.totalUsdBn.toFixed(0)} bn).`
-  );
+  if (qeds && qedsPeak) {
+    j.push(
+      `Government external debt due in the 12 months from the end of ${quarterLabel(qeds.asOf)} is $${qeds.next12mUsdBn.toFixed(1)} bn (QEDS); the heaviest quarter is ${
+        qedsPeak.label === 'Next 3 months' ? 'the first three months' : `${qedsPeak.label} ahead`
+      } ($${qedsPeak.usdBn.toFixed(1)} bn).`
+    );
+  } else {
+    j.push(
+      `About $${next12m.toFixed(0)} bn falls due in the next 12 months against $${roll.liquidFxReservesUsdBn.toFixed(0)} bn of liquid reserves (sample maturity profile). The heaviest period is ${peak.periodLabel} ($${peak.totalUsdBn.toFixed(0)} bn).`
+    );
+  }
+  if (idsYear?.debtServiceUsdBn !== undefined)
+    j.push(
+      `The World Bank projects $${idsYear.debtServiceUsdBn.toFixed(1)} bn of public external debt service in ${idsYear.year}${
+        idsYear.principalUsdBn !== undefined ? `, of which $${idsYear.principalUsdBn.toFixed(1)} bn is principal` : ''
+      }.`
+    );
   j.push(
     events.length
       ? `Avoid pricing around ${events
@@ -102,7 +127,9 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
   );
 
   return {
-    headline: `${run.countryName}: market access ${band.open ? 'open' : 'likely closed'}, about $${next12m.toFixed(0)} bn due in 12 months, ${
+    headline: `${run.countryName}: market access ${band.open ? 'open' : 'likely closed'}, ${
+      qeds ? `$${qeds.next12mUsdBn.toFixed(1)} bn of government external debt due in 12 months` : `about $${next12m.toFixed(0)} bn due in 12 months (sample)`
+    }, ${
       signals.length ? `${signals.length} sign${signals.length > 1 ? 's' : ''} of distress` : 'no signs of distress'
     }.`,
     judgements: j,
@@ -123,7 +150,25 @@ export function bankerBrief(run: CouncilAssessmentRun, peers: WatchlistItem[], n
       {
         title: 'Financing need',
         rows: [
-          row(status, 'Due in next 12 months', `$${next12m.toFixed(1)} bn`, 'sample'),
+          ...(qeds
+            ? [
+                { label: 'Government external debt due, next 12 months', value: `$${qeds.next12mUsdBn.toFixed(1)} bn`, source: QEDS_SRC, verified: true },
+                ...qeds.buckets.map((b) => ({ label: `Of which ${b.label.toLowerCase()}`, value: `$${b.usdBn.toFixed(1)} bn`, source: QEDS_SRC, verified: true })),
+              ]
+            : []),
+          ...(idsYear?.debtServiceUsdBn !== undefined
+            ? [
+                {
+                  label: `Public external debt service, ${idsYear.year}`,
+                  value: `$${idsYear.debtServiceUsdBn.toFixed(1)} bn${
+                    idsYear.principalUsdBn !== undefined ? ` (principal $${idsYear.principalUsdBn.toFixed(1)} bn)` : ''
+                  }`,
+                  source: IDS_SRC,
+                  verified: true,
+                },
+              ]
+            : []),
+          row(status, qeds ? 'All debt due in 12 months, incl. domestic' : 'Due in next 12 months', `$${next12m.toFixed(1)} bn`, 'sample'),
           row(status, 'Heaviest period', `${peak.periodLabel}, $${peak.totalUsdBn.toFixed(1)} bn`, 'sample'),
           row(status, 'Average maturity', `${roll.weightedAvgMaturityYears.toFixed(1)} years`, 'sample'),
           row(status, 'Floating-rate share', pct(roll.floatingRateDebtSharePct, 0), 'sample'),

@@ -23,6 +23,7 @@
 - Optional: `GEMINI_API_KEY` in `.env` for live AI Council Phase 1–3 synthesis and MPC/IMF Article IV Document AI parsing (deterministic econometric engines and multilateral open-data APIs run out-of-the-box).
 - Optional: `FRED_API_KEY` in `.env` (free from fred.stlouisfed.org) to fetch official OECD 10-year yields through the FRED API. Without it the app uses FRED's public CSV download for the same figures.
 - Optional: `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` in `.env` for Turkey's official 10-year yield from the central bank's EVDS service (free key from evds3.tcmb.gov.tr; the series code is the one EVDS shows for the bond yield you want, starting with `TP.`). Without both, Turkey's yield is shown as a sample value.
+- No key needed: government external debt falling due comes from the World Bank API. QEDS (source 22, compiled with the IMF) gives the next 12 months by quarter for countries that report to the IMF's SDDS; IDS (source 6, low- and middle-income countries only) gives projected public external debt service by year. Where neither answers, the banker brief keeps its sample maturity profile, labelled sample.
 
 ### Installation & Startup
 
