@@ -462,22 +462,16 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               <button
                 type="button"
                 onClick={() => setFxRegimeMode('FLOATING')}
-                className={`px-2.5 py-1 transition-colors ${
-                  fxRegimeMode === 'FLOATING'
-                    ? 'bg-blue-600 text-white font-semibold'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
+                aria-pressed={fxRegimeMode === 'FLOATING'}
+                className="ui-pill"
               >
                 Floating FX Weights
               </button>
               <button
                 type="button"
                 onClick={() => setFxRegimeMode('MANAGED_PEG')}
-                className={`px-2.5 py-1 transition-colors ${
-                  fxRegimeMode === 'MANAGED_PEG'
-                    ? 'bg-blue-600 text-white font-semibold'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                }`}
+                aria-pressed={fxRegimeMode === 'MANAGED_PEG'}
+                className="ui-pill"
               >
                 Fixed / Managed Peg Weights
               </button>
@@ -597,11 +591,8 @@ export const InstitutionalRiskModules: React.FC<InstitutionalRiskModulesProps> =
               key={tab.id}
               type="button"
               onClick={() => setSubView(tab.id as SovereignSubView)}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                subView === tab.id
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
+              aria-pressed={subView === tab.id}
+              className="ui-pill whitespace-nowrap shrink-0"
             >
               {tab.label}
             </button>

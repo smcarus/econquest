@@ -1062,11 +1062,8 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               key={tab.id}
               type="button"
               onClick={() => setSubView(tab.id as GeoSubViewMode)}
-              className={`px-3 py-1.5 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                subView === tab.id
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-              }`}
+              aria-pressed={subView === tab.id}
+              className="ui-pill whitespace-nowrap shrink-0"
             >
               {tab.label}
             </button>
@@ -1191,11 +1188,8 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                           setPanCenter(pt);
                         }
                       }}
-                      className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
-                        activeTheaterId === preset.id
-                          ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
-                      }`}
+                      aria-pressed={activeTheaterId === preset.id}
+                      className="ui-pill"
                     >
                       {preset.label}
                     </button>
@@ -1207,11 +1201,8 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                       setZoomLevel(2.4);
                       setPanCenter(sovPt);
                     }}
-                    className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
-                      activeTheaterId === 'ACTIVE_SOVEREIGN'
-                        ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                        : 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 hover:border-blue-500'
-                    }`}
+                    aria-pressed={activeTheaterId === 'ACTIVE_SOVEREIGN'}
+                    className="ui-pill"
                   >
                     Focus {run.iso3}
                   </button>
@@ -3224,11 +3215,8 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     key={trig.id}
                     type="button"
                     onClick={() => setSelectedIrfTrigger(trig.id)}
-                    className={`px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                      selectedIrfTrigger === trig.id
-                        ? 'bg-blue-600 text-white font-semibold'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
+                    aria-pressed={selectedIrfTrigger === trig.id}
+                    className="ui-pill whitespace-nowrap shrink-0"
                   >
                     {trig.label}
                   </button>

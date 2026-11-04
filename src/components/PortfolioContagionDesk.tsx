@@ -167,11 +167,8 @@ export const PortfolioContagionDesk: React.FC<PortfolioContagionDeskProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => handleLoadPreset(preset.id)}
-                className={`px-3 py-1.5 text-xs font-medium border transition-colors whitespace-nowrap shrink-0 ${
-                  selectedPresetId === preset.id
-                    ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={selectedPresetId === preset.id}
+                className="ui-pill whitespace-nowrap shrink-0"
               >
                 {preset.name}
               </button>

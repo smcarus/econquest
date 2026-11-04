@@ -413,11 +413,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                     key={ccy}
                     type="button"
                     onClick={() => handleConfigChange('fundingLegCurrency', ccy)}
-                    className={`px-2 py-0.5 text-xs tabular-nums font-medium transition-colors cursor-pointer ${
-                      strategyConfig.fundingLegCurrency === ccy
-                        ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                    }`}
+                    aria-pressed={strategyConfig.fundingLegCurrency === ccy}
+                    className="ui-pill"
                   >
                     {ccy}
                   </button>
@@ -675,11 +672,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => handleLiquidityPresetSelect(preset.id)}
-                className={`px-2.5 py-1 text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                  stressParams.presetId === preset.id
-                    ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={stressParams.presetId === preset.id}
+                className="ui-pill whitespace-nowrap shrink-0"
               >
                 {preset.label}
               </button>
@@ -1244,11 +1238,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   key={grp}
                   type="button"
                   onClick={() => setRegionFilter(grp)}
-                  className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                    regionFilter === grp
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  aria-pressed={regionFilter === grp}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   {grp === 'ALL' ? 'All Corridors (12)' : `${grp} Desk`}
                 </button>
@@ -1268,11 +1259,8 @@ export const MarketMakerAlphaDesk: React.FC<MarketMakerAlphaDeskProps> = ({
                   key={b.id}
                   type="button"
                   onClick={() => setBookFilter(b.id)}
-                  className={`px-2.5 py-1 text-xs font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
-                    bookFilter === b.id
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  aria-pressed={bookFilter === b.id}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   {b.label}
                 </button>

@@ -232,11 +232,8 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <button
                   key={p.id}
                   onClick={() => onChangePersona(p.id)}
-                  className={`flex items-center gap-2 px-3 py-2  border text-left transition-all ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600 '
-                      : 'bg-slate-50 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
-                  }`}
+                  aria-pressed={isSelected}
+                  className="ui-pill flex items-center gap-2 text-left"
                 >
                   <span>{p.icon}</span>
                   <div>
@@ -264,11 +261,8 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                 <button
                   key={tab.id}
                   onClick={() => handleSelectSubTab(tab.id)}
-                  className={`flex items-center justify-between px-3.5 py-2.5  text-left border transition-all ${
-                    isActive
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-blue-600 dark:border-blue-500 '
-                      : 'bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
-                  }`}
+                  aria-pressed={isActive}
+                  className="ui-pill flex items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={isActive ? 'text-emerald-300 dark:text-white' : 'text-emerald-600 dark:text-emerald-400'}>
@@ -813,11 +807,8 @@ export const PersonaPlaybooksAndSignalDesk: React.FC<PersonaPlaybooksAndSignalDe
                             holdingHorizonDays: days,
                           }))
                         }
-                        className={`py-1.5 text-xs tabular-nums font-semibold  border ${
-                          backtestInputs.holdingHorizonDays === days
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-slate-50 dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300'
-                        }`}
+                        aria-pressed={backtestInputs.holdingHorizonDays === days}
+                        className="ui-pill"
                       >
                         {days} Days
                       </button>

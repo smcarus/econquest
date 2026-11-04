@@ -638,11 +638,8 @@ export const StrategyBacktestEngine: React.FC<StrategyBacktestEngineProps> = ({
                 key={f.id}
                 type="button"
                 onClick={() => setDeskFilter(f.id as any)}
-                className={`px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap shrink-0 ${
-                  deskFilter === f.id
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold '
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
-                }`}
+                aria-pressed={deskFilter === f.id}
+                className="ui-pill whitespace-nowrap shrink-0"
               >
                 {f.label}
               </button>

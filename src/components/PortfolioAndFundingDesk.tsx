@@ -249,11 +249,8 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             <button
               type="button"
               onClick={() => handleTabChange('embi_portfolio_pair_book')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-                activeTab === 'embi_portfolio_pair_book'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'embi_portfolio_pair_book'}
+              className="ui-pill inline-flex items-center gap-1.5"
             >
               <Briefcase className="w-3.5 h-3.5" />
               <span>6.1 EMBI Portfolio & Pair-Trade Book</span>
@@ -262,11 +259,8 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             <button
               type="button"
               onClick={() => handleTabChange('dmo_treasury_auction_sim')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-                activeTab === 'dmo_treasury_auction_sim'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'dmo_treasury_auction_sim'}
+              className="ui-pill inline-flex items-center gap-1.5"
             >
               <Landmark className="w-3.5 h-3.5" />
               <span>6.2 24M DMO Treasury Auction Simulator</span>
@@ -275,11 +269,8 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
             <button
               type="button"
               onClick={() => handleTabChange('mpc_imf_document_ai')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-                activeTab === 'mpc_imf_document_ai'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'mpc_imf_document_ai'}
+              className="ui-pill inline-flex items-center gap-1.5"
             >
               <FileSearch className="w-3.5 h-3.5" />
               <span>6.3 MPC & IMF Article IV Document AI</span>
@@ -540,13 +531,10 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
                       setPairShortIso(idea.shortIso3);
                       setPairInstrument(idea.instrumentType);
                     }}
-                    className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
-                      pairLongIso === idea.longIso3 &&
+                    aria-pressed={pairLongIso === idea.longIso3 &&
                       pairShortIso === idea.shortIso3 &&
-                      pairInstrument === idea.instrumentType
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold'
-                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
+                      pairInstrument === idea.instrumentType}
+                      className="ui-pill"
                   >
                     Long {idea.longIso3} / Short {idea.shortIso3}
                   </button>
@@ -1203,33 +1191,24 @@ export const PortfolioAndFundingDesk: React.FC<PortfolioAndFundingDeskProps> = (
               <button
                 type="button"
                 onClick={() => setSelectedDocCategory('MPC_MONETARY_STATEMENT')}
-                className={`px-2.5 py-1 text-xs font-semibold border transition-colors ${
-                  selectedDocCategory === 'MPC_MONETARY_STATEMENT'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={selectedDocCategory === 'MPC_MONETARY_STATEMENT'}
+                className="ui-pill"
               >
                 Central Bank MPC Statement
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedDocCategory('IMF_ARTICLE_IV_STAFF_REPORT')}
-                className={`px-2.5 py-1 text-xs font-semibold border transition-colors ${
-                  selectedDocCategory === 'IMF_ARTICLE_IV_STAFF_REPORT'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={selectedDocCategory === 'IMF_ARTICLE_IV_STAFF_REPORT'}
+                className="ui-pill"
               >
                 IMF Article IV & QPC Audit
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedDocCategory('EUROBOND_CAC_PROSPECTUS')}
-                className={`px-2.5 py-1 text-xs font-semibold border transition-colors ${
-                  selectedDocCategory === 'EUROBOND_CAC_PROSPECTUS'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={selectedDocCategory === 'EUROBOND_CAC_PROSPECTUS'}
+                className="ui-pill"
               >
                 Eurobond CAC Offering Circular
               </button>

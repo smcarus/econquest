@@ -163,11 +163,8 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => handleTabChange('ratings_shadow_fallen_angel')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-                activeTab === 'ratings_shadow_fallen_angel'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'ratings_shadow_fallen_angel'}
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               <Award className="w-3.5 h-3.5" />
               <span>8.1 Shadow Rating & Fallen-Angel</span>
@@ -176,11 +173,8 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => handleTabChange('fx_beer_feer_equilibrium')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-                activeTab === 'fx_beer_feer_equilibrium'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'fx_beer_feer_equilibrium'}
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               <Globe className="w-3.5 h-3.5" />
               <span>8.2 FX BEER / FEER Valuation Lab</span>
@@ -189,11 +183,8 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => handleTabChange('debt_investor_base_doom_loop')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-                activeTab === 'debt_investor_base_doom_loop'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'debt_investor_base_doom_loop'}
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               <Landmark className="w-3.5 h-3.5" />
               <span>8.3 Investor Base & Doom-Loop</span>
@@ -202,11 +193,8 @@ export const SovereignRatingsFxAndIcDesk: React.FC<SovereignRatingsFxAndIcDeskPr
             <button
               type="button"
               onClick={() => handleTabChange('ic_pitchbook_dossier_exporter')}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap shrink-0 ${
-                activeTab === 'ic_pitchbook_dossier_exporter'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={activeTab === 'ic_pitchbook_dossier_exporter'}
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap shrink-0"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>8.4 Boardroom IC Pitchbook</span>

@@ -86,7 +86,7 @@
     @apply border-blue-600 text-blue-700 dark:text-blue-300 font-medium;
   }
   .ui-pill {
-    @apply px-2.5 py-1 text-xs border whitespace-nowrap transition-colors border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800;
+    @apply px-2.5 py-1 text-xs border max-w-full transition-colors border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800;
   }
   .ui-pill[aria-selected='true'], .ui-pill[aria-pressed='true'] {
     @apply bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-900 dark:border-white;

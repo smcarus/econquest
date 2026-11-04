@@ -302,11 +302,8 @@ export const PolicyDocumentAndCsvLab: React.FC<PolicyDocumentAndCsvLabProps> = (
                     key={preset.id}
                     type="button"
                     onClick={() => handleLoadSamplePreset(preset.id)}
-                    className={`px-2.5 py-1.5 text-xs font-semibold border transition-colors ${
-                      isCurrent
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-500'
-                    }`}
+                    aria-pressed={isCurrent}
+                    className="ui-pill"
                   >
                     {preset.iso3} · {preset.id.split('_')[1]}–{preset.id.split('_')[2]}
                   </button>

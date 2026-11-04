@@ -237,11 +237,8 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
             <button
               type="button"
               onClick={() => onChangeWargameParams(DEFAULT_WARGAME_PARAMS)}
-              className={`px-2.5 py-1 text-xs font-medium border transition-colors ${
-                !isStressedPreset
-                  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold'
-                  : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={!isStressedPreset}
+              className="ui-pill"
             >
               Baseline Regime
             </button>
@@ -301,11 +298,8 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                       setPanCenter(pt);
                     }
                   }}
-                  className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
-                    activeTheaterId === preset.id
-                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                      : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
-                  }`}
+                  aria-pressed={activeTheaterId === preset.id}
+                  className="ui-pill"
                 >
                   {preset.label}
                 </button>
@@ -317,11 +311,8 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                   setZoomLevel(2.4);
                   setPanCenter(sovPt);
                 }}
-                className={`px-2 py-0.5 text-xs tabular-nums border transition-colors cursor-pointer ${
-                  activeTheaterId === 'ACTIVE_SOVEREIGN'
-                    ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                    : 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 border-blue-300 dark:border-blue-800 hover:border-blue-500'
-                }`}
+                aria-pressed={activeTheaterId === 'ACTIVE_SOVEREIGN'}
+                className="ui-pill"
               >
                 Focus {run.iso3}
               </button>

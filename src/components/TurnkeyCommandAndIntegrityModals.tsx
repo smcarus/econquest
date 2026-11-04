@@ -162,11 +162,8 @@ export const GlobalCommandPaletteModal: React.FC<GlobalCommandPaletteModalProps>
               key={cat.id}
               type="button"
               onClick={() => setCategoryFilter(cat.id)}
-              className={`px-2.5 py-1 font-medium border transition-colors ${
-                categoryFilter === cat.id
-                  ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                  : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={categoryFilter === cat.id}
+              className="ui-pill"
             >
               {cat.label}
             </button>
@@ -669,11 +666,8 @@ export const CustomSovereignOnboardingModal: React.FC<
                   key={tpl.iso3}
                   type="button"
                   onClick={() => handleSelectTemplate(tpl)}
-                  className={`px-2.5 py-1.5 tabular-nums text-xs border transition-colors ${
-                    draft.iso3 === tpl.iso3
-                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={draft.iso3 === tpl.iso3}
+                  className="ui-pill"
                 >
                   {tpl.iso3} · {tpl.countryName}
                 </button>
@@ -1277,11 +1271,8 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
                 setActiveDoc('userManual');
                 setSearchFilter('');
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold border transition-colors ${
-                activeDoc === 'userManual'
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
-              }`}
+              aria-pressed={activeDoc === 'userManual'}
+              className="ui-pill inline-flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>docs/USER_MANUAL.md (Full Manual)</span>
@@ -1292,11 +1283,8 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
                 setActiveDoc('readme');
                 setSearchFilter('');
               }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold border transition-colors ${
-                activeDoc === 'readme'
-                  ? 'bg-blue-600 text-white border-blue-500'
-                  : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
-              }`}
+              aria-pressed={activeDoc === 'readme'}
+              className="ui-pill inline-flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5" />
               <span>README.md (Root Overview)</span>
@@ -1312,11 +1300,8 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
                 key={chap.id}
                 type="button"
                 onClick={() => setSearchFilter(chap.query)}
-                className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
-                  searchFilter === chap.query
-                    ? 'bg-slate-900 dark:bg-blue-950 text-white dark:text-blue-200 border-slate-900 dark:border-blue-700 font-semibold'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                aria-pressed={searchFilter === chap.query}
+                className="ui-pill"
               >
                 {chap.label}
               </button>
@@ -2069,44 +2054,32 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
               <button
                 type="button"
                 onClick={() => setActiveTab('global_gui')}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === 'global_gui'
-                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                aria-pressed={activeTab === 'global_gui'}
+                className="ui-pill"
               >
                 1. Global Models &amp; Parameters GUI
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('agent_matrix_gui')}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === 'agent_matrix_gui'
-                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                aria-pressed={activeTab === 'agent_matrix_gui'}
+                className="ui-pill"
               >
                 2. Per-Desk &amp; 12-Agent GUI Matrix
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('docker_builder_gui')}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === 'docker_builder_gui'
-                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                aria-pressed={activeTab === 'docker_builder_gui'}
+                className="ui-pill"
               >
                 3. Docker &amp; OS Self-Host GUI Builder
               </button>
               <button
                 type="button"
                 onClick={() => setActiveTab('api_connectors_gui')}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === 'api_connectors_gui'
-                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                aria-pressed={activeTab === 'api_connectors_gui'}
+                className="ui-pill"
               >
                 4. External &amp; Internal APIs
               </button>
@@ -2116,11 +2089,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   setActiveTab('top_level_integration_gui');
                   void fetchIntegrationDeliveries();
                 }}
-                className={`px-3 py-1.5 text-xs font-semibold transition-colors ${
-                  activeTab === 'top_level_integration_gui'
-                    ? 'bg-slate-900 dark:bg-blue-600 text-white'
-                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                }`}
+                aria-pressed={activeTab === 'top_level_integration_gui'}
+                className="ui-pill"
               >
                 5. Top-Level App Integration Bus
               </button>
@@ -2248,11 +2218,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         });
                         probeOllamaEndpoint(preset.url);
                       }}
-                      className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
-                        runtimeConfig.ollamaBaseUrl === preset.url
-                          ? 'bg-blue-600 text-white border-blue-500 font-semibold'
-                          : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-slate-400'
-                      }`}
+                      aria-pressed={runtimeConfig.ollamaBaseUrl === preset.url}
+                      className="ui-pill"
                     >
                       {preset.label}
                     </button>
@@ -3133,11 +3100,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                         key={key}
                         type="button"
                         onClick={() => setActiveDockerFile(key)}
-                        className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
-                          activeDockerFile === key
-                            ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500 font-semibold'
-                            : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border-slate-300 dark:border-slate-700'
-                        }`}
+                        aria-pressed={activeDockerFile === key}
+                        className="ui-pill"
                       >
                         {activeFileMeta[key].filename}
                       </button>
@@ -3322,11 +3286,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                           key={tab.id}
                           type="button"
                           onClick={() => setConnectorCategoryFilter(tab.id)}
-                          className={`px-2.5 py-1 font-semibold transition-colors ${
-                            connectorCategoryFilter === tab.id
-                              ? 'bg-blue-600 text-white'
-                              : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                          }`}
+                          aria-pressed={connectorCategoryFilter === tab.id}
+                          className="ui-pill"
                         >
                           {tab.label}
                         </button>
@@ -4165,11 +4126,8 @@ es.addEventListener("manual.gui.broadcast", (e) => {
                           key={tab.id}
                           type="button"
                           onClick={() => setActiveSnippetTab(tab.id)}
-                          className={`px-2.5 py-1 text-xs font-semibold border ${
-                            activeSnippetTab === tab.id
-                              ? 'bg-slate-900 dark:bg-blue-600 text-white border-slate-900 dark:border-blue-500'
-                              : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700'
-                          }`}
+                          aria-pressed={activeSnippetTab === tab.id}
+                          className="ui-pill"
                         >
                           {tab.label}
                         </button>

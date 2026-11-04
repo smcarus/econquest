@@ -522,11 +522,8 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
                   key={sg.groupId}
                   type="button"
                   onClick={() => onSelectNavSection(sg.modules[0].id)}
-                  className={`px-2.5 py-1 text-xs font-medium transition-colors whitespace-nowrap ${
-                    isActiveGroup
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white font-semibold '
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                  }`}
+                  aria-pressed={isActiveGroup}
+                  className="ui-pill whitespace-nowrap"
                 >
                   {sg.groupTitle}
                 </button>
@@ -549,11 +546,8 @@ export const PillarSubNavigationStrip: React.FC<PillarSubNavigationStripProps> =
                   type="button"
                   onClick={() => onSelectNavSection(mod.id)}
                   title={mod.description}
-                  className={`px-2.5 py-1 text-xs font-medium border transition-colors whitespace-nowrap ${
-                    isSelected
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 font-semibold '
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={isSelected}
+                  className="ui-pill whitespace-nowrap"
                 >
                   {mod.shortLabel}
                 </button>
@@ -698,11 +692,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
                 prev === 'morning_radar' ? null : 'morning_radar'
               )
             }
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs tabular-nums font-semibold border transition-colors ${
-              openDrawer === 'morning_radar'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/80 hover:bg-amber-100 dark:hover:bg-amber-900/50'
-            }`}
+            aria-pressed={openDrawer === 'morning_radar'}
+            className="ui-pill inline-flex items-center gap-1.5"
             title="Open Morning Alpha & Catalyst Radar Slide-Over Drawer (Top-3 Daily Dislocations & Upcoming MPC/CPI Catalysts)"
           >
             <Radar className="w-3.5 h-3.5" />
@@ -716,11 +707,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
                 prev === 'executive_bluf' ? null : 'executive_bluf'
               )
             }
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs tabular-nums font-semibold border transition-colors ${
-              openDrawer === 'executive_bluf'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/80 hover:bg-blue-100 dark:hover:bg-blue-900/50'
-            }`}
+            aria-pressed={openDrawer === 'executive_bluf'}
+            className="ui-pill inline-flex items-center gap-1.5"
             title="Open Executive BLUF Risk Scorecard & Investment Thesis Slide-Over Drawer"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -732,11 +720,8 @@ export const CompactTopStatusAndDrawersBar: React.FC<
             onClick={() =>
               setOpenDrawer((prev) => (prev === 'desk_guide' ? null : 'desk_guide'))
             }
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs tabular-nums font-semibold border transition-colors ${
-              openDrawer === 'desk_guide'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/80 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
-            }`}
+            aria-pressed={openDrawer === 'desk_guide'}
+            className="ui-pill inline-flex items-center gap-1.5"
             title="Open Plain-English Desk Clarity Guide & Formula Glossary Slide-Over Drawer"
           >
             <BookOpen className="w-3.5 h-3.5" />
@@ -898,11 +883,8 @@ export const MacroOverviewTabbedWorkspace: React.FC<
           <button
             type="button"
             onClick={() => setOverviewTab('horizon_charts')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              overviewTab === 'horizon_charts'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 '
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+            aria-pressed={overviewTab === 'horizon_charts'}
+            className="ui-pill inline-flex items-center gap-1.5"
           >
             <BarChart3 className="w-3.5 h-3.5" />
             <span>1. Sovereign Horizon Charts &amp; Debt Maturity Wall</span>
@@ -910,11 +892,8 @@ export const MacroOverviewTabbedWorkspace: React.FC<
           <button
             type="button"
             onClick={() => setOverviewTab('geo_map')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold border transition-colors ${
-              overviewTab === 'geo_map'
-                ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 '
-                : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
+            aria-pressed={overviewTab === 'geo_map'}
+            className="ui-pill inline-flex items-center gap-1.5"
           >
             <MapPin className="w-3.5 h-3.5" />
             <span>2. Interactive Global Geopolitical &amp; Chokepoint Map</span>
@@ -1076,22 +1055,16 @@ export const ViewportScrollBudgetContainer: React.FC<
               <button
                 type="button"
                 onClick={() => setActivePage('page1')}
-                className={`px-3 py-1 text-xs font-semibold border transition-colors ${
-                  activePage === 'page1'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 '
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={activePage === 'page1'}
+                className="ui-pill"
               >
                 Overview
               </button>
               <button
                 type="button"
                 onClick={() => setActivePage('page2')}
-                className={`px-3 py-1 text-xs font-semibold border transition-colors ${
-                  activePage === 'page2'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100 '
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                }`}
+                aria-pressed={activePage === 'page2'}
+                className="ui-pill"
               >
                 Details
               </button>
@@ -1110,11 +1083,8 @@ export const ViewportScrollBudgetContainer: React.FC<
               onClick={() =>
                 setActivePage((prev) => (prev === 'all' ? 'page1' : 'all'))
               }
-              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs tabular-nums font-semibold border transition-colors ${
-                activePage === 'all'
-                  ? 'bg-blue-600 text-white border-blue-600'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-500'
-              }`}
+              aria-pressed={activePage === 'all'}
+              className="ui-pill inline-flex items-center gap-1"
               title="Show every panel on one page, or go back to the Overview / Details split"
             >
               {activePage === 'all' ? (

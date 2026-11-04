@@ -2078,11 +2078,8 @@ export default function App() {
                   type="button"
                   onClick={() => setAppArea('today')}
                   aria-current={appArea === 'today' ? 'page' : undefined}
-                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                    appArea === 'today'
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={appArea === 'today'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
                   Today
                 </button>
@@ -2093,11 +2090,8 @@ export default function App() {
                   onClick={returnToCountryPage}
                   aria-current={appArea === 'country' ? 'page' : undefined}
                   title={`Country page: ${run.countryName}`}
-                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                    appArea === 'country'
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={appArea === 'country'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
                   Countries
                 </button>
@@ -2107,11 +2101,8 @@ export default function App() {
                   type="button"
                   onClick={() => openWorkspace('portfolio')}
                   aria-current={appArea === 'portfolio' ? 'page' : undefined}
-                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                    appArea === 'portfolio'
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={appArea === 'portfolio'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
                   Portfolio
                 </button>
@@ -2121,11 +2112,8 @@ export default function App() {
                   type="button"
                   onClick={() => openWorkspace('reports')}
                   aria-current={appArea === 'reports' ? 'page' : undefined}
-                  className={`inline-flex items-center px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                    appArea === 'reports'
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={appArea === 'reports'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
                   Reports
                 </button>
@@ -2142,11 +2130,8 @@ export default function App() {
                     aria-expanded={isToolsMenuOpen}
                     aria-current={appArea === 'desks' ? 'page' : undefined}
                     title="All 41 analysis desks"
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 border transition-colors whitespace-nowrap ${
-                      appArea === 'desks'
-                        ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                    }`}
+                    aria-pressed={appArea === 'desks'}
+                    className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
                   >
                     <span>Tools</span>
                     <ChevronDown className="w-3.5 h-3.5 opacity-80" />
@@ -2230,11 +2215,8 @@ export default function App() {
             type="button"
             onClick={() => setIsScenarioDrawerOpen((v) => !v)}
             title="Compare scenario A with scenario B"
-            className={`hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
-              isScenarioDrawerOpen
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
-            }`}
+            aria-pressed={isScenarioDrawerOpen}
+            className="ui-pill hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap"
           >
             <GitCompare className="w-3.5 h-3.5" />
             <span>A vs B</span>
@@ -2277,11 +2259,8 @@ export default function App() {
               aria-haspopup="menu"
               aria-expanded={isHeaderMenuOpen}
               title="View settings, AI and data connections, manual, saved sessions"
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold border transition-colors whitespace-nowrap ${
-                isHeaderMenuOpen
-                  ? 'bg-slate-900 text-white border-slate-900 dark:bg-slate-100 dark:text-slate-900 dark:border-slate-100'
-                  : 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border-slate-200 dark:border-slate-700'
-              }`}
+              aria-pressed={isHeaderMenuOpen}
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
             >
               <Settings2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Menu</span>
@@ -2308,11 +2287,8 @@ export default function App() {
                         key={d.id}
                         type="button"
                         onClick={() => setDensityMode(d.id)}
-                        className={`px-2 py-1.5 border font-semibold transition-colors ${
-                          densityMode === d.id
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-                        }`}
+                        aria-pressed={densityMode === d.id}
+                        className="ui-pill"
                       >
                         {d.label}
                       </button>
@@ -2334,11 +2310,7 @@ export default function App() {
                           setIsHeaderMenuOpen(false);
                         }}
                         aria-pressed={userRole === r.id}
-                        className={`text-left px-2 py-1.5 border transition-colors ${
-                          userRole === r.id
-                            ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                            : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-blue-400'
-                        }`}
+                        className="ui-pill text-left"
                       >
                         {r.label}
                       </button>
@@ -2500,11 +2472,8 @@ export default function App() {
                       type="button"
                       onClick={() => handleSelectSovereign(item)}
                       title={`Switch active sovereign to ${item.countryName} (${item.iso3} · ${item.currencyCode})`}
-                      className={`px-2 py-0.5 text-xs tabular-nums font-semibold border transition-colors ${
-                        isActiveSov
-                          ? 'bg-blue-600 text-white border-blue-600 '
-                          : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500'
-                      }`}
+                      aria-pressed={isActiveSov}
+                      className="ui-pill"
                     >
                       {item.iso3}
                     </button>
@@ -2547,11 +2516,8 @@ export default function App() {
                       key={mode.id}
                       type="button"
                       onClick={() => setLayoutMode(mode.id)}
-                      className={`px-2 py-0.5 text-xs tabular-nums font-semibold transition-colors ${
-                        layoutMode === mode.id
-                          ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 '
-                          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
-                      }`}
+                      aria-pressed={layoutMode === mode.id}
+                      className="ui-pill"
                     >
                       {mode.label}
                     </button>
@@ -2579,11 +2545,8 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setShowScenarioInput((v) => !v)}
-                  className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold border transition-colors ${
-                    showScenarioInput
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
+                  aria-pressed={showScenarioInput}
+                  className="ui-pill inline-flex items-center gap-1"
                 >
                   <span>Scenario Directive {showScenarioInput ? '▴' : '▾'}</span>
                 </button>
@@ -2626,11 +2589,8 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => setAppArea('today')}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    appArea === 'today'
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={appArea === 'today'}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   Today
                 </button>
@@ -2639,11 +2599,8 @@ export default function App() {
                 <button
                   type="button"
                   onClick={returnToCountryPage}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    appArea === 'country'
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={appArea === 'country'}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   Countries
                 </button>
@@ -2652,11 +2609,8 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openWorkspace('portfolio')}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    appArea === 'portfolio'
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={appArea === 'portfolio'}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   Portfolio
                 </button>
@@ -2665,11 +2619,8 @@ export default function App() {
                 <button
                   type="button"
                   onClick={() => openWorkspace('reports')}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    appArea === 'reports'
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={appArea === 'reports'}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   Reports
                 </button>
@@ -2681,11 +2632,8 @@ export default function App() {
                     setLayoutMode('executive_brief');
                     setAppArea('desks');
                   }}
-                  className={`px-2.5 py-1 text-xs font-medium whitespace-nowrap shrink-0 ${
-                    appArea === 'desks'
-                      ? 'bg-blue-600 text-white font-semibold'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
-                  }`}
+                  aria-pressed={appArea === 'desks'}
+                  className="ui-pill whitespace-nowrap shrink-0"
                 >
                   Tools
                 </button>

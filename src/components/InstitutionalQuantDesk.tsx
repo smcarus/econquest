@@ -692,11 +692,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
-                className={`flex items-center gap-2 px-3 py-1.5  text-xs font-medium transition-all border ${
-                  isActive
-                    ? 'bg-blue-600 text-white border-blue-500 '
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200/80 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-700'
-                }`}
+                aria-pressed={isActive}
+                className="ui-pill flex items-center gap-2"
               >
                 {tab.icon}
                 <span className="tabular-nums text-xs opacity-80">{tab.shortCode}</span>
@@ -1515,11 +1512,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={m.id}
                     type="button"
                     onClick={() => setEconometricModelId(m.id)}
-                    className={`px-3 py-1.5  text-xs tabular-nums border transition-all ${
-                      econometricModelId === m.id
-                        ? 'bg-blue-600 text-white border-blue-500 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
-                    }`}
+                    aria-pressed={econometricModelId === m.id}
+                    className="ui-pill"
                   >
                     {m.label}
                   </button>
@@ -2497,11 +2491,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={item.id}
                     type="button"
                     onClick={() => setCorrSpreadSeries(item.id)}
-                    className={`px-2.5 py-1.5  text-xs tabular-nums font-semibold border transition-colors cursor-pointer ${
-                      corrSpreadSeries === item.id
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400'
-                    }`}
+                    aria-pressed={corrSpreadSeries === item.id}
+                    className="ui-pill"
                   >
                     {item.label}
                   </button>
@@ -2520,11 +2511,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={win}
                     type="button"
                     onClick={() => setCorrRollingWindow(win)}
-                    className={`px-2 py-1.5  text-xs tabular-nums font-semibold border transition-colors cursor-pointer ${
-                      corrRollingWindow === win
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900 dark:border-slate-100'
-                        : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-300 dark:border-slate-700 hover:border-slate-400'
-                    }`}
+                    aria-pressed={corrRollingWindow === win}
+                    className="ui-pill"
                   >
                     {win}
                   </button>
@@ -3238,11 +3226,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                     key={preset.id}
                     type="button"
                     onClick={() => setNssPresetRegime(preset.id)}
-                    className={`px-2.5 py-1 text-xs tabular-nums border transition-colors ${
-                      nssPresetRegime === preset.id
-                        ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-950 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400'
-                    }`}
+                    aria-pressed={nssPresetRegime === preset.id}
+                    className="ui-pill"
                   >
                     {preset.label}
                   </button>
@@ -3678,22 +3663,16 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
               <button
                 type="button"
                 onClick={() => setCatalystScope('ALL_WATCHLIST')}
-                className={`px-2.5 py-1 border ${
-                  catalystScope === 'ALL_WATCHLIST'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={catalystScope === 'ALL_WATCHLIST'}
+                className="ui-pill"
               >
                 All Watchlist Sovereigns ({catalystSuite.events.length})
               </button>
               <button
                 type="button"
                 onClick={() => setCatalystScope('ACTIVE_SOVEREIGN')}
-                className={`px-2.5 py-1 border ${
-                  catalystScope === 'ACTIVE_SOVEREIGN'
-                    ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold'
-                    : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                }`}
+                aria-pressed={catalystScope === 'ACTIVE_SOVEREIGN'}
+                className="ui-pill"
               >
                 Active Sovereign Only ({run.iso3} ·{' '}
                 {catalystSuite.activeSovereignEvents.length})
@@ -3715,11 +3694,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                   key={cat.id}
                   type="button"
                   onClick={() => setCatalystCategoryFilter(cat.id)}
-                  className={`px-2.5 py-1 border ${
-                    catalystCategoryFilter === cat.id
-                      ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                      : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                  }`}
+                  aria-pressed={catalystCategoryFilter === cat.id}
+                  className="ui-pill"
                 >
                   {cat.label}
                 </button>
@@ -3981,11 +3957,8 @@ export const InstitutionalQuantDesk: React.FC<InstitutionalQuantDeskProps> = ({
                         weightScheme: scheme.id as EmbiPortfolioWeightScheme,
                       }))
                     }
-                    className={`px-2 py-1 border ${
-                      portfolioStressParams.weightScheme === scheme.id
-                        ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 font-semibold'
-                        : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800'
-                    }`}
+                    aria-pressed={portfolioStressParams.weightScheme === scheme.id}
+                    className="ui-pill"
                   >
                     {scheme.label}
                   </button>

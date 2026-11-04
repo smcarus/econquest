@@ -209,22 +209,16 @@ export const AnnotatedChartsDeck: React.FC<AnnotatedChartsDeckProps> = ({
             <button
               type="button"
               onClick={() => setInnerTab('horizon_charts')}
-              className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors ${
-                innerTab === 'horizon_charts'
-                  ? 'bg-blue-600 text-white border-blue-600 '
-                  : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={innerTab === 'horizon_charts'}
+              className="ui-pill"
             >
               1. 2×2 Sovereign &amp; Macro Horizon Charts (GDP, Debt, Yield, Reserves)
             </button>
             <button
               type="button"
               onClick={() => setInnerTab('maturity_contagion')}
-              className={`px-3.5 py-1.5 text-xs font-semibold border transition-colors ${
-                innerTab === 'maturity_contagion'
-                  ? 'bg-blue-600 text-white border-blue-600 '
-                  : 'bg-slate-50 dark:bg-slate-950 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800'
-              }`}
+              aria-pressed={innerTab === 'maturity_contagion'}
+              className="ui-pill"
             >
               2. Debt Maturity Wall (Q1 2025–Q4 2026) &amp; Cross-Desk Contagion
             </button>

@@ -152,11 +152,8 @@ export const MultiSovereignComparatorDrawer: React.FC<
                   key={item.iso3}
                   type="button"
                   onClick={() => handleToggleIso(item.iso3)}
-                  className={`px-2.5 py-1 text-xs tabular-nums font-semibold border transition-colors ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-blue-400'
-                  }`}
+                  aria-pressed={isSelected}
+                  className="ui-pill"
                 >
                   {item.iso3} · {item.countryName}
                 </button>

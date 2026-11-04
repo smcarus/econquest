@@ -216,11 +216,8 @@ export const RestructuringMonetaryGeoDesk: React.FC<RestructuringMonetaryGeoDesk
                 <button
                   key={tab.id}
                   onClick={() => handleSelectSubTab(tab.id)}
-                  className={`flex items-center justify-between px-3.5 py-2.5  text-left border transition-all ${
-                    isActive
-                      ? 'bg-slate-900 text-white border-slate-900 dark:bg-blue-600 dark:border-blue-500 '
-                      : 'bg-white dark:bg-slate-900/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:border-slate-400'
-                  }`}
+                  aria-pressed={isActive}
+                  className="ui-pill flex items-center justify-between text-left"
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={isActive ? 'text-blue-300 dark:text-white' : 'text-blue-600 dark:text-blue-400'}>

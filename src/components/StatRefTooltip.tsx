@@ -256,11 +256,8 @@ export const StatRefBadge: React.FC<StatRefBadgeProps> = ({
                   type="button"
                   onClick={handleTogglePin}
                   title={isPinned ? 'Unpin tooltip' : 'Pin tooltip open'}
-                  className={`p-1 border text-xs tabular-nums inline-flex items-center gap-1 cursor-pointer transition-colors ${
-                    isPinned
-                      ? 'bg-blue-600 border-blue-600 text-white'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-blue-500'
-                  }`}
+                  aria-pressed={isPinned}
+                  className="ui-pill inline-flex items-center gap-1"
                 >
                   <Pin className="w-3 h-3" />
                   <span>{isPinned ? 'Pinned' : 'Pin'}</span>
