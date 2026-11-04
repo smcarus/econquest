@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Upload } from 'lucide-react';
 import type { WatchlistItem } from '../types/council';
+import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { summariseBook, type Holding } from '../utils/holdings';
 
@@ -164,6 +165,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                 <th className="py-1.5 pr-3 font-normal">Risk</th>
                 {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">Net credit</th>}
                 {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">DV01 ($k/bp)</th>}
+                <th className="py-1.5 pr-3 font-normal text-right">10Y yield</th>
                 <th className="py-1.5 pr-3 font-normal text-right">Weight</th>
                 <th className="py-1.5 pr-3 font-normal text-right">Share of risk</th>
                 <th className="py-1.5 font-normal w-1/4 hidden sm:table-cell" aria-hidden="true" />
@@ -192,6 +194,24 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                   {hasHoldings && (
                     <td className="py-1.5 pr-3 text-right ui-num">{signed(r.dv01UsdK ?? 0, (v) => v.toFixed(1))}</td>
                   )}
+                  <td className="py-1.5 pr-3 text-right" title={r.item ? yieldSourceHelp(r.item) : undefined}>
+                    {r.item ? (
+                      <>
+                        <span className="ui-num">{r.item.yield10YPct.toFixed(2)}%</span>
+                        <span
+                          className={`block text-xs whitespace-nowrap ${
+                            r.item.yield10YSource === 'official'
+                              ? 'text-emerald-700 dark:text-emerald-400'
+                              : 'text-slate-500 dark:text-slate-400'
+                          }`}
+                        >
+                          {yieldSourceNote(r.item)}
+                        </span>
+                      </>
+                    ) : (
+                      '–'
+                    )}
+                  </td>
                   <td className="py-1.5 pr-3 text-right ui-num">{(r.weight * 100).toFixed(0)}%</td>
                   <td className="py-1.5 pr-3 text-right ui-num">{r.item ? `${(r.riskShare * 100).toFixed(0)}%` : '–'}</td>
                   <td className="py-1.5 hidden sm:table-cell">
@@ -209,7 +229,13 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             </tbody>
           </table>
           <p className="ui-label mt-1">
-            Share of risk = weight × the country's risk score, as a share of the book total. Click a row to open the country.
+            Share of risk = weight × the country's risk score, as a share of the book total.{' '}
+            {(() => {
+              const items = s.rows.filter((r) => r.item);
+              const official = items.filter((r) => r.item!.yield10YSource === 'official').length;
+              return `${official} of ${items.length} yields are official figures; the rest are sample values or estimates.`;
+            })()}{' '}
+            Click a row to open the country.
           </p>
         </div>
 

@@ -439,6 +439,11 @@ export interface WatchlistItem {
   /** Whether this row's figures came from live feeds (see utils/dataStatus.ts). Absent = sample. */
   dataMode?: 'live' | 'partial' | 'sample' | 'unverified';
   dataAsOf?: string;
+  /** Where yield10YPct came from (see utils/watchlistYield.ts). Absent = sample. */
+  yield10YSource?: 'official' | 'ai_estimate' | 'sample' | 'uploaded';
+  /** Official figures only: YYYY-MM (monthly average) or YYYY-MM-DD (daily rate). */
+  yield10YPeriod?: string;
+  yield10YFrequency?: 'monthly' | 'daily';
 }
 
 export interface WatchlistGroup {

@@ -124,6 +124,7 @@ import {
   StagedTradeTicketSpec,
 } from './utils/nssYieldCurveAndCatalystEngine';
 import type { CouncilAssessmentRun as RunForPdf } from './types/council';
+import { watchlistYieldFields } from './utils/watchlistYield';
 // The PDF library is large, so it loads only when someone exports a PDF.
 const exportSMCRPdfDossier = (r: RunForPdf) =>
   import('./utils/smcrReportExporter').then((m) => m.exportSMCRPdfDossier(r));
@@ -1008,7 +1009,7 @@ export default function App() {
                 it.iso3 === snap.iso3
                   ? {
                       ...it,
-                      yield10YPct: snap.monetaryAndMarket.sovereign10YBondYieldPct,
+                      ...watchlistYieldFields(snap),
                       cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
                       debtToGdpPct: snap.imfIndicators.debtToGdpPct,
                       fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
@@ -1201,6 +1202,9 @@ export default function App() {
             ? {
                 ...it,
                 yield10YPct: updatedOpenData.monetaryAndMarket.sovereign10YBondYieldPct,
+                yield10YSource: 'uploaded',
+                yield10YPeriod: undefined,
+                yield10YFrequency: undefined,
                 cds5YBps: updatedOpenData.monetaryAndMarket.cds5YSpreadBps,
                 debtToGdpPct: updatedOpenData.imfIndicators.debtToGdpPct,
                 fxReservesMonths: updatedOpenData.worldBankIndicators.fxReservesMonthsImport,

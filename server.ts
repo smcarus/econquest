@@ -54,6 +54,7 @@ import {
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
+import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import {
   FRED_10Y_SERIES,
   OFFICIAL_YIELD_SOURCE_LABEL,
@@ -116,7 +117,26 @@ async function fetchTesouroDiretoYield(): Promise<OfficialYieldObservation | nul
   }
 }
 
+/**
+ * Official yields change at most daily (Brazil) or monthly (FRED/OECD), so results are kept for
+ * 6 hours. A miss (feed down, or no series) is kept for 30 minutes so the watchlist does not
+ * retry every country on each refresh.
+ */
+const officialYieldCache = new Map<string, { at: number; obs: OfficialYieldObservation | null }>();
 async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObservation | null> {
+  const hit = officialYieldCache.get(iso3);
+  if (hit && Date.now() - hit.at < (hit.obs ? 6 * 60 * 60 * 1000 : 30 * 60 * 1000)) return hit.obs;
+  const obs = await fetchOfficial10YYieldUncached(iso3);
+  officialYieldCache.set(iso3, { at: Date.now(), obs });
+  return obs;
+}
+
+/** Countries with a free official 10Y source wired in. */
+function hasOfficial10YSource(iso3: string): boolean {
+  return iso3 === 'BRA' || Boolean(FRED_10Y_SERIES[iso3]);
+}
+
+async function fetchOfficial10YYieldUncached(iso3: string): Promise<OfficialYieldObservation | null> {
   if (iso3 === 'BRA') return fetchTesouroDiretoYield();
   const seriesId = FRED_10Y_SERIES[iso3];
   if (!seriesId) return null;
@@ -884,19 +904,29 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const sov = run.croState.sovereignRiskScore;
         const mac = run.croState.macroRiskScore;
         const comp = Number(((geo + sov + mac) / 3).toFixed(2));
+        const status = getSnapshotDataStatus(snap);
+        const fetchedOfficial =
+          !status.officialYield && hasOfficial10YSource(catItem.iso3)
+            ? // Brazil's file is large; don't hold the whole watchlist for it. The fetch keeps
+              // going in the background and fills the cache for the next refresh.
+              await Promise.race([
+                fetchOfficial10YYield(catItem.iso3),
+                new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+              ])
+            : null;
         return {
           ...catItem,
           geopoliticalRisk: geo,
           sovereignRisk: sov,
           macroRisk: mac,
           compositeRisk: comp,
-          yield10YPct: snap.monetaryAndMarket.sovereign10YBondYieldPct,
+          ...watchlistYieldFields(snap, fetchedOfficial),
           cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
-          dataMode: getSnapshotDataStatus(snap).mode,
-          dataAsOf: getSnapshotDataStatus(snap).asOf,
+          dataMode: status.mode,
+          dataAsOf: status.asOf,
         } as WatchlistItem;
       } catch {
         return catItem;
