@@ -375,6 +375,8 @@ export interface OpenDataSnapshot {
     source: string;
     seriesId: string;
     url: string;
+    frequency?: 'monthly' | 'daily';
+    instrument?: string;
   };
   groundingCitations?: Array<{ title: string; uri: string }>;
   livePlumbingOverrides?: {

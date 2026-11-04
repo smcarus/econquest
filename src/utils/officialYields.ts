@@ -8,17 +8,35 @@
  * Two routes to the same data: the official FRED API when FRED_API_KEY is set (free key from
  * fred.stlouisfed.org), otherwise the website's no-key CSV download.
  *
- * Coverage is OECD members only. Countries without a series (for example Brazil, Turkey,
+ * Coverage is OECD members only. Brazil comes from the Treasury's own Tesouro Direto file
+ * (see `parseTesouroDiretoLatest`). Countries with no verified free source (for example Turkey,
  * Indonesia, Egypt) keep the AI estimate or sample value, and are labelled as such.
  */
 
 export interface OfficialYieldObservation {
   valuePct: number;
-  /** Month of the observation, YYYY-MM. */
+  /** YYYY-MM for a monthly average, YYYY-MM-DD for a daily rate. */
   period: string;
   source: string;
   seriesId: string;
   url: string;
+  /** Monthly average (FRED / OECD) or one day's rate (Tesouro Direto). Missing means monthly. */
+  frequency?: 'monthly' | 'daily';
+  /** The bond behind a daily rate, e.g. "NTN-F 2037". */
+  instrument?: string;
+}
+
+/** Short and long descriptions for labels, e.g. "Sep 2026 avg" / "30 Oct 2026". */
+export function describeOfficialYield(o: OfficialYieldObservation): { when: string; long: string } {
+  if (o.frequency === 'daily') {
+    const when = formatPeriod(o.period);
+    return {
+      when,
+      long: `${o.source}${o.instrument ? `, ${o.instrument}` : ''}, rate on ${when}`,
+    };
+  }
+  const when = formatPeriod(o.period);
+  return { when: `${when} avg`, long: `${o.source}, ${when} monthly average` };
 }
 
 /** FRED series ids, checked on fred.stlouisfed.org on 2026-11-04 (latest Sep 2026). */
@@ -84,10 +102,93 @@ export function parseFredCsvLatest(csv: string, seriesId: string): OfficialYield
   return null;
 }
 
-/** "Sep 2026" from "2026-09". */
+/** "Sep 2026" from "2026-09"; "30 Oct 2026" from "2026-10-30". */
 export function formatPeriod(period: string): string {
-  const [y, m] = period.split('-').map(Number);
+  const [y, m, d] = period.split('-').map(Number);
   if (!y || !m) return period;
   const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return MONTHS[m - 1] ? `${MONTHS[m - 1]} ${y}` : period;
+  if (!MONTHS[m - 1]) return period;
+  return d ? `${d} ${MONTHS[m - 1]} ${y}` : `${MONTHS[m - 1]} ${y}`;
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Brazil: Tesouro Direto daily rates (Tesouro Transparente open data, ODbL, no key).
+ * Brazil has no OECD 10Y series. The Treasury publishes the daily buy and sell rates of every
+ * bond offered on Tesouro Direto. We take the fixed-rate bond with semi-annual coupons
+ * (Tesouro Prefixado com Juros Semestrais, NTN-F) whose maturity is closest to 10 years and
+ * use the midpoint of its buy and sell rates. It is a retail offer rate, so it is labelled as
+ * the Treasury's rate on a named bond, not as a benchmark yield.
+ * Checked 2026-11-04: NTN-F 01/01/2037 on 30/10/2026 bought at 15.23%, sold at 15.35%.
+ * ------------------------------------------------------------------------------------------ */
+
+export const TESOURO_DIRETO_CSV_URL =
+  'https://www.tesourotransparente.gov.br/ckan/dataset/df56aa42-484a-4a59-8184-7676580c81e3/resource/796d2059-14e9-44e3-80c9-2d9e30b405c1/download/precotaxatesourodireto.csv';
+export const TESOURO_DIRETO_DATASET_URL =
+  'https://www.tesourotransparente.gov.br/ckan/dataset/taxas-dos-titulos-ofertados-pelo-tesouro-direto';
+export const TESOURO_YIELD_SOURCE_LABEL = 'Tesouro Direto (Brazil Treasury) NTN-F daily rate';
+
+const NTNF_TYPE = /prefixado com juros semestrais/i;
+
+/** "30/10/2026" -> "2026-10-30", or null. */
+function brDate(v: string): string | null {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(v.trim());
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+
+/** "15,23" -> 15.23, or null. */
+function brNumber(v: string): number | null {
+  const s = v.trim().replace(/\./g, '').replace(',', '.');
+  if (!s) return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+/**
+ * Parses the Tesouro Direto CSV (semicolon-separated, Brazilian dates and decimal commas) and returns
+ * the NTN-F closest to 10 years on the latest date, as the midpoint of its buy and sell rates.
+ */
+export function parseTesouroDiretoLatest(csv: string): OfficialYieldObservation | null {
+  const lines = csv.replace(/^\uFEFF/, '').split(/\r?\n/).filter((l) => l.trim());
+  if (lines.length < 2) return null;
+  const header = lines[0].split(';').map((h) => h.trim().toLowerCase());
+  const col = (re: RegExp) => header.findIndex((h) => re.test(h));
+  const iType = col(/^tipo titulo/);
+  const iMat = col(/^data vencimento/);
+  const iBase = col(/^data base/);
+  const iBuy = col(/^taxa compra/);
+  const iSell = col(/^taxa venda/);
+  if ([iType, iMat, iBase, iBuy, iSell].some((i) => i < 0)) return null;
+
+  type Row = { base: string; maturity: string; buy: number | null; sell: number | null };
+  const rows: Row[] = [];
+  let latest = '';
+  for (const line of lines.slice(1)) {
+    const c = line.split(';');
+    if (!NTNF_TYPE.test(c[iType] || '')) continue;
+    const base = brDate(c[iBase] || '');
+    const maturity = brDate(c[iMat] || '');
+    if (!base || !maturity) continue;
+    const r = { base, maturity, buy: brNumber(c[iBuy] || ''), sell: brNumber(c[iSell] || '') };
+    if (r.buy === null && r.sell === null) continue;
+    rows.push(r);
+    if (base > latest) latest = base;
+  }
+  const yearsTo = (from: string, to: string) => (Date.parse(to) - Date.parse(from)) / (365.25 * 86400000);
+  const candidates = rows.filter((r) => r.base === latest && yearsTo(r.base, r.maturity) > 5);
+  if (!candidates.length) return null;
+  candidates.sort((a, b) => Math.abs(yearsTo(a.base, a.maturity) - 10) - Math.abs(yearsTo(b.base, b.maturity) - 10));
+  const best = candidates[0];
+  const rates = [best.buy, best.sell].filter((x): x is number => x !== null && x > 0);
+  if (!rates.length) return null;
+  const mid = rates.reduce((a, b) => a + b, 0) / rates.length;
+  if (mid <= 0 || mid > 70) return null;
+  return {
+    valuePct: Number(mid.toFixed(2)),
+    period: best.base,
+    source: 'Brazil Treasury, Tesouro Direto',
+    seriesId: `NTN-F ${best.maturity.slice(0, 4)}`,
+    url: TESOURO_DIRETO_DATASET_URL,
+    frequency: 'daily',
+    instrument: `NTN-F ${best.maturity.slice(0, 4)}, midpoint of buy and sell rates`,
+  };
 }

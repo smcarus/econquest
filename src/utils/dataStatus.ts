@@ -27,7 +27,7 @@ const FEED_PATTERNS: Record<DataFeedKey, RegExp> = {
   gdelt: /GDELT/i,
   treasury: /Treasury/i,
   ai_market: /Gemini/i,
-  official_yield: /FRED/i,
+  official_yield: /FRED|Tesouro Direto/i,
 };
 
 export type SnapshotDataMode = 'live' | 'partial' | 'sample' | 'unverified';
@@ -41,6 +41,8 @@ export interface SnapshotDataStatus {
   /** Where the 10Y yield came from. 'official' = OECD via FRED, monthly average for `yieldPeriod`. */
   yieldSource: 'official' | 'ai_estimate' | 'sample';
   yieldPeriod?: string;
+  /** The official observation itself, when yieldSource is 'official'. */
+  officialYield?: OpenDataSnapshot['official10YYield'];
   isFeedLive: (key: DataFeedKey) => boolean;
 }
 
@@ -65,6 +67,7 @@ export function getSnapshotDataStatus(snapshot: OpenDataSnapshot): SnapshotDataS
           ? 'ai_estimate'
           : 'sample',
     yieldPeriod: snapshot.official10YYield?.period,
+    officialYield: snapshot.official10YYield && isFeedLive('official_yield') ? snapshot.official10YYield : undefined,
     isFeedLive,
   };
 }

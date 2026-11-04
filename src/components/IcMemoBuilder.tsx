@@ -3,7 +3,7 @@ import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from '../utils/dataStatus';
-import { formatPeriod } from '../utils/officialYields';
+import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { summariseBook, type Holding } from '../utils/holdings';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
@@ -72,9 +72,7 @@ export interface MemoSection {
 }
 
 function yieldSourceNote(status: SnapshotDataStatus, fallback: string): string {
-  return status.yieldSource === 'official' && status.yieldPeriod
-    ? ` (OECD via FRED, ${formatPeriod(status.yieldPeriod)} monthly average)`
-    : fallback;
+  return status.officialYield ? ` (${describeOfficialYield(status.officialYield).long})` : fallback;
 }
 
 export function buildSections(
@@ -265,7 +263,9 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
         `- Foreign currency savings would cover about ${open.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports${note}.`,
         `- The central bank’s interest rate is ${mkt.policyRatePct.toFixed(2)}%${priceNote}.`,
         `- The government pays about ${mkt.sovereign10YBondYieldPct.toFixed(1)}% a year to borrow for 10 years${
-          status.yieldSource === 'official' && status.yieldPeriod ? ` (official figure, ${formatPeriod(status.yieldPeriod)} average)` : priceNote
+          status.officialYield
+            ? ` (official figure, ${status.officialYield.frequency === 'daily' ? `rate on ${formatPeriod(status.officialYield.period)}` : `${formatPeriod(status.officialYield.period)} average`})`
+            : priceNote
         }.`,
       ],
     });

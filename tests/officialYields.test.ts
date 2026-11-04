@@ -55,3 +55,39 @@ test('series map covers only verified OECD members', () => {
   assert.deepEqual(Object.keys(FRED_10Y_SERIES).sort(), ['CHL', 'GBR', 'JPN', 'MEX', 'POL', 'ZAF']);
   for (const id of Object.values(FRED_10Y_SERIES)) assert.match(id, /^IRLTLT01[A-Z]{2}M156N$/);
 });
+
+import { parseTesouroDiretoLatest, describeOfficialYield } from '../src/utils/officialYields.ts';
+
+// Rows in the real file's layout (checked 2026-11-04), plus decoys.
+const TESOURO_CSV = [
+  'Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha;Taxa Venda Manha;PU Compra Manha;PU Venda Manha;PU Base Manha',
+  'Tesouro Prefixado com Juros Semestrais;01/01/2037;29/10/2026;15,00;15,12;812,10;805,22;805,01',
+  'Tesouro Prefixado com Juros Semestrais;01/01/2037;30/10/2026;15,23;15,35;800,10;795,22;795,01',
+  'Tesouro Prefixado com Juros Semestrais;01/01/2035;30/10/2026;14,90;15,02;850,10;845,22;845,01',
+  'Tesouro Prefixado com Juros Semestrais;01/01/2029;30/10/2026;14,10;14,22;950,10;945,22;945,01',
+  'Tesouro Prefixado;01/01/2032;30/10/2026;14,50;14,62;500,10;495,22;495,01',
+  'Tesouro IPCA+;15/05/2035;30/10/2026;7,10;7,22;2500,10;2495,22;2495,01',
+].join('\r\n');
+
+test('Tesouro Direto: NTN-F closest to 10 years on the latest date, mid of buy and sell', () => {
+  const r = parseTesouroDiretoLatest(TESOURO_CSV);
+  assert.ok(r);
+  assert.equal(r.valuePct, 15.29);
+  assert.equal(r.period, '2026-10-30');
+  assert.equal(r.frequency, 'daily');
+  assert.equal(r.seriesId, 'NTN-F 2037');
+  assert.equal(describeOfficialYield(r).when, '30 Oct 2026');
+  assert.match(describeOfficialYield(r).long, /Brazil Treasury, Tesouro Direto, NTN-F 2037/);
+});
+
+test('Tesouro Direto: ignores inflation-linked and short bonds, rejects junk', () => {
+  const onlyShort = TESOURO_CSV.split('\r\n').filter((l) => !/203[57]/.test(l) || /IPCA/.test(l)).join('\n');
+  assert.equal(parseTesouroDiretoLatest(onlyShort), null);
+  assert.equal(parseTesouroDiretoLatest('<html>Service unavailable</html>'), null);
+  assert.equal(parseTesouroDiretoLatest(''), null);
+});
+
+test('monthly observations keep the "avg" label', () => {
+  const r = parseFredCsvLatest('observation_date,S\n2026-09-01,9.35\n', 'S')!;
+  assert.equal(describeOfficialYield(r).when, 'Sep 2026 avg');
+});
