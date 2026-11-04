@@ -1,0 +1,42 @@
+/**
+ * Loaded into the server under test with NODE_OPTIONS="--import ...".
+ * Replaces fetch so the server never touches the network: the official yield feeds answer with
+ * fixed fixtures, and every other host fails at once, as if the machine were offline.
+ * Each request is logged to stderr as "[offline-fetch] <url> key=<present|missing>" so tests can
+ * check what the server asked for.
+ */
+const TESOURO_CSV = [
+  'Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha;Taxa Venda Manha;PU Compra Manha;PU Venda Manha;PU Base Manha',
+  'Tesouro Prefixado com Juros Semestrais;01/01/2037;30/10/2026;15,23;15,35;800,10;795,22;795,01',
+  'Tesouro Prefixado com Juros Semestrais;01/01/2035;30/10/2026;14,90;15,02;850,10;845,22;845,01',
+].join('\r\n');
+
+const json = (body, status = 200) =>
+  new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+globalThis.fetch = async (input, init = {}) => {
+  const url = String(input instanceof Request ? input.url : input);
+  const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+  process.stderr.write(`[offline-fetch] ${url} key=${headers.has('key') ? 'present' : 'missing'}\n`);
+
+  // FRED API: answers for Mexico only, refuses South Africa so the CSV fallback is exercised.
+  if (url.includes('api.stlouisfed.org')) {
+    if (url.includes('IRLTLT01MXM156N')) {
+      return json({ observations: [{ date: '2026-09-01', value: '9.35' }, { date: '2026-08-01', value: '9.28' }] });
+    }
+    return json({ error_code: 400, error_message: 'Bad Request' }, 400);
+  }
+  // FRED CSV download (no key).
+  if (url.includes('fredgraph.csv')) {
+    const id = new URL(url).searchParams.get('id');
+    return new Response(`observation_date,${id}\n2026-07-01,8.60\n2026-08-01,8.71\n2026-09-01,.\n`, { status: 200 });
+  }
+  // Brazil Treasury, Tesouro Direto.
+  if (url.includes('tesourotransparente.gov.br')) return new Response(TESOURO_CSV, { status: 200 });
+  // Turkey, CBRT EVDS3: the key must arrive in the "key" header and never in the URL.
+  if (url.includes('evds3.tcmb.gov.tr')) {
+    if (!headers.has('key') || /[?&]key=/i.test(url)) return json({ error: "Required request header 'key' is not present" }, 403);
+    return json({ totalCount: 2, items: [{ Tarih: '29-10-2026', TP_TEST_Y10: '31.85' }, { Tarih: '30-10-2026', TP_TEST_Y10: '31.92' }] });
+  }
+  throw new TypeError(`offline: ${new URL(url).host}`);
+};
