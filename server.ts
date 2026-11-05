@@ -219,7 +219,7 @@ async function fetchTesouroDiretoYield(): Promise<OfficialYieldObservation | nul
       tesouroCache = { at: Date.now(), obs };
       try {
         fs.mkdirSync(path.dirname(tesouroFile()), { recursive: true });
-        fs.writeFileSync(tesouroFile(), JSON.stringify(tesouroCache));
+        writeFileAtomic(tesouroFile(), JSON.stringify(tesouroCache));
       } catch {
         // keep the memory copy
       }
@@ -526,7 +526,7 @@ async function fetchCftcPull(): Promise<CftcPull | null> {
     cftcMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(cftcFile()), { recursive: true });
-      fs.writeFileSync(cftcFile(), JSON.stringify(fresh));
+      writeFileAtomic(cftcFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -578,7 +578,7 @@ async function fetchTicPull(): Promise<TicPull | null> {
     ticMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(ticFile()), { recursive: true });
-      fs.writeFileSync(ticFile(), JSON.stringify(fresh));
+      writeFileAtomic(ticFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -640,7 +640,7 @@ async function fetchCbpolPull(): Promise<CbpolPull | null> {
     cbpolMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(cbpolFile()), { recursive: true });
-      fs.writeFileSync(cbpolFile(), JSON.stringify(fresh));
+      writeFileAtomic(cbpolFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -739,7 +739,7 @@ async function fetchCommodities(): Promise<CommodityReply> {
     if (pink || eia) {
       try {
         fs.mkdirSync(path.dirname(commodityFile()), { recursive: true });
-        fs.writeFileSync(commodityFile(), JSON.stringify({ pink: mem.pink, eia: mem.eia }));
+        writeFileAtomic(commodityFile(), JSON.stringify({ pink: mem.pink, eia: mem.eia }));
       } catch {
         // keep the memory copy
       }
@@ -837,7 +837,7 @@ async function fetchCliPull(): Promise<CliPull | null> {
     cliMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(cliFile()), { recursive: true });
-      fs.writeFileSync(cliFile(), JSON.stringify(fresh));
+      writeFileAtomic(cliFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -895,7 +895,7 @@ async function fetchCpiPull(): Promise<CpiPull | null> {
     cpiMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(cpiFile()), { recursive: true });
-      fs.writeFileSync(cpiFile(), JSON.stringify(fresh));
+      writeFileAtomic(cpiFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -976,7 +976,7 @@ async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
     nationalCpiMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(nationalCpiFile()), { recursive: true });
-      fs.writeFileSync(nationalCpiFile(), JSON.stringify(fresh));
+      writeFileAtomic(nationalCpiFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -1065,7 +1065,7 @@ async function fetchComtrade(): Promise<ComtradeFile> {
     if (changed) {
       try {
         fs.mkdirSync(path.dirname(comtradeFile()), { recursive: true });
-        fs.writeFileSync(comtradeFile(), JSON.stringify(mem.file));
+        writeFileAtomic(comtradeFile(), JSON.stringify(mem.file));
       } catch {
         // keep the memory copy
       }
@@ -1136,7 +1136,7 @@ async function fetchImfPull(): Promise<ImfPull | null> {
     imfMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(imfFile()), { recursive: true });
-      fs.writeFileSync(imfFile(), JSON.stringify(fresh));
+      writeFileAtomic(imfFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -1187,7 +1187,7 @@ async function fetchCoferPull(): Promise<CoferPull | null> {
     coferMemory = { pull: fresh, triedAt: Date.now() };
     try {
       fs.mkdirSync(path.dirname(coferFile()), { recursive: true });
-      fs.writeFileSync(coferFile(), JSON.stringify(fresh));
+      writeFileAtomic(coferFile(), JSON.stringify(fresh));
     } catch {
       // keep the memory copy
     }
@@ -1535,7 +1535,7 @@ async function fetchGdeltQuarterly(iso3: string, countryName: string): Promise<G
     gdeltMemory.set(iso3, { pull, triedAt: Date.now() });
     try {
       fs.mkdirSync(path.dirname(gdeltFile(iso3)), { recursive: true });
-      fs.writeFileSync(gdeltFile(iso3), JSON.stringify(pull));
+      writeFileAtomic(gdeltFile(iso3), JSON.stringify(pull));
     } catch {
       // keep the memory copy
     }
