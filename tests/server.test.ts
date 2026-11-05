@@ -575,6 +575,21 @@ test('as of a past day: archived figures beside today, with a CSV of the past pu
   assert.equal((await fetch(`${base}/api/export/MEX/figures.csv?asOf=2000-01-01`)).status, 404);
 });
 
+test('replicate a decision: decisions from the BIS series, then the week-before data and rule', async () => {
+  const list = (await (await fetch(`${base}/api/decision-replay/MEX`)).json()) as { decisions: Array<{ date: string }>; first: string | null; target: { pct: number } | null };
+  assert.ok(Array.isArray(list.decisions));
+  assert.equal(list.target?.pct, 3);
+  assert.equal((await fetch(`${base}/api/decision-replay/MEX?date=yesterday`)).status, 400);
+  if (list.decisions.length) {
+    const r = await fetch(`${base}/api/decision-replay/MEX?date=${list.decisions[0].date}`);
+    assert.equal(r.status, 200);
+    const body = (await r.json()) as { replay: { action: string; caveats: string[] }; sentence: string };
+    assert.ok(['raised', 'cut', 'held'].includes(body.replay.action));
+    assert.match(body.sentence, /The bank /);
+  }
+  if (list.first) assert.equal((await fetch(`${base}/api/decision-replay/MEX?date=1990-01-01`)).status, 404);
+});
+
 test('series: every figure lists its history or why it has none; unknown series say Missing', async () => {
   const list = (await (await fetch(`${base}/api/series/MEX`)).json()) as { series: Array<{ id: string; count: number }>; missing: Array<{ id: string; reason: string }> };
   const ids = [...list.series.map((s) => s.id), ...list.missing.map((m) => m.id)];
