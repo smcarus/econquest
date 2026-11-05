@@ -44,3 +44,15 @@ test('Brazil: a Tesouro Direto daily rate counts as official', () => {
   assert.equal(s.yieldSource, 'official');
   assert.equal(s.officialYield?.frequency, 'daily');
 });
+
+test('offline, a snapshot that was live when saved reads Saved data, never Live data', async () => {
+  const { dataBadgeText } = await import('../src/utils/dataStatus.ts');
+  assert.equal(dataBadgeText('live', false, 'Nov 5, 07:58 PM').label, 'Live data');
+  const off = dataBadgeText('live', true, 'Nov 5, 07:58 PM');
+  assert.equal(off.label, 'Saved data');
+  assert.equal(off.saved, true);
+  assert.match(off.help, /cannot be reached.*saved on Nov 5, 07:58 PM/);
+  assert.equal(dataBadgeText('partial', true, '').label, 'Saved data');
+  // Nothing was live: offline changes nothing, it still says so.
+  assert.equal(dataBadgeText('sample', true, '').label, 'No live data');
+});
