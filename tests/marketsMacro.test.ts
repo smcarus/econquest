@@ -187,3 +187,18 @@ test('with CDS on four countries the screen keeps the CDS basis', () => {
   assert.equal(r.basis, 'cds');
   assert.equal(r.realFit, null);
 });
+
+test('panels with no figure fold away; panels with one figure stay, order kept', async () => {
+  const { splitEmptyGroups, emptyGroupReasons } = await import('../src/utils/marketsMacro.ts');
+  const miss = (label: string, source: string) => ({ label, value: 'Missing', source, verified: false, missing: true });
+  const groups = [
+    { title: 'A', rows: [miss('x', 'IMF did not answer'), miss('y', 'IMF did not answer')] },
+    { title: 'B', rows: [miss('x', 'BIS did not answer'), { label: 'z', value: '4.6%', source: 'BCB', verified: true }] },
+    { title: 'C', rows: [{ label: 'w', value: 'Missing', source: 'No source yet', verified: false }] },
+    { title: 'D', rows: [] },
+  ];
+  const { filled, empty } = splitEmptyGroups(groups);
+  assert.deepEqual(filled.map((g) => g.title), ['B', 'D']);
+  assert.deepEqual(empty.map((g) => g.title), ['A', 'C']);
+  assert.deepEqual(emptyGroupReasons(groups[0]), ['IMF did not answer']);
+});

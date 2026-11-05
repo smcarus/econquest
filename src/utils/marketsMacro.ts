@@ -701,3 +701,25 @@ export function coferRows(self: LiveWatchlistItem | undefined, iso3: string): Br
     verified: true,
   }));
 }
+
+/** True when a row holds no figure: the value reads Missing (with the reason under it). */
+export function rowIsMissing(r: BriefRow): boolean {
+  return Boolean(r.missing) || r.value.trim() === 'Missing';
+}
+
+/**
+ * Splits panels into those with at least one figure and those with none, so a country page
+ * leads with what the app actually holds and folds the all-Missing panels into one list of
+ * what each still needs. Order inside each half is kept.
+ */
+export function splitEmptyGroups<G extends { rows: BriefRow[] }>(groups: G[]): { filled: G[]; empty: G[] } {
+  const filled: G[] = [];
+  const empty: G[] = [];
+  for (const g of groups) (g.rows.length && g.rows.every(rowIsMissing) ? empty : filled).push(g);
+  return { filled, empty };
+}
+
+/** The reasons an all-Missing panel gives, each once, for the folded list ("IMF did not answer"). */
+export function emptyGroupReasons(g: { rows: BriefRow[] }): string[] {
+  return [...new Set(g.rows.map((r) => r.source.trim()).filter(Boolean))];
+}
