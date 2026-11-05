@@ -1,3 +1,4 @@
+import { isSmallModel, largestModel } from '../utils/refereeModel';
 import React, { useState } from 'react';
 import { CheckCircle2, Loader2, Search, XCircle } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
@@ -48,6 +49,7 @@ export const AiModelSettings: React.FC<{
   const [status, setStatus] = useState<OllamaStatus | null>(null);
   const [finding, setFinding] = useState(false);
   const [tryReply, setTryReply] = useState<TryReply | null>(null);
+  const [refereeReply, setRefereeReply] = useState<TryReply | null>(null);
   const [trying, setTrying] = useState(false);
 
   const update = (patch: Partial<AIRuntimeConfig>) => {
@@ -81,18 +83,26 @@ export const AiModelSettings: React.FC<{
     }
   };
 
-  const tryModel = async () => {
-    setTrying(true);
-    setTryReply(null);
+  const tryOne = async (referee: boolean): Promise<TryReply> => {
     try {
       const r = await fetch('/api/ai/try-model', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ runtimeConfig: config }),
+        body: JSON.stringify({ runtimeConfig: config, ...(referee ? { referee: true } : {}) }),
       });
-      setTryReply(r.ok ? ((await r.json()) as TryReply) : { ok: false, ms: 0, reason: `the app server answered HTTP ${r.status}` });
+      return r.ok ? ((await r.json()) as TryReply) : { ok: false, ms: 0, reason: `the app server answered HTTP ${r.status}` };
     } catch {
-      setTryReply({ ok: false, ms: 0, reason: 'the app server did not answer' });
+      return { ok: false, ms: 0, reason: 'the app server did not answer' };
+    }
+  };
+  /** Tests the fast model, then (with Ollama) the referee model, the way the council calls each. */
+  const tryModel = async () => {
+    setTrying(true);
+    setTryReply(null);
+    setRefereeReply(null);
+    try {
+      setTryReply(await tryOne(false));
+      if (config.providerMode !== 'gemini') setRefereeReply(await tryOne(true));
     } finally {
       setTrying(false);
     }
@@ -173,8 +183,8 @@ export const AiModelSettings: React.FC<{
           <div className="grid gap-3 sm:grid-cols-2">
             {(
               [
-                { key: 'ollamaQuickModel', label: 'Model for summaries, agent picking and the debate', hint: 'A 7-8B model answers in under a minute on most Macs.' },
-                { key: 'ollamaDeepModel', label: 'Model for the full council’s final step', hint: 'Can be larger or a reasoning model; it runs once per council.' },
+                { key: 'ollamaQuickModel', label: 'Fast model: picking agents and the desk agents', hint: 'A 7-8B model answers in under a minute on most Macs.' },
+                { key: 'ollamaDeepModel', label: 'Referee model: Supreme Council, chat summaries, explanations and the debate', hint: 'Use your largest model (for example a 31B). It judges and sums up the agents, so it can take a few minutes.' },
               ] as const
             ).map((m) => (
               <label key={m.key} className="text-xs text-slate-600 dark:text-slate-400">
@@ -203,6 +213,16 @@ export const AiModelSettings: React.FC<{
               </label>
             ))}
           </div>
+          {isSmallModel(config.ollamaDeepModel) && (
+            <p className="text-xs text-amber-800 dark:text-amber-300 flex flex-wrap items-center gap-2" data-settings-small-referee="true">
+              <span>The referee model is {config.ollamaDeepModel}, a small model. The Supreme Council and the chat summaries should run on your largest model.</span>
+              {largestModel(installed) && (
+                <button type="button" className="ui-btn" onClick={() => update({ ollamaDeepModel: largestModel(installed)! })}>
+                  Use {largestModel(installed)}
+                </button>
+              )}
+            </p>
+          )}
           {!installed.length && <p className="text-xs text-slate-500 dark:text-slate-400">Press Find Ollama to pick from the models you have downloaded.</p>}
         </div>
       )}
@@ -230,8 +250,16 @@ export const AiModelSettings: React.FC<{
           <p className={`mt-2 text-xs inline-flex items-start gap-1.5 ${tryReply.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`} role="status" data-settings-try-result={tryReply.ok ? 'ok' : 'failed'}>
             {tryReply.ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : <XCircle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden />}
             {tryReply.ok
-              ? `Working: ${tryReply.provider} answered in ${Math.max(1, Math.round(tryReply.ms / 1000))} s. Council chat summaries will use it.`
-              : `Not working: ${tryReply.reason}.`}
+              ? `Fast model working: ${tryReply.provider} answered in ${Math.max(1, Math.round(tryReply.ms / 1000))} s.`
+              : `Fast model not working: ${tryReply.reason}.`}
+          </p>
+        )}
+        {refereeReply && (
+          <p className={`mt-1 text-xs flex items-start gap-1.5 ${refereeReply.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`} role="status" data-settings-try-referee={refereeReply.ok ? 'ok' : 'failed'}>
+            {refereeReply.ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : <XCircle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden />}
+            {refereeReply.ok
+              ? `Referee working: ${refereeReply.provider} answered in ${Math.max(1, Math.round(refereeReply.ms / 1000))} s. The Supreme Council, summaries, explanations and debate use it.`
+              : `Referee not working: ${refereeReply.reason}.`}
           </p>
         )}
       </div>

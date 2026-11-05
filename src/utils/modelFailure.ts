@@ -3,8 +3,8 @@
  * "no model answered". Also the time a step may wait for a model on this computer.
  */
 
-/** Steps that summarise a whole conversation (and Settings > AI model > Test, which waits the same way). */
-export const LONG_CHAT_STEPS = new Set(['COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'AI_MODEL_TEST', 'REVIEW_OPTIONS']);
+/** Steps that summarise a whole conversation, the Supreme Council's final step (a large model), and Settings > AI model > Test. */
+export const LONG_CHAT_STEPS = new Set(['COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'AI_MODEL_TEST', 'REVIEW_OPTIONS', 'STAGE_3_SUPREME_COUNCIL', 'AI_MODEL_TEST_REFEREE']);
 
 /** A local model (Ollama on a laptop) can take a minute or more to read the agents' answers. */
 export const LONG_CHAT_STEP_MIN_MS = 120_000;

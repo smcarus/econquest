@@ -8,7 +8,7 @@ test('summary and debate steps give a local model at least two minutes', () => {
   assert.equal(localStepTimeoutMs('COUNCIL_SYNTHESIS', 300, false), 300_000);
   // Quick steps keep their old limits.
   assert.equal(localStepTimeoutMs('COUNCIL_CHOOSE_AGENTS', undefined, false), 16_000);
-  assert.equal(localStepTimeoutMs('STAGE_3_SUPREME_COUNCIL', undefined, true), 25_000);
+  assert.equal(localStepTimeoutMs('STAGE_3_SUPREME_COUNCIL', undefined, true), 120_000); // a referee on a large model
   assert.equal(localStepTimeoutMs('STAGE_1_GEO_DESK', 40, false), 40_000);
   assert.equal(localStepTimeoutMs('STAGE_1_GEO_DESK', 2, false), 16_000);
 });
