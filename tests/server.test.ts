@@ -528,3 +528,16 @@ test('pull archive: each saved country pull is kept by day and read back on or b
   const list = (await (await fetch(`${base}/api/archive`)).json()) as { countries: Array<{ iso3: string }> };
   assert.ok(list.countries.some((c) => c.iso3 === 'MEX'));
 });
+
+test('series: every figure lists its history or why it has none; unknown series say Missing', async () => {
+  const list = (await (await fetch(`${base}/api/series/MEX`)).json()) as { series: Array<{ id: string; count: number }>; missing: Array<{ id: string; reason: string }> };
+  const ids = [...list.series.map((s) => s.id), ...list.missing.map((m) => m.id)];
+  for (const id of ['policy_rate', 'cpi_monthly', 'cli', 'cftc_lev_net', 'tic_holdings', 'debt_gdp', 'yield_10y']) assert.ok(ids.includes(id), id);
+  for (const m of list.missing) assert.ok(m.reason.length > 0, m.id);
+  for (const s of list.series) assert.ok(s.count > 0, s.id);
+  const egypt = await fetch(`${base}/api/series/EGY/policy_rate`);
+  assert.equal(egypt.status, 404);
+  assert.match(((await egypt.json()) as { message: string }).message, /Missing\. Not in BIS policy rates/);
+  const world = (await (await fetch(`${base}/api/series/world`)).json()) as { series: unknown[]; missing: unknown[] };
+  assert.ok(Array.isArray(world.series) && Array.isArray(world.missing));
+});
