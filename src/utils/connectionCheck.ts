@@ -14,6 +14,7 @@
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
+import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
@@ -97,6 +98,8 @@ export interface CheckOptions {
   readFile?: (path: string) => { text: string; modified: Date } | null;
   /** Only these source ids. */
   only?: string[];
+  /** Pause between the two OECD checks, ms (default 3000; tests set 0). */
+  oecdGapMs?: number;
 }
 
 export const STATE_LABEL: Record<ConnectionState, string> = {
@@ -163,6 +166,8 @@ async function probe(fetchFn: FetchFn, url: string, timeoutMs: number, init: Req
 }
 
 function httpRefusal(status: number | undefined, text: string | undefined): string {
+  if (isBotCheck(status, text))
+    return `Blocked by the site's bot check (a Cloudflare "Just a moment" page, HTTP ${status}), not a data error. It usually clears after an hour without calls; the app pauses its own calls for an hour after this.`;
   const snippet = (text || '').replace(/\s+/g, ' ').trim().slice(0, 140);
   const why =
     status === 401 || status === 403
@@ -610,37 +615,43 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       clearTimeout(timer);
     }
   });
-  add('oecd_cli', () =>
-    httpCheck(
-      { id: 'oecd_cli', name: 'OECD leading indicators', group: 'free', feeds: 'Monthly composite leading indicator (amplitude adjusted, 100 = long-term average) for the countries the OECD covers' },
+  // OECD data via DBnomics: one call at a time, the CPI check after the CLI one.
+  let oecdGate: Promise<unknown> = Promise.resolve();
+  add('oecd_cli', () => {
+    const job = httpCheck(
+      { id: 'oecd_cli', name: 'OECD leading indicators (via DBnomics)', group: 'free', feeds: 'Monthly OECD composite leading indicator (amplitude adjusted, 100 = long-term average) for the countries the OECD covers' },
       fetchFn,
-      cliUrl({ areas: ['USA', SAMPLE_ISO3], months: 6 }),
+      cliUrl({ areas: ['USA', SAMPLE_ISO3] }),
       Math.max(T, 20000),
       (r) => {
         const s = parseCli(r.text);
         const c = cliFor(SAMPLE_ISO3, s) || cliFor('USA', s);
         return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} leading indicator ${fmt(c.level, 2)} (${formatMonth(c.month)}${c.phase ? `, ${c.phase}` : ''})` : null;
       },
-      undefined,
-      'The OECD answered, but not with an amplitude-adjusted leading indicator series the app reads. The dataset layout may have changed.'
-    )
-  );
+      { headers: OECD_HEADERS },
+      'DBnomics answered, but with no amplitude-adjusted OECD leading indicator series the app reads (dataset DSD_STES@DF_CLI). The dataset code or dimension names may differ.'
+    );
+    oecdGate = job;
+    return job;
+  });
 
-  add('oecd_cpi', () =>
-    httpCheck(
-      { id: 'oecd_cpi', name: 'OECD consumer prices', group: 'free', feeds: 'Monthly headline CPI inflation, y/y, for the countries the OECD covers' },
+  add('oecd_cpi', async () => {
+    await oecdGate.catch(() => undefined);
+    await new Promise((r) => setTimeout(r, opts.oecdGapMs ?? 3000));
+    return httpCheck(
+      { id: 'oecd_cpi', name: 'OECD consumer prices (via DBnomics)', group: 'free', feeds: 'Monthly OECD headline CPI inflation, y/y, for the countries the OECD covers' },
       fetchFn,
-      cpiUrl({ areas: ['USA', SAMPLE_ISO3], months: 15 }),
+      cpiUrl({ areas: ['USA', SAMPLE_ISO3] }),
       Math.max(T, 20000),
       (r) => {
         const s = parseCpi(r.text);
         const c = cpiFor(SAMPLE_ISO3, s) || cpiFor('USA', s);
         return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})` : null;
       },
-      undefined,
-      'The OECD answered, but not with a monthly headline CPI series the app reads. The dataset layout may have changed.'
-    )
-  );
+      { headers: OECD_HEADERS },
+      'DBnomics answered, but with no monthly OECD headline CPI growth series the app reads (dataset DSD_PRICES@DF_PRICES_ALL). The dataset code or dimension names may differ.'
+    );
+  });
 
   add('comtrade', async () => {
     const key = (env.COMTRADE_API_KEY || '').trim();

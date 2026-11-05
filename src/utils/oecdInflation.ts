@@ -2,8 +2,9 @@
  * OECD consumer price inflation, monthly (Sam, 2026-11-05: "OECD composite leading indicators and
  * inflation, monthly, no key").
  *
- * Source: OECD Data Explorer API, dataflow OECD.SDD.TPS / DSD_PRICES@DF_PRICES_ALL, headline CPI
- * (all items), monthly. Free, no key. The OECD's own annual growth rate (y/y %) is used where it
+ * Source: the OECD's dataflow DSD_PRICES@DF_PRICES_ALL, headline CPI (all items), monthly, read
+ * through DBnomics (api.db.nomics.world, free, no key) because the OECD's own API refused the app
+ * with a bot check. The OECD's own annual growth rate (y/y %) is used where it
  * is in the reply; otherwise the y/y change is worked out from the CPI index 12 months apart, and
  * the source says so. The newest month is usually one to two months old.
  *
@@ -15,19 +16,25 @@
  * Readings: the latest y/y rate and month, the change over three months, and a stated rule on
  * that change: up 0.5 pts or more = rising, down 0.5 pts or more = easing, otherwise steady.
  */
-import { OECD_API, OECD_AREA_FOR, areaSeries, formatMonth, parseSdmxCsv, seriesByArea, startPeriod } from './oecdSdmx';
+import { OECD_AREA_FOR, areaSeries, dbnomicsUrl, formatMonth, parseOecdReply, seriesByArea } from './oecdSdmx';
 
-export const CPI_LABEL = 'OECD consumer prices, all items, y/y';
-export const CPI_FLOW = 'OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,';
+export const CPI_LABEL = 'OECD consumer prices via DBnomics, all items, y/y';
+export const CPI_DATASET = 'DSD_PRICES@DF_PRICES_ALL';
 
 /**
- * Query for headline CPI. With no area, every area the OECD publishes (one call for the whole app).
- * Key order: REF_AREA.FREQ.METHODOLOGY.MEASURE.UNIT_MEASURE.EXPENDITURE.ADJUSTMENT.TRANSFORMATION.
- * Methodology, unit, adjustment and transformation are left open and chosen when read.
+ * DBnomics query for headline CPI. With no area, every area (one call for the whole app).
+ * Filtered to monthly, CPI, all items, annual growth rate; `wide` drops the growth-rate filter
+ * (used if the narrow query finds nothing), and the reader then works y/y out from the index.
  */
-export function cpiUrl(opts: { areas?: string[]; months?: number; now?: Date } = {}): string {
-  const area = (opts.areas || []).flatMap((a) => OECD_AREA_FOR[a] || [a]).join('+');
-  return `${OECD_API}/${CPI_FLOW}/${area}.M..CPI.._T..?startPeriod=${startPeriod(opts.months ?? 27, opts.now)}&format=csvfile`;
+export function cpiUrl(opts: { areas?: string[]; wide?: boolean } = {}): string {
+  const areas = (opts.areas || []).flatMap((a) => OECD_AREA_FOR[a] || [a]);
+  return dbnomicsUrl(CPI_DATASET, {
+    ...(areas.length ? { REF_AREA: areas } : {}),
+    FREQ: ['M'],
+    MEASURE: ['CPI'],
+    EXPENDITURE: ['_T'],
+    ...(opts.wide ? {} : { TRANSFORMATION: ['GY'] }),
+  });
 }
 
 export type CpiBasis = 'oecd_yoy' | 'from_index';
@@ -35,7 +42,7 @@ export type CpiSeries = Record<string, { basis: CpiBasis; points: { period: stri
 
 /** Reads the OECD reply into one y/y series per area. Null when nothing usable. */
 export function parseCpi(text: unknown): CpiSeries | null {
-  const obs = parseSdmxCsv(text);
+  const obs = parseOecdReply(text);
   if (!obs?.length) return null;
   const base = { MEASURE: ['CPI'], FREQ: ['M'], EXPENDITURE: ['_T'] };
   const prefer = { METHODOLOGY: ['N', 'HICP'], ADJUSTMENT: ['N'] };
@@ -96,14 +103,14 @@ export function cpiFor(iso3: string, series: CpiSeries | null | undefined): CpiR
 
 /** Source line for a figure. */
 export function cpiSource(c: { month: string; basis: CpiBasis }): string {
-  return `OECD, ${formatMonth(c.month)}${c.basis === 'from_index' ? ' (y/y worked out from the OECD CPI index)' : ''}`;
+  return `OECD via DBnomics, ${formatMonth(c.month)}${c.basis === 'from_index' ? ' (y/y worked out from the OECD CPI index)' : ''}`;
 }
 
 /** Why a country has no OECD CPI figure: the OECD answered without it, or did not answer. */
 export function cpiMissing(pulled: boolean): { short: string; help: string } {
   return pulled
     ? { short: 'OECD publishes no CPI', help: 'The OECD answered, but publishes no monthly consumer price index for this country.' }
-    : { short: 'OECD did not answer', help: 'The OECD Data Explorer did not answer yet; the app asks again within the hour.' };
+    : { short: 'DBnomics did not answer', help: 'DBnomics (the free mirror the app reads OECD data from) did not answer yet; the app asks again within the hour.' };
 }
 
 const sg = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;

@@ -1,6 +1,12 @@
 /**
- * Shared reader for the OECD Data Explorer API (sdmx.oecd.org, free, no key), used by the OECD
- * leading indicator (oecdCli.ts) and OECD inflation (oecdInflation.ts) feeds.
+ * Shared reader for OECD data, used by the OECD leading indicator (oecdCli.ts) and OECD inflation
+ * (oecdInflation.ts) feeds.
+ *
+ * Route (Sam, 2026-11-05 03:33Z: "Lets use DBnomics"): the OECD's own API (sdmx.oecd.org) sits
+ * behind a Cloudflare bot check that refused the app on Sam's Mac, so the app reads the same OECD
+ * series from DBnomics (api.db.nomics.world, free, no key), which mirrors the OECD's datasets
+ * under the OECD's own codes. The reply is JSON: series.docs[] with dimensions{}, period[] and
+ * value[]. The SDMX-CSV reader below stays for the OECD's own format.
  *
  * The app asks for SDMX-CSV (`format=csvfile`): one row per observation with a header naming each
  * column (REF_AREA, TIME_PERIOD, OBS_VALUE and the series' other dimensions). Columns are read by
@@ -11,6 +17,81 @@
  */
 
 export const OECD_HOST = 'sdmx.oecd.org';
+export const DBNOMICS_HOST = 'api.db.nomics.world';
+export const DBNOMICS_SOURCE = 'OECD via DBnomics';
+
+/**
+ * DBnomics query for one OECD dataset, filtered by dimension name (so the order of the OECD's key
+ * does not matter). One page of up to 1000 series with their observations.
+ */
+export function dbnomicsUrl(dataset: string, dims: Record<string, string[]>): string {
+  const d = encodeURIComponent(JSON.stringify(dims));
+  return `https://${DBNOMICS_HOST}/v22/series/OECD/${encodeURIComponent(dataset)}?dimensions=${d}&observations=1&format=json&limit=1000`;
+}
+
+/**
+ * Reads a DBnomics series reply into monthly observations (only the last `keepMonths` months of
+ * each series, to keep the disk copy small). Null when it is not a DBnomics series reply; an empty
+ * list when DBnomics answered with no series.
+ */
+export function parseDbnomics(json: unknown, keepMonths = 40): SdmxObs[] | null {
+  const docs = (json as any)?.series?.docs;
+  if (!Array.isArray(docs)) return null;
+  const out: SdmxObs[] = [];
+  for (const doc of docs) {
+    const dimsRaw = doc?.dimensions && typeof doc.dimensions === 'object' ? doc.dimensions : {};
+    const dims: Record<string, string> = {};
+    for (const [k, v] of Object.entries(dimsRaw)) dims[k.toUpperCase()] = String(v);
+    const area = String(dims.REF_AREA || dims.LOCATION || '').toUpperCase();
+    const periods: unknown[] = Array.isArray(doc?.period) ? doc.period : [];
+    const values: unknown[] = Array.isArray(doc?.value) ? doc.value : [];
+    if (!area || !periods.length) continue;
+    delete dims.REF_AREA;
+    const pts: SdmxObs[] = [];
+    periods.forEach((p, i) => {
+      const period = String(p).slice(0, 7);
+      const v = values[i];
+      const value = typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' && v !== 'NA' ? Number(v) : NaN;
+      if (/^\d{4}-\d{2}$/.test(period) && Number.isFinite(value)) pts.push({ area, period, value, dims });
+    });
+    out.push(...pts.slice(-keepMonths));
+  }
+  return out;
+}
+
+/** Reads either reply the app may get: DBnomics JSON or the OECD's own SDMX-CSV. */
+export function parseOecdReply(text: unknown): SdmxObs[] | null {
+  if (typeof text !== 'string') return null;
+  const t = text.replace(/^\uFEFF/, '').trimStart();
+  if (t.startsWith('{')) {
+    try {
+      return parseDbnomics(JSON.parse(t));
+    } catch {
+      return null;
+    }
+  }
+  return parseSdmxCsv(t);
+}
+
+/**
+ * Headers for every OECD call. The OECD's site sits behind Cloudflare, which answered requests
+ * that looked like a bare script (no Accept for CSV, a generic user agent) with a "Just a moment"
+ * bot check and HTTP 429 on Sam's Mac (2026-11-05). The app names itself honestly and asks for
+ * the SDMX-CSV it reads.
+ */
+export const OECD_HEADERS: Record<string, string> = {
+  Accept: 'application/json',
+  'User-Agent': 'EconQuest/1.0 (sovereign research terminal; +https://github.com/smcarus/econquest)',
+};
+
+/** After a refusal (429 or the bot check), the app leaves the OECD alone this long. */
+export const OECD_PAUSE_MS = 60 * 60 * 1000;
+
+/** True when the reply is Cloudflare's bot check page rather than data. */
+export function isBotCheck(status: number | undefined, text: string | undefined): boolean {
+  const t = (text || '').slice(0, 4000);
+  return (status === 403 || status === 429 || status === 503) && /just a moment|cf-chl|challenge-platform|cf_chl_opt|attention required/i.test(t);
+}
 export const OECD_API = `https://${OECD_HOST}/public/rest/data`;
 
 /** Country codes the OECD uses where they differ from the app's (the EU row is the euro area). */

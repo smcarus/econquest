@@ -16,6 +16,7 @@ import { readXlsxSheet } from './src/utils/xlsxRead';
 import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
 import { pullImfExternal, type ImfExternal, type ImfStructure } from './src/utils/imfReserves';
 import { pullCofer, type CoferReading } from './src/utils/imfCofer';
@@ -698,6 +699,42 @@ async function fetchCommodities(): Promise<CommodityReply> {
 }
 
 /**
+ * One way to fetch OECD data (now through DBnomics, api.db.nomics.world): named headers, one call
+ * at a time at least 5 seconds apart, and nothing at all for an hour after a refusal (HTTP 429 or
+ * a Cloudflare bot check).
+ */
+let oecdQueue: Promise<unknown> = Promise.resolve();
+let oecdLastCallAt = 0;
+let oecdPausedUntil = 0;
+async function oecdFetch(url: string, timeoutMs: number): Promise<{ status: number; text: string } | null> {
+  const run = async () => {
+    if (Date.now() < oecdPausedUntil) {
+      console.warn(`[OECD] paused after a refusal; asking again in ${Math.ceil((oecdPausedUntil - Date.now()) / 60000)} min`);
+      return null;
+    }
+    const wait = oecdLastCallAt + 5000 - Date.now();
+    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
+    oecdLastCallAt = Date.now();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { signal: controller.signal, headers: OECD_HEADERS });
+      const text = await res.text();
+      if (res.status === 429 || isBotCheck(res.status, text)) {
+        oecdPausedUntil = Date.now() + OECD_PAUSE_MS;
+        console.warn(`[OECD via DBnomics] ${isBotCheck(res.status, text) ? 'blocked by a bot check' : 'too many requests'} (HTTP ${res.status}); pausing these calls for an hour`);
+      }
+      return { status: res.status, text };
+    } finally {
+      clearTimeout(timer);
+    }
+  };
+  const p = oecdQueue.then(run, run);
+  oecdQueue = p.catch(() => undefined);
+  return p;
+}
+
+/**
  * OECD composite leading indicators (src/utils/oecdCli.ts). Monthly; one call for every area.
  * Saved to data/live/oecd-cli.json with its pull date and pulled again after a day; a failed pull
  * keeps the last good one and is retried after an hour. If the OECD refuses the narrow query
@@ -724,15 +761,19 @@ async function fetchCliPull(): Promise<CliPull | null> {
   cliInFlight = (async () => {
     let series: CliSeries | null = null;
     for (const wide of [false, true]) {
+      let res: { status: number; text: string } | null = null;
       try {
-        const res = await fetchWithTimeout(cliUrl({ wide }), 30000);
-        if (res.ok) series = parseCli(await res.text());
-        else console.warn(`[OECD] leading indicators refused (HTTP ${res.status})${wide ? '' : '; trying the whole dataflow'}`);
+        res = await oecdFetch(cliUrl({ wide }), 30000);
       } catch (e) {
-        console.warn(`[OECD] leading indicators: ${describeNetworkError(e, 30000)}`);
+        console.warn(`[OECD via DBnomics] leading indicators: ${describeNetworkError(e, 30000)}`);
         break;
       }
-      if (series) break;
+      if (!res) break;
+      if (res.status >= 200 && res.status < 300) series = parseCli(res.text);
+      else console.warn(`[OECD via DBnomics] leading indicators refused (HTTP ${res.status})`);
+      // Ask again without the adjustment filter only when the narrow query found nothing or was
+      // refused as unknown; never after a 429 or a bot check.
+      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
     }
     const prev = cliMemory?.pull ?? null;
     if (!series) {
@@ -779,12 +820,18 @@ async function fetchCpiPull(): Promise<CpiPull | null> {
   if (cpiInFlight) return cpiInFlight;
   cpiInFlight = (async () => {
     let series: CpiSeries | null = null;
-    try {
-      const res = await fetchWithTimeout(cpiUrl(), 30000);
-      if (res.ok) series = parseCpi(await res.text());
-      else console.warn(`[OECD] consumer prices refused (HTTP ${res.status})`);
-    } catch (e) {
-      console.warn(`[OECD] consumer prices: ${describeNetworkError(e, 30000)}`);
+    for (const wide of [false, true]) {
+      let res: { status: number; text: string } | null = null;
+      try {
+        res = await oecdFetch(cpiUrl({ wide }), 60000);
+      } catch (e) {
+        console.warn(`[OECD via DBnomics] consumer prices: ${describeNetworkError(e, 60000)}`);
+        break;
+      }
+      if (!res) break;
+      if (res.status >= 200 && res.status < 300) series = parseCpi(res.text);
+      else console.warn(`[OECD via DBnomics] consumer prices refused (HTTP ${res.status})`);
+      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
     }
     const prev = cpiMemory?.pull ?? null;
     if (!series) {
