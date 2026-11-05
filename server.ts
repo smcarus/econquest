@@ -11,7 +11,8 @@ import {
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
-import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
+import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
+import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
@@ -3972,6 +3973,71 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
       res.json(out);
     } catch (error: any) {
       const out: AgentChoiceResult = { agents: null, reason: `the AI step failed (${error?.message || 'unknown error'})` };
+      res.json(out);
+    }
+  });
+
+  app.post('/api/council/debate', async (req, res) => {
+    const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
+    const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 6) : [];
+    if (!question || !answers.length || !answers.every((a) => a && typeof a.name === 'string' && Array.isArray(a.findings) && Array.isArray(a.missing))) {
+      return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
+    }
+    // Challenges are rebuilt here from the answers, never taken from the request.
+    const challenges = findChallenges(answers);
+    if (!challenges.length) {
+      const out: DebateResult = { challenges, replies: null, reason: 'the agents do not pull different ways on these countries' };
+      return res.json(out);
+    }
+    try {
+      const step = await executeResilientLlmStep<{ replies: Array<{ index: number; reply: string }>; verdict: string; open: string[] }>({
+        stepName: 'COUNCIL_DEBATE',
+        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
+        runtimeConfig: req.body?.runtimeConfig || {},
+        thinkingLevel: ThinkingLevel.LOW,
+        systemInstruction: DEBATE_INSTRUCTION,
+        prompt: (answersAsText(question, answers) + '\n' + challengesAsText(challenges)).slice(0, 24000),
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            replies: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: { index: { type: Type.NUMBER, description: 'Challenge number, from 1.' }, reply: { type: Type.STRING } },
+                required: ['index', 'reply'],
+              },
+            },
+            verdict: { type: Type.STRING },
+            open: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ['replies', 'verdict', 'open'],
+        },
+        fallbackValue: { replies: [], verdict: '', open: [] },
+        maxRetries: 1,
+      });
+      if (step.usedFallback) {
+        const out: DebateResult = { challenges, replies: null, reason: 'no AI model answered' };
+        return res.json(out);
+      }
+      const { ok, removed, contradicted } = sentenceCheck(question, answers);
+      const str = (x: unknown) => (typeof x === 'string' ? x.trim().slice(0, 600) : '');
+      const seen = new Set<number>();
+      const replies = (Array.isArray(step.data?.replies) ? step.data.replies : [])
+        .map((r) => ({ index: Math.round(Number(r?.index)) - 1, reply: str(r?.reply) }))
+        .filter((r) => r.index >= 0 && r.index < challenges.length && r.reply && !seen.has(r.index) && seen.add(r.index) && ok(r.reply));
+      const verdict = str(step.data?.verdict);
+      const out: DebateResult = {
+        challenges,
+        replies,
+        verdict: verdict && ok(verdict) ? verdict : undefined,
+        open: (Array.isArray(step.data?.open) ? step.data.open : []).map(str).filter((o) => o && ok(o)).slice(0, 6),
+        removed: [...removed, ...contradicted.map((c) => `${c.sentence} (${c.reason})`)],
+        provider: step.providerUsed,
+      };
+      res.json(out);
+    } catch (error: any) {
+      const out: DebateResult = { challenges, replies: null, reason: `the debate step failed (${error?.message || 'unknown error'})` };
       res.json(out);
     }
   });
