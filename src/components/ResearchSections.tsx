@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { RESEARCH_SECTIONS, sourcesGrid } from '../utils/researchSections';
 
@@ -6,23 +6,35 @@ import { RESEARCH_SECTIONS, sourcesGrid } from '../utils/researchSections';
 export const ResearchSectionNav: React.FC<{
   active: string;
   onChange: (id: string) => void;
+  /** The four shared sections by default; one country passes its own tabs under the same names. */
+  sections?: Array<{ id: string; label: string }>;
   extra?: Array<{ id: string; label: string; className?: string }>;
   ariaLabel?: string;
-}> = ({ active, onChange, extra = [], ariaLabel = 'Research sections' }) => (
-  <nav className="mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel} data-research-sections="true">
-    {RESEARCH_SECTIONS.map((s) => (
-      <button key={s.id} type="button" onClick={() => onChange(s.id)} aria-current={active === s.id ? 'page' : undefined} className="ui-tab whitespace-nowrap">
-        {s.label}
-      </button>
-    ))}
-    {extra.length > 0 && <span aria-hidden="true" className="self-center mx-1 h-4 border-l border-slate-200 dark:border-slate-700" />}
-    {extra.map((t) => (
-      <button key={t.id} type="button" onClick={() => onChange(t.id)} aria-current={active === t.id ? 'page' : undefined} className={`ui-tab whitespace-nowrap ${t.className || ''}`}>
-        {t.label}
-      </button>
-    ))}
-  </nav>
-);
+}> = ({ active, onChange, sections = RESEARCH_SECTIONS, extra = [], ariaLabel = 'Research sections' }) => {
+  const ref = useRef<HTMLElement | null>(null);
+  // On a phone the menu scrolls sideways: keep the open section in view.
+  useEffect(() => {
+    const el = ref.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (el && ref.current && ref.current.scrollWidth > ref.current.clientWidth) {
+      ref.current.scrollLeft = Math.max(0, el.offsetLeft - ref.current.clientWidth / 2 + el.clientWidth / 2);
+    }
+  }, [active]);
+  return (
+    <nav ref={ref} className="mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel} data-research-sections="true">
+      {sections.map((s) => (
+        <button key={s.id} type="button" onClick={() => onChange(s.id)} aria-current={active === s.id ? 'page' : undefined} className="ui-tab whitespace-nowrap">
+          {s.label}
+        </button>
+      ))}
+      {extra.length > 0 && <span aria-hidden="true" className="self-center mx-1 h-4 border-l border-slate-200 dark:border-slate-700" />}
+      {extra.map((t) => (
+        <button key={t.id} type="button" onClick={() => onChange(t.id)} aria-current={active === t.id ? 'page' : undefined} className={`ui-tab whitespace-nowrap ${t.className || ''}`}>
+          {t.label}
+        </button>
+      ))}
+    </nav>
+  );
+};
 
 /** Header card for the Compare and My holdings scopes: what is in view, its data state, then the section menu. */
 export const ResearchHeader: React.FC<{

@@ -34,7 +34,7 @@ export function describeSnapshotSync(snapshot: OpenDataSnapshot, countryName = s
   if (status.liveFeeds.length === 0) {
     return {
       type: 'warning',
-      message: `${countryName}: no data source answered. All figures are built-in sample values, not current data.`,
+      message: `${countryName}: no data source answered, so its figures read Missing until one does. No built-in values are shown.`,
     };
   }
 
@@ -49,7 +49,7 @@ export function describeSnapshotSync(snapshot: OpenDataSnapshot, countryName = s
   const parts = [`${countryName} updated. Live: ${joinList(live) || 'none'}.`];
   if (status.marketSource === 'ai_estimate') parts.push(`AI estimates (not market prices): ${joinList(prices)}.`);
   else notLive.push(...prices);
-  if (notLive.length) parts.push(`Still sample values: ${joinList(notLive)}.`);
+  if (notLive.length) parts.push(`Still missing: ${joinList(notLive)}.`);
 
   return { type: status.mode === 'live' ? 'success' : 'info', message: parts.join(' ') };
 }

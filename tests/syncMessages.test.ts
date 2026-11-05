@@ -15,7 +15,8 @@ test('nothing answered: a warning, never a green tick', () => {
   const m = describeSnapshotSync(snap([]), 'Mexico');
   assert.equal(m.type, 'warning');
   assert.match(m.message, /no data source answered/);
-  assert.match(m.message, /sample values/);
+  assert.match(m.message, /read Missing/);
+  assert.doesNotMatch(m.message, /sample values/);
 });
 
 test('old snapshot without sources is flagged', () => {
@@ -27,7 +28,7 @@ test('old snapshot without sources is flagged', () => {
 test('one feed is not "live data": partial, with the sample parts named', () => {
   const m = describeSnapshotSync(snap(['Frankfurter Spot FX']), 'Mexico');
   assert.equal(m.type, 'info');
-  assert.equal(m.message, 'Mexico updated. Live: exchange rate. Still sample values: debt and reserves, CDS, 10Y yield, policy rate and rating.');
+  assert.equal(m.message, 'Mexico updated. Live: exchange rate. Still missing: debt and reserves, CDS, 10Y yield, policy rate and rating.');
 });
 
 test('full public data with an official yield and AI prices', () => {
@@ -51,5 +52,5 @@ test('Brazil Treasury yield is not mistaken for the US Treasury feed', () => {
     }),
     'Brazil'
   );
-  assert.equal(m.message, 'Brazil updated. Live: 10Y yield (official, 30 Oct 2026). Still sample values: debt and reserves, CDS, policy rate and rating.');
+  assert.equal(m.message, 'Brazil updated. Live: 10Y yield (official, 30 Oct 2026). Still missing: debt and reserves, CDS, policy rate and rating.');
 });
