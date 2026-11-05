@@ -5,6 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkConnections, describeNetworkError, formatReport, type FetchFn } from '../src/utils/connectionCheck.ts';
+import { imfFetch } from './helpers/imfFixtures.ts';
 import { makeXlsx, pinkSheetRows } from './helpers/makeXlsx.ts';
 
 const PINK_XLSX = makeXlsx('Monthly Prices', pinkSheetRows([{ code: 'CRUDE_BRENT', heading: 'Crude oil, Brent', unit: '$/bbl', values: Array.from({ length: 46 }, (_, i) => 60 + i) }]));
@@ -22,6 +23,7 @@ const dnsFail = () => {
 const healthy: FetchFn = async (url) => {
   if (url.includes('api.worldbank.org/v2/country/BRA/indicator/FI.RES.TOTL.MO')) return json([{ page: 1 }, [{ date: '2025', value: null }, { date: '2024', value: 5.94 }]]);
   if (url.includes('api.worldbank.org/v2/sources/6')) return json({ source: [{ data: [] }] });
+  if (url.includes('api.imf.org') || url.includes('datamapper/api/v1/NGDPD')) return imfFetch()(url);
   if (url.includes('imf.org')) return json({ values: { GGXWDG_NGDP: { BRA: { '2025': 91.4 } } } });
   if (url.includes('gdeltproject')) return json({ articles: [{ title: 'Brazil central bank holds rates' }] });
   if (url.includes('polymarket')) return json([{ title: 'Fed cut in December?' }]);
@@ -85,6 +87,8 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.equal(row('cftc').state, 'connected');
   assert.equal(row('bis_cbpol').state, 'connected');
   assert.equal(row('bis_cbpol').sample, 'Brazil policy rate 15.00% (Central Bank of Brazil, 2026-10-27)');
+  assert.equal(row('imf_reserves').state, 'connected');
+  assert.match(row('imf_reserves').sample!, /Brazil reserves \$345\.0bn \(Sep 2025\), 10\.3 months of imports, current account -2\.5% of GDP \(4 quarters to Q2 2025\)/);
   assert.match(row('oecd_cpi').sample!, /Brazil inflation 4\.2% y\/y \(Sep 2026\)/);
   assert.match(row('oecd_cli').sample!, /Brazil leading indicator 99\.80 \(Sep 2026, recovery\)/);
   assert.match(row('tic').sample!, /Brazil holds \$168\.4bn of US Treasuries \(Aug 2026\)/);

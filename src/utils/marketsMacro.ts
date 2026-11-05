@@ -11,6 +11,7 @@ import { liveRow, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow,
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
 import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
+import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 import { cliMissing } from './oecdCli';
 import { cpiMissing, cpiSource } from './oecdInflation';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
@@ -216,6 +217,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       ],
     },
     {
+      title: 'Reserves and balance of payments (IMF)',
+      rows: imfRows(self),
+    },
+    {
       title: 'Market pricing',
       rows: [
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
@@ -248,6 +253,9 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
         gap !== undefined ? model('Inflation against target', pts(gap)) : needs('Inflation against target', cpi === undefined ? 'live inflation' : 'an inflation target'),
         realPolicy !== undefined ? model('Real policy rate', pct(realPolicy)) : needs('Real policy rate', policy === undefined ? 'a policy rate' : 'live inflation'),
         real10Y !== undefined ? model('Real 10Y yield', pct(real10Y)) : needs('Real 10Y yield', y10 === undefined ? 'an official 10Y yield' : 'live inflation'),
+        self?.imf?.monthsOfImports !== undefined
+          ? model('Reserve cover', `${reserveCover(self.imf.monthsOfImports)} (${self.imf.monthsOfImports.toFixed(1)} months of imports)`, 'model: IMF reserves over a month of IMF BOP imports; under 3 = thin, 3 to 6 = adequate, over 6 = ample')
+          : needs('Reserve cover', 'IMF monthly reserves and four quarters of IMF BOP imports'),
       ],
     },
     {
@@ -347,6 +355,53 @@ export function ticRows(self: LiveWatchlistItem | undefined, iso3: string): Brie
       : []),
     ...(t.shareOfForeignPct !== undefined ? [{ label: 'Share of all foreign holdings', value: `${t.shareOfForeignPct.toFixed(1)}%`, source: src, verified: true }] : []),
   ];
+}
+
+/** IMF reserves and balance-of-payments rows for the Country tab, each with its period and pull date. */
+export function imfRows(self: LiveWatchlistItem | undefined): BriefRow[] {
+  const e = self?.imf;
+  const pulled = e ? ` (pulled ${e.pulledAt.slice(0, 10)})` : '';
+  const sg = (v: number, dp = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(dp)}`;
+  const miss = (label: string, m: 'reserves' | 'currentAccount' | 'imports') => {
+    const r = imfMissing(e, m);
+    return missingRow(label, { kind: 'unreachable', short: r.short, help: r.help });
+  };
+  const rows: BriefRow[] = [];
+  if (e?.reserves) {
+    const src = `official, IMF International Liquidity, ${formatImfPeriod(e.reserves.period)}, series ${e.reserves.key}${pulled}`;
+    rows.push({ label: 'Official reserves', value: `$${e.reserves.usdBn.toFixed(1)}bn`, source: src, verified: true });
+    if (e.reserves.change12mPct !== undefined) rows.push({ label: 'Reserves, change over 12 months', value: `${sg(e.reserves.change12mPct)}%`, source: src, verified: true });
+  } else rows.push(miss('Official reserves', 'reserves'));
+  if (e?.monthsOfImports !== undefined && e.imports4q) {
+    rows.push({
+      label: 'Reserves in months of imports',
+      value: `${e.monthsOfImports.toFixed(1)} months`,
+      source: `model: IMF reserves over imports of goods and services for the four quarters to ${formatImfPeriod(e.imports4q.through)} ($${e.imports4q.usdBn.toFixed(1)}bn, series ${e.imports4q.key}) / 12`,
+      verified: false,
+    });
+  } else rows.push(miss('Reserves in months of imports', e?.reserves ? 'imports' : 'reserves'));
+  if (e?.currentAccount) {
+    rows.push({
+      label: 'Current account, latest quarter',
+      value: `${sg(e.currentAccount.usdBn, 1)}bn`,
+      source: `official, IMF Balance of Payments, ${formatImfPeriod(e.currentAccount.period)}, series ${e.currentAccount.key}${pulled}`,
+      verified: true,
+    });
+    const four = e.currentAccount4q;
+    if (four?.pctGdp !== undefined) {
+      rows.push({
+        label: 'Current account, last four quarters',
+        value: `${sg(four.pctGdp)}% of GDP`,
+        source: `model: IMF BOP $${four.usdBn.toFixed(1)}bn to ${formatImfPeriod(four.through)} over IMF WEO GDP ${four.gdpYear} ($${four.gdpUsdBn?.toFixed(0)}bn)`,
+        verified: false,
+      });
+    } else {
+      rows.push(
+        noSourceRow('Current account, last four quarters', four ? `The IMF World Economic Outlook has no GDP for ${four.through.slice(0, 4)}.` : 'The IMF series does not have four quarters in a row.')
+      );
+    }
+  } else rows.push(miss('Current account', 'currentAccount'));
+  return rows;
 }
 
 /** OECD leading indicator rows for the Country tab, with the month and the date the app pulled it. */

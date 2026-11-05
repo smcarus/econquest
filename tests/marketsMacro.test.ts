@@ -77,8 +77,8 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
   // Readings are grouped under the desk role that owns them.
-  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'OECD inflation (monthly)', 'OECD leading indicator (monthly)', 'Futures positioning (CFTC, weekly)', 'US Treasury holdings (TIC, monthly)', 'FX Valuation Agent', 'Global Spillover Agent']);
-  assert.deepEqual(b.groups[3].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
+  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Reserves and balance of payments (IMF)', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'OECD inflation (monthly)', 'OECD leading indicator (monthly)', 'Futures positioning (CFTC, weekly)', 'US Treasury holdings (TIC, monthly)', 'FX Valuation Agent', 'Global Spillover Agent']);
+  assert.deepEqual(b.groups[4].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
 });
 
 test('brief: no US yield, no target, too few peers: says so instead of guessing', () => {
@@ -100,4 +100,29 @@ test('brief: with no live feeds, nothing is shown from built-in values and readi
   assert.equal(rows['Real policy rate'].source, 'Needs a policy rate');
   assert.match(b.headline, /no live market or macro figures/);
   assert.match(b.sampleWarning || '', /missing/);
+});
+
+test('brief: IMF reserves and balance of payments rows carry the IMF series and period; Missing says why', async () => {
+  const { imfRows } = await import('../src/utils/marketsMacro.ts');
+  const self = {
+    iso3: 'BRA',
+    imf: {
+      iso3: 'BRA',
+      pulledAt: '2026-11-05T03:00:00Z',
+      reserves: { key: 'BRA.TRA.USD.M', period: '2025-09', usdBn: 345, change12mPct: 2.4 },
+      imports4q: { usdBn: 400, through: '2025-Q2', key: 'BRA.DB.GS.USD.Q' },
+      monthsOfImports: 10.3,
+      currentAccount: { key: 'BRA.NETCD.CAB.USD.Q', period: '2025-Q2', usdBn: -18 },
+      currentAccount4q: { usdBn: -60, through: '2025-Q2', pctGdp: -2.5, gdpYear: '2025', gdpUsdBn: 2400 },
+    },
+  } as never;
+  const rows = Object.fromEntries(imfRows(self).map((r) => [r.label, r]));
+  assert.equal(rows['Official reserves'].value, '$345.0bn');
+  assert.match(rows['Official reserves'].source, /IMF International Liquidity, Sep 2025, series BRA\.TRA\.USD\.M \(pulled 2026-11-05\)/);
+  assert.equal(rows['Reserves in months of imports'].value, '10.3 months');
+  assert.equal(rows['Current account, last four quarters'].value, '-2.5% of GDP');
+  assert.match(rows['Current account, last four quarters'].source, /^model: IMF BOP/);
+  const none = imfRows(undefined);
+  assert.ok(none.every((r) => r.value === 'Missing'));
+  assert.match(none[0].source, /IMF did not answer/);
 });

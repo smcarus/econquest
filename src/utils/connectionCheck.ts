@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
+import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
@@ -220,6 +221,7 @@ export const SOURCE_IDS = [
   'worldbank',
   'worldbank_debt',
   'imf',
+  'imf_reserves',
   'gdelt',
   'polymarket',
   'kalshi',
@@ -312,6 +314,52 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       }
     )
   );
+
+  add('imf_reserves', async () => {
+    const def: Def = {
+      id: 'imf_reserves',
+      name: 'IMF reserves and balance of payments (api.imf.org)',
+      group: 'free',
+      feeds: 'Monthly official reserves (IL), quarterly current account and imports (BOP), months of import cover',
+    };
+    const t0 = Date.now();
+    let pulled: Awaited<ReturnType<typeof pullImfExternal>>;
+    try {
+      pulled = await pullImfExternal({ fetchFn, env, timeoutMs: Math.max(T, 30000) }, SAMPLE_ISO3);
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const e = pulled.external;
+    const latencyMs = Date.now() - t0;
+    const failed = pulled.steps.filter((s) => !s.ok);
+    const steps = pulled.steps.map((s) => `${IMF_MEASURES[s.measure].label}: ${s.ok ? 'read' : 'not read'} (${s.note})`).join(' ');
+    if (e.reserves || e.currentAccount) {
+      const bits = [
+        e.reserves ? `reserves $${fmt(e.reserves.usdBn)}bn (${formatImfPeriod(e.reserves.period)})` : '',
+        e.monthsOfImports !== undefined ? `${fmt(e.monthsOfImports)} months of imports` : '',
+        e.currentAccount4q?.pctGdp !== undefined
+          ? `current account ${fmt(e.currentAccount4q.pctGdp)}% of GDP (4 quarters to ${formatImfPeriod(e.currentAccount4q.through)})`
+          : e.currentAccount
+            ? `current account $${fmt(e.currentAccount.usdBn)}bn (${formatImfPeriod(e.currentAccount.period)})`
+            : '',
+      ].filter(Boolean);
+      return {
+        ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${steps}`, IMF_SDMX_HOST),
+        latencyMs,
+        sample: `${SAMPLE_NAME} ${bits.join(', ')}`,
+        ...(failed.length ? { warning: failed.map((s) => `${IMF_MEASURES[s.measure].label}: ${s.note}`).join(' ') } : {}),
+        setup: 'If an IMF indicator is not matched by name, set its series key in .env: IMF_RESERVES_KEY, IMF_CA_KEY, IMF_IMPORTS_KEY ({ISO3} for the country).',
+      };
+    }
+    const status = failed.map((s) => s.httpStatus ?? Number(/HTTP (\d{3})/.exec(s.note)?.[1] ?? 0)).find((n) => n >= 400);
+    const noAnswer = failed.length > 0 && failed.every((s) => !s.httpStatus && /no answer within|fetch failed|request failed/i.test(s.note));
+    return {
+      ...setRow(def, status ? 'refused' : noAnswer ? 'no_answer' : 'bad_reply', steps || 'The IMF answered nothing the app could read.', IMF_SDMX_HOST),
+      latencyMs,
+      ...(status ? { httpStatus: status } : {}),
+      setup: 'If an IMF indicator is not matched by name, set its series key in .env: IMF_RESERVES_KEY, IMF_CA_KEY, IMF_IMPORTS_KEY ({ISO3} for the country).',
+    };
+  });
 
   add('gdelt', () =>
     httpCheck(
