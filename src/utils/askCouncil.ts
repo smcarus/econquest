@@ -138,6 +138,58 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
   return { countries, scopeNote, agents };
 }
 
+/* ------------------------------------------------------------------------------------------
+ * Follow-up questions (Sam, 2026-11-05). A follow-up keeps the last question's countries when it
+ * names none, and the last question's agents when it names no topic, so "and the currency?" or
+ * "what about Egypt?" mean what they would in conversation.
+ * ------------------------------------------------------------------------------------------ */
+
+export const CARRIED = 'carried over from your last question';
+
+export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
+  const plan = planCouncil(question, items, scopeIso3);
+  const namesCountry = Boolean(scopeIso3) || countriesInQuestion(question, items).length > 0;
+  const namesTopic = AGENT_ORDER.some((id) => COUNCIL_AGENTS[id].topic.test(question));
+  return {
+    countries: namesCountry ? plan.countries : prev.countries,
+    scopeNote: namesCountry ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
+    agents: namesTopic ? plan.agents : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
+  };
+}
+
+/** Questions for the agents not yet asked, about the same countries. */
+const FOLLOW_UP: Record<AgentId, string> = {
+  cb: 'How does inflation compare with the policy rate?',
+  rv: 'Is CDS cheap or rich against peers?',
+  fx: 'Is the currency strong or weak for its history?',
+  spill: 'How exposed are they to a Hormuz closure?',
+  calendar: 'What dates are coming up?',
+};
+
+export function suggestFollowUps(plan: CouncilPlan, answers: AgentAnswer[]): string[] {
+  const asked = new Set(plan.agents.map((a) => a.id));
+  const out = AGENT_ORDER.filter((id) => !asked.has(id)).map((id) => FOLLOW_UP[id]);
+  // When one country stands out, offer to look at it alone.
+  const top = answers.flatMap((a) => a.findings).sort((x, y) => y.weight - x.weight)[0];
+  if (top && plan.countries.length > 1 && top.weight > 0) out.unshift(`What about ${baseName(top.countryName)} on its own?`);
+  return out.slice(0, 3);
+}
+
+/** Earlier turns, for the synthesis prompt: the question and the summary's headline only. */
+export interface EarlierTurn {
+  question: string;
+  headline?: string;
+}
+
+export function earlierAsText(earlier: EarlierTurn[]): string {
+  if (!earlier.length) return '';
+  return [
+    'Earlier in this conversation (context only; every number you write must still come from the findings below):',
+    ...earlier.slice(-4).map((t) => `- Q: ${t.question.slice(0, 300)}${t.headline ? ` A: ${t.headline.slice(0, 300)}` : ''}`),
+    '',
+  ].join('\n');
+}
+
 /* ------------------------------------------------------------------------------------------ */
 
 const p1 = (v: number) => `${v.toFixed(1)}%`;
@@ -499,6 +551,8 @@ export interface SavedCouncilBrief {
   scopeNote: string;
   answers: AgentAnswer[];
   synthesis: SynthesisResult | null;
+  /** Earlier questions in the same conversation, oldest first. */
+  earlier?: EarlierTurn[];
 }
 
 const STORE_KEY = 'econquest.councilBrief.v1';
@@ -534,7 +588,17 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
   if (!b) return [{ heading: 'No council brief yet', lines: ['Ask the council a question on Workspace, then choose "Send to Reports".'] }];
   const out: Array<{ heading: string; lines: string[] }> = [];
   const s = b.synthesis?.brief;
-  if (on('question')) out.push({ heading: COUNCIL_SECTIONS.question, lines: [b.question, `Asked ${b.askedAt.slice(0, 16).replace('T', ' ')} UTC about ${b.scopeNote}.`] });
+  if (on('question'))
+    out.push({
+      heading: COUNCIL_SECTIONS.question,
+      lines: [
+        b.question,
+        `Asked ${b.askedAt.slice(0, 16).replace('T', ' ')} UTC about ${b.scopeNote}.`,
+        ...(b.earlier?.length
+          ? ['Earlier in the conversation:', ...b.earlier.map((t) => `- ${t.question}${t.headline ? ` (${t.headline})` : ''}`)]
+          : []),
+      ],
+    });
   if (on('summary')) {
     out.push({
       heading: COUNCIL_SECTIONS.summary,

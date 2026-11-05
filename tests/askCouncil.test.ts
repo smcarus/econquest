@@ -112,3 +112,36 @@ test('Reports: no saved brief says how to make one; a brief without a model says
   assert.match(agents.lines.join('\n'), /Central Bank Watcher Agent/);
   assert.match(agents.lines.join('\n'), /CPI inflation 34\.0% \(Live data, IMF, live\)/);
 });
+
+test('follow-ups keep the last countries and agents unless the question names others', async () => {
+  const { planFollowUp, suggestFollowUps, earlierAsText, CARRIED } = await import('../src/utils/askCouncil.ts');
+  const first = planCouncil('Is Turkey behind the curve?', ALL);
+  assert.deepEqual(first.countries.map((c) => c.iso3), ['TUR']);
+  // A topic but no country: same country, new agent.
+  const fx = planFollowUp('And the currency?', first, ALL);
+  assert.deepEqual(fx.countries.map((c) => c.iso3), ['TUR']);
+  assert.match(fx.scopeNote, new RegExp(CARRIED));
+  assert.deepEqual(fx.agents.map((a) => a.id), ['fx']);
+  // A country but no topic: new country, same agents.
+  const egy = planFollowUp('What about Egypt?', first, ALL);
+  assert.deepEqual(egy.countries.map((c) => c.iso3), ['EGY']);
+  assert.deepEqual(egy.agents.map((a) => a.id), first.agents.map((a) => a.id));
+  assert.ok(egy.agents.every((a) => a.why.includes(CARRIED)));
+  // Suggestions cover agents not yet asked.
+  const s = suggestFollowUps(first, runCouncil('Is Turkey behind the curve?', first, ALL));
+  assert.ok(s.length > 0 && s.length <= 3);
+  assert.ok(!s.includes('How does inflation compare with the policy rate?'), 'the Central Bank Watcher was already asked');
+  // Earlier turns go to the model as context only.
+  assert.match(earlierAsText([{ question: 'Is Turkey behind the curve?', headline: 'Policy looks tight.' }]), /context only.*\n- Q: Is Turkey behind the curve\? A: Policy looks tight\./s);
+  assert.equal(earlierAsText([]), '');
+});
+
+test('the saved brief lists earlier questions of the conversation', () => {
+  const q = 'And the currency?';
+  const plan = planCouncil(q, ALL);
+  const lines = councilBriefSections(
+    { question: q, askedAt: '2026-11-05T00:30:00Z', scopeNote: 'Turkey', answers: runCouncil(q, plan, ALL), synthesis: null, earlier: [{ question: 'Is Turkey behind the curve?', headline: 'Policy looks tight.' }] },
+    (id) => id === 'question'
+  )[0].lines;
+  assert.ok(lines.includes('- Is Turkey behind the curve? (Policy looks tight.)'));
+});

@@ -11,7 +11,7 @@ import {
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
-import { SYNTHESIS_INSTRUCTION, answersAsText, checkBrief, type AgentAnswer, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
+import { SYNTHESIS_INSTRUCTION, answersAsText, checkBrief, earlierAsText, type AgentAnswer, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
@@ -3951,7 +3951,7 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
         runtimeConfig: req.body?.runtimeConfig || {},
         thinkingLevel: ThinkingLevel.LOW,
         systemInstruction: SYNTHESIS_INSTRUCTION,
-        prompt: answersAsText(question, answers).slice(0, 20000),
+        prompt: (earlierAsText(Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : []) + answersAsText(question, answers)).slice(0, 20000),
         responseSchema: {
           type: Type.OBJECT,
           properties: {
