@@ -303,6 +303,14 @@ hold no figures of their own; the handout reads them from the app's series when 
   must be running; a brief missed while it was closed runs when it next starts that day. Without an AI
   model the agents' answers are saved with no summary. Settings are kept in
   `data/local/morning-brief.json`.
+- **Audit log**: every council answer (the question, the AI model that wrote the summary or "none",
+  and each figure the agents used with its source and period, plus what was missing) and every save,
+  delete, download, settings, key and AI model change, newest first. Search it or pick a kind, and
+  download it as CSV or as the log file itself. Kept in `data/local/audit/audit-log.jsonl`; lines are
+  only added, each chained to the one before by a SHA-256 hash, and the window checks the chain each
+  time it opens: an entry changed or removed after it was written shows as "Check failed". Someone who
+  rewrites the whole file could rebuild the chain, so keep the latest hash or an export elsewhere if
+  that matters. Keys, document text and holdings amounts are never logged. The log is not in backups.
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
   (briefs, documents, notebooks, teaching episodes), watch alerts, holdings, watchlists, added
   countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a
