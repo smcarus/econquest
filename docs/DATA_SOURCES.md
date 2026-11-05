@@ -40,6 +40,7 @@ own-data switch in Settings).
 | IMF reserves and balance of payments | Monthly official reserves (International Liquidity, IL); quarterly current account and imports of goods and services (BOP); import cover and current account % of GDP | api.imf.org | 1 day, on disk (structures 1 week) |
 | IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
+| GDELT 2.0 raw files (events and Global Knowledge Graph) | Weekly event counts per country (protests, sanctions, violence, Goldstein and tone) and economic-theme shares of news (inflation, central bank, debt, currency, fiscal, lenders and more) with tone and the people and organisations named | data.gdeltproject.org/gdeltv2/ | Per day on disk (`data/live/gdelt-raw/`), look-back `GDELT_RAW_WEEKS` (default 8) |
 | Polymarket, Kalshi | Prediction-market odds | gamma-api.polymarket.com, api.elections.kalshi.com | per request |
 | New York Fed | Fed funds, SOFR, reverse repo | markets.newyorkfed.org | 3 min to 6 h |
 | Spot FX | Exchange rates against the dollar | open.er-api.com (backup: Frankfurter) | 3 min |
@@ -65,6 +66,22 @@ Notes from the first check on Sam's Mac (2026-11-05):
   After a refusal GDELT holds each answer about 11 seconds and keeps refusing, so the app sends
   nothing to GDELT for 15 minutes after any refusal. Each country is pulled once every
   `GDELT_REFRESH_DAYS` days (default 7) and kept on disk (`data/live/gdelt/`).
+- **GDELT raw files** are the 15-minute files GDELT publishes for everyone (listed in
+  `masterfilelist.txt`, newest in `lastupdate.txt`), not the DOC API, so they are not limited to one
+  request every 5 seconds. `npm run gdelt:pull` reads every events file in the look-back
+  (`GDELT_RAW_WEEKS`, default 8) and one Global Knowledge Graph file every
+  `GDELT_GKG_EVERY_HOURS` hours (default 3; GKG files are about ten times larger). Each file is
+  downloaded into memory, added up per country and thrown away; only one small file per day is kept
+  in `data/live/gdelt-raw/`, with the list of files already read, so a stopped pull carries on and a
+  weekly pull only fetches new files. `npm run gdelt:pull -- --estimate` prints the files left and a
+  size estimate from the newest file sizes before downloading anything. A file GDELT never
+  published (HTTP 404, it has gaps) is shown as missing; HTTP 429 or 503 pauses 15 minutes.
+  Countries: GDELT writes places in FIPS codes (Chile CI, South Africa SF, Japan JA, UK UK), mapped
+  to ISO3 in `src/utils/gdeltRaw.ts`. An event counts for a country when it happens there or the
+  country is either actor; an article counts when it names a place in the country. Theme groups are
+  GDELT theme names listed in `GKG_THEME_GROUPS` (for example ECON_INFLATION, ECON_CENTRALBANK,
+  ECON_DEBT, ECON_CURRENCY*, ECON_TAXATION, ECON_DEVELOPMENTORGS). With GKG sampling the figures shown
+  are shares of the articles read, and the share of files read is shown with them.
 - **Brazil Treasury** serves the whole price history, about 15 MB, slowly (60 seconds on the Mac).
   The app allows 90 seconds, downloads it once at a time, and keeps the answer on disk
   (`data/live/tesouro.json`) so a restart does not download it again.

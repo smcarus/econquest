@@ -14,7 +14,8 @@
     "test:smoke": "node tests/smoke/ui-smoke.mjs",
     "check:data": "tsx scripts/check-connections.ts",
     "check:imf": "tsx scripts/imf-codes.ts",
-    "preload": "tsx server.ts --preload"
+    "preload": "tsx server.ts --preload",
+    "gdelt:pull": "tsx scripts/gdelt-pull.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
