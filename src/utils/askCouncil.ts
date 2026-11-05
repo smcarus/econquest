@@ -39,11 +39,12 @@ import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, deb
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
+import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestion, testsInQuestion, type ChartRequest, type ChartResult } from './councilChart';
 
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing';
-/** 'doc' = the Policy Document Agent, asked whenever you have added documents. */
-export type AgentId = CoreAgentId | 'doc';
+/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for. */
+export type AgentId = CoreAgentId | 'doc' | 'chart';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {
@@ -73,6 +74,8 @@ export interface AgentAnswer {
   findings: AgentFinding[];
   /** What the agent could not answer, in words. */
   missing: string[];
+  /** The Chart Agent's chart and test results (src/utils/councilChart.ts). */
+  chart?: ChartResult;
 }
 
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
@@ -173,6 +176,8 @@ export interface CouncilPlan {
   offWatchlist?: string[];
   /** Their ISO3 codes, so the app can offer to add them for this question. */
   offWatchlistIso3?: string[];
+  /** A chart and statistical tests asked for in the question (the Chart Agent answers it). */
+  chart?: ChartRequest;
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -241,10 +246,12 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
     const m = question.match(COUNCIL_AGENTS[id].topic);
     if (m) agents.push({ id, why: `the question mentions "${m[0].trim()}"` });
   }
-  if (!agents.length) {
+  const chart = chartRequest(question, countries, picked.length > 0 || named.length > 0) ?? undefined;
+  // A chart question with no desk topic is answered by the Chart Agent alone, not by every agent.
+  if (!agents.length && !chart) {
     for (const id of AGENT_ORDER) agents.push({ id, why: 'no specific topic in the question, so every agent answers' });
   }
-  return { countries, scopeNote, agents, ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
+  return { countries, scopeNote, agents, ...(chart ? { chart } : {}), ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -259,10 +266,17 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
   const plan = planCouncil(question, items, scopeIso3);
   const named = Boolean(scopeIso3) || countriesInQuestion(question, items).length > 0 || Boolean(plan.offWatchlist?.length);
   const namesTopic = AGENT_ORDER.some((id) => COUNCIL_AGENTS[id].topic.test(question));
+  // Charts: a follow-up that names its own series makes a new chart; otherwise one about the last
+  // chart ("is it stable?", "what about Mexico?") keeps its series and adds the tests it asks for.
+  const ownChart = plan.chart && seriesInQuestion(question).length ? plan.chart : undefined;
+  const aboutChart = Boolean(prev.chart) && (testsInQuestion(question).length > 0 || !namesTopic);
+  const chart = ownChart ?? (aboutChart && prev.chart ? carryChart(question, prev.chart, named ? plan.countries : undefined) : plan.chart);
+  const chartOnly = Boolean(chart) && !namesTopic && aboutChart;
   return {
     countries: named ? plan.countries : prev.countries,
     scopeNote: named ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
-    agents: namesTopic ? plan.agents : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
+    agents: namesTopic ? plan.agents : chartOnly && !prev.agents.length ? [] : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
+    ...(chart ? { chart } : {}),
     ...(named && plan.offWatchlist ? { offWatchlist: plan.offWatchlist, ...(plan.offWatchlistIso3 ? { offWatchlistIso3: plan.offWatchlistIso3 } : {}) } : {}),
   };
 }
@@ -281,6 +295,8 @@ const FOLLOW_UP: Record<CoreAgentId, string> = {
 
 export function suggestFollowUps(plan: CouncilPlan, answers: AgentAnswer[]): string[] {
   const asked = new Set(plan.agents.map((a) => a.id));
+  // After a chart, the next tests to run come first.
+  if (plan.chart) return chartFollowUps(plan.chart).slice(0, 3);
   const out = AGENT_ORDER.filter((id) => !asked.has(id)).map((id) => FOLLOW_UP[id]);
   // When one country stands out, offer to look at it alone.
   const top = answers.flatMap((a) => a.findings).filter((f) => !isDocFinding(f)).sort((x, y) => y.weight - x.weight)[0];
@@ -1023,6 +1039,26 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
   });
   if (plan.offWatchlist?.length && desk.length) desk[0].missing.unshift(offWatchlistNote(plan.offWatchlist));
   return docs.length ? [...desk, docAgent(question, docs, all, plan.countries)] : desk;
+}
+
+export const CHART_AGENT_NAME = 'Chart';
+
+/** The Chart Agent's answer: the chart to draw, and its test results as a finding the summary can use. */
+export function chartAnswer(req: ChartRequest, result: ChartResult): AgentAnswer {
+  const f = chartFinding(req, result);
+  return {
+    id: 'chart',
+    name: CHART_AGENT_NAME,
+    why: req.why,
+    findings: f ? [f] : [],
+    missing: [...result.missing, ...result.tests.filter((t) => !t.figures.length).map((t) => `${t.title}: ${t.reading.replace(/^Not run:\s*/, '')}`)],
+    chart: result,
+  };
+}
+
+/** Answers as sent to the AI steps: the chart's points stay on this computer, its test results go. */
+export function answersForModel(answers: AgentAnswer[]): AgentAnswer[] {
+  return answers.map(({ chart: _chart, ...a }) => a);
 }
 
 /** Which dated figures each agent leans on (src/utils/freshness.ts ids). */
