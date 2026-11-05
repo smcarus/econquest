@@ -40,7 +40,7 @@ test('a sentence that contradicts an agent is caught, with the reason; agreeing 
 
 test('checkBrief removes a contradicting sentence and keeps the rest', () => {
   const it = (iso3: string, countryName: string, o: Partial<WatchlistItem> = {}): WatchlistItem =>
-    ({ iso3, countryName, compositeRisk: 0.5, cds5YBps: 150, yield10YPct: 8, ...o }) as WatchlistItem;
+    ({ iso3, countryName, compositeRisk: 0.5, cds5YBps: 150, cds5YSource: 'own', yield10YPct: 8, yield10YSource: 'official', yield10YPeriod: '2026-09', cpiSource: 'live', policyRateSource: 'bis', ...o }) as WatchlistItem;
   const ALL = [
     it('TUR', 'Turkey', { cpiInflationPct: 34, policyRatePct: 45, reerGapPct: -12.4 }),
     it('ZAF', 'South Africa', { cpiInflationPct: 3.4, policyRatePct: 8 }),

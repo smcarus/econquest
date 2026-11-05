@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  keepSourcedFindings,
+  offWatchlistCountries,
+  planFollowUp,
   agentChoicePrompt,
   allowedNumbers,
   applyAgentChoice,
@@ -15,7 +18,19 @@ import {
 import type { WatchlistItem } from '../src/types/council.ts';
 
 const it = (iso3: string, countryName: string, o: Partial<WatchlistItem> = {}): WatchlistItem =>
-  ({ iso3, countryName, compositeRisk: 0.5, cds5YBps: 150, yield10YPct: 8, ...o }) as WatchlistItem;
+  ({
+    iso3,
+    countryName,
+    compositeRisk: 0.5,
+    cds5YBps: 150,
+    cds5YSource: 'own',
+    cds5YProvider: 'file',
+    yield10YPct: 8,
+    yield10YSource: 'official',
+    yield10YPeriod: '2026-09',
+    policyRateSource: 'bis',
+    ...o,
+  }) as WatchlistItem;
 
 const TUR = it('TUR', 'Turkey', {
   compositeRisk: 0.7,
@@ -24,7 +39,9 @@ const TUR = it('TUR', 'Turkey', {
   cpiInflationPct: 34,
   cpiSource: 'live',
   policyRatePct: 30,
-  policyRateSource: 'ai_estimate',
+  policyRateSource: 'bis',
+  policyRateDate: '2026-10-27',
+  policyRateBank: 'Central Bank of the Republic of Türkiye',
   reerGapPct: -12.4,
   reerPeriod: '2026-09',
   trade: { fuelImportsPctMerch: 15, fuelExportsPctMerch: 3, importsPctGdp: 32, exportsPctGdp: 30, wbYear: '2025', chinaExportSharePct: 2, witsYear: '2023' },
@@ -65,7 +82,7 @@ test('agents answer only from figures on hand, each figure tagged, and say what 
   assert.match(cb.reading, /Behind the curve/);
   const tag = (label: string) => cb.figures.find((f) => f.label === label)!.tag;
   assert.equal(tag('CPI inflation'), 'live');
-  assert.equal(tag('Policy rate'), 'estimate');
+  assert.equal(tag('Policy rate'), 'official');
   assert.equal(tag('Real policy rate'), 'model');
   // CDS against peers needs the whole watchlist (4 countries with CDS).
   assert.ok(by.rv.findings[0].figures.some((f) => f.label === 'CDS against risk peers'));
@@ -88,7 +105,7 @@ test('number check: a sentence survives only when its numbers trace back to an a
   const { brief, removed } = checkBrief(
     {
       headline: 'Turkey looks behind the curve, with inflation at 34.0% and a real policy rate of -4.0%.',
-      points: ['The policy rate is 30.00%, an AI estimate.', 'Inflation will fall to 21% next year.', 'No number here.'],
+      points: ['The policy rate is 30.00%, from the BIS.', 'Inflation will fall to 21% next year.', 'No number here.'],
       disagreements: [],
       gaps: [],
     },
@@ -96,7 +113,7 @@ test('number check: a sentence survives only when its numbers trace back to an a
     answers
   );
   assert.match(brief.headline, /behind the curve/);
-  assert.deepEqual(brief.points, ['The policy rate is 30.00%, an AI estimate.', 'No number here.']);
+  assert.deepEqual(brief.points, ['The policy rate is 30.00%, from the BIS.', 'No number here.']);
   assert.deepEqual(removed, ['Inflation will fall to 21% next year.']);
 });
 
@@ -204,4 +221,60 @@ test('Central Bank Watcher answers with IMF reserves and current account even wi
   assert.ok(f.figures.some((x) => x.label === 'Reserves in months of imports' && x.tag === 'model'));
   assert.ok(f.figures.some((x) => x.label === 'Official reserves' && x.tag === 'official'));
   assert.match(cb.missing.join(' '), /policy rate/);
+});
+
+test('the council never uses an AI estimate or a built-in figure: the finding is left out and the gap says why', () => {
+  const est = { ...TUR, policyRateSource: 'ai_estimate' } as WatchlistItem;
+  const answers = runCouncil('Is Turkey behind the curve?', planCouncil('Is Turkey behind the curve?', [est, ZAF, EGY, POL]), [est, ZAF, EGY, POL]);
+  const cb = answers.find((a) => a.id === 'cb')!;
+  assert.equal(cb.findings.length, 0);
+  assert.ok(cb.missing.some((m) => /Turkey: left out, as policy rate is not from a live feed, an official series or your own file/.test(m)));
+  const { findings, missing } = keepSourcedFindings([
+    { iso3: 'X', countryName: 'X', reading: 'r', weight: 1, figures: [{ label: 'A', value: '1', source: 's', tag: 'sample' }, { label: 'B', value: '2', source: 's', tag: 'estimate' }] },
+    { iso3: 'Y', countryName: 'Y', reading: 'r', weight: 1, figures: [{ label: 'A', value: '1', source: 's', tag: 'official' }] },
+  ]);
+  assert.deepEqual(findings.map((f) => f.iso3), ['Y']);
+  assert.match(missing[0], /X: left out, as a and b are not/);
+});
+
+test('a missing inflation target is a gap, not a figure tagged as sample data', () => {
+  const q = 'Is South Africa behind the curve?';
+  const zafNoTarget = { ...ZAF, iso3: 'ZZZ', countryName: 'Nowhere' } as WatchlistItem;
+  const cb = runCouncil(q, planCouncil('Nowhere inflation', [zafNoTarget]), [zafNoTarget]).find((a) => a.id === 'cb')!;
+  assert.equal(cb.findings.length, 1);
+  assert.ok(!cb.findings[0].figures.some((f) => f.label === 'Inflation target'));
+  assert.ok(cb.missing.some((m) => /Nowhere: inflation target not on file/.test(m)));
+  const sections = councilBriefSections({ question: q, askedAt: '2026-11-05T04:00:00Z', scopeNote: 's', answers: [cb], synthesis: null }, () => true);
+  assert.ok(!/\((AI estimate|Sample data),/.test(sections.map((x) => x.lines.join(' ')).join(' ')));
+});
+
+test('a country off the watchlist is named as such, never answered for the whole watchlist', () => {
+  const four = [TUR, ZAF, POL, it('BRA', 'Brazil')];
+  assert.deepEqual(offWatchlistCountries('What about Egypt?', four), ['Egypt']);
+  const p = planCouncil('Is Egypt behind the curve?', four);
+  assert.equal(p.countries.length, 0);
+  assert.deepEqual(p.offWatchlist, ['Egypt']);
+  assert.match(p.scopeNote, /Egypt is not on the watchlist, so the agents hold no figures for it/);
+  const answers = runCouncil('Is Egypt behind the curve?', p, four);
+  assert.ok(answers.every((a) => a.findings.length === 0));
+  assert.match(answers[0].missing[0], /Egypt is not on the watchlist/);
+  // Mixed: the watchlist country is answered, the other is listed.
+  const mixed = planCouncil('Compare Brazil and Argentina inflation', four);
+  assert.deepEqual(mixed.countries.map((c) => c.iso3), ['BRA']);
+  assert.match(mixed.scopeNote, /Brazil, named in the question\. Argentina is not on the watchlist/);
+  // Longer names win; ISO-like words in capitals are not countries.
+  assert.deepEqual(offWatchlistCountries('Papua New Guinea debt', four), ['Papua New Guinea']);
+  assert.deepEqual(offWatchlistCountries('ARE RATES TOO HIGH?', four), []);
+  // A follow-up naming an off-list country does not carry the last countries over.
+  const f = planFollowUp('and Egypt?', planCouncil('Is Turkey behind the curve?', four), four);
+  assert.equal(f.countries.length, 0);
+});
+
+test('"us" and "sa" in a sentence do not name the United States or South Africa; capitals do', () => {
+  const usa = it('USA', 'United States');
+  const list = [usa, ZAF, TUR];
+  assert.deepEqual(countriesInQuestion('Can you tell us which central banks are tight?', list), []);
+  assert.deepEqual(countriesInQuestion('Is the US behind the curve?', list).map((c) => c.iso3), ['USA']);
+  assert.deepEqual(countriesInQuestion('UK and SA policy', [it('GBR', 'United Kingdom'), ZAF]).map((c) => c.iso3), ['GBR', 'ZAF']);
+  assert.deepEqual(countriesInQuestion('turkey and the lira', list).map((c) => c.iso3), ['TUR']);
 });
