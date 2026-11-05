@@ -179,3 +179,98 @@ export function snapshotId(createdAt: string, inputsHash: string): string {
 }
 
 export const isSnapshotId = (v: unknown): v is string => typeof v === 'string' && /^s\d{8,17}-[0-9a-f]{12}$/.test(v);
+
+/* ------------------------------------------------------------------------------------------
+ * Comparing two runs: a re-run on the same snapshot, or a later answer to the same question.
+ * ------------------------------------------------------------------------------------------ */
+
+export interface RunSide {
+  snapshot: SnapshotSummary;
+  brief: CouncilBrief | null;
+  provider?: string | null;
+}
+
+export interface FigureChange {
+  iso3: string;
+  label: string;
+  agent: string;
+  before: string | null;
+  after: string | null;
+  beforeSource?: string;
+  afterSource?: string;
+}
+
+export interface RunComparison {
+  /** True when the written answer is word for word the same. */
+  sameAnswer: boolean;
+  sameInputs: boolean;
+  samePrompt: boolean;
+  sameInstructions: boolean;
+  sameModel: boolean;
+  sameSampling: boolean;
+  /** Agents whose standard document differs (by hash), or that are in only one run. */
+  documentsChanged: string[];
+  figuresChanged: FigureChange[];
+  headlineChanged: boolean;
+  pointsAdded: string[];
+  pointsRemoved: string[];
+  /** Plain sentences, most important first: why the answers differ, or that they match. */
+  notes: string[];
+}
+
+const briefSentences = (b: CouncilBrief | null) => (b ? [...b.points, ...b.disagreements, ...b.gaps] : []);
+
+export function compareRuns(before: RunSide, after: RunSide): RunComparison {
+  const a = before.snapshot;
+  const b = after.snapshot;
+  const sameInputs = a.inputsHash === b.inputsHash;
+  const samePrompt = a.promptHash === b.promptHash;
+  const sameInstructions = a.templateHash === b.templateHash;
+  const sameModel = (a.model || null) === (b.model || null);
+  const sameSampling = a.temperature === b.temperature && a.seed === b.seed;
+  const sameAnswer = a.outputHash === b.outputHash;
+
+  const docsA = new Map(a.documents.map((d) => [d.agent, d.hash]));
+  const docsB = new Map(b.documents.map((d) => [d.agent, d.hash]));
+  const documentsChanged = [...new Set([...docsA.keys(), ...docsB.keys()])].filter((k) => docsA.get(k) !== docsB.get(k));
+
+  const key = (f: SnapshotFigure) => `${f.iso3}|${f.agent}|${f.label}`;
+  const figA = new Map(a.figures.map((f) => [key(f), f]));
+  const figB = new Map(b.figures.map((f) => [key(f), f]));
+  const figuresChanged: FigureChange[] = [];
+  for (const k of new Set([...figA.keys(), ...figB.keys()])) {
+    const x = figA.get(k);
+    const y = figB.get(k);
+    if (x && y && x.value === y.value && x.source === y.source) continue;
+    const f = (x || y)!;
+    figuresChanged.push({
+      iso3: f.iso3,
+      label: f.label,
+      agent: f.agent,
+      before: x ? x.value : null,
+      after: y ? y.value : null,
+      ...(x ? { beforeSource: x.source } : {}),
+      ...(y ? { afterSource: y.source } : {}),
+    });
+  }
+
+  const sa = briefSentences(before.brief);
+  const sb = briefSentences(after.brief);
+  const headlineChanged = (before.brief?.headline || '') !== (after.brief?.headline || '');
+  const pointsAdded = sb.filter((x) => !sa.includes(x));
+  const pointsRemoved = sa.filter((x) => !sb.includes(x));
+
+  const notes: string[] = [];
+  if (sameAnswer) notes.push('Same answer, word for word.');
+  else if (!before.brief || !after.brief) notes.push(after.brief ? 'This run has an answer; the first had none.' : `No answer this time${after.provider ? '' : ': no AI model answered'}.`);
+  else notes.push(`Different answer: ${headlineChanged ? 'the headline changed' : 'same headline'}, ${pointsAdded.length} sentence(s) new, ${pointsRemoved.length} gone.`);
+  if (!sameModel) notes.push(`The AI model changed: ${a.model || 'none'} then, ${b.model || 'none'} now.`);
+  if (!sameSampling) notes.push(`The sampling changed: temperature ${a.temperature}, seed ${a.seed} then; temperature ${b.temperature}, seed ${b.seed} now.`);
+  if (!sameInstructions) notes.push("The app's instructions to the model changed since the first run (an app update).");
+  if (figuresChanged.length) notes.push(`${figuresChanged.length} figure(s) differ between the two runs.`);
+  else if (documentsChanged.length) notes.push(`The documents of ${documentsChanged.join(', ')} differ.`);
+  if (!sameAnswer && sameInputs && samePrompt && sameModel && sameSampling) {
+    notes.push('Everything sent was the same, so the difference comes from the model itself (some providers do not give the same text even with a fixed seed).');
+  }
+  return { sameAnswer, sameInputs, samePrompt, sameInstructions, sameModel, sameSampling, documentsChanged, figuresChanged, headlineChanged, pointsAdded, pointsRemoved, notes };
+}

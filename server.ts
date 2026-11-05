@@ -7,8 +7,8 @@ import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from '.
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
-import { COUNCIL_SEED, COUNCIL_TEMPERATURE, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
-import { buildSnapshot, saveSnapshot, sha256, snapshotDir } from './src/utils/answerSnapshotStore';
+import { COUNCIL_SEED, COUNCIL_TEMPERATURE, compareRuns, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
+import { buildSnapshot, loadSnapshot, saveSnapshot, sha256, snapshotDir, verifySnapshot } from './src/utils/answerSnapshotStore';
 import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
 import { TRACK_RECORD_HEADER, trackRecord, trackRecordRows, trackRecordSentence, type ArchivedDay } from './src/utils/trackRecord';
 import { INFLATION_TARGETS } from './src/utils/marketsMacro';
@@ -7131,6 +7131,27 @@ ${MISSING_FIGURES_RULE}
       'Council chat'
     );
     res.json(out);
+  });
+
+  // Re-run: the same snapshot (inputs, documents, question time) sent again, compared with the first answer.
+  app.post('/api/council/rerun', async (req, res) => {
+    const id = typeof req.body?.id === 'string' ? req.body.id : '';
+    const first = loadSnapshot(ANSWER_SNAPSHOT_DIR, id);
+    if (!first) return res.status(404).json({ error: `No snapshot ${id.slice(0, 40)} on this computer.` });
+    const tampered = verifySnapshot(first);
+    if (tampered.length) return res.status(409).json({ error: `Snapshot ${first.id} was changed after it was saved (${tampered.join(' and ')} no longer match their hash), so it is not re-run.` });
+    const inp = first.inputs;
+    const out = await answerAndRecord(
+      inp.question,
+      inp.answers,
+      { scope: inp.scope, countries: inp.countries, earlier: inp.earlier, explain: inp.explain, askedAt: inp.askedAt, asOf: inp.asOf, runtimeConfig: req.body?.runtimeConfig || {} },
+      `Re-run of ${first.id}`,
+      first.id
+    );
+    const comparison = out.snapshot
+      ? compareRuns({ snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, { snapshot: out.snapshot, brief: out.brief, provider: out.provider })
+      : null;
+    res.json({ original: { snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, rerun: out, comparison });
   });
 
   app.post('/api/council/analyze-policy-document', async (req, res) => {

@@ -61,3 +61,20 @@ test('modelFromProvider reads the model tag', () => {
   assert.equal(modelFromProvider('Google AI Studio (gemini-3.8-flash)'), 'gemini-3.8-flash');
   assert.equal(modelFromProvider(undefined), null);
 });
+
+test('compareRuns names what changed: model, figures, sentences', async () => {
+  const { compareRuns } = await import('../src/utils/answerSnapshot.ts');
+  const a = buildSnapshot({ inputs, settings, output, via: 'x', documents: [] });
+  const moved = structuredClone(inputs);
+  moved.answers[0].findings[0].figures[0].value = '14.25%';
+  const out2 = { ...output, brief: { headline: 'Brazil looks very tight.', points: ['Policy rate 14.25%.'], disagreements: [], gaps: [] } };
+  const b = buildSnapshot({ inputs: moved, settings: { ...settings, model: 'gemma4:31b' }, output: out2, via: 'x' });
+  const c = compareRuns({ snapshot: summariseSnapshot(a), brief: output.brief }, { snapshot: summariseSnapshot(b), brief: out2.brief, provider: 'p' });
+  assert.equal(c.sameAnswer, false);
+  assert.equal(c.headlineChanged, true);
+  assert.deepEqual(c.pointsAdded, ['Policy rate 14.25%.']);
+  assert.deepEqual(c.figuresChanged.map((f) => [f.label, f.before, f.after]), [['Policy rate', '13.75%', '14.25%']]);
+  assert.ok(c.notes.some((n) => /qwen2.5:32b then, gemma4:31b now/.test(n)));
+  const same = compareRuns({ snapshot: summariseSnapshot(a), brief: output.brief }, { snapshot: summariseSnapshot(a), brief: output.brief });
+  assert.deepEqual(same.notes, ['Same answer, word for word.']);
+});

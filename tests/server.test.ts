@@ -278,6 +278,45 @@ test('council synthesis: a model brief keeps traceable sentences and drops inven
   assert.ok(audit.some((e: { detail?: { snapshot?: { id: string } } }) => e.detail?.snapshot?.id === snap.id));
 });
 
+test('council re-run: the same snapshot sent again gives the same answer, and says so; an edited snapshot is refused', async () => {
+  const answers = [
+    {
+      id: 'cb',
+      name: 'Central Bank Watcher',
+      why: 'the question mentions "inflation"',
+      findings: [{ iso3: 'TUR', countryName: 'Turkey', reading: 'Policy looks loose.', figures: [{ label: 'CPI inflation', value: '34.0%', source: 'IMF, live', tag: 'live' }], weight: 0.5 }],
+      missing: [],
+    },
+  ];
+  const runtimeConfig = { providerMode: 'ollama', ollamaBaseUrl: 'http://fake-ollama.test:11434' };
+  const first = await (
+    await fetch(`${base}/api/council/synthesise`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: 'Is Turkey behind the curve on inflation?', askedAt: '2026-11-05T09:00:00.000Z', answers, runtimeConfig }),
+    })
+  ).json();
+  const res = await fetch(`${base}/api/council/rerun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: first.snapshot.id, runtimeConfig }) });
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.comparison.sameAnswer, true);
+  assert.equal(body.comparison.sameInputs, true);
+  assert.equal(body.comparison.samePrompt, true);
+  assert.equal(body.comparison.notes[0], 'Same answer, word for word.');
+  assert.equal(body.rerun.snapshot.rerunOf, first.snapshot.id);
+  assert.notEqual(body.rerun.snapshot.id, first.snapshot.id);
+
+  const file = path.join(dataDir, 'local', 'snapshots', `${first.snapshot.id}.json`);
+  const saved = JSON.parse(readFileSync(file, 'utf8'));
+  saved.inputs.answers[0].findings[0].figures[0].value = '12.0%';
+  writeFileSync(file, JSON.stringify(saved));
+  const edited = await fetch(`${base}/api/council/rerun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: first.snapshot.id, runtimeConfig }) });
+  assert.equal(edited.status, 409);
+  assert.match((await edited.json()).error, /changed after it was saved/);
+  const missing = await fetch(`${base}/api/council/rerun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: 's20261105-000000000000' }) });
+  assert.equal(missing.status, 404);
+});
+
 test('council explain: facts apart from interpretation, by lens; invented numbers and lenses without figures dropped', async () => {
   const answers = [
     {
