@@ -11,6 +11,8 @@ import { toLive } from '../utils/liveFigures';
 import { isCoreCountryTab } from '../utils/simpleMode';
 import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 import { MarketsMacroPanel } from './MarketsMacroPanel';
+import { AsOfPanel } from './AsOfPanel';
+import { PanelBoundary } from './PanelBoundary';
 import { HistoryPanel } from './HistoryPanel';
 
 /**
@@ -375,7 +377,14 @@ export const CountryPage: React.FC<{
         </div>
       )}
 
-      {tab.id === 'history' && <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />}
+      {tab.id === 'history' && (
+        <div className="space-y-3">
+          <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
+          <PanelBoundary name="As of a past day">
+            <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+          </PanelBoundary>
+        </div>
+      )}
       {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} />}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 

@@ -124,6 +124,12 @@ a figure in the country header to open its history. *Show the numbers* lists eve
 observation, with unit, frequency, source, the source that day and the pull date).
 Figures with no history yet are listed with the reason.
 
+*As of a past day* (below the chart): pick a date and see every figure the app held on that day,
+from its saved pulls, beside today's, with the change where both sides are live. A day without a pull
+uses the pull before it. Each value keeps its own source and period; hover for them, or for the
+reason a value reads Missing. *Download these figures* saves that day's figures as CSV. The archive
+gains a day with each pull, so the choice of dates grows from the day you install this version.
+
 With Menu > Show all tools, more tabs appear (Debt & fiscal, Markets, Politics & geo, Scenarios,
 Restructuring) holding the older desks.
 
