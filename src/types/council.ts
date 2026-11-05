@@ -358,6 +358,8 @@ export interface OpenDataSnapshot {
     primaryFiscalBalancePct: number;
     realGdpGrowthPct: number;
     cpiInflationPct: number;
+    /** IMF WEO output gap, % of potential GDP; set only where the IMF publishes one (mostly advanced economies). */
+    outputGapPct?: number;
     sourceUrl: string;
     /** WEO year each live figure is for, by liveFields key (e.g. 'imf.debtToGdpPct' -> '2025'). */
     years?: Record<string, string>;
@@ -481,6 +483,8 @@ export interface WatchlistItem {
   cpiSource?: 'live' | 'sample' | 'oecd';
   /** YYYY-MM of the OECD monthly CPI figure, when cpiSource is 'oecd'. */
   cpiMonth?: string;
+  /** IMF WEO output gap (% of potential GDP), only when the IMF publishes one for this country. */
+  outputGap?: { pct: number; year: string };
   /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
   policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
   /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */

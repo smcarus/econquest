@@ -94,7 +94,9 @@ Pick a country from the list at the top. **Refresh now** pulls every source for 
 
 **MarketEdge.** The country against its peers: CDS or real yield fitted on the risk score, policy
 stance (tight, neutral or loose), the cycle clock (hiking, cutting or on hold and for how long; the
-leading indicator phase and last turning point; next decision date), FX valuation, carry per unit of
+leading indicator phase and last turning point; next decision date), a policy rule check (the policy rate against a simple
+Taylor rule: r* of 2%, inflation, half the gap to the bank's own target and half the IMF output gap
+where the IMF publishes one; the term is left out and said so elsewhere), FX valuation, carry per unit of
 volatility, CFTC futures positioning, US Treasury TIC holdings, IMF reserves and balance of payments,
 world reserve currency shares (COFER), shock early warning and the signal track record.
 
