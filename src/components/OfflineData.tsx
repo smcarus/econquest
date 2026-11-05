@@ -31,6 +31,14 @@ const day = (iso?: string | null) =>
 const dayTime = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
 
+/** "1 min 20 s" since an ISO time. */
+export function elapsed(sinceIso: string, now = Date.now()): string {
+  const sec = Math.max(0, Math.round((now - Date.parse(sinceIso)) / 1000));
+  if (!Number.isFinite(sec)) return '';
+  const m = Math.floor(sec / 60);
+  return m ? `${m} min ${sec % 60} s` : `${sec} s`;
+}
+
 /** Polls whether the feeds answer (every minute) and whether the browser itself has a network. */
 export function useOnlineStatus(): OnlineReply | null {
   const [status, setStatus] = useState<OnlineReply | null>(null);
@@ -121,6 +129,14 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
     }
   };
 
+  // Ticks every second so the running step's time moves even between server polls.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [running]);
+
   const s = reply?.summary;
   const pct = s && s.total ? Math.round((s.done / s.total) * 100) : 0;
 
@@ -199,7 +215,7 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
                   ? reply.state.waiting
                     ? `${reply.state.waiting.why}, until ${dayTime(reply.state.waiting.until)}.`
                     : reply.state.current
-                    ? `Now: ${reply.state.current.label}`
+                    ? `Now (step ${s.done + s.failed + s.skipped + 1} of ${s.total}, running ${elapsed(reply.state.current.since, now)}): ${reply.state.current.label}`
                     : 'Starting…'
                   : s.completeAsOf
                   ? `Everything saved; the oldest step is from ${dayTime(s.completeAsOf)}.`
@@ -255,7 +271,7 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
           )}
 
           <p className="text-slate-500 dark:text-slate-400">
-            Takes a few minutes per country (GDELT allows few requests and may pause the run for 15 minutes). You can
+            Takes a few minutes per country. A step that takes longer than 3 minutes is listed as not saved and the run moves on. You can
             close this window; the download carries on, and a stopped one picks up where it left off. Same as{' '}
             <code>npm run preload</code> in a terminal. Saved in data/live, data/history and data/archive; progress in{' '}
             {reply?.file || 'data/local/preload.json'}.

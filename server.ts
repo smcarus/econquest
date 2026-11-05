@@ -2094,18 +2094,12 @@ function preloadPlan(): PreloadStep[] {
 }
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** GDELT asked to slow down (HTTP 429): wait the 15-minute pause out before the next country. */
-async function waitOutGdeltPause(): Promise<void> {
-  while (Date.now() < gdeltPausedUntil && !preloadStopAsked) {
-    preloadState.waiting = { until: new Date(gdeltPausedUntil).toISOString(), why: 'GDELT asked the app to slow down; waiting out its 15-minute pause' };
-    savePreloadState();
-    await sleep(Math.min(5000, gdeltPausedUntil - Date.now()));
-  }
-  if (preloadState.waiting) {
-    preloadState.waiting = undefined;
-    savePreloadState();
-  }
-}
+/**
+ * Longest one step may take before the run records it as not saved and moves on (the download
+ * behind it may still finish in the background and fill the figures later). PRELOAD_STEP_TIMEOUT_S
+ * in .env changes it.
+ */
+const PRELOAD_STEP_TIMEOUT_MS = Math.max(5, Number(process.env.PRELOAD_STEP_TIMEOUT_S) || 180) * 1000;
 
 async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult, 'at'>> {
   const had = (x: unknown, what: string) => (x ? { outcome: 'done' as const } : { outcome: 'failed' as const, note: `${what} did not answer` });
@@ -2117,7 +2111,8 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const failedN = Object.keys(h.failed || {}).length;
       return { outcome: 'done', note: `${n} figure${n === 1 ? '' : 's'} with history${failedN ? `, ${failedN} did not answer` : ''}` };
     }
-    await waitOutGdeltPause();
+    // GDELT's 15-minute pause is not waited out here (it can refuse every country in turn);
+    // its figures fill in on a later hourly refresh.
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === step.iso3)?.countryName;
     const pausedBefore = gdeltPausedUntil;
     const snap = await refreshStoredSnapshot(step.iso3, name);
@@ -2235,7 +2230,15 @@ function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = 
       savePreloadState();
       let result: PreloadStepResult;
       try {
-        result = { ...(await runPreloadStep(step)), at: new Date().toISOString() };
+        let timer: NodeJS.Timeout | undefined;
+        const limit = new Promise<Omit<PreloadStepResult, 'at'>>((resolve) => {
+          timer = setTimeout(
+            () => resolve({ outcome: 'failed', note: `took longer than ${PRELOAD_STEP_TIMEOUT_MS >= 120000 ? `${Math.round(PRELOAD_STEP_TIMEOUT_MS / 60000)} minutes` : `${Math.round(PRELOAD_STEP_TIMEOUT_MS / 1000)} s`}; moved on (it may still finish in the background)` }),
+            PRELOAD_STEP_TIMEOUT_MS
+          );
+        });
+        result = { ...(await Promise.race([runPreloadStep(step), limit])), at: new Date().toISOString() };
+        clearTimeout(timer);
       } catch (err: any) {
         result = { outcome: 'failed', note: String(err?.message || err).slice(0, 200), at: new Date().toISOString() };
       }
