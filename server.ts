@@ -50,6 +50,7 @@ import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/research
 import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
+import { deleteReview, loadReviews, newReview, parseFrame, putReview, reviewFilePath, saveStep, summarise as summariseReview, verifyReview, stepStates, REVIEW_TEMPLATE_VERSION } from './src/utils/policyReview';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
@@ -177,6 +178,8 @@ const SPEC_DIR = path.join(__dirname, 'docs', 'validation', 'preregistered');
 let validationRunning = false;
 // Report sign-off (Reports > Saved research). See src/utils/signoff.ts.
 const SIGNOFF_FILE = signOffFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+// Policy reviews (Reports > Policy reviews). See src/utils/policyReview.ts and docs/POLICY_REVIEW.md.
+const REVIEW_FILE = reviewFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
@@ -4199,6 +4202,59 @@ async function startServer() {
       detail: { id: b.id, step: out.entry.step, by: out.entry.by, contentHash: hash, status: SIGNOFF_LABEL[view.status], ...(out.entry.note ? { note: out.entry.note } : {}) },
     });
     res.json(view);
+  });
+  // Policy reviews: a guided case file per country and problem (src/utils/policyReview.ts).
+  app.get('/api/reviews', (_req, res) => {
+    res.json({ reviews: loadReviews(REVIEW_FILE).reviews.map(summariseReview), templateVersion: REVIEW_TEMPLATE_VERSION, file: 'data/local/reviews.json' });
+  });
+  app.get('/api/reviews/:id', (req, res) => {
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    res.json({ review: r, states: stepStates(r), changed: verifyReview(r) });
+  });
+  const writeReview = (res: express.Response, review: Parameters<typeof putReview>[1]): boolean => {
+    try {
+      putReview(REVIEW_FILE, review);
+      return true;
+    } catch (error: any) {
+      res.status(500).json({ error: `Could not save the policy review (${error?.code || error?.message || 'unknown error'}).` });
+      return false;
+    }
+  };
+  app.post('/api/reviews', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const parsed = parseFrame(req.body?.frame);
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' '), errors: parsed.errors });
+    const existing = loadReviews(REVIEW_FILE).reviews;
+    const previousId = typeof req.body?.previousId === 'string' && existing.some((r) => r.id === req.body.previousId) ? req.body.previousId : undefined;
+    const review = newReview(parsed.frame, existing.map((r) => r.id), new Date(), previousId);
+    if (!writeReview(res, review)) return;
+    appendAudit(AUDIT_FILES, { kind: 'research', summary: `Started policy review "${review.title}"`, detail: { id: review.id, step: 'frame', hash: review.steps.frame?.hash, templateVersion: review.templateVersion, ...(previousId ? { previousId } : {}) } });
+    res.json({ review, states: stepStates(review) });
+  });
+  app.put('/api/reviews/:id/frame', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const parsed = parseFrame(req.body?.frame);
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' '), errors: parsed.errors });
+    const out = saveStep(r, 'frame', parsed.frame);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, { kind: 'research', summary: `Changed the frame of policy review "${out.review.title}"`, detail: { id: r.id, step: 'frame', hash: out.review.steps.frame?.hash } });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  app.delete('/api/reviews/:id', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    try {
+      deleteReview(REVIEW_FILE, r.id);
+    } catch (error: any) {
+      return res.status(500).json({ error: `Could not delete the policy review (${error?.code || error?.message || 'unknown error'}).` });
+    }
+    appendAudit(AUDIT_FILES, { kind: 'research', summary: `Deleted policy review "${r.title}"`, detail: { id: r.id } });
+    res.json({ ok: true });
   });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
   app.get('/api/validation', (_req, res) => {

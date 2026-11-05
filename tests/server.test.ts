@@ -782,3 +782,24 @@ test('morning brief: settings are checked and saved; Run now saves each answer t
   const lib = await (await fetch(`${base}/api/research`)).json();
   assert.ok(lib.briefs.some((b: { question: string }) => b.question.startsWith('Morning brief: ')));
 });
+
+test('policy reviews: a frame starts a review, a bad one is refused, and both are in the audit log', async () => {
+  const post = (body: unknown) => fetch(`${base}/api/reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const bad = await post({ frame: { iso3: 'BRA' } });
+  assert.equal(bad.status, 400);
+  assert.ok((await bad.json()).errors.length >= 3);
+  const asOf = new Date().toISOString().slice(0, 10);
+  const res = await post({ frame: { iso3: 'BRA', problem: 'Inflation is above target and growth is slowing.', goal: { indicator: 'Headline inflation', direction: 'lower' }, constraints: [], asOf } });
+  assert.equal(res.status, 200);
+  const { review, states } = await res.json();
+  assert.equal(states.frame, 'done');
+  assert.equal(states.diagnose, 'not_started');
+  const list = await (await fetch(`${base}/api/reviews`)).json();
+  assert.ok(list.reviews.some((r: { id: string; next: string }) => r.id === review.id && r.next === 'diagnose'));
+  const one = await (await fetch(`${base}/api/reviews/${review.id}`)).json();
+  assert.deepEqual(one.changed, []);
+  const audit = await (await fetch(`${base}/api/audit`)).json();
+  assert.ok(JSON.stringify(audit).includes('Started policy review'));
+  assert.equal((await fetch(`${base}/api/reviews/${review.id}`, { method: 'DELETE' })).status, 200);
+  assert.equal((await fetch(`${base}/api/reviews/${review.id}`)).status, 404);
+});
