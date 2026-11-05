@@ -7,6 +7,9 @@ import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '..
 import {
   councilBriefSections,
   planCouncil,
+  planFollowUp,
+  suggestFollowUps,
+  type EarlierTurn,
   runCouncil,
   saveCouncilBrief,
   tagLabel,
@@ -91,11 +94,17 @@ export const AskCouncilPanel: React.FC<{
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [writing, setWriting] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Earlier turns of this conversation, oldest first. A question in the top box starts a new one.
+  const [earlier, setEarlier] = useState<Array<EarlierTurn & { scopeNote: string; points: string[] }>>([]);
+  const [followUp, setFollowUp] = useState('');
 
-  const ask = async (q: string) => {
+  const ask = async (q: string, asFollowUp = false) => {
     const text = q.trim();
     if (!text || !items.length) return;
-    const plan = planCouncil(text, items, scope || undefined);
+    const history = asFollowUp && asked ? [...earlier, { question: asked.question, headline: synthesis?.brief?.headline || undefined, scopeNote: asked.plan.scopeNote, points: synthesis?.brief?.points || [] }] : [];
+    setEarlier(history);
+    setFollowUp('');
+    const plan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
     const answers = runCouncil(text, plan, items);
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt });
@@ -110,7 +119,7 @@ export const AskCouncilPanel: React.FC<{
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, answers, runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, answers, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {
@@ -121,7 +130,14 @@ export const AskCouncilPanel: React.FC<{
   };
 
   const saved: SavedCouncilBrief | null = asked
-    ? { question: asked.question, askedAt: asked.askedAt, scopeNote: asked.plan.scopeNote, answers: asked.answers, synthesis }
+    ? {
+        question: asked.question,
+        askedAt: asked.askedAt,
+        scopeNote: asked.plan.scopeNote,
+        answers: asked.answers,
+        synthesis,
+        ...(earlier.length ? { earlier: earlier.map((t) => ({ question: t.question, headline: t.headline })) } : {}),
+      }
     : null;
   const copy = async () => {
     if (!saved) return;
@@ -223,8 +239,40 @@ export const AskCouncilPanel: React.FC<{
         </div>
       </form>
 
+      {asked && earlier.length > 0 && (
+        <ol className="px-4 pt-3 space-y-1.5" data-council-earlier="true" aria-label="Earlier in this conversation">
+          {earlier.map((t, i) => (
+            <li key={`${i}-${t.question}`}>
+              <details className="text-sm border-l-2 border-slate-200 dark:border-slate-700 pl-3">
+                <summary className="cursor-pointer text-slate-700 dark:text-slate-300">
+                  <span className="text-slate-500 dark:text-slate-400">You asked: </span>
+                  {t.question}
+                </summary>
+                <div className="mt-1 text-slate-700 dark:text-slate-300 space-y-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">About {t.scopeNote}.</p>
+                  {t.headline ? <p className="font-medium">{t.headline}</p> : <p className="text-xs">No AI summary for this one; the agents answered on their own.</p>}
+                  {t.points.length > 0 && (
+                    <ul className="list-disc pl-5 space-y-0.5">
+                      {t.points.map((p) => (
+                        <li key={p}>{p}</li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </details>
+            </li>
+          ))}
+        </ol>
+      )}
+
       {asked && (
         <div className="px-4 py-3 space-y-3" data-council-result="true">
+          {earlier.length > 0 && (
+            <p className="text-sm text-slate-900 dark:text-white">
+              <span className="text-slate-500 dark:text-slate-400">Follow-up: </span>
+              {asked.question}
+            </p>
+          )}
           <AgentNetwork
             title={`Agents on your question, about ${asked.plan.scopeNote}`}
             columns={askCouncilColumns(asked.answers, writing, synthesis)}
@@ -332,6 +380,39 @@ export const AskCouncilPanel: React.FC<{
             </button>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400">Hover a figure for its source. For discussion, not investment advice.</p>
+
+          <form
+            className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2"
+            data-council-followup="true"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void ask(followUp, true);
+            }}
+          >
+            <label htmlFor="council-followup" className="ui-label">
+              Ask a follow-up. It keeps these countries and agents unless you name others.
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="council-followup"
+                value={followUp}
+                maxLength={500}
+                onChange={(e) => setFollowUp(e.target.value)}
+                placeholder="For example: and the currency? or what about Egypt?"
+                className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+              />
+              <button type="submit" className="ui-btn ui-btn-primary" disabled={!followUp.trim() || writing}>
+                Ask
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {suggestFollowUps(asked.plan, asked.answers).map((s) => (
+                <button key={s} type="button" className="ui-pill" disabled={writing} onClick={() => void ask(s, true)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </form>
         </div>
       )}
 
