@@ -1,3 +1,4 @@
+import { PanelValidationBadge } from './ValidationBadge';
 import React, { useMemo, useState } from 'react';
 import { FileText } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
@@ -98,7 +99,10 @@ export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
     {brief.groups.map((g) => (
       <section key={g.title} className="ui-panel">
         <header className="ui-panel-header">
-          <h3 className="ui-section-title">{g.title}</h3>
+          <h3 className="ui-section-title flex flex-wrap items-center gap-2">
+            {g.title}
+            <PanelValidationBadge title={g.title} />
+          </h3>
         </header>
         <table className="w-full text-sm">
           <caption className="sr-only">{g.title}</caption>

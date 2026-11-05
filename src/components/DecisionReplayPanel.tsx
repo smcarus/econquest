@@ -1,3 +1,4 @@
+import { ValidationBadge } from './ValidationBadge';
 import React, { useEffect, useState } from 'react';
 import { Gavel } from 'lucide-react';
 import type { DecisionReplay, RateDecision } from '../utils/decisionReplay';
@@ -60,6 +61,7 @@ export const DecisionReplayPanel: React.FC<{ iso3: string; countryName: string }
         <h2 className="ui-section-title flex items-center gap-2">
           <Gavel className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Replicate a rate decision, {countryName}
+          <ValidationBadge id="taylor_gap" />
         </h2>
         <p className="ui-label">Pick one of the central bank's moves, or any date: the data the week before, what a simple Taylor rule pointed to, and what the bank did.</p>
       </header>
