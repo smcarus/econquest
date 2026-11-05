@@ -166,7 +166,7 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
             placeholder={'Questions, one per line, e.g.\nWhat did inflation and the target say the week before?\nDid a simple Taylor rule point the same way as the bank?'}
             className={`w-full ${inputCls}`}
           />
-          <button type="submit" className="ui-btn ui-btn-primary" disabled={!ready}>
+          <button type="submit" className="ui-btn" disabled={!ready}>
             <Plus className="w-3.5 h-3.5" /> Add episode
           </button>
           <p className="text-xs text-slate-500 dark:text-slate-400">Tip: the rate moves listed under Country Research › History › Replicate a rate decision make good episode dates.</p>

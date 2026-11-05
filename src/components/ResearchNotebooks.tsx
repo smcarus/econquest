@@ -91,7 +91,7 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
             maxLength={120}
             className="flex-1 min-w-[12rem] px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           />
-          <button type="submit" className="ui-btn ui-btn-primary" disabled={!title.trim()}>
+          <button type="submit" className="ui-btn" disabled={!title.trim()}>
             <Plus className="w-3.5 h-3.5" /> Start notebook
           </button>
         </form>
