@@ -21,7 +21,7 @@ const indexFile = path.join(recDir, 'index.json');
 const skip = existsSync(indexFile) ? false : 'no recorded feed replies yet: run `npm run record:feeds`';
 
 /** Figures allowed to be Missing offline, each with its reason. */
-const NOT_SAVED = new Set<string>(['comtrade']); // UN Comtrade saves only after a full pass; fixed next
+const NOT_SAVED = new Set<string>([]);
 
 type Row = Record<string, unknown> & { iso3: string };
 

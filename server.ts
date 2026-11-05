@@ -1142,16 +1142,13 @@ async function fetchComtrade(): Promise<ComtradeFile> {
   if (comtradeInFlight) return comtradeInFlight;
   const key = (process.env.COMTRADE_API_KEY || '').trim();
   comtradeInFlight = (async () => {
-    let changed = false;
+    // Saved after each country: the paced pass takes minutes, and a restart or a stopped download
+    // part-way must not lose the countries already pulled.
     for (const iso of due) {
       mem.triedAt[iso] = Date.now();
       const profile = await pullComtradeCountry(iso, key);
-      if (profile) {
-        mem.file.countries[iso] = { pulledAt: new Date().toISOString(), profile };
-        changed = true;
-      }
-    }
-    if (changed) {
+      if (!profile) continue;
+      mem.file.countries[iso] = { pulledAt: new Date().toISOString(), profile };
       try {
         fs.mkdirSync(path.dirname(comtradeFile()), { recursive: true });
         writeFileAtomic(comtradeFile(), JSON.stringify(mem.file));
@@ -2257,10 +2254,12 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return { outcome: 'failed', note: r.note };
     }
     case 'world:comtrade': {
-      if (!(process.env.COMTRADE_API_KEY || '').trim()) return { outcome: 'skipped', note: 'add a UN Comtrade key in Menu > Settings' };
+      // Without a key the free preview route is used (slower, fewer requests), as on every refresh.
+      const keyed = !!(process.env.COMTRADE_API_KEY || '').trim();
       const file = await fetchComtrade();
       const n = Object.keys(file.countries || {}).length;
-      return n ? { outcome: 'done', note: `${n} countries saved` } : { outcome: 'failed', note: 'UN Comtrade did not answer' };
+      const route = keyed ? '' : ' (free preview route; a UN Comtrade key in Menu > Settings is faster)';
+      return n ? { outcome: 'done', note: `${n} countries saved${route}` } : { outcome: 'failed', note: `UN Comtrade did not answer${route}` };
     }
     case 'world:market_extras': {
       const fredIds = [...new Set([US_10Y_SERIES, ...MARKET_EDGE_ANCHORS.map((d) => d.fredSeries).filter((x): x is string => !!x)])];
