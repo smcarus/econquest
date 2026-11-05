@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
@@ -11,13 +11,14 @@ import { toLive } from '../utils/liveFigures';
 import { isCoreCountryTab } from '../utils/simpleMode';
 import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 import { MarketsMacroPanel } from './MarketsMacroPanel';
+import { HistoryPanel } from './HistoryPanel';
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
  * Each tab is a short list of existing desks; one desk shows at a time.
  */
 
-export type CountryTabId = 'brief' | 'macro' | 'overview' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
+export type CountryTabId = 'brief' | 'macro' | 'overview' | 'history' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
 
 export interface CountryTabConfig {
   id: CountryTabId;
@@ -32,6 +33,8 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
   { id: 'macro', label: 'MarketEdge', desks: [] },
   // Overview: what is live for this country. Its old chart desks ran on built-in figures and were removed (Sam, 2026-11-04).
   { id: 'overview', label: 'Overview', desks: [] },
+  // History: each figure's run of real observations as a chart (src/components/HistoryPanel.tsx). No desks.
+  { id: 'history', label: 'History', desks: [] },
   {
     id: 'debt',
     label: 'Debt & fiscal',
@@ -116,8 +119,16 @@ const ALERT_LABEL: Record<WatchlistItem['alertStatus'], string> = {
   STABLE: 'Stable',
 };
 
-const Figure: React.FC<{ label: string; value: string; title?: string; missing?: string }> = ({ label, value, title, missing }) => (
-  <div className="min-w-0" title={title} data-missing={missing ? 'true' : undefined}>
+const Figure: React.FC<{ label: string; value: string; title?: string; missing?: string; onHistory?: () => void }> = ({ label, value, title, missing, onHistory }) => (
+  <div
+    className={`min-w-0 ${onHistory ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50' : ''}`}
+    title={onHistory ? `${title ? `${title} ` : ''}Click for its history.` : title}
+    data-missing={missing ? 'true' : undefined}
+    role={onHistory ? 'button' : undefined}
+    tabIndex={onHistory ? 0 : undefined}
+    onClick={onHistory}
+    onKeyDown={onHistory ? (e) => (e.key === 'Enter' || e.key === ' ') && onHistory() : undefined}
+  >
     <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</div>
     <div className={`text-sm whitespace-nowrap [font-variant-numeric:tabular-nums] ${missing ? 'text-slate-400 dark:text-slate-500' : 'font-semibold text-slate-900 dark:text-white'}`}>
       {value}
@@ -127,12 +138,12 @@ const Figure: React.FC<{ label: string; value: string; title?: string; missing?:
 );
 
 /** The header's key figures, each shown only from a real source. */
-const HEADER_FIGURES: Array<{ path: string; label: string; fmt: (v: number) => string }> = [
-  { path: 'imf.debtToGdpPct', label: 'Debt / GDP', fmt: (v) => `${v.toFixed(1)}%` },
-  { path: 'market.cds5YSpreadBps', label: '5Y CDS', fmt: (v) => `${Math.round(v)} bps` },
-  { path: 'market.sovereign10YBondYieldPct', label: '10Y yield', fmt: (v) => `${v.toFixed(2)}%` },
-  { path: 'market.policyRatePct', label: 'Policy rate', fmt: (v) => `${v.toFixed(2)}%` },
-  { path: 'wb.fxReservesMonthsImport', label: 'Reserves', fmt: (v) => `${v.toFixed(1)} mo` },
+const HEADER_FIGURES: Array<{ path: string; label: string; fmt: (v: number) => string; series: string }> = [
+  { path: 'imf.debtToGdpPct', label: 'Debt / GDP', fmt: (v) => `${v.toFixed(1)}%`, series: 'debt_gdp' },
+  { path: 'market.cds5YSpreadBps', label: '5Y CDS', fmt: (v) => `${Math.round(v)} bps`, series: 'cds_5y' },
+  { path: 'market.sovereign10YBondYieldPct', label: '10Y yield', fmt: (v) => `${v.toFixed(2)}%`, series: 'yield_10y' },
+  { path: 'market.policyRatePct', label: 'Policy rate', fmt: (v) => `${v.toFixed(2)}%`, series: 'policy_rate' },
+  { path: 'wb.fxReservesMonthsImport', label: 'Reserves', fmt: (v) => `${v.toFixed(1)} mo`, series: 'reserves_months' },
 ];
 
 export const CountryPage: React.FC<{
@@ -185,6 +196,9 @@ export const CountryPage: React.FC<{
   const events = useMemo(() => upcomingOfficialEvents([run.iso3], 120), [run.iso3]);
   // The risk badge only when the score rests on live inputs.
   const alert = item ? toLive(item).alertStatus : undefined;
+  // Which series History opens on, when a header figure was clicked.
+  const [historyPick, setHistoryPick] = useState<string | null>(null);
+  const showHistory = tabs.some((t) => t.id === 'history');
 
   return (
     <div className="space-y-3" data-country-page="true">
@@ -234,6 +248,14 @@ export const CountryPage: React.FC<{
                   value={v === undefined ? 'Missing' : f.fmt(v)}
                   missing={why?.short}
                   title={why ? why.help : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `Official figure: ${describeOfficialYield(status.officialYield).long}.` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `Your own ${status.ownCds.source} quote.` : undefined}
+                  onHistory={
+                    showHistory
+                      ? () => {
+                          setHistoryPick(f.series);
+                          onChangeTab('history');
+                        }
+                      : undefined
+                  }
                 />
               );
             })}
@@ -350,6 +372,7 @@ export const CountryPage: React.FC<{
         </div>
       )}
 
+      {tab.id === 'history' && <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />}
       {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} />}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 

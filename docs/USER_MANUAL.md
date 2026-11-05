@@ -96,6 +96,13 @@ world reserve currency shares (COFER), shock early warning and the signal track 
 **Overview.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it.
 
+**History.** Every figure that has a run of real observations, as a chart with its source, how often it
+comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
+leading indicator, CFTC positioning and TIC holdings come with their own history; every other figure
+gains one point per weekly pull from the pull archive, each with what the source said that day. Click
+a figure in the country header to open its history. *Show the numbers* lists every observation.
+Figures with no history yet are listed with the reason.
+
 With Menu > Show all tools, more tabs appear (Debt & fiscal, Markets, Politics & geo, Scenarios,
 Restructuring) holding the older desks.
 

@@ -9,7 +9,7 @@ test('core view: no Tools in the top bar; all of it with the switch on', () => {
 });
 
 test('core view: Brief, MarketEdge and Overview only on the Country page', () => {
-  assert.ok(isCoreCountryTab('brief') && isCoreCountryTab('macro') && isCoreCountryTab('overview'));
+  assert.ok(isCoreCountryTab('brief') && isCoreCountryTab('macro') && isCoreCountryTab('overview') && isCoreCountryTab('history'));
   for (const t of ['debt', 'markets', 'geo', 'scenarios', 'restructuring']) assert.equal(isCoreCountryTab(t), false);
 });
 

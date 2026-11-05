@@ -83,3 +83,20 @@ test('commodity series and summaries', () => {
   assert.deepEqual([sum.count, sum.first, sum.last, sum.latest], [2, '2026-09', '2026-10', 125]);
   assert.equal((sum as Record<string, unknown>).points, undefined);
 });
+
+test('gaps are named for monthly and weekly series, never filled', async () => {
+  const { seriesGaps } = await import('../src/utils/seriesHistory.ts');
+  assert.deepEqual(
+    seriesGaps({ freq: 'monthly', points: [{ date: '2025-11', value: 1 }, { date: '2025-12', value: 1 }, { date: '2026-03', value: 1 }] }),
+    [{ after: '2025-12', before: '2026-03' }]
+  );
+  assert.deepEqual(seriesGaps({ freq: 'weekly', points: [{ date: '2026-10-07', value: 1 }, { date: '2026-10-14', value: 1 }, { date: '2026-11-04', value: 1 }] }), [
+    { after: '2026-10-14', before: '2026-11-04' },
+  ]);
+  assert.deepEqual(seriesGaps({ freq: 'daily', points: [{ date: '2026-01-01', value: 1 }, { date: '2026-06-01', value: 1 }] }), []);
+});
+
+test('monthly inflation says the OECD has not answered when only a national series came back', () => {
+  const set = countrySeries('MEX', { cpiOecdAnswered: false, cpi: { pulledAt: 'x', series: { BRA: { basis: 'national', points: [{ period: '2026-09', value: 4.5 }] } } } });
+  assert.equal(set.missing.find((m) => m.id === 'cpi_monthly')?.reason, 'OECD inflation has not answered yet');
+});
