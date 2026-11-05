@@ -755,12 +755,13 @@ export default function App() {
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [settingsTab, setSettingsTab] = useState<SettingsTab>('keys');
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('ai');
   // Settings opens from the Menu, from Cmd/Ctrl + comma (as in most desktop apps), or from any
   // panel that dispatches OPEN_SETTINGS_EVENT (Data connections does, next to a missing key).
   useEffect(() => {
-    const open = () => {
-      setSettingsTab('keys');
+    const open = (e?: Event) => {
+      const tab = (e as CustomEvent<{ tab?: SettingsTab }> | undefined)?.detail?.tab;
+      if (tab) setSettingsTab(tab);
       setIsSettingsOpen(true);
     };
     const onKey = (e: KeyboardEvent) => {
@@ -2551,10 +2552,7 @@ export default function App() {
                         icon: <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'Settings',
                         hint: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,',
-                        onClick: () => {
-                          setSettingsTab('keys');
-                          setIsSettingsOpen(true);
-                        },
+                        onClick: () => setIsSettingsOpen(true),
                         className: '',
                       },
                       {
@@ -2571,14 +2569,19 @@ export default function App() {
                       {
                         key: 'runtime',
                         icon: <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
-                        label: 'AI model and data connections',
+                        label: 'AI model',
                         hint:
                           runtimeConfig.providerMode === 'ollama'
                             ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
                             : runtimeConfig.providerMode === 'hybrid'
-                            ? 'Hybrid Ollama'
+                            ? 'Ollama, then Gemini'
+                            : runtimeConfig.providerMode === 'openai_compatible'
+                            ? 'Local server'
                             : 'Gemini',
-                        onClick: () => setIsRuntimeModalOpen(true),
+                        onClick: () => {
+                          setSettingsTab('ai');
+                          setIsSettingsOpen(true);
+                        },
                         className: '',
                       },
                       {
@@ -3023,8 +3026,10 @@ export default function App() {
               holdingsCount={holdings.length}
               heldIso3={heldIso3}
               onInputAction={(id) => {
-                if (id === 'keys') setIsSettingsOpen(true);
-                else if (id === 'ai') setIsRuntimeModalOpen(true);
+                if (id === 'keys' || id === 'ai') {
+                  setSettingsTab(id);
+                  setIsSettingsOpen(true);
+                }
                 else if (id === 'watchlist') setIsWatchlistCollapsed(false);
                 else if (id === 'country') openCountryPage();
                 else if (id === 'holdings') openHoldingsEditor(); else if (showAllTools) setIsRuntimeModalOpen(true);
@@ -3667,6 +3672,8 @@ export default function App() {
         onOpenAiModel={() => setIsRuntimeModalOpen(true)}
         tab={settingsTab}
         onTabChange={setSettingsTab}
+        aiConfig={runtimeConfig}
+        onAiConfigChange={setRuntimeConfig}
         tools={
           <ToolsPage
             run={run}

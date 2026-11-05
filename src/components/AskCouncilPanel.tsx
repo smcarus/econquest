@@ -1,3 +1,4 @@
+import { SettingsText } from './SettingsText';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Copy, Download, FileText, X } from 'lucide-react';
 import { councilBriefMarkdown, downloadCouncilBrief } from '../utils/briefExport';
@@ -441,7 +442,7 @@ export const AskCouncilPanel: React.FC<{
             </>
           ) : (
             <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
-              No AI summary. {t.synthesis?.reason || ''} Each agent’s document below stands on its own.
+              No AI summary. <SettingsText text={t.synthesis?.reason || ''} /> Each agent’s document below stands on its own.
             </p>
           )}
         </div>

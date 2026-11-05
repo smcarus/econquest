@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import { CheckCircle2, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import type { AIRuntimeConfig } from '../types/council';
+import { AiModelSettings } from './AiModelSettings';
 import { STATE_LABEL, isFailure, type ConnectionResult } from '../utils/connectionCheck';
 import type { ApiKeyStatus } from '../utils/userSettings';
 
@@ -10,8 +12,15 @@ import type { ApiKeyStatus } from '../utils/userSettings';
  * Each key can be tested before it is saved; the test is the same as the Data connections check.
  */
 
-/** Any part of the app can open Settings with window.dispatchEvent(new CustomEvent(OPEN_SETTINGS_EVENT)). */
+/**
+ * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'tools' }).
+ */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
+
+export function openSettings(tab?: SettingsTab): void {
+  window.dispatchEvent(new CustomEvent(OPEN_SETTINGS_EVENT, { detail: tab ? { tab } : undefined }));
+}
 
 interface KeysReply {
   keys: ApiKeyStatus[];
@@ -184,19 +193,39 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'keys' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'tools';
+
+/** The pages of Settings, in order, and which key sections each one shows. */
+const PAGES: Array<{ id: SettingsTab; label: string; sections: Array<'free_key' | 'own_account' | 'ai'> }> = [
+  { id: 'ai', label: 'AI model', sections: [] },
+  { id: 'keys', label: 'Free data keys', sections: ['free_key'] },
+  { id: 'paid', label: 'Your own paid data', sections: ['own_account'] },
+  { id: 'tools', label: 'Tools', sections: [] },
+];
+const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
+  ai: <Cpu className="w-3.5 h-3.5" aria-hidden />,
+  keys: <KeyRound className="w-3.5 h-3.5" aria-hidden />,
+  paid: <Lock className="w-3.5 h-3.5" aria-hidden />,
+  tools: <Wrench className="w-3.5 h-3.5" aria-hidden />,
+};
 
 export const SettingsDialog: React.FC<{
   isOpen: boolean;
   onClose: () => void;
+  /** Opens the full (advanced) AI set-up window. */
   onOpenAiModel?: () => void;
-  /** Which part is showing: Data API keys, or the Tools page (Sam, 2026-11-05: Tools inside Settings). */
+  /** Which page is showing (Sam, 2026-11-05: one Settings window, each link opens its page). */
   tab?: SettingsTab;
   onTabChange?: (tab: SettingsTab) => void;
   /** The Tools page, drawn when the Tools part is open. */
   tools?: React.ReactNode;
-}> = ({ isOpen, onClose, onOpenAiModel, tab = 'keys', onTabChange, tools }) => {
+  /** The AI model choice (Menu > AI model), for the AI model page. */
+  aiConfig?: AIRuntimeConfig;
+  onAiConfigChange?: (next: AIRuntimeConfig) => void;
+}> = ({ isOpen, onClose, onOpenAiModel, tab = 'ai', onTabChange, tools, aiConfig, onAiConfigChange }) => {
   const showTools = tab === 'tools' && !!tools;
+  const showAi = tab === 'ai' && !!aiConfig && !!onAiConfigChange;
+  const page = PAGES.find((p) => p.id === tab) || PAGES[1];
   const [reply, setReply] = useState<KeysReply | null>(null);
   const [error, setError] = useState('');
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -243,67 +272,62 @@ export const SettingsDialog: React.FC<{
         </div>
 
         <div className="flex flex-col sm:flex-row min-h-0 flex-1">
-          <nav aria-label="Settings sections" className="sm:w-48 shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 p-2 flex sm:flex-col gap-1">
-            <button
-              type="button"
-              aria-current={!showTools ? 'page' : undefined}
-              aria-pressed={!showTools}
-              className="ui-tab inline-flex items-center gap-2 text-left"
-              onClick={() => onTabChange?.('keys')}
-            >
-              <KeyRound className="w-3.5 h-3.5" aria-hidden /> Data API keys
-            </button>
-            {!showTools && (
-              <>
-                <button
-                  type="button"
-                  className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
-                  onClick={() => document.getElementById('settings-section-own_account')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                >
-                  Your own paid data
-                </button>
-                <button
-                  type="button"
-                  className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
-                  onClick={() => document.getElementById('settings-section-ai')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                >
-                  AI model key
-                </button>
-              </>
-            )}
-            {tools && (
+          <nav aria-label="Settings sections" className="sm:w-48 shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 p-2 flex sm:flex-col gap-1 overflow-x-auto">
+            {PAGES.filter((p) => (p.id === 'tools' ? !!tools : p.id === 'ai' ? !!aiConfig : true)).map((p) => (
               <button
+                key={p.id}
                 type="button"
-                aria-current={showTools ? 'page' : undefined}
-                aria-pressed={showTools}
-                className="ui-tab inline-flex items-center gap-2 text-left"
-                onClick={() => onTabChange?.('tools')}
-                data-settings-tools-tab="true"
+                aria-current={tab === p.id ? 'page' : undefined}
+                aria-pressed={tab === p.id}
+                className="ui-tab inline-flex items-center gap-2 text-left whitespace-nowrap"
+                onClick={() => onTabChange?.(p.id)}
+                data-settings-tab={p.id}
+                {...(p.id === 'tools' ? { 'data-settings-tools-tab': 'true' } : {})}
               >
-                <Wrench className="w-3.5 h-3.5" aria-hidden /> Tools
+                {PAGE_ICON[p.id]} {p.label}
               </button>
-            )}
-            {onOpenAiModel && (
-              <button
-                type="button"
-                className="ui-tab inline-flex items-center gap-2 text-left"
-                onClick={() => {
-                  onClose();
-                  onOpenAiModel();
-                }}
-              >
-                <Cpu className="w-3.5 h-3.5" aria-hidden /> AI model…
-              </button>
-            )}
+            ))}
           </nav>
 
           {showTools ? (
             <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-label="Tools" data-settings-tools="true">
               {tools}
             </section>
+          ) : showAi ? (
+            <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-ai-title">
+              <h3 id="settings-ai-title" className="ui-section-title">AI model</h3>
+              <div className="mt-3">
+                <AiModelSettings
+                  config={aiConfig!}
+                  onChange={onAiConfigChange!}
+                  geminiKeySet={reply ? reply.keys.some((k) => k.section === 'ai' && k.source !== 'none') : undefined}
+                  geminiKey={
+                    reply ? (
+                      <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                        {reply.keys
+                          .filter((k) => k.section === 'ai')
+                          .map((k) => (
+                            <KeyRow key={k.id} k={k} canEdit={reply.canEdit} onChanged={setReply} />
+                          ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1 text-xs text-slate-500">{error || 'Loading…'}</p>
+                    )
+                  }
+                  onOpenAdvanced={
+                    onOpenAiModel
+                      ? () => {
+                          onClose();
+                          onOpenAiModel();
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+            </section>
           ) : (
           <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-keys-title">
-            <h3 id="settings-keys-title" className="ui-section-title">Data API keys</h3>
+            <h3 id="settings-keys-title" className="ui-section-title">{page.label}</h3>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
               Your own keys and settings for data sources. They are saved on this computer only{reply ? ` (${reply.savedIn})` : ''}, sent only to the source they belong to, and shown here masked. A key
               saved here is used instead of the same key in .env.
@@ -323,7 +347,7 @@ export const SettingsDialog: React.FC<{
             )}
             {!reply && !error && <p className="mt-3 text-sm text-slate-500">Loading…</p>}
             {reply &&
-              SECTIONS.map((sec) => {
+              SECTIONS.filter((sec) => page.sections.includes(sec.id)).map((sec) => {
                 const keys = reply.keys.filter((k) => (k.section || 'free_key') === sec.id);
                 if (!keys.length) return null;
                 return (
