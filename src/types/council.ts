@@ -192,6 +192,8 @@ export interface TradeExecutionTicket {
 }
 
 export interface SupremeCouncilOutput {
+  /** True only when an AI model wrote this report in a council run; the built-in starting report has none. */
+  fromModel?: boolean;
   reportId: string;
   schemaVersion: 'SMCR-1.0';
   generatedAt: string;

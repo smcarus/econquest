@@ -380,7 +380,7 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                               {agent.agentCode}
                             </span>
                             <span className="tabular-nums text-slate-600 dark:text-slate-400">
-                              {toDisplayCase(agent.stance)} · Risk {agent.riskScore.toFixed(2)} · Calib {(agent.brierCalibrationWeight * 100).toFixed(0)}%
+                              {toDisplayCase(agent.stance)} · Risk {Number.isFinite(agent.riskScore) ? agent.riskScore.toFixed(2) : 'Missing'}
                             </span>
                           </div>
                           <div className="text-xs font-semibold text-slate-900 dark:text-slate-100 mt-1">
@@ -411,9 +411,12 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                 <div className="text-xs text-slate-500 dark:text-slate-400">
                   <span>Selected Analyst: {activeAgent.agentCode}</span>
                   <span className="mx-2" aria-hidden="true">·</span>
-                  <span>Brier Calibration Reliability Weight: {(activeAgent.brierCalibrationWeight * 100).toFixed(0)}%</span>
-                  <span className="mx-2" aria-hidden="true">·</span>
-                  <span>Confidence: {(activeAgent.confidence * 100).toFixed(0)}%</span>
+                  <span>
+                    Confidence:{' '}
+                    {Number.isFinite(activeAgent.confidence)
+                      ? `${(activeAgent.confidence * 100).toFixed(0)}% (the model's own)`
+                      : 'Missing (the model gave none)'}
+                  </span>
                 </div>
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
                   {activeAgent.agentName} — {activeAgent.roleTitle}
@@ -612,7 +615,6 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
                       desk: activeAgent.deskId,
                       stance: activeAgent.stance,
                       risk_score: activeAgent.riskScore,
-                      brier_calibration_weight: activeAgent.brierCalibrationWeight,
                       telemetry_payload: activeAgent.structuredPayload,
                     },
                     null,

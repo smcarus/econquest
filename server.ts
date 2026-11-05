@@ -2955,6 +2955,11 @@ function sanitizeAndParseJson<T>(rawText: string, fallback: T): { parsed: T; sch
   return { parsed: fallback, schemaVerified: false };
 }
 
+/** Shown where a council desk's AI model did not answer: nothing is filled in from built-in text. */
+const NO_MODEL_DESK = 'No AI model answered for this part, so it is left empty.';
+const NO_MODEL_COUNCIL =
+  'No AI model answered, so the council gave no assessment and no verdict. Nothing was filled in from built-in text. Check Menu > AI model (a Gemini key, or Ollama running).';
+
 function clampScoreToAnchor(
   rawScore: unknown,
   anchorScore: number,
@@ -3169,7 +3174,7 @@ function progressTracker(id: unknown) {
     /** Done with a model, or on the built-in figures when no model answered. */
     finish: (step: string, usedFallback = false, note?: string) => {
       if (entry?.steps[step]?.status === 'failed') return; // a failure already recorded stands
-      set(step, usedFallback ? 'fallback' : 'done', note ?? (usedFallback ? 'No model answered: built-in figures used' : undefined));
+      set(step, usedFallback ? 'fallback' : 'done', note ?? (usedFallback ? 'No model answered' : undefined));
     },
     skip: (step: string, note: string) => set(step, 'skipped', note),
     fail: (step: string, note: string) => set(step, 'failed', note),
@@ -4469,9 +4474,9 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
               .filter((c: any) => c?.web?.uri)
               .slice(0, 6)
               .map((c: any) => ({
-                title: String(c.web.title || 'Verified Web Grounding Source'),
+                title: String(c.web.title || 'Web link found by Gemini search'),
                 uri: String(c.web.uri),
-                sourceType: 'Google Search Grounding',
+                sourceType: 'Gemini web search (link not checked)',
               }));
           } catch {
             progress.fail('search', 'Web search did not answer');
@@ -4483,6 +4488,9 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
       const geoResult = geoSettled.status === 'fulfilled' ? geoSettled.value : null;
       const sovResult = sovSettled.status === 'fulfilled' ? sovSettled.value : null;
       const macroResult = macroSettled.status === 'fulfilled' ? macroSettled.value : null;
+      if (![geoResult, sovResult, macroResult].some((r) => r && !r.usedFallback)) {
+        return res.status(503).json({ error: NO_MODEL_COUNCIL });
+      }
       const searchGroundingLinks =
         searchSettled.status === 'fulfilled' && Array.isArray(searchSettled.value)
           ? searchSettled.value
@@ -4498,7 +4506,8 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
         anchorScore: number,
         workerRes: NonNullable<typeof geoResult> | null
       ) => {
-        const d = workerRes?.data || {};
+        const answered = Boolean(workerRes && !workerRes.usedFallback);
+        const d = answered ? workerRes?.data || {} : {};
         const clampDesk = clampScoreToAnchor(d.deskPreCascadeScore, anchorScore, 0.22);
 
         // Update 3 Sub-Agents under this desk
@@ -4510,13 +4519,15 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           const clampedAgent = clampScoreToAnchor(rawAgentScore, anchorScore, 0.24);
           agent.riskScore = clampedAgent.finalBoundedScore;
           agent.stance = normalizeStance(d[`agent${idxNum}Stance`], clampedAgent.finalBoundedScore);
+          // Confidence only when the model gave one; the built-in starting value is not shown.
           const conf = Number(d[`agent${idxNum}Confidence`]);
-          if (!Number.isNaN(conf) && conf >= 0.5 && conf <= 0.99) {
-            agent.confidence = Number(conf.toFixed(2));
-          }
-          if (d[`agent${idxNum}FindingsSummary`]) {
-            agent.findingsSummary = String(d[`agent${idxNum}FindingsSummary`]);
-          }
+          agent.confidence = !Number.isNaN(conf) && conf >= 0.5 && conf <= 0.99 ? Number(conf.toFixed(2)) : NaN;
+          agent.brierCalibrationWeight = NaN;
+          agent.findingsSummary = d[`agent${idxNum}FindingsSummary`]
+            ? String(d[`agent${idxNum}FindingsSummary`])
+            : answered
+            ? 'The model gave no findings for this agent.'
+            : NO_MODEL_DESK;
           const assignedModel =
             runtimeConfig.agentModelOverrides?.[agent.agentId] ||
             runtimeConfig.deskModelOverrides?.[deskId] ||
@@ -4535,9 +4546,11 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
 
         const debate = baseRun.deskDebates[deskId];
         debate.preCascadeRiskScore = clampDesk.finalBoundedScore;
-        if (d.consensusSummary) {
-          debate.consensusSummary = String(d.consensusSummary);
-        }
+        debate.consensusSummary = d.consensusSummary
+          ? String(d.consensusSummary)
+          : answered
+          ? 'The model gave no summary for this desk.'
+          : NO_MODEL_DESK;
         const validStances = ['CONSTRUCTIVE', 'CAUTIOUS', 'DEFENSIVE', 'DISTRESSED'];
         if (validStances.includes(String(d.consensusStance || '').toUpperCase())) {
           debate.consensusStance = String(d.consensusStance).toUpperCase() as any;
@@ -4545,9 +4558,10 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
 
         // Hydrate Round 1 + optional Round 2 if maxDebateRounds >= 2
         if (debate.rounds[0]) {
-          if (d.round1ProposerThesis) debate.rounds[0].thesis = String(d.round1ProposerThesis);
-          if (d.round1ChallengerCounter) debate.rounds[0].counterThesis = String(d.round1ChallengerCounter);
-          if (d.round1Resolution) debate.rounds[0].deskLeadResolution = String(d.round1Resolution);
+          const empty = answered ? 'The model gave no text for this part of the debate.' : NO_MODEL_DESK;
+          debate.rounds[0].thesis = d.round1ProposerThesis ? String(d.round1ProposerThesis) : empty;
+          debate.rounds[0].counterThesis = d.round1ChallengerCounter ? String(d.round1ChallengerCounter) : empty;
+          debate.rounds[0].deskLeadResolution = d.round1Resolution ? String(d.round1Resolution) : empty;
         }
 
         if (maxDebateRounds >= 2 && d.round2ProposerThesis && d.round2ChallengerCounter) {
@@ -4867,18 +4881,20 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         },
       });
 
+      // Only what the model answered; no built-in shock sizes or template text when it did not.
+      const cascadeData: Record<string, any> = cascadeRes.usedFallback ? {} : cascadeRes.data || {};
       const postGeo = clampScoreToAnchor(
-        cascadeRes.data?.postCascadeGeoScore,
+        cascadeData.postCascadeGeoScore,
         geoClamp.finalBoundedScore,
         0.15
       );
       const postMacro = clampScoreToAnchor(
-        cascadeRes.data?.postCascadeMacroScore,
+        cascadeData.postCascadeMacroScore,
         macroClamp.finalBoundedScore,
         0.18
       );
       const postSov = clampScoreToAnchor(
-        cascadeRes.data?.postCascadeSovereignScore,
+        cascadeData.postCascadeSovereignScore,
         sovClamp.finalBoundedScore,
         0.18
       );
@@ -4887,22 +4903,28 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       baseRun.deskDebates.macro.postCascadeRiskScore = postMacro.finalBoundedScore;
       baseRun.deskDebates.sovereign.postCascadeRiskScore = postSov.finalBoundedScore;
 
-      const energyShock = Number(
-        Math.max(2, Math.min(45, Number(cascadeRes.data?.energyInflationShockPct ?? 15.0))).toFixed(1)
-      );
-      const spreadShockBps = Math.round(
-        Math.max(15, Math.min(350, Number(cascadeRes.data?.debtServicingSpreadBps ?? 85)))
-      );
+      const energyShock = Number.isFinite(Number(cascadeData.energyInflationShockPct))
+        ? Number(Math.max(2, Math.min(45, Number(cascadeData.energyInflationShockPct))).toFixed(1))
+        : NaN;
+      const spreadShockBps = Number.isFinite(Number(cascadeData.debtServicingSpreadBps))
+        ? Math.round(Math.max(15, Math.min(350, Number(cascadeData.debtServicingSpreadBps))))
+        : NaN;
+      if (cascadeRes.usedFallback) {
+        for (const step of baseRun.cascadeSteps || []) {
+          step.shockDelta = NO_MODEL_DESK;
+          step.transmissionMechanism = NO_MODEL_DESK;
+        }
+      }
 
       if (baseRun.cascadeSteps[0]) {
         baseRun.cascadeSteps[0].priorRiskScore = macroClamp.finalBoundedScore;
         baseRun.cascadeSteps[0].postCascadeRiskScore = postMacro.finalBoundedScore;
-        if (cascadeRes.data?.step1ShockDelta) {
-          baseRun.cascadeSteps[0].shockDelta = String(cascadeRes.data.step1ShockDelta);
+        if (cascadeData.step1ShockDelta) {
+          baseRun.cascadeSteps[0].shockDelta = String(cascadeData.step1ShockDelta);
         }
-        if (cascadeRes.data?.step1TransmissionMechanism) {
+        if (cascadeData.step1TransmissionMechanism) {
           baseRun.cascadeSteps[0].transmissionMechanism = String(
-            cascadeRes.data.step1TransmissionMechanism
+            cascadeData.step1TransmissionMechanism
           );
         }
         baseRun.cascadeSteps[0].jsonPatch = {
@@ -4915,12 +4937,12 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       if (baseRun.cascadeSteps[1]) {
         baseRun.cascadeSteps[1].priorRiskScore = sovClamp.finalBoundedScore;
         baseRun.cascadeSteps[1].postCascadeRiskScore = postSov.finalBoundedScore;
-        if (cascadeRes.data?.step2ShockDelta) {
-          baseRun.cascadeSteps[1].shockDelta = String(cascadeRes.data.step2ShockDelta);
+        if (cascadeData.step2ShockDelta) {
+          baseRun.cascadeSteps[1].shockDelta = String(cascadeData.step2ShockDelta);
         }
-        if (cascadeRes.data?.step2TransmissionMechanism) {
+        if (cascadeData.step2TransmissionMechanism) {
           baseRun.cascadeSteps[1].transmissionMechanism = String(
-            cascadeRes.data.step2TransmissionMechanism
+            cascadeData.step2TransmissionMechanism
           );
         }
         baseRun.cascadeSteps[1].jsonPatch = {
@@ -5119,25 +5141,22 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       const finalMac = Math.min(0.99, Math.max(0.05, Number((cro.macroRiskScore + shockMacroBoost).toFixed(2))));
       const compositeScore = Number(((finalGeo + finalSov + finalMac) / 3).toFixed(2));
 
-      const kellyExecutionSuite = computeCouncilKellyAndLobExecution(targetRun);
-
+      const shown = (v: number) => (Number.isFinite(v) ? String(v) : 'MISSING');
       const councilPrompt = `Synthesize the final SMCR-1.0 (Sovereign-Macro Council Report v1.0) output for ${targetRun.countryName} (${targetRun.iso3}).
 
 CRO Human-in-the-Loop Approved / Overridden Risk Vector:
-- Geopolitical Desk Risk Score: ${finalGeo} (${targetRun.deskDebates?.geopolitical?.consensusSummary || ''})
-- Sovereign Risk Desk Score: ${finalSov} (${targetRun.deskDebates?.sovereign?.consensusSummary || ''})
-- Macroeconomic Desk Risk Score: ${finalMac} (${targetRun.deskDebates?.macro?.consensusSummary || ''})
-- Composite Risk Score: ${compositeScore}
-- Energy/Freight Inflation Shock Input: +${cro.energyInflationShockPct}%
-- Debt Servicing Spread Impact: +${cro.debtServicingSpreadBps} bps
+- Geopolitical Desk Risk Score: ${shown(finalGeo)} (${targetRun.deskDebates?.geopolitical?.consensusSummary || ''})
+- Sovereign Risk Desk Score: ${shown(finalSov)} (${targetRun.deskDebates?.sovereign?.consensusSummary || ''})
+- Macroeconomic Desk Risk Score: ${shown(finalMac)} (${targetRun.deskDebates?.macro?.consensusSummary || ''})
+- Composite Risk Score: ${shown(compositeScore)}
+- Energy/Freight Inflation Shock Input: ${Number.isFinite(cro.energyInflationShockPct) ? `+${cro.energyInflationShockPct}%` : 'MISSING (no model set it)'}
+- Debt Servicing Spread Impact: ${Number.isFinite(cro.debtServicingSpreadBps) ? `+${cro.debtServicingSpreadBps} bps` : 'MISSING (no model set it)'}
 - Scenario inputs above (energy shock, spread impact) come from the cascade step and your review, not from data.
 Country figures (only those a live feed, an official series or your own data filled; MISSING ones are unknown):
 ${councilInputs(targetRun.openData).lines.join('\n')}
 ${MISSING_FIGURES_RULE}
-- Political Will Index: ${cro.politicalWillIndex}/100
 - Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
-- Chief Risk Officer Directives: "${cro.croNotes}"
-- Brier-Calibrated Half-Kelly Sizing & Market-Maker LOB Execution Audit: Composite Conviction = ${kellyExecutionSuite.compositeBrierConvictionPct}% | Recommended Gross Half-Kelly Allocation = ${kellyExecutionSuite.totalHalfKellyGrossNavPct}% NAV ($${kellyExecutionSuite.totalAllocatedNotionalUsdMillions}M) | Weighted LOB Slippage Drag = -${kellyExecutionSuite.weightedExecutionSlippageBps} bps | Net Post-Slippage Alpha = +${kellyExecutionSuite.netPortfolioExpectedAlphaBps} bps (${kellyExecutionSuite.dealerInventoryRegime})`;
+- Chief Risk Officer Directives: "${cro.croNotes}"`;
 
       let baseOutput: SupremeCouncilOutput =
         targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
@@ -5196,6 +5215,9 @@ ${MISSING_FIGURES_RULE}
         },
       }));
 
+      if (supremeStep.usedFallback) {
+        return res.status(503).json({ error: NO_MODEL_COUNCIL });
+      }
       const parsed = supremeStep.data || {};
       const supremeContext = [
         councilPrompt,
@@ -5211,6 +5233,7 @@ ${MISSING_FIGURES_RULE}
 
       baseOutput = {
         ...baseOutput,
+        fromModel: true,
         reportId: `SMCR-1.0-${targetRun.iso3}-${Date.now().toString().slice(-5)}`,
         generatedAt: new Date().toISOString(),
         decisionVerdict: verdict as SupremeCouncilOutput['decisionVerdict'],
