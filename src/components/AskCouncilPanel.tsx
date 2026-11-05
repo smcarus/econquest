@@ -306,6 +306,12 @@ function useCouncilChat(): CouncilChat {
   return chat;
 }
 
+/** True once a question is asked or being planned in this conversation (the Agents panel then has something to show). */
+export function useCouncilHasQuestion(): boolean {
+  const { asked, choosing } = useCouncilChat();
+  return Boolean(asked || choosing);
+}
+
 export const AskCouncilPanel: React.FC<{
   onOpenCountry: (item: LiveWatchlistItem) => void;
   onSendToReports: () => void;
@@ -623,7 +629,7 @@ export const AskCouncilPanel: React.FC<{
         <div className="flex items-center gap-1 shrink-0">
           {(asked || fullCouncilInChat) && (
             <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true" aria-label="New conversation">
-              New<span className="hidden sm:inline">&nbsp;conversation</span>
+              <span className="sm:hidden">New</span><span className="hidden sm:inline">New conversation</span>
             </button>
           )}
           {toolbar}

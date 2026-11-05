@@ -11,7 +11,7 @@ import { UsesLine, WorkspaceInputs, useServerInputs } from './WorkspaceInputs';
 import { workspaceInputs, type InputId, type PanelId } from '../utils/workspaceInputs';
 import { useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
-import { AskCouncilPanel, CouncilAgentsPanel, type FullCouncilStep } from './AskCouncilPanel';
+import { AskCouncilPanel, CouncilAgentsPanel, useCouncilHasQuestion, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
 import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView } from '../utils/watchlistView';
@@ -212,18 +212,23 @@ export const TodayPage: React.FC<{
       /* private window */
     }
   };
-  // The Agents side panel on the left: open by default on a wide screen, closed on a phone; remembered.
-  const [agentsOpen, setAgentsOpenState] = useState<boolean>(() => {
+  // The Agents side panel on the left. Until you open or close it yourself, it opens on a wide
+  // screen once a question is asked (before that it would only say "no question yet"); on a phone it
+  // stays closed. Your own choice is remembered.
+  const hasQuestion = useCouncilHasQuestion();
+  const [agentsPref, setAgentsPref] = useState<'open' | 'closed' | null>(() => {
     try {
       const v = localStorage.getItem(AGENTS_KEY);
-      if (v) return v === 'open';
+      if (v === 'open' || v === 'closed') return v;
     } catch {
       /* private window */
     }
-    return typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches === true;
+    return null;
   });
+  const wide = typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches === true;
+  const agentsOpen = agentsPref ? agentsPref === 'open' : wide && hasQuestion;
   const setAgentsOpen = (open: boolean) => {
-    setAgentsOpenState(open);
+    setAgentsPref(open ? 'open' : 'closed');
     try {
       localStorage.setItem(AGENTS_KEY, open ? 'open' : 'closed');
     } catch {
@@ -261,10 +266,16 @@ export const TodayPage: React.FC<{
       aria-controls="ws-briefing"
       data-briefing-toggle="true"
       aria-label="Briefing"
-      title="Your inputs, watchlist, what moved, the next two weeks and watch alerts"
+      title={`Your inputs, watchlist, what moved, the next two weeks and watch alerts${toFix > 0 ? `. ${toFix} ${toFix === 1 ? 'input needs' : 'inputs need'} setup.` : ''}`}
     >
       <PanelRight className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Briefing</span>
-      {toFix > 0 && <span className="ml-0.5 inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-label={`${toFix} inputs need setup`} />}
+      {toFix > 0 && (
+        <span className="ml-0.5 inline-flex items-center gap-1" data-briefing-setup={toFix}>
+          <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-hidden />
+          <span className={`hidden sm:inline text-xs ${briefing ? 'text-amber-100' : 'text-amber-700 dark:text-amber-400'}`}>{toFix} to set up</span>
+          <span className="sr-only sm:hidden">{`${toFix} ${toFix === 1 ? 'input needs' : 'inputs need'} setup`}</span>
+        </span>
+      )}
     </button>
   );
 
