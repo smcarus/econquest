@@ -3,6 +3,7 @@ import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
 import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
+import { TRACK_RECORD_HEADER, trackRecord, trackRecordRows, trackRecordSentence, type ArchivedDay } from './src/utils/trackRecord';
 import { INFLATION_TARGETS } from './src/utils/marketsMacro';
 import { BCB_IPCA_12M, BCB_LONG, BCB_SHORT, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, bcbSgsUrl, eurostatHicpUrl, mergeNationalCpi, parseBcbSgs, parseEurostatHicp, type NationalCpiSeries } from './src/utils/nationalCpi';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
@@ -3553,6 +3554,31 @@ async function startServer() {
     }
     const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
     sendTable(req, res, exportFileName(iso3, 'figures'), FIGURES_HEADER, figureRows(snap));
+  });
+
+  // Track record log (src/utils/trackRecord.ts): the rule signal on each saved pull and what the bank did after.
+  async function trackRecordFor(iso3: string) {
+    const set = await seriesFor(iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const days: ArchivedDay[] = listArchivedDays(ARCHIVE_DIR, iso3)
+      .map((d) => readArchivedPull<ArchivedDay['snapshot']>(ARCHIVE_DIR, iso3, d))
+      .filter((x): x is NonNullable<typeof x> => Boolean(x))
+      .map((x) => ({ date: x.date, snapshot: x.snapshot }));
+    const policy = pick('policy_rate');
+    return {
+      record: trackRecord({ iso3, days, policy, cpi: pick('cpi_monthly'), target: INFLATION_TARGETS[iso3] }),
+      policyMissing: policy ? null : set.missing.find((m) => m.id === 'policy_rate')?.reason || 'No BIS policy rate history',
+    };
+  }
+  app.get('/api/track-record/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const { record, policyMissing } = await trackRecordFor(iso3);
+    res.json({ ...record, sentence: trackRecordSentence(record), policyMissing, target: INFLATION_TARGETS[iso3] ?? null });
+  });
+  app.get('/api/export/:iso3/track-record.:fmt(csv|xlsx)', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const { record } = await trackRecordFor(iso3);
+    sendTable(req, res, exportFileName(iso3, 'track-record'), TRACK_RECORD_HEADER, trackRecordRows(record));
   });
 
   // As of a past day: the archived pull on or before the date, beside today's figures.
