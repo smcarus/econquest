@@ -70,6 +70,7 @@ const VERDICT: Record<string, string> = {
 const EXAMPLES = [
   'Which central banks look behind the curve?',
   'Who is most exposed to a Hormuz closure?',
+  'Whose government debt is on a rising path?',
   'What is coming up in the next month?',
 ];
 

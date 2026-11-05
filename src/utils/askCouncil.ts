@@ -28,11 +28,12 @@ import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
+import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 
 /** Desk agents the planner (or the AI model) can pick. */
-export type CoreAgentId = 'cb' | 'rv' | 'fx' | 'spill' | 'calendar';
+export type CoreAgentId = 'cb' | 'fiscal' | 'rv' | 'fx' | 'spill' | 'calendar';
 /** 'doc' = the Policy Document Agent, asked whenever you have added documents. */
 export type AgentId = CoreAgentId | 'doc';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
@@ -72,6 +73,11 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
     covers: 'inflation against target (OECD monthly where published), policy rate, real rates, official reserves and import cover, current account (IMF)',
     topic: /central bank|monetary|reserves?\b|import cover|balance of payments|\bbop\b|current account|external (?:position|balance|financing)|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
   },
+  fiscal: {
+    name: 'Fiscal & Debt',
+    covers: 'government debt and the IMF projection of it, primary balance and the balance that would hold debt steady, external debt falling due in the next year and how far reserves cover it (IMF WEO, World Bank QEDS and IDS, BIS)',
+    topic: /\bdebt|fiscal|deficit|primary (?:balance|surplus)|sustainab|solvenc|amorti[sz]|refinanc|roll-?over|maturit|eurobond|debt service|borrowing|austerity|consolidation|imf program/i,
+  },
   rv: {
     name: 'Relative Value',
     covers: 'CDS against risk peers, carry over the US rate',
@@ -94,7 +100,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
 };
 
-export const AGENT_ORDER: CoreAgentId[] = ['cb', 'rv', 'fx', 'spill', 'calendar'];
+export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'rv', 'fx', 'spill', 'calendar'];
 export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
   live: 'Live data',
   official: 'Official',
@@ -230,6 +236,7 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
 /** Questions for the agents not yet asked, about the same countries. */
 const FOLLOW_UP: Record<CoreAgentId, string> = {
   cb: 'How does inflation compare with the policy rate?',
+  fiscal: 'Is the debt on a rising path, and what falls due next year?',
   rv: 'Is CDS cheap or rich against peers?',
   fx: 'Is the currency strong or weak for its history?',
   spill: 'How exposed are they to a Hormuz closure?',
@@ -418,6 +425,97 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     });
   }
   return { id: 'cb', name: COUNCIL_AGENTS.cb.name, findings, missing };
+}
+
+/** Fiscal & Debt Agent: debt level and path, primary balance against the debt-stabilising one, and external debt falling due. */
+function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
+  const findings: AgentFinding[] = [];
+  const missing: string[] = [];
+  const bn = (v: number) => `$${v >= 100 ? v.toFixed(0) : v.toFixed(1)}bn`;
+  for (const it of countries) {
+    const f = it.fiscal;
+    if (!f) {
+      missing.push(`${it.countryName}: no debt or fiscal figures (IMF WEO, World Bank QEDS/IDS and BIS did not answer)`);
+      continue;
+    }
+    const figures: AgentFigure[] = [];
+    const parts: string[] = [];
+    let weight = 0;
+    if (f.debtPctGdp) {
+      figures.push({ label: 'Government debt', value: `${p1(f.debtPctGdp.value)} of GDP`, source: `${WEO_LABEL}, ${f.debtPctGdp.year}`, tag: 'official' });
+      weight = Math.max(weight, Math.min(1, Math.max(0, (f.debtPctGdp.value - 60) / 80)));
+    } else missing.push(`${it.countryName}: government debt missing (IMF WEO did not answer)`);
+    const path = debtPath(f);
+    if (path && f.debtProjectionPctGdp && f.debtPctGdp) {
+      figures.push(
+        { label: `Government debt, IMF projection for ${f.debtProjectionPctGdp.year}`, value: `${p1(f.debtProjectionPctGdp.value)} of GDP`, source: `${WEO_LABEL} projection`, tag: 'official' },
+        { label: 'Debt path', value: `${path.path} (${sgn(path.changePts)} pts)`, source: `IMF projection less the ${f.debtPctGdp.year} figure; 2 pts or more up = rising, 2 or more down = falling`, tag: 'model' }
+      );
+      parts.push(`Government debt is ${p1(f.debtPctGdp.value)} of GDP and the IMF projects it ${path.path === 'stable' ? 'roughly flat' : path.path} to ${f.debtProjectionPctGdp.year}.`);
+      if (path.path === 'rising') weight = Math.max(weight, Math.min(1, path.changePts / 10 + 0.3));
+    } else if (f.debtPctGdp) {
+      parts.push(`Government debt is ${p1(f.debtPctGdp.value)} of GDP.`);
+    }
+    if (f.primaryBalancePctGdp) {
+      figures.push({ label: 'Primary balance', value: `${sgn(f.primaryBalancePctGdp.value)}% of GDP`, source: `${WEO_LABEL}, ${f.primaryBalancePctGdp.year}`, tag: 'official' });
+      const realRate = it.yield10YPct !== undefined && it.cpiInflationPct !== undefined ? it.yield10YPct - it.cpiInflationPct : undefined;
+      if (f.debtPctGdp && f.realGrowthPct && realRate !== undefined) {
+        const star = stabilisingPrimaryBalance(f.debtPctGdp.value, realRate, f.realGrowthPct.value);
+        const gap = f.primaryBalancePctGdp.value - star;
+        figures.push(
+          { label: 'Real GDP growth', value: p1(f.realGrowthPct.value), source: `${WEO_LABEL}, ${f.realGrowthPct.year}`, tag: 'official' },
+          { label: 'Real borrowing cost', value: p1(realRate), source: '10Y yield minus inflation (the cost of new borrowing; older debt usually costs less)', tag: 'model' },
+          { label: 'Primary balance that holds debt steady', value: `${sgn(star)}% of GDP`, source: 'debt × (real rate − real growth) / (1 + real growth)', tag: 'model' },
+          { label: 'Primary balance against that', value: `${sgn(gap)} pts`, source: 'primary balance minus the debt-stabilising one; below zero = debt drifts up on these rates', tag: 'model' }
+        );
+        parts.push(
+          gap < -0.5
+            ? `The primary balance is short of the level that would hold debt steady at today's borrowing cost and growth.`
+            : gap > 0.5
+              ? `The primary balance is above the level that would hold debt steady at today's borrowing cost and growth.`
+              : `The primary balance is close to the level that would hold debt steady at today's borrowing cost and growth.`
+        );
+        if (gap < -0.5) weight = Math.max(weight, Math.min(1, -gap / 4 + 0.2));
+      } else {
+        const need = [!f.realGrowthPct ? 'real growth (IMF WEO)' : '', realRate === undefined ? 'a 10Y yield and inflation' : ''].filter(Boolean);
+        missing.push(`${it.countryName}: no debt-stabilising primary balance, as ${need.join(' and ')} ${need.length > 1 ? 'are' : 'is'} missing`);
+      }
+    }
+    if (f.extDue12m) {
+      figures.push({ label: 'Government external principal due in the next 12 months', value: bn(f.extDue12m.usdBn), source: `${QEDS_SHORT}, from ${formatQuarter(f.extDue12m.asOf)}`, tag: 'official' });
+      const res = it.imf?.reserves?.usdBn;
+      if (res !== undefined && f.extDue12m.usdBn > 0) {
+        const times = res / f.extDue12m.usdBn;
+        figures.push({
+          label: 'Reserves over that',
+          value: `${times.toFixed(1)} times (${coverLabel(times)})`,
+          source: 'IMF official reserves over QEDS principal due; under 1 = thin, 1 to 3 = adequate, over 3 = ample. Government only: private external debt is not counted',
+          tag: 'model',
+        });
+        parts.push(`Official reserves cover the government's external principal due in the next year ${times.toFixed(1)} times (${coverLabel(times)}).`);
+        if (times < 1) weight = Math.max(weight, 0.8);
+      }
+    }
+    if (f.idsNext?.debtServiceUsdBn !== undefined) {
+      figures.push({ label: `Public external debt service, ${f.idsNext.year}`, value: bn(f.idsNext.debtServiceUsdBn), source: IDS_SHORT, tag: 'official' });
+    }
+    if (f.intlBonds) {
+      figures.push({ label: 'Government bonds in international markets', value: bn(f.intlBonds.usdBn), source: `${BIS_SECURITIES_SHORT}, ${formatQuarter(f.intlBonds.asOf)}`, tag: 'official' });
+      if (f.intlBonds.due1yUsdBn !== undefined) {
+        figures.push({ label: 'Of which due within a year', value: bn(f.intlBonds.due1yUsdBn), source: `${BIS_SECURITIES_SHORT}, ${formatQuarter(f.intlBonds.asOf)}`, tag: 'official' });
+      }
+    }
+    if (!f.extDue12m && !f.intlBonds && !f.idsNext) missing.push(`${it.countryName}: no external debt falling due (World Bank QEDS, IDS and BIS did not answer or have no series)`);
+    if (!figures.length) continue;
+    findings.push({
+      iso3: it.iso3,
+      countryName: it.countryName,
+      reading: parts.join(' ') || 'Debt figures on hand, but not enough for a reading.',
+      figures,
+      weight,
+    });
+  }
+  return { id: 'fiscal', name: COUNCIL_AGENTS.fiscal.name, findings, missing };
 }
 
 function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
@@ -706,7 +804,9 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
     const a =
       id === 'cb'
         ? cbAgent(plan.countries)
-        : id === 'rv'
+        : id === 'fiscal'
+          ? fiscalAgent(plan.countries)
+          : id === 'rv'
           ? rvAgent(plan.countries, all)
           : id === 'fx'
             ? fxAgent(plan.countries)

@@ -62,7 +62,7 @@ test('planner: countries by name, alias or ISO code; the whole watchlist when no
   assert.deepEqual(planCouncil('Turkey?', ALL, 'POL').countries.map((c) => c.iso3), ['POL']);
 });
 
-test('planner: agents by stated keyword rules, with the reason; all five when no topic matches', () => {
+test('planner: agents by stated keyword rules, with the reason; all six when no topic matches', () => {
   const p = planCouncil("Is Turkey's central bank behind the curve, and what would a Hormuz closure do?", ALL);
   assert.deepEqual(p.agents.map((a) => a.id), ['cb', 'spill']);
   assert.match(p.agents[0].why, /mentions "central bank"/);
@@ -70,7 +70,7 @@ test('planner: agents by stated keyword rules, with the reason; all five when no
   // "exchange rate" is the FX agent's, not the central bank's.
   assert.deepEqual(planCouncil('Is the exchange rate weak?', ALL).agents.map((a) => a.id), ['fx']);
   const all = planCouncil('Tell me about Poland', ALL);
-  assert.deepEqual(all.agents.map((a) => a.id), ['cb', 'rv', 'fx', 'spill', 'calendar']);
+  assert.deepEqual(all.agents.map((a) => a.id), ['cb', 'fiscal', 'rv', 'fx', 'spill', 'calendar']);
   assert.match(all.agents[0].why, /every agent answers/);
 });
 

@@ -25,6 +25,7 @@ import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type F
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
+import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import {
   API_KEY_IDS,
@@ -1453,6 +1454,12 @@ function getLatestImfValue(series: Record<string, number> | undefined, targetYea
   return undefined;
 }
 
+/** The WEO year getLatestImfValue would pick, so a figure can say which year it is for. */
+function latestImfYear(series: Record<string, number> | undefined, targetYears: string[]): string | undefined {
+  if (!series || typeof series !== 'object') return undefined;
+  return targetYears.find((yr) => typeof series[yr] === 'number' && !Number.isNaN(series[yr]));
+}
+
 async function fetchLiveOpenDataSnapshotNetwork(
   iso3: string,
   countryNameHint?: string
@@ -1547,10 +1554,12 @@ async function fetchLiveOpenDataSnapshotNetwork(
           const f2027 = getLatestImfValue(series, ['2027', '2028', '2026']);
           if (typeof cur === 'number') {
             baseline.imfIndicators.debtToGdpPct = Number(cur.toFixed(1)); markLive('imf.debtToGdpPct', 'IMF WEO');
+            (baseline.imfIndicators.years ||= {})['imf.debtToGdpPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
             imfHit = true;
           }
           if (typeof f2027 === 'number') {
             baseline.imfIndicators.debtToGdpForecast2027Pct = Number(f2027.toFixed(1)); markLive('imf.debtToGdpForecast2027Pct', 'IMF WEO forecast');
+            (baseline.imfIndicators.years ||= {})['imf.debtToGdpForecast2027Pct'] = latestImfYear(series, ['2027', '2028', '2026']) || '';
           }
         } else if (metric === 'PCPIPCH') {
           const cpi = getLatestImfValue(series, ['2025', '2026', '2024']);
@@ -1562,12 +1571,14 @@ async function fetchLiveOpenDataSnapshotNetwork(
           const gdp = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof gdp === 'number') {
             baseline.imfIndicators.realGdpGrowthPct = Number(gdp.toFixed(2)); markLive('imf.realGdpGrowthPct', 'IMF WEO');
+            (baseline.imfIndicators.years ||= {})['imf.realGdpGrowthPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
             imfHit = true;
           }
         } else if (metric === 'GGXONLB_NGDP') {
           const pb = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof pb === 'number') {
             baseline.imfIndicators.primaryFiscalBalancePct = Number(pb.toFixed(2)); markLive('imf.primaryFiscalBalancePct', 'IMF WEO');
+            (baseline.imfIndicators.years ||= {})['imf.primaryFiscalBalancePct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
             imfHit = true;
           }
         }
@@ -2012,6 +2023,10 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
                 intlBondsAsOf: snap.debtSchedule.bis.intl.asOf,
               }
             : {}),
+          ...((() => {
+            const fiscal = fiscalFromSnapshot(snap);
+            return fiscal ? { fiscal } : {};
+          })()),
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
           dataMode: status.mode,
           dataAsOf: status.asOf,
