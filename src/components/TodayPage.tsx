@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PanelBuilder } from './PanelBuilder';
+import { DigestPanel } from './DigestPanel';
 import { RegimeQuadrant } from './RegimeQuadrant';
 import { CalendarClock, ExternalLink, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
@@ -208,6 +209,12 @@ export const TodayPage: React.FC<{
           <FirstRunGuide liveCount={liveCount} aiProvider={aiProvider} onAction={onFirstRunAction} />
         </PanelBoundary>
       )}
+
+      <div id="tool-digest" className="scroll-mt-4">
+        <PanelBoundary name="Since your last visit">
+          <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        </PanelBoundary>
+      </div>
 
       {/* Watchlist as a small card in the top-left corner; the full table lives in the pop-out. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(16rem,22rem)_1fr] gap-4 items-start">

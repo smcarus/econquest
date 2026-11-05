@@ -51,6 +51,13 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'today', anchor: 'tool-regime' },
   },
   {
+    id: 'digest',
+    title: 'Since your last visit',
+    what: 'Policy rate moves, new inflation prints, leading-indicator turns, 10Y moves of 25 bp or more and watch alerts that started firing since you last opened Workspace.',
+    sources: 'BIS policy rates, monthly inflation, OECD leading indicator, official 10Y yields, your watch rules',
+    target: { area: 'today', anchor: 'tool-digest' },
+  },
+  {
     id: 'divergences',
     title: 'Where data and price disagree',
     what: 'One line per country, biggest gap first: cheap or rich CDS against peers, policy rate against inflation, carry and currency valuation.',

@@ -26,6 +26,11 @@ The page the app opens on. From the top:
 **Getting started.** Shown on a new install until its four steps are done (see the README) or you
 press Hide.
 
+**Since your last visit.** What moved on the watchlist since you last opened the app: policy rate
+moves (BIS), new monthly inflation prints, turns in the OECD leading indicator, 10Y yield moves of 25
+bp or more, and watch alerts that started firing. Each line has its date and source. On a first
+visit it lists policy moves from the last 30 days. Your last visit is remembered in this browser only.
+
 **Watchlist.** A compact card with your list. *Pop out* opens the full table in its own window,
 with your choice of columns; *Edit* adds or removes countries and switches lists.
 
