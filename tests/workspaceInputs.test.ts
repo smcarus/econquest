@@ -71,3 +71,9 @@ test('each panel lists the inputs that feed it', () => {
   assert.deepEqual(panelUses(chips, 'calendar').map((c) => c.id), ['watchlist']);
   assert.deepEqual(panelUses(chips, 'council').map((c) => c.id), ['watchlist', 'country', 'feeds', 'keys', 'ai', 'research']);
 });
+
+test('a panel no input feeds gets no Uses line entries; holdings feed no Workspace panel yet', () => {
+  const chips = workspaceInputs(fresh);
+  assert.equal(chips.find((c) => c.id === 'holdings')!.drives.length, 0);
+  assert.ok(chips.find((c) => c.id === 'holdings')!.alsoFeeds);
+});

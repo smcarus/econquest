@@ -91,7 +91,9 @@ export const AskCouncilPanel: React.FC<{
   onOpenCountry: (item: LiveWatchlistItem) => void;
   onSendToReports: () => void;
   fullCouncil?: FullCouncilStep;
-}> = ({ items, onOpenCountry, onSendToReports, fullCouncil }) => {
+  /** "Uses:" line linking back to Workspace > Your inputs. */
+  uses?: React.ReactNode;
+}> = ({ items, onOpenCountry, onSendToReports, fullCouncil, uses }) => {
   const [question, setQuestion] = useState('');
   const [scope, setScope] = useState('');
   const [asked, setAsked] = useState<{ question: string; plan: CouncilPlan; answers: AgentAnswer[]; askedAt: string; startedAt: string } | null>(null);
@@ -286,6 +288,7 @@ export const AskCouncilPanel: React.FC<{
         <p className="ui-label">
           Ask about your watchlist. The desk agents that cover your question answer from the app’s own figures, each with its source; a synthesis agent then writes a short brief from their answers only.
         </p>
+        {uses}
       </header>
       <form
         className="px-4 pt-3 space-y-2"

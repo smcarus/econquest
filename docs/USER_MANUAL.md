@@ -30,7 +30,8 @@ The page the app opens on. From the top:
 country, data feeds, free keys, AI model, holdings and saved research. Each chip shows its state
 (green set, amber needs setup with the reason, grey optional and not used yet), names the panels it
 feeds, and opens the place where you change it. On a new install, the amber chips are the setup
-steps.
+steps. Point at a chip to outline the panels it feeds. Under each panel title a *Uses:* line names
+the inputs behind it, marks any that are Missing or need setup, and opens one when you press it.
 
 **Since your last visit.** What moved on the watchlist since you last opened the app: policy rate
 moves (BIS), new monthly inflation prints, turns in the OECD leading indicator, 10Y yield moves of 25
