@@ -54,6 +54,9 @@ pull, the last good figure from that source is kept with "kept from the <date> p
 and the pull is retried within the hour. **Refresh now** on the country page pulls everything for
 that country again at once. Slower sources (IMF reserves, CFTC, TIC, OECD, Comtrade, Pink Sheet,
 GDELT) keep their own caches; [DATA_SOURCES.md](./docs/DATA_SOURCES.md) lists each one's interval.
+Your holdings, watchlists, added countries and AI model settings are kept in
+`data/local/workspace.json` (shared by Docker and `npm run dev`), with saved research in
+`data/local/research.json` and keys in `data/local/settings.json`.
 Every pull is also kept by day in `data/archive/`, so the data as it stood on a past date is never
 lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 
@@ -63,8 +66,9 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 
 | Page | What it is for |
 | --- | --- |
-| **Workspace** | Watchlist, Ask the council, watch alerts, where data and price disagree, MarketEdge, scenario exposure, official calendar |
-| **Country Research** | Brief (economist, issuer and official-sector views), MarketEdge for the country, Overview of every figure with its source, History charts; CSV downloads of figures and series |
+| **Workspace** | The daily start: since your last visit, watchlist, Ask the council, watch alerts, next two weeks |
+| **Country Research** | Brief (economist, issuer and official-sector views), MarketEdge for the country, History charts, Sources (every figure with its source); CSV and Excel downloads |
+| **Compare** | The watchlist side by side: where data and price disagree, MarketEdge, growth and inflation, scenarios, and a Compare countries table to download |
 | **Portfolio** | Your holdings (CSV import) or your watchlist at equal weight: concentration, where the risk sits, dates to watch |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
 | **Tools** | Every ready tool in one list, data connections, and what each hidden desk would need to come back |
@@ -120,3 +124,9 @@ council on that country, and never sends built-in figures. Set `SMCR_INTEGRATION
 127.0.0.1 too. Set `HOST="0.0.0.0"` in `.env` only if you want other machines on your network to
 reach it; Settings can still be changed only from this computer unless `SETTINGS_ALLOW_REMOTE` is
 "true".
+
+The server answers only to localhost names (localhost, 127.0.0.1, [::1]), so a website cannot reach
+it by pointing its own domain at this computer, and it refuses changes sent from pages on other
+sites. If you open it to your network, list the names it may be reached by in `ALLOWED_HOSTS`. The
+connector test and webhook buttons work only from this computer and cannot be pointed at the app
+itself or at cloud metadata addresses.
