@@ -361,7 +361,7 @@ hold no figures of their own; the handout reads them from the app's series when 
   rewrites the whole file could rebuild the chain, so keep the latest hash or an export elsewhere if
   that matters. Keys, document text and holdings amounts are never logged. The log is not in backups.
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
-  (briefs, documents, notebooks, teaching episodes), watch alerts, holdings, watchlists, added
+  (briefs, documents, notebooks, teaching episodes), policy reviews, watch alerts, holdings, watchlists, added
   countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a
   file holds, then *Restore this backup* replaces what is saved here with it; a copy of what was
   here is saved first in `data/local/backups/`, and AI keys already on this computer are kept. Use it

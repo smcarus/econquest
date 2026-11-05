@@ -3993,10 +3993,10 @@ async function startServer() {
     res.attachment(`econquest-audit-log-${stamp}.csv`);
     res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', note, '', '', '', '']]));
   });
-  // Backup and restore (Menu > Settings > Backup): saved research, watch alerts, holdings,
+  // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
   // a larger body than the other routes (a library with documents), so it parses its own.
-  const backupFiles = { research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: WORKSPACE_FILE };
+  const backupFiles = { research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: WORKSPACE_FILE, reviews: REVIEW_FILE };
   app.get('/api/backup', (_req, res) => {
     res.json({ summary: summariseBackup(currentBackup(backupFiles)), fileName: backupFileName() });
   });

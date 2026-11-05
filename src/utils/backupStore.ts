@@ -1,5 +1,5 @@
 /**
- * Server side of backup and restore (see backup.ts): read the three files into one backup, and
+ * Server side of backup and restore (see backup.ts): read the files into one backup, and
  * restore a backup over them after saving a copy of what was there in data/local/backups/.
  */
 import path from 'path';
@@ -8,11 +8,14 @@ import { buildBackup, keepSecrets, type BackupFile } from './backup';
 import { loadLibrary, saveLibrary } from './researchStore';
 import { loadWatchRules, saveWatchRules } from './watchRulesStore';
 import { loadWorkspace, saveWorkspaceValues } from './workspaceStore';
+import { loadReviews } from './policyReviewStore';
 
 export interface BackupFiles {
   research: string;
   watchRules: string;
   workspace: string;
+  /** data/local/reviews.json; left out, reviews are not backed up or restored. */
+  reviews?: string;
 }
 
 export function currentBackup(files: BackupFiles, now = new Date()): BackupFile {
@@ -21,6 +24,7 @@ export function currentBackup(files: BackupFiles, now = new Date()): BackupFile 
       research: loadLibrary(files.research),
       watchRules: loadWatchRules(files.watchRules),
       workspace: loadWorkspace(files.workspace).values,
+      ...(files.reviews ? { reviews: loadReviews(files.reviews).reviews } : {}),
     },
     now
   );
@@ -59,5 +63,7 @@ export function restoreBackup(files: BackupFiles, backup: BackupFile, now = new 
   saveLibrary(files.research, backup.contents.research);
   saveWatchRules(files.watchRules, backup.contents.watchRules);
   saveWorkspaceValues(files.workspace, workspace, now);
+  // An older backup has no reviews: the ones on this computer stay as they are.
+  if (files.reviews && backup.contents.reviews) writeFileAtomic(files.reviews, JSON.stringify({ reviews: backup.contents.reviews }, null, 1), 0o600);
   return { savedCopy: path.join('data', 'local', 'backups', path.basename(copy)) };
 }
