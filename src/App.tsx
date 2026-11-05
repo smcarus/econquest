@@ -173,6 +173,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { OPEN_SETTINGS_EVENT, SettingsDialog } from './components/SettingsDialog';
+import { PanelBoundary } from './components/PanelBoundary';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 const AnnotatedChartsDeck = lazyNamed(() => import('./components/AnnotatedChartsDeck'), 'AnnotatedChartsDeck');
@@ -1872,7 +1873,7 @@ export default function App() {
   };
 
   const renderDeskBody = (sec: NavSectionId) => (
-    <>
+    <PanelBoundary key={sec} name="This section" resetKey={run.iso3}>
               {sec === 'charts_watchlists' && (
                 <MacroOverviewTabbedWorkspace
                   countryName={run.countryName}
@@ -2133,7 +2134,7 @@ export default function App() {
                   onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
                 />
               )}
-    </>
+    </PanelBoundary>
   );
 
   return (
@@ -2845,6 +2846,7 @@ export default function App() {
           )}
 
           {appArea === 'today' && (
+            <PanelBoundary name="Workspace" resetKey={run.iso3}>
             <TodayPage
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
@@ -2884,9 +2886,11 @@ export default function App() {
               }}
               coreOnly={!showAllTools}
             />
+            </PanelBoundary>
           )}
 
           {appArea === 'country' && (
+            <PanelBoundary name="Country Research" resetKey={run.iso3}>
             <CountryPage
               run={run}
               watchlistItems={activeWatchlistItems}
@@ -2919,6 +2923,7 @@ export default function App() {
                 </Suspense>
               )}
             />
+            </PanelBoundary>
           )}
 
           {appArea === 'portfolio' && isHoldingsPanelOpen && (
@@ -2931,6 +2936,7 @@ export default function App() {
           )}
 
           {(appArea === 'portfolio' || appArea === 'reports') && (
+            <PanelBoundary key={appArea} name={appArea === 'portfolio' ? 'Portfolio' : 'Reports'}>
             <WorkspacePage
               key={appArea}
               ariaLabel={appArea === 'portfolio' ? 'Portfolio sections' : 'Reports sections'}
@@ -3016,6 +3022,7 @@ export default function App() {
                 )
               }
             />
+            </PanelBoundary>
           )}
 
           {appArea === 'desks' && !showAllTools && (

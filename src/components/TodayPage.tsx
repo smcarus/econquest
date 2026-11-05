@@ -5,6 +5,7 @@ import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEng
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
+import { PanelBoundary } from './PanelBoundary';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
@@ -218,6 +219,7 @@ export const TodayPage: React.FC<{
             </div>
           }
         >
+          <PanelBoundary name="The watchlist">
           <MissingSources items={watchlistItems} compact />
           <WatchlistTable
             compact
@@ -228,31 +230,39 @@ export const TodayPage: React.FC<{
             highlightIso3={run.iso3}
             onOpen={(it) => onOpenCountry(it)}
           />
+          </PanelBoundary>
         </Card>
 
         <div className="min-w-0 scroll-mt-4" id="tool-council">
+        <PanelBoundary name="Ask the council">
         <AskCouncilPanel
           items={edgeItems}
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}
           onSendToReports={() => onSendCouncilToReports?.()}
           fullCouncil={fullCouncil}
         />
+        </PanelBoundary>
         </div>
       </div>
 
       <div id="tool-watch-alerts" className="scroll-mt-4">
-        <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        <PanelBoundary name="Watch alerts">
+          <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        </PanelBoundary>
       </div>
 
       <div id="tool-divergences" className="scroll-mt-4">
+        <PanelBoundary name="Where data and price disagree">
         <DivergenceList
           items={edgeItems}
           lastLook={lastVisit?.rows}
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}
         />
+        </PanelBoundary>
       </div>
 
       <div id="tool-marketedge" className="scroll-mt-4">
+        <PanelBoundary name="MarketEdge">
         <MarketEdgeScreen
           watchlist={watchlistItems}
           anchors={edgeAnchors}
@@ -260,10 +270,13 @@ export const TodayPage: React.FC<{
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}
           intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
         />
+        </PanelBoundary>
       </div>
 
       <div id="tool-scenarios" className="scroll-mt-4">
-        <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        <PanelBoundary name="Scenarios">
+          <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        </PanelBoundary>
       </div>
 
       <div id="tool-calendar" className={`scroll-mt-4 ${coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}`}>
