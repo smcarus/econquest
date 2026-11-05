@@ -82,9 +82,18 @@ try {
     await page.goto(base, { waitUntil: 'networkidle', timeout: 90_000 });
     await settle('Workspace');
 
-    for (const area of ['Workspace', 'Country Research', 'Compare', 'Portfolio', 'Reports', 'Tools']) {
+    // Research is one header entry with three scopes: one country, compare countries, my holdings.
+    const stops = [
+      ['Workspace'],
+      ['Research', 'country'],
+      ['Research', 'compare'],
+      ['Research', 'portfolio'],
+      ['Reports'],
+      ['Tools'],
+    ];
+    for (const [navName, scope] of stops) {
       // Tools sits inside the Settings window (Menu > Tools), unless the full desk library is on.
-      if (area === 'Tools' && !allTools) {
+      if (navName === 'Tools' && !allTools) {
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
         await page.getByRole('menuitem', { name: /^Tools/ }).first().click();
         await page.waitForSelector('[data-settings-tools] [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open Tools in Settings`));
@@ -92,9 +101,19 @@ try {
         await page.keyboard.press('Escape');
         continue;
       }
-      const nav = page.getByRole('button', { name: area, exact: true }).first();
+      const nav = page.getByRole('button', { name: navName, exact: true }).first();
       if (!(await nav.count())) continue;
       await nav.click();
+      if (scope) {
+        await page.waitForTimeout(200);
+        const pick = page.locator(`[data-research-scope] button[data-scope="${scope}"]`);
+        if (!(await pick.count())) {
+          failures.push(`${mode}: Research has no "${scope}" scope button`);
+          continue;
+        }
+        await pick.click();
+      }
+      const area = scope ? `Research (${scope})` : navName;
       await settle(area);
       // Every section tab, and every tool tab inside it.
       const tabCount = await page.locator('button.ui-tab').count();

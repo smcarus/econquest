@@ -27,5 +27,7 @@ test('switch is off when nothing is saved (or storage is missing)', () => {
 test('no roles: Workspace leads the navigation, labels as Sam set them (2026-11-04)', () => {
   assert.equal(NAV[0], 'today');
   assert.equal(NAV_LABEL.today, 'Workspace');
-  assert.equal(NAV_LABEL.country, 'Country Research');
+  assert.equal(NAV_LABEL.research, 'Research');
+  // Country Research, Compare and Portfolio are one Research page (Sam, 2026-11-05).
+  assert.deepEqual(NAV.slice(0, 3), ['today', 'research', 'reports']);
 });

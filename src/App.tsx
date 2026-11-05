@@ -85,6 +85,7 @@ import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
+import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
 import { CORE_REPORTS, visibleReport } from './utils/simpleMode';
 import { ToolsPage } from './components/ToolsPage';
@@ -672,6 +673,18 @@ export default function App() {
     setAppArea('country');
     window.scrollTo({ top: 0 });
   };
+  // Research remembers which scope you last looked at (one country, compare, holdings).
+  const [researchScope, setResearchScope] = useState<ResearchScope>('country');
+  useEffect(() => {
+    if (isResearchScope(appArea)) setResearchScope(appArea);
+  }, [appArea]);
+  const openResearchScope = (scope: ResearchScope) => {
+    if (scope === 'country') returnToCountryPage();
+    else if (scope === 'portfolio') openWorkspace('portfolio');
+    else setAppArea('compare');
+    window.scrollTo({ top: 0 });
+  };
+  const openResearch = () => openResearchScope(researchScope);
   const returnToCountryPage = () => {
     const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || DEFAULT_COUNTRY_TAB;
     if (tab.desks.length && !tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
@@ -2210,39 +2223,16 @@ export default function App() {
                   Workspace
                 </button>
               ),
-              country: (
+              research: (
                 <button
                   type="button"
-                  onClick={returnToCountryPage}
-                  aria-current={appArea === 'country' ? 'page' : undefined}
-                  title={`Country Research: ${run.countryName}`}
-                  aria-pressed={appArea === 'country'}
+                  onClick={openResearch}
+                  aria-current={isResearchScope(appArea) ? 'page' : undefined}
+                  aria-pressed={isResearchScope(appArea)}
+                  title="One country, countries side by side, or your holdings"
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
-                  Country Research
-                </button>
-              ),
-              compare: (
-                <button
-                  type="button"
-                  onClick={() => setAppArea('compare')}
-                  aria-current={appArea === 'compare' ? 'page' : undefined}
-                  aria-pressed={appArea === 'compare'}
-                  title="Your watchlist side by side: MarketEdge, gaps, growth and inflation, scenarios and the compare table"
-                  className="ui-pill inline-flex items-center whitespace-nowrap"
-                >
-                  Compare
-                </button>
-              ),
-              portfolio: (
-                <button
-                  type="button"
-                  onClick={() => openWorkspace('portfolio')}
-                  aria-current={appArea === 'portfolio' ? 'page' : undefined}
-                  aria-pressed={appArea === 'portfolio'}
-                  className="ui-pill inline-flex items-center whitespace-nowrap"
-                >
-                  Portfolio
+                  Research
                 </button>
               ),
               reports: (
@@ -2746,34 +2736,14 @@ export default function App() {
                   Workspace
                 </button>
               ),
-              country: (
+              research: (
                 <button
                   type="button"
-                  onClick={returnToCountryPage}
-                  aria-pressed={appArea === 'country'}
+                  onClick={openResearch}
+                  aria-pressed={isResearchScope(appArea)}
                   className="ui-pill whitespace-nowrap shrink-0"
                 >
-                  Country Research
-                </button>
-              ),
-              compare: (
-                <button
-                  type="button"
-                  onClick={() => setAppArea('compare')}
-                  aria-pressed={appArea === 'compare'}
-                  className="ui-pill whitespace-nowrap shrink-0"
-                >
-                  Compare
-                </button>
-              ),
-              portfolio: (
-                <button
-                  type="button"
-                  onClick={() => openWorkspace('portfolio')}
-                  aria-pressed={appArea === 'portfolio'}
-                  className="ui-pill whitespace-nowrap shrink-0"
-                >
-                  Portfolio
+                  Research
                 </button>
               ),
               reports: (
@@ -2889,6 +2859,15 @@ export default function App() {
                 setAppArea('today');
                 window.scrollTo({ top: 0 });
               }}
+            />
+          )}
+
+          {isResearchScope(appArea) && (
+            <ResearchScopeBar
+              scope={appArea}
+              countryName={run.countryName}
+              holdingsCount={holdings.length}
+              onChange={openResearchScope}
             />
           )}
 
