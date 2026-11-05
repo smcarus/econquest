@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
+import { asOfRows, parseAsOfDate } from './src/utils/asOf';
 import { BCB_IPCA_12M, BCB_LONG, BCB_SHORT, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, bcbSgsUrl, eurostatHicpUrl, mergeNationalCpi, parseBcbSgs, parseEurostatHicp, type NationalCpiSeries } from './src/utils/nationalCpi';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
 import {
@@ -3474,8 +3475,49 @@ async function startServer() {
 
   app.get('/api/export/:iso3/figures.csv', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (req.query.asOf !== undefined) {
+      // The figures as the app held them on a past day, from the pull archive.
+      const requested = parseAsOfDate(req.query.asOf);
+      if (!requested) return res.status(400).json({ error: 'BAD_DATE', message: 'asOf must be a date, YYYY-MM-DD.' });
+      const past = archivedSnapshot(iso3, requested);
+      if (!past) return res.status(404).json({ error: 'NOT_IN_ARCHIVE', message: `No archived pull for ${iso3} on or before ${requested}.` });
+      return sendCsv(res, exportFileName(iso3, `figures-as-of-${past.date}`), toCsv(FIGURES_HEADER, figureRows({ ...past.snapshot, fetchedAt: new Date(past.pulledAt).toISOString() })));
+    }
     const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
     sendCsv(res, exportFileName(iso3, 'figures'), toCsv(FIGURES_HEADER, figureRows(snap)));
+  });
+
+  // As of a past day: the archived pull on or before the date, beside today's figures.
+  const archivedSnapshot = (iso3: string, date: string) => {
+    const day = archivedDayOnOrBefore(listArchivedDays(ARCHIVE_DIR, iso3), date);
+    const pull = day ? readArchivedPull<OpenDataSnapshot>(ARCHIVE_DIR, iso3, day) : null;
+    return pull ? { date: pull.date, pulledAt: pull.pulledAt, incomplete: Boolean(pull.incomplete), snapshot: reviveMissing(pull.snapshot, buildBaselineOpenData(iso3)) } : null;
+  };
+  app.get('/api/as-of/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const days = listArchivedDays(ARCHIVE_DIR, iso3);
+    if (req.query.date === undefined) return res.json({ iso3, days });
+    const requested = parseAsOfDate(req.query.date);
+    if (!requested) return res.status(400).json({ error: 'BAD_DATE', message: 'date must be YYYY-MM-DD.', days });
+    const past = archivedSnapshot(iso3, requested);
+    if (!past) {
+      return res.status(404).json({
+        error: 'NOT_IN_ARCHIVE',
+        message: days.length ? `No pull for ${iso3} on or before ${requested}; the archive starts ${days[0]}.` : `No archived pulls for ${iso3} yet. The archive gains a day with each pull.`,
+        days,
+      });
+    }
+    const now = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
+    res.json({
+      iso3,
+      requested,
+      date: past.date,
+      pulledAt: new Date(past.pulledAt).toISOString(),
+      incomplete: past.incomplete,
+      nowPulledAt: now.fetchedAt ?? null,
+      days,
+      rows: asOfRows(figureRows({ ...past.snapshot, fetchedAt: new Date(past.pulledAt).toISOString() }), figureRows(now)),
+    });
   });
 
   // The pull archive: every saved pull by day (data/archive/). Read-only.

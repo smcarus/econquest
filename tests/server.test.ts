@@ -554,6 +554,27 @@ test('pull archive: each saved country pull is kept by day and read back on or b
   assert.ok(list.countries.some((c) => c.iso3 === 'MEX'));
 });
 
+test('as of a past day: archived figures beside today, with a CSV of the past pull', async () => {
+  const today = new Date().toISOString().slice(0, 10);
+  const list = (await (await fetch(`${base}/api/as-of/MEX`)).json()) as { days: string[] };
+  assert.ok(list.days.includes(today));
+  const r = await fetch(`${base}/api/as-of/MEX?date=2999-01-01`);
+  assert.equal(r.status, 200);
+  const body = (await r.json()) as { date: string; rows: Array<{ field: string; then: { status: string }; now: { status: string }; change: number | null }> };
+  assert.equal(body.date, today);
+  assert.ok(body.rows.length > 5);
+  for (const row of body.rows) if (row.then.status !== 'Live' || row.now.status !== 'Live') assert.equal(row.change, null, row.field);
+  assert.equal((await fetch(`${base}/api/as-of/MEX?date=2026-02-30`)).status, 400);
+  const before = await fetch(`${base}/api/as-of/MEX?date=2000-01-01`);
+  assert.equal(before.status, 404);
+  assert.match(((await before.json()) as { message: string }).message, /the archive starts/);
+  const csv = await fetch(`${base}/api/export/MEX/figures.csv?asOf=2999-01-01`);
+  assert.equal(csv.status, 200);
+  assert.match(csv.headers.get('content-disposition') || '', new RegExp(`MEX-figures-as-of-${today}-`));
+  assert.ok((await csv.text()).includes("iso3,country,field,figure"));
+  assert.equal((await fetch(`${base}/api/export/MEX/figures.csv?asOf=2000-01-01`)).status, 404);
+});
+
 test('series: every figure lists its history or why it has none; unknown series say Missing', async () => {
   const list = (await (await fetch(`${base}/api/series/MEX`)).json()) as { series: Array<{ id: string; count: number }>; missing: Array<{ id: string; reason: string }> };
   const ids = [...list.series.map((s) => s.id), ...list.missing.map((m) => m.id)];
