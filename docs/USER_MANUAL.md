@@ -82,6 +82,28 @@ full council and saved research.
   answers only. A number check marks any figure it cannot trace to an agent.
 - *Follow-up*: once a conversation has started, the box asks follow-ups. "and the currency?" or
   "what about Egypt?" keeps the last question's countries or agents. Asking the same question later shows what changed since last time.
+- *Charts and statistical tests*: ask for a chart in words, for example "chart Brazil's policy rate
+  against inflation and test which moves first". The Chart Agent draws the series the app holds
+  (series it does not hold are listed as Missing, with the reason), puts them on their common
+  frequency, and runs the tests asked for: correlation, regression (scatter with the line), lead/lag
+  (which moves first), Granger (does one help predict the other), stationarity (ADF) and trend and
+  cycle (HP filter). Each test comes with a plain-English reading and a caution when the sample is
+  short. Ask for "year-on-year", "changes", "indexed" or "z-scores" to show the lines another way.
+  - *Ready-made charts*, asked for by name or from *Charts and statistical tests* under the welcome
+    line: Phillips curve, Taylor rule gap (the policy rate against r* 2% + inflation + 0.5 x
+    inflation gap + 0.5 x output gap, with the central bank's own target), real policy rate, real 10Y
+    yield, yield curve slope (10Y minus policy rate), r minus g (10Y yield minus inflation minus real
+    growth) and leading indicator vs policy rate. Worked-out lines show where they stand against
+    their own history.
+  - *Across countries*: "scatter government debt against bond yields across countries" puts one point
+    per country at its latest figure, fits a line, and names the countries furthest above and below it.
+  - *Talk about it*: follow-ups such as "is that relationship stable over time?", "what about Mexico?"
+    or "what does this mean for the next policy move?" keep the chart and add the test or the desk
+    agents; with an AI model, the summary agent writes from the chart's test results like any other
+    agent's figures.
+  - *Open larger* shows the lead/lag and rolling-correlation charts, and lets you show the lines
+    another way or switch tests on and off. *CSV* downloads the figures with their sources. *Save to
+    Reports* keeps the chart with the Chart Agent's document under Reports > Council documents.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your
