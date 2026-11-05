@@ -31,6 +31,8 @@ import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
+import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
+import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import {
@@ -132,6 +134,7 @@ const ENV_FILE_KEYS = envKeySnapshot(process.env);
 const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 let savedSettings = loadSettings(SETTINGS_FILE);
 const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
 // Rebuilt when the Gemini key is changed in Menu > Settings.
@@ -3152,6 +3155,20 @@ async function startServer() {
   app.delete('/api/research/docs/:id', (req, res) => {
     if (refuseRemoteResearch(req, res)) return;
     writeResearch(res, (lib) => removeDoc(lib, req.params.id));
+  });
+  // Watch alerts: thresholds you set, kept in data/local/watch-rules.json. Evaluated in the page.
+  app.get('/api/watch-rules', (_req, res) => res.json({ rules: loadWatchRules(WATCH_RULES_FILE), file: 'data/local/watch-rules.json' }));
+  app.put('/api/watch-rules', (req, res) => {
+    if (isLocalRequest(req.socket.remoteAddress, process.env) === false) {
+      return res.status(403).json({ error: `Watch alerts can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
+    }
+    const rules = parseRules(req.body);
+    try {
+      saveWatchRules(WATCH_RULES_FILE, rules);
+      res.json({ ok: true, rules });
+    } catch (error: any) {
+      res.status(500).json({ error: `Could not save the watch alerts file (${error?.code || error?.message || 'unknown error'}).` });
+    }
   });
   app.put('/api/settings/keys/:id', async (req, res) => {
     if (refuseRemote(req, res)) return;
