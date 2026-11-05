@@ -28,6 +28,7 @@ import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
+import { MEASURE_LABEL, TOLERANCE, compareClaims, extractClaims, fmtMeasure } from './docFigureCheck';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
@@ -861,20 +862,95 @@ export const DOC_AGENT_NAME = 'Policy Document';
 const DOC_PREFIX = 'doc:';
 export const isDocFinding = (f: Pick<AgentFinding, 'iso3'>) => f.iso3.startsWith(DOC_PREFIX);
 
-export function docAgent(question: string, docs: PolicyDoc[]): AgentAnswer {
+/**
+ * Which watchlist country a document is about: one named in its title, else the one its text names
+ * most (at least twice), else the question's country when the question is about one country.
+ */
+export function docCountry(doc: PolicyDoc, items: LiveWatchlistItem[], asked: LiveWatchlistItem[]): LiveWatchlistItem | undefined {
+  const inTitle = countriesInQuestion(doc.title, items);
+  if (inTitle.length === 1) return inTitle[0];
+  const body = doc.text.slice(0, 50_000);
+  let best: { it: LiveWatchlistItem; n: number } | undefined;
+  for (const it of items) {
+    const names = [baseName(it.countryName), ...(ALIASES[it.iso3] || [])];
+    const n = names.reduce((sum, nm) => sum + (body.match(new RegExp(`(^|[^\\p{L}])${escapeRe(nm)}($|[^\\p{L}])`, 'giu')) || []).length, 0);
+    if (n >= 2 && (!best || n > best.n)) best = { it, n };
+  }
+  if (best) return best.it;
+  return asked.length === 1 ? asked[0] : undefined;
+}
+
+/** Each figure a document states, next to the app's figure for the same country, by stated rules. */
+export function docChecks(docs: PolicyDoc[], items: LiveWatchlistItem[], asked: LiveWatchlistItem[]): { findings: AgentFinding[]; missing: string[] } {
+  const findings: AgentFinding[] = [];
+  const missing: string[] = [];
+  if (!items.length) return { findings, missing };
+  for (const d of docs) {
+    const claims = extractClaims(d.text);
+    if (!claims.length) continue;
+    const it = docCountry(d, items, asked);
+    if (!it) {
+      missing.push(`${d.title}: states figures, but names no single watchlist country, so they were not checked against the app`);
+      continue;
+    }
+    // Only check documents about a country this question covers.
+    if (asked.length && !asked.some((a) => a.iso3 === it.iso3)) continue;
+    const figures: AgentFigure[] = [];
+    const notes: string[] = [];
+    for (const c of compareClaims(claims, it)) {
+      const label = MEASURE_LABEL[c.claim.measure];
+      figures.push({ label: `${label}, in the document`, value: fmtMeasure(c.claim.measure, c.claim.value), source: `${d.title}: “${c.claim.quote}”`, tag: 'document' });
+      if (!c.app || c.gap === undefined) {
+        notes.push(`${label}: the app has no figure for ${baseName(it.countryName)} to check it against.`);
+        continue;
+      }
+      const tol = TOLERANCE[c.claim.measure];
+      const gapText = `${sgn(c.gap, tol.unit === '%' ? 0 : 2)} ${tol.unit}`;
+      figures.push(
+        { label: `${label}, in the app`, value: fmtMeasure(c.claim.measure, c.app.value), source: c.app.source, tag: c.app.tag },
+        {
+          label: `${label}: document against the app`,
+          value: c.matches ? 'matches' : `differs by ${gapText}`,
+          source: `document less app; within ${tol.value} ${tol.unit} counts as matching`,
+          tag: 'model',
+        }
+      );
+      if (!c.matches) notes.push(`${label} differs: the document says ${fmtMeasure(c.claim.measure, c.claim.value)}, the app's figure is ${fmtMeasure(c.claim.measure, c.app.value)} (${c.app.source}).`);
+    }
+    const differs = notes.filter((n) => n.includes(' differs:')).length;
+    findings.push({
+      iso3: `${DOC_PREFIX}${d.id}:check`,
+      countryName: `${d.title}, checked against the app's ${baseName(it.countryName)} figures`,
+      reading: differs
+        ? `${notes.join(' ')} The document may be older than the app's figure, or measure something else (core against headline inflation, a monthly against an annual figure).`
+        : notes.length
+          ? `Every figure the app also holds matches the document. ${notes.join(' ')}`
+          : 'Every figure the document states matches the app.',
+      figures,
+      weight: differs ? 0.6 : 0.2,
+    });
+  }
+  return { findings, missing };
+}
+
+export function docAgent(question: string, docs: PolicyDoc[], items: LiveWatchlistItem[] = [], asked: LiveWatchlistItem[] = []): AgentAnswer {
   const hits = searchDocs(question, docs);
+  const checks = docChecks(docs, items, asked);
   return {
     id: 'doc',
     name: DOC_AGENT_NAME,
     why: `you added ${docs.length === 1 ? 'a document' : `${docs.length} documents`}`,
-    findings: hits.map((h) => ({
-      iso3: `${DOC_PREFIX}${h.docId}:${h.part}`,
-      countryName: h.title,
-      reading: `“${h.text}”`,
-      figures: [{ label: 'Passage', value: `${h.part} of ${h.parts}`, source: `${h.title}, a document you added. Matched on: ${h.matched.join(', ')}`, tag: 'document' as const }],
-      weight: h.score,
-    })),
-    missing: hits.length ? [] : ['no passage in your documents shares enough words with the question'],
+    findings: [
+      ...checks.findings,
+      ...hits.map((h) => ({
+        iso3: `${DOC_PREFIX}${h.docId}:${h.part}`,
+        countryName: h.title,
+        reading: `“${h.text}”`,
+        figures: [{ label: 'Passage', value: `${h.part} of ${h.parts}`, source: `${h.title}, a document you added. Matched on: ${h.matched.join(', ')}`, tag: 'document' as const }],
+        weight: h.score,
+      })),
+    ],
+    missing: [...checks.missing, ...(hits.length ? [] : ['no passage in your documents shares enough words with the question'])],
   };
 }
 
@@ -902,7 +978,7 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
     return { ...a, why, findings: kept, missing };
   });
   if (plan.offWatchlist?.length && desk.length) desk[0].missing.unshift(offWatchlistNote(plan.offWatchlist));
-  return docs.length ? [...desk, docAgent(question, docs)] : desk;
+  return docs.length ? [...desk, docAgent(question, docs, all, plan.countries)] : desk;
 }
 
 /** Tags that are not a live feed, an official series, your own file or a stated rule on those. */
