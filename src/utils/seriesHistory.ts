@@ -1,0 +1,249 @@
+/**
+ * One place for every figure's history. Several feeds already bring a run of observations (BIS
+ * policy rates, the OECD leading indicator, monthly inflation, CFTC positioning, US Treasury TIC
+ * holdings, World Bank Pink Sheet prices); everything else gets a history from the pull archive
+ * (src/utils/pullArchive.ts): the value each saved pull showed, dated by the pull.
+ *
+ * Only real observations are returned. A figure with no history says why, in words, and a series
+ * never has a point filled in, carried forward or smoothed.
+ *
+ * Browser-safe (no fs): the server hands in what it has pulled.
+ */
+import { CBPOL_AREA, type CbpolPull } from './bisPolicyRates';
+import { CFTC_CURRENCY_CODES, type CftcWeek } from './cftcPositioning';
+import { type PriceSeries } from './commodityPrices';
+import { areaSeries } from './oecdSdmx';
+import { type CliSeries } from './oecdCli';
+import { type CpiBasis } from './oecdInflation';
+import { type TicTable } from './ticHoldings';
+
+export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
+
+export interface SeriesPoint {
+  /** YYYY-MM-DD, YYYY-MM, YYYY-Qn or YYYY. */
+  date: string;
+  value: number;
+  /** For archive series: what the source said that pull (e.g. "IMF WEO", "World Bank, 2024"). */
+  note?: string;
+}
+
+export interface Series {
+  id: string;
+  label: string;
+  unit: string;
+  freq: SeriesFreq;
+  source: string;
+  /** When the feed behind it was last pulled (ISO). */
+  pulledAt?: string;
+  /** Oldest first. */
+  points: SeriesPoint[];
+  /** A sentence on how to read it, when it is not obvious. */
+  about?: string;
+}
+
+export interface SeriesMissing {
+  id: string;
+  label: string;
+  reason: string;
+}
+
+export interface SeriesSet {
+  iso3: string;
+  series: Series[];
+  missing: SeriesMissing[];
+}
+
+/** One archived pull, as the archive reader returns it (snapshot shape kept loose on purpose). */
+export interface ArchivedSnapshot {
+  date: string;
+  pulledAt: number;
+  snapshot: { liveFields?: Record<string, string>; [k: string]: unknown };
+}
+
+export interface SeriesInputs {
+  cbpol?: CbpolPull | null;
+  cli?: { pulledAt: string; series: CliSeries } | null;
+  cpi?: { pulledAt: string; series: Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }> } | null;
+  cftc?: { pulledAt: string; weeks: Record<string, CftcWeek[]> } | null;
+  tic?: { pulledAt: string; table: TicTable } | null;
+  /** Saved pulls for the country, any order. */
+  archive?: ArchivedSnapshot[];
+}
+
+/** Figures given a history from the pull archive: the live-field key and where the value sits. */
+export const ARCHIVE_FIGURES: Array<{ id: string; field: string; label: string; unit: string }> = [
+  { id: 'debt_gdp', field: 'imf.debtToGdpPct', label: 'Government debt', unit: '% of GDP' },
+  { id: 'primary_balance', field: 'imf.primaryFiscalBalancePct', label: 'Primary balance', unit: '% of GDP' },
+  { id: 'gdp_growth', field: 'imf.realGdpGrowthPct', label: 'Real GDP growth', unit: '%' },
+  { id: 'cpi_imf', field: 'imf.cpiInflationPct', label: 'Inflation (IMF WEO)', unit: '%' },
+  { id: 'reserves_months', field: 'wb.fxReservesMonthsImport', label: 'Reserves', unit: 'months of imports' },
+  { id: 'current_account', field: 'wb.currentAccountPctGdp', label: 'Current account', unit: '% of GDP' },
+  { id: 'external_debt', field: 'wb.externalDebtPctGni', label: 'External debt', unit: '% of GNI' },
+  { id: 'stability', field: 'wb.politicalStabilityPercentile', label: 'Political stability rank', unit: 'percentile' },
+  { id: 'yield_10y', field: 'market.sovereign10YBondYieldPct', label: '10Y government bond yield', unit: '%' },
+  { id: 'cds_5y', field: 'market.cds5YSpreadBps', label: '5Y CDS (your data)', unit: 'bp' },
+  { id: 'fx_per_usd', field: 'market.exchangeRatePerUsd', label: 'Exchange rate', unit: 'per USD' },
+  { id: 'gdelt_tone', field: 'gdelt.averageTone', label: 'News tone (GDELT)', unit: 'tone' },
+];
+
+const GROUP_FOR_PREFIX: Record<string, string> = {
+  imf: 'imfIndicators',
+  wb: 'worldBankIndicators',
+  market: 'monetaryAndMarket',
+  gdelt: 'gdeltMetrics',
+};
+
+/** The number a live-field key points at in a snapshot, or undefined. */
+export function snapshotValue(snapshot: Record<string, unknown>, field: string): number | undefined {
+  const [prefix, key] = field.split('.');
+  const group = snapshot[GROUP_FOR_PREFIX[prefix] ?? ''] as Record<string, unknown> | undefined;
+  const v = group?.[key];
+  return typeof v === 'number' && Number.isFinite(v) ? v : undefined;
+}
+
+const sortByDate = (pts: SeriesPoint[]) => pts.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+function policyRate(iso3: string, pull: CbpolPull | null | undefined): Series | SeriesMissing {
+  const label = 'Policy rate';
+  const area = CBPOL_AREA[iso3];
+  if (!area) return { id: 'policy_rate', label, reason: 'Not in BIS policy rates' };
+  if (!pull) return { id: 'policy_rate', label, reason: 'BIS has not answered yet' };
+  const daily = pull.daily?.[area];
+  const monthly = pull.monthly?.[area];
+  const use = daily?.points?.length ? { s: daily, freq: 'daily' as const } : monthly?.points?.length ? { s: monthly, freq: 'monthly' as const } : null;
+  if (!use) return { id: 'policy_rate', label, reason: 'Not in BIS policy rates' };
+  return {
+    id: 'policy_rate',
+    label,
+    unit: '%',
+    freq: use.freq,
+    source: `BIS central bank policy rates${use.s.bank ? ` (${use.s.bank})` : ''}`,
+    pulledAt: pull.pulledAt,
+    points: sortByDate(use.s.points.filter((p) => finite(p.pct)).map((p) => ({ date: p.period, value: p.pct }))),
+  };
+}
+
+function leadingIndicator(iso3: string, pull: SeriesInputs['cli']): Series | SeriesMissing {
+  const label = 'OECD leading indicator';
+  const pts = pull ? areaSeries(iso3, pull.series) : undefined;
+  if (!pull) return { id: 'cli', label, reason: 'OECD data has not answered yet' };
+  if (!pts?.length) return { id: 'cli', label, reason: 'The OECD publishes no leading indicator for this country' };
+  return {
+    id: 'cli',
+    label,
+    unit: 'index, 100 = trend',
+    freq: 'monthly',
+    source: 'OECD via DBnomics',
+    pulledAt: pull.pulledAt,
+    points: sortByDate(pts.filter((p) => finite(p.value)).map((p) => ({ date: p.period, value: p.value }))),
+    about: 'Above 100 = above trend; rising = growth picking up.',
+  };
+}
+
+function inflation(iso3: string, pull: SeriesInputs['cpi']): Series | SeriesMissing {
+  const label = 'Inflation, monthly';
+  if (!pull) return { id: 'cpi_monthly', label, reason: 'Monthly inflation has not answered yet' };
+  const s = areaSeries(iso3, pull.series);
+  if (!s?.points?.length) return { id: 'cpi_monthly', label, reason: 'No monthly inflation source for this country yet' };
+  return {
+    id: 'cpi_monthly',
+    label,
+    unit: '% year on year',
+    freq: 'monthly',
+    source: s.long || (s.basis === 'national' ? 'National statistics' : 'OECD via DBnomics'),
+    pulledAt: pull.pulledAt,
+    points: sortByDate(s.points.filter((p) => finite(p.value)).map((p) => ({ date: p.period, value: p.value }))),
+  };
+}
+
+function positioning(iso3: string, pull: SeriesInputs['cftc']): Series | SeriesMissing {
+  const label = 'Futures positioning (leveraged funds)';
+  const def = CFTC_CURRENCY_CODES[iso3];
+  if (!def) return { id: 'cftc_lev_net', label, reason: 'No CFTC currency future for this country' };
+  if (!pull) return { id: 'cftc_lev_net', label, reason: 'CFTC has not answered yet' };
+  const weeks = pull.weeks?.[def.code] || [];
+  const points = weeks
+    .filter((w) => finite(w.levNet) && finite(w.openInterest) && w.openInterest > 0)
+    .map((w) => ({ date: w.date, value: Number(((w.levNet / w.openInterest) * 100).toFixed(2)) }));
+  if (!points.length) return { id: 'cftc_lev_net', label, reason: 'CFTC sent no weeks for this currency' };
+  return {
+    id: 'cftc_lev_net',
+    label,
+    unit: '% of open interest, net long',
+    freq: 'weekly',
+    source: `CFTC Traders in Financial Futures, ${def.market}`,
+    pulledAt: pull.pulledAt,
+    points: sortByDate(points),
+    about: 'Positive = funds net long the currency against the dollar.',
+  };
+}
+
+function ticHoldings(iso3: string, pull: SeriesInputs['tic']): Series | SeriesMissing {
+  const label = 'US Treasuries held';
+  if (!pull) return { id: 'tic_holdings', label, reason: 'US Treasury TIC has not answered yet' };
+  const row = pull.table?.rows?.[iso3];
+  const months = pull.table?.months || [];
+  if (!row?.length) return { id: 'tic_holdings', label, reason: 'Not listed separately in TIC' };
+  const points = months.map((m, i) => ({ date: m, value: row[i] })).filter((p) => finite(p.value));
+  return { id: 'tic_holdings', label, unit: 'USD bn', freq: 'monthly', source: 'US Treasury TIC (SLT table 5)', pulledAt: pull.pulledAt, points: sortByDate(points) };
+}
+
+/** Archive series for one figure: one point per saved pull that had it live. */
+export function archiveSeries(archive: ArchivedSnapshot[] | undefined, fig: (typeof ARCHIVE_FIGURES)[number]): Series | SeriesMissing {
+  const pulls = [...(archive || [])].sort((a, b) => a.pulledAt - b.pulledAt);
+  if (!pulls.length) return { id: fig.id, label: fig.label, reason: 'No saved pulls yet; the archive started with this version' };
+  const points: SeriesPoint[] = [];
+  for (const p of pulls) {
+    const src = p.snapshot?.liveFields?.[fig.field];
+    const v = src ? snapshotValue(p.snapshot as Record<string, unknown>, fig.field) : undefined;
+    if (src && v !== undefined) points.push({ date: p.date, value: v, note: src });
+  }
+  if (!points.length) return { id: fig.id, label: fig.label, reason: `No saved pull had it (${pulls.length} pull${pulls.length === 1 ? '' : 's'} checked)` };
+  return {
+    id: fig.id,
+    label: fig.label,
+    unit: fig.unit,
+    freq: 'per pull',
+    source: 'Saved pulls (value as each pull showed it)',
+    points,
+    about: 'Each point is the figure as the app saw it on that day; the source and period are in its note.',
+  };
+}
+
+const isSeries = (x: Series | SeriesMissing): x is Series => 'points' in x;
+
+/** Every history the app has for a country, and what is missing with the reason. */
+export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
+  const code = String(iso3 || '').toUpperCase();
+  const all: Array<Series | SeriesMissing> = [
+    policyRate(code, inputs.cbpol),
+    inflation(code, inputs.cpi),
+    leadingIndicator(code, inputs.cli),
+    positioning(code, inputs.cftc),
+    ticHoldings(code, inputs.tic),
+    ...ARCHIVE_FIGURES.map((f) => archiveSeries(inputs.archive, f)),
+  ];
+  return { iso3: code, series: all.filter(isSeries), missing: all.filter((x): x is SeriesMissing => !isSeries(x)) };
+}
+
+/** World commodity prices as series (Pink Sheet monthly, EIA daily). */
+export function commoditySeries(prices: PriceSeries[], pulledAt: Record<'pink_sheet' | 'eia', string | undefined>): Series[] {
+  return prices
+    .filter((p) => p.points?.length)
+    .map((p) => ({
+      id: `commodity_${p.source}_${p.code}`.toLowerCase(),
+      label: p.name,
+      unit: p.unit,
+      freq: p.source === 'eia' ? ('daily' as const) : ('monthly' as const),
+      source: p.source === 'eia' ? 'US EIA spot prices' : 'World Bank Pink Sheet',
+      pulledAt: pulledAt[p.source],
+      points: sortByDate(p.points.filter((x) => finite(x.value)).map((x) => ({ date: x.period, value: x.value }))),
+    }));
+}
+
+/** A series without its points, for lists. */
+export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number } {
+  const { points, ...rest } = s;
+  return { ...rest, count: points.length, first: points[0]?.date, last: points[points.length - 1]?.date, latest: points[points.length - 1]?.value };
+}

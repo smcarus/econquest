@@ -35,6 +35,7 @@ import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
+import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
@@ -3273,6 +3274,56 @@ async function startServer() {
     writeResearch(res, (lib) => removeDoc(lib, req.params.id));
   });
   // Watch alerts: thresholds you set, kept in data/local/watch-rules.json. Evaluated in the page.
+  // Series history (src/utils/seriesHistory.ts): every figure's run of real observations.
+  const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
+    Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
+  async function seriesFor(iso3: string) {
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic] = await Promise.all([
+      quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
+    ]);
+    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
+    const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
+      .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
+      .filter((x): x is NonNullable<typeof x> => Boolean(x))
+      .map((x) => ({ date: x.date, pulledAt: x.pulledAt, snapshot: x.snapshot }));
+    return countrySeries(iso3, {
+      cbpol,
+      cli,
+      cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
+      cftc,
+      tic,
+      archive,
+    });
+  }
+  async function worldSeries(): Promise<Series[]> {
+    await quick(fetchCommodities());
+    const m = commodityMemory;
+    const prices = [...Object.values(m?.pink?.series || {}), ...Object.values(m?.eia?.series || {})];
+    return commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt });
+  }
+  app.get('/api/series/world', async (_req, res) => {
+    const series = await worldSeries();
+    res.json({ series: series.map(seriesSummary), missing: series.length ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }] });
+  });
+  app.get('/api/series/world/:id', async (req, res) => {
+    const hit = (await worldSeries()).find((s) => s.id === req.params.id);
+    if (!hit) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id} for world prices.` });
+    res.json(hit);
+  });
+  app.get('/api/series/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    res.json({ iso3, series: set.series.map(seriesSummary), missing: set.missing });
+  });
+  app.get('/api/series/:iso3/:id', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    const hit = set.series.find((s) => s.id === req.params.id);
+    if (hit) return res.json({ iso3, ...hit });
+    const miss = set.missing.find((m) => m.id === req.params.id);
+    res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
+  });
+
   // The pull archive: every saved pull by day (data/archive/). Read-only.
   app.get('/api/archive', (_req, res) => {
     res.json({ countries: listArchivedCountries(ARCHIVE_DIR).map((iso3) => ({ iso3, days: listArchivedDays(ARCHIVE_DIR, iso3) })) });
