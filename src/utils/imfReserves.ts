@@ -455,8 +455,12 @@ async function getJson(fetchFn: ImfFetch, url: string, timeoutMs: number): Promi
       return { status: res.status, error: 'answered, but not with JSON' };
     }
   } catch (e) {
-    const err = e as { name?: string; message?: string };
-    return { error: err?.name === 'AbortError' ? `no answer within ${Math.round(timeoutMs / 1000)} s` : String(err?.message || 'request failed') };
+    const err = e as { name?: string; message?: string; cause?: { code?: string } };
+    const code = err?.cause?.code || '';
+    if (err?.name === 'AbortError') return { error: `no answer within ${Math.round(timeoutMs / 1000)} s` };
+    if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return { error: 'fetch failed: address not found (internet, VPN or firewall)' };
+    if (code === 'ECONNRESET' || code === 'ECONNREFUSED') return { error: 'fetch failed: connection cut or refused (a firewall or proxy may block api.imf.org)' };
+    return { error: String(err?.message || 'request failed') };
   } finally {
     clearTimeout(timer);
   }
