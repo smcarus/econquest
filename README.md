@@ -48,7 +48,7 @@ npm test
 npm run build
 ```
 
-Every pull request runs the same three checks on GitHub (`.github/workflows/ci.yml`). Tests live in `tests/` and use Node's built-in test runner, so there is nothing extra to install. `tests/server.test.ts` starts the real server with the network replaced by fixtures (`tests/helpers/offline-fetch.mjs`), so the data endpoints are checked without touching the internet.
+Every pull request runs these checks on GitHub (`.github/workflows/ci.yml`), plus `npm run test:smoke`: it opens every page of the built app in Chromium with all data feeds down and fails on any page error or any panel showing its crash note (run `npx playwright install chromium` once to use it locally). Tests live in `tests/` and use Node's built-in test runner, so there is nothing extra to install. `tests/server.test.ts` starts the real server with the network replaced by fixtures (`tests/helpers/offline-fetch.mjs`), so the data endpoints are checked without touching the internet.
 
 ---
 

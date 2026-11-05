@@ -25,3 +25,7 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Install Chromium for the UI smoke test
+        run: npx playwright install --with-deps chromium
+      - name: UI smoke test (every page, all feeds down)
+        run: npm run test:smoke
