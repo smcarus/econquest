@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cliFor, cliMissing, cliPhase, cliSentence, cliUrl, parseCli } from '../src/utils/oecdCli.ts';
-import { isBotCheck, parseSdmxCsv, splitCsvLine, startPeriod } from '../src/utils/oecdSdmx.ts';
+import { isBotCheck, parseSdmxCsv, seriesByArea, splitCsvLine, startPeriod } from '../src/utils/oecdSdmx.ts';
 import { planCouncil, runCouncil } from '../src/utils/askCouncil.ts';
 import { cliRows } from '../src/utils/marketsMacro.ts';
 import { COLUMN_BY_ID } from '../src/utils/watchlistView.ts';
@@ -129,4 +129,20 @@ test('bot check: Cloudflare challenge pages are told apart from a plain refusal'
   assert.equal(isBotCheck(403, '<script src="/cdn-cgi/challenge-platform/h/b"></script>'), true);
   assert.equal(isBotCheck(429, 'Too many requests'), false);
   assert.equal(isBotCheck(200, 'Just a moment'), false);
+});
+
+test('series picking skips a preferred series that stopped months before another one', () => {
+  const mk = (meth: string, months: string[]) =>
+    months.map((period, i) => ({ area: 'BRA', period, value: 100 + i, dims: { METHODOLOGY: meth } }));
+  const obs = [...mk('H', ['2026-03', '2026-04', '2026-05']), ...mk('X', ['2026-07', '2026-08', '2026-09'])];
+  const s = seriesByArea(obs, {}, { METHODOLOGY: ['H'] });
+  assert.equal(s.BRA[s.BRA.length - 1].period, '2026-09');
+});
+
+test('series picking still prefers the stated series when both are current', () => {
+  const obs = [
+    { area: 'BRA', period: '2026-08', value: 101, dims: { METHODOLOGY: 'H' } },
+    { area: 'BRA', period: '2026-09', value: 99, dims: { METHODOLOGY: 'X' } },
+  ];
+  assert.equal(seriesByArea(obs, {}, { METHODOLOGY: ['H'] }).BRA[0].value, 101);
 });
