@@ -541,3 +541,22 @@ test('series: every figure lists its history or why it has none; unknown series 
   const world = (await (await fetch(`${base}/api/series/world`)).json()) as { series: unknown[]; missing: unknown[] };
   assert.ok(Array.isArray(world.series) && Array.isArray(world.missing));
 });
+
+test('downloads: figures and series come as CSV files; a series with no history says why', async () => {
+  const figs = await fetch(`${base}/api/export/MEX/figures.csv`);
+  assert.equal(figs.status, 200);
+  assert.match(figs.headers.get('content-type') || '', /text\/csv/);
+  assert.match(figs.headers.get('content-disposition') || '', /MEX-figures-\d{4}-\d{2}-\d{2}\.csv/);
+  const text = await figs.text();
+  assert.ok(text.includes('iso3,country,field,figure,value,unit,status'));
+  assert.ok(text.includes('Missing'));
+  const all = await fetch(`${base}/api/export/MEX/series.csv`);
+  assert.equal(all.status, 200);
+  assert.ok((await all.text()).includes('iso3,series_id,series,unit,frequency,date,value'));
+  const one = await fetch(`${base}/api/export/MEX/series/policy_rate.csv`);
+  assert.ok(one.status === 200 || one.status === 404);
+  const none = await fetch(`${base}/api/export/EGY/series/policy_rate.csv`);
+  assert.equal(none.status, 404);
+  const world = await fetch(`${base}/api/export/world/series.csv`);
+  assert.equal(world.status, 200);
+});

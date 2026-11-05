@@ -94,13 +94,16 @@ volatility, CFTC futures positioning, US Treasury TIC holdings, IMF reserves and
 world reserve currency shares (COFER), shock early warning and the signal track record.
 
 **Overview.** Every figure the country pages use, with its source and date, or why it is missing and
-what would fill it.
+what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live
+figure; "Missing" and the reason for the rest, never a number.
 
 **History.** Every figure that has a run of real observations, as a chart with its source, how often it
 comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
 leading indicator, CFTC positioning and TIC holdings come with their own history; every other figure
 gains one point per weekly pull from the pull archive, each with what the source said that day. Click
 a figure in the country header to open its history. *Show the numbers* lists every observation.
+*Download this series* and *Download every series* save CSV files in long format (one row per
+observation, with unit, frequency, source, the source that day and the pull date).
 Figures with no history yet are listed with the reason.
 
 With Menu > Show all tools, more tabs appear (Debt & fiscal, Markets, Politics & geo, Scenarios,

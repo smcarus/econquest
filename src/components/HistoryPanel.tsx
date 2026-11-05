@@ -148,6 +148,14 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                     : ''
                   : `Gaps (no observation, not filled): ${gaps.map((g) => `${g.after} to ${g.before}`).join('; ')}.`}
               </p>
+              <div className="flex flex-wrap gap-1.5">
+                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.csv`} download>
+                  Download this series (CSV)
+                </a>
+                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.csv`} download>
+                  Download every series for {countryName} (CSV)
+                </a>
+              </div>
               <details>
                 <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">Show the numbers</summary>
                 <div className="mt-2 max-h-64 overflow-auto">
