@@ -268,8 +268,10 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
   const namesTopic = AGENT_ORDER.some((id) => COUNCIL_AGENTS[id].topic.test(question));
   // Charts: a follow-up that names its own series makes a new chart; otherwise one about the last
   // chart ("is it stable?", "what about Mexico?") keeps its series and adds the tests it asks for.
-  const ownChart = plan.chart && seriesInQuestion(question).length ? plan.chart : undefined;
-  const aboutChart = Boolean(prev.chart) && (testsInQuestion(question).length > 0 || !namesTopic);
+  const ownChart = plan.chart && (seriesInQuestion(question).length || plan.chart.preset) ? plan.chart : undefined;
+  // "What does this mean for policy?" names a desk topic but is still about the chart: keep it beside the desk agents.
+  const refersBack = /\b(this|that|it|these|those|the chart|the results?|the gap)\b/i.test(question);
+  const aboutChart = Boolean(prev.chart) && (testsInQuestion(question).length > 0 || !namesTopic || refersBack);
   const chart = ownChart ?? (aboutChart && prev.chart ? carryChart(question, prev.chart, named ? plan.countries : undefined) : plan.chart);
   const chartOnly = Boolean(chart) && !namesTopic && aboutChart;
   return {

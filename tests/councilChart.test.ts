@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { carryChart, chartRequest, computeChart, seriesInQuestion, type FetchedSeries } from '../src/utils/councilChart.ts';
+import { carryChart, chartFollowUps, chartRequest, computeChart, PRESETS, presetInQuestion, seriesInQuestion, type FetchedSeries } from '../src/utils/councilChart.ts';
 import { chartAnswer, planCouncil, planFollowUp, suggestFollowUps, answersForModel, allowedNumbers, answersAsText } from '../src/utils/askCouncil.ts';
 import { shiftPeriod } from '../src/utils/stats.ts';
 import type { LiveWatchlistItem } from '../src/types/council.ts';
@@ -82,4 +82,57 @@ test('carryChart swaps countries for "what about Mexico?" and keeps world series
   const req = chartRequest('plot Brazil inflation and oil', [BRA], true)!;
   const next = carryChart('and Mexico?', req, [MEX]);
   assert.deepEqual(next.series.map((s) => s.iso3), ['MEX', null]);
+});
+
+test('ready-made charts: each is found by its own name, and the welcome menu wording finds it', () => {
+  for (const p of PRESETS) assert.equal(presetInQuestion(`Chart the ${p.name}`)?.id, p.id, p.name);
+  assert.equal(presetInQuestion("What is Brazil's real interest rate?")?.id, 'real_rate');
+  assert.equal(presetInQuestion('show r-g for Turkey')?.id, 'r_minus_g');
+  assert.equal(presetInQuestion('chart the yield curve')?.id, 'term_spread');
+  assert.equal(presetInQuestion('Is Brazil behind the curve on inflation?'), undefined);
+});
+
+test('real policy rate: worked out on shared dates, drawn first, with where it stands', () => {
+  const req = chartRequest("Chart Brazil's real policy rate", [BRA], true)!;
+  assert.equal(req.preset, 'real_rate');
+  assert.deepEqual(req.tests, ['summary']);
+  const res = computeChart(req, [S('policy_rate', 'Policy rate', '%', rate), S('cpi_monthly', 'Inflation, monthly', '%', infl.slice(12))]);
+  assert.equal(res.title, 'Brazil: Real policy rate');
+  assert.equal(res.lines[0].label, 'Real policy rate');
+  assert.equal(res.lines[0].points.length, 108);
+  const last = res.lines[0].points[res.lines[0].points.length - 1];
+  assert.ok(Math.abs(last.value - (rate[119].value - infl[119].value)) < 1e-9);
+  const sum = res.tests.find((t) => t.test === 'summary')!;
+  assert.match(sum.reading, /Real policy rate is .* % at 2025-12, (above|below) its average/);
+  assert.ok(res.notes.some((n) => /policy rate - inflation/.test(n)));
+  assert.ok(chartFollowUps(req).includes('Where is it against its trend?'));
+  // Without inflation it is Missing, with the reason, and no figure is made up.
+  const none = computeChart(req, [S('policy_rate', 'Policy rate', '%', rate), { reason: 'no inflation feed' }]);
+  assert.ok(none.missing.some((m) => /^Real policy rate: Missing/.test(m)));
+  assert.equal(none.lines.filter((l) => l.key.startsWith('d')).length, 0);
+});
+
+test('Taylor rule gap: uses the stated target, leaves out the output gap when the IMF has none, and needs a target', () => {
+  const req = chartRequest('chart the Taylor rule gap for Brazil', [BRA], true)!;
+  assert.equal(req.derived!.length, 2);
+  const res = computeChart(req, [S('policy_rate', 'Policy rate', '%', rate), S('cpi_monthly', 'Inflation, monthly', '%', infl), { reason: 'IMF WEO has no output gap' }]);
+  // Brazil target 3%: rule = 2 + 1.5 x inflation - 0.5 x 3.
+  const i = 119;
+  const gap = res.lines.find((l) => l.label === 'Policy rate minus Taylor rule')!;
+  assert.ok(Math.abs(gap.points[gap.points.length - 1].value - (rate[i].value - (2 + 1.5 * infl[i].value - 1.5))) < 1e-9);
+  assert.ok(res.notes.some((n) => /output gap term left out/.test(n)));
+  const noTarget = chartRequest('chart the Taylor rule for Egypt', [it('EGY', 'Egypt')], true)!;
+  assert.equal(noTarget.derived, undefined);
+  assert.ok(noTarget.notes.some((n) => /Missing the central bank's inflation target/.test(n)));
+});
+
+test('ready-made charts in the chat: Chart Agent alone, follow-ups move it to another country and keep talking about it', () => {
+  const p = planCouncil('chart the Phillips curve for Brazil', items);
+  assert.equal(p.chart!.preset, 'phillips');
+  assert.deepEqual(p.chart!.tests, ['regression', 'correlation']);
+  const m = planFollowUp('and for Mexico?', p, items);
+  assert.equal(m.chart!.title, 'Mexico: Phillips curve');
+  const r = planCouncil("chart Brazil's real policy rate", items);
+  const why = planFollowUp('What does this mean for the next policy move?', r, items);
+  assert.equal(why.chart!.preset, 'real_rate');
 });

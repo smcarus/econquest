@@ -7,6 +7,8 @@
  * a series the app does not hold is listed as Missing with the reason.
  */
 import type { LiveWatchlistItem } from '../types/council';
+import { INFLATION_TARGETS } from './marketsMacro';
+import { TAYLOR_R_STAR, TAYLOR_WEIGHTS } from './taylorRule';
 import {
   adf,
   alignPair,
@@ -31,9 +33,10 @@ import {
   type Transform,
 } from './stats';
 
-export type ChartTest = 'correlation' | 'regression' | 'leadlag' | 'granger' | 'adf' | 'hp' | 'rolling';
+export type ChartTest = 'summary' | 'correlation' | 'regression' | 'leadlag' | 'granger' | 'adf' | 'hp' | 'rolling';
 
 export const TEST_TITLE: Record<ChartTest, string> = {
+  summary: 'Where it stands',
   correlation: 'Correlation',
   regression: 'Regression',
   leadlag: 'Which moves first (lead/lag)',
@@ -61,6 +64,23 @@ export interface ChartRequest {
   why: string;
   /** Notes for the reader (countries left out, and so on). */
   notes: string[];
+  /** A ready-made macro chart (Phillips curve, real policy rate...): its id and title. */
+  preset?: PresetId;
+  title?: string;
+  /** Lines worked out from the series (real rate = policy rate - inflation), drawn first. */
+  derived?: DerivedLine[];
+  /** Which of the series to draw beside the worked-out lines (all when left out); the rest are only inputs. */
+  show?: number[];
+}
+
+/** A line worked out from the request's series: constant + sum of k x series[i], on dates all of them have. */
+export interface DerivedLine {
+  label: string;
+  unit: string;
+  constant: number;
+  terms: Array<{ i: number; k: number; /** Left out when that series is missing, with this note. */ optional?: string }>;
+  /** The formula in words, shown under the chart. */
+  method: string;
 }
 
 /** A series as the app's /api/series routes return it (only the fields the chart needs). */
@@ -152,6 +172,126 @@ const TRANSFORM_WORDS: Array<[RegExp, Transform]> = [
   [/\bchanges?\b|first difference/i, 'change'],
 ];
 
+// ---------------------------------------------------------------------------------------------
+// Ready-made macro charts: asked for by name, built from the series the app holds
+
+export type PresetId = 'phillips' | 'real_rate' | 'real_yield' | 'taylor' | 'term_spread' | 'r_minus_g' | 'cli_policy';
+
+interface Preset {
+  id: PresetId;
+  re: RegExp;
+  name: string;
+  /** What the chart is for, in one line (shown in the list of ready-made charts). */
+  about: string;
+  series: string[];
+  tests: ChartTest[];
+  show?: number[];
+  derived?: (iso3: string) => { lines: DerivedLine[]; notes: string[] } | { missing: string };
+}
+
+const word = (id: string) => SERIES_WORDS.find((w) => w.id === id)!;
+
+export const PRESETS: Preset[] = [
+  {
+    id: 'phillips',
+    re: /phillips/i,
+    name: 'Phillips curve',
+    about: 'inflation against the output gap, with the regression slope',
+    series: ['output_gap', 'cpi_monthly'],
+    tests: ['regression', 'correlation'],
+  },
+  {
+    id: 'taylor',
+    re: /taylor(?: rule| gap)?/i,
+    name: 'Taylor rule gap',
+    about: 'the policy rate against a simple Taylor rule, over time',
+    series: ['policy_rate', 'cpi_monthly', 'output_gap'],
+    tests: ['summary'],
+    show: [0],
+    derived: (iso3) => {
+      const t = INFLATION_TARGETS[iso3];
+      if (!t) return { missing: "the central bank's inflation target (the app holds targets for a short list of countries)" };
+      const wi = TAYLOR_WEIGHTS.inflation;
+      const wo = TAYLOR_WEIGHTS.output;
+      const gapNote = 'output gap term left out (IMF WEO has no output gap for this country)';
+      const rule = `rule = r* ${TAYLOR_R_STAR}% + inflation + ${wi} x (inflation - target ${t.pct}%) + ${wo} x output gap; r* is Taylor (1993)'s 2%, a stated parameter`;
+      return {
+        lines: [
+          { label: 'Policy rate minus Taylor rule', unit: '% pts', constant: -(TAYLOR_R_STAR - wi * t.pct), terms: [{ i: 0, k: 1 }, { i: 1, k: -(1 + wi) }, { i: 2, k: -wo, optional: gapNote }], method: `Gap = policy rate - rule rate; ${rule}. Above zero = tighter than the rule` },
+          { label: 'Taylor rule rate', unit: '%', constant: TAYLOR_R_STAR - wi * t.pct, terms: [{ i: 1, k: 1 + wi }, { i: 2, k: wo, optional: gapNote }], method: '' },
+        ],
+        notes: [],
+      };
+    },
+  },
+  {
+    id: 'real_rate',
+    re: /real (?:policy |interest |short[- ]term )?rates?|ex[- ]post real rate/i,
+    name: 'Real policy rate',
+    about: 'the policy rate minus inflation',
+    series: ['policy_rate', 'cpi_monthly'],
+    tests: ['summary'],
+    derived: () => ({ lines: [{ label: 'Real policy rate', unit: '%', constant: 0, terms: [{ i: 0, k: 1 }, { i: 1, k: -1 }], method: 'Real policy rate = policy rate - inflation (ex post, on the inflation the app holds)' }], notes: [] }),
+  },
+  {
+    id: 'real_yield',
+    re: /real (?:10[- ]?y(?:ea)?r? |bond )?yields?/i,
+    name: 'Real 10Y yield',
+    about: 'the 10-year bond yield minus inflation',
+    series: ['yield_10y', 'cpi_monthly'],
+    tests: ['summary'],
+    derived: () => ({ lines: [{ label: 'Real 10Y yield', unit: '%', constant: 0, terms: [{ i: 0, k: 1 }, { i: 1, k: -1 }], method: 'Real 10Y yield = 10Y government bond yield - inflation (ex post, not inflation expectations)' }], notes: [] }),
+  },
+  {
+    id: 'term_spread',
+    re: /term spread|yield curve|curve slope|10y? (?:minus|less|over|-) (?:the )?policy/i,
+    name: 'Yield curve slope',
+    about: 'the 10-year yield minus the policy rate',
+    series: ['yield_10y', 'policy_rate'],
+    tests: ['summary'],
+    derived: () => ({ lines: [{ label: '10Y yield minus policy rate', unit: '% pts', constant: 0, terms: [{ i: 0, k: 1 }, { i: 1, k: -1 }], method: 'Slope = 10Y government bond yield - policy rate; below zero = inverted curve' }], notes: [] }),
+  },
+  {
+    id: 'r_minus_g',
+    re: /\br\s*[-−–]\s*g\b|r minus g|interest[- ]growth (?:differential|gap)/i,
+    name: 'r minus g',
+    about: 'the real interest rate on debt minus real growth, the debt-dynamics gap',
+    series: ['yield_10y', 'cpi_monthly', 'gdp_growth'],
+    tests: ['summary'],
+    derived: () => ({
+      lines: [{ label: 'r - g (real 10Y yield minus real growth)', unit: '% pts', constant: 0, terms: [{ i: 0, k: 1 }, { i: 1, k: -1 }, { i: 2, k: -1 }], method: 'r - g = 10Y yield - inflation - real GDP growth. It uses the market yield, not the average rate the government pays on its stock of debt; above zero, debt to GDP rises unless there is a primary surplus' }],
+      notes: [],
+    }),
+  },
+  {
+    id: 'cli_policy',
+    re: /(?:leading indicator|\bcli\b).{0,40}(?:policy|rate)|(?:policy|rate) cycle.{0,40}(?:leading indicator|\bcli\b)|policy cycle/i,
+    name: 'Leading indicator vs policy rate',
+    about: 'the OECD leading indicator against the policy rate, and which turns first',
+    series: ['cli', 'policy_rate'],
+    tests: ['leadlag', 'correlation'],
+  },
+];
+
+/** The ready-made chart a question asks for by name, if any. */
+export function presetInQuestion(question: string): Preset | undefined {
+  return PRESETS.find((p) => p.re.test(question));
+}
+
+/** A ready-made chart for one country. */
+export function presetRequest(preset: Preset, c: { iso3: string; countryName: string }, notes: string[] = []): ChartRequest {
+  const series: ChartSeriesRef[] = preset.series.map((id) => ({ iso3: c.iso3, countryName: c.countryName, id, fallback: word(id).fallback, label: `${c.countryName}: ${word(id).label}` }));
+  const d = preset.derived?.(c.iso3);
+  const own = [...notes];
+  let derived: DerivedLine[] | undefined;
+  if (d && 'missing' in d) own.push(`${preset.name} could not be worked out: Missing ${d.missing}`);
+  else if (d) {
+    derived = d.lines;
+    own.push(...d.notes);
+  }
+  return { series, tests: preset.tests, transform: 'level', why: `the question asks for the ${preset.name}`, notes: own, preset: preset.id, title: `${c.countryName}: ${preset.name}`, ...(derived ? { derived, ...(preset.show ? { show: preset.show } : {}) } : {}) };
+}
+
 /** The series a question names, in the order it names them; each phrase counts once. */
 export function seriesInQuestion(question: string): Array<(typeof SERIES_WORDS)[number]> {
   let rest = question;
@@ -181,6 +321,15 @@ export const MAX_LINES = 4;
  * otherwise. `countries` are the plan's countries (named in the question, or the whole watchlist).
  */
 export function chartRequest(question: string, countries: LiveWatchlistItem[], namedCountries: boolean): ChartRequest | null {
+  const preset = presetInQuestion(question);
+  if (preset && countries[0]) {
+    const notes: string[] = [];
+    if (!namedCountries && countries.length > 1) notes.push(`No country was named, so the chart shows ${countries[0].countryName}; name another to see it there`);
+    else if (countries.length > 1) notes.push(`The ${preset.name} is drawn for one country at a time, so this shows ${countries[0].countryName}; ask again for the others`);
+    const req = presetRequest(preset, countries[0], notes);
+    const more = testsInQuestion(question).filter((t) => !req.tests.includes(t));
+    return more.length ? { ...req, tests: [...req.tests, ...more] } : req;
+  }
   const asked = testsInQuestion(question);
   const wantsChart = CHART_WORDS.test(question);
   let words = seriesInQuestion(question);
@@ -228,7 +377,7 @@ function defaultTests(asked: ChartTest[], lines: number): ChartTest[] {
     set.add('leadlag');
   }
   if (lines < 2) for (const t of pairTests) set.delete(t);
-  const order: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling', 'adf', 'hp'];
+  const order: ChartTest[] = ['summary', 'correlation', 'regression', 'leadlag', 'granger', 'rolling', 'adf', 'hp'];
   return order.filter((t) => set.has(t));
 }
 
@@ -236,6 +385,12 @@ function defaultTests(asked: ChartTest[], lines: number): ChartTest[] {
 export function carryChart(question: string, prev: ChartRequest, countries?: LiveWatchlistItem[]): ChartRequest {
   const more = testsInQuestion(question);
   const tf = TRANSFORM_WORDS.find(([re]) => re.test(question))?.[1] ?? prev.transform;
+  const preset = prev.preset && PRESETS.find((p) => p.id === prev.preset);
+  if (preset) {
+    const base = countries?.length ? presetRequest(preset, countries[0]) : { ...prev, notes: [] };
+    const tests = [...new Set<ChartTest>([...prev.tests, ...more])];
+    return { ...base, tests, transform: tf, why: countries?.length ? `the ${preset.name} again, for ${countries[0].countryName}` : 'carried over from your last question (the same chart)' };
+  }
   let series = prev.series;
   const why = countries?.length ? 'the same chart as your last question, for the countries this one names' : 'carried over from your last question (the same chart)';
   if (countries?.length) {
@@ -274,10 +429,10 @@ function unitWord(freq: Freq, n: number): string {
  */
 export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | { reason: string }>): ChartResult {
   const missing: string[] = [];
-  const have: Array<{ ref: ChartSeriesRef; s: FetchedSeries }> = [];
+  const have: Array<{ ref: ChartSeriesRef; s: FetchedSeries; i: number }> = [];
   req.series.forEach((ref, i) => {
     const f = fetched[i];
-    if (f && 'points' in f && f.points.length) have.push({ ref, s: f });
+    if (f && 'points' in f && f.points.length) have.push({ ref, s: f, i });
     else missing.push(`${ref.label}: Missing (${(f && 'reason' in f && f.reason) || 'no data'})`);
   });
   const freq = have.length ? commonFreq(have.map((h) => h.s.points.map((p) => ({ date: p.date, value: p.value })))) : 'annual';
@@ -292,10 +447,42 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
     return { key: `s${i}`, label, unit, axis: units.indexOf(unit) === 0 ? 'left' : 'right', source: s.source, points: pts };
   });
   const notes = [...req.notes];
+  if (req.derived?.length) {
+    // Worked-out lines (real rate, Taylor gap...) on the common frequency, before any transform; drawn first.
+    const level = new Map(have.map((h) => [h.i, new Map(toFreq(h.s.points, freq).map((p) => [p.date, p.value]))]));
+    const made: ChartLine[] = [];
+    req.derived.forEach((d, j) => {
+      const used = d.terms.filter((t) => level.has(t.i));
+      const lost = d.terms.filter((t) => !level.has(t.i));
+      if (lost.some((t) => !t.optional)) {
+        missing.push(`${d.label}: Missing (needs ${lost.filter((t) => !t.optional).map((t) => req.series[t.i]?.label ?? 'a series').join(' and ')})`);
+        return;
+      }
+      for (const t of lost) if (t.optional && !notes.includes(t.optional)) notes.push(t.optional);
+      const dates = [...level.get(used[0].i)!.keys()].filter((dt) => used.every((t) => level.get(t.i)!.has(dt))).sort();
+      const pts = dates.map((dt) => ({ date: dt, value: d.constant + used.reduce((sum, t) => sum + t.k * level.get(t.i)!.get(dt)!, 0) }));
+      if (!pts.length) {
+        missing.push(`${d.label}: Missing (its series share no dates)`);
+        return;
+      }
+      const sources = [...new Set(used.map((t) => have.find((h) => h.i === t.i)!.s.source))].join('; ');
+      made.push({ key: `d${j}`, label: d.label, unit: req.transform === 'level' ? d.unit : units[0] ?? d.unit, axis: 'left', source: `worked out from ${sources}`, points: transform(pts, req.transform, freq) });
+      if (d.method && !notes.includes(d.method)) notes.push(d.method);
+    });
+    if (made.length) {
+      // The worked-out lines take the left axis; the series they come from move to the right.
+      if (req.show) {
+        const keep = new Set(have.filter((h) => req.show!.includes(h.i)).map((h) => lines[have.indexOf(h)]));
+        lines.splice(0, lines.length, ...lines.filter((l) => keep.has(l)));
+      }
+      for (const l of [...made, ...lines]) l.axis = l.unit === made[0].unit ? 'left' : 'right';
+      lines.unshift(...made);
+    }
+  }
   if (units.length > 2) notes.push(`The series have ${units.length} different units, so all but the first share the right-hand axis; ask for z-scores to compare their shapes`);
   if (req.transform !== 'level') notes.push(`Shown as: ${TRANSFORM_LABEL[req.transform].toLowerCase()}`);
   const allDates = lines.flatMap((l) => l.points.map((p) => p.date)).sort();
-  const title = lines.length ? lines.map((l) => l.label).join(' vs ') : req.series.map((s) => s.label).join(' vs ');
+  const title = req.title ?? (lines.length ? lines.map((l) => l.label).join(' vs ') : req.series.map((s) => s.label).join(' vs '));
   const out: ChartResult = { title, freq, transform: req.transform, lines, tests: [], missing, notes, first: allDates[0], last: allDates[allDates.length - 1] };
 
   const [a, b] = lines;
@@ -414,6 +601,32 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
         });
       }
     }
+    if (test === 'summary') {
+      const subject = lines.filter((l) => l.key.startsWith('d'));
+      for (const l of (subject.length ? subject : lines).slice(0, 1)) {
+        const vals = l.points.map((p) => p.value);
+        if (!vals.length) continue;
+        const now = vals[vals.length - 1];
+        const avg = vals.reduce((x, y) => x + y, 0) / vals.length;
+        const below = Math.round((100 * vals.filter((v) => v < now).length) / vals.length);
+        const from = l.points[0].date;
+        const to = l.points[l.points.length - 1].date;
+        const side = Math.abs(now - avg) < 1e-9 ? 'at' : now > avg ? 'above' : 'below';
+        out.tests.push({
+          test,
+          title: `${TEST_TITLE.summary}: ${l.label}`,
+          reading: `${l.label} is ${fmt(now)} ${l.unit} at ${to}, ${side} its average of ${fmt(avg)} ${l.unit} since ${from}, and higher than ${below}% of the ${vals.length} ${freq} points (range ${fmt(Math.min(...vals))} to ${fmt(Math.max(...vals))}).`,
+          figures: [
+            { label: `${l.label}, latest`, value: fmt(now) },
+            { label: `${l.label}, average since ${from}`, value: fmt(avg) },
+            { label: `${l.label}, lowest`, value: fmt(Math.min(...vals)) },
+            { label: `${l.label}, highest`, value: fmt(Math.max(...vals)) },
+            { label: `Share of points below the latest`, value: `${below}%` },
+          ],
+          caution: sampleCaution(vals.length, freq) ?? undefined,
+        });
+      }
+    }
     if (test === 'adf') {
       for (const l of lines.slice(0, 2)) {
         const r = adf(l.points.map((p) => p.value));
@@ -512,6 +725,12 @@ export function chartFinding(req: ChartRequest, result: ChartResult): {
 /** Suggested follow-ups after a chart: the tests not yet run. */
 export function chartFollowUps(req: ChartRequest): string[] {
   const out: string[] = [];
+  if (req.derived?.length) {
+    if (!req.tests.includes('hp')) out.push('Where is it against its trend?');
+    if (!req.tests.includes('adf')) out.push('Is it stationary?');
+    out.push('What does this mean for the next policy move?');
+    return out;
+  }
   if (req.series.length >= 2) {
     if (!req.tests.includes('rolling')) out.push('Is that relationship stable over time?');
     if (!req.tests.includes('granger')) out.push('Does one help predict the other?');
