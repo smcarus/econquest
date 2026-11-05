@@ -82,6 +82,22 @@ full council and saved research.
   answers only. A number check marks any figure it cannot trace to an agent.
 - *Follow-up*: once a conversation has started, the box asks follow-ups. "and the currency?" or
   "what about Egypt?" keeps the last question's countries or agents. Asking the same question later shows what changed since last time.
+- *Explain*: ask why ("why is Brazil's real rate so high?"), what something means ("what does a weak
+  lira mean for households?") or how it feeds through, and the council explains instead of ranking.
+  The answer is split into **Data** (what the figures are, each with a numbered source) and
+  **Interpretation** (why it is where it is, what it means through each lens: monetary policy,
+  public finances, households and firms, trade and external, conflict and politics, markets, and
+  what would change the reading). Name a lens ("for the budget", "for households") to get just that
+  one; otherwise every lens the agents have figures for is covered. A lens with no figures reads
+  *Missing* with the reason. Households and firms are read from inflation, rates and the currency;
+  there are no surveys in the app. The same number check applies: a sentence with a number not in
+  the agents' figures is removed.
+- *Explain on a figure, chart or panel*: an *Explain* link sits beside every figure in an agent
+  document and on the Research pages (point at a row on a wide screen to see it), at the top of
+  each Research panel, and on every chat chart. It sends that exact figure, with its source and
+  date (or the chart's latest points and test results), to Council chat and asks the council to
+  explain it; on Research the chat opens in its side panel. Follow up with "and for households?" to
+  narrow it.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your

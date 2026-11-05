@@ -5,6 +5,8 @@ import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { economistBrief, type CountryBrief } from '../utils/countryNotes';
 import { bankerBrief } from '../utils/bankerNote';
 import { officialBrief } from '../utils/officialNote';
+import { explainInChat } from '../utils/explainHandoff';
+import type { BriefGroup } from '../utils/countryNotes';
 
 export type BriefView = 'economist' | 'banker' | 'official';
 
@@ -70,7 +72,7 @@ export const CountryBriefPanel: React.FC<{
         </header>
         <BriefSummary brief={brief} />
       </section>
-      <BriefGroups brief={brief} />
+      <BriefGroups brief={brief} country={run} />
     </div>
   );
 };
@@ -93,16 +95,44 @@ export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
   </div>
 );
 
-/** The figure tables of a brief, each row with its source under the label. */
-export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
+type BriefRow = BriefGroup['rows'][number];
+
+/** "Explain": asks Council chat what a figure or a whole panel means, with each value as shown and its source. */
+function explainRow(r: BriefRow, c: { iso3: string; countryName: string }) {
+  explainInChat({ kind: 'figure', label: r.label, value: r.value, source: r.source, iso3: c.iso3, countryName: c.countryName });
+}
+function explainPanel(g: BriefGroup, c: { iso3: string; countryName: string }) {
+  const shown = g.rows.filter((r) => !r.missing);
+  explainInChat({
+    kind: 'panel',
+    label: g.title,
+    iso3: c.iso3,
+    countryName: c.countryName,
+    detail: shown.slice(0, 8).map((r) => `${r.label}: ${r.value.slice(0, 160)} [${r.source}]`),
+  });
+}
+
+const EXPLAIN_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover:opacity-100 focus:opacity-100';
+const EXPLAIN_ROW_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover/row:opacity-100 focus:opacity-100';
+
+/**
+ * The figure tables of a brief, each row with its source under the label. With a country, each
+ * figure and each panel gets an Explain link (shown on hover on a wide screen) into Council chat.
+ */
+export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {brief.groups.map((g) => (
-      <section key={g.title} className="ui-panel">
-        <header className="ui-panel-header">
+      <section key={g.title} className="ui-panel group">
+        <header className="ui-panel-header flex items-start justify-between gap-2">
           <h3 className="ui-section-title flex flex-wrap items-center gap-2">
             {g.title}
             <PanelValidationBadge title={g.title} />
           </h3>
+          {country && g.rows.some((r) => !r.missing) && (
+            <button type="button" className={EXPLAIN_LINK} onClick={() => explainPanel(g, country)} title="Ask the council what this panel shows and what it means" data-explain-panel={g.title}>
+              Explain
+            </button>
+          )}
         </header>
         <table className="w-full text-sm">
           <caption className="sr-only">{g.title}</caption>
@@ -118,7 +148,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
                   </td>
                 </tr>
               ) : (
-              <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
+              <tr key={`${r.label}-${r.value}`} className="group/row border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
                 <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
                   {r.label}
                   <span
@@ -131,6 +161,11 @@ export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
                   {r.value}
+                  {country && !r.missing && (
+                    <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title="Ask the council what this figure means and why it is where it is" data-explain-row={r.label}>
+                      Explain
+                    </button>
+                  )}
                 </td>
               </tr>
               ),
