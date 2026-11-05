@@ -13,7 +13,7 @@ import { changeLines, pickPrevious, whatChanged, type ChangeReport } from '../ut
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
-import { DocumentCards, DocumentViewer } from './CouncilDocuments';
+import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
 import {
@@ -337,6 +337,7 @@ export const AskCouncilPanel: React.FC<{
   // The council document open over the page, if any (a card in the chat opens it).
   const [openDoc, setOpenDoc] = useState<CouncilDocument | null>(null);
   const closeDoc = React.useCallback(() => setOpenDoc(null), []);
+  const savedDocIds = useMemo(() => new Set(lib.councilDocs.map((d) => d.id)), [lib.councilDocs]);
 
   // Keep the newest message in view as the conversation grows.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -446,7 +447,14 @@ export const AskCouncilPanel: React.FC<{
         </div>
 
         {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
-        <DocumentCards agents={agentDocs} synthesis={writingNow ? null : synthDoc} writing={writingNow} onOpen={setOpenDoc} />
+        <DocumentCards
+          agents={agentDocs}
+          synthesis={writingNow ? null : synthDoc}
+          writing={writingNow}
+          onOpen={setOpenDoc}
+          savedIds={savedDocIds}
+          onSaveAll={() => void lib.saveCouncilDocs([synthDoc, ...agentDocs])}
+        />
         <p className="text-xs text-slate-500 dark:text-slate-400" data-council-agents="true">
           {withFindings} of {t.asked.answers.length} agents answered with figures.
         </p>
@@ -766,7 +774,7 @@ export const AskCouncilPanel: React.FC<{
           </div>
         </details>
       </form>
-      {openDoc && <DocumentViewer doc={openDoc} items={items} onOpenCountry={(it) => { setOpenDoc(null); onOpenCountry(it); }} onClose={closeDoc} />}
+      {openDoc && <DocumentViewer doc={openDoc} items={items} onOpenCountry={(it) => { setOpenDoc(null); onOpenCountry(it); }} onClose={closeDoc} actions={<SaveToReportsButton saved={savedDocIds.has(openDoc.id)} onSave={() => void lib.saveCouncilDocs([openDoc])} />} />}
     </section>
   );
 };

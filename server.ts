@@ -36,12 +36,12 @@ import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, type ModelAttempt } from './src/utils/modelFailure';
-import { documentsAsText, toAgentDocuments } from './src/utils/agentDocument';
+import { documentsAsText, isCouncilDocument, toAgentDocuments, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
-import { addBrief, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
+import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
@@ -3371,6 +3371,21 @@ async function startServer() {
   app.delete('/api/research/briefs/:id', (req, res) => {
     if (refuseRemoteResearch(req, res)) return;
     writeResearch(res, (lib) => removeBrief(lib, req.params.id));
+  });
+  // Standard council documents (agent and synthesis) saved to Reports from Council chat.
+  app.get('/api/research/council-docs/:id', (req, res) => {
+    const d = loadLibrary(RESEARCH_FILE).councilDocs.find((x) => x.id === req.params.id);
+    return d ? res.json(d) : res.status(404).json({ error: 'No saved council document with that id.' });
+  });
+  app.post('/api/research/council-docs', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const list: unknown[] = Array.isArray(req.body?.documents) ? req.body.documents.slice(0, 12) : [req.body];
+    if (!list.length || !list.every(isCouncilDocument)) return res.status(400).json({ error: 'A standard council document is needed.' });
+    writeResearch(res, (lib) => list.reduce((l: typeof lib, d) => addCouncilDoc(l, d as CouncilDocument), lib), { ids: list.map((d) => (d as CouncilDocument).id) });
+  });
+  app.delete('/api/research/council-docs/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    writeResearch(res, (lib) => removeCouncilDoc(lib, req.params.id));
   });
   app.get('/api/research/docs/:id', (req, res) => {
     const d = loadLibrary(RESEARCH_FILE).docs.find((x) => x.id === req.params.id);

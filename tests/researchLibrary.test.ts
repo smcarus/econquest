@@ -21,8 +21,8 @@ test('documents: same id replaces, capped, and a broken file reads as empty', ()
   assert.equal(lib.docs[0].id, `d${MAX_SAVED_DOCS + 2}`);
   lib = addDoc(lib, { id: 'd5', title: 'New title', text: 'text', addedAt: '2026-11-05' });
   assert.equal(lib.docs.filter((d) => d.id === 'd5').length, 1);
-  assert.deepEqual(parseLibrary(null), { briefs: [], docs: [], notebooks: [], episodes: [] });
-  assert.deepEqual(parseLibrary({ briefs: [{ nope: 1 }], docs: [{ id: 'x', title: 't', text: '' }] }), { briefs: [], docs: [], notebooks: [], episodes: [] });
+  assert.deepEqual(parseLibrary(null), { briefs: [], docs: [], notebooks: [], episodes: [], councilDocs: [] });
+  assert.deepEqual(parseLibrary({ briefs: [{ nope: 1 }], docs: [{ id: 'x', title: 't', text: '' }] }), { briefs: [], docs: [], notebooks: [], episodes: [], councilDocs: [] });
 });
 
 test('notebooks: group conversations and documents by topic; deleting an item takes it out', async () => {

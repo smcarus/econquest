@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Copy, Download, FileText, X } from 'lucide-react';
+import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
+import { useResearchLibrary } from './SavedResearch';
 import type { LiveWatchlistItem } from '../types/council';
 import type { FigureTag } from '../utils/askCouncil';
 import { documentMarkdown, documentSections, type AgentDocument, type CouncilDocument, type CoverageLevel, type SynthesisDocument } from '../utils/agentDocument';
@@ -73,9 +74,23 @@ export const DocumentCards: React.FC<{
   /** The synthesis agent is still writing. */
   writing?: boolean;
   onOpen: (d: CouncilDocument) => void;
-}> = ({ agents, synthesis, writing, onOpen }) => (
+  /** Saves every document of this answer to Reports. */
+  onSaveAll?: () => void;
+  /** Ids already saved to Reports. */
+  savedIds?: ReadonlySet<string>;
+}> = ({ agents, synthesis, writing, onOpen, onSaveAll, savedIds }) => {
+  const all = [...(synthesis && !writing ? [synthesis] : []), ...agents];
+  const allSaved = all.length > 0 && all.every((d) => savedIds?.has(d.id));
+  return (
   <div className="space-y-1.5" data-council-documents={agents.length}>
-    <div className="ui-label">Documents</div>
+    <div className="flex flex-wrap items-center justify-between gap-2">
+      <div className="ui-label">Documents</div>
+      {onSaveAll && all.length > 0 && (
+        <button type="button" className="text-xs text-blue-700 dark:text-blue-300 hover:underline disabled:text-slate-500 disabled:no-underline" onClick={onSaveAll} disabled={allSaved || writing} data-council-docs-save-all="true">
+          {allSaved ? 'All saved to Reports' : 'Save all to Reports'}
+        </button>
+      )}
+    </div>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
       {writing ? (
         <div className="border border-dashed border-slate-300 dark:border-slate-600 px-2.5 py-2 text-xs text-slate-500 dark:text-slate-400" data-council-doc-card="synthesis-writing">
@@ -108,7 +123,8 @@ export const DocumentCards: React.FC<{
       ))}
     </div>
   </div>
-);
+  );
+};
 
 /** **bold** and plain text; nothing else is interpreted. */
 function inline(text: string): React.ReactNode {
@@ -250,5 +266,87 @@ export const DocumentViewer: React.FC<{
         </div>
       </div>
     </div>
+  );
+};
+
+/** A Save to Reports button for the viewer. */
+export const SaveToReportsButton: React.FC<{ saved: boolean; onSave: () => void }> = ({ saved, onSave }) => (
+  <button type="button" className="ui-btn ui-btn-primary" onClick={onSave} disabled={saved} data-council-doc-save="true">
+    <FileText className="w-4 h-4" aria-hidden /> {saved ? 'Saved to Reports' : 'Save to Reports'}
+  </button>
+);
+
+/**
+ * Reports > Council documents: the agent and synthesis documents saved from Council chat, kept in
+ * data/local/research.json, grouped by question, newest first.
+ */
+export const SavedCouncilDocuments: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry: (it: LiveWatchlistItem) => void }> = ({ items, onOpenCountry }) => {
+  const lib = useResearchLibrary();
+  const [open, setOpen] = useState<CouncilDocument | null>(null);
+  const close = React.useCallback(() => setOpen(null), []);
+  const groups: Array<{ key: string; question: string; askedAt: string; scope: string; docs: typeof lib.councilDocs }> = [];
+  for (const d of lib.councilDocs) {
+    const key = `${d.askedAt}|${d.question}`;
+    const g = groups.find((x) => x.key === key);
+    if (g) g.docs.push(d);
+    else groups.push({ key, question: d.question, askedAt: d.askedAt, scope: d.scope, docs: [d] });
+  }
+  for (const g of groups) g.docs.sort((a, b) => (a.kind === b.kind ? a.author.localeCompare(b.author) : a.kind === 'synthesis' ? -1 : 1));
+  return (
+    <section className="ui-panel p-4 space-y-3" data-saved-council-docs={lib.councilDocs.length}>
+      <div>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Council documents</h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          Agent and synthesis documents you saved from Council chat, each in the standard template. Kept on this computer in data/local/research.json.
+        </p>
+      </div>
+      {lib.error && <p className="text-xs text-amber-700 dark:text-amber-400">{lib.error}</p>}
+      {!groups.length ? (
+        <p className="text-sm text-slate-600 dark:text-slate-300">None saved yet. Open a document card under a council answer and choose Save to Reports.</p>
+      ) : (
+        <ul className="space-y-3">
+          {groups.map((g) => (
+            <li key={g.key} className="border-t border-slate-200 dark:border-slate-700 pt-2">
+              <p className="text-sm font-medium text-slate-900 dark:text-white">{g.question}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Asked {g.askedAt.slice(0, 16).replace('T', ' ')} UTC about {g.scope}
+              </p>
+              <ul className="mt-1.5 grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                {g.docs.map((d) => (
+                  <li key={d.id} className="flex items-stretch">
+                    <button
+                      type="button"
+                      className="flex-1 min-w-0 flex items-start gap-2 text-left border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 hover:border-blue-400 dark:hover:border-blue-500"
+                      onClick={() => void lib.loadCouncilDoc(d.id).then((doc) => doc && setOpen(doc))}
+                      data-saved-council-doc={d.id}
+                    >
+                      <FileText className="w-4 h-4 mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
+                      <span className="min-w-0">
+                        <span className="block text-sm text-slate-900 dark:text-white truncate">{d.author}</span>
+                        <span className="block text-xs text-slate-500 dark:text-slate-400">{d.status}</span>
+                      </span>
+                    </button>
+                    <button type="button" className="ui-btn border-l-0" onClick={() => void lib.deleteCouncilDoc(d.id)} aria-label={`Delete ${d.author} document`} title="Delete from Reports">
+                      <Trash2 className="w-4 h-4" aria-hidden />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </li>
+          ))}
+        </ul>
+      )}
+      {open && (
+        <DocumentViewer
+          doc={open}
+          items={items}
+          onOpenCountry={(it) => {
+            setOpen(null);
+            onOpenCountry(it);
+          }}
+          onClose={close}
+        />
+      )}
+    </section>
   );
 };
