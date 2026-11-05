@@ -119,6 +119,8 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
     delete out.policyRateStale;
     delete out.policyRateChange12mPts;
     delete out.policyRateLastMove;
+    delete out.policyRateMoves;
+    delete out.policyRateHistoryFrom;
   }
   return out;
 }

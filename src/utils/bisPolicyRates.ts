@@ -145,6 +145,10 @@ export interface BisPolicyRate {
   change12mPts?: number;
   /** The latest month-end the rate differed from the month before (from the monthly series). */
   lastMove?: { period: string; fromPct: number; toPct: number };
+  /** Every move in the history read (month-end to month-end, plus one after the last month-end), oldest first. */
+  moves?: { period: string; fromPct: number; toPct: number }[];
+  /** First month of the monthly history read, so "no move since" can say how far back it looked. */
+  historyFrom?: string;
   /** True when the latest figure is older than CBPOL_STALE_DAYS. */
   stale: boolean;
   pulledAt: string;
@@ -182,18 +186,13 @@ export function policyRateFor(iso3: string, pull: CbpolPull | null | undefined, 
     if (prior) change12mPts = round(latest.pct - prior.pct);
   }
 
-  let lastMove: BisPolicyRate['lastMove'];
-  if (useDaily && lastM && Math.abs(lastD!.pct - lastM.pct) > 1e-9) {
-    // Moved after the last month-end in the monthly series: in the daily figure's month.
-    lastMove = { period: lastD!.period.slice(0, 7), fromPct: lastM.pct, toPct: lastD!.pct };
-  } else {
-    for (let i = months.length - 1; i > 0; i--) {
-      if (Math.abs(months[i].pct - months[i - 1].pct) > 1e-9) {
-        lastMove = { period: months[i].period, fromPct: months[i - 1].pct, toPct: months[i].pct };
-        break;
-      }
-    }
+  const moves: NonNullable<BisPolicyRate['moves']> = [];
+  for (let i = 1; i < months.length; i++) {
+    if (Math.abs(months[i].pct - months[i - 1].pct) > 1e-9) moves.push({ period: months[i].period, fromPct: months[i - 1].pct, toPct: months[i].pct });
   }
+  // Moved after the last month-end in the monthly series: in the daily figure's month.
+  if (useDaily && lastM && Math.abs(lastD!.pct - lastM.pct) > 1e-9) moves.push({ period: lastD!.period.slice(0, 7), fromPct: lastM.pct, toPct: lastD!.pct });
+  const lastMove: BisPolicyRate['lastMove'] = moves[moves.length - 1];
 
   const src = (useDaily ? d : m) || d || m;
   return {
@@ -206,6 +205,7 @@ export function policyRateFor(iso3: string, pull: CbpolPull | null | undefined, 
     ...(src?.rate || d?.rate || m?.rate ? { rate: src?.rate || d?.rate || m?.rate } : {}),
     ...(change12mPts !== undefined ? { change12mPts } : {}),
     ...(lastMove ? { lastMove } : {}),
+    ...(months.length ? { moves, historyFrom: months[0].period } : {}),
     stale: ageDays(latest.period, now) > CBPOL_STALE_DAYS,
     pulledAt: pull.pulledAt,
   };

@@ -66,6 +66,14 @@ export interface CliReading {
   change1m?: number;
   change6m?: number;
   phase?: CliPhase;
+  /** First month of the current phase, read back through the series (calendar months, no gaps). */
+  phaseSince?: string;
+  /** Months the current phase has lasted, counting the latest month. */
+  monthsInPhase?: number;
+  /** True when the phase began at the start of the series read, so it may have begun earlier. */
+  phaseSinceAtStart?: boolean;
+  /** Latest turning point: the month the indicator peaked or bottomed, with two months one way before it and two months the other way after. */
+  lastTurn?: { month: string; kind: 'peak' | 'trough'; level: number };
 }
 
 export function cliFor(iso3: string, series: CliSeries | null | undefined): CliReading | null {
@@ -82,13 +90,48 @@ export function cliFor(iso3: string, series: CliSeries | null | undefined): CliR
   const six = back(6);
   const r2 = (v: number) => Number(v.toFixed(2));
   const change1m = prev ? r2(last.value - prev.value) : undefined;
+  const hist = cliHistory(pts);
   return {
     iso3,
     month: last.period,
     level: r2(last.value),
     ...(change1m !== undefined ? { change1m, phase: cliPhase(last.value, change1m) } : {}),
     ...(six ? { change6m: r2(last.value - six.value) } : {}),
+    ...hist,
   };
+}
+
+const nextMonth = (p: string) => {
+  const [y, m] = p.split('-').map(Number);
+  return new Date(Date.UTC(y, m, 1)).toISOString().slice(0, 7);
+};
+
+/**
+ * How long the current phase has lasted and the latest turning point, from the unbroken run of
+ * calendar months that ends at the latest figure (a gap ends the run: nothing is read across it).
+ */
+export function cliHistory(pts: { period: string; value: number }[]): Pick<CliReading, 'phaseSince' | 'monthsInPhase' | 'phaseSinceAtStart' | 'lastTurn'> {
+  let start = pts.length - 1;
+  while (start > 0 && nextMonth(pts[start - 1].period) === pts[start].period) start--;
+  const run = pts.slice(start);
+  if (run.length < 2) return {};
+  const steps = run.slice(1).map((p, i) => ({ period: p.period, level: p.value, change: p.value - run[i].value }));
+  const phases = steps.map((s) => cliPhase(s.level, s.change));
+  const now = phases[phases.length - 1];
+  let i = phases.length - 1;
+  while (i > 0 && phases[i - 1] === now) i--;
+  const out: ReturnType<typeof cliHistory> = { phaseSince: steps[i].period, monthsInPhase: phases.length - i, ...(i === 0 ? { phaseSinceAtStart: true } : {}) };
+  // Turning point: two months one way, then two months the other way. A one-month reversal is not
+  // counted on either side, so a single wobble is never called a turn.
+  for (let k = steps.length - 2; k > 0; k--) {
+    const a = steps[k - 1].change;
+    const b = steps[k].change;
+    if (Math.sign(steps[k + 1].change) !== Math.sign(b)) continue;
+    if (k < 2 || Math.sign(steps[k - 2].change) !== Math.sign(a)) continue;
+    if (a > 0 && b < 0) return { ...out, lastTurn: { month: steps[k - 1].period, kind: 'peak', level: Number(steps[k - 1].level.toFixed(2)) } };
+    if (a < 0 && b > 0) return { ...out, lastTurn: { month: steps[k - 1].period, kind: 'trough', level: Number(steps[k - 1].level.toFixed(2)) } };
+  }
+  return out;
 }
 
 /** Why a country has no CLI figure: the OECD answered without it, or did not answer. */

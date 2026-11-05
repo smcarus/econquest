@@ -2018,6 +2018,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
                 policyRateStale: bisRate.stale,
                 ...(bisRate.change12mPts !== undefined ? { policyRateChange12mPts: bisRate.change12mPts } : {}),
                 ...(bisRate.lastMove ? { policyRateLastMove: bisRate.lastMove } : {}),
+                ...(bisRate.moves ? { policyRateMoves: bisRate.moves, policyRateHistoryFrom: bisRate.historyFrom } : {}),
               }
             : { policyRateSource: 'sample' }),
           debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
