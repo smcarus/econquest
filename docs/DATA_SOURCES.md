@@ -37,6 +37,7 @@ estimated, invented or taken from built-in sample values.
 | Spot FX | Exchange rates against the dollar | open.er-api.com (backup: Frankfurter) | 3 min |
 | ECB rates (Frankfurter) | FX volatility; last year's closing rate for the year-to-date move | api.frankfurter.dev | 12 h |
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
+| BIS central bank policy rates | Policy rate per country with its date and central bank, the 12-month change and the last move | stats.bis.org | 12 h, on disk |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
@@ -71,6 +72,15 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+
+- **BIS central bank policy rates** (dataset `WS_CBPOL`) come from each central bank through the
+  BIS, daily for most countries. The app asks twice for every country at once: the latest daily
+  figure, and about 25 months of month-end figures for the change over 12 months and when the
+  rate last moved. It keeps both on disk (`data/live/bis-policy-rates.json`) and asks again after
+  12 hours. Every figure carries its date and the central bank's name; a figure more than 45 days
+  old is flagged as possibly out of date. The US figure is the mid-point of the Fed's target
+  range; the EU benchmark uses the ECB deposit rate. Egypt is not in the dataset and reads Missing
+  for that reason. `GET /api/data/policy-rates` lists what the app holds for each country.
 
 ## Free, with your own key
 

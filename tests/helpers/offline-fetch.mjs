@@ -11,6 +11,8 @@ const TESOURO_CSV = [
   'Tesouro Prefixado com Juros Semestrais;01/01/2035;30/10/2026;14,90;15,02;850,10;845,22;845,01',
 ].join('\r\n');
 
+import { CBPOL_DAILY_LIVE, CBPOL_MONTHLY } from '../fixtures/bisCbpol.mjs';
+
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -82,6 +84,9 @@ globalThis.fetch = async (input, init = {}) => {
       });
     }
   }
+  // BIS central bank policy rates: the live daily rows (UK, Mexico, US, euro area) and the monthly fixture.
+  if (url.includes('stats.bis.org') && url.includes('/WS_CBPOL/D.')) return new Response(CBPOL_DAILY_LIVE, { status: 200 });
+  if (url.includes('stats.bis.org') && url.includes('/WS_CBPOL/M.')) return new Response(CBPOL_MONTHLY, { status: 200 });
   // BIS debt securities (CSV): answer for Indonesia (ID) only, values from the live 2026-11-04 answers.
   if (url.includes('stats.bis.org') && url.includes('/WS_DEBT_SEC2_PUB/Q.ID.')) {
     const head =

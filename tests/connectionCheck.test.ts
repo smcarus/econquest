@@ -35,6 +35,10 @@ const healthy: FetchFn = async (url) => {
     return new Response([head, ...rows].join('\n'));
   }
   if (url.includes('WS_DEBT_SEC2_PUB')) return new Response('nothing usable');
+  if (url.includes('WS_CBPOL/D.BR/'))
+    return new Response(
+      'FREQ,REF_AREA,UNIT_MEASURE,UNIT_MULT,TIME_FORMAT,COMPILATION,DECIMALS,SOURCE_REF,SUPP_INFO_BREAKS,TITLE,TIME_PERIOD,OBS_VALUE,OBS_STATUS,OBS_CONF,OBS_PRE_BREAK\nD,BR,368,0,,From 5 Mar 1999 onwards: SELIC target rate.,4,Central Bank of Brazil,, Central bank policy rates - Brazil - Daily - End of period,2026-10-27,15,A,F,\n'
+    );
   if (url.includes('wits.worldbank.org')) return new Response('<Obs TIME_PERIOD="2023" OBS_VALUE="30.71" />');
   if (url.includes('publicreporting.cftc.gov'))
     return json([
@@ -65,6 +69,8 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.match(row('wits').sample!, /30\.7%/);
   assert.match(row('bis_reer').sample!, /real exchange rate/);
   assert.equal(row('cftc').state, 'connected');
+  assert.equal(row('bis_cbpol').state, 'connected');
+  assert.equal(row('bis_cbpol').sample, 'Brazil policy rate 15.00% (Central Bank of Brazil, 2026-10-27)');
   assert.match(row('tic').sample!, /Brazil holds \$168\.4bn of US Treasuries \(Aug 2026\)/);
   assert.match(row('cftc').sample!, /Leveraged funds net MXN \+24\.5% of open interest \(as of 2026-10-27, 2 weeks\)/);
   assert.equal(row('worldbank_debt').state, 'connected', 'an empty but valid reply still proves the connection');

@@ -14,6 +14,7 @@
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
+import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
 import { idsUrl, parseIds } from './debtSchedule';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl } from './fxValuation';
 import {
@@ -223,6 +224,7 @@ export const SOURCE_IDS = [
   'frankfurter',
   'bis_reer',
   'bis_debt',
+  'bis_cbpol',
   'wits',
   'cftc',
   'tic',
@@ -412,6 +414,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const d = parseBisIntl(r.text);
         return d ? `${SAMPLE_NAME} international government bonds $${fmt(d.outstandingUsdBn)}bn (${d.asOf})` : null;
       }
+    )
+  );
+
+  add('bis_cbpol', () =>
+    httpCheck(
+      { id: 'bis_cbpol', name: 'BIS central bank policy rates', group: 'free', feeds: 'Policy rate per country, daily, with the central bank and the date' },
+      fetchFn,
+      cbpolDailyUrl([CBPOL_AREA[SAMPLE_ISO3]]),
+      Math.max(T, 15000),
+      (r) => {
+        const p = policyRateFor(SAMPLE_ISO3, { pulledAt: now.toISOString(), daily: parseCbpolCsv(r.text, 'D'), monthly: {} }, now);
+        return p ? `${SAMPLE_NAME} policy rate ${fmt(p.ratePct, 2)}% (${p.bank ? `${p.bank}, ` : ''}${p.date})` : null;
+      },
+      undefined,
+      'The BIS answered, but with no Brazil policy-rate rows the app could read. The dataset format may have changed.'
     )
   );
 

@@ -6,7 +6,7 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -270,12 +270,33 @@ test('council progress: each step reports as it finishes, honestly marked when n
   assert.deepEqual((await (await fetch(`${base}/api/council/progress/nope-nope`)).json()).steps, {});
 });
 
+test('policy rates: BIS figures with their dates, kept on disk; missing countries say why', async () => {
+  const res = await fetch(`${base}/api/data/policy-rates`);
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { pulledAt: string; rows: Array<{ iso3: string; rate?: any; missing?: { short: string } }> };
+  const row = (iso3: string) => body.rows.find((r) => r.iso3 === iso3)!;
+  assert.ok(body.pulledAt);
+  assert.equal(row('MEX').rate.ratePct, 6.5);
+  assert.equal(row('MEX').rate.date, '2026-10-27');
+  assert.equal(row('MEX').rate.bank, 'Bank of Mexico');
+  assert.equal(row('USA').rate.ratePct, 3.875);
+  assert.equal(row('EUU').rate.ratePct, 2.5);
+  assert.equal(row('TUR').rate.date, '2026-09');
+  assert.equal(row('EGY').missing!.short, 'Not in BIS policy rates');
+  assert.equal(row('BRA').missing!.short, 'No BIS series returned');
+  const file = path.join(dataDir, 'live', 'bis-policy-rates.json');
+  assert.ok(existsSync(file));
+  const saved = JSON.parse(readFileSync(file, 'utf8'));
+  assert.equal(saved.daily.MX.points[0].pct, 6.5);
+  assert.equal(saved.pulledAt, body.pulledAt);
+});
+
 test('data connections: every source gets a row; keys are never in the reply', async () => {
   const res = await fetch(`${base}/api/data/connections?refresh=1`);
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 22);
+  assert.equal(rep.results.length, 23);
   // The offline fixtures answer FRED's download, Brazil's Treasury and EVDS; everything else is down.
   assert.equal(row('fred_csv').state, 'connected');
   assert.equal(row('tesouro').state, 'connected');
