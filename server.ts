@@ -3021,6 +3021,8 @@ async function startServer() {
   const keysReply = (req: express.Request) => ({
     keys: describeKeys(ENV_FILE_KEYS, savedSettings),
     canEdit: isLocalRequest(req.socket.remoteAddress, process.env),
+    requestFrom: req.socket.remoteAddress || '',
+    inDocker: process.env.SELF_HOSTED_DOCKER === 'true',
     savedIn: path.relative(__dirname, SETTINGS_FILE).startsWith('..') ? SETTINGS_FILE : path.relative(__dirname, SETTINGS_FILE),
   });
   const runKeyCheck = async (id: string, env: Record<string, string | undefined>, sources: Record<string, 'app' | 'env' | 'none'>) => {
@@ -3031,7 +3033,7 @@ async function startServer() {
   };
   const refuseRemote = (req: express.Request, res: express.Response): boolean => {
     if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
-    res.status(403).json({ error: 'Keys can only be changed from the computer running the app. For Docker, set SETTINGS_ALLOW_REMOTE="true" in .env.' });
+    res.status(403).json({ error: `Keys can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}). Under Docker, pull the latest docker-compose.yml and rebuild, or set SETTINGS_ALLOW_REMOTE="true" in .env.` });
     return true;
   };
   app.get('/api/settings/keys', (req, res) => res.json(keysReply(req)));
