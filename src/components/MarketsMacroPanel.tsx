@@ -82,7 +82,7 @@ export const MarketsMacroPanel: React.FC<{
         sec.groups.length ? (
           <div key={sec.title} className="space-y-2">
             <h3 className="ui-section-title pt-2">{sec.title}</h3>
-            <BriefGroups brief={{ ...brief, groups: sec.groups }} />
+            <BriefGroups brief={{ ...brief, groups: sec.groups }} country={run} />
           </div>
         ) : null
       )}
