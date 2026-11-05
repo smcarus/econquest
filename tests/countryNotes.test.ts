@@ -99,3 +99,19 @@ test('country note: all sections by default, switched-off sections left out', ()
   const fiscal = all.find((s) => s.id === 'fiscal')!;
   assert.ok(fiscal.lines.every((l) => /: Missing \(.+\)$|\((IMF WEO|model, from figures above|official, .+)\)$/.test(l)), fiscal.lines.join('\n'));
 });
+
+test('saved figures carry their period: IMF figures name the WEO year, spot FX the day it was read', async () => {
+  const { liveRow } = await import('../src/utils/countryNotes.ts');
+  const run = runFor('BRA', ['IMF DataMapper WEO', 'ExchangeRate-API Spot FX (Live)'], (s) => {
+    s.imfIndicators.cpiInflationPct = 5;
+    s.imfIndicators.years = { 'imf.cpiInflationPct': '2025' };
+    s.monetaryAndMarket.exchangeRatePerUsd = 5.469;
+    s.fetchedAt = '2026-11-05T19:58:05.643Z';
+    s.liveFields = { 'imf.cpiInflationPct': 'IMF WEO', 'market.exchangeRatePerUsd': 'ExchangeRate-API' };
+  });
+  const st = getSnapshotDataStatus(run.openData);
+  assert.equal(liveRow(st, 'CPI', 'imf.cpiInflationPct', String, run.openData).source, 'IMF WEO, 2025');
+  const fx = liveRow(st, 'FX', 'market.exchangeRatePerUsd', String, run.openData).source;
+  assert.match(fx, /^FX spot, .*2026/);
+  assert.doesNotMatch(fx, /live/);
+});

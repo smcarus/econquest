@@ -1764,6 +1764,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
           const cpi = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof cpi === 'number') {
             baseline.imfIndicators.cpiInflationPct = Number(cpi.toFixed(2)); markLive('imf.cpiInflationPct', 'IMF WEO');
+            (baseline.imfIndicators.years ||= {})['imf.cpiInflationPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
             imfHit = true;
           }
         } else if (metric === 'NGDP_RPCH') {

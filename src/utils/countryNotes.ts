@@ -52,9 +52,18 @@ function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAsse
   if (path === 'market.sovereign10YBondYieldPct' && status.officialYield) return `official, ${describeOfficialYield(status.officialYield).when}`;
   if (path === 'market.cds5YSpreadBps' && status.ownCds) return `your ${status.ownCds.source} data, ${formatPeriod(status.ownCds.date)}`;
   const tag = open?.liveFields?.[path];
-  if (path.startsWith('imf.')) return tag || 'IMF WEO';
+  if (path.startsWith('imf.')) {
+    // The WEO year the figure is for, so a saved figure is read with its period ("IMF WEO, 2025").
+    const year = open?.imfIndicators?.years?.[path];
+    const base = tag || 'IMF WEO';
+    return year && !base.includes(year) ? `${base}, ${year}` : base;
+  }
   if (path.startsWith('wb.')) return tag || 'World Bank';
-  if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx')) return tag?.includes('kept from the') ? tag : 'live FX';
+  if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx')) {
+    if (tag?.includes('kept from the')) return tag;
+    const day = String(open?.fetchedAt || '').slice(0, 10);
+    return /^\d{4}-\d{2}-\d{2}$/.test(day) ? `FX spot, ${formatPeriod(day)}` : 'FX spot';
+  }
   return tag || 'live feed';
 }
 

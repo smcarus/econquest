@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { RESEARCH_SECTIONS, sourcesGrid } from '../utils/researchSections';
+import { useOnlineStatus } from './OfflineData';
 
 /** The section menu, the same on every Research scope. Extra tabs (the specialist desks) follow a divider. */
 export const ResearchSectionNav: React.FC<{
@@ -82,19 +83,32 @@ export const ResearchHeader: React.FC<{
   </div>
 );
 
-/** "Live data for 3 of 5 countries", or the honest empty state. */
+/** "Live data for 3 of 5 countries" ("Offline: saved data for ..." without feeds), or the honest empty state. */
 export const LiveCountBadge: React.FC<{ items: LiveWatchlistItem[] }> = ({ items }) => {
   const live = items.filter((w) => w.dataMode === 'live' || w.dataMode === 'partial').length;
+  const net = useOnlineStatus();
+  // Offline the figures are the last saved pull: say so, never "Live data".
+  const offline = !!net && !net.online;
   return (
     <p
       className={`text-xs px-2 py-1 border ${
-        live === 0
+        live === 0 || offline
           ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
           : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900'
       }`}
-      title="A country counts as live when at least one public data feed answered on its last pull."
+      title={
+        offline
+          ? 'The feeds cannot be reached from this computer. A country counts when at least one public data feed answered on its last saved pull.'
+          : 'A country counts as live when at least one public data feed answered on its last pull.'
+      }
     >
-      {items.length === 0 ? 'No countries yet' : live === 0 ? 'No live data yet: figures read Missing until a source answers' : `Live data for ${live} of ${items.length} countries`}
+      {items.length === 0
+        ? 'No countries yet'
+        : live === 0
+          ? 'No live data yet: figures read Missing until a source answers'
+          : offline
+            ? `Offline: saved data for ${live} of ${items.length} countries`
+            : `Live data for ${live} of ${items.length} countries`}
     </p>
   );
 };
