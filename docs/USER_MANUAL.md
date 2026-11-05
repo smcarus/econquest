@@ -165,6 +165,13 @@ Markdown file: your notes, each conversation as its full council brief with sour
 and the opening of each document. Deleting a notebook keeps the conversations and documents; deleting
 a conversation takes it out of every notebook. Kept in `data/local/research.json`.
 
+**Teaching episodes.** Below the notebooks. Give an episode a title, a country and a past decision
+date (the moves listed under *Replicate a rate decision* make good dates), and write the questions,
+one per line. *Student handout* is a Markdown file with the data as it stood the week before (policy
+rate, latest inflation, target, leading indicator, each with its source and the replay's caveats) and
+the questions. *Teacher copy* adds what the bank did, the Taylor rule reading and your notes. Episodes
+hold no figures of their own; the handout reads them from the app's series when you download it.
+
 ---
 
 ## 5. Tools

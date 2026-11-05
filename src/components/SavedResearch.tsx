@@ -3,13 +3,14 @@ import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { downloadCouncilBrief } from '../utils/briefExport';
 import { councilBriefSections, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
 import type { PolicyDoc } from '../utils/policyDocs';
-import type { BriefSummary, DocSummary, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
+import type { BriefSummary, DocSummary, Episode, EpisodeInput, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
 
 /** The research library on this computer (data/local/research.json), through the app server. */
 export function useResearchLibrary() {
   const [briefs, setBriefs] = useState<BriefSummary[]>([]);
   const [docs, setDocs] = useState<DocSummary[]>([]);
   const [notebooks, setNotebooks] = useState<NotebookSummary[]>([]);
+  const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [error, setError] = useState('');
   const refresh = useCallback(async () => {
     try {
@@ -19,6 +20,7 @@ export function useResearchLibrary() {
       setBriefs(Array.isArray(j.briefs) ? j.briefs : []);
       setDocs(Array.isArray(j.docs) ? j.docs : []);
       setNotebooks(Array.isArray(j.notebooks) ? j.notebooks : []);
+      setEpisodes(Array.isArray(j.episodes) ? j.episodes : []);
       setError('');
     } catch (e: any) {
       setError(`Saved research could not be read (${e?.message || 'the app server did not answer'}).`);
@@ -54,8 +56,15 @@ export function useResearchLibrary() {
     briefs,
     docs,
     notebooks,
+    episodes,
     error,
     refresh,
+    createEpisode: async (input: EpisodeInput): Promise<string | null> => {
+      const j = await send('POST', '/api/research/episodes', input);
+      return typeof j?.id === 'string' ? j.id : null;
+    },
+    updateEpisode: async (id: string, input: EpisodeInput) => (await send('PUT', `/api/research/episodes/${encodeURIComponent(id)}`, input)) !== null,
+    deleteEpisode: async (id: string) => (await send('DELETE', `/api/research/episodes/${encodeURIComponent(id)}`)) !== null,
     createNotebook: async (title: string, briefIds?: string[]): Promise<string | null> => {
       const j = await send('POST', '/api/research/notebooks', { title, ...(briefIds ? { briefIds } : {}) });
       return typeof j?.id === 'string' ? j.id : null;

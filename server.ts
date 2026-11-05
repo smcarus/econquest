@@ -35,7 +35,8 @@ import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, ans
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
-import { addBrief, addDoc, addNotebook, briefId, isBrief, isDoc, removeBrief, removeDoc, removeNotebook, summarise, updateNotebook } from './src/utils/researchLibrary';
+import { addBrief, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
+import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
@@ -3405,6 +3406,36 @@ async function startServer() {
     const hit = (await worldSeries()).find((s) => s.id === req.params.id);
     if (!hit) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id} for world prices.` });
     res.json(hit);
+  });
+  // Teaching episodes: a country, a past date and a question set, kept with saved research.
+  app.post('/api/research/episodes', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const made = addEpisode(loadLibrary(RESEARCH_FILE), req.body || {});
+    if ('error' in made) return res.status(400).json({ error: made.error });
+    writeResearch(res, () => made.lib, { id: made.id });
+  });
+  app.put('/api/research/episodes/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const next = updateEpisode(loadLibrary(RESEARCH_FILE), req.params.id, req.body || {});
+    if (!next) return res.status(404).json({ error: 'No episode with that id.' });
+    writeResearch(res, () => next);
+  });
+  app.delete('/api/research/episodes/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    writeResearch(res, (lib) => removeEpisode(lib, req.params.id));
+  });
+  app.get('/api/export/episode/:id.md', async (req, res) => {
+    const ep = loadLibrary(RESEARCH_FILE).episodes.find((e) => e.id === req.params.id);
+    if (!ep) return res.status(404).json({ error: 'No episode with that id.' });
+    const set = await seriesFor(ep.iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const policy = pick('policy_rate');
+    const replay = replayDecision({ iso3: ep.iso3, date: ep.date, policy, cpi: pick('cpi_monthly'), cli: pick('cli'), target: INFLATION_TARGETS[ep.iso3] });
+    const teacher = req.query.teacher === '1';
+    const name = (await fetchLiveOpenDataSnapshot(ep.iso3, undefined, { cacheOnly: true }).catch(() => null))?.countryName || ep.iso3;
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${episodeFileName(ep, teacher)}"`);
+    res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {
