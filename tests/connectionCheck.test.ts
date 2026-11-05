@@ -5,6 +5,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkConnections, describeNetworkError, formatReport, type FetchFn } from '../src/utils/connectionCheck.ts';
+import { makeXlsx, pinkSheetRows } from './helpers/makeXlsx.ts';
+
+const PINK_XLSX = makeXlsx('Monthly Prices', pinkSheetRows([{ code: 'CRUDE_BRENT', heading: 'Crude oil, Brent', unit: '$/bbl', values: Array.from({ length: 46 }, (_, i) => 60 + i) }]));
+const PINK_LINK = 'https://thedocs.worldbank.org/en/doc/abc-0050012026/related/CMO-Historical-Data-Monthly.xlsx';
 
 const NOW = new Date('2026-11-05T12:00:00Z');
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -50,6 +54,12 @@ const healthy: FetchFn = async (url) => {
   if (url.includes('sdmx.oecd.org') && url.includes('DF_PRICES_ALL'))
     return new Response('STRUCTURE,STRUCTURE_ID,ACTION,REF_AREA,FREQ,METHODOLOGY,MEASURE,UNIT_MEASURE,EXPENDITURE,ADJUSTMENT,TRANSFORMATION,TIME_PERIOD,OBS_VALUE\nDATAFLOW,OECD.SDD.TPS:DSD_PRICES@DF_PRICES_ALL(1.0),I,BRA,M,N,CPI,PA,_T,N,GY,2026-09,4.2\n');
   if (url.includes('ticdata.treasury.gov')) return new Response('Table 5\nCountry\t2026-08\t2026-07\nJapan\t1068.3\t1103.9\nBrazil\t168.4\t168.0\nGrand Total\t9331.7\t9248.4\n');
+  if (url.includes('www.worldbank.org/en/research/commodity-markets')) return new Response(`<a href="${PINK_LINK}">October 2026 (XLS)</a>`);
+  if (url === PINK_LINK) return new Response(PINK_XLSX as BodyInit);
+  if (url.includes('api.eia.gov'))
+    return url.includes('api_key=good-eia')
+      ? json({ response: { data: [{ period: '2026-11-03', series: 'RBRTE', value: '64.10' }, { period: '2026-10-03', series: 'RBRTE', value: '62.00' }] } })
+      : json({ error: { code: 'API_KEY_INVALID', message: 'bad key' } }, 403);
   if (url.includes('fredgraph.csv')) return new Response('observation_date,IRLTLT01USM156N\n2026-08-01,4.21\n2026-09-01,4.12\n');
   if (url.includes('api.stlouisfed.org')) return json({ error_code: 400, error_message: 'Bad Request. The value for variable api_key is not registered.' }, 400);
   if (url.includes('tesourotransparente')) return new Response('Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha\nTesouro Prefixado com Juros Semestrais;01/01/2037;30/10/2026;15,23\n');
@@ -80,6 +90,30 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.match(row('tic').sample!, /Brazil holds \$168\.4bn of US Treasuries \(Aug 2026\)/);
   assert.match(row('cftc').sample!, /Leveraged funds net MXN \+24\.5% of open interest \(as of 2026-10-27, 2 weeks\)/);
   assert.equal(row('worldbank_debt').state, 'connected', 'an empty but valid reply still proves the connection');
+  assert.equal(row('pink_sheet').state, 'connected');
+  assert.match(row('pink_sheet').sample!, /Brent crude \$105\/bbl \(2026-10\), \+1\.0% on the month/);
+  assert.equal(row('pink_sheet').host, 'thedocs.worldbank.org');
+});
+
+test('Pink Sheet: a page without the link, or a workbook in another layout, says what to do', async () => {
+  const noLink = await byId({ env: {}, fetchFn: async (u) => (u.includes('commodity-markets') ? new Response('<p>moved</p>') : healthy(u)) });
+  assert.equal(noLink.row('pink_sheet').state, 'bad_reply');
+  assert.match(noLink.row('pink_sheet').detail, /PINK_SHEET_URL/);
+  const override = await byId({ env: { PINK_SHEET_URL: PINK_LINK }, fetchFn: async (u) => (u.includes('commodity-markets') ? dnsFail() : healthy(u)) });
+  assert.equal(override.row('pink_sheet').state, 'connected', 'PINK_SHEET_URL skips the page');
+  const html = await byId({ env: {}, fetchFn: async (u) => (u === PINK_LINK ? new Response('<html>error</html>') : healthy(u)) });
+  assert.equal(html.row('pink_sheet').state, 'bad_reply');
+});
+
+test('EIA: optional without a key; a good key reads Brent; a bad key needs setup and is never shown', async () => {
+  assert.equal((await byId({ env: {}, fetchFn: healthy })).row('eia').state, 'optional');
+  const good = await byId({ env: { EIA_API_KEY: 'good-eia' }, fetchFn: healthy });
+  assert.equal(good.row('eia').state, 'connected');
+  assert.match(good.row('eia').sample!, /Brent crude \(EIA daily\) \$64\.1\/bbl \(2026-11-03\), \+3\.4% on the month/);
+  const bad = await byId({ env: { EIA_API_KEY: 'secret-eia-999' }, fetchFn: healthy });
+  assert.equal(bad.row('eia').state, 'needs_setup');
+  assert.doesNotMatch(JSON.stringify(bad.rep), /secret-eia-999|good-eia/);
+  assert.doesNotMatch(JSON.stringify(good.rep), /good-eia/);
 });
 
 test('an answer in the wrong shape is reported as unreadable, not connected', async () => {

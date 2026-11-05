@@ -317,7 +317,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 25);
+  assert.equal(rep.results.length, 27);
   // The offline fixtures answer FRED's download, Brazil's Treasury and EVDS; everything else is down.
   assert.equal(row('fred_csv').state, 'connected');
   assert.equal(row('tesouro').state, 'connected');
@@ -328,6 +328,14 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.match(row('own_cds').detail, /1 country/);
   const body = JSON.stringify(rep);
   assert.doesNotMatch(body, /test-key|test-evds-key/);
+});
+
+test('commodity prices: with the World Bank down every commodity reads Missing with a reason, never a number', async () => {
+  const r = await (await fetch(`${base}/api/data/commodities`)).json();
+  assert.deepEqual(r.moves, []);
+  assert.equal(r.pinkStatus, 'no_answer');
+  assert.ok(r.missing.length >= 20);
+  assert.ok(r.missing.every((m: { reason: string }) => m.reason.length > 0));
 });
 
 test('no stand-in data when sources are down: prediction markets, connector test, Ollama models, health check', async () => {
