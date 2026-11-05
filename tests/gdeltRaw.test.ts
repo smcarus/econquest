@@ -282,7 +282,7 @@ test('Politics & Events Agent: event counts, surge rule and themes, each with it
   const themes = figures.find((f) => f.label.startsWith('Economic themes'))!;
   assert.match(themes.value, /Inflation and prices 12% \(before 5%\)/);
   assert.match(themes.source, /12\.5% of GKG files read/);
-  assert.ok(sentences.some((s) => /Protests doubled/.test(s)));
+  assert.ok(sentences.some((s) => /Protests rose to 12, against 4 a week before/.test(s)));
   assert.ok(sentences.some((s) => /inflation and prices/.test(s)));
 });
 

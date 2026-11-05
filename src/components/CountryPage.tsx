@@ -14,6 +14,7 @@ import { MarketsMacroPanel } from './MarketsMacroPanel';
 import { AsOfPanel } from './AsOfPanel';
 import { DecisionReplayPanel } from './DecisionReplayPanel';
 import { TrackRecordPanel } from './TrackRecordPanel';
+import { GdeltEventsPanel } from './GdeltEventsPanel';
 import { PanelBoundary } from './PanelBoundary';
 import { ResearchSectionNav } from './ResearchSections';
 import { lazyNamed, DeskLoading } from './LazyDesk';
@@ -403,6 +404,11 @@ export const CountryPage: React.FC<{
         </div>
       )}
       {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} onOpenCompare={onOpenCompare} />}
+      {tab.id === 'macro' && (
+        <PanelBoundary name="News and events">
+          <GdeltEventsPanel key={`gdelt-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+        </PanelBoundary>
+      )}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 
       {/* Desk picker for this tab */}
