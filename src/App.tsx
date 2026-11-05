@@ -84,6 +84,7 @@ import { HoldingsPanel } from './components/HoldingsPanel';
 import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
+import { PolicyReviews } from './components/PolicyReviews';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
@@ -3275,6 +3276,11 @@ export default function App() {
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
                   <>
+                  <div id="tool-policy-reviews" className="mb-3 scroll-mt-4">
+                    <PanelBoundary name="Policy reviews">
+                      <PolicyReviews countries={liveWatchlistItems} defaultIso3={run.iso3} />
+                    </PanelBoundary>
+                  </div>
                   <div id="tool-council-docs" className="mb-3 scroll-mt-4">
                     <PanelBoundary name="Council documents">
                       <SavedCouncilDocuments
