@@ -82,3 +82,20 @@ export function setWorkspaceValue(file: string, key: string, value: string | nul
   }
   return next;
 }
+
+/** Replace every workspace item at once (used by restore). Items that fail workspaceProblem are skipped. */
+export function saveWorkspaceValues(file: string, values: Record<string, string>, now = new Date()): WorkspaceFile {
+  const next = empty();
+  for (const [key, value] of Object.entries(values)) {
+    if (workspaceProblem(key, value)) continue;
+    next.values[key] = value;
+    next.updatedAt[key] = now.toISOString();
+  }
+  writeFileAtomic(file, JSON.stringify(next), 0o600);
+  try {
+    fs.chmodSync(file, 0o600);
+  } catch {
+    // not supported on this file system (Windows)
+  }
+  return next;
+}

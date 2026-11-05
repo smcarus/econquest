@@ -427,12 +427,11 @@ export function buildCommandPaletteIndex(
     {
       id: 'cmd_act_session_manager',
       category: 'EXPORT_AND_AUDIT',
-      categoryBadge: 'Session I/O',
-      title: 'Workspace Session Manager: Save / Export / Restore .JSON Snapshot',
-      subtitle:
-        'Persist or share active sovereign, watchlists, custom ISO-3 countries, shocks & persona state',
-      shortcutHint: 'Session',
-      keywords: ['session', 'save', 'restore', 'json', 'export', 'import', 'persistence', 'snapshot'],
+      categoryBadge: 'Backup',
+      title: 'Backup: download or restore your research, alerts, holdings and watchlists',
+      subtitle: 'One file, without your API keys (Settings > Backup)',
+      shortcutHint: 'Backup',
+      keywords: ['backup', 'session', 'save', 'restore', 'json', 'export', 'import', 'move', 'snapshot'],
       actionType: 'OPEN_SESSION_MANAGER',
     },
     {

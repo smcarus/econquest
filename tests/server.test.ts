@@ -738,3 +738,28 @@ test('online check: the feeds probe answers, with what is saved on disk', async 
   assert.ok(body.countriesTotal >= 10);
   assert.ok(body.countriesSaved >= 0);
 });
+
+test('backup: download carries no keys; restore refuses a non-backup and restores a real one', async () => {
+  const summary = await (await fetch(`${base}/api/backup`)).json();
+  assert.ok(summary.summary && /^econquest-backup-\d{4}-\d{2}-\d{2}\.json$/.test(summary.fileName));
+  const dl = await fetch(`${base}/api/backup/download`);
+  assert.equal(dl.status, 200);
+  assert.match(dl.headers.get('content-disposition') || '', /attachment; filename="econquest-backup-/);
+  const backup = await dl.json();
+  assert.equal(backup.format, 'econquest-backup');
+  assert.ok(!JSON.stringify(backup).includes('test-key'), 'no API key in the file');
+
+  const post = (body: unknown) =>
+    fetch(`${base}/api/backup/restore`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const bad = await post({ backup: { format: 'nope' } });
+  assert.equal(bad.status, 400);
+  backup.contents.watchRules = [{ id: 'r9', iso3: '*', metric: 'policy_rate', op: '>=', value: 12, createdAt: '2026-11-05T00:00:00Z' }];
+  const ok = await post({ backup });
+  assert.equal(ok.status, 200);
+  const body = await ok.json();
+  assert.equal(body.summary.watchRules, 1);
+  assert.match(body.savedCopy, /before-restore-/);
+  const rules = await (await fetch(`${base}/api/watch-rules`)).json();
+  assert.deepEqual(rules.rules.map((r: { id: string }) => r.id), ['r9']);
+  assert.ok(existsSync(path.join(dataDir, 'local', 'backups')));
+});

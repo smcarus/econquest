@@ -47,6 +47,8 @@ import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBr
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
+import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
+import { currentBackup, restoreBackup } from './src/utils/backupStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { tableWorkbook } from './src/utils/xlsxExport';
@@ -3729,6 +3731,30 @@ async function startServer() {
       return res.status(403).json({ error: 'Changes can only be made from the app itself, not from another website.' });
     }
     next();
+  });
+  // Backup and restore (Menu > Settings > Backup): saved research, watch alerts, holdings,
+  // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
+  // a larger body than the other routes (a library with documents), so it parses its own.
+  const backupFiles = { research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: WORKSPACE_FILE };
+  app.get('/api/backup', (_req, res) => {
+    res.json({ summary: summariseBackup(currentBackup(backupFiles)), fileName: backupFileName() });
+  });
+  app.get('/api/backup/download', (_req, res) => {
+    res.setHeader('Content-Disposition', `attachment; filename="${backupFileName()}"`);
+    res.type('application/json').send(JSON.stringify(currentBackup(backupFiles), null, 1));
+  });
+  app.post('/api/backup/restore', express.json({ limit: '60mb' }), (req, res) => {
+    if (!isLocalRequest(req.socket.remoteAddress, process.env)) {
+      return res.status(403).json({ error: `A backup can only be restored from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
+    }
+    const parsed = parseBackup(req.body?.backup);
+    if (!parsed.ok) return res.status(400).json({ error: parsed.error });
+    try {
+      const { savedCopy } = restoreBackup(backupFiles, parsed.backup);
+      res.json({ ok: true, summary: parsed.summary, savedCopy });
+    } catch (error: any) {
+      res.status(500).json({ error: `Could not restore the backup (${error?.code || error?.message || 'unknown error'}). Nothing was lost: see data/local/backups/.` });
+    }
   });
   app.use(express.json({ limit: '5mb' }));
 
