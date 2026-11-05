@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
+import { EMPTY_PRELOAD_STATE, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
@@ -2052,6 +2053,219 @@ async function archivePull(iso3: string, entry: StoredSnapshot): Promise<void> {
 }
 
 /**
+ * "Download all country data" (src/utils/preload.ts): every world feed once, then each country's
+ * full snapshot and full history, one step at a time. State is saved after each step in
+ * data/local/preload.json, so a stopped run carries on where it left off. Runs from the app
+ * (Menu > Offline data) or the terminal (npm run preload).
+ */
+const PRELOAD_FILE = path.join(DATA_DIR, 'local', 'preload.json');
+let preloadState: PreloadState = loadPreloadState();
+let preloadStopAsked = false;
+let preloadJob: Promise<void> | null = null;
+function loadPreloadState(): PreloadState {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(PRELOAD_FILE, 'utf8')) as PreloadState;
+    if (!parsed || typeof parsed.steps !== 'object') return { ...EMPTY_PRELOAD_STATE, steps: {} };
+    // A run that was going when the app closed did not finish.
+    if (parsed.running) return { ...parsed, running: false, current: undefined, waiting: undefined, endedEarly: 'The app closed during the download; start it again to carry on' };
+    return parsed;
+  } catch {
+    return { ...EMPTY_PRELOAD_STATE, steps: {} };
+  }
+}
+function savePreloadState(): void {
+  try {
+    writeFileAtomic(PRELOAD_FILE, JSON.stringify(preloadState));
+  } catch (err: any) {
+    console.warn(`[preload] could not save progress: ${err?.message || err}`);
+  }
+}
+/**
+ * Every country the app covers, or only those named with --countries=BRA,TUR (terminal) or
+ * PRELOAD_COUNTRIES in .env.
+ */
+function preloadCountries(): Array<{ iso3: string; countryName: string }> {
+  const arg = process.argv.find((a) => a.startsWith('--countries='))?.slice('--countries='.length) || process.env.PRELOAD_COUNTRIES || '';
+  const only = new Set(arg.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean));
+  return SOVEREIGN_CATALOG.filter((c) => !only.size || only.has(c.iso3)).map((c) => ({ iso3: c.iso3, countryName: c.countryName }));
+}
+function preloadPlan(): PreloadStep[] {
+  return planPreload(preloadCountries());
+}
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** GDELT asked to slow down (HTTP 429): wait the 15-minute pause out before the next country. */
+async function waitOutGdeltPause(): Promise<void> {
+  while (Date.now() < gdeltPausedUntil && !preloadStopAsked) {
+    preloadState.waiting = { until: new Date(gdeltPausedUntil).toISOString(), why: 'GDELT asked the app to slow down; waiting out its 15-minute pause' };
+    savePreloadState();
+    await sleep(Math.min(5000, gdeltPausedUntil - Date.now()));
+  }
+  if (preloadState.waiting) {
+    preloadState.waiting = undefined;
+    savePreloadState();
+  }
+}
+
+async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult, 'at'>> {
+  const had = (x: unknown, what: string) => (x ? { outcome: 'done' as const } : { outcome: 'failed' as const, note: `${what} did not answer` });
+  if (step.kind === 'country' && step.iso3) {
+    if (step.id.endsWith(':history')) {
+      const h = await fetchOfficialHistory(step.iso3, { force: true });
+      if (!h) return { outcome: 'failed', note: 'World Bank and IMF did not answer' };
+      const n = Object.keys(h.series).length;
+      const failedN = Object.keys(h.failed || {}).length;
+      return { outcome: 'done', note: `${n} figure${n === 1 ? '' : 's'} with history${failedN ? `, ${failedN} did not answer` : ''}` };
+    }
+    await waitOutGdeltPause();
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === step.iso3)?.countryName;
+    const pausedBefore = gdeltPausedUntil;
+    const snap = await refreshStoredSnapshot(step.iso3, name);
+    if (!snap) return { outcome: 'failed', note: 'The pull failed; see the server log' };
+    const live = snap.dataStatus?.verifiedLiveSources?.length ?? 0;
+    if (!live) return { outcome: 'failed', note: 'No feed answered (offline?)' };
+    const notes = [`${live} feed${live === 1 ? '' : 's'} answered`];
+    if (loadStoredSnapshot(step.iso3)?.incomplete) notes.push('some did not; their last good figures were kept');
+    if (gdeltPausedUntil > pausedBefore) notes.push('GDELT paused, news tone fills in on a later refresh');
+    return { outcome: 'done', note: notes.join('; ') };
+  }
+  switch (step.id) {
+    case 'world:bis':
+      return had(await fetchCbpolPull(), 'BIS');
+    case 'world:oecd_cli':
+      return had(await fetchCliPull(), 'OECD (DBnomics)');
+    case 'world:oecd_cpi':
+      return had(await fetchCpiPull(), 'OECD (DBnomics)');
+    case 'world:national_cpi':
+      return had(await fetchNationalCpi(), 'BCB / Eurostat');
+    case 'world:cftc':
+      return had(await fetchCftcPull(), 'CFTC');
+    case 'world:tic':
+      return had(await fetchTicPull(), 'US Treasury');
+    case 'world:imf_external':
+      return had(await fetchImfPull(), 'IMF');
+    case 'world:cofer':
+      return had(await fetchCoferPull(), 'IMF');
+    case 'world:commodities': {
+      await fetchCommodities();
+      const m = commodityMemory;
+      if (!m?.pink && !m?.eia) return { outcome: 'failed', note: 'World Bank Pink Sheet did not answer' };
+      return { outcome: 'done', note: m?.eia ? undefined : 'EIA needs a key in Settings; Pink Sheet saved' };
+    }
+    case 'world:comtrade': {
+      if (!(process.env.COMTRADE_API_KEY || '').trim()) return { outcome: 'skipped', note: 'Needs setup: UN Comtrade key in Menu > Settings' };
+      const file = await fetchComtrade();
+      const n = Object.keys(file.countries || {}).length;
+      return n ? { outcome: 'done', note: `${n} countries saved` } : { outcome: 'failed', note: 'UN Comtrade did not answer' };
+    }
+    default:
+      return { outcome: 'failed', note: 'Unknown step' };
+  }
+}
+
+/** Bytes under a folder (0 when it does not exist). */
+function folderBytes(dir: string): number {
+  let total = 0;
+  let entries: fs.Dirent[] = [];
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+  for (const e of entries) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) total += folderBytes(p);
+    else if (e.isFile()) {
+      try {
+        total += fs.statSync(p).size;
+      } catch {
+        // gone meanwhile
+      }
+    }
+  }
+  return total;
+}
+function fileBytes(p: string): number {
+  try {
+    return fs.statSync(p).size;
+  } catch {
+    return 0;
+  }
+}
+/** What is on disk now, and a size estimate for the countries not yet saved. */
+function preloadDisk() {
+  const countries = preloadCountries();
+  const perCountry = countries.map((c) => fileBytes(snapshotFile(c.iso3)) + fileBytes(historyFile(c.iso3)));
+  const left = perCountry.filter((b) => b === 0).length;
+  const bytes = folderBytes(SNAPSHOT_DIR) + folderBytes(HISTORY_DIR) + folderBytes(ARCHIVE_DIR);
+  return { bytes, remainingEstimateBytes: estimateRemainingBytes(perCountry, left), countriesOnDisk: countries.length - left };
+}
+function preloadReply() {
+  const plan = preloadPlan();
+  return { state: preloadState, summary: summarisePreload(plan, preloadState), disk: preloadDisk(), file: 'data/local/preload.json' };
+}
+
+/** Starts a run (or returns the one going). log gets one line per step. */
+function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = {}): Promise<void> {
+  if (preloadJob) return preloadJob;
+  const log = opts.log || ((line: string) => console.log(line));
+  preloadStopAsked = false;
+  preloadJob = (async () => {
+    const plan = preloadPlan();
+    const todo = stepsToRun(plan, preloadState, { fresh: opts.fresh });
+    preloadState = { ...preloadState, running: true, startedAt: new Date().toISOString(), finishedAt: undefined, endedEarly: undefined, countries: preloadCountries().map((c) => c.iso3) };
+    savePreloadState();
+    log(`[preload] ${todo.length} of ${plan.length} steps to do (${plan.length - todo.length} already saved within the last day)`);
+    let i = 0;
+    for (const step of todo) {
+      if (preloadStopAsked) break;
+      i++;
+      preloadState.current = { id: step.id, label: step.label, since: new Date().toISOString() };
+      savePreloadState();
+      let result: PreloadStepResult;
+      try {
+        result = { ...(await runPreloadStep(step)), at: new Date().toISOString() };
+      } catch (err: any) {
+        result = { outcome: 'failed', note: String(err?.message || err).slice(0, 200), at: new Date().toISOString() };
+      }
+      preloadState.steps[step.id] = result;
+      preloadState.current = undefined;
+      savePreloadState();
+      log(progressLine(i, todo.length, step, result));
+    }
+    preloadState.running = false;
+    preloadState.current = undefined;
+    preloadState.waiting = undefined;
+    if (preloadStopAsked) preloadState.endedEarly = 'Stopped by you; start again to carry on';
+    else preloadState.finishedAt = new Date().toISOString();
+    savePreloadState();
+    const sum = summarisePreload(plan, preloadState);
+    log(`[preload] ${preloadStopAsked ? 'stopped' : 'finished'}: ${sum.done} of ${sum.total} steps saved, ${sum.failed} failed, ${sum.skipped} need setup. ${sum.countriesReady} of ${sum.countriesTotal} countries ready offline.`);
+  })().finally(() => {
+    preloadJob = null;
+  });
+  return preloadJob;
+}
+
+/** npm run preload: the same run in the terminal, without starting the web server. */
+async function runPreloadCli(): Promise<void> {
+  const fresh = process.argv.includes('--fresh');
+  console.log('Downloading every free feed for every country into data/ (live, history, archive).');
+  console.log('Safe to stop with Ctrl+C: the next run carries on where this one left off.');
+  process.on('SIGINT', () => {
+    if (preloadStopAsked) process.exit(130);
+    preloadStopAsked = true;
+    console.log('\n[preload] stopping after this step (Ctrl+C again to quit now)');
+  });
+  await startPreload({ fresh });
+  const d = preloadDisk();
+  console.log(`[preload] on disk now: ${formatBytes(d.bytes)} in data/live, data/history and data/archive.`);
+  const sum = summarisePreload(preloadPlan(), preloadState);
+  for (const p of sum.problems) console.log(`  ${p.outcome === 'skipped' ? 'Not run' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
+  process.exit(0);
+}
+
+/**
  * Serves the last stored snapshot instantly and refreshes it in the background once it is
  * older than a week. Without a stored copy it waits for one live pull (or, with
  * cacheOnly, returns the static baseline and warms the store in the background).
@@ -3409,6 +3623,17 @@ async function startServer() {
   app.post('/api/data/refresh', (_req, res) => {
     void refreshStaleSnapshots(true);
     res.status(202).json({ status: 'refresh started', countries: SOVEREIGN_CATALOG.length });
+  });
+
+  // Download all country data (Menu > Offline data; same run as npm run preload).
+  app.get('/api/preload', (_req, res) => res.json(preloadReply()));
+  app.post('/api/preload/start', (req, res) => {
+    void startPreload({ fresh: req.body?.fresh === true });
+    res.status(202).json(preloadReply());
+  });
+  app.post('/api/preload/stop', (_req, res) => {
+    if (preloadJob) preloadStopAsked = true;
+    res.json(preloadReply());
   });
 
   // 1b. Live Watchlist Multi-Sovereign Telemetry Endpoint
@@ -6731,4 +6956,5 @@ ${String(documentText).slice(0, 12000)}
   });
 }
 
-startServer();
+if (process.argv.includes('--preload')) void runPreloadCli();
+else startServer();

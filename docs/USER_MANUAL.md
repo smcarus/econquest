@@ -283,6 +283,30 @@ hold no figures of their own; the handout reads them from the app's series when 
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
 - **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
 
+### Download all country data (for offline use)
+
+One pass over every free feed for every country the app covers: the world feeds once (BIS policy
+rates, OECD leading indicators and inflation, national inflation, CFTC, TIC, IMF reserves and COFER,
+commodity prices, UN Comtrade), then for each country its latest figures from every feed and the full
+World Bank and IMF history. Everything is saved under `data/` (live, history, archive), so pages,
+charts and the History tab then load from disk and keep working without a connection. Screens still
+show only the newest value; the full runs are behind History & data and the downloads.
+
+From a terminal in the app folder:
+
+```bash
+npm run preload                        # every country
+npm run preload -- --countries=BRA,TUR # only these
+npm run preload -- --fresh             # download everything again, even what was saved today
+docker compose exec econquest npm run preload   # when the app runs in Docker
+```
+
+Each step prints one line (ok, FAIL with the reason, or skip when a key is needed). Ctrl+C stops after
+the current step; the next run skips every step saved within the last day and carries on. Progress is
+kept in `data/local/preload.json`. GDELT allows few requests: after a refusal the run waits out
+GDELT's 15-minute pause before the next country. A feed that fails leaves its figures Missing with
+the reason; nothing is filled in.
+
 ---
 
 ## 6. When something looks wrong

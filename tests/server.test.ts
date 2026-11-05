@@ -710,3 +710,14 @@ test('council: a country off the catalog can be pulled for one question; its fig
   // Feeds are down in tests: no figure, never a stand-in.
   assert.ok(arg.debtToGdpPct === null || arg.debtToGdpPct === undefined);
 });
+
+test('offline data: the preload status lists every step, what is on disk, and nothing running', async () => {
+  const body = (await (await fetch(`${base}/api/preload`)).json()) as { state: { running: boolean }; summary: { total: number; countriesTotal: number }; disk: { bytes: number }; file: string };
+  assert.equal(body.state.running, false);
+  assert.ok(body.summary.total > 10);
+  assert.ok(body.summary.countriesTotal >= 10);
+  assert.ok(body.disk.bytes >= 0);
+  assert.equal(body.file, 'data/local/preload.json');
+  const stop = await fetch(`${base}/api/preload/stop`, { method: 'POST' });
+  assert.equal(stop.status, 200);
+});

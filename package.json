@@ -13,7 +13,8 @@
     "test": "tsx --test \"tests/*.test.ts\"",
     "test:smoke": "node tests/smoke/ui-smoke.mjs",
     "check:data": "tsx scripts/check-connections.ts",
-    "check:imf": "tsx scripts/imf-codes.ts"
+    "check:imf": "tsx scripts/imf-codes.ts",
+    "preload": "tsx server.ts --preload"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
