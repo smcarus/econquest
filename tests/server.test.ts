@@ -560,3 +560,17 @@ test('downloads: figures and series come as CSV files; a series with no history 
   const world = await fetch(`${base}/api/export/world/series.csv`);
   assert.equal(world.status, 200);
 });
+
+test('panel builder: countries x figures as JSON and CSV; missing cells say why', async () => {
+  const r = await fetch(`${base}/api/panel?countries=MEX,EGY&figures=policy_rate,yield_10y`);
+  assert.equal(r.status, 200);
+  const body = (await r.json()) as { cells: Array<{ iso3: string; figureId: string; status: string; value: number | null; reason: string }> };
+  assert.equal(body.cells.length, 4);
+  for (const c of body.cells) if (c.status === 'Missing') assert.ok(c.value === null && c.reason.length > 0);
+  const hist = (await (await fetch(`${base}/api/panel?countries=MEX&figures=policy_rate&mode=history`)).json()) as { rowCount: number };
+  assert.equal(typeof hist.rowCount, 'number');
+  const csv = await fetch(`${base}/api/export/panel.csv?countries=MEX,EGY&figures=policy_rate`);
+  assert.equal(csv.status, 200);
+  assert.ok((await csv.text()).includes('iso3,country,figure_id,figure,value,unit,status,period,source,reason_if_missing'));
+  assert.equal((await fetch(`${base}/api/panel?countries=`)).status, 400);
+});

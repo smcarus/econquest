@@ -36,6 +36,7 @@ import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summ
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
+import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
@@ -3350,6 +3351,37 @@ async function startServer() {
     }
     sendCsv(res, exportFileName(iso3, hit.id), toCsv(SERIES_HEADER, seriesRows(iso3, [hit])));
   });
+  // Panel builder (src/utils/panelTable.ts): countries x figures, latest or full history.
+  async function panelData(countriesRaw: unknown): Promise<PanelCountryData[]> {
+    const iso3s = parseCountries(countriesRaw);
+    return Promise.all(
+      iso3s.map(async (iso3) => ({
+        iso3,
+        snapshot: await fetchLiveOpenDataSnapshot(iso3, SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName, { cacheOnly: true }),
+        series: await seriesFor(iso3),
+      }))
+    );
+  }
+  app.get('/api/panel', async (req, res) => {
+    const figures = parseFigureIds(req.query.figures);
+    const data = await panelData(req.query.countries);
+    if (!data.length) return res.status(400).json({ error: 'NO_COUNTRIES', message: 'Pick at least one country.' });
+    if (req.query.mode === 'history') {
+      const rows = panelHistoryRows(data, figures);
+      return res.json({ mode: 'history', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), rowCount: rows.length, preview: rows.slice(0, 50) });
+    }
+    res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures) });
+  });
+  app.get('/api/export/panel.csv', async (req, res) => {
+    const figures = parseFigureIds(req.query.figures);
+    const data = await panelData(req.query.countries);
+    if (!data.length) return res.status(400).json({ error: 'NO_COUNTRIES', message: 'Pick at least one country.' });
+    if (req.query.mode === 'history') {
+      return sendCsv(res, exportFileName('panel', 'history'), toCsv(SERIES_HEADER, panelHistoryRows(data, figures)));
+    }
+    sendCsv(res, exportFileName('panel', 'latest'), toCsv(PANEL_LATEST_HEADER, panelLatestRows(panelLatest(data, figures))));
+  });
+
   app.get('/api/export/:iso3/figures.csv', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });

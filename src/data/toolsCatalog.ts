@@ -37,6 +37,13 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'today', anchor: 'tool-marketedge' },
   },
   {
+    id: 'panel_builder',
+    title: 'Compare countries',
+    what: 'Pick countries and figures for one table, latest values or full history, and download it as CSV with the source and period of every value.',
+    sources: 'Every live figure and series in the app',
+    target: { area: 'today', anchor: 'tool-panel' },
+  },
+  {
     id: 'divergences',
     title: 'Where data and price disagree',
     what: 'One line per country, biggest gap first: cheap or rich CDS against peers, policy rate against inflation, carry and currency valuation.',
