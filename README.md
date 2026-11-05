@@ -13,6 +13,7 @@ Settings.
 
 - [docs/USER_MANUAL.md](./docs/USER_MANUAL.md): how to use each page
 - [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md): every source, what it fills, how to set it up
+- [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md): audit log, model register, pre-registered backtests, report sign-off, and what a multi-user version would need
 - [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md): UI rules for contributors
 
 ---
