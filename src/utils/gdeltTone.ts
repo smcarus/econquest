@@ -35,6 +35,8 @@ function day(v: unknown): string | undefined {
 export function gdeltToneShift(series: unknown): GdeltToneShift | null {
   if (!Array.isArray(series)) return null;
   const pts = series
+    // A point with no value (null or blank) is skipped: Number(null) would read it as a tone of 0.
+    .filter((p: any) => p?.value !== null && p?.value !== undefined && String(p.value).trim() !== '')
     .map((p: any) => ({ date: day(p?.date), v: Number(p?.value) }))
     .filter((p) => Number.isFinite(p.v));
   if (pts.length < 7 + GDELT_MIN_EARLIER_DAYS) return null;
