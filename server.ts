@@ -9,7 +9,7 @@ import {
   parseOwnCdsCsv,
   type OwnCdsQuote,
 } from './src/utils/ownCds';
-import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
+import { WB_TRADE_INDICATORS, enrichTrade, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, buildCommodityReply, eiaSpotUrl, findPinkSheetUrl, parseEiaSpot, parsePinkSheet, type CommodityReply, type PriceSeries } from './src/utils/commodityPrices';
 import { readXlsxSheet } from './src/utils/xlsxRead';
@@ -1835,7 +1835,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, comtrade, imf, cofer] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, comtrade, imf, cofer, commodities] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -1849,6 +1849,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
     Promise.race([fetchImfPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchCoferPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    // Commodity prices for the spillover scenarios: don't hold the watchlist for the Pink Sheet download.
+    Promise.race([fetchCommodities(), new Promise<CommodityReply | null>((resolve) => setTimeout(() => resolve(null), 3000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1894,7 +1896,11 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(comtrade?.countries[catItem.iso3] ? { comtrade: { ...comtrade.countries[catItem.iso3].profile, pulledAt: comtrade.countries[catItem.iso3].pulledAt } } : {}),
           ...(imf?.countries[catItem.iso3] ? { imf: { ...imf.countries[catItem.iso3], pulledAt: imf.pulledAt } } : {}),
           ...(cofer ? { cofer: { ...cofer.cofer, pulledAt: cofer.pulledAt } } : {}),
-          ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
+          ...((() => {
+            const base = tradeAll.get(catItem.iso3);
+            const trade = enrichTrade(base && Object.keys(base).length ? base : undefined, comtrade?.countries[catItem.iso3]?.profile, commodities?.moves);
+            return trade ? { trade } : {};
+          })()),
           geopoliticalRisk: geo,
           sovereignRisk: sov,
           macroRisk: mac,
