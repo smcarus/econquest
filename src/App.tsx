@@ -2869,7 +2869,7 @@ export default function App() {
                 draft: croDraft,
                 result:
                   run.supremeCouncil && run.runId === councilReportRunId
-                    ? { reportId: run.supremeCouncil.reportId, verdict: run.supremeCouncil.decisionVerdict, summary: run.supremeCouncil.executiveSummary }
+                    ? { reportId: run.supremeCouncil.reportId, verdict: run.supremeCouncil.decisionVerdict, summary: run.supremeCouncil.executiveSummary, figureCheck: run.figureCheck }
                     : undefined,
                 progressId: councilProgressId,
                 onRun: handleRunCouncilPhase1And2,

@@ -26,6 +26,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
+import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import {
   API_KEY_IDS,
@@ -4462,6 +4463,10 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       };
 
       progress.finish('cascade', cascadeRes.usedFallback);
+      // Number check: desk and cascade text may quote only figures the council was given.
+      baseRun.figureCheck = {
+        desks: checkDeskText(baseRun, [sharedContextHeader, String(scenarioPrompt || ''), String(policyDocumentText || ''), JSON.stringify(anchors)]),
+      };
       // Pause at Human-in-the-Loop CRO Checkpoint before Supreme Council
       baseRun.stage = 'AWAITING_CRO_APPROVAL';
       latestRunsByIso3.set(baseRun.iso3, baseRun);
@@ -4520,7 +4525,10 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
 - Composite Risk Score: ${compositeScore}
 - Energy/Freight Inflation Shock Input: +${cro.energyInflationShockPct}%
 - Debt Servicing Spread Impact: +${cro.debtServicingSpreadBps} bps
-- FX Reserve Cover: ${cro.fxReserveAdequacyMonths} months | 10Y Local Yield: ${targetRun.openData.monetaryAndMarket.sovereign10YBondYieldPct}% | 5Y CDS: ${targetRun.openData.monetaryAndMarket.cds5YSpreadBps} bps | Spot FX: ${targetRun.openData.monetaryAndMarket.exchangeRatePerUsd} ${targetRun.openData.currencyCode}/USD
+- Scenario inputs above (energy shock, spread impact) come from the cascade step and your review, not from data.
+Country figures (only those a live feed, an official series or your own data filled; MISSING ones are unknown):
+${councilInputs(targetRun.openData).lines.join('\n')}
+${MISSING_FIGURES_RULE}
 - Political Will Index: ${cro.politicalWillIndex}/100
 - Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
 - Chief Risk Officer Directives: "${cro.croNotes}"
@@ -4584,6 +4592,11 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
       }));
 
       const parsed = supremeStep.data || {};
+      const supremeContext = [
+        councilPrompt,
+        ...Object.values(targetRun.deskDebates || {}).map((d) => d.consensusSummary),
+        ...(targetRun.cascadeSteps || []).map((c) => `${c.shockDelta} ${c.transmissionMechanism}`),
+      ];
       const validVerdicts = ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'];
       const verdict = validVerdicts.includes(parsed.decisionVerdict)
         ? parsed.decisionVerdict
@@ -4660,6 +4673,10 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
         },
       };
 
+      // Number check: the final report may quote only figures the council was given.
+      const reportCheck = checkSupremeText(baseOutput, supremeContext, [...runScores(targetRun), finalGeo, finalSov, finalMac, compositeScore]);
+      baseOutput = reportCheck.output;
+
       const prevTelemetry =
         targetRun.pipelineExecutionTelemetry ||
         buildDefaultAssessmentRun(targetRun.iso3, targetRun.openData).pipelineExecutionTelemetry!;
@@ -4695,6 +4712,7 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
           approvedAt: new Date().toISOString(),
         },
         supremeCouncil: baseOutput,
+        figureCheck: { ...targetRun.figureCheck, report: reportCheck.check },
         pipelineExecutionTelemetry: {
           ...prevTelemetry,
           executedAt: new Date().toISOString(),
