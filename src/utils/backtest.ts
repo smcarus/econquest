@@ -13,10 +13,11 @@
  * DBnomics (today's vintage), CFTC weekly positioning. Pure functions: the runner fetches.
  */
 import { cliTurns } from './oecdCli';
+import { targetIn } from '../data/inflationTargetHistory';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap';
 
 export interface BacktestSpec {
   id: string;
@@ -171,6 +172,83 @@ export function cliTurnPolicyCases(
       if (hit === null) continue;
       out.push({ where, when: known, what: `${t.kind} in ${t.month}, known ${known}: ${dir < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`, hit, base: base[dir] });
     }
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ Taylor gap -> policy move */
+
+/**
+ * Each month: rule rate = rStar + inflation + inflationWeight x (inflation - target), with the
+ * inflation published by then (publicationLagMonths back) and the target in force that month
+ * (src/data/inflationTargetHistory.ts). No output gap: the IMF's is annual and revised every
+ * vintage. Policy more than bandPts above the rule = tight, below = loose. A call is the first
+ * month of a run of the same reading. Hit: tight -> a cut, loose -> a hike, within windowMonths.
+ * Base rate: the share of all months in the same span followed by a cut (hike) within the window.
+ */
+export function taylorGapCases(
+  spec: BacktestSpec,
+  iso3: string,
+  inflation: { period: string; value: number }[],
+  policy: { period: string; pct: number }[]
+): BacktestCase[] {
+  const { publicationLagMonths = 2, windowMonths = 6, bandPts = 1, rStar = 2, inflationWeight = 0.5 } = spec.params;
+  if (!inflation.length || policy.length < 2) return [];
+  const pct = new Map(policy.map((p) => [p.period, p.pct]));
+  const cpi = new Map(inflation.map((p) => [p.period, p.value]));
+  const last = policy[policy.length - 1].period;
+  const moveIn = (m: string): number => {
+    const a = pct.get(addMonths(m, -1));
+    const b = pct.get(m);
+    return a === undefined || b === undefined ? 0 : Math.sign(Number((b - a).toFixed(4)));
+  };
+  const moved = (from: string, dir: number): boolean | null => {
+    if (addMonths(from, windowMonths) > last) return null;
+    for (let k = 1; k <= windowMonths; k++) if (moveIn(addMonths(from, k)) === dir) return true;
+    return false;
+  };
+  const lo = spec.sample.from;
+  const hi = spec.sample.to || '9999-12';
+  type Row = { month: string; reading: -1 | 0 | 1; gap: number; rule: number; target: number; infl: number; rate: number };
+  const rows: Row[] = [];
+  for (const p of policy) {
+    if (p.period < lo || p.period > hi) continue;
+    const t = targetIn(iso3, p.period);
+    const infl = cpi.get(addMonths(p.period, -publicationLagMonths));
+    if (!t || infl === undefined) continue;
+    const rule = rStar + infl + inflationWeight * (infl - t.pct);
+    const gap = p.pct - rule;
+    rows.push({ month: p.period, reading: gap > bandPts ? 1 : gap < -bandPts ? -1 : 0, gap, rule, target: t.pct, infl, rate: p.pct });
+  }
+  const baseFor = (dir: number) => {
+    let n = 0;
+    let yes = 0;
+    for (const r of rows) {
+      const m = moved(r.month, dir);
+      if (m === null) continue;
+      n++;
+      if (m) yes++;
+    }
+    return n ? yes / n : 0;
+  };
+  const base = { [-1]: baseFor(-1), [1]: baseFor(1) } as Record<number, number>;
+  const out: BacktestCase[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r.reading) continue;
+    // First month of a run: the month before was a different reading, or not a consecutive month.
+    const prev = rows[i - 1];
+    if (prev && prev.reading === r.reading && addMonths(prev.month, 1) === r.month) continue;
+    const want = r.reading === 1 ? -1 : 1;
+    const hit = moved(r.month, want);
+    if (hit === null) continue;
+    out.push({
+      where: iso3,
+      when: r.month,
+      what: `${r.reading === 1 ? 'tight' : 'loose'}: policy ${r.rate.toFixed(2)}% vs rule ${r.rule.toFixed(2)}% (inflation ${r.infl.toFixed(1)}%, target ${r.target}%): ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`,
+      hit,
+      base: base[want],
+    });
   }
   return out;
 }

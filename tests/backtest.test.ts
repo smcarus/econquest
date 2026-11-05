@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, judge, monthlyRuns, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
+import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, judge, monthlyRuns, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
+import { targetIn } from '../src/data/inflationTargetHistory';
 import { loadSpecs, runBacktests, sha256 } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
 
@@ -113,11 +114,12 @@ test('runBacktests pulls the histories once, judges each registered test and sav
     fetcher: async (url) => {
       urls.push(url);
       if (url.includes('stats.bis.org')) return bisCsv;
+      if (url.includes('DF_PRICES_ALL')) throw new Error('HTTP 502');
       if (url.includes('db.nomics')) return JSON.stringify(dbn);
       throw new Error('HTTP 503');
     },
   });
-  assert.equal(urls.length, 3);
+  assert.equal(urls.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
   assert.ok(urls.some((u) => u.includes('startPeriod=1990-01')));
   assert.ok(urls.some((u) => u.includes('2006-06-01')));
   const r = out.results.cli_turn_policy;
@@ -126,5 +128,46 @@ test('runBacktests pulls the histories once, judges each registered test and sav
   assert.equal(r.specHash, loadSpecs(SPEC_DIR).find((s) => s.file === 'cli_turn_policy.json')!.hash);
   assert.equal(out.results.cftc_crowding, undefined);
   assert.ok(out.problems.some((p) => /CFTC did not answer/.test(p)));
+  assert.ok(out.problems.some((p) => /OECD consumer prices did not answer/.test(p)));
+  assert.equal(out.results.taylor_gap, undefined, 'no verdict without inflation history');
   assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(resultFile, 'utf8')).results), ['cli_turn_policy']);
+});
+
+test('targetIn gives the target as it stood in that month, and nothing before the first row', () => {
+  assert.equal(targetIn('BRA', '2010-06')?.pct, 4.5);
+  assert.equal(targetIn('BRA', '2024-03')?.pct, 3);
+  assert.equal(targetIn('ZAF', '2025-10')?.pct, 4.5);
+  assert.equal(targetIn('ZAF', '2025-11')?.pct, 3);
+  assert.equal(targetIn('USA', '2011-12'), undefined, 'no numeric Fed target before 2012');
+  assert.equal(targetIn('TUR', '2020-01'), undefined, 'Turkey is left out');
+});
+
+test('taylorGapCases calls tight and loose at the start of each run, with inflation lagged, and checks the move', () => {
+  const months = Array.from({ length: 30 }, (_, i) => addMonths('2014-01', i));
+  // Inflation 2% on a 2% target: rule = 2 + 2 + 0 = 4%.
+  const inflation = months.map((period) => ({ period, value: 2 }));
+  // Policy 4% (neutral) for 6 months, 6% (tight) from 2014-07, cut to 5.5% (still tight) in 2014-11,
+  // 1% (loose) from 2015-09, hiked to 1.5% (still loose) in 2015-12.
+  const policy = months.map((period, i) => ({ period, pct: i < 6 ? 4 : i < 10 ? 6 : i < 20 ? 5.5 : i < 23 ? 1 : 1.5 }));
+  const cases = taylorGapCases(spec({ method: 'taylor_gap', sample: { from: '2014-01' }, params: { publicationLagMonths: 2, windowMonths: 6, bandPts: 1 } }), 'USA', inflation, policy);
+  assert.equal(cases.length, 2, 'one call per run, not one per month');
+  const tight = cases.find((c) => c.when === '2014-07');
+  assert.ok(tight, 'first tight month is a call');
+  assert.equal(tight!.hit, true, 'cut 4 months later');
+  assert.match(tight!.what, /tight: policy 6\.00% vs rule 4\.00%/);
+  const loose = cases.find((c) => c.when === '2015-09');
+  assert.ok(loose);
+  assert.equal(loose!.hit, true);
+});
+
+test('taylorGapCases: no move within the window is a miss, and no target means no case', () => {
+  const months = Array.from({ length: 24 }, (_, i) => addMonths('2014-01', i));
+  const inflation = months.map((period) => ({ period, value: 2 }));
+  const policy = months.map((period, i) => ({ period, pct: i < 4 ? 4 : i < 16 ? 6 : 5 }));
+  const s = spec({ method: 'taylor_gap', sample: { from: '2014-01' }, params: { publicationLagMonths: 2, windowMonths: 6, bandPts: 1 } });
+  const cases = taylorGapCases(s, 'USA', inflation, policy);
+  assert.equal(cases.length, 1);
+  assert.equal(cases[0].when, '2014-05');
+  assert.equal(cases[0].hit, false, 'the cut comes 12 months later');
+  assert.deepEqual(taylorGapCases(s, 'TUR', inflation, policy), []);
 });

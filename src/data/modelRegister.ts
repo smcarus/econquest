@@ -56,7 +56,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
     where: 'Research > Markets & signals (Central Bank Watcher Agent), Council chat, Replicate a rate decision',
     use: 'Decision input',
     status: 'not_validated',
-    testPlan: 'Does a tight (loose) reading precede a cut (hike) or hold more often than chance within 6 months, on BIS policy-rate history since the 1990s with inflation lagged to what was published?',
+    testPlan: 'Pre-registered (taylor_gap v1): does a tight (loose) reading come before a cut (hike) within 6 months more often than in any month, from 2000, with inflation lagged 2 months and each bank\'s target as it stood then? The backtest leaves out the output gap.',
     limits: 'r* fixed at 2%; output gap is an annual IMF estimate revised each vintage; targets are hand-entered.',
     code: 'src/utils/taylorRule.ts',
     panels: ['Central Bank Watcher Agent', 'Replicate a rate decision', 'Track record log'],

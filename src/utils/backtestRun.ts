@@ -11,9 +11,11 @@ import { createHash } from 'crypto';
 import { BIS_API } from './bisDebtSecurities';
 import { CBPOL_AREA, CBPOL_DATASET, parseCbpolCsv } from './bisPolicyRates';
 import { CLI_LABEL, cliUrl, parseCli } from './oecdCli';
+import { CPI_LABEL, cpiUrl, parseCpi } from './oecdInflation';
+import { TARGET_HISTORY } from '../data/inflationTargetHistory';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, judge, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
+import { cftcCrowdingCases, cliTurnPolicyCases, taylorGapCases, judge, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
 import { writeFileAtomic } from './atomicWrite';
 
 export interface ValidationFile {
@@ -78,14 +80,15 @@ export const defaultFetcher: Fetcher = async (url) => {
 };
 
 /** The long histories the tests read, pulled once per run. */
-async function pullHistory(fetcher: Fetcher, problems: string[]) {
+async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<string>) {
   const areas = [...new Set(Object.values(CBPOL_AREA))].sort().join('+');
-  const [bis, cli, cftc] = await Promise.all([
+  const [bis, cli, cftc, cpi] = await Promise.all([
     fetcher(`${BIS_API}/${CBPOL_DATASET}/M.${areas}/all?startPeriod=1990-01&format=csv`).then((t) => parseCbpolCsv(t, 'M')).catch((e) => (problems.push(`BIS policy rates did not answer (${e.message})`), null)),
     fetcher(cliUrl()).then((t) => parseCli(t, 100_000)).catch((e) => (problems.push(`OECD leading indicator did not answer (${e.message})`), null)),
     fetcher(cftcUrl(new Date(), undefined, { since: '2006-06-01', limit: 50_000 })).then((t) => parseCftcRows(JSON.parse(t))).catch((e) => (problems.push(`CFTC did not answer (${e.message})`), null)),
+    methods.has('taylor_gap') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
   ]);
-  return { bis, cli, cftc };
+  return { bis, cli, cftc, cpi };
 }
 
 export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void }): Promise<ValidationFile & { problems: string[] }> {
@@ -95,7 +98,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
   const runnable = specs.filter((s) => s.spec);
   const file = loadValidation(opts.resultFile);
   if (runnable.length) {
-    const h = await pullHistory(opts.fetcher || defaultFetcher, problems);
+    const h = await pullHistory(opts.fetcher || defaultFetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
     const at = (opts.now || new Date()).toISOString();
     for (const { spec, hash } of runnable) {
       const s = spec!;
@@ -123,6 +126,17 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (!weeks?.length) continue;
           series.push(`${def.ccy} (${def.market})`);
           cases.push(...cftcCrowdingCases(s, def.ccy, weeks));
+        }
+      } else if (s.method === 'taylor_gap') {
+        if (!h.bis || !h.cpi) continue;
+        data = `${CPI_LABEL}; BIS central bank policy rates (monthly, from 1990); inflation targets as they stood (src/data/inflationTargetHistory.ts)`;
+        for (const iso3 of Object.keys(TARGET_HISTORY)) {
+          const area = CBPOL_AREA[iso3];
+          const infl = areaSeries(iso3, h.cpi)?.points;
+          const pol = area ? h.bis[area]?.points : undefined;
+          if (!infl?.length || !pol?.length) continue;
+          series.push(iso3);
+          cases.push(...taylorGapCases(s, iso3, infl, pol));
         }
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
