@@ -142,6 +142,14 @@ cut, or hold within 1 pt) and what the bank did. Two caveats are always shown: t
 revised figures rather than the first release, and the output gap is left out because the IMF's is
 revised every vintage. A teaching and checking tool, not a model of how the bank decides.
 
+*Track record* (below that): the Taylor rule signal on each saved pull (raise, cut or hold within 1 pt)
+and what the central bank did in the 90 days after it. The policy rate and the IMF output gap are read
+from that day's saved pull, as the app held them; monthly inflation uses only months at least 45 days
+old on the pull day. A run of weekly pulls with the same signal counts as one call. Each call stays
+*pending* until 90 days have passed and the BIS series reaches that day. The line on top counts calls
+followed and says when there are too few (under 5) to lean on. No odds are given. *Download log* saves
+every pull as CSV or Excel. The log starts with the archive, so it fills in week by week.
+
 With Menu > Show all tools, more tabs appear (Debt & fiscal, Markets, Politics & geo, Scenarios,
 Restructuring) holding the older desks.
 

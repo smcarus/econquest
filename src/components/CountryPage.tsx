@@ -13,6 +13,7 @@ import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPa
 import { MarketsMacroPanel } from './MarketsMacroPanel';
 import { AsOfPanel } from './AsOfPanel';
 import { DecisionReplayPanel } from './DecisionReplayPanel';
+import { TrackRecordPanel } from './TrackRecordPanel';
 import { PanelBoundary } from './PanelBoundary';
 import { HistoryPanel } from './HistoryPanel';
 
@@ -391,6 +392,9 @@ export const CountryPage: React.FC<{
           </PanelBoundary>
           <PanelBoundary name="Replicate a rate decision">
             <DecisionReplayPanel key={`replay-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+          </PanelBoundary>
+          <PanelBoundary name="Track record">
+            <TrackRecordPanel key={`track-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
           </PanelBoundary>
         </div>
       )}

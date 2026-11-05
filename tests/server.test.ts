@@ -639,6 +639,19 @@ test('downloads: figures and series come as CSV files; a series with no history 
   assert.equal(world.status, 200);
 });
 
+test('track record: log from the archive, with download', async () => {
+  const r = await fetch(`${base}/api/track-record/MEX`);
+  assert.equal(r.status, 200);
+  const body = (await r.json()) as { entries: unknown[]; calls: number; sentence: string; caveats: string[] };
+  assert.ok(Array.isArray(body.entries));
+  assert.equal(typeof body.calls, 'number');
+  assert.ok(body.sentence.length > 0 && body.caveats.length > 0);
+  const csv = await fetch(`${base}/api/export/MEX/track-record.csv`);
+  assert.equal(csv.status, 200);
+  assert.ok((await csv.text()).includes('iso3,pull_day,call,signal'));
+  assert.equal((await fetch(`${base}/api/export/MEX/track-record.xlsx`)).status, 200);
+});
+
 test('downloads: the same tables come as Excel workbooks', async () => {
   const figs = await fetch(`${base}/api/export/MEX/figures.xlsx`);
   assert.equal(figs.status, 200);
