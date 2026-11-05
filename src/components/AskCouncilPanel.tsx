@@ -638,7 +638,7 @@ export const AskCouncilPanel: React.FC<{
         {!asked && !choosing && !fullCouncilInChat && (
           <div className={page ? 'pt-[12vh] text-center space-y-4' : 'border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-2'} data-council-welcome="true">
             <p className={page ? 'text-xl font-semibold text-slate-900 dark:text-white' : 'text-sm text-slate-800 dark:text-slate-200'}>
-              What do you want to know about your watchlist?
+              What do you want to know about the Economy?
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Agents answer from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.
