@@ -7,6 +7,7 @@ import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
+import { WatchAlertsPanel } from './WatchAlertsPanel';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
@@ -237,6 +238,10 @@ export const TodayPage: React.FC<{
           fullCouncil={fullCouncil}
         />
         </div>
+      </div>
+
+      <div id="tool-watch-alerts" className="scroll-mt-4">
+        <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
       </div>
 
       <div id="tool-divergences" className="scroll-mt-4">

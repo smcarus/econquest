@@ -459,3 +459,14 @@ test('Saved research: conversations and documents are kept in data/local/researc
   const empty = await (await fetch(`${base}/api/research`)).json();
   assert.equal(empty.briefs.length + empty.docs.length, 0);
 });
+
+test('Watch alerts: rules you set are kept in data/local/watch-rules.json; bad rules are dropped', async () => {
+  const put = (body: unknown) => fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  assert.deepEqual((await (await fetch(`${base}/api/watch-rules`)).json()).rules, []);
+  const saved = await (await put({ rules: [{ id: 'w1', iso3: '*', metric: 'cftc_percentile', op: '>=', value: 90, createdAt: '2026-11-05T05:00:00Z' }, { iso3: 'bad', metric: 'x', op: '>', value: 'no' }] })).json();
+  assert.equal(saved.rules.length, 1);
+  const onDisk = JSON.parse(readFileSync(path.join(dataDir, 'local', 'watch-rules.json'), 'utf8'));
+  assert.equal(onDisk.rules[0].metric, 'cftc_percentile');
+  await put({ rules: [] });
+  assert.deepEqual((await (await fetch(`${base}/api/watch-rules`)).json()).rules, []);
+});
