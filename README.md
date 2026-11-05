@@ -66,7 +66,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 
 | Page | What it is for |
 | --- | --- |
-| **Workspace** | The daily start: Council chat first, then since your last visit, next two weeks and watch alerts, with your inputs and watchlist on the left |
+| **Workspace** | A chat page: Council chat fills the screen with the question box at the bottom; **Briefing** opens your inputs, watchlist, what moved, next two weeks and watch alerts in a side panel |
 | **Research** | One page, three scopes: **One country**, **Compare countries** (the watchlist side by side) and **My holdings**. Each scope has the same four sections: **Summary** (country brief / where data and price disagree, growth and inflation / book brief), **Markets & signals** (MarketEdge / MarketEdge table and scenarios / signals on your holdings), **History & data** (charts, As of, Replicate, Track record / Compare countries table / holdings import) and **Sources** (what is live, or why not). CSV and Excel downloads |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
 | **Tools** (Settings > Tools) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |

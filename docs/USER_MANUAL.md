@@ -25,10 +25,11 @@ shown when an input is missing.
 
 ## 1. Workspace
 
-The page the app opens on. Council chat is the main panel, at the top of the right column; What
-moved, Next two weeks and Watch alerts follow it. Your inputs and the watchlist sit in a left column
-that stays in view on a desktop. On a phone Council chat comes first, with a jump bar at the bottom
-of the screen (Council · Moved · Dates · Alerts · Inputs · Watchlist).
+The page the app opens on is a chat page, laid out like an AI chat app: the conversation with the
+council fills the screen and the question box sits at the bottom. **Briefing** (top right of the
+chat; an amber dot means an input needs setup) opens a side panel with Your inputs, the watchlist,
+What moved, Next two weeks and Watch alerts; on a phone it covers the screen, and *Close* hides it.
+The app remembers whether you left it open.
 
 **Your inputs.** One chip for each thing you set that changes what Workspace shows: watchlist, open
 country, data feeds, free keys, AI model, holdings and saved research. Each chip shows its state
@@ -57,6 +58,9 @@ The chat is one conversation across the whole app. On Research and Reports, *Cou
 header opens the same chat in a panel on the right (full screen on a phone); questions asked there
 show on Workspace too, and an answer that is still being written keeps going when you change page.
 *Close* hides the panel; the header button brings it back.
+
+Under the question box, *Options* holds the rest: the countries to ask about, policy documents, the
+full council and saved research.
 
 - *Countries*: as named in the question, otherwise the whole watchlist. A country not on the
   watchlist is named as not covered rather than silently answered for the list; *Add … for this

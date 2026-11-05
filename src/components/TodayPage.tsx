@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DigestPanel } from './DigestPanel';
-import { CalendarClock, ExternalLink, Ticket } from 'lucide-react';
+import { CalendarClock, ExternalLink, PanelRight, Ticket, X } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
@@ -24,15 +24,11 @@ import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView
 
 // v2: only figures from real sources are recorded (v1 held built-in values, so it is ignored).
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
-/** Phone jump bar targets, in page order. */
-const JUMPS: [string, string][] = [
-  ['tool-council', 'Council'],
-  ['tool-digest', 'Moved'],
-  ['tool-calendar', 'Dates'],
-  ['tool-watch-alerts', 'Alerts'],
-  ['ws-inputs', 'Inputs'],
-  ['ws-watchlist', 'Watchlist'],
-];
+/** Panels that live in the Briefing side panel; a link to one of them opens it. */
+const BRIEFING_IDS = ['ws-inputs', 'ws-watchlist', 'tool-digest', 'tool-calendar', 'tool-watch-alerts'];
+const BRIEFING_KEY = 'econquest.briefing.v1';
+/** App asks a page to show an anchor before scrolling to it (the Briefing panel opens for its panels). */
+export const REVEAL_EVENT = 'econquest:reveal';
 /** Elections, budgets and IMF dates listed before "Show all". */
 const PF_SHOWN = 3;
 
@@ -199,45 +195,96 @@ export const TodayPage: React.FC<{
     ...server,
   });
   const [highlight, setHighlight] = useState<InputId | null>(null);
+  // The Briefing side panel: closed by default so the chat fills the page; remembered.
+  const [briefing, setBriefingState] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem(BRIEFING_KEY) === 'open';
+    } catch {
+      return false;
+    }
+  });
+  const setBriefing = (open: boolean) => {
+    setBriefingState(open);
+    try {
+      localStorage.setItem(BRIEFING_KEY, open ? 'open' : 'closed');
+    } catch {
+      /* private window */
+    }
+  };
+  useEffect(() => {
+    const onReveal = (e: Event) => {
+      if (BRIEFING_IDS.includes(String((e as CustomEvent).detail))) setBriefing(true);
+    };
+    window.addEventListener(REVEAL_EVENT, onReveal);
+    return () => window.removeEventListener(REVEAL_EVENT, onReveal);
+  }, []);
+  const toFix = chips.filter((c) => c.state === 'setup').length;
   const held = useMemo(() => new Set(heldIso3 || []), [heldIso3]);
   const lit = (panel: PanelId) =>
     highlight && chips.find((c) => c.id === highlight)?.drives.includes(panel) ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-950' : '';
   const inputAction = (id: InputId) => {
-    if (id === 'research') document.getElementById('tool-council')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (id === 'research') document.querySelector<HTMLDetailsElement>('[data-council-options]')?.setAttribute('open', '');
     else onInputAction?.(id);
   };
   const uses = (panel: PanelId) => (onInputAction ? <UsesLine chips={chips} panel={panel} onAction={inputAction} /> : undefined);
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
   const byIso = new Map(watchlistItems.map((w) => [w.iso3, w]));
   const openIso = (iso3: string, sectionId?: string) => {
     const item = byIso.get(iso3);
     if (item) onOpenCountry(item, sectionId);
   };
 
+  const briefingButton = (
+    <button
+      type="button"
+      className={`ui-btn ${briefing ? 'ui-btn-primary' : 'ui-btn-ghost'}`}
+      onClick={() => setBriefing(!briefing)}
+      aria-expanded={briefing}
+      aria-controls="ws-briefing"
+      data-briefing-toggle="true"
+      title="Your inputs, watchlist, what moved, the next two weeks and watch alerts"
+    >
+      <PanelRight className="w-3.5 h-3.5" /> Briefing
+      {toFix > 0 && <span className="ml-0.5 inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-label={`${toFix} inputs need setup`} />}
+    </button>
+  );
+
   return (
     <div className="space-y-4" data-no-stat-ref="true">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Workspace</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">{today}</p>
+      {/* Workspace is a chat page: the conversation fills the screen, input box at the bottom. Everything else sits in Briefing. */}
+      <div className="flex gap-4 h-[calc(100dvh-9.5rem)] lg:h-[calc(100dvh-7.5rem)]">
+        <div className={`min-w-0 flex-1 transition-shadow ${lit('council')}`} id="tool-council">
+          <PanelBoundary name="Council chat">
+            <AskCouncilPanel
+              page
+              toolbar={briefingButton}
+              onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+              onSendToReports={() => onSendCouncilToReports?.()}
+              fullCouncil={fullCouncil}
+            />
+          </PanelBoundary>
         </div>
-      </div>
 
-      {/* Inputs on the left (sticky on a desktop), Council chat and the other outputs on the right. On a phone the chat comes first. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(18rem,22rem)_1fr] gap-4 items-start pb-16 lg:pb-0">
-        <aside className="order-2 lg:order-1 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" aria-label="Your inputs and watchlist">
-          <div id="ws-inputs" className="scroll-mt-36 lg:scroll-mt-20">
+        {briefing && (
+          <aside
+            id="ws-briefing"
+            aria-label="Briefing"
+            data-briefing="true"
+            className="fixed inset-0 z-30 overflow-y-auto bg-slate-50 dark:bg-[#0B0F17] p-3 space-y-4 lg:static lg:z-auto lg:p-0 lg:bg-transparent lg:w-[24rem] lg:shrink-0"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="ui-section-title">Briefing</h2>
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setBriefing(false)} aria-label="Close Briefing" data-briefing-close="true">
+                <X className="w-3.5 h-3.5" /> Close
+              </button>
+            </div>
+          <div id="ws-inputs" className="scroll-mt-4">
             {onInputAction && (
               <PanelBoundary name="Your inputs">
                 <WorkspaceInputs chips={chips} onAction={inputAction} onHighlight={setHighlight} />
               </PanelBoundary>
             )}
           </div>
-          <div id="ws-watchlist" className="scroll-mt-36 lg:scroll-mt-20">
+          <div id="ws-watchlist" className="scroll-mt-4">
           <Card
             title="Watchlist"
             icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
@@ -280,28 +327,13 @@ export const TodayPage: React.FC<{
             </PanelBoundary>
           </Card>
           </div>
-        </aside>
-
-        <div className="min-w-0 space-y-4 order-1 lg:order-2">
-        {/* Council chat first and largest: the main thing to do on Workspace. */}
-        <div className={`min-w-0 scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('council')}`} id="tool-council">
-        <PanelBoundary name="Council chat">
-        <AskCouncilPanel
-          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-          onSendToReports={() => onSendCouncilToReports?.()}
-          fullCouncil={fullCouncil}
-          uses={uses('council')}
-        />
-        </PanelBoundary>
-        </div>
-
-        <div id="tool-digest" className={`scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('digest')}`}>
+        <div id="tool-digest" className={`scroll-mt-4 transition-shadow ${lit('digest')}`}>
           <PanelBoundary name="Since your last visit">
             <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('digest')} />
           </PanelBoundary>
         </div>
 
-          <div id="tool-calendar" className="scroll-mt-36 lg:scroll-mt-20">
+          <div id="tool-calendar" className="scroll-mt-4">
           <Card
             title="Next two weeks"
             icon={<CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
@@ -409,26 +441,14 @@ export const TodayPage: React.FC<{
           </div>
 
 
-        <div id="tool-watch-alerts" className={`scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('alerts')}`}>
+        <div id="tool-watch-alerts" className={`scroll-mt-4 transition-shadow ${lit('alerts')}`}>
           <PanelBoundary name="Watch alerts">
             <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('alerts')} />
           </PanelBoundary>
         </div>
-        </div>
+          </aside>
+        )}
       </div>
-
-      {/* Phone: a jump bar fixed to the bottom of the screen. */}
-      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-20 bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800" aria-label="Jump to a Workspace panel" data-ws-jump="true">
-        <ul className="grid grid-cols-6 text-xs">
-          {JUMPS.map(([id, label]) => (
-            <li key={id}>
-              <a href={`#${id}`} className="block py-3 text-center text-slate-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-blue-300">
-                {label}
-              </a>
-            </li>
-          ))}
-        </ul>
-      </nav>
 
       {!coreOnly && (
       <Card
