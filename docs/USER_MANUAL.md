@@ -343,9 +343,11 @@ hold no figures of their own; the handout reads them from the app's series when 
   outcome window and the pass mark (enough cases, a lift over the base rate, a p-value) before any
   run, and its SHA-256 is listed in `manifest.json`; a file that no longer matches its hash is refused.
   The tests pull the long free histories (BIS policy rates since 1990, the OECD leading indicator,
-  CFTC since 2006), so they need a connection. A verdict (passed, failed, too few cases) replaces the
-  badge and is saved in `data/local/validation/results.json` and in the audit log. First tests:
-  leading-indicator turn to policy move, and CFTC crowding to unwind.
+  CFTC since 2006, OECD consumer prices), so they need a connection. A verdict (passed, failed, too few cases) replaces the
+  badge and is saved in `data/local/validation/results.json` and in the audit log. Tests: leading-
+  indicator turn to policy move, CFTC crowding to unwind, and the policy rule check (Taylor gap:
+  does a tight reading come before a cut, and a loose one before a hike, within 6 months, judged
+  against each bank's inflation target as it stood at the time, from `src/data/inflationTargetHistory.ts`).
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it

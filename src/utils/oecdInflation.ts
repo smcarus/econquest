@@ -42,8 +42,8 @@ export type CpiBasis = 'oecd_yoy' | 'from_index' | 'national';
 export type CpiSeries = Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }>;
 
 /** Reads the OECD reply into one y/y series per area. Null when nothing usable. */
-export function parseCpi(text: unknown): CpiSeries | null {
-  const obs = parseOecdReply(text);
+export function parseCpi(text: unknown, keepMonths?: number): CpiSeries | null {
+  const obs = parseOecdReply(text, keepMonths);
   if (!obs?.length) return null;
   const base = { MEASURE: ['CPI'], FREQ: ['M'], EXPENDITURE: ['_T'] };
   const prefer = { METHODOLOGY: ['N', 'HICP'], ADJUSTMENT: ['N'] };
