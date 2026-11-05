@@ -103,7 +103,7 @@ test('brief: own CDS is labelled with provider and date; without the switch it r
   assert.equal(own.verified, true);
   const none = cds(run(false));
   assert.equal(none.value, 'Missing');
-  assert.match(none.help || '', /CDS_FEED=csv/);
+  assert.match(none.help || '', /Your own paid data/);
   // Own CDS alone does not make the snapshot "live" (that needs IMF and World Bank).
   assert.notEqual(getSnapshotDataStatus(run(true).openData).mode, 'live');
 });
