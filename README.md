@@ -64,7 +64,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 | Page | What it is for |
 | --- | --- |
 | **Workspace** | Watchlist, Ask the council, watch alerts, where data and price disagree, MarketEdge, scenario exposure, official calendar |
-| **Country Research** | Brief (economist, issuer and official-sector views), MarketEdge for the country, Overview of every figure with its source |
+| **Country Research** | Brief (economist, issuer and official-sector views), MarketEdge for the country, Overview of every figure with its source, History charts; CSV downloads of figures and series |
 | **Portfolio** | Your holdings (CSV import) or your watchlist at equal weight: concentration, where the risk sits, dates to watch |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
 | **Tools** | Every ready tool in one list, data connections, and what each hidden desk would need to come back |

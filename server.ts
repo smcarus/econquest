@@ -35,6 +35,7 @@ import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
+import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
@@ -3323,6 +3324,36 @@ async function startServer() {
     if (hit) return res.json({ iso3, ...hit });
     const miss = set.missing.find((m) => m.id === req.params.id);
     res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
+  });
+
+  // Downloads (src/utils/csvExport.ts): CSV with unit, source and dates per value; Missing with its reason.
+  const sendCsv = (res: express.Response, name: string, csv: string) => {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.attachment(name);
+    res.send(csv);
+  };
+  app.get('/api/export/world/series.csv', async (_req, res) => {
+    sendCsv(res, exportFileName('WORLD', 'commodity-prices'), toCsv(SERIES_HEADER, seriesRows('WORLD', await worldSeries())));
+  });
+  app.get('/api/export/:iso3/series.csv', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    sendCsv(res, exportFileName(iso3, 'series'), toCsv(SERIES_HEADER, seriesRows(iso3, set.series)));
+  });
+  app.get('/api/export/:iso3/series/:id.csv', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    const hit = set.series.find((s) => s.id === req.params.id);
+    if (!hit) {
+      const miss = set.missing.find((m) => m.id === req.params.id);
+      return res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.` });
+    }
+    sendCsv(res, exportFileName(iso3, hit.id), toCsv(SERIES_HEADER, seriesRows(iso3, [hit])));
+  });
+  app.get('/api/export/:iso3/figures.csv', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
+    sendCsv(res, exportFileName(iso3, 'figures'), toCsv(FIGURES_HEADER, figureRows(snap)));
   });
 
   // The pull archive: every saved pull by day (data/archive/). Read-only.
