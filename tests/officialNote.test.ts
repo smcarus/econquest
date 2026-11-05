@@ -9,7 +9,7 @@ import {
   sustainabilitySignals,
 } from '../src/utils/officialNote.ts';
 import { buildBaselineOpenData } from '../src/data/presetsAndBaselines.ts';
-import { markLive } from './helpers/live.ts';
+import { fillTestValues, markLive } from './helpers/live.ts';
 import type { CouncilAssessmentRun, OpenDataSnapshot } from '../src/types/council.ts';
 
 const NOW = new Date('2026-11-04T12:00:00Z');
@@ -19,6 +19,7 @@ function runFor(iso3: string, tweak: (s: OpenDataSnapshot) => void = () => {}, l
   openData.dataStatus = { verifiedLiveSources: [], checkedAt: '2026-11-04T12:00:00Z' };
   if (live) {
     markLive(openData);
+    fillTestValues(openData, ['market.sovereign10YBondYieldPct']);
     openData.official10YYield = { valuePct: openData.monetaryAndMarket.sovereign10YBondYieldPct, period: '2026-09', source: 'OECD via FRED', seriesId: 'S', url: 'u', frequency: 'monthly' };
     openData.dataStatus!.verifiedLiveSources.push('FRED / OECD 10Y government yield (monthly average)');
   }
@@ -97,6 +98,7 @@ test('a projection far above the IMF 2027 forecast is flagged as an upper bound'
     s.imfIndicators.realGdpGrowthPct = 2;
     s.imfIndicators.cpiInflationPct = 4;
     s.official10YYield!.valuePct = 13; // real rate about 10%
+    s.monetaryAndMarket.sovereign10YBondYieldPct = 13;
   });
   assert.ok(officialBrief(run, NOW).judgements.some((j) => /upper bound/.test(j)));
 });

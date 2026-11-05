@@ -470,3 +470,23 @@ test('Watch alerts: rules you set are kept in data/local/watch-rules.json; bad r
   await put({ rules: [] });
   assert.deepEqual((await (await fetch(`${base}/api/watch-rules`)).json()).rules, []);
 });
+
+test('integration API sends no built-in figures: without a council run it says so', async () => {
+  for (const url of ['/api/v1/integration/bundle/BRA', '/api/v1/integration/desks/BRA']) {
+    const res = await fetch(`${base}${url}`);
+    assert.equal(res.status, 404, url);
+    const body = (await res.json()) as { error: string; message: string };
+    assert.equal(body.error, 'NO_COUNCIL_RUN');
+    assert.match(body.message, /never built-in figures/);
+  }
+});
+
+test('a snapshot served with every feed down carries no figures', async () => {
+  const res = await fetch(`${base}/api/open-data/POL`);
+  const { snapshot } = (await res.json()) as { snapshot: Record<string, Record<string, unknown>> };
+  for (const section of ['imfIndicators', 'worldBankIndicators']) {
+    for (const [k, v] of Object.entries(snapshot[section])) {
+      if (k !== 'sourceUrl') assert.equal(v, null, `${section}.${k}`);
+    }
+  }
+});

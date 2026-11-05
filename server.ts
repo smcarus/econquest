@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { mergeLastGood } from './src/utils/snapshotMerge';
+import { reviveMissing } from './src/utils/reviveMissing';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
 import {
   OWN_CDS_LABEL,
@@ -1791,11 +1792,14 @@ const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
 const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 /** A pull that came back short (a feed failed, or nothing answered) is tried again after an hour. */
 const SNAPSHOT_RETRY_MS = 60 * 60 * 1000;
-type StoredSnapshot = { snapshot: OpenDataSnapshot; pulledAt: number; incomplete?: boolean };
+/** Version 2: saved after built-in figures were removed (older copies carry built-in curves and betas). */
+const SNAPSHOT_SCHEMA = 2;
+type StoredSnapshot = { snapshot: OpenDataSnapshot; pulledAt: number; incomplete?: boolean; schema?: number };
 const snapshotStore = new Map<string, StoredSnapshot>();
 
 /** Whether a saved snapshot is due a refresh: a week for a full pull, an hour for one that came back short. */
 function snapshotDue(stored: StoredSnapshot): boolean {
+  if (stored.schema !== SNAPSHOT_SCHEMA) return true; // saved by an older version: pull again
   const age = Date.now() - stored.pulledAt;
   return age > (stored.incomplete ? SNAPSHOT_RETRY_MS : SNAPSHOT_REFRESH_MS);
 }
@@ -1811,6 +1815,8 @@ function loadStoredSnapshot(iso3: string) {
   try {
     const parsed = JSON.parse(fs.readFileSync(snapshotFile(iso3), 'utf8'));
     if (parsed?.snapshot && typeof parsed.pulledAt === 'number') {
+      // Missing figures are saved as null (JSON has no NaN); make them NaN again.
+      parsed.snapshot = reviveMissing(parsed.snapshot, buildBaselineOpenData(iso3));
       snapshotStore.set(iso3, parsed);
       return parsed as StoredSnapshot;
     }
@@ -1833,7 +1839,7 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
         console.warn(`[snapshot-store] ${iso3}: kept ${merged.carried.length} figure(s) from the last good pull; retrying within the hour`);
       }
       const snapshot = merged.snapshot;
-      const entry: StoredSnapshot = { snapshot, pulledAt: Date.now(), ...(merged.incomplete ? { incomplete: true } : {}) };
+      const entry: StoredSnapshot = { snapshot, pulledAt: Date.now(), schema: SNAPSHOT_SCHEMA, ...(merged.incomplete ? { incomplete: true } : {}) };
       snapshotStore.set(iso3, entry);
       fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
       const tmp = `${snapshotFile(iso3)}.tmp`;
@@ -2215,15 +2221,6 @@ function computeHmacSha256(payloadStr: string, secret: string): string {
     .digest('hex')}`;
 }
 
-function getOrBuildAssessmentRun(iso3Input: string): CouncilAssessmentRun {
-  const iso3 = String(iso3Input || 'BRA').toUpperCase().trim();
-  const cached = latestRunsByIso3.get(iso3);
-  if (cached) return cached;
-  const snapshot = buildBaselineOpenData(iso3);
-  const freshRun = buildDefaultAssessmentRun(iso3, snapshot);
-  latestRunsByIso3.set(iso3, freshRun);
-  return freshRun;
-}
 
 function buildTopLevelIntegrationPayload(
   run: CouncilAssessmentRun,
@@ -5772,7 +5769,13 @@ ${String(documentText).slice(0, 12000)}
       supreme: 'supreme_council',
     };
     const scope = scopeMap[deskParam] || 'all_desks_bundle';
-    const run = getOrBuildAssessmentRun(iso3);
+    const run = latestRunsByIso3.get(iso3);
+    if (!run) {
+      return res.status(404).json({
+        error: 'NO_COUNCIL_RUN',
+        message: `No council run for ${iso3} yet. Run the full council on it in the app first. This API sends only what a council run produced from live figures, never built-in figures.`,
+      });
+    }
     const payload = buildTopLevelIntegrationPayload(run, scope, {
       includeSubAgents,
       includeQuantSuites,
@@ -5808,7 +5811,13 @@ ${String(documentText).slice(0, 12000)}
   app.get('/api/v1/integration/bundle/:iso3', verifyIntegrationApiKey, (req, res) => {
     const t0 = Date.now();
     const iso3 = String(req.params.iso3 || 'BRA').toUpperCase().trim();
-    const run = getOrBuildAssessmentRun(iso3);
+    const run = latestRunsByIso3.get(iso3);
+    if (!run) {
+      return res.status(404).json({
+        error: 'NO_COUNCIL_RUN',
+        message: `No council run for ${iso3} yet. Run the full council on it in the app first. This API sends only what a council run produced from live figures, never built-in figures.`,
+      });
+    }
     const payload = buildTopLevelIntegrationPayload(run, 'all_desks_bundle', {
       includeSubAgents: true,
       includeQuantSuites: true,
@@ -5859,7 +5868,14 @@ ${String(documentText).slice(0, 12000)}
       if (incomingRun && incomingRun.iso3) {
         latestRunsByIso3.set(incomingRun.iso3.toUpperCase(), incomingRun);
       }
-      const targetRun = incomingRun || getOrBuildAssessmentRun(cleanIso3);
+      const targetRun = incomingRun || latestRunsByIso3.get(cleanIso3);
+      if (!targetRun) {
+        const iso3 = cleanIso3;
+        return res.status(404).json({
+          error: 'NO_COUNCIL_RUN',
+          message: `No council run for ${iso3} yet. Run the full council on it in the app first. This API sends only what a council run produced from live figures, never built-in figures.`,
+        });
+      }
       const receipts = await dispatchTopLevelIntegrationEvent(targetRun, scope, eventType);
       const payload = buildTopLevelIntegrationPayload(targetRun, scope);
 

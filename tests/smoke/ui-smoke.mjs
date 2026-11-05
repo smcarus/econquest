@@ -74,6 +74,9 @@ try {
       for (const name of crashed) failures.push(`${where}: "${name}" showed its crash note`);
       const text = (await page.innerText('body')).trim();
       if (text.length < 40) failures.push(`${where}: page is blank`);
+      // A missing figure reads Missing or a dash, never "NaN" or "undefined".
+      const bad = text.match(/[^\n]{0,40}\b(NaN|undefined|Infinity)\b[^\n]{0,40}/);
+      if (bad) failures.push(`${where}: shows "${bad[0].trim()}"`);
     };
 
     await page.goto(base, { waitUntil: 'networkidle', timeout: 90_000 });

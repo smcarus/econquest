@@ -33,6 +33,7 @@ import {
   saveSeenDefaultWatchlists,
   buildAnnotatedChartsForSovereign,
   buildDefaultAssessmentRun,
+  buildBaselineOpenData,
   recomputeDerivedOpenDataAnalytics,
   registerCustomSovereignInCatalog,
 } from './data/presetsAndBaselines';
@@ -174,6 +175,7 @@ import {
 } from 'lucide-react';
 import { OPEN_SETTINGS_EVENT, SettingsDialog } from './components/SettingsDialog';
 import { PanelBoundary } from './components/PanelBoundary';
+import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 const AnnotatedChartsDeck = lazyNamed(() => import('./components/AnnotatedChartsDeck'), 'AnnotatedChartsDeck');
@@ -729,6 +731,8 @@ export default function App() {
         // Fallback to defaults
       }
     }
+    // Missing figures were saved as null (JSON has no NaN); make them NaN again.
+    if (saved) saved = reviveWatchlistGroups(saved);
     if (!saved) {
       saveSeenDefaultWatchlists(DEFAULT_WATCHLISTS.map((g) => g.id));
       return DEFAULT_WATCHLISTS;
@@ -1055,7 +1059,15 @@ export default function App() {
         )}&countryName=${encodeURIComponent(countryNameTarget)}`
       );
       if (res.ok) {
-        const data = await res.json();
+        const raw = await res.json();
+        // Missing figures travel as null (JSON has no NaN); turn them back into NaN before use.
+        const data = raw?.snapshot
+          ? {
+              ...raw,
+              snapshot: reviveMissing(raw.snapshot, buildBaselineOpenData(raw.snapshot.iso3 || iso3Target)),
+              run: raw.run ? reviveMissing(raw.run, buildDefaultAssessmentRun(raw.run.iso3 || iso3Target)) : raw.run,
+            }
+          : raw;
         if (data?.snapshot && data?.charts) {
           setRun((prev) => {
             if (data.run) {
@@ -1326,7 +1338,7 @@ export default function App() {
     setPolicyDocTitle(docTitleStr);
     setPolicyDocText(docTextStr);
 
-    const nextOpenData: OpenDataSnapshot = JSON.parse(JSON.stringify(run.openData));
+    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
     nextOpenData.monetaryAndMarket.policyRatePct = Number(
       Math.max(
         0.5,
@@ -1394,7 +1406,7 @@ export default function App() {
   };
 
   const handleApplyConditionalEventShock = (sim: ConditionalBayesianEventSimulation) => {
-    const nextOpenData: OpenDataSnapshot = JSON.parse(JSON.stringify(run.openData));
+    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
     nextOpenData.monetaryAndMarket.cds5YSpreadBps = Math.max(
       15,
       Math.round(nextOpenData.monetaryAndMarket.cds5YSpreadBps + sim.conditional5YCdsDeltaBps)
@@ -1445,7 +1457,7 @@ export default function App() {
     yield10YDeltaBps: number;
     fxDepreciationPct: number;
   }) => {
-    const nextOpenData: OpenDataSnapshot = JSON.parse(JSON.stringify(run.openData));
+    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
     nextOpenData.monetaryAndMarket.cds5YSpreadBps = Math.max(
       15,
       Math.round(nextOpenData.monetaryAndMarket.cds5YSpreadBps + params.cdsDeltaBps)
@@ -1493,7 +1505,7 @@ export default function App() {
     connectorName: string,
     extracted: Partial<Record<ExternalInternalConnectorMetricKey, number>>
   ) => {
-    const nextOpenData: OpenDataSnapshot = JSON.parse(JSON.stringify(run.openData));
+    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
     const appliedFields: string[] = [];
 
     if (typeof extracted.gdpGrowth === 'number') {
