@@ -134,3 +134,44 @@ test('check: facts and interpretation are kept apart, numbers must trace (focus 
   assert.ok(brief.points.includes('Households and firms: Real incomes fall when prices outrun wages; borrowers gain while savers lose.'));
   assert.ok(brief.points.some((p) => p.startsWith('What would change it:')));
 });
+
+test('references: a sentence cites a source only when it quotes that source\'s figure as written; rule readings are not cited', async () => {
+  const { citedExplain } = await import('../src/utils/explain.ts');
+  const answers = [
+    {
+      id: 'cb' as const,
+      name: 'Central Bank Watcher',
+      why: 'x',
+      findings: [
+        {
+          iso3: 'TUR',
+          countryName: 'Turkey',
+          reading: 'Loose.',
+          weight: 1,
+          figures: [
+            { label: 'CPI inflation', value: '34.0%', source: 'OECD, monthly', tag: 'live' as const },
+            { label: 'Policy rate', value: '30.00%', source: 'BIS policy rates', tag: 'official' as const },
+            { label: 'Real policy rate', value: '-4.0%', source: 'Central Bank Watcher rule', tag: 'model' as const },
+          ],
+        },
+      ],
+      missing: [],
+    },
+  ];
+  const c = citedExplain(
+    {
+      facts: ['The policy rate is 30.00% and inflation 34.0%.', 'The real rate is -4.0%.'],
+      reasons: ['Policy is loose.'],
+      lenses: [{ lens: 'micro', label: 'Households and firms', sentences: ['Inflation of 34.0% erodes real incomes.'] }],
+      watch: [],
+      focus: { kind: 'figure', label: 'Ten-year yield', value: '27.5%', source: 'FRED', asOf: '2026-09' },
+    },
+    answers
+  );
+  // Numbered in reading order; the same source keeps its number.
+  assert.deepEqual(c.facts[0].refs, [1, 2]);
+  assert.equal(c.references[0].source, 'BIS policy rates');
+  assert.deepEqual(c.facts[1].refs, []);
+  assert.deepEqual(c.lenses[0].sentences[0].refs, [2]);
+  assert.equal(c.references.length, 2);
+});
