@@ -129,7 +129,11 @@ test('Reports: no saved brief says how to make one; a brief without a model says
   assert.match(summary.lines[0], /^No AI summary\. No AI model answered\./);
   const agents = sections.find((s) => s.heading === 'What each agent found')!;
   assert.match(agents.lines.join('\n'), /Central Bank Watcher Agent/);
-  assert.match(agents.lines.join('\n'), /CPI inflation 34\.0% \(Live data, IMF, live\)/);
+  assert.match(agents.lines.join('\n'), /CPI inflation 34\.0% \(Live data\) \[1\]/);
+  // Rule readings keep their method beside them; sourced figures are listed once under References.
+  assert.match(agents.lines.join('\n'), /Real policy rate -4\.0% \(Central Bank Watcher Agent, policy rate minus inflation\)/);
+  const refs = sections.find((s) => s.heading === 'References')!;
+  assert.match(refs.lines[0], /^\[1\] IMF, live\. .*Read by the app on 2026-11-04\./);
 });
 
 test('follow-ups keep the last countries and agents unless the question names others', async () => {

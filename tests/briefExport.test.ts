@@ -27,10 +27,11 @@ const brief: SavedCouncilBrief = {
   synthesis: { brief: { headline: 'Debt rises → 92% by 2031.', points: ['Primary balance falls short.'], disagreements: [], gaps: [] }, removed: [], provider: 'Ollama' } as any,
 };
 
-test('Markdown keeps every figure with its source and ends with the disclaimer', () => {
+test('Markdown keeps every figure with a numbered source, lists the references and ends with the disclaimer', () => {
   const md = councilBriefMarkdown(brief);
   assert.match(md, /^# Council brief/);
-  assert.match(md, /Debt\/GDP 86\.4% \(Live data, IMF WEO, 2025\)/);
+  assert.match(md, /Debt\/GDP 86\.4% \(Live data\) \[1\]/);
+  assert.match(md, /## References\n\n\[1\] IMF WEO, 2025\. https:\/\/www\.imf\.org\/external\/datamapper\/ Read by the app on 2026-11-05\./);
   assert.match(md, /Is Brazil’s debt sustainable\?/);
   assert.match(md, /_For discussion, not investment advice\./);
 });

@@ -1,3 +1,4 @@
+import { withNoteReferences } from '../utils/citations';
 import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
@@ -148,9 +149,12 @@ export function buildReportSections(
 ): Array<{ heading: string; lines: string[] }> {
   const on = (id: string) => include[id] !== false;
   if (audience === 'council') return councilBriefSections(loadCouncilBrief(), on);
-  if (audience === 'economist') return buildEconomistSections(p.run, on);
-  if (audience === 'official') return buildOfficialSections(p.run, on);
-  if (audience === 'banker') return buildBankerSections(p.run, p.peers ?? p.riskLookup, on);
+  // Country notes: sourced figures get reference numbers and a References list (src/utils/citations.ts).
+  const accessed = p.run.openData?.fetchedAt || new Date().toISOString();
+  const cite = (sections: Array<{ heading: string; lines: string[] }>) => (on('references') ? withNoteReferences(sections, accessed) : sections);
+  if (audience === 'economist') return cite(buildEconomistSections(p.run, on));
+  if (audience === 'official') return cite(buildOfficialSections(p.run, on));
+  if (audience === 'banker') return cite(buildBankerSections(p.run, p.peers ?? p.riskLookup, on));
   if (audience === 'book' || audience === 'client_review') {
     const v = bookView(p.holdings, p.riskLookup, p.peers ?? p.riskLookup);
     return audience === 'book' ? buildBookSections(v, p.stagedTickets, on) : buildClientReviewSections(v, on);
