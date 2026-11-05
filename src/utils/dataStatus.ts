@@ -116,6 +116,21 @@ export const DATA_MODE_HELP: Record<SnapshotDataMode, string> = {
     'This snapshot was saved by an older version that did not record which feeds answered. Press Refresh now under Research > One country.',
 };
 
+/**
+ * The status badge's words. While the feeds cannot be reached the figures on screen are the last
+ * saved pull, so a snapshot that was live when saved reads "Saved data", never "Live data".
+ */
+export function dataBadgeText(mode: SnapshotDataMode, offline: boolean, asOf: string): { label: string; help: string; saved: boolean } {
+  if (offline && (mode === 'live' || mode === 'partial')) {
+    return {
+      label: 'Saved data',
+      help: `The free data feeds cannot be reached from this computer, so these are the figures saved${asOf ? ` on ${asOf}` : ''}. ${mode === 'partial' ? 'Some feeds had not answered when they were saved. ' : ''}They refresh once the feeds answer again.`,
+      saved: true,
+    };
+  }
+  return { label: DATA_MODE_LABEL[mode], help: DATA_MODE_HELP[mode], saved: false };
+}
+
 export function formatAsOf(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '';

@@ -1,8 +1,8 @@
 import React from 'react';
 import type { OpenDataSnapshot } from '../types/council';
+import { useOnlineStatus } from './OfflineData';
 import {
-  DATA_MODE_HELP,
-  DATA_MODE_LABEL,
+  dataBadgeText,
   formatAsOf,
   getSnapshotDataStatus,
 } from '../utils/dataStatus';
@@ -29,17 +29,20 @@ const DOT_CLASS = {
 export const DataStatusBadge: React.FC<{ snapshot: OpenDataSnapshot }> = ({ snapshot }) => {
   const status = getSnapshotDataStatus(snapshot);
   const asOf = formatAsOf(status.asOf);
+  const net = useOnlineStatus();
+  const text = dataBadgeText(status.mode, !!net && !net.online, asOf);
   const feedList = status.liveFeeds.length
-    ? `\n\nFeeds that answered:\n• ${status.liveFeeds.join('\n• ')}`
+    ? `\n\nFeeds that answered${text.saved ? ' when saved' : ''}:\n• ${status.liveFeeds.join('\n• ')}`
     : '';
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <span
-        title={`${DATA_MODE_HELP[status.mode]}${feedList}`}
-        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold border ${MODE_CLASS[status.mode]}`}
+        title={`${text.help}${feedList}`}
+        data-data-badge={text.saved ? 'saved' : status.mode}
+        className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-xs font-semibold border ${text.saved ? MODE_CLASS.sample : MODE_CLASS[status.mode]}`}
       >
-        <span className={`w-1.5 h-1.5 rounded-full ${DOT_CLASS[status.mode]}`} />
-        <span>{DATA_MODE_LABEL[status.mode]}</span>
+        <span className={`w-1.5 h-1.5 rounded-full ${text.saved ? DOT_CLASS.sample : DOT_CLASS[status.mode]}`} />
+        <span>{text.label}</span>
         {status.mode !== 'unverified' && asOf && (
           <span className="font-normal opacity-80">· as of {asOf}</span>
         )}
