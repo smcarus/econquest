@@ -38,6 +38,7 @@ estimated, invented or taken from built-in sample values.
 | ECB rates (Frankfurter) | FX volatility; last year's closing rate for the year-to-date move | api.frankfurter.dev | 12 h |
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
+| CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
@@ -51,6 +52,16 @@ Notes from the first check on Sam's Mac (2026-11-05):
 - **Brazil Treasury** serves the whole price history, about 15 MB, slowly (60 seconds on the Mac).
   The app allows 90 seconds, downloads it once at a time, and keeps the answer on disk
   (`data/live/tesouro.json`) so a restart does not download it again.
+
+- **CFTC** publishes positions as of Tuesday on Friday afternoon (US Eastern), so the newest
+  figure is 3 to 10 days old and always shows its report date and the date the app pulled it. The
+  app asks once for about three years of weekly reports for all six currency futures (one small
+  request), keeps it on disk (`data/live/cftc.json`), and asks again only when the newest report
+  is 7 or more days old and the last pull is over 12 hours old. Readings: leveraged funds net as
+  a share of open interest, asset managers net, the week's change, and where leveraged funds sit
+  in their own last three years (90th percentile or above = crowded long, 10th or below = crowded
+  short; tagged as the FX Valuation Agent's reading). Turkey, Egypt, Indonesia, Poland and Chile
+  have no CFTC-reported future and say so.
 
 ## Free, with your own key
 

@@ -484,6 +484,8 @@ export interface WatchlistItem {
   /** US effective federal funds rate (NY Fed), for carry. */
   usFedFundsPct?: number;
   usFedFundsDate?: string;
+  /** CFTC currency futures positioning (utils/cftcPositioning.ts), with the date the app pulled it. */
+  cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }

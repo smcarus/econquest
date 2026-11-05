@@ -16,6 +16,7 @@ import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk, policyStance, targetSource
 import { missingReason } from './liveFigures';
 import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
+import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
@@ -70,8 +71,8 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   fx: {
     name: 'FX Valuation',
-    covers: 'real exchange rate against its 10-year average, FX volatility',
-    topic: /\bfx\b|currenc|exchange rate|\breer\b|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
+    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning',
+    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
   },
   spill: {
     name: 'Global Spillover',
@@ -383,11 +384,34 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       figures.push({ label: 'FX volatility against USD, 3 months', value: p1(it.fxVol3mPct), source: `ECB reference rates${it.fxVolTo ? ` to ${it.fxVolTo}` : ''}`, tag: 'live' });
       parts.push(`Three-month volatility against the dollar is ${p1(it.fxVol3mPct)} a year.`);
     }
+    let crowd = 0;
+    if (it.cftc) {
+      const c = it.cftc;
+      figures.push({
+        label: `Leveraged funds net ${c.ccy} futures, share of open interest`,
+        value: `${sgn(c.levNetPctOi)}%`,
+        source: `${CFTC_LABEL}, ${c.market}, positions as of ${c.reportDate}`,
+        tag: 'official',
+      });
+      figures.push({ label: `Asset managers net ${c.ccy} futures, share of open interest`, value: `${sgn(c.assetMgrNetPctOi)}%`, source: `CFTC, as of ${c.reportDate}`, tag: 'official' });
+      if (c.percentile !== undefined) {
+        figures.push({
+          label: 'Leveraged funds positioning against its last 3 years',
+          value: `${ordinal(c.percentile)} percentile (${positioningLabel(c.percentile)})`,
+          source: `${c.weeks} weekly CFTC reports; 90th or above = crowded long, 10th or below = crowded short`,
+          tag: 'model',
+        });
+        if (positioningLabel(c.percentile) !== 'not stretched') crowd = Math.abs(c.percentile - 50) / 50;
+      }
+      parts.push(positioningSentence(c));
+    } else {
+      missing.push(`${it.countryName}: futures positioning missing (${cftcMissing(it.iso3).short})`);
+    }
     if (!parts.length) {
-      missing.push(`${it.countryName}: no BIS real exchange rate or ECB rate`);
+      missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate or CFTC positioning`);
       continue;
     }
-    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' '), figures, weight: fxValueSignal(it)?.score ?? 0, ...(stance.length ? { stance } : {}) });
+    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' '), figures, weight: Math.max(fxValueSignal(it)?.score ?? 0, crowd), ...(stance.length ? { stance } : {}) });
   }
   return { id: 'fx', name: COUNCIL_AGENTS.fx.name, findings, missing };
 }

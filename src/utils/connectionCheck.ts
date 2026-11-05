@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { idsUrl, parseIds } from './debtSchedule';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl } from './fxValuation';
@@ -222,6 +223,7 @@ export const SOURCE_IDS = [
   'bis_reer',
   'bis_debt',
   'wits',
+  'cftc',
   'fred_csv',
   'fred_api',
   'tesouro',
@@ -421,6 +423,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const s = parseWitsShare(r.text);
         return s ? `${SAMPLE_NAME} exports to China ${fmt(s.pct)}% of total (${s.year})` : null;
       }
+    )
+  );
+
+  add('cftc', () =>
+    httpCheck(
+      { id: 'cftc', name: 'CFTC Commitments of Traders', group: 'free', feeds: 'Weekly currency futures positioning: MXN, BRL, ZAR, JPY, GBP, EUR' },
+      fetchFn,
+      cftcUrl(now, [CFTC_CURRENCY_CODES.MEX.code]),
+      Math.max(T, 20000),
+      (r) => {
+        const p = positioningFor('MEX', parseCftcRows(parseJson(r.text)));
+        return p ? `Leveraged funds net MXN ${p.levNetPctOi > 0 ? '+' : ''}${fmt(p.levNetPctOi)}% of open interest (as of ${p.reportDate}, ${p.weeks} weeks)` : null;
+      },
+      undefined,
+      'The CFTC answered, but with no Mexican peso rows the app could read. The report format may have changed.'
     )
   );
 

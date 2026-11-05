@@ -77,7 +77,7 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
   // Readings are grouped under the desk role that owns them.
-  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'Global Spillover Agent']);
+  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'Futures positioning (CFTC, weekly)', 'FX Valuation Agent', 'Global Spillover Agent']);
   assert.deepEqual(b.groups[3].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
 });
 

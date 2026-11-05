@@ -10,6 +10,7 @@ import { formatPeriod } from './officialYields';
 import { liveRow, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
+import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
 
 /**
@@ -43,7 +44,7 @@ export const INFLATION_TARGETS: Record<string, InflationTarget> = {
  * agent of that name; Relative Value is the desk that compares a country's pricing with its peers.
  * The readings are stated rules on sourced figures (tagged "model"), not AI output.
  */
-export const EDGE_AGENTS = { cb: 'Central Bank Watcher', rv: 'Relative Value', spill: 'Global Spillover' } as const;
+export const EDGE_AGENTS = { cb: 'Central Bank Watcher', rv: 'Relative Value', fx: 'FX Valuation', spill: 'Global Spillover' } as const;
 
 export function targetSource(t: InflationTarget): string {
   return t.checked ? `${t.bank} stated target` : `${t.bank} published target, not re-checked`;
@@ -244,6 +245,22 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       ],
     },
     {
+      title: 'Futures positioning (CFTC, weekly)',
+      rows: positioningRows(self, run.iso3),
+    },
+    {
+      title: `${EDGE_AGENTS.fx} Agent`,
+      rows: [
+        self?.cftc?.percentile !== undefined
+          ? model(
+              'Leveraged funds against their last 3 years',
+              `${ordinal(self.cftc.percentile)} percentile (${positioningLabel(self.cftc.percentile)})`,
+              `model: ${self.cftc.weeks} weekly CFTC reports; 90th or above = crowded long, 10th or below = crowded short`
+            )
+          : needs('Leveraged funds against their last 3 years', CFTC_CURRENCY_CODES[run.iso3] ? 'a year or more of CFTC reports' : 'a CFTC-reported currency future'),
+      ],
+    },
+    {
       title: `${EDGE_AGENTS.spill} Agent`,
       rows: SCENARIOS.map((sc) => {
         const imp = self?.trade ? scenarioImpact(sc.id, self.trade) : null;
@@ -260,4 +277,21 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
     screen,
     groups,
   };
+}
+
+/** CFTC rows for the Country tab: official figures with the report date and the date the app pulled them. */
+export function positioningRows(self: LiveWatchlistItem | undefined, iso3: string): BriefRow[] {
+  const c = self?.cftc;
+  const why = cftcMissing(iso3);
+  const miss = (label: string) => (CFTC_CURRENCY_CODES[iso3] ? missingRow(label, { kind: 'unreachable', short: why.short, help: why.help }) : noSourceRow(label, why.help));
+  if (!c) return [miss('Leveraged funds net, share of open interest'), miss('Asset managers net, share of open interest')];
+  const src = `official, CFTC as of ${c.reportDate} (pulled ${c.pulledAt.slice(0, 10)})`;
+  const sg = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`;
+  return [
+    { label: `Leveraged funds net ${c.ccy}, share of open interest`, value: sg(c.levNetPctOi), source: src, verified: true },
+    { label: `Asset managers net ${c.ccy}, share of open interest`, value: sg(c.assetMgrNetPctOi), source: src, verified: true },
+    ...(c.levNetWeekChange !== undefined
+      ? [{ label: 'Leveraged funds, change on the week', value: `${c.levNetWeekChange >= 0 ? '+' : ''}${c.levNetWeekChange.toLocaleString('en-US')} contracts`, source: src, verified: true }]
+      : []),
+  ];
 }
