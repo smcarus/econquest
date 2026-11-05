@@ -26,6 +26,8 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
+import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
+import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import {
@@ -124,6 +126,7 @@ const __dirname = path.dirname(__filename);
 const ENV_FILE_KEYS = envKeySnapshot(process.env);
 const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 let savedSettings = loadSettings(SETTINGS_FILE);
+const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
 // Rebuilt when the Gemini key is changed in Menu > Settings.
@@ -3080,6 +3083,48 @@ async function startServer() {
     return true;
   };
   app.get('/api/settings/keys', (req, res) => res.json(keysReply(req)));
+
+  // Research library: council conversations and policy documents kept in data/local/research.json.
+  const refuseRemoteResearch = (req: express.Request, res: express.Response): boolean => {
+    if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
+    res.status(403).json({ error: `Saved research can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
+    return true;
+  };
+  const writeResearch = (res: express.Response, change: (lib: ReturnType<typeof loadLibrary>) => ReturnType<typeof loadLibrary>, reply: Record<string, unknown> = {}) => {
+    try {
+      saveLibrary(RESEARCH_FILE, change(loadLibrary(RESEARCH_FILE)));
+      res.json({ ok: true, ...reply });
+    } catch (error: any) {
+      res.status(500).json({ error: `Could not save the research file (${error?.code || error?.message || 'unknown error'}).` });
+    }
+  };
+  app.get('/api/research', (_req, res) => res.json({ ...summarise(loadLibrary(RESEARCH_FILE)), file: 'data/local/research.json' }));
+  app.get('/api/research/briefs/:id', (req, res) => {
+    const b = loadLibrary(RESEARCH_FILE).briefs.find((x) => x.id === req.params.id);
+    return b ? res.json(b) : res.status(404).json({ error: 'No saved conversation with that id.' });
+  });
+  app.post('/api/research/briefs', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    if (!isBrief(req.body)) return res.status(400).json({ error: 'A council conversation is needed.' });
+    writeResearch(res, (lib) => addBrief(lib, req.body).lib, { id: briefId(req.body.startedAt || req.body.askedAt) });
+  });
+  app.delete('/api/research/briefs/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    writeResearch(res, (lib) => removeBrief(lib, req.params.id));
+  });
+  app.get('/api/research/docs/:id', (req, res) => {
+    const d = loadLibrary(RESEARCH_FILE).docs.find((x) => x.id === req.params.id);
+    return d ? res.json(d) : res.status(404).json({ error: 'No saved document with that id.' });
+  });
+  app.post('/api/research/docs', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    if (!isDoc(req.body)) return res.status(400).json({ error: 'A document with a title and text is needed.' });
+    writeResearch(res, (lib) => addDoc(lib, req.body));
+  });
+  app.delete('/api/research/docs/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    writeResearch(res, (lib) => removeDoc(lib, req.params.id));
+  });
   app.put('/api/settings/keys/:id', async (req, res) => {
     if (refuseRemote(req, res)) return;
     const next = withKey(savedSettings, req.params.id, req.body?.value);

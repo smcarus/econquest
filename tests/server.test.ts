@@ -437,3 +437,25 @@ test('Settings > own paid data: switching CDS off in the app wins over CDS_FEED 
   const report = await (await fetch(`${base}/api/data/connections?refresh=1`)).json();
   assert.equal(report.results.find((r: { id: string }) => r.id === 'own_cds').state, 'connected');
 });
+
+test('Saved research: conversations and documents are kept in data/local/research.json and can be deleted', async () => {
+  const post = (url: string, body: unknown) => fetch(`${base}${url}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const brief = { question: 'Is Brazil debt sustainable?', askedAt: '2026-11-05T05:00:00.000Z', startedAt: '2026-11-05T04:59:00.000Z', scopeNote: 'Brazil', answers: [], synthesis: null };
+  const saved = await (await post('/api/research/briefs', brief)).json();
+  assert.equal(saved.id, 'b-20261105045900000');
+  // A follow-up in the same conversation replaces the entry instead of adding one.
+  await post('/api/research/briefs', { ...brief, question: 'And the currency?', askedAt: '2026-11-05T05:01:00.000Z', earlier: [{ question: brief.question }] });
+  assert.equal((await post('/api/research/briefs', { question: '' })).status, 400);
+  await post('/api/research/docs', { id: 'd1', title: 'BCB Copom statement', text: 'The Committee decided to keep the Selic rate unchanged.', addedAt: '2026-11-05T05:00:00Z' });
+  const list = await (await fetch(`${base}/api/research`)).json();
+  assert.deepEqual(list.briefs.map((b: { question: string; turns: number }) => [b.question, b.turns]), [['And the currency?', 2]]);
+  assert.deepEqual(list.docs.map((d: { title: string }) => d.title), ['BCB Copom statement']);
+  const onDisk = JSON.parse(readFileSync(path.join(dataDir, 'local', 'research.json'), 'utf8'));
+  assert.equal(onDisk.docs[0].text, 'The Committee decided to keep the Selic rate unchanged.');
+  const doc = await (await fetch(`${base}/api/research/docs/d1`)).json();
+  assert.equal(doc.title, 'BCB Copom statement');
+  await fetch(`${base}/api/research/briefs/${saved.id}`, { method: 'DELETE' });
+  await fetch(`${base}/api/research/docs/d1`, { method: 'DELETE' });
+  const empty = await (await fetch(`${base}/api/research`)).json();
+  assert.equal(empty.briefs.length + empty.docs.length, 0);
+});

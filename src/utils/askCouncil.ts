@@ -996,6 +996,8 @@ export interface SavedCouncilBrief {
   /** How the agents were picked (AI model or word matching). */
   chooserNote?: string;
   debate?: DebateResult;
+  /** When the conversation's first question was asked; follow-ups keep it, so the saved copy is one entry. */
+  startedAt?: string;
 }
 
 const STORE_KEY = 'econquest.councilBrief.v1';

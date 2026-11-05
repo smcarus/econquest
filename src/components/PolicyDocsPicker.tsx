@@ -54,7 +54,7 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
         <button type="button" className="ui-btn" disabled={disabled || full} onClick={() => setPasting((p) => !p)}>
           Paste text
         </button>
-        <span className="text-xs text-slate-500 dark:text-slate-400">Read in this tab only; the summary sees just the quoted passages.</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">Kept on this computer (data/local); the summary sees just the quoted passages.</span>
       </div>
 
       {pasting && (
