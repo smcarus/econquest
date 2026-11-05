@@ -2895,10 +2895,6 @@ export default function App() {
             <PanelBoundary name={appArea === 'compare' ? 'Compare' : 'Workspace'} resetKey={run.iso3}>
             <TodayPage
               section={appArea === 'compare' ? 'compare' : 'workspace'}
-              onOpenCompare={() => {
-                setAppArea('compare');
-                window.scrollTo({ top: 0 });
-              }}
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}

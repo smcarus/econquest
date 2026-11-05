@@ -80,3 +80,11 @@ test('visitFrom keeps each row and the firing alerts', () => {
   assert.deepEqual(v.alerts, ['a|BRA']);
   assert.equal(v.rows.BRA.policyRatePct, 13.75);
 });
+
+test('an empty digest says Missing when no feed answered, and Nothing moved only with live figures', async () => {
+  const { digestEmptyNote } = await import('../src/utils/digest.ts');
+  assert.match(digestEmptyNote([], false), /^Missing: the watchlist has no countries/);
+  assert.match(digestEmptyNote([{ dataMode: 'unverified' }, { dataMode: 'sample' }], false), /^Missing: no data feed has answered/);
+  assert.equal(digestEmptyNote([{ dataMode: 'live' }, { dataMode: 'unverified' }], true), 'Nothing moved since then in the live figures (live figures for 1 of 2 countries).');
+  assert.equal(digestEmptyNote([{ dataMode: 'partial' }], false), 'Nothing moved in the live figures.');
+});
