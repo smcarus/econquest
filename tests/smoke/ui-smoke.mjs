@@ -83,9 +83,16 @@ try {
     await settle('Workspace');
 
     for (const area of ['Workspace', 'Country Research', 'Compare', 'Portfolio', 'Reports', 'Tools']) {
-      // Tools sits in Menu, next to Settings, unless the full desk library is on.
-      if (area === 'Tools' && !allTools) await page.getByRole('button', { name: 'Menu', exact: true }).click();
-      const nav = (area === 'Tools' && !allTools ? page.getByRole('menuitem', { name: /^Tools/ }) : page.getByRole('button', { name: area, exact: true })).first();
+      // Tools sits inside the Settings window (Menu > Tools), unless the full desk library is on.
+      if (area === 'Tools' && !allTools) {
+        await page.getByRole('button', { name: 'Menu', exact: true }).click();
+        await page.getByRole('menuitem', { name: /^Tools/ }).first().click();
+        await page.waitForSelector('[data-settings-tools] [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open Tools in Settings`));
+        await settle('Settings > Tools');
+        await page.keyboard.press('Escape');
+        continue;
+      }
+      const nav = page.getByRole('button', { name: area, exact: true }).first();
       if (!(await nav.count())) continue;
       await nav.click();
       await settle(area);
