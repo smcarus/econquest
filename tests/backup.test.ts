@@ -102,3 +102,26 @@ test('restore replaces the three files, saves a copy first and keeps this comput
   if (process.platform !== 'win32') assert.equal(statSync(copyFile).mode & 0o777, 0o600);
   assert.equal(currentBackup(files).contents.watchRules.length, 1);
 });
+
+test('policy reviews go in the backup and come back; an older backup without them leaves them alone', async () => {
+  const { newReview, putReview, loadReviews, reviewFilePath } = await import('../src/utils/policyReviewStore.ts');
+  const { dir, files } = setup();
+  const withReviews = { ...files, reviews: reviewFilePath(dir) };
+  const frame = { iso3: 'BRA', problem: 'Inflation is above target.', goal: { indicator: 'Inflation', direction: 'lower' as const }, constraints: [], asOf: '2026-11-01' };
+  putReview(withReviews.reviews, newReview(frame, [], new Date('2026-11-05T00:00:00Z')));
+  const backup = currentBackup(withReviews);
+  assert.equal(backup.contents.reviews?.length, 1);
+  const parsed = parseBackup(JSON.stringify(backup));
+  assert.ok(parsed.ok);
+  if (parsed.ok) assert.match(describeBackup(parsed.summary), /1 policy review/);
+  // An older backup (no reviews field) keeps what is on this computer.
+  const old = JSON.parse(JSON.stringify(backup));
+  delete old.contents.reviews;
+  const oldParsed = parseBackup(old);
+  assert.ok(oldParsed.ok);
+  if (oldParsed.ok) restoreBackup(withReviews, oldParsed.backup);
+  assert.equal(loadReviews(withReviews.reviews).reviews.length, 1);
+  // A backup with an empty list restores the empty list.
+  if (parsed.ok) restoreBackup(withReviews, { ...parsed.backup, contents: { ...parsed.backup.contents, reviews: [] } });
+  assert.equal(loadReviews(withReviews.reviews).reviews.length, 0);
+});

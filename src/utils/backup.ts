@@ -6,6 +6,8 @@
  *    episodes): data/local/research.json
  *  - watch alerts: data/local/watch-rules.json
  *  - holdings, watchlists, countries you added and AI model settings: data/local/workspace.json
+ *  - policy reviews: data/local/reviews.json (a backup made before reviews existed leaves the
+ *    reviews on this computer as they are when restored)
  *
  * It never holds your API keys (data/local/settings.json is left out) and any key, secret or
  * token inside the AI settings is removed before the file is written. On restore those fields are
@@ -16,6 +18,7 @@
  */
 import { parseLibrary, type ResearchLibrary } from './researchLibrary';
 import { parseRules, type WatchRule } from './watchRules';
+import type { PolicyReview } from './policyReview';
 
 export const BACKUP_FORMAT = 'econquest-backup';
 export const BACKUP_VERSION = 1;
@@ -32,6 +35,8 @@ export interface BackupContents {
   research: ResearchLibrary;
   watchRules: WatchRule[];
   workspace: Record<string, string>;
+  /** Left out by backups made before policy reviews existed. */
+  reviews?: PolicyReview[];
 }
 
 export interface BackupFile {
@@ -49,6 +54,7 @@ export interface BackupSummary {
   notebooks: number;
   episodes: number;
   watchRules: number;
+  reviews: number;
   /** Labels of the workspace items present, e.g. "holdings". */
   workspace: string[];
 }
@@ -106,6 +112,11 @@ export function keepSecrets(restored: unknown, current: unknown): unknown {
   return restored;
 }
 
+/** Policy reviews that have the fields the app needs; anything else is dropped. */
+export function cleanReviews(v: unknown): PolicyReview[] {
+  return (Array.isArray(v) ? v : []).filter((r): r is PolicyReview => Boolean(r && typeof r.id === 'string' && r.id && typeof r.title === 'string' && r.steps && typeof r.steps === 'object' && Array.isArray(r.runs))).slice(0, 100);
+}
+
 function cleanWorkspace(values: unknown): Record<string, string> {
   const out: Record<string, string> = {};
   if (!values || typeof values !== 'object') return out;
@@ -121,7 +132,7 @@ function cleanWorkspace(values: unknown): Record<string, string> {
   return out;
 }
 
-export function buildBackup(parts: { research: ResearchLibrary; watchRules: WatchRule[]; workspace: Record<string, string> }, now = new Date()): BackupFile {
+export function buildBackup(parts: { research: ResearchLibrary; watchRules: WatchRule[]; workspace: Record<string, string>; reviews?: PolicyReview[] }, now = new Date()): BackupFile {
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
@@ -130,6 +141,7 @@ export function buildBackup(parts: { research: ResearchLibrary; watchRules: Watc
       research: parseLibrary(parts.research),
       watchRules: parseRules({ rules: parts.watchRules }),
       workspace: cleanWorkspace(parts.workspace),
+      reviews: cleanReviews(parts.reviews),
     },
   };
 }
@@ -144,6 +156,7 @@ export function summariseBackup(b: BackupFile): BackupSummary {
     notebooks: r.notebooks.length,
     episodes: r.episodes.length,
     watchRules: b.contents.watchRules.length,
+    reviews: b.contents.reviews?.length ?? 0,
     workspace: Object.keys(BACKUP_WORKSPACE_KEYS)
       .filter((k) => k in b.contents.workspace)
       .map((k) => BACKUP_WORKSPACE_KEYS[k]),
@@ -174,6 +187,7 @@ export function parseBackup(raw: unknown): { ok: true; backup: BackupFile; summa
       research: parseLibrary(c.research),
       watchRules: parseRules({ rules: c.watchRules }),
       workspace: cleanWorkspace(c.workspace),
+      ...(Array.isArray(c.reviews) ? { reviews: cleanReviews(c.reviews) } : {}),
     },
   };
   return { ok: true, backup, summary: summariseBackup(backup) };
@@ -194,6 +208,7 @@ export function describeBackup(s: BackupSummary): string {
     ...n(s.notebooks, 'notebook', 'notebooks'),
     ...n(s.episodes, 'teaching episode', 'teaching episodes'),
     ...n(s.watchRules, 'watch alert', 'watch alerts'),
+    ...n(s.reviews ?? 0, 'policy review', 'policy reviews'),
   ];
   if (s.workspace.length) parts.push(s.workspace.length === 1 ? s.workspace[0] : `${s.workspace.slice(0, -1).join(', ')} and ${s.workspace[s.workspace.length - 1]}`);
   return parts.length ? parts.join(', ') : 'nothing saved yet';
