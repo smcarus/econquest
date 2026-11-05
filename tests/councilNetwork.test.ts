@@ -33,7 +33,7 @@ test('ask network: planner and desk agents finish at once on app figures; synthe
   assert.equal(writing[2].nodes[0].status, 'running');
   const none = askCouncilColumns(answers, false, { brief: null, removed: [], reason: 'No AI model answered.' });
   assert.equal(none[2].nodes[0].status, 'skipped');
-  assert.match(none[2].nodes[0].note!, /no model answered/);
+  assert.match(none[2].nodes[0].note!, /^no summary: No AI model answered/);
 });
 
 test('ask network: the planner says when the AI model picked the agents', () => {

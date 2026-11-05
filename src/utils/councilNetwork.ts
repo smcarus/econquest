@@ -55,7 +55,7 @@ export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synt
     : synthesis?.brief
       ? { status: 'done', note: synthesis.removed.length ? `${synthesis.removed.length} sentence(s) removed by the number check` : undefined }
       : synthesis
-        ? { status: 'skipped', note: 'no model answered, so no summary' }
+        ? { status: 'skipped', note: synthesis.reason ? `no summary: ${synthesis.reason}` : 'no summary' }
         : { status: 'waiting' };
   return [
     {
