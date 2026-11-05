@@ -42,6 +42,8 @@ estimated, invented or taken from built-in sample values.
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
+| OECD leading indicators | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | sdmx.oecd.org | 1 day, on disk |
+| OECD consumer prices | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | sdmx.oecd.org | 1 day, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
@@ -73,6 +75,17 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+- **OECD leading indicators** come from the OECD Data Explorer API (dataflow
+  `OECD.SDD.STES,DSD_STES@DF_CLI`, measure LI, amplitude adjusted). The OECD publishes around
+  mid-month; the newest month is usually one to two months old and always shows with the date the
+  app pulled it. The app asks once a day for every area at once (the OECD asks users to keep calls
+  modest), keeps it on disk (`data/live/oecd-cli.json`), and if the OECD refuses the narrow query
+  asks once for the whole dataflow and reads it the same way. The EU benchmark reads the euro
+  area. Readings: the level, the change on the month and over six months, and the OECD's cycle
+  phase as a stated rule (above 100 and rising = expansion, above and falling = downturn, below
+  and falling = slowdown, below and rising = recovery; tagged as the Global Spillover Agent's
+  reading). A country the OECD answered without (Egypt, for one) reads Missing: "OECD publishes
+  no CLI"; when the OECD did not answer, it says that instead.
 
 - **BIS central bank policy rates** (dataset `WS_CBPOL`) come from each central bank through the
   BIS, daily for most countries. The app asks twice for every country at once: the latest daily
@@ -94,6 +107,15 @@ Notes from the first check on Sam's Mac (2026-11-05):
   Readings per commodity: latest month, change on the month and over 12 months, and the latest
   against its 3-year average. A commodity whose column is not found reads Missing and says so.
   Shown at `GET /api/data/commodities`; the spillover scenarios read it.
+- **OECD consumer prices** come from the same API (dataflow `OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL`,
+  headline CPI, all items, monthly). The OECD's own y/y rate is used; where only the index is in
+  the reply, y/y is worked out from the index 12 months apart and the source says so. Asked once
+  a day for every area, kept on disk (`data/live/oecd-cpi.json`). Where the OECD has a figure it
+  becomes the app's inflation figure (watchlist, Central Bank Watcher, real rates, the
+  divergence list), shown as "OECD, <month>", because it is monthly and the IMF's is annual;
+  elsewhere the IMF figure stays and says IMF. Readings: the y/y rate, the change over three
+  months, and a stated rule on it (up 0.5 pts or more = rising, down 0.5 pts or more = easing).
+  A country the OECD answered without reads "OECD publishes no CPI" on the OECD rows.
 
 ## Free, with your own key
 

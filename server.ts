@@ -14,6 +14,8 @@ import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/uti
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, buildCommodityReply, eiaSpotUrl, findPinkSheetUrl, parseEiaSpot, parsePinkSheet, type CommodityReply, type PriceSeries } from './src/utils/commodityPrices';
 import { readXlsxSheet } from './src/utils/xlsxRead';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
+import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
@@ -693,6 +695,115 @@ async function fetchCommodities(): Promise<CommodityReply> {
 }
 
 /**
+ * OECD composite leading indicators (src/utils/oecdCli.ts). Monthly; one call for every area.
+ * Saved to data/live/oecd-cli.json with its pull date and pulled again after a day; a failed pull
+ * keeps the last good one and is retried after an hour. If the OECD refuses the narrow query
+ * (a changed layout), the whole dataflow is asked for once and read the same way.
+ */
+type CliPull = { pulledAt: string; series: CliSeries };
+let cliMemory: { pull: CliPull | null; triedAt: number } | null = null;
+let cliInFlight: Promise<CliPull | null> | null = null;
+function cliFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cli.json');
+}
+async function fetchCliPull(): Promise<CliPull | null> {
+  if (!cliMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cliFile(), 'utf8')) as CliPull;
+      if (saved?.pulledAt && saved.series) cliMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (cliMemory?.pull && Date.now() - Date.parse(cliMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cliMemory.pull;
+  if (cliMemory && Date.now() - cliMemory.triedAt < 60 * 60 * 1000) return cliMemory.pull;
+  if (cliInFlight) return cliInFlight;
+  cliInFlight = (async () => {
+    let series: CliSeries | null = null;
+    for (const wide of [false, true]) {
+      try {
+        const res = await fetchWithTimeout(cliUrl({ wide }), 30000);
+        if (res.ok) series = parseCli(await res.text());
+        else console.warn(`[OECD] leading indicators refused (HTTP ${res.status})${wide ? '' : '; trying the whole dataflow'}`);
+      } catch (e) {
+        console.warn(`[OECD] leading indicators: ${describeNetworkError(e, 30000)}`);
+        break;
+      }
+      if (series) break;
+    }
+    const prev = cliMemory?.pull ?? null;
+    if (!series) {
+      cliMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: CliPull = { pulledAt: new Date().toISOString(), series };
+    cliMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cliFile()), { recursive: true });
+      fs.writeFileSync(cliFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cliInFlight = null;
+  });
+  return cliInFlight;
+}
+
+/**
+ * OECD consumer price inflation (src/utils/oecdInflation.ts). Monthly; one call for every area.
+ * Saved to data/live/oecd-cpi.json with its pull date and pulled again after a day; a failed pull
+ * keeps the last good one and is retried after an hour.
+ */
+type CpiPull = { pulledAt: string; series: CpiSeries };
+let cpiMemory: { pull: CpiPull | null; triedAt: number } | null = null;
+let cpiInFlight: Promise<CpiPull | null> | null = null;
+function cpiFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cpi.json');
+}
+async function fetchCpiPull(): Promise<CpiPull | null> {
+  if (!cpiMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cpiFile(), 'utf8')) as CpiPull;
+      if (saved?.pulledAt && saved.series) cpiMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (cpiMemory?.pull && Date.now() - Date.parse(cpiMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cpiMemory.pull;
+  if (cpiMemory && Date.now() - cpiMemory.triedAt < 60 * 60 * 1000) return cpiMemory.pull;
+  if (cpiInFlight) return cpiInFlight;
+  cpiInFlight = (async () => {
+    let series: CpiSeries | null = null;
+    try {
+      const res = await fetchWithTimeout(cpiUrl(), 30000);
+      if (res.ok) series = parseCpi(await res.text());
+      else console.warn(`[OECD] consumer prices refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[OECD] consumer prices: ${describeNetworkError(e, 30000)}`);
+    }
+    const prev = cpiMemory?.pull ?? null;
+    if (!series) {
+      cpiMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: CpiPull = { pulledAt: new Date().toISOString(), series };
+    cpiMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cpiFile()), { recursive: true });
+      fs.writeFileSync(cpiFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cpiInFlight = null;
+  });
+  return cpiInFlight;
+}
+
+/**
  * Trade exposure for the scenario ranking (src/utils/scenarioExposure.ts): World Bank fuel and
  * trade shares, and WITS partner shares with China and Russia. Kept 24 hours (1 hour after a miss).
  */
@@ -752,9 +863,18 @@ async function fetchTradeExposure(): Promise<Map<string, TradeExposure>> {
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
 async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
-  const [ownCds, catalog, us10Y] = await Promise.all([loadOwnCds(), fetchLiveWatchlistCatalog(), fetchUs10YYield()]);
+  const [ownCds, catalog, us10Y, cli] = await Promise.all([
+    loadOwnCds(),
+    fetchLiveWatchlistCatalog(),
+    fetchUs10YYield(),
+    Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+  ]);
   const anchors = await Promise.all(
-    MARKET_EDGE_ANCHORS.map(async (def) => buildAnchor(def, def.fredSeries ? await fetchFredCached(def.fredSeries) : null, ownCds.get(def.iso3)))
+    MARKET_EDGE_ANCHORS.map(async (def) => {
+      const a = buildAnchor(def, def.fredSeries ? await fetchFredCached(def.fredSeries) : null, ownCds.get(def.iso3));
+      const lead = cliFor(def.iso3, cli?.series);
+      return lead && cli ? { ...a, cli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { ...a, cliPulledAt: cli.pulledAt } : a;
+    })
   );
   const peers = catalog.filter((c) => MARKET_EDGE_ANCHOR_ISO3.includes(c.iso3));
   return { anchors, peers, ...(us10Y ? { us10Y } : {}), fetchedAt: new Date().toISOString() };
@@ -1501,13 +1621,15 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
     Promise.race([fetchCftcPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchTicPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     cbpolPullQuick(),
+    Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1540,6 +1662,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const pos = positioningFor(catItem.iso3, cftcWeeks);
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
+        const lead = cliFor(catItem.iso3, cli?.series);
+        const prices = cpiFor(catItem.iso3, cpi?.series);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
@@ -1547,6 +1671,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
+          ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
           ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,
@@ -1560,6 +1685,12 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
+          // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
+          ...(prices && cpi
+            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: cpi.pulledAt } }
+            : cpi
+              ? { oecdCpiPulledAt: cpi.pulledAt }
+              : {}),
           // Policy rate: the BIS figure with its date, or nothing (the row reads Missing with the reason).
           ...(bisRate
             ? {

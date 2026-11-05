@@ -13,6 +13,7 @@
  * figures count fully, AI estimates 0.7, sample values 0.5. A gap built on sample data can still
  * show, but below a smaller one built on live data, and every line says which it is.
  */
+import { formatMonth } from './oecdSdmx';
 import type { LiveWatchlistItem } from '../types/council';
 import { POLITICAL_FISCAL_CATEGORIES, upcomingOfficialEvents } from '../data/officialCalendar';
 import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk } from './marketsMacro';
@@ -61,7 +62,11 @@ function make(d: Omit<Divergence, 'score'>): Divergence {
 }
 
 export const cpiTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
-  it.cpiSource === 'live' ? { q: 'live', src: 'IMF, live' } : { q: 'sample', src: 'sample' };
+  it.cpiSource === 'oecd' && it.cpiMonth
+    ? { q: 'live', src: `OECD monthly, ${formatMonth(it.cpiMonth)}` }
+    : it.cpiSource === 'live'
+      ? { q: 'live', src: 'IMF, live' }
+      : { q: 'sample', src: 'sample' };
 export const policyTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.policyRateSource === 'bis'
     ? { q: 'live', src: `BIS${it.policyRateBank ? ` (${it.policyRateBank})` : ''}${it.policyRateDate ? `, ${it.policyRateDate.length === 7 ? 'end of ' : ''}${it.policyRateDate}` : ''}${it.policyRateStale ? ', may be out of date' : ''}` }

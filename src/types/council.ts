@@ -474,8 +474,10 @@ export interface WatchlistItem {
   /** Macro figures for the ranked divergence list (utils/divergences.ts). Set by the live watchlist. */
   cpiInflationPct?: number;
   policyRatePct?: number;
-  /** 'live' when the IMF feed answered for this country's CPI, else 'sample'. */
-  cpiSource?: 'live' | 'sample';
+  /** 'oecd' when the OECD monthly figure filled CPI, 'live' when the IMF feed answered, else 'sample'. */
+  cpiSource?: 'live' | 'sample' | 'oecd';
+  /** YYYY-MM of the OECD monthly CPI figure, when cpiSource is 'oecd'. */
+  cpiMonth?: string;
   /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
   policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
   /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */
@@ -506,6 +508,14 @@ export interface WatchlistItem {
   cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
   /** TIC holdings of US Treasuries (utils/ticHoldings.ts), with the date the app pulled them. */
   tic?: import('../utils/ticHoldings').TicHolding & { pulledAt: string };
+  /** OECD composite leading indicator (utils/oecdCli.ts), with the date the app pulled it. */
+  oecdCli?: import('../utils/oecdCli').CliReading & { pulledAt: string };
+  /** Set when the OECD answered but publishes no CLI for this country (so the reason can say so). */
+  oecdCliPulledAt?: string;
+  /** OECD monthly CPI inflation (utils/oecdInflation.ts), with the date the app pulled it. */
+  oecdCpi?: import('../utils/oecdInflation').CpiReading & { pulledAt: string };
+  /** Set when the OECD answered but publishes no CPI for this country. */
+  oecdCpiPulledAt?: string;
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }

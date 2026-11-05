@@ -17,6 +17,8 @@ import { missingReason } from './liveFigures';
 import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
+import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
+import { cpiSentence } from './oecdInflation';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
@@ -62,7 +64,7 @@ export interface AgentAnswer {
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
   cb: {
     name: 'Central Bank Watcher',
-    covers: 'inflation against target, policy rate, real rates',
+    covers: 'inflation against target (OECD monthly where published), policy rate, real rates',
     topic: /central bank|monetary|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
   },
   rv: {
@@ -77,8 +79,8 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   spill: {
     name: 'Global Spillover',
-    covers: 'Hormuz, Taiwan Strait and Russia shocks through trade',
-    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit/i,
+    covers: 'Hormuz, Taiwan Strait and Russia shocks through trade; growth cycle from the OECD leading indicator',
+    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit|leading indicator|\bcli\b|\boecd\b|growth|cycle|slowdown|recession|downturn|recovery|momentum/i,
   },
   calendar: {
     name: 'Calendar',
@@ -303,11 +305,17 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         ? [{ label: 'Real 10Y yield', value: p1(real10), source: `10Y yield ${p2(it.yield10YPct)} (${y.src}) minus inflation`, tag: 'model' as const }]
         : []),
     ];
+    if (it.oecdCpi?.change3mPts !== undefined && it.oecdCpi.trend) {
+      figures.push(
+        { label: 'Change in inflation over 3 months', value: `${sgn(it.oecdCpi.change3mPts)} pts`, source: c.src, tag: 'official' },
+        { label: 'Inflation trend', value: it.oecdCpi.trend, source: '3-month change: +0.5 pts or more = rising, -0.5 pts or more down = easing', tag: 'model' }
+      );
+    }
     const stanceText = policyStance(real, gap);
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading: `Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
+      reading: `${it.oecdCpi ? `${cpiSentence(it.oecdCpi)} ` : ''}Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
       figures,
       weight: sig?.score ?? 0,
       stance: [{ dim: 'policy', call: policyCall(stanceText) }],
@@ -461,25 +469,49 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
     const rows = scs
       .map((sc) => ({ sc, imp: it.trade ? scenarioImpact(sc.id, it.trade) : null }))
       .filter((r): r is { sc: (typeof SCENARIOS)[number]; imp: NonNullable<ReturnType<typeof scenarioImpact>> } => r.imp !== null);
-    if (!rows.length) {
-      missing.push(`${it.countryName}: World Bank or WITS trade figures not loaded`);
-      continue;
+    const cli = it.oecdCli;
+    if (!rows.length) missing.push(`${it.countryName}: World Bank or WITS trade figures not loaded`);
+    if (!cli) missing.push(`${it.countryName}: OECD leading indicator missing (${cliMissing(!!it.oecdCliPulledAt).short})`);
+    if (!rows.length && !cli) continue;
+    const parts: string[] = [];
+    const figures: AgentFigure[] = [];
+    if (rows.length) {
+      const worst = [...rows].sort((a, b) => a.imp.pctGdp - b.imp.pctGdp)[0];
+      parts.push(
+        worst.imp.pctGdp < 0
+          ? `Most exposed to ${SCENARIO_PHRASE[worst.sc.id]}: about ${Math.abs(worst.imp.pctGdp).toFixed(1)}% of GDP off the current account in the first round.`
+          : `Gains in the first round from ${SCENARIO_PHRASE[worst.sc.id]} (${sgn(worst.imp.pctGdp)}% of GDP).`
+      );
+      figures.push(
+        ...rows.map((r) => ({
+          label: r.sc.name,
+          value: `${sgn(r.imp.pctGdp)}% of GDP`,
+          source: `${r.sc.shock} Basis: ${r.imp.basis}`,
+          tag: 'model' as const,
+        }))
+      );
     }
-    const worst = [...rows].sort((a, b) => a.imp.pctGdp - b.imp.pctGdp)[0];
+    let cycle = 0;
+    if (cli) {
+      figures.push({ label: 'OECD leading indicator', value: cli.level.toFixed(2), source: `${CLI_LABEL}, ${formatMonth(cli.month)}`, tag: 'official' });
+      if (cli.change1m !== undefined) figures.push({ label: 'Leading indicator, change on the month', value: sgn(cli.change1m, 2), source: `OECD CLI, ${formatMonth(cli.month)}`, tag: 'official' });
+      if (cli.phase) {
+        figures.push({
+          label: 'Growth cycle phase',
+          value: cli.phase,
+          source: 'OECD rule: above 100 and rising = expansion, above and falling = downturn, below and falling = slowdown, below and rising = recovery',
+          tag: 'model',
+        });
+        if (cli.phase === 'slowdown' || cli.phase === 'downturn') cycle = Math.min(1, Math.abs(cli.level - 100) / 2);
+      }
+      parts.push(cliSentence(cli));
+    }
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading:
-        worst.imp.pctGdp < 0
-          ? `Most exposed to ${SCENARIO_PHRASE[worst.sc.id]}: about ${Math.abs(worst.imp.pctGdp).toFixed(1)}% of GDP off the current account in the first round.`
-          : `Gains in the first round from ${SCENARIO_PHRASE[worst.sc.id]} (${sgn(worst.imp.pctGdp)}% of GDP).`,
-      figures: rows.map((r) => ({
-        label: r.sc.name,
-        value: `${sgn(r.imp.pctGdp)}% of GDP`,
-        source: `${r.sc.shock} Basis: ${r.imp.basis}`,
-        tag: 'model' as const,
-      })),
-      weight: Math.min(1, Math.max(...rows.map((r) => Math.abs(r.imp.pctGdp))) / 5),
+      reading: parts.join(' '),
+      figures,
+      weight: Math.max(rows.length ? Math.min(1, Math.max(...rows.map((r) => Math.abs(r.imp.pctGdp))) / 5) : 0, cycle),
     });
   }
   return { id: 'spill', name: COUNCIL_AGENTS.spill.name, findings, missing };

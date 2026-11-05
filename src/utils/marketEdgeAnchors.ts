@@ -21,6 +21,8 @@ import { toLive } from './liveFigures';
 import { FRED_10Y_SERIES, US_10Y_SERIES, describeOfficialYield, type OfficialYieldObservation } from './officialYields';
 import type { OwnCdsQuote } from './ownCds';
 import { formatPeriod } from './officialYields';
+import { cliMissing } from './oecdCli';
+import { formatMonth } from './oecdSdmx';
 
 export interface MarketEdgeAnchorDef {
   iso3: string;
@@ -59,6 +61,10 @@ export interface MarketEdgeAnchor {
   noYieldReason?: string;
   cds?: OwnCdsQuote;
   noCdsReason?: string;
+  /** OECD composite leading indicator, with the date the app pulled it. */
+  cli?: import('./oecdCli').CliReading & { pulledAt: string };
+  /** Set when the OECD answered but publishes no CLI for this area. */
+  cliPulledAt?: string;
 }
 
 export interface MarketEdgeAnchorsReply {
@@ -88,6 +94,8 @@ export interface BenchmarkRow {
   spreadBps?: number;
   cdsBps?: number;
   cdsNote: string;
+  /** OECD leading indicator in words, or why it is missing. */
+  cliNote: string;
 }
 
 /**
@@ -106,6 +114,9 @@ export function benchmarkRows(anchors: MarketEdgeAnchor[], peerIso3: string[], u
       spreadBps: a.yield && us10YPct !== undefined && a.iso3 !== 'USA' ? Math.round((a.yield.valuePct - us10YPct) * 100) : undefined,
       cdsBps: a.cds?.bps,
       cdsNote: a.cds ? `Your ${a.cds.source}, ${formatPeriod(a.cds.date)}` : a.noCdsReason || 'No CDS feed (add it to your CDS file)',
+      cliNote: a.cli
+        ? `OECD leading indicator ${a.cli.level.toFixed(2)}, ${formatMonth(a.cli.month)}${a.cli.phase ? ` (${a.cli.phase})` : ''}`
+        : `OECD leading indicator: Missing (${cliMissing(!!a.cliPulledAt).short})`,
     }));
 }
 

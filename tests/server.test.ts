@@ -317,7 +317,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 25);
+  assert.equal(rep.results.length, 27);
   // The offline fixtures answer FRED's download, Brazil's Treasury and EVDS; everything else is down.
   assert.equal(row('fred_csv').state, 'connected');
   assert.equal(row('tesouro').state, 'connected');
