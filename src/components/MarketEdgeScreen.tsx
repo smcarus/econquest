@@ -176,7 +176,7 @@ export const MarketEdgeScreen: React.FC<{
             })}
             {bench.length > 0 && (
               <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                <td colSpan={7} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <td colSpan={10} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
                   Benchmarks, always shown. No risk score in the app yet, so they are not in the cheap or rich fit.
                 </td>
               </tr>
@@ -226,9 +226,9 @@ const TrendCells: React.FC<{ t?: MarketTrend; part: 'change' | 'cycle' }> = ({ t
     return (
       <td className="hidden md:table-cell px-3 py-2 text-right whitespace-nowrap" data-edge-trend="change">
         <div className={`tabular-nums ${t?.yieldChg3mBps === undefined ? MUTED : ''}`}>
-          {t?.yieldChg3mBps !== undefined ? signedBps(t.yieldChg3mBps) : '–'}
-          {' · '}
-          {t?.yieldChg12mBps !== undefined ? signedBps(t.yieldChg12mBps) : '–'}
+          {t?.yieldChg3mBps === undefined && t?.yieldChg12mBps === undefined
+            ? '–'
+            : `${t?.yieldChg3mBps !== undefined ? signedBps(t.yieldChg3mBps) : '–'} · ${t?.yieldChg12mBps !== undefined ? signedBps(t.yieldChg12mBps) : '–'}`}
         </div>
         <div className="text-xs text-slate-500 dark:text-slate-400" title={t?.yieldChg3mBps === undefined ? 'Needs an official monthly yield with 3 months of history' : undefined}>
           {t?.spreadChg3mBps !== undefined ? `Spread 3m ${signedBps(t.spreadChg3mBps)}` : t?.yieldChg3mBps === undefined ? 'No monthly history' : ''}

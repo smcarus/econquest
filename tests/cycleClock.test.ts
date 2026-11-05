@@ -82,7 +82,7 @@ test('cycle clock: only a BIS rate counts; text and rows say where things stand,
   assert.equal(c.policy!.state, 'cutting');
   assert.match(cliCycleText(c.cli!), /^Slowdown for 3 months \(since Mar 2026\), as of May 2026; last turning point a peak in Dec 2025 at 100\.20$/);
   assert.equal(cycleClock({ ...it, policyRateSource: 'ai_estimate' }, now).policy, undefined);
-  if (c.nextDecision) assert.match(nextDecisionText(c.nextDecision), /^\d{4}-\d{2}-\d{2} \((today|tomorrow|in \d+ days)\)$/);
+  if (c.nextDecision) assert.match(nextDecisionText(c.nextDecision), /^\d{1,2} [A-Z][a-z]{2} \d{4}, (today|tomorrow|in \d+ days)$/);
   const rows = cycleClockRows(it as never, 'MEX', now);
   assert.deepEqual(rows.map((r) => r.label), ['Policy cycle', 'Business cycle (leading indicator)', 'Next rate decision']);
   assert.match(rows[0].source, /^model, from BIS/);

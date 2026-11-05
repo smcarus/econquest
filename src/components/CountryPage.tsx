@@ -35,10 +35,10 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
   { id: 'brief', label: 'Brief', desks: [] },
   // MarketEdge: the economy, market pricing and model readings of where they disagree. No desks.
   { id: 'macro', label: 'MarketEdge', desks: [] },
-  // Overview: what is live for this country. Its old chart desks ran on built-in figures and were removed (Sam, 2026-11-04).
-  { id: 'overview', label: 'Overview', desks: [] },
   // History: each figure's run of real observations as a chart (src/components/HistoryPanel.tsx). No desks.
   { id: 'history', label: 'History', desks: [] },
+  // Sources (id 'overview'): what is live for this country. Its old chart desks ran on built-in figures and were removed (Sam, 2026-11-04).
+  { id: 'overview', label: 'Sources', desks: [] },
   {
     id: 'debt',
     label: 'Debt & fiscal',
