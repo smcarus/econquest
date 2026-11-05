@@ -73,6 +73,7 @@ import {
 } from './components/CountryPage';
 import {
   WorkspacePage,
+  deskLabel as workspaceDeskLabel,
   PORTFOLIO_TABS,
   REPORTS_TABS,
   findTabForDesk,
@@ -86,6 +87,9 @@ import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
 import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
+import { ResearchCompare } from './components/ResearchCompare';
+import { LiveCountBadge, ResearchHeader, SourcesGrid } from './components/ResearchSections';
+import { countryTabForSection, sectionForAnchor, sectionForCountryTab, type ResearchSectionId } from './utils/researchSections';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
 import { CORE_REPORTS, visibleReport } from './utils/simpleMode';
 import { ToolsPage } from './components/ToolsPage';
@@ -625,7 +629,6 @@ export default function App() {
   // Tools is always shown: without the old desks it is the page of tools that run on live data.
   const navAreas = NAV;
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
-  const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
   const setHoldings = (next: Holding[]) => {
     setHoldingsState(next);
     saveHoldings(next);
@@ -637,6 +640,8 @@ export default function App() {
     (area === 'portfolio' ? setPortfolioTab : setReportsTab)(tab.id);
     const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
     setActiveNavSection(desk as NavSectionId);
+    // My holdings shows a specialist desk only when one was asked for (all tools on).
+    if (area === 'portfolio') setPortfolioDeskOpen(Boolean(deskId) && showAllTools);
     setAppArea(area);
     window.scrollTo({ top: 0 });
   };
@@ -678,15 +683,40 @@ export default function App() {
   useEffect(() => {
     if (isResearchScope(appArea)) setResearchScope(appArea);
   }, [appArea]);
+  // The section (Summary, Markets & signals, History & data, Sources) carries across scopes, so
+  // switching from Brazil's markets to Compare shows markets for the whole watchlist.
+  const [researchSection, setResearchSection] = useState<ResearchSectionId>('summary');
+  // My holdings with all tools on: a specialist desk tab is open instead of a section.
+  const [portfolioDeskOpen, setPortfolioDeskOpen] = useState(false);
+  useEffect(() => {
+    const s = sectionForCountryTab(countryTab);
+    if (s) setResearchSection(s);
+  }, [countryTab]);
   const openResearchScope = (scope: ResearchScope) => {
-    if (scope === 'country') returnToCountryPage();
-    else if (scope === 'portfolio') openWorkspace('portfolio');
-    else setAppArea('compare');
+    if (scope === 'country') {
+      // Keep a specialist desk tab if one is open; otherwise land on the same section.
+      if (sectionForCountryTab(countryTab)) setCountryTab(countryTabForSection(researchSection) as CountryTabId);
+      returnToCountryPage();
+    } else if (scope === 'portfolio') {
+      setPortfolioDeskOpen(false);
+      setAppArea('portfolio');
+    } else setAppArea('compare');
+    window.scrollTo({ top: 0 });
+  };
+  /** Research > My holdings > History & data: import and edit holdings. */
+  const openHoldingsEditor = () => {
+    setPortfolioDeskOpen(false);
+    setResearchSection('history');
+    setAppArea('portfolio');
     window.scrollTo({ top: 0 });
   };
   const openResearch = () => openResearchScope(researchScope);
   const returnToCountryPage = () => {
     const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || DEFAULT_COUNTRY_TAB;
+    if (!tab.desks.length) {
+      setAppArea('country');
+      return;
+    }
     if (tab.desks.length && !tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
     setAppArea('country');
   };
@@ -1755,6 +1785,11 @@ export default function App() {
   ];
   // Portfolio and Reports see only real figures: the catalogue's built-in values are stripped too.
   const liveRiskLookup = useMemo(() => holdingsRiskLookup.map(toLive), [activeWatchlistItems]);
+  // The countries you hold, with only their real figures (Research > My holdings).
+  const heldLive = useMemo(() => {
+    const held = new Set(holdings.map((h) => h.iso3));
+    return liveRiskLookup.filter((w) => held.has(w.iso3));
+  }, [holdings, liveRiskLookup]);
 
   const activeDomainHub =
     DOMAIN_HUBS.find((hub) => hub.subTabs.some((t) => t.id === activeNavSection)) ||
@@ -1898,6 +1933,7 @@ export default function App() {
     window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   const openTool = (t: ToolTarget) => {
     if (t.area === 'today' || t.area === 'compare') {
+      if (t.area === 'compare') setResearchSection(sectionForAnchor(t.anchor));
       setAppArea(t.area);
       // Wait for Workspace to render, then bring the section into view.
       window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
@@ -1907,7 +1943,10 @@ export default function App() {
       setAppArea('country');
       if (t.anchor) scrollToAnchor(t.anchor);
     } else if (t.area === 'portfolio') {
-      openWorkspace('portfolio');
+      setResearchSection(sectionForAnchor(t.anchor));
+      setPortfolioDeskOpen(false);
+      setAppArea('portfolio');
+      window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
     } else openWorkspace('reports');
   };
@@ -2871,10 +2910,26 @@ export default function App() {
             />
           )}
 
-          {(appArea === 'today' || appArea === 'compare') && (
-            <PanelBoundary name={appArea === 'compare' ? 'Compare' : 'Workspace'} resetKey={run.iso3}>
+          {appArea === 'compare' && (
+            <PanelBoundary name="Compare countries" resetKey={run.iso3}>
+              <ResearchCompare
+                run={run}
+                watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
+                watchlistItems={liveWatchlistItems}
+                section={researchSection}
+                onSection={setResearchSection}
+                onOpenCountry={(item, tab) => {
+                  const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
+                  if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
+                  openCountryPage(tab);
+                }}
+              />
+            </PanelBoundary>
+          )}
+
+          {appArea === 'today' && (
+            <PanelBoundary name="Workspace" resetKey={run.iso3}>
             <TodayPage
-              section={appArea === 'compare' ? 'compare' : 'workspace'}
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}
@@ -2920,11 +2975,7 @@ export default function App() {
                 else if (id === 'ai') setIsRuntimeModalOpen(true);
                 else if (id === 'watchlist') setIsWatchlistCollapsed(false);
                 else if (id === 'country') openCountryPage();
-                else if (id === 'holdings') {
-                  setAppArea('portfolio');
-                  setIsHoldingsPanelOpen(true);
-                  window.scrollTo({ top: 0 });
-                } else if (showAllTools) setIsRuntimeModalOpen(true);
+                else if (id === 'holdings') openHoldingsEditor(); else if (showAllTools) setIsRuntimeModalOpen(true);
                 else {
                   setAppArea('desks');
                   window.setTimeout(() => document.querySelector('[data-connections-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
@@ -2975,35 +3026,141 @@ export default function App() {
             </PanelBoundary>
           )}
 
-          {appArea === 'portfolio' && isHoldingsPanelOpen && (
-            <HoldingsPanel
-              holdings={holdings}
-              countries={holdingsRiskLookup}
-              onChange={setHoldings}
-              onClose={() => setIsHoldingsPanelOpen(false)}
-            />
+          {appArea === 'portfolio' && (
+            <PanelBoundary name="My holdings" resetKey={`${researchSection}-${portfolioDeskOpen ? portfolioTab : ''}`}>
+            <div className="space-y-3" data-research-holdings="true">
+              <ResearchHeader
+                title="My holdings"
+                subtitle={
+                  holdings.length
+                    ? `${holdings.length} ${holdings.length === 1 ? 'position' : 'positions'} in ${heldLive.length} ${heldLive.length === 1 ? 'country' : 'countries'}, from the holdings you imported. Click a country to open it on its own.`
+                    : `No holdings imported yet, so this shows your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}, at equal weight. Import holdings under History & data.`
+                }
+                badge={<LiveCountBadge items={heldLive.length ? heldLive : liveWatchlistItems} />}
+                actions={
+                  showAllTools && (
+                    <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
+                      IC tickets ({stagedTradeTickets.length})
+                    </button>
+                  )
+                }
+                section={portfolioDeskOpen ? portfolioTab : researchSection}
+                onSection={(id) => {
+                  const deskTab = PORTFOLIO_TABS.find((t) => t.id === id);
+                  if (deskTab) {
+                    setPortfolioTab(deskTab.id);
+                    setActiveNavSection(deskTab.desks[0] as NavSectionId);
+                    setPortfolioDeskOpen(true);
+                  } else {
+                    setPortfolioDeskOpen(false);
+                    setResearchSection(id as ResearchSectionId);
+                  }
+                }}
+                extra={showAllTools ? PORTFOLIO_TABS.map((t) => ({ id: t.id, label: t.label })) : undefined}
+              />
+
+              {!portfolioDeskOpen && researchSection === 'summary' && (
+                <>
+                  <PanelBoundary name="Book brief">
+                    <BookBriefPanel
+                      holdings={holdings}
+                      riskLookup={liveRiskLookup}
+                      watchlist={liveWatchlistItems}
+                      stagedTickets={showAllTools ? stagedTradeTickets : []}
+                      view="pm"
+                      onWriteReport={(view) => {
+                        setRequestedReport(view === 'client' ? 'client_review' : 'book');
+                        openWorkspace('reports', 'ic_memo_builder');
+                      }}
+                    />
+                  </PanelBoundary>
+                  <PanelBoundary name="The book">
+                    <PortfolioSummary
+                      watchlistItems={liveWatchlistItems}
+                      riskLookup={liveRiskLookup}
+                      holdings={holdings}
+                      onManageHoldings={openHoldingsEditor}
+                      stagedTickets={showAllTools ? stagedTradeTickets : []}
+                      onOpenCountry={(live) => {
+                        const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
+                        if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
+                        openCountryPage();
+                      }}
+                    />
+                  </PanelBoundary>
+                </>
+              )}
+
+              {!portfolioDeskOpen && researchSection === 'markets' && (
+                <PanelBoundary name="Signals on your holdings">
+                  <div id="tool-holdings-signals" className="scroll-mt-4" />
+                  <PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={openHoldingsEditor} />
+                </PanelBoundary>
+              )}
+
+              {!portfolioDeskOpen && researchSection === 'history' && (
+                <PanelBoundary name="Your holdings">
+                  <HoldingsPanel
+                    holdings={holdings}
+                    countries={holdingsRiskLookup}
+                    onChange={setHoldings}
+                    onClose={() => setResearchSection('summary')}
+                  />
+                </PanelBoundary>
+              )}
+
+              {!portfolioDeskOpen && researchSection === 'sources' && (
+                <PanelBoundary name="Sources across your holdings">
+                  <SourcesGrid
+                    items={heldLive.length ? heldLive : liveWatchlistItems}
+                    title={heldLive.length ? 'What is live for the countries you hold' : 'What is live across your watchlist (no holdings imported)'}
+                    empty="No countries yet."
+                    onOpenCountry={(live) => {
+                      const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
+                      if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
+                      openCountryPage('overview');
+                    }}
+                  />
+                </PanelBoundary>
+              )}
+
+              {portfolioDeskOpen && (() => {
+                const tab = PORTFOLIO_TABS.find((t) => t.id === portfolioTab) || PORTFOLIO_TABS[0];
+                const desk = tab.desks.includes(activeNavSection) ? activeNavSection : (tab.desks[0] as NavSectionId);
+                return (
+                  <>
+                    {tab.hint && <p className="ui-label">{tab.hint}</p>}
+                    {tab.desks.length > 1 && (
+                      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={`${tab.label} tools`}>
+                        {tab.desks.map((d) => (
+                          <button key={d} type="button" role="tab" aria-selected={d === desk} onClick={() => setActiveNavSection(d as NavSectionId)} className="ui-pill">
+                            {workspaceDeskLabel(d)}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <Suspense key={desk} fallback={<DeskLoading />}>
+                      <ViewportScrollBudgetContainer activeNavSection={desk}>{renderDeskBody(desk)}</ViewportScrollBudgetContainer>
+                    </Suspense>
+                  </>
+                );
+              })()}
+            </div>
+            </PanelBoundary>
           )}
 
-          {(appArea === 'portfolio' || appArea === 'reports') && (
-            <PanelBoundary key={appArea} name={appArea === 'portfolio' ? 'Portfolio' : 'Reports'}>
+          {appArea === 'reports' && (
+            <PanelBoundary name="Reports">
             <WorkspacePage
-              key={appArea}
-              ariaLabel={appArea === 'portfolio' ? 'Portfolio sections' : 'Reports sections'}
-              title={appArea === 'portfolio' ? 'Portfolio' : 'Reports'}
-              subtitle={
-                appArea === 'portfolio'
-                  ? holdings.length
-                    ? 'Your book, from the holdings you imported'
-                    : `No holdings yet: showing your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}`
-                  : `Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`
-              }
-              tabs={showAllTools ? (appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS) : appArea === 'portfolio' ? [] : CORE_REPORTS_TABS}
-              activeTabId={appArea === 'portfolio' ? portfolioTab : reportsTab}
+              ariaLabel="Reports sections"
+              title="Reports"
+              subtitle={`Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`}
+              tabs={showAllTools ? REPORTS_TABS : CORE_REPORTS_TABS}
+              activeTabId={reportsTab}
               activeDesk={activeNavSection}
               onChangeTab={(tabId) => {
-                const tabs = appArea === 'portfolio' ? PORTFOLIO_TABS : REPORTS_TABS;
-                (appArea === 'portfolio' ? setPortfolioTab : setReportsTab)(tabId);
-                const cfg = tabs.find((t) => t.id === tabId) || tabs[0];
+                setReportsTab(tabId);
+                const cfg = REPORTS_TABS.find((t) => t.id === tabId) || REPORTS_TABS[0];
                 setActiveNavSection(cfg.desks[0] as NavSectionId);
               }}
               onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
@@ -3013,45 +3170,11 @@ export default function App() {
                   <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
                     IC tickets ({stagedTradeTickets.length})
                   </button>
-                  {appArea === 'reports' && (
-                    <button type="button" className="ui-btn" onClick={() => setIsComparatorDrawerOpen(true)}>
-                      Compare countries
-                    </button>
-                  )}
+                  <button type="button" className="ui-btn" onClick={() => setIsComparatorDrawerOpen(true)}>
+                    Compare countries
+                  </button>
                 </>
                 )
-              }
-              summary={
-                appArea === 'portfolio' ? (
-                  <div className="space-y-4">
-                  <BookBriefPanel
-                    holdings={holdings}
-                    riskLookup={liveRiskLookup}
-                    watchlist={liveWatchlistItems}
-                    stagedTickets={showAllTools ? stagedTradeTickets : []}
-                    view="pm"
-                    onWriteReport={(view) => {
-                      setRequestedReport(view === 'client' ? 'client_review' : 'book');
-                      openWorkspace('reports', 'ic_memo_builder');
-                    }}
-                  />
-                  <PortfolioSummary
-                    watchlistItems={liveWatchlistItems}
-                    riskLookup={liveRiskLookup}
-                    holdings={holdings}
-                    onManageHoldings={() => setIsHoldingsPanelOpen(true)}
-                    stagedTickets={showAllTools ? stagedTradeTickets : []}
-                    onOpenCountry={(live) => {
-                      const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
-                      if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
-                      openCountryPage();
-                    }}
-                  />
-                  <PanelBoundary name="Signals on your holdings">
-                    <div id="tool-holdings-signals" className="scroll-mt-4" /><PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={() => setIsHoldingsPanelOpen(true)} />
-                  </PanelBoundary>
-                  </div>
-                ) : undefined
               }
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (

@@ -91,7 +91,7 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
       <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="ui-section-title">Holdings</h2>
-          <p className="ui-label">Saved in this browser only. Nothing is sent to the server.</p>
+          <p className="ui-label">Saved on this computer in data/local/workspace.json, shared by Docker and npm run dev. Nothing leaves your machine.</p>
         </div>
         <div className="flex flex-wrap gap-1.5">
           <button type="button" className="ui-btn" onClick={() => downloadText('econquest-holdings-template.csv', HOLDINGS_TEMPLATE_CSV)}>
