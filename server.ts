@@ -13,6 +13,7 @@ import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, wit
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
@@ -646,6 +647,58 @@ async function fetchCliPull(): Promise<CliPull | null> {
     cliInFlight = null;
   });
   return cliInFlight;
+}
+
+/**
+ * OECD consumer price inflation (src/utils/oecdInflation.ts). Monthly; one call for every area.
+ * Saved to data/live/oecd-cpi.json with its pull date and pulled again after a day; a failed pull
+ * keeps the last good one and is retried after an hour.
+ */
+type CpiPull = { pulledAt: string; series: CpiSeries };
+let cpiMemory: { pull: CpiPull | null; triedAt: number } | null = null;
+let cpiInFlight: Promise<CpiPull | null> | null = null;
+function cpiFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cpi.json');
+}
+async function fetchCpiPull(): Promise<CpiPull | null> {
+  if (!cpiMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cpiFile(), 'utf8')) as CpiPull;
+      if (saved?.pulledAt && saved.series) cpiMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (cpiMemory?.pull && Date.now() - Date.parse(cpiMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cpiMemory.pull;
+  if (cpiMemory && Date.now() - cpiMemory.triedAt < 60 * 60 * 1000) return cpiMemory.pull;
+  if (cpiInFlight) return cpiInFlight;
+  cpiInFlight = (async () => {
+    let series: CpiSeries | null = null;
+    try {
+      const res = await fetchWithTimeout(cpiUrl(), 30000);
+      if (res.ok) series = parseCpi(await res.text());
+      else console.warn(`[OECD] consumer prices refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[OECD] consumer prices: ${describeNetworkError(e, 30000)}`);
+    }
+    const prev = cpiMemory?.pull ?? null;
+    if (!series) {
+      cpiMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: CpiPull = { pulledAt: new Date().toISOString(), series };
+    cpiMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cpiFile()), { recursive: true });
+      fs.writeFileSync(cpiFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cpiInFlight = null;
+  });
+  return cpiInFlight;
 }
 
 /**
@@ -1466,7 +1519,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol, cli] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -1474,6 +1527,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     Promise.race([fetchTicPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     cbpolPullQuick(),
     Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1507,6 +1561,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
         const lead = cliFor(catItem.iso3, cli?.series);
+        const prices = cpiFor(catItem.iso3, cpi?.series);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
@@ -1528,6 +1583,12 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
+          // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
+          ...(prices && cpi
+            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: cpi.pulledAt } }
+            : cpi
+              ? { oecdCpiPulledAt: cpi.pulledAt }
+              : {}),
           // Policy rate: the BIS figure with its date, or nothing (the row reads Missing with the reason).
           ...(bisRate
             ? {

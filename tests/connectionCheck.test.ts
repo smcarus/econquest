@@ -47,6 +47,8 @@ const healthy: FetchFn = async (url) => {
     ]);
   if (url.includes('sdmx.oecd.org') && url.includes('DF_CLI'))
     return new Response('STRUCTURE,STRUCTURE_ID,ACTION,REF_AREA,FREQ,MEASURE,UNIT_MEASURE,ACTIVITY,ADJUSTMENT,TRANSFORMATION,TIME_HORIZ,METHODOLOGY,TIME_PERIOD,OBS_VALUE\nDATAFLOW,OECD.SDD.STES:DSD_STES@DF_CLI(4.1),I,BRA,M,LI,IX,_Z,AA,IX,_Z,H,2026-08,99.71\nDATAFLOW,OECD.SDD.STES:DSD_STES@DF_CLI(4.1),I,BRA,M,LI,IX,_Z,AA,IX,_Z,H,2026-09,99.80\n');
+  if (url.includes('sdmx.oecd.org') && url.includes('DF_PRICES_ALL'))
+    return new Response('STRUCTURE,STRUCTURE_ID,ACTION,REF_AREA,FREQ,METHODOLOGY,MEASURE,UNIT_MEASURE,EXPENDITURE,ADJUSTMENT,TRANSFORMATION,TIME_PERIOD,OBS_VALUE\nDATAFLOW,OECD.SDD.TPS:DSD_PRICES@DF_PRICES_ALL(1.0),I,BRA,M,N,CPI,PA,_T,N,GY,2026-09,4.2\n');
   if (url.includes('ticdata.treasury.gov')) return new Response('Table 5\nCountry\t2026-08\t2026-07\nJapan\t1068.3\t1103.9\nBrazil\t168.4\t168.0\nGrand Total\t9331.7\t9248.4\n');
   if (url.includes('fredgraph.csv')) return new Response('observation_date,IRLTLT01USM156N\n2026-08-01,4.21\n2026-09-01,4.12\n');
   if (url.includes('api.stlouisfed.org')) return json({ error_code: 400, error_message: 'Bad Request. The value for variable api_key is not registered.' }, 400);
@@ -73,6 +75,7 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.equal(row('cftc').state, 'connected');
   assert.equal(row('bis_cbpol').state, 'connected');
   assert.equal(row('bis_cbpol').sample, 'Brazil policy rate 15.00% (Central Bank of Brazil, 2026-10-27)');
+  assert.match(row('oecd_cpi').sample!, /Brazil inflation 4\.2% y\/y \(Sep 2026\)/);
   assert.match(row('oecd_cli').sample!, /Brazil leading indicator 99\.80 \(Sep 2026, recovery\)/);
   assert.match(row('tic').sample!, /Brazil holds \$168\.4bn of US Treasuries \(Aug 2026\)/);
   assert.match(row('cftc').sample!, /Leveraged funds net MXN \+24\.5% of open interest \(as of 2026-10-27, 2 weeks\)/);

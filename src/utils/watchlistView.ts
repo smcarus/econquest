@@ -9,6 +9,7 @@ import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { cftcMissing, positioningLabel } from './cftcPositioning';
 import { formatMonth, ticMissing } from './ticHoldings';
 import { cliMissing } from './oecdCli';
+import { formatMonth as oecdMonth } from './oecdSdmx';
 
 export const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 export const WATCHLIST_VIEW_KEY = 'econquest.watchlistView.v1';
@@ -90,12 +91,17 @@ export const COLUMNS: ColumnDef[] = [
   {
     id: 'cpi',
     label: 'Inflation',
-    help: 'CPI inflation, IMF',
+    help: 'CPI inflation, y/y: OECD monthly where the OECD publishes it, IMF otherwise',
     align: 'right',
     figure: 'cpi',
     value: (it) => it.cpiInflationPct,
     text: (it) => num(it.cpiInflationPct, 1, '%'),
-    note: (it) => (it.cpiInflationPct === undefined ? undefined : 'Live, IMF'),
+    note: (it) =>
+      it.cpiInflationPct === undefined
+        ? undefined
+        : it.cpiSource === 'oecd' && it.cpiMonth
+          ? `OECD, ${oecdMonth(it.cpiMonth)}${it.oecdCpi?.trend ? `, ${it.oecdCpi.trend}` : ''}`
+          : 'Live, IMF',
   },
   {
     id: 'policy',

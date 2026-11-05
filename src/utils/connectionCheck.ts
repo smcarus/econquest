@@ -13,6 +13,7 @@
  */
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
+import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
@@ -230,6 +231,7 @@ export const SOURCE_IDS = [
   'cftc',
   'tic',
   'oecd_cli',
+  'oecd_cpi',
   'fred_csv',
   'fred_api',
   'tesouro',
@@ -491,6 +493,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'The OECD answered, but not with an amplitude-adjusted leading indicator series the app reads. The dataset layout may have changed.'
+    )
+  );
+
+  add('oecd_cpi', () =>
+    httpCheck(
+      { id: 'oecd_cpi', name: 'OECD consumer prices', group: 'free', feeds: 'Monthly headline CPI inflation, y/y, for the countries the OECD covers' },
+      fetchFn,
+      cpiUrl({ areas: ['USA', SAMPLE_ISO3], months: 15 }),
+      Math.max(T, 20000),
+      (r) => {
+        const s = parseCpi(r.text);
+        const c = cpiFor(SAMPLE_ISO3, s) || cpiFor('USA', s);
+        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})` : null;
+      },
+      undefined,
+      'The OECD answered, but not with a monthly headline CPI series the app reads. The dataset layout may have changed.'
     )
   );
 
