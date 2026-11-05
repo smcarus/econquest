@@ -108,3 +108,19 @@ test('isCouncilDocument rejects junk', () => {
   assert.equal(isCouncilDocument(null), false);
   assert.equal(isCouncilDocument({ kind: 'agent', id: '../x', question: 'q', askedAt: 'a', sources: [], findings: [], missing: [] }), false);
 });
+
+test('council documents save to the research library for Reports, same id replaces, junk dropped on read', async () => {
+  const { EMPTY_LIBRARY, addCouncilDoc, removeCouncilDoc, summarise, parseLibrary } = await import('../src/utils/researchLibrary.ts');
+  const a = toAgentDocument(answer(), CTX);
+  const s = toSynthesisDocument([a], { brief: null, removed: [], reason: 'No AI model answered.' }, CTX);
+  let lib = addCouncilDoc(addCouncilDoc(EMPTY_LIBRARY, a), s);
+  lib = addCouncilDoc(lib, a); // saved twice: one entry
+  assert.equal(lib.councilDocs.length, 2);
+  const sum = summarise(lib).councilDocs;
+  assert.deepEqual(sum.map((d) => d.author).sort(), ['Central Bank Watcher Agent', 'Synthesis']);
+  assert.ok(sum.some((d) => d.status === 'not written'));
+  const back = parseLibrary(JSON.parse(JSON.stringify({ ...lib, councilDocs: [...lib.councilDocs, { kind: 'agent', id: 'x' }] })));
+  assert.equal(back.councilDocs.length, 2);
+  assert.equal(removeCouncilDoc(lib, a.id).councilDocs.length, 1);
+  assert.deepEqual(parseLibrary({}).councilDocs, []);
+});

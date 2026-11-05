@@ -11,10 +11,13 @@
  */
 import type { SavedCouncilBrief } from './askCouncil';
 import type { PolicyDoc } from './policyDocs';
+import { isCouncilDocument, type CouncilDocument } from './agentDocument';
 import { MAX_DOC_CHARS } from './policyDocs';
 
 export const MAX_SAVED_BRIEFS = 200;
 export const MAX_SAVED_DOCS = 30;
+/** Standard council documents saved to Reports (agent and synthesis documents). */
+export const MAX_COUNCIL_DOCS = 300;
 export const MAX_NOTEBOOKS = 50;
 export const MAX_NOTEBOOK_NOTES = 20000;
 
@@ -63,11 +66,29 @@ export interface SavedBriefEntry extends SavedCouncilBrief {
   savedAt: string;
 }
 
+export type SavedCouncilDoc = CouncilDocument & { savedAt: string };
+
 export interface ResearchLibrary {
   briefs: SavedBriefEntry[];
   docs: PolicyDoc[];
   notebooks: Notebook[];
   episodes: Episode[];
+  /** Agent and synthesis documents from Council chat, saved to Reports. */
+  councilDocs: SavedCouncilDoc[];
+}
+
+/** One line per saved council document, for the Reports list. */
+export interface CouncilDocSummary {
+  id: string;
+  kind: CouncilDocument['kind'];
+  /** "Central Bank Watcher Agent" or "Synthesis". */
+  author: string;
+  question: string;
+  askedAt: string;
+  savedAt: string;
+  scope: string;
+  /** Agent: coverage level; synthesis: written or not. */
+  status: string;
 }
 
 /** One line per saved conversation, for the list. */
@@ -93,7 +114,7 @@ export interface DocSummary {
   chars: number;
 }
 
-export const EMPTY_LIBRARY: ResearchLibrary = { briefs: [], docs: [], notebooks: [], episodes: [] };
+export const EMPTY_LIBRARY: ResearchLibrary = { briefs: [], docs: [], notebooks: [], episodes: [], councilDocs: [] };
 
 /** A conversation's id: the time its latest question was asked, so later answers overwrite it. */
 export const briefId = (askedAt: string) => `b-${askedAt.replace(/[^0-9]/g, '')}`;
@@ -127,6 +148,17 @@ export function removeBrief(lib: ResearchLibrary, id: string): ResearchLibrary {
 export function addDoc(lib: ResearchLibrary, d: PolicyDoc): ResearchLibrary {
   const doc: PolicyDoc = { id: str(d.id, 80), title: str(d.title, 200) || 'Document', text: d.text.slice(0, MAX_DOC_CHARS), addedAt: str(d.addedAt, 40) || new Date().toISOString(), ...(d.pages ? { pages: d.pages } : {}) };
   return { ...lib, docs: [doc, ...lib.docs.filter((x) => x.id !== doc.id)].slice(0, MAX_SAVED_DOCS) };
+}
+
+/** Save a council document to Reports (same id replaces: the same agent on the same question), newest first. */
+export function addCouncilDoc(lib: ResearchLibrary, d: CouncilDocument, now: Date = new Date()): ResearchLibrary {
+  const entry: SavedCouncilDoc = { ...d, question: str(d.question, 500), savedAt: now.toISOString() };
+  const councilDocs = [entry, ...lib.councilDocs.filter((x) => x.id !== d.id)].sort((x, y) => y.askedAt.localeCompare(x.askedAt)).slice(0, MAX_COUNCIL_DOCS);
+  return { ...lib, councilDocs };
+}
+
+export function removeCouncilDoc(lib: ResearchLibrary, id: string): ResearchLibrary {
+  return { ...lib, councilDocs: lib.councilDocs.filter((d) => d.id !== id) };
 }
 
 /** Deleting a document also takes it out of every notebook. */
@@ -237,7 +269,7 @@ export function suggestedTopics(briefs: BriefSummary[], notebooks: Pick<Notebook
     .sort((a, b) => b.briefIds.length - a.briefIds.length || a.title.localeCompare(b.title));
 }
 
-export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs: DocSummary[]; notebooks: NotebookSummary[]; episodes: Episode[] } {
+export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs: DocSummary[]; notebooks: NotebookSummary[]; episodes: Episode[]; councilDocs: CouncilDocSummary[] } {
   return {
     briefs: lib.briefs.map((b) => ({
       id: b.id,
@@ -253,6 +285,16 @@ export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs:
     docs: lib.docs.map((d) => ({ id: d.id, title: d.title, addedAt: d.addedAt, ...(d.pages ? { pages: d.pages } : {}), chars: d.text.length })),
     notebooks: lib.notebooks.map((n) => ({ id: n.id, title: n.title, updatedAt: n.updatedAt, briefIds: n.briefIds, docIds: n.docIds, notesChars: n.notes.length })),
     episodes: lib.episodes,
+    councilDocs: lib.councilDocs.map((d) => ({
+      id: d.id,
+      kind: d.kind,
+      author: d.kind === 'agent' ? `${d.agentName} Agent` : 'Synthesis',
+      question: d.question,
+      askedAt: d.askedAt,
+      savedAt: d.savedAt,
+      scope: d.scope,
+      status: d.kind === 'agent' ? `coverage ${d.coverage?.level || 'none'}` : d.status,
+    })),
   };
 }
 
@@ -264,6 +306,7 @@ export function parseLibrary(raw: unknown): ResearchLibrary {
     docs: Array.isArray(r?.docs) ? r!.docs.filter(isDoc) : [],
     notebooks: Array.isArray(r?.notebooks) ? r!.notebooks.flatMap((n) => parseNotebook(n)) : [],
     episodes: Array.isArray(r?.episodes) ? r!.episodes.flatMap((e) => parseEpisode(e)) : [],
+    councilDocs: Array.isArray(r?.councilDocs) ? r!.councilDocs.filter((d): d is SavedCouncilDoc => isCouncilDocument(d) && typeof (d as SavedCouncilDoc).savedAt === 'string') : [],
   };
 }
 

@@ -84,6 +84,7 @@ import { HoldingsPanel } from './components/HoldingsPanel';
 import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
+import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
 import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
@@ -3232,6 +3233,18 @@ export default function App() {
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
                   <>
+                  <div id="tool-council-docs" className="mb-3 scroll-mt-4">
+                    <PanelBoundary name="Council documents">
+                      <SavedCouncilDocuments
+                        items={liveWatchlistItems}
+                        onOpenCountry={(item) => {
+                          const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
+                          if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
+                          openCountryPage('macro');
+                        }}
+                      />
+                    </PanelBoundary>
+                  </div>
                   <IcMemoBuilder
                     key={`${d}-${requestedReport || DEFAULT_REPORT}-${reportNonce}`}
                     run={run}

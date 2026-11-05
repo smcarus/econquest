@@ -3,7 +3,8 @@ import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { downloadCouncilBrief } from '../utils/briefExport';
 import { councilBriefSections, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
 import type { PolicyDoc } from '../utils/policyDocs';
-import type { BriefSummary, DocSummary, Episode, EpisodeInput, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
+import type { CouncilDocument } from '../utils/agentDocument';
+import type { BriefSummary, CouncilDocSummary, DocSummary, Episode, EpisodeInput, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
 
 /** The research library on this computer (data/local/research.json), through the app server. */
 export function useResearchLibrary() {
@@ -11,6 +12,7 @@ export function useResearchLibrary() {
   const [docs, setDocs] = useState<DocSummary[]>([]);
   const [notebooks, setNotebooks] = useState<NotebookSummary[]>([]);
   const [episodes, setEpisodes] = useState<Episode[]>([]);
+  const [councilDocs, setCouncilDocs] = useState<CouncilDocSummary[]>([]);
   const [error, setError] = useState('');
   const refresh = useCallback(async () => {
     try {
@@ -21,6 +23,7 @@ export function useResearchLibrary() {
       setDocs(Array.isArray(j.docs) ? j.docs : []);
       setNotebooks(Array.isArray(j.notebooks) ? j.notebooks : []);
       setEpisodes(Array.isArray(j.episodes) ? j.episodes : []);
+      setCouncilDocs(Array.isArray(j.councilDocs) ? j.councilDocs : []);
       setError('');
     } catch (e: any) {
       setError(`Saved research could not be read (${e?.message || 'the app server did not answer'}).`);
@@ -57,6 +60,7 @@ export function useResearchLibrary() {
     docs,
     notebooks,
     episodes,
+    councilDocs,
     error,
     refresh,
     createEpisode: async (input: EpisodeInput): Promise<string | null> => {
@@ -82,6 +86,13 @@ export function useResearchLibrary() {
     loadBrief: async (id: string): Promise<SavedBriefEntry | null> => {
       const r = await fetch(`/api/research/briefs/${encodeURIComponent(id)}`).catch(() => null);
       return r?.ok ? ((await r.json()) as SavedBriefEntry) : null;
+    },
+    /** Save council documents to Reports (one or several in one write). */
+    saveCouncilDocs: (docs: CouncilDocument[]) => write('POST', '/api/research/council-docs', { documents: docs }),
+    deleteCouncilDoc: (id: string) => write('DELETE', `/api/research/council-docs/${encodeURIComponent(id)}`),
+    loadCouncilDoc: async (id: string): Promise<CouncilDocument | null> => {
+      const r = await fetch(`/api/research/council-docs/${encodeURIComponent(id)}`).catch(() => null);
+      return r?.ok ? ((await r.json()) as CouncilDocument) : null;
     },
     loadDoc: async (id: string): Promise<PolicyDoc | null> => {
       const r = await fetch(`/api/research/docs/${encodeURIComponent(id)}`).catch(() => null);
