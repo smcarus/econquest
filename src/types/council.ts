@@ -483,6 +483,9 @@ export interface WatchlistItem {
   policyRateStale?: boolean;
   policyRateChange12mPts?: number;
   policyRateLastMove?: { period: string; fromPct: number; toPct: number };
+  /** BIS: every move in the history read, oldest first, and the first month read. */
+  policyRateMoves?: { period: string; fromPct: number; toPct: number }[];
+  policyRateHistoryFrom?: string;
   /** 'live' when the IMF filled debt/GDP, or the World Bank filled reserves; else built-in. */
   debtSource?: 'live' | 'sample';
   reservesSource?: 'live' | 'sample';

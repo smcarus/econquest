@@ -13,6 +13,7 @@ import { carryToVol, reerLabel } from './fxValuation';
 import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
 import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 import { cliMissing } from './oecdCli';
+import { HOLD_AFTER_MONTHS, cliCycleText, cycleClock, nextDecisionText, policyCycleText } from './cycleClock';
 import { cpiMissing, cpiSource } from './oecdInflation';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
@@ -370,6 +371,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       rows: cliRows(self),
     },
     {
+      title: 'Cycle clock',
+      rows: cycleClockRows(self, run.iso3),
+    },
+    {
       title: 'Futures positioning (CFTC, weekly)',
       rows: positioningRows(self, run.iso3),
     },
@@ -556,6 +561,31 @@ export function cliRows(self: LiveWatchlistItem | undefined): BriefRow[] {
     ...(c.change1m !== undefined ? [{ label: 'Change on the month', value: sg(c.change1m), source: src, verified: true }] : []),
     ...(c.change6m !== undefined ? [{ label: 'Change over 6 months', value: sg(c.change6m), source: src, verified: true }] : []),
   ];
+}
+
+/**
+ * Cycle clock rows for the Country tab: policy cycle (BIS moves), business cycle (OECD leading
+ * indicator) and the next scheduled rate decision. Where things stand and for how long, not a forecast.
+ */
+export function cycleClockRows(self: LiveWatchlistItem | undefined, iso3: string, now = new Date()): BriefRow[] {
+  const clock = cycleClock(self ?? { iso3 }, now);
+  const rows: BriefRow[] = [];
+  rows.push(
+    clock.policy
+      ? { label: 'Policy cycle', value: policyCycleText(clock.policy), source: `model, from BIS policy-rate moves to ${formatPeriod(clock.policy.asOf)}; no move for ${HOLD_AFTER_MONTHS} months = on hold`, verified: false }
+      : missingRow('Policy cycle', { kind: 'setup', short: 'Needs the BIS policy-rate history', help: 'Worked out from the BIS monthly policy-rate series, which is missing for this country.' })
+  );
+  rows.push(
+    clock.cli
+      ? { label: 'Business cycle (leading indicator)', value: cliCycleText(clock.cli), source: 'model, OECD rule on the CLI level and monthly change; a turn needs two months each way', verified: false }
+      : missingRow('Business cycle (leading indicator)', { kind: 'setup', short: 'Needs the OECD leading indicator', help: 'Worked out from the OECD composite leading indicator, which is missing for this country.' })
+  );
+  rows.push(
+    clock.nextDecision
+      ? { label: 'Next rate decision', value: nextDecisionText(clock.nextDecision), source: `official calendar: ${clock.nextDecision.source}${clock.nextDecision.primary ? '' : ', secondary source'}`, verified: clock.nextDecision.primary }
+      : noSourceRow('Next rate decision', 'No rate decision date on file in the official calendar for this country.')
+  );
+  return rows;
 }
 
 /** OECD monthly CPI rows for the Country tab, with the month and the date the app pulled it. */
