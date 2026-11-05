@@ -1,4 +1,5 @@
 import { withNoteReferences } from '../utils/citations';
+import { modelCouncil } from '../utils/councilResult';
 import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
@@ -194,7 +195,7 @@ export function buildSections(
   if (audience === 'client') return buildClientSections(p, include);
   const { run, stagedTickets, holdings, riskLookup } = p;
   const open = run.openData;
-  const sc = run.supremeCouncil;
+  const sc = modelCouncil(run);
   const status = getSnapshotDataStatus(open);
   // Only real figures: anything else is named as missing, with the reason.
   const fig = (label: string, path: string, fmt: (v: number) => string, note = '') => {
@@ -322,7 +323,7 @@ export function buildSections(
 function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, boolean>): MemoSection[] {
   const { run, holdings, riskLookup } = p;
   const open = run.openData;
-  const sc = run.supremeCouncil;
+  const sc = modelCouncil(run);
   const status = getSnapshotDataStatus(open);
   const L = CLIENT_SECTION_LABEL as Record<SectionId, string>;
   const out: MemoSection[] = [];

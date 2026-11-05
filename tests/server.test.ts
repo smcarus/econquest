@@ -267,14 +267,24 @@ test('council progress: each step reports as it finishes, honestly marked when n
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ iso3: 'ZAF', countryName: 'South Africa', progressId }),
   });
-  assert.equal(run.status, 200);
+  // No model answered (no Gemini key in tests): no assessment is made up from built-in text.
+  assert.equal(run.status, 503);
+  assert.match((await run.json()).error, /No AI model answered, so the council gave no assessment and no verdict/);
   const { steps } = await (await fetch(`${base}/api/council/progress/${progressId}`)).json();
   assert.equal(steps.data.status, 'done');
-  for (const desk of ['geo', 'sov', 'macro', 'cascade']) {
+  for (const desk of ['geo', 'sov', 'macro']) {
     assert.equal(steps[desk].status, 'fallback', desk); // no Gemini key in tests
     assert.match(steps[desk].note, /No model answered/);
   }
   assert.equal(steps.search.status, 'skipped');
+  // The final report gives no verdict either when no model answers.
+  const supreme = await fetch(`${base}/api/council/supreme-council`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({}),
+  });
+  assert.equal(supreme.status, 503);
+  assert.match((await supreme.json()).error, /no verdict/);
   // An unknown id answers with no steps rather than an error.
   assert.deepEqual((await (await fetch(`${base}/api/council/progress/nope-nope`)).json()).steps, {});
 });
