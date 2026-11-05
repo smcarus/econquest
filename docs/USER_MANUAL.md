@@ -25,7 +25,10 @@ shown when an input is missing.
 
 ## 1. Workspace
 
-The page the app opens on. From the top:
+The page the app opens on. Your inputs and the watchlist sit in a left column that stays in view on
+a desktop; the outputs (What moved, Next two weeks, Ask the council, Watch alerts) run down the
+right in the order you would check them. On a phone it is one column, with a jump bar at the bottom
+of the screen (Inputs · Watchlist · Moved · Dates · Council · Alerts).
 
 **Your inputs.** One chip for each thing you set that changes what Workspace shows: watchlist, open
 country, data feeds, free keys, AI model, holdings and saved research. Each chip shows its state
@@ -40,7 +43,7 @@ bp or more, and watch alerts that started firing. Each line has its date and sou
 visit it lists policy moves from the last 30 days. Your last visit is remembered in this browser only.
 When no feed has answered for the watchlist it reads Missing with that reason, not "Nothing moved".
 
-**Watchlist.** A compact card with your list. *Pop out* opens the full table in its own window,
+**Watchlist.** A compact card with your list, under Your inputs; the open country is marked *Open* and countries in your imported holdings are marked *Held*. *Pop out* opens the full table in its own window,
 with your choice of columns; *Edit* adds or removes countries and switches lists.
 
 **Ask the council.** Type a question, or pick one of the suggestions.

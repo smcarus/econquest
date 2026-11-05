@@ -1733,6 +1733,7 @@ export default function App() {
     () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
     [holdings]
   );
+  const heldIso3 = useMemo(() => [...new Set(holdings.map((h) => h.iso3))], [holdings]);
   const holdingsContagionBook = useMemo(() => holdingsToContagionBook(holdings, SOVEREIGN_CATALOG), [holdings]);
   // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
   const holdingsRiskLookup = [
@@ -2934,6 +2935,7 @@ export default function App() {
               coreOnly={!showAllTools}
               aiProvider={runtimeConfig.providerMode}
               holdingsCount={holdings.length}
+              heldIso3={heldIso3}
               onInputAction={(id) => {
                 if (id === 'keys') setIsSettingsOpen(true);
                 else if (id === 'ai') setIsRuntimeModalOpen(true);
