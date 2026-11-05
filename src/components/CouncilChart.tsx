@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { Download, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
@@ -33,6 +33,7 @@ function rows(result: ChartResult): Array<Record<string, number | string>> {
 }
 
 function downloadCsv(result: ChartResult) {
+  if (!result.lines.length && result.scatter) return downloadScatterCsv(result);
   const data = rows(result);
   const head = ['date', ...result.lines.map((l) => `${l.label} (${l.unit})`)];
   const esc = (s: string) => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
@@ -67,6 +68,19 @@ function downloadImage(result: ChartResult, box: HTMLElement | null) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${fileStem(result.title)}.svg`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** Across countries: one row per country. */
+function downloadScatterCsv(result: ChartResult) {
+  const s = result.scatter!;
+  const esc = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
+  const credits = creditsFor(result.sources ?? []).credits.map((c) => `# Credit: ${esc(c)}`);
+  const text = [csvNoticeLine(), ...result.notes.map((n) => `# ${n}`), ...credits, ['country', s.xLabel, s.yLabel].map(esc).join(','), ...s.pairs.map((p) => [p.date, String(p.x), String(p.y)].map(esc).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
+  a.download = `${result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 60) || 'chart'}.csv`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -108,21 +122,25 @@ const ChartLines: React.FC<{ result: ChartResult; height: number }> = ({ result,
 
 const ScatterFit: React.FC<{ result: ChartResult; height: number }> = ({ result, height }) => {
   const s = result.scatter;
-  if (!s) return null;
+  if (!s || !s.pairs.length) return null;
+  const cross = Boolean(result.request?.cross);
   const xs = s.pairs.map((p) => p.x);
   const lo = Math.min(...xs);
   const hi = Math.max(...xs);
   const fit = s.fit ? [{ x: lo, y: s.fit.a + s.fit.b * lo }, { x: hi, y: s.fit.a + s.fit.b * hi }] : [];
   return (
-    <div style={{ height }} data-council-chart-scatter={s.pairs.length}>
+    <div style={{ height }} data-council-chart-scatter={s.pairs.length} className={cross ? 'pb-5' : ''}>
+      {cross && <div className="text-xs text-slate-500 dark:text-slate-400">↑ {s.yLabel}</div>}
       <ResponsiveContainer width="100%" height="100%">
-        <ScatterChart margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
+        <ScatterChart margin={{ top: cross ? 20 : 8, right: cross ? 48 : 16, bottom: 16, left: 0 }}>
           <CartesianGrid stroke="currentColor" strokeOpacity={0.1} />
           <XAxis type="number" dataKey="x" name={s.xLabel} tick={{ fontSize: 11 }} domain={['auto', 'auto']} label={{ value: s.xLabel, position: 'insideBottom', offset: -8, fontSize: 11 }} />
           <YAxis type="number" dataKey="y" name={s.yLabel} tick={{ fontSize: 11 }} width={52} domain={['auto', 'auto']} />
-          <ZAxis range={[24, 24]} />
-          <Tooltip formatter={(v) => fmt(Number(v))} />
-          <Scatter data={s.pairs} fill="#2563eb" fillOpacity={0.55} isAnimationActive={false} name="Points" />
+          <ZAxis range={cross ? [48, 48] : [24, 24]} />
+          <Tooltip formatter={(v) => fmt(Number(v))} labelFormatter={() => ''} />
+          <Scatter data={s.pairs} fill="#2563eb" fillOpacity={cross ? 0.8 : 0.55} isAnimationActive={false} name={cross ? 'Countries' : 'Points'}>
+            {cross && <LabelList dataKey="date" position="top" fontSize={11} fill="currentColor" />}
+          </Scatter>
           {fit.length > 0 && <Scatter data={fit} line={{ stroke: '#d97706', strokeWidth: 2 }} shape={() => <g />} isAnimationActive={false} name="Regression line" legendType="line" />}
         </ScatterChart>
       </ResponsiveContainer>
@@ -171,8 +189,8 @@ function footnote(result: ChartResult): string {
 
 const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big }) => (
   <div className="space-y-3">
-    {result.lines.length ? <ChartLines result={result} height={big ? 420 : 240} /> : <p className="ui-body">Nothing to draw: every series asked for is missing.</p>}
-    {result.scatter && <ScatterFit result={result} height={big ? 360 : 220} />}
+    {result.lines.length ? <ChartLines result={result} height={big ? 420 : 240} /> : !result.scatter?.pairs.length && <p className="ui-body">Nothing to draw: every series asked for is missing.</p>}
+    {result.scatter && <ScatterFit result={result} height={result.lines.length ? (big ? 360 : 220) : big ? 480 : 300} />}
     {result.tests.length > 0 && (
       <ul className="space-y-2" data-council-chart-tests={result.tests.length}>
         {result.tests.map((t, i) => (
@@ -207,7 +225,7 @@ const ALL_TESTS: ChartTest[] = ['summary', 'correlation', 'regression', 'leadlag
  */
 const Controls: React.FC<{ base: ChartResult; view: ChartResult; busy: boolean; onChange: (transform: Transform, tests: ChartTest[]) => void }> = ({ base, view, busy, onChange }) => {
   const req = view.request;
-  if (!req) return null;
+  if (!req || req.cross) return null;
   const pair = req.series.length >= 2 && !req.derived?.length;
   const offered = ALL_TESTS.filter((t) => (t === 'summary' ? Boolean(req.derived?.length) || req.tests.includes('summary') : pair || !PAIR_TESTS.includes(t)));
   const toggle = (t: ChartTest) => onChange(req.transform, req.tests.includes(t) ? req.tests.filter((x) => x !== t) : [...req.tests, t]);
@@ -247,7 +265,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
   const [busy, setBusy] = useState(false);
   const chartBox = useRef<HTMLDivElement>(null);
   // Sharing mode: no image or CSV of figures whose sources' terms do not let them be passed on.
-  const blocked = shareModeBlock(result.lines.map((l) => l.source), loadShareMode());
+  const blocked = shareModeBlock([...result.lines.map((l) => l.source), ...(result.sources ?? [])], loadShareMode());
   const redraw = async (transform: Transform, tests: ChartTest[]) => {
     if (!result.request) return;
     const req = { ...result.request, transform, tests: ALL_TESTS.filter((t) => tests.includes(t)) };
@@ -289,7 +307,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
           >
             <ImageIcon className="w-3.5 h-3.5" /> Image
           </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={!result.lines.length || Boolean(blocked)} title={blocked ?? undefined}>
+          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={(!result.lines.length && !result.scatter?.pairs.length) || Boolean(blocked)} title={blocked ?? undefined}>
             <Download className="w-3.5 h-3.5" /> CSV
           </button>
         </div>
@@ -307,7 +325,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
                 <h2 className="ui-section-title">{view.title}</h2>
               </div>
               <div className="flex items-center gap-1">
-                <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(view)} disabled={!view.lines.length}>
+                <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(view)} disabled={!view.lines.length && !view.scatter?.pairs.length}>
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
                 <button type="button" className="ui-btn" onClick={() => setOpen(false)} aria-label="Close chart">
