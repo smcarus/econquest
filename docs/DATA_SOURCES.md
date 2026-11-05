@@ -39,6 +39,7 @@ estimated, invented or taken from built-in sample values.
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
+| US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
@@ -62,6 +63,14 @@ Notes from the first check on Sam's Mac (2026-11-05):
   in their own last three years (90th percentile or above = crowded long, 10th or below = crowded
   short; tagged as the FX Valuation Agent's reading). Turkey, Egypt, Indonesia, Poland and Chile
   have no CFTC-reported future and say so.
+- **US Treasury TIC** publishes its Major Foreign Holders table monthly, around the 18th, for
+  the month-end two months earlier (so the newest figure is 6 to 10 weeks old). It names only the
+  largest holders; Mexico, Turkey, South Africa, Poland, Chile, Indonesia and Egypt are inside
+  "All Other" and read Missing for that reason. The app reads `slt_table5.txt` (the older
+  `mfh.txt` stopped at January 2023), keeps it on disk (`data/live/tic.json`) and asks again
+  after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
+  holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
+  more = buying; tagged as the FX Valuation Agent's reading).
 
 ## Free, with your own key
 

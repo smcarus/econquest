@@ -16,6 +16,7 @@ import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk, policyStance, targetSource
 import { missingReason } from './liveFigures';
 import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
+import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
@@ -71,8 +72,8 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   fx: {
     name: 'FX Valuation',
-    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning',
-    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
+    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC)',
+    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
   },
   spill: {
     name: 'Global Spillover',
@@ -407,11 +408,22 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     } else {
       missing.push(`${it.countryName}: futures positioning missing (${cftcMissing(it.iso3).short})`);
     }
+    let tic = 0;
+    if (it.tic) {
+      const t = it.tic;
+      figures.push({ label: 'Holdings of US Treasuries', value: `$${t.holdingsUsdBn.toFixed(1)}bn`, source: `${TIC_LABEL}, ${formatMonth(t.month)}`, tag: 'official' });
+      if (t.change12mUsdBn !== undefined && t.change12mPct !== undefined) {
+        figures.push({ label: 'Change in US Treasury holdings, 12 months', value: `${sgn(t.change12mUsdBn)}bn (${sgn(t.change12mPct)}%)`, source: `TIC, to ${formatMonth(t.month)}`, tag: 'official' });
+        figures.push({ label: 'US Treasury holdings trend', value: ticTrend(t.change12mPct), source: '12-month change: -10% or less = selling, +10% or more = buying', tag: 'model' });
+        if (ticTrend(t.change12mPct) !== 'steady') tic = Math.min(1, Math.abs(t.change12mPct) / 30);
+      }
+      parts.push(ticSentence(t));
+    }
     if (!parts.length) {
-      missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate or CFTC positioning`);
+      missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate, CFTC positioning or TIC holdings`);
       continue;
     }
-    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' '), figures, weight: Math.max(fxValueSignal(it)?.score ?? 0, crowd), ...(stance.length ? { stance } : {}) });
+    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' '), figures, weight: Math.max(fxValueSignal(it)?.score ?? 0, crowd, tic), ...(stance.length ? { stance } : {}) });
   }
   return { id: 'fx', name: COUNCIL_AGENTS.fx.name, findings, missing };
 }
