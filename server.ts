@@ -1,7 +1,8 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
-import { OFFICIAL_FIGURES, officialPoints, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
+import { OFFICIAL_FIGURES, officialPoints, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
+import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
@@ -2120,6 +2121,14 @@ function fetchOfficialHistory(iso3: string, opts: { force?: boolean } = {}): Pro
   return job;
 }
 
+/** The app's output gap estimate (src/utils/outputGap.ts) from a saved history, or why there is none. */
+function outputGapFrom(file: OfficialHistoryFile | null | undefined): OutputGapResult {
+  const fig = OFFICIAL_FIGURES.find((f) => f.id === 'gdp_growth')!;
+  const s = officialSeries(file, fig);
+  if (!('points' in s)) return { ok: false, reason: s.reason };
+  return outputGapFromGrowth(s.points, { pulledAt: s.pulledAt });
+}
+
 /**
  * Keeps this pull in the dated archive (src/utils/pullArchive.ts), with the BIS policy rate laid
  * over it as the app served it that day. A failure here never touches the live snapshot.
@@ -2706,8 +2715,12 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
           ...(lf['imf.outputGapPct'] && Number.isFinite(snap.imfIndicators.outputGapPct)
-            ? { outputGap: { pct: snap.imfIndicators.outputGapPct as number, year: snap.imfIndicators.years?.['imf.outputGapPct'] || '' } }
-            : {}),
+            ? { outputGap: { pct: snap.imfIndicators.outputGapPct as number, year: snap.imfIndicators.years?.['imf.outputGapPct'] || '', source: 'imf' as const } }
+            : (() => {
+                // The IMF publishes no output gap series; the app's stated estimate from saved IMF growth history.
+                const est = outputGapFrom(loadOfficialHistory(catItem.iso3));
+                return est.ok ? { outputGap: { pct: est.latest.central, year: est.latest.year, source: 'estimate' as const, low: est.latest.low, high: est.latest.high } } : {};
+              })()),
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
           ...(prices && (cpi || nationalCpi)
             ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
@@ -4845,6 +4858,12 @@ async function startServer() {
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${episodeFileName(ep, teacher)}"`);
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
+  });
+  // Output gap (src/utils/outputGap.ts): HP and Hamilton filters on saved IMF real GDP growth.
+  app.get('/api/output-gap/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    res.json({ iso3, ...outputGapFrom(file) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {

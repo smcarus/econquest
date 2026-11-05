@@ -17,6 +17,7 @@ import { type CliSeries } from './oecdCli';
 import { type CpiBasis } from './oecdInflation';
 import { type TicTable } from './ticHoldings';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './officialHistory';
+import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
 
@@ -258,6 +259,17 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];
+  // The IMF publishes no output gap series: where it has none, the app's stated estimate stands in,
+  // labelled as such (src/utils/outputGap.ts).
+  const gapAt = all.findIndex((x) => x.id === 'output_gap');
+  if (gapAt >= 0 && !isSeries(all[gapAt])) {
+    const growth = all.find((x) => x.id === 'gdp_growth');
+    if (growth && isSeries(growth)) {
+      const est = outputGapFromGrowth(growth.points, { pulledAt: growth.pulledAt });
+      if (est.ok) all[gapAt] = outputGapSeries(est);
+      else all[gapAt] = { ...all[gapAt], reason: `${(all[gapAt] as SeriesMissing).reason}; the app estimate needs more history: ${est.reason}` };
+    }
+  }
   return { iso3: code, series: all.filter(isSeries), missing: all.filter((x): x is SeriesMissing => !isSeries(x)) };
 }
 

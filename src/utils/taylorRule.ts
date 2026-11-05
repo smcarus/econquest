@@ -31,6 +31,8 @@ export interface TaylorReading {
   target: InflationTarget;
   outputGapPct?: number;
   outputGapYear?: string;
+  /** 'estimate' when the gap is the app's own filter estimate (src/utils/outputGap.ts), not the IMF's. */
+  outputGapSource?: 'imf' | 'estimate';
   rStar: number;
   rulePct: number;
   /** Policy rate minus the rule rate; positive = tighter than the rule. */
@@ -77,7 +79,7 @@ export function taylorCheck(row: RowInputs | undefined): TaylorResult {
       inflationPct: inflation,
       inflationBasis: row.cpiSource === 'oecd' ? `monthly${row.cpiMonth ? `, ${row.cpiMonth}` : ''}` : 'IMF WEO, year',
       target,
-      ...(gap ? { outputGapPct: gap.pct, outputGapYear: gap.year } : {}),
+      ...(gap ? { outputGapPct: gap.pct, outputGapYear: gap.year, outputGapSource: gap.source === 'estimate' ? ('estimate' as const) : ('imf' as const) } : {}),
       rStar: TAYLOR_R_STAR,
       rulePct,
       gapToRulePts,
@@ -90,11 +92,17 @@ export function taylorCheck(row: RowInputs | undefined): TaylorResult {
 const p2 = (v: number) => `${v.toFixed(2)}%`;
 const sg = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
 
+/** Where the output gap in a reading came from, in words. */
+export function outputGapLabel(r: Pick<TaylorReading, 'outputGapSource' | 'outputGapYear'>): string {
+  const yr = r.outputGapYear ? ` ${r.outputGapYear}` : '';
+  return r.outputGapSource === 'estimate' ? `app estimate${yr}, HP and Hamilton filters on IMF real GDP growth` : `IMF WEO${yr}`;
+}
+
 /** The stated rule, with the numbers that went in. */
 export function taylorMethod(r: TaylorReading): string {
   const gapPart = r.withoutOutputGap
-    ? 'output gap left out (IMF WEO has none for this country)'
-    : `+ 0.5 x output gap ${sg(r.outputGapPct!)} (IMF WEO ${r.outputGapYear || ''})`.trim();
+    ? 'output gap left out (no IMF figure and too little IMF growth history for the app estimate)'
+    : `+ 0.5 x output gap ${sg(r.outputGapPct!)} (${outputGapLabel(r)})`;
   return `rule = r* ${r.rStar}% + inflation ${r.inflationPct.toFixed(2)}% + 0.5 x (inflation - target ${r.target.pct}%) ${gapPart}; r* is Taylor (1993)'s 2%, a stated parameter`;
 }
 
