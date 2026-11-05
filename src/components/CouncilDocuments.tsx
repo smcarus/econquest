@@ -4,6 +4,7 @@ import { useResearchLibrary } from './SavedResearch';
 import type { LiveWatchlistItem } from '../types/council';
 import type { FigureTag } from '../utils/askCouncil';
 import { lazyNamed } from './LazyDesk';
+import { explainInChat } from '../utils/explainHandoff';
 import { documentMarkdown, documentSections, type AgentDocument, type CouncilDocument, type CoverageLevel, type SynthesisDocument } from '../utils/agentDocument';
 
 /**
@@ -167,7 +168,7 @@ function Lines({ lines }: { lines: string[] }) {
   return <div className="space-y-1.5">{out}</div>;
 }
 
-function AgentFindings({ d, items, onOpenCountry }: { d: AgentDocument; items: LiveWatchlistItem[]; onOpenCountry: (it: LiveWatchlistItem) => void }) {
+function AgentFindings({ d, items, onOpenCountry, onExplained }: { d: AgentDocument; items: LiveWatchlistItem[]; onOpenCountry: (it: LiveWatchlistItem) => void; onExplained?: () => void }) {
   if (!d.findings.length) return <p>No reading from the figures on hand.</p>;
   return (
     <ul className="space-y-3">
@@ -193,6 +194,22 @@ function AgentFindings({ d, items, onOpenCountry }: { d: AgentDocument; items: L
                       <td className="py-0.5 pr-2 tabular-nums text-slate-900 dark:text-slate-100 whitespace-nowrap">{g.value}</td>
                       <td className={`py-0.5 pr-2 whitespace-nowrap ${TAG_CLASS[g.tag]}`}>{g.tagText}</td>
                       <td className="py-0.5 text-slate-500 dark:text-slate-400">{g.ref ? `[${g.ref}]` : g.source}</td>
+                      {onExplained && (
+                        <td className="py-0.5 pl-2 text-right">
+                          <button
+                            type="button"
+                            className="text-blue-700 dark:text-blue-300 hover:underline"
+                            title="Ask the council what this figure means and why it is where it is"
+                            data-explain-figure={g.label}
+                            onClick={() => {
+                              explainInChat({ kind: 'figure', label: g.label, value: g.value, source: g.source, asOf: `read ${d.askedAt.slice(0, 10)}`, iso3: f.iso3, countryName: f.subject });
+                              onExplained();
+                            }}
+                          >
+                            Explain
+                          </button>
+                        </td>
+                      )}
                     </tr>
                   ))}
                 </tbody>
@@ -261,7 +278,7 @@ export const DocumentViewer: React.FC<{
           {documentSections(doc).map((s) => (
             <section key={s.heading} data-doc-section={s.heading}>
               <h3 className="ui-label mb-1">{s.heading}</h3>
-              {doc.kind === 'agent' && s.heading === 'Findings' ? <AgentFindings d={doc} items={items} onOpenCountry={onOpenCountry} /> : <Lines lines={s.lines} />}
+              {doc.kind === 'agent' && s.heading === 'Findings' ? <AgentFindings d={doc} items={items} onOpenCountry={onOpenCountry} onExplained={onClose} /> : <Lines lines={s.lines} />}
             </section>
           ))}
         </div>

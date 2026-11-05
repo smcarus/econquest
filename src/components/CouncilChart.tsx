@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
-import { Download, Maximize2, X } from 'lucide-react';
+import { Download, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
+import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
 import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
 
@@ -234,6 +235,16 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
           <h3 className="text-sm font-medium text-slate-900 dark:text-white">{result.title}</h3>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            className="ui-btn ui-btn-ghost"
+            onClick={() => explainInChat(chartFocus(result))}
+            disabled={!result.lines.length}
+            title="Ask the council what this pattern shows, why, and what it means"
+            data-council-chart-explain="true"
+          >
+            <MessageCircleQuestion className="w-3.5 h-3.5" /> Explain
+          </button>
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setOpen(true)} data-council-chart-open="true">
             <Maximize2 className="w-3.5 h-3.5" /> Open larger
           </button>

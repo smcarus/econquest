@@ -36,7 +36,8 @@ import {
   type SynthesisResult,
 } from '../utils/askCouncil';
 
-import { withExplainAgents } from '../utils/explain';
+import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
+import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
 import { lazyNamed } from './LazyDesk';
 // The chart card (recharts) loads only when an answer has a chart.
@@ -176,7 +177,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
    * new: starts a conversation. followup: keeps this one's countries and agents unless others are
    * named. replace: asks the latest question again (after adding a country) without a new message.
    */
-  const ask = async (q: string, mode: 'new' | 'followup' | 'replace' = 'new', poolOverride?: LiveWatchlistItem[]) => {
+  const ask = async (q: string, mode: 'new' | 'followup' | 'replace' = 'new', poolOverride?: LiveWatchlistItem[], focus?: ExplainFocus) => {
     const text = q.trim();
     const items = poolOverride ?? pool;
     if (!text || !items.length) return;
@@ -189,7 +190,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     const wordPlan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
     setChoosing(true);
     // Explain questions ("why…", "what does it mean for…") also bring the agents for each lens.
-    const plan = withExplainAgents(applyAgentChoice(wordPlan, await chooseAgents(text, history)), text);
+    const plan = withExplainAgents(applyAgentChoice(wordPlan, await chooseAgents(text, history)), text, focus);
     setChoosing(false);
     const desk = runCouncil(text, plan, items, new Date(), docs);
     // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
@@ -217,6 +218,20 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       setWriting(false);
     }
   };
+
+  // "Explain" pressed on a figure, chart or panel: ask about it, with the exact figure, in this conversation.
+  const askRef = useRef(ask);
+  askRef.current = ask;
+  const askedRef = useRef(asked);
+  askedRef.current = asked;
+  useEffect(() => {
+    const onExplain = (e: Event) => {
+      const f = (e as CustomEvent<ExplainFocus>).detail;
+      if (f?.label) void askRef.current(focusQuestion(f), askedRef.current ? 'followup' : 'new', undefined, f);
+    };
+    window.addEventListener(EXPLAIN_EVENT, onExplain);
+    return () => window.removeEventListener(EXPLAIN_EVENT, onExplain);
+  }, []);
 
   /** Pulls live figures for countries the question named that are off the watchlist, then asks again. */
   const addForQuestion = async () => {

@@ -175,3 +175,30 @@ test('references: a sentence cites a source only when it quotes that source\'s f
   assert.deepEqual(c.lenses[0].sentences[0].refs, [2]);
   assert.equal(c.references.length, 2);
 });
+
+test('chart focus: title, each line\'s latest point with source, test readings; one country narrows the plan', async () => {
+  const { chartFocus } = await import('../src/utils/explainHandoff.ts');
+  const f = chartFocus({
+    title: 'Brazil: Real policy rate',
+    freq: 'M',
+    transform: 'level',
+    lines: [
+      { key: 'a', label: 'Brazil: Policy rate', unit: '%', axis: 'left', source: 'BIS policy rates', points: [{ date: '2026-10', value: 15 }, { date: '2026-11', value: 13.75 }] },
+      { key: 'b', label: 'Empty', unit: '%', axis: 'left', source: 'x', points: [] },
+    ],
+    tests: [
+      { test: 'adf', title: 'Stationarity (ADF test)', reading: 'Not stationary.', figures: [{ label: 'p', value: '0.41' }] },
+      { test: 'hp', title: 'Trend', reading: 'Not run: too short.', figures: [] },
+    ],
+    missing: [],
+    notes: [],
+    first: '2023-01',
+    last: '2026-11',
+    request: { series: [{ iso3: 'BRA', countryName: 'Brazil', id: 'policy_rate', label: 'Policy rate' }] },
+  } as never);
+  assert.equal(f.kind, 'chart');
+  assert.equal(f.iso3, 'BRA');
+  assert.equal(f.asOf, '2023-01 to 2026-11');
+  assert.deepEqual(f.detail, ['Brazil: Policy rate: latest 13.75% (2026-11) [BIS policy rates]', 'Stationarity (ADF test): Not stationary.']);
+  assert.match(focusQuestion(f), /^Explain this chart \(Brazil: Real policy rate\)/);
+});

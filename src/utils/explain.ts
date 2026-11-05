@@ -139,10 +139,11 @@ export function cleanFocus(v: unknown): ExplainFocus | undefined {
 
 /** The question put in the chat box when Explain is pressed (the user can edit it before sending). */
 export function focusQuestion(f: ExplainFocus): string {
-  const who = f.countryName ? `${f.countryName}: ` : '';
+  const who = f.countryName && !f.label.startsWith(f.countryName) ? `${f.countryName}: ` : '';
   const what = f.value ? `${f.label} of ${f.value}` : f.label;
   if (f.kind === 'chart') return `Explain this chart (${who}${f.label}): what the pattern shows, why it looks like this, and what it means.`;
-  return `Explain ${who}${what}: what it means, why it is where it is, and what it means for policy and the economy.`;
+  // No lens is named here, so every lens the agents can speak to is asked for; a follow-up can narrow it.
+  return `Explain ${who}${what}: what it means and why it is where it is.`;
 }
 
 /** The focus in words, for the prompt and the number check. */
