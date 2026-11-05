@@ -19,9 +19,13 @@ import { carryToVol, reerLabel } from './fxValuation';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
+import { searchDocs, type PolicyDoc } from './policyDocs';
 
-export type AgentId = 'cb' | 'rv' | 'fx' | 'spill' | 'calendar';
-export type FigureTag = Quality | 'official' | 'model';
+/** Desk agents the planner (or the AI model) can pick. */
+export type CoreAgentId = 'cb' | 'rv' | 'fx' | 'spill' | 'calendar';
+/** 'doc' = the Policy Document Agent, asked whenever you have added documents. */
+export type AgentId = CoreAgentId | 'doc';
+export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {
   label: string;
@@ -52,7 +56,7 @@ export interface AgentAnswer {
   missing: string[];
 }
 
-export const COUNCIL_AGENTS: Record<AgentId, { name: string; covers: string; topic: RegExp }> = {
+export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
   cb: {
     name: 'Central Bank Watcher',
     covers: 'inflation against target, policy rate, real rates',
@@ -80,12 +84,13 @@ export const COUNCIL_AGENTS: Record<AgentId, { name: string; covers: string; top
   },
 };
 
-export const AGENT_ORDER: AgentId[] = ['cb', 'rv', 'fx', 'spill', 'calendar'];
+export const AGENT_ORDER: CoreAgentId[] = ['cb', 'rv', 'fx', 'spill', 'calendar'];
 export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
   live: 'Live data',
   official: 'Official',
   estimate: 'AI estimate',
   sample: 'Sample data',
+  document: 'Your document',
 };
 export const tagLabel = (tag: FigureTag, agent: string) => (tag === 'model' ? `${agent} Agent` : TAG_LABEL[tag]);
 
@@ -104,7 +109,7 @@ export interface CouncilPlan {
   countries: LiveWatchlistItem[];
   /** How the countries were picked, in words. */
   scopeNote: string;
-  agents: Array<{ id: AgentId; why: string }>;
+  agents: Array<{ id: CoreAgentId; why: string }>;
   /** Who picked the agents: the AI model, or word matching in the question (the default). */
   chosenBy?: 'ai' | 'words';
   /** Why word matching was used when the AI was asked, or which model picked. */
@@ -162,7 +167,7 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
 }
 
 /** Questions for the agents not yet asked, about the same countries. */
-const FOLLOW_UP: Record<AgentId, string> = {
+const FOLLOW_UP: Record<CoreAgentId, string> = {
   cb: 'How does inflation compare with the policy rate?',
   rv: 'Is CDS cheap or rich against peers?',
   fx: 'Is the currency strong or weak for its history?',
@@ -174,7 +179,7 @@ export function suggestFollowUps(plan: CouncilPlan, answers: AgentAnswer[]): str
   const asked = new Set(plan.agents.map((a) => a.id));
   const out = AGENT_ORDER.filter((id) => !asked.has(id)).map((id) => FOLLOW_UP[id]);
   // When one country stands out, offer to look at it alone.
-  const top = answers.flatMap((a) => a.findings).sort((x, y) => y.weight - x.weight)[0];
+  const top = answers.flatMap((a) => a.findings).filter((f) => !isDocFinding(f)).sort((x, y) => y.weight - x.weight)[0];
   if (top && plan.countries.length > 1 && top.weight > 0) out.unshift(`What about ${baseName(top.countryName)} on its own?`);
   return out.slice(0, 3);
 }
@@ -227,10 +232,10 @@ export interface AgentChoiceResult {
 
 /** Use the model's picks when at least one names a real agent; otherwise keep the word-matched plan. */
 export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | null): CouncilPlan {
-  const seen = new Set<AgentId>();
+  const seen = new Set<CoreAgentId>();
   const picked: CouncilPlan['agents'] = [];
   for (const a of choice?.agents || []) {
-    const id = String(a?.id || '').trim().toLowerCase() as AgentId;
+    const id = String(a?.id || '').trim().toLowerCase() as CoreAgentId;
     if (!AGENT_ORDER.includes(id) || seen.has(id)) continue;
     seen.add(id);
     const why = String(a?.why || '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim().slice(0, 200);
@@ -466,8 +471,33 @@ function calendarAgent(countries: LiveWatchlistItem[], now: Date): Omit<AgentAns
 }
 
 /** Run the planned agents. `all` is the whole watchlist, for peer comparisons. */
-export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchlistItem[], now: Date = new Date()): AgentAnswer[] {
-  return plan.agents.map(({ id, why }) => {
+/* ------------------------------------------------------------------------------------------
+ * Policy Document Agent: quotes the passages of your documents that best match the question.
+ * ------------------------------------------------------------------------------------------ */
+
+export const DOC_AGENT_NAME = 'Policy Document';
+const DOC_PREFIX = 'doc:';
+export const isDocFinding = (f: Pick<AgentFinding, 'iso3'>) => f.iso3.startsWith(DOC_PREFIX);
+
+export function docAgent(question: string, docs: PolicyDoc[]): AgentAnswer {
+  const hits = searchDocs(question, docs);
+  return {
+    id: 'doc',
+    name: DOC_AGENT_NAME,
+    why: `you added ${docs.length === 1 ? 'a document' : `${docs.length} documents`}`,
+    findings: hits.map((h) => ({
+      iso3: `${DOC_PREFIX}${h.docId}:${h.part}`,
+      countryName: h.title,
+      reading: `“${h.text}”`,
+      figures: [{ label: 'Passage', value: `${h.part} of ${h.parts}`, source: `${h.title}, a document you added. Matched on: ${h.matched.join(', ')}`, tag: 'document' as const }],
+      weight: h.score,
+    })),
+    missing: hits.length ? [] : ['no passage in your documents shares enough words with the question'],
+  };
+}
+
+export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchlistItem[], now: Date = new Date(), docs: PolicyDoc[] = []): AgentAnswer[] {
+  const desk = plan.agents.map(({ id, why }) => {
     const a =
       id === 'cb'
         ? cbAgent(plan.countries)
@@ -484,6 +514,7 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
     if (sorted.length > kept.length) missing.push(`${sorted.length - kept.length} more countries with smaller readings left out`);
     return { ...a, why, findings: kept, missing };
   });
+  return docs.length ? [...desk, docAgent(question, docs)] : desk;
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -513,6 +544,7 @@ export const SYNTHESIS_INSTRUCTION = [
   'Answer the question in a short brief using ONLY the agent findings given.',
   'Every number you write must appear in the findings. Do not compute new numbers, forecast, or add outside facts.',
   'When a figure is tagged Sample data or AI estimate, say so next to it.',
+  'Passages from the Policy Document Agent are quotes from documents the user added: name the document when you use one, and do not treat its forecasts as data.',
   'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Where agents point different ways (for example tight policy but a weak currency), say so under disagreements; do not smooth it over.',
   'List under gaps what the agents could not answer.',
@@ -543,7 +575,7 @@ export function allowedNumbers(question: string, answers: AgentAnswer[]): number
   const set = new Set<number>((text.match(NUM) || []).map(Number));
   // Counts the brief may state: how many agents and countries answered.
   set.add(answers.length);
-  set.add(new Set(answers.flatMap((a) => a.findings.map((f) => f.iso3))).size);
+  set.add(new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size);
   return [...set];
 }
 

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Copy, FileText } from 'lucide-react';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
+import { PolicyDocsPicker } from './PolicyDocsPicker';
+import type { PolicyDoc } from '../utils/policyDocs';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
 import {
@@ -37,6 +39,7 @@ const TAG_CLASS: Record<FigureTag, string> = {
   estimate: 'text-amber-700 dark:text-amber-400',
   sample: 'text-amber-700 dark:text-amber-400',
   model: 'text-blue-700 dark:text-blue-300',
+  document: 'text-slate-700 dark:text-slate-300',
 };
 
 /** The full nine-agent council on the country open now, run from the conversation. */
@@ -100,6 +103,7 @@ export const AskCouncilPanel: React.FC<{
   const [earlier, setEarlier] = useState<Array<EarlierTurn & { scopeNote: string; points: string[] }>>([]);
   const [followUp, setFollowUp] = useState('');
   const [choosing, setChoosing] = useState(false);
+  const [docs, setDocs] = useState<PolicyDoc[]>([]);
 
   /** Ask the AI model which agents should answer; null when it cannot be reached in time. */
   const chooseAgents = async (question: string, history: EarlierTurn[]): Promise<AgentChoiceResult | null> => {
@@ -130,7 +134,7 @@ export const AskCouncilPanel: React.FC<{
     setChoosing(true);
     const plan = applyAgentChoice(wordPlan, await chooseAgents(text, history));
     setChoosing(false);
-    const answers = runCouncil(text, plan, items);
+    const answers = runCouncil(text, plan, items, new Date(), docs);
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt });
     setSynthesis(null);
@@ -247,6 +251,7 @@ export const AskCouncilPanel: React.FC<{
             Ask
           </button>
         </div>
+        <PolicyDocsPicker docs={docs} onChange={setDocs} disabled={writing || choosing} />
         <div className="flex flex-wrap gap-1.5">
           {EXAMPLES.map((ex) => (
             <button
@@ -386,9 +391,13 @@ export const AskCouncilPanel: React.FC<{
                     const item = items.find((i) => i.iso3 === f.iso3);
                     return (
                       <li key={f.iso3} className="text-sm">
-                        <button type="button" onClick={() => item && onOpenCountry(item)} className="font-medium text-slate-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-300">
-                          {f.countryName}
-                        </button>
+                        {item ? (
+                          <button type="button" onClick={() => onOpenCountry(item)} className="font-medium text-slate-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-300">
+                            {f.countryName}
+                          </button>
+                        ) : (
+                          <span className="font-medium text-slate-900 dark:text-white">{f.countryName}</span>
+                        )}
                         <span className="text-slate-800 dark:text-slate-200">: {f.reading}</span>
                         <ul className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap gap-x-3 gap-y-0.5">
                           {f.figures.map((g) => (
