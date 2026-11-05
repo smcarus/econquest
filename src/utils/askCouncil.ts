@@ -13,6 +13,7 @@
  *   that does not trace back to an agent's figures is removed and listed.
  */
 import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
+import { oddsMoveText } from './oddsMoves';
 import type { LiveWatchlistItem } from '../types/council';
 import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar';
 import { INFLATION_TARGETS, REAL_YIELD_BAND_PTS, cdsVsPeers, fitCdsOnRisk, fitRealYieldOnRisk, policyStance, realYield, realYieldVsPeers, targetSource } from './marketsMacro';
@@ -568,7 +569,7 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
     for (const m of p.markets || []) {
       figures.push({
         label: `Prediction market: ${m.question}`,
-        value: `${m.probabilityPct}% yes${m.volumeUsd ? ` (${formatUsd(m.volumeUsd)} traded)` : ''}`,
+        value: `${m.probabilityPct}% yes${m.volumeUsd ? ` (${formatUsd(m.volumeUsd)} traded)` : ''}${oddsMoveText(m) ? `; ${oddsMoveText(m)}` : ''}`,
         source: `${POLYMARKET_SHORT}, pulled ${p.marketsPulledAt || 'today'}; market odds, not a forecast by the app`,
         tag: 'live',
       });

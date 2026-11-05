@@ -17,7 +17,7 @@ export interface PoliticsFigures {
   headlines?: Array<{ title: string; source: string; publishedAt: string; url: string }>;
   headlinesPulledAt?: string;
   stability?: { percentile: number; year: string };
-  markets?: Array<{ question: string; probabilityPct: number; volumeUsd: number; url: string }>;
+  markets?: Array<{ question: string; probabilityPct: number; volumeUsd: number; url: string; change1dPts?: number; change1wPts?: number; change1mPts?: number }>;
   marketsPulledAt?: string;
 }
 
@@ -53,7 +53,15 @@ export function politicsFromSnapshot(snap: OpenDataSnapshot): PoliticsFigures | 
       return (name.length > 2 && q.includes(name)) || iso.test(q);
     });
     if (mine.length) {
-      out.markets = mine.slice(0, 3).map((c) => ({ question: c.question, probabilityPct: c.probabilityPct, volumeUsd: c.volumeUsd, url: c.url }));
+      out.markets = mine.slice(0, 3).map((c) => ({
+        question: c.question,
+        probabilityPct: c.probabilityPct,
+        volumeUsd: c.volumeUsd,
+        url: c.url,
+        ...(c.change1dPts !== undefined ? { change1dPts: c.change1dPts } : {}),
+        ...(c.change1wPts !== undefined ? { change1wPts: c.change1wPts } : {}),
+        ...(c.change1mPts !== undefined ? { change1mPts: c.change1mPts } : {}),
+      }));
       out.marketsPulledAt = dateIn(lf['polymarket.contracts'], /(\d{4}-\d{2}-\d{2})/);
     }
   }
