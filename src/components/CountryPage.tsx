@@ -3,6 +3,7 @@ import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
 import { DataStatusBadge } from './DataStatusBadge';
+import { useOnlineStatus } from './OfflineData';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { getSnapshotDataStatus } from '../utils/dataStatus';
@@ -197,6 +198,8 @@ export const CountryPage: React.FC<{
   onWriteNote,
   coreOnly = false,
 }) => {
+  const net = useOnlineStatus();
+  const offline = !!net && !net.online;
   const item = watchlistItems.find((w) => w.iso3 === run.iso3);
   const showRestructuring = isRestructuringRelevant(item, run);
   const tabs = COUNTRY_TABS.filter((t) => t.id !== 'restructuring' || showRestructuring || activeTab === 'restructuring').filter(
@@ -328,8 +331,11 @@ export const CountryPage: React.FC<{
           <div className="xl:col-span-2 space-y-2" data-no-provenance-overlay="true">
             <section className="ui-panel">
               <header className="ui-panel-header">
-                <h2 className="ui-section-title">What is live for {run.countryName}</h2>
-                <p className="ui-label">Every figure the country pages use, with its source, or why it is missing and what would fill it. No built-in values are shown.</p>
+                <h2 className="ui-section-title">{offline ? `What is saved for ${run.countryName}` : `What is live for ${run.countryName}`}</h2>
+                <p className="ui-label">
+                  Every figure the country pages use, with its source, or why it is missing and what would fill it. No built-in values are shown.
+                  {offline && ' The feeds cannot be reached from this computer, so these are the figures from the last pull, each with its own date.'}
+                </p>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.csv`} download>
                     Download these figures (CSV)
