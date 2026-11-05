@@ -12,6 +12,7 @@
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
+import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
 import type { LiveWatchlistItem } from '../types/council';
 import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar';
 import { INFLATION_TARGETS, REAL_YIELD_BAND_PTS, cdsVsPeers, fitCdsOnRisk, fitRealYieldOnRisk, policyStance, realYield, realYieldVsPeers, targetSource } from './marketsMacro';
@@ -36,7 +37,7 @@ import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
 
 /** Desk agents the planner (or the AI model) can pick. */
-export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar';
+export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing';
 /** 'doc' = the Policy Document Agent, asked whenever you have added documents. */
 export type AgentId = CoreAgentId | 'doc';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
@@ -106,9 +107,14 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
     covers: 'rate decisions, CPI releases, elections, budget deadlines, IMF dates',
     topic: /\bwhen\b|\bnext\b|calendar|election|budget|\bimf\b|\bdates?\b|upcoming|meeting|decision|catalyst|deadline|this (?:week|month|year)|coming/i,
   },
+  timing: {
+    name: TIMING_AGENT_NAME,
+    covers: 'when a trend or shock could play out: dated catalysts, policy and business cycle turns, crowded positioning starting to unwind (CFTC), news tone shifts (GDELT), Treasury flows (TIC), 3-month yield moves',
+    topic: /timing|how soon|\bwhen (?:could|will|would|might|does|do|is)\b|turning point|\bturn(?:s|ed|ing)?\b|shocks?\b|trigger|unwind|crowded|momentum|\btrend|\bcycle|what could (?:change|move)|catalyst/i,
+  },
 };
 
-export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar'];
+export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar', 'timing'];
 export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
   live: 'Live data',
   official: 'Official',
@@ -250,6 +256,7 @@ const FOLLOW_UP: Record<CoreAgentId, string> = {
   fx: 'Is the currency strong or weak for its history?',
   spill: 'How exposed are they to a Hormuz closure?',
   calendar: 'What dates are coming up?',
+  timing: 'What could change soon, and when?',
 };
 
 export function suggestFollowUps(plan: CouncilPlan, answers: AgentAnswer[]): string[] {
@@ -970,7 +977,9 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
             ? fxAgent(plan.countries)
             : id === 'spill'
               ? spillAgent(plan.countries, question)
-              : calendarAgent(plan.countries, now);
+              : id === 'timing'
+                ? timingAgent(plan.countries, now)
+                : calendarAgent(plan.countries, now);
     const sourced = keepSourcedFindings(a.findings);
     const sorted = [...sourced.findings].sort((x, y) => y.weight - x.weight);
     const kept = sorted.slice(0, MAX_FINDINGS);
