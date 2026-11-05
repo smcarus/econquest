@@ -1,7 +1,7 @@
 /**
  * The agent networks shown while the council works: which agents run, in what order, and each
  * one's live status. Statuses come from the server (/api/council/progress/:id) for the full
- * council, and from the browser for Ask the council, whose desk agents run instantly on the
+ * council, and from the browser for Council chat, whose desk agents run instantly on the
  * app's own figures.
  */
 import type { AgentColumn, AgentNode, AgentStatus, ProgressSteps } from '../components/AgentNetwork';
@@ -48,7 +48,7 @@ export function fullCouncilColumns(steps: ProgressSteps, phase: FullCouncilPhase
   ];
 }
 
-/** Ask the council: the planner, the desk agents it chose, then the synthesis agent. */
+/** Council chat: the planner, the desk agents it chose, then the synthesis agent. */
 export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synthesis: SynthesisResult | null, chosenBy: 'ai' | 'words' = 'words'): AgentColumn[] {
   const synth: { status: AgentStatus; note?: string } = writing
     ? { status: 'running' }

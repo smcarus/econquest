@@ -26,7 +26,7 @@ shown when an input is missing.
 ## 1. Workspace
 
 The page the app opens on. Your inputs and the watchlist sit in a left column that stays in view on
-a desktop; the outputs (What moved, Next two weeks, Ask the council, Watch alerts) run down the
+a desktop; the outputs (What moved, Next two weeks, Council chat, Watch alerts) run down the
 right in the order you would check them. On a phone it is one column, with a jump bar at the bottom
 of the screen (Inputs · Watchlist · Moved · Dates · Council · Alerts).
 
@@ -46,7 +46,12 @@ When no feed has answered for the watchlist it reads Missing with that reason, n
 **Watchlist.** A compact card with your list, under Your inputs; the open country is marked *Open* and countries in your imported holdings are marked *Held*. *Pop out* opens the full table in its own window,
 with your choice of columns; *Edit* adds or removes countries and switches lists.
 
-**Ask the council.** Type a question, or pick one of the suggestions.
+**Council chat.** A chat with the council. Type a question in the box at the bottom, or pick one of
+the suggestions. Your question appears as a message, and the council answers in the chat: the
+summary first, then *N of M agents answered* (open it for each agent's figures and sources), the
+agent debate, and Copy, Markdown, PDF and Send to Reports on each answer. Earlier answers stay in
+the chat above the newest one. *New conversation* clears it (saved conversations stay in Saved
+research).
 
 - *Countries*: as named in the question, otherwise the whole watchlist. A country not on the
   watchlist is named as not covered rather than silently answered for the list; *Add … for this
@@ -63,12 +68,12 @@ with your choice of columns; *Edit* adds or removes countries and switches lists
   figures in the document are checked against the app's own figures.
 - *Brief*: with Gemini or Ollama set up, a summary agent writes a short brief from the agents'
   answers only. A number check marks any figure it cannot trace to an agent.
-- *Follow-up*: "and the currency?" or "what about Egypt?" keeps the last question's countries or
-  agents. Asking the same question later shows what changed since last time.
+- *Follow-up*: once a conversation has started, the box asks follow-ups. "and the currency?" or
+  "what about Egypt?" keeps the last question's countries or agents. Asking the same question later shows what changed since last time.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
-- *Run the full council*: nine desk agents debate the open country, then pause for your approval
-  before the final report. It needs Gemini or Ollama (Menu > AI model). If no model answers, the
+- *Run the full council*: nine desk agents debate the open country, then pause in the chat for your
+  approval before the final report, which also appears in the chat. It needs Gemini or Ollama (Menu > AI model). If no model answers, the
   council gives no assessment and no verdict and says so; a desk whose model did not answer is left
   empty. Agent confidence is shown only when the model gave one.
 
@@ -246,7 +251,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ## 4. Tools (Menu > Tools, inside Settings)
 
-- **Groups**: every working tool, grouped by use (Ask the council, Keep up, Screen and compare
+- **Groups**: every working tool, grouped by use (Council chat, Keep up, Screen and compare
   countries, Study one country, Look back, Your portfolio, Write and share). Click a group to open
   it; *Open all* opens every group and *Show sources* lists each tool's sources.
 - **Data connections**: the same check as `npm run check:data`, one line per source. *Check again*

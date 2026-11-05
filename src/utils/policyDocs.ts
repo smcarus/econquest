@@ -1,5 +1,5 @@
 /**
- * Policy documents you add to Ask the council (Sam, 2026-11-05): an MPC statement, an IMF staff
+ * Policy documents you add to Council chat (Sam, 2026-11-05): an MPC statement, an IMF staff
  * report, a budget speech. The Policy Document Agent answers with the passages that best match
  * the question, quoted word for word, so every figure it brings is one printed in your document.
  *

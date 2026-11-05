@@ -109,7 +109,7 @@ export const ResearchNotebooks: React.FC<{ countries?: Country[] }> = ({ countri
 
         {lib.notebooks.length === 0 && !lib.error && (
           <p className="ui-body">
-            No notebooks yet. Save a conversation from Ask the council on Workspace, then start a notebook here and tick what belongs in it.
+            No notebooks yet. Save a conversation from Council chat on Workspace, then start a notebook here and tick what belongs in it.
           </p>
         )}
 

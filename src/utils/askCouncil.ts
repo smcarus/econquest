@@ -1,5 +1,5 @@
 /**
- * Ask the council: a question goes to the desk agents that cover it, each answers only from the
+ * Council chat: a question goes to the desk agents that cover it, each answers only from the
  * figures the app already holds, and a synthesis agent may then write a short brief from those
  * answers alone.
  *
@@ -1198,7 +1198,7 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
 };
 
 export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: string) => boolean): Array<{ heading: string; lines: string[] }> {
-  if (!b) return [{ heading: 'No council brief yet', lines: ['Ask the council a question on Workspace, then choose "Send to Reports".'] }];
+  if (!b) return [{ heading: 'No council brief yet', lines: ['Ask a question in Council chat on Workspace, then choose "Send to Reports" on the answer.'] }];
   const out: Array<{ heading: string; lines: string[] }> = [];
   const s = b.synthesis?.brief;
   if (on('question'))

@@ -1,7 +1,7 @@
 /**
  * Number check for the full nine-agent council (Sam, 2026-11-05).
  *
- * Ask the council already removes any summary sentence whose numbers do not trace back to an
+ * Council chat already removes any summary sentence whose numbers do not trace back to an
  * agent's figure. The full council's desk debates, cascade and final report are free text written
  * by an AI model (or, when no model answers, built-in example text), so the same rule applies here:
  * a sentence keeps its place only when every number in it can be found in what the council was

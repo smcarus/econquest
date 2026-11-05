@@ -118,7 +118,7 @@ test('number check: a sentence survives only when its numbers trace back to an a
 });
 
 test('Reports: no saved brief says how to make one; a brief without a model says so, never invents a summary', () => {
-  assert.match(councilBriefSections(null, () => true)[0].lines[0], /Ask the council a question on Workspace/);
+  assert.match(councilBriefSections(null, () => true)[0].lines[0], /Ask a question in Council chat on Workspace/);
   const q = 'Is Turkey behind the curve?';
   const plan = planCouncil(q, ALL);
   const sections = councilBriefSections(
