@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Copy, FileText } from 'lucide-react';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
 import { PolicyDocsPicker } from './PolicyDocsPicker';
 import { FigureCheckNote } from './FigureCheckNote';
+import { SavedDocsRow, SavedResearchList, useResearchLibrary } from './SavedResearch';
+import { MAX_DOCS } from '../utils/policyDocs';
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
@@ -98,7 +100,8 @@ export const AskCouncilPanel: React.FC<{
 }> = ({ items, onOpenCountry, onSendToReports, fullCouncil }) => {
   const [question, setQuestion] = useState('');
   const [scope, setScope] = useState('');
-  const [asked, setAsked] = useState<{ question: string; plan: CouncilPlan; answers: AgentAnswer[]; askedAt: string } | null>(null);
+  const [asked, setAsked] = useState<{ question: string; plan: CouncilPlan; answers: AgentAnswer[]; askedAt: string; startedAt: string } | null>(null);
+  const lib = useResearchLibrary();
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [writing, setWriting] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -161,7 +164,7 @@ export const AskCouncilPanel: React.FC<{
     setChoosing(false);
     const answers = runCouncil(text, plan, items, new Date(), docs);
     const askedAt = new Date().toISOString();
-    setAsked({ question: text, plan, answers, askedAt });
+    setAsked({ question: text, plan, answers, askedAt, startedAt: asFollowUp && asked ? asked.startedAt : askedAt });
     setSynthesis(null);
     setDebate(null);
     setCopied(false);
@@ -194,8 +197,20 @@ export const AskCouncilPanel: React.FC<{
         ...(earlier.length ? { earlier: earlier.map((t) => ({ question: t.question, headline: t.headline })) } : {}),
         ...(asked.plan.chooserNote ? { chooserNote: asked.plan.chooserNote } : {}),
         ...(debate && !debating ? { debate } : {}),
+        startedAt: asked.startedAt,
       }
     : null;
+  // Keep each conversation on this computer once its answer is in (and again after a debate or follow-up).
+  const settled = Boolean(saved) && !writing && !debating && !choosing;
+  useEffect(() => {
+    if (settled && saved) void lib.saveBrief(saved);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [settled, asked?.askedAt, synthesis, debate]);
+  const changeDocs = (next: PolicyDoc[]) => {
+    const known = new Set(lib.docs.map((d) => d.id));
+    for (const d of next) if (!known.has(d.id)) void lib.saveDoc(d);
+    setDocs(next);
+  };
   const copy = async () => {
     if (!saved) return;
     try {
@@ -279,7 +294,8 @@ export const AskCouncilPanel: React.FC<{
             Ask
           </button>
         </div>
-        <PolicyDocsPicker docs={docs} onChange={setDocs} disabled={writing || choosing} />
+        <PolicyDocsPicker docs={docs} onChange={changeDocs} disabled={writing || choosing} />
+        <SavedDocsRow lib={lib} activeIds={docs.map((d) => d.id)} canAdd={docs.length < MAX_DOCS && !writing && !choosing} onUse={(d) => setDocs((cur) => (cur.some((x) => x.id === d.id) || cur.length >= MAX_DOCS ? cur : [...cur, d]))} />
         <div className="flex flex-wrap gap-1.5">
           {EXAMPLES.map((ex) => (
             <button
@@ -296,6 +312,7 @@ export const AskCouncilPanel: React.FC<{
           ))}
         </div>
       </form>
+      <SavedResearchList lib={lib} toMarkdown={toMarkdown} onSendToReports={onSendToReports} />
 
       {choosing && (
         <p className="px-4 pt-3 text-sm text-slate-500 dark:text-slate-400" data-council-choosing="true">
