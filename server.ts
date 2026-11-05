@@ -124,14 +124,17 @@ const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirna
 let savedSettings = loadSettings(SETTINGS_FILE);
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY,
-  httpOptions: {
-    headers: {
-      'User-Agent': 'aistudio-build',
+// Rebuilt when the Gemini key is changed in Menu > Settings.
+const makeGeminiClient = () =>
+  new GoogleGenAI({
+    apiKey: process.env.GEMINI_API_KEY,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build',
+      },
     },
-  },
-});
+  });
+let ai = makeGeminiClient();
 
 async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response> {
   const controller = new AbortController();
@@ -3028,7 +3031,18 @@ async function startServer() {
   const runKeyCheck = async (id: string, env: Record<string, string | undefined>, sources: Record<string, 'app' | 'env' | 'none'>) => {
     const field = apiKeyField(id);
     if (!field) return null;
-    const report = await checkConnections({ env, only: [field.checkId], keySources: sources });
+    const report = await checkConnections({
+      env,
+      only: [field.checkId],
+      keySources: sources,
+      ai: {
+        provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+        ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
+        ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
+        ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
+        openAiBaseUrl: serverGuiRuntimeConfig.openAiBaseUrl,
+      },
+    });
     return report.results[0] || null;
   };
   // A changed key is used from the next pull: forget answers that were fetched without it.
@@ -3042,6 +3056,7 @@ async function startServer() {
     if (id === 'COMTRADE_API_KEY' && comtradeMemory) comtradeMemory.triedAt = {};
     if (id.startsWith('EVDS_')) officialYieldCache.delete('TUR');
     if (id.startsWith('CDS_') || id.startsWith('LSEG_')) ownCdsCache = null;
+    if (id === 'GEMINI_API_KEY') ai = makeGeminiClient();
   };
   const refuseRemote = (req: express.Request, res: express.Response): boolean => {
     if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;

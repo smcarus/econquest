@@ -221,7 +221,7 @@ reads Missing.
 | Provider | Settings | The check |
 | --- | --- | --- |
 | Ollama (on this computer) | `DEFAULT_AI_PROVIDER="ollama"`, `OLLAMA_BASE_URL`, `OLLAMA_QUICK_MODEL`, `OLLAMA_DEEP_MODEL` | Lists installed models and names any configured model that is missing, with the `ollama pull` line |
-| Gemini | `DEFAULT_AI_PROVIDER="gemini"`, `GEMINI_API_KEY` | Reads the model's description, so the key and model name are checked without spending tokens |
+| Gemini | `DEFAULT_AI_PROVIDER="gemini"`, and the key in Menu > Settings > AI model key or `GEMINI_API_KEY` | Reads the model's description, so the key and model name are checked without spending tokens |
 | OpenAI-style server | `DEFAULT_AI_PROVIDER="openai_compatible"`, `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_MODEL` | Lists its models |
 
 The provider can also be changed in the app (Menu > AI model and data connections). That setting

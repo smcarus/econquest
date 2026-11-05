@@ -855,20 +855,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: `Gemini (${model})`,
       group: 'ai',
       feeds: 'Council summary, debate replies, agent choice',
-      setup: 'GEMINI_API_KEY="..." (aistudio.google.com > Get API key).',
+      setup: 'Menu > Settings > AI model key, or GEMINI_API_KEY="..." in .env (aistudio.google.com > Get API key).',
     };
     const key = (env.GEMINI_API_KEY || '').trim();
     if (!key || key === 'MY_GEMINI_API_KEY') {
-      return setRow(def, usesGemini ? 'needs_setup' : 'optional', usesGemini ? 'The AI model is set to Gemini but GEMINI_API_KEY is empty.' : `Not set. The AI model is set to ${provider}, so Gemini is not needed.`, 'generativelanguage.googleapis.com');
+      return setRow(def, usesGemini ? 'needs_setup' : 'optional', usesGemini ? 'The AI model is set to Gemini but no Gemini key is set (Menu > Settings, or GEMINI_API_KEY).' : `Not set. The AI model is set to ${provider}, so Gemini is not needed.`, 'generativelanguage.googleapis.com');
     }
     // Reads the model's description: proves the key and the model name without spending tokens.
     const res = await httpCheck(def, fetchFn, `https://generativelanguage.googleapis.com/v1beta/models/${model}`, T, (r) => {
       const name = (parseJson(r.text) as { name?: string; displayName?: string })?.displayName;
       return name ? `Key accepted; model "${name}" available` : null;
     }, { headers: { 'x-goog-api-key': key } });
-    if (res.state === 'refused' && (res.httpStatus === 400 || res.httpStatus === 401 || res.httpStatus === 403)) return { ...res, state: 'needs_setup', detail: `Google did not accept GEMINI_API_KEY (HTTP ${res.httpStatus}).` };
+    if (res.state === 'refused' && (res.httpStatus === 400 || res.httpStatus === 401 || res.httpStatus === 403)) return { ...res, state: 'needs_setup', detail: `Google did not accept ${keyPhrase('GEMINI_API_KEY')} (HTTP ${res.httpStatus}).` };
     if (res.state === 'refused' && res.httpStatus === 404) return { ...res, detail: `The key works but model ${model} was not found. The model name in the app may need updating.` };
-    return res;
+    return savedNote('GEMINI_API_KEY', res);
   });
 
   add('ollama', async () => {
