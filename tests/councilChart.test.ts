@@ -136,3 +136,13 @@ test('ready-made charts in the chat: Chart Agent alone, follow-ups move it to an
   const why = planFollowUp('What does this mean for the next policy move?', r, items);
   assert.equal(why.chart!.preset, 'real_rate');
 });
+
+test('a saved Chart Agent document keeps its chart and the request behind it, so Reports can draw it again', async () => {
+  const { toAgentDocument, isCouncilDocument } = await import('../src/utils/agentDocument.ts');
+  const req = chartRequest("Chart Brazil's real policy rate", [BRA], true)!;
+  const res = computeChart(req, [S('policy_rate', 'Policy rate', '%', rate), S('cpi_monthly', 'Inflation, monthly', '%', infl)]);
+  assert.equal(res.request, req);
+  const doc = toAgentDocument(chartAnswer(req, res), { question: 'q', askedAt: '2026-11-05T20:00:00.000Z', scope: 'Brazil', countriesAsked: 1 } as never);
+  assert.equal(doc.chart?.title, 'Brazil: Real policy rate');
+  assert.ok(isCouncilDocument(JSON.parse(JSON.stringify(doc))));
+});

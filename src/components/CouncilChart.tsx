@@ -1,7 +1,8 @@
 import React, { useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { Download, Maximize2, X } from 'lucide-react';
-import type { ChartResult } from '../utils/councilChart';
+import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
+import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
 
 /**
  * Council chat > the Chart Agent's chart: the lines the question named, then each test with its
@@ -167,11 +168,66 @@ const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big })
   </div>
 );
 
+const SHOW_AS: Transform[] = ['level', 'change', 'yoy', 'index100', 'zscore'];
+const PAIR_TESTS: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling'];
+const ALL_TESTS: ChartTest[] = ['summary', 'correlation', 'regression', 'leadlag', 'granger', 'rolling', 'adf', 'hp'];
+
+/**
+ * The larger view's controls: show the lines another way and switch tests on or off. The series are
+ * fetched again from the app's own history, so the view is redrawn from real figures only.
+ */
+const Controls: React.FC<{ base: ChartResult; view: ChartResult; busy: boolean; onChange: (transform: Transform, tests: ChartTest[]) => void }> = ({ base, view, busy, onChange }) => {
+  const req = view.request;
+  if (!req) return null;
+  const pair = req.series.length >= 2 && !req.derived?.length;
+  const offered = ALL_TESTS.filter((t) => (t === 'summary' ? Boolean(req.derived?.length) || req.tests.includes('summary') : pair || !PAIR_TESTS.includes(t)));
+  const toggle = (t: ChartTest) => onChange(req.transform, req.tests.includes(t) ? req.tests.filter((x) => x !== t) : [...req.tests, t]);
+  const changed = req.transform !== base.request?.transform || req.tests.join() !== base.request?.tests.join();
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs border-y border-slate-100 dark:border-slate-800 py-2" data-council-chart-controls="true">
+      <label className="flex items-center gap-1.5">
+        <span className="text-slate-500 dark:text-slate-400">Show as</span>
+        <select className="border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-1.5 py-0.5 text-xs" value={req.transform} disabled={busy} onChange={(e) => onChange(e.target.value as Transform, req.tests)} data-council-chart-transform="true">
+          {SHOW_AS.map((t) => (
+            <option key={t} value={t}>
+              {TRANSFORM_LABEL[t]}
+            </option>
+          ))}
+        </select>
+      </label>
+      <span className="flex flex-wrap items-center gap-1.5">
+        <span className="text-slate-500 dark:text-slate-400">Tests</span>
+        {offered.map((t) => (
+          <button key={t} type="button" className="ui-pill" aria-pressed={req.tests.includes(t)} disabled={busy} onClick={() => toggle(t)} data-council-chart-test={t}>
+            {TEST_TITLE[t].replace(/ \(.*\)$/, '').replace(/^Is the relationship stable\?/, 'Rolling correlation')}
+          </button>
+        ))}
+      </span>
+      {busy && <span className="text-slate-500 dark:text-slate-400">Redrawing…</span>}
+      {changed && !busy && (
+        <span className="text-slate-500 dark:text-slate-400">Changed here only; ask in the chat to have the council talk about this view.</span>
+      )}
+    </div>
+  );
+};
+
 /** The chart card inside a council answer, with Open larger and Download CSV. */
 export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) => {
   const [open, setOpen] = useState(false);
+  const [view, setView] = useState<ChartResult>(result);
+  const [busy, setBusy] = useState(false);
+  const redraw = async (transform: Transform, tests: ChartTest[]) => {
+    if (!result.request) return;
+    const req = { ...result.request, transform, tests: ALL_TESTS.filter((t) => tests.includes(t)) };
+    setBusy(true);
+    try {
+      setView(computeChart(req, await fetchChartSeries(req)));
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
-    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true">
+    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true" data-no-provenance-overlay="true">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="ui-label">Chart Agent</div>
@@ -193,10 +249,10 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
             <div className="flex items-start justify-between gap-2">
               <div>
                 <div className="ui-label">Chart Agent</div>
-                <h2 className="ui-section-title">{result.title}</h2>
+                <h2 className="ui-section-title">{view.title}</h2>
               </div>
               <div className="flex items-center gap-1">
-                <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={!result.lines.length}>
+                <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(view)} disabled={!view.lines.length}>
                   <Download className="w-3.5 h-3.5" /> CSV
                 </button>
                 <button type="button" className="ui-btn" onClick={() => setOpen(false)} aria-label="Close chart">
@@ -204,7 +260,8 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
                 </button>
               </div>
             </div>
-            <Body result={result} big />
+            <Controls base={result} view={view} busy={busy} onChange={(t, tests) => void redraw(t, tests)} />
+            <Body result={view} big />
           </div>
         </div>
       )}

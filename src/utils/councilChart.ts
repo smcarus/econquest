@@ -126,6 +126,8 @@ export interface ChartResult {
   notes: string[];
   first?: string;
   last?: string;
+  /** What was asked for, so the larger view can redraw it another way (and a saved chart can too). */
+  request?: ChartRequest;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -483,7 +485,7 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
   if (req.transform !== 'level') notes.push(`Shown as: ${TRANSFORM_LABEL[req.transform].toLowerCase()}`);
   const allDates = lines.flatMap((l) => l.points.map((p) => p.date)).sort();
   const title = req.title ?? (lines.length ? lines.map((l) => l.label).join(' vs ') : req.series.map((s) => s.label).join(' vs '));
-  const out: ChartResult = { title, freq, transform: req.transform, lines, tests: [], missing, notes, first: allDates[0], last: allDates[allDates.length - 1] };
+  const out: ChartResult = { title, freq, transform: req.transform, lines, tests: [], missing, notes, first: allDates[0], last: allDates[allDates.length - 1], request: req };
 
   const [a, b] = lines;
   const pair = a && b ? alignPair(a.points, b.points, freq) : null;
