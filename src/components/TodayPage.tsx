@@ -287,7 +287,6 @@ export const TodayPage: React.FC<{
         <div className={`min-w-0 scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('council')}`} id="tool-council">
         <PanelBoundary name="Council chat">
         <AskCouncilPanel
-          items={edgeItems}
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}
           onSendToReports={() => onSendCouncilToReports?.()}
           fullCouncil={fullCouncil}

@@ -53,6 +53,11 @@ agent debate, and Copy, Markdown, PDF and Send to Reports on each answer. Earlie
 the chat above the newest one. *New conversation* clears it (saved conversations stay in Saved
 research).
 
+The chat is one conversation across the whole app. On Research and Reports, *Council chat* in the
+header opens the same chat in a panel on the right (full screen on a phone); questions asked there
+show on Workspace too, and an answer that is still being written keeps going when you change page.
+*Close* hides the panel; the header button brings it back.
+
 - *Countries*: as named in the question, otherwise the whole watchlist. A country not on the
   watchlist is named as not covered rather than silently answered for the list; *Add … for this
   question* pulls its live figures (any country, up to five at a time) and asks again, without
