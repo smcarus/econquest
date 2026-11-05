@@ -1,0 +1,157 @@
+/**
+ * The data connection check, with the network replaced by a fake: each source must come back in
+ * the right state with a plain reason, read through the app's own parsers, and never show a key.
+ */
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { checkConnections, describeNetworkError, formatReport, type FetchFn } from '../src/utils/connectionCheck.ts';
+
+const NOW = new Date('2026-11-05T12:00:00Z');
+const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+const dnsFail = () => {
+  const e = new TypeError('fetch failed') as TypeError & { cause?: unknown };
+  e.cause = { code: 'ENOTFOUND' };
+  throw e;
+};
+
+/** Answers like the real sources, for Brazil and the US. */
+const healthy: FetchFn = async (url) => {
+  if (url.includes('api.worldbank.org/v2/country/BRA/indicator/FI.RES.TOTL.MO')) return json([{ page: 1 }, [{ date: '2025', value: null }, { date: '2024', value: 5.94 }]]);
+  if (url.includes('api.worldbank.org/v2/sources/6')) return json({ source: [{ data: [] }] });
+  if (url.includes('imf.org')) return json({ values: { GGXWDG_NGDP: { BRA: { '2025': 91.4 } } } });
+  if (url.includes('gdeltproject')) return json({ articles: [{ title: 'Brazil central bank holds rates' }] });
+  if (url.includes('polymarket')) return json([{ title: 'Fed cut in December?' }]);
+  if (url.includes('kalshi')) return json({ markets: [{ title: 'CPI above 3%?' }] });
+  if (url.includes('newyorkfed')) return json({ refRates: [{ effectiveDate: '2026-11-04', percentRate: 3.88 }] });
+  if (url.includes('open.er-api.com')) return json({ rates: { BRL: 5.412 } });
+  if (url.includes('frankfurter')) {
+    const rates: Record<string, Record<string, number>> = {};
+    for (let i = 0; i < 60; i++) rates[new Date(Date.UTC(2026, 7, 1 + i)).toISOString().slice(0, 10)] = { BRL: 5.4 + Math.sin(i) * 0.05 };
+    return json({ rates });
+  }
+  if (url.includes('WS_EER')) {
+    const head = 'FREQ,EER_TYPE,EER_BASKET,REF_AREA,TIME_PERIOD,OBS_VALUE';
+    const rows = Array.from({ length: 72 }, (_, i) => `M,R,B,BR,${2020 + Math.floor(i / 12)}-${String((i % 12) + 1).padStart(2, '0')},${100 + (i === 71 ? 8 : 0)}`);
+    return new Response([head, ...rows].join('\n'));
+  }
+  if (url.includes('WS_DEBT_SEC2_PUB')) return new Response('nothing usable');
+  if (url.includes('wits.worldbank.org')) return new Response('<Obs TIME_PERIOD="2023" OBS_VALUE="30.71" />');
+  if (url.includes('fredgraph.csv')) return new Response('observation_date,IRLTLT01USM156N\n2026-08-01,4.21\n2026-09-01,4.12\n');
+  if (url.includes('api.stlouisfed.org')) return json({ error_code: 400, error_message: 'Bad Request. The value for variable api_key is not registered.' }, 400);
+  if (url.includes('tesourotransparente')) return new Response('Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha\nTesouro Prefixado com Juros Semestrais;01/01/2037;30/10/2026;15,23\n');
+  if (url.includes('generativelanguage')) return json({ name: 'models/gemini-3.8-flash', displayName: 'Gemini 3.8 Flash' });
+  if (url.includes('11434/api/tags')) return json({ models: [{ name: 'qwen2.5:7b' }] });
+  return dnsFail();
+};
+
+const byId = async (opts: Parameters<typeof checkConnections>[0]) => {
+  const rep = await checkConnections({ now: NOW, ...opts });
+  return { rep, row: (id: string) => rep.results.find((r) => r.id === id)! };
+};
+
+test('free sources connect and show a figure read by the app parser', async () => {
+  const { row } = await byId({ env: {}, fetchFn: healthy });
+  assert.equal(row('worldbank').state, 'connected');
+  assert.match(row('worldbank').sample!, /5\.9 months of imports \(2024\)/);
+  assert.match(row('imf').sample!, /91\.4% of GDP \(2025\)/);
+  assert.match(row('nyfed').sample!, /3\.88% \(2026-11-04\)/);
+  assert.match(row('fred_csv').sample!, /US 10Y 4\.12% \(2026-09/);
+  assert.match(row('wits').sample!, /30\.7%/);
+  assert.match(row('bis_reer').sample!, /real exchange rate/);
+  assert.equal(row('worldbank_debt').state, 'connected', 'an empty but valid reply still proves the connection');
+});
+
+test('an answer in the wrong shape is reported as unreadable, not connected', async () => {
+  const { row } = await byId({ env: {}, fetchFn: healthy });
+  assert.equal(row('bis_debt').state, 'bad_reply');
+  assert.match(row('bis_debt').detail, /format/);
+});
+
+test('a source with no network says why in words', async () => {
+  const { row, rep } = await byId({ env: {}, fetchFn: async () => dnsFail() });
+  assert.equal(row('imf').state, 'no_answer');
+  assert.match(row('imf').detail, /Address not found/);
+  assert.equal(row('imf').host, 'www.imf.org');
+  assert.ok(rep.counts.no_answer >= 14);
+});
+
+test('GDELT text instead of JSON points at its rate limit', async () => {
+  const fetchFn: FetchFn = async (u) => (u.includes('gdelt') ? new Response('Please limit requests to one every 5 seconds') : healthy(u));
+  const { row } = await byId({ env: {}, fetchFn });
+  assert.equal(row('gdelt').state, 'bad_reply');
+  assert.match(row('gdelt').detail, /5 seconds/);
+});
+
+test('HTTP errors are refused with the status', async () => {
+  const fetchFn: FetchFn = async (u) => (u.includes('imf.org') ? new Response('busy', { status: 503 }) : healthy(u));
+  const { row } = await byId({ env: {}, fetchFn });
+  assert.equal(row('imf').state, 'refused');
+  assert.equal(row('imf').httpStatus, 503);
+  assert.match(row('imf').detail, /HTTP 503/);
+});
+
+test('FRED: no key is optional (the download is used); a rejected key needs setup and is never shown', async () => {
+  const none = await byId({ env: {}, fetchFn: healthy });
+  assert.equal(none.row('fred_api').state, 'optional');
+  const bad = await byId({ env: { FRED_API_KEY: 'secret-fred-123' }, fetchFn: healthy });
+  assert.equal(bad.row('fred_api').state, 'needs_setup');
+  assert.match(bad.row('fred_api').detail, /did not accept the key/);
+  assert.doesNotMatch(JSON.stringify(bad.rep), /secret-fred-123/);
+  assert.doesNotMatch(formatReport(bad.rep), /secret-fred-123/);
+});
+
+test('EVDS: missing pieces each get their own reason; the key goes in a header', async () => {
+  assert.match((await byId({ env: {}, fetchFn: healthy })).row('evds').detail, /Not set up/);
+  assert.match((await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: healthy })).row('evds').detail, /EVDS_TR10Y_SERIES is empty/);
+  assert.match((await byId({ env: { EVDS_API_KEY: 'k', EVDS_TR10Y_SERIES: 'bond' }, fetchFn: healthy })).row('evds').detail, /not a series code/);
+  let sawHeader = false;
+  const fetchFn: FetchFn = async (u, init) => {
+    if (u.includes('evds3')) {
+      sawHeader = new Headers(init?.headers).get('key') === 'evds-secret' && !u.includes('evds-secret');
+      return json({ items: [{ Tarih: '30-10-2026', TP_TEST_Y10: '31.92' }] });
+    }
+    return healthy(u);
+  };
+  const ok = await byId({ env: { EVDS_API_KEY: 'evds-secret', EVDS_TR10Y_SERIES: 'TP.TEST.Y10' }, fetchFn });
+  assert.equal(ok.row('evds').state, 'connected');
+  assert.ok(sawHeader);
+  assert.doesNotMatch(JSON.stringify(ok.rep), /evds-secret/);
+});
+
+test('own CDS: off by default, then file checks (missing, unreadable, read, stale)', async () => {
+  assert.equal((await byId({ env: {}, fetchFn: healthy })).row('own_cds').state, 'off');
+  const env = { CDS_FEED: 'csv', CDS_CSV_PATH: '/x/cds.csv' };
+  assert.match((await byId({ env, fetchFn: healthy, readFile: () => null })).row('own_cds').detail, /No file at CDS_CSV_PATH/);
+  const junk = await byId({ env, fetchFn: healthy, readFile: () => ({ text: 'a,b\n1,2\n', modified: NOW }) });
+  assert.equal(junk.row('own_cds').state, 'bad_reply');
+  const good = await byId({ env, fetchFn: healthy, readFile: () => ({ text: 'iso3,date,cds5y_bps,source\nMEX,2026-10-20,117.4,Bloomberg\n', modified: NOW }) });
+  assert.equal(good.row('own_cds').state, 'connected');
+  assert.match(good.row('own_cds').sample!, /MEX 5Y CDS 117\.4 bp/);
+  assert.match(good.row('own_cds').warning!, /16 days old/);
+  assert.match((await byId({ env: { CDS_FEED: 'bloomberg' }, fetchFn: healthy })).row('own_cds').detail, /must be "csv" or "lseg"/);
+  assert.match((await byId({ env: { CDS_FEED: 'lseg', LSEG_APP_KEY: 'a' }, fetchFn: healthy })).row('own_cds').detail, /LSEG_USERNAME, LSEG_PASSWORD, LSEG_CDS_RICS are not set/);
+});
+
+test('AI: the chosen provider is required, the others are optional; missing Ollama models are named', async () => {
+  const g = await byId({ env: { DEFAULT_AI_PROVIDER: 'gemini' }, fetchFn: async () => dnsFail() });
+  assert.equal(g.row('gemini').state, 'needs_setup');
+  assert.equal(g.row('ollama').state, 'optional');
+  const o = await byId({ env: { DEFAULT_AI_PROVIDER: 'ollama', GEMINI_API_KEY: 'gk' }, fetchFn: healthy });
+  assert.equal(o.row('ollama').state, 'connected');
+  assert.match(o.row('ollama').warning!, /ollama pull deepseek-r1:8b/);
+  assert.equal(o.row('gemini').state, 'connected');
+  const down = await byId({ env: { DEFAULT_AI_PROVIDER: 'ollama' }, fetchFn: async () => dnsFail() });
+  assert.equal(down.row('ollama').state, 'no_answer');
+  assert.match(down.row('ollama').detail, /ollama serve/);
+});
+
+test('network errors in words', () => {
+  assert.match(describeNetworkError({ name: 'AbortError' }, 8000), /No answer within 8 s/);
+  assert.match(describeNetworkError({ cause: { code: 'ECONNREFUSED' } }, 8000), /refused/);
+  assert.match(describeNetworkError({ message: 'Request was cancelled.' }, 8000), /proxy or firewall/);
+});
+
+test('only= limits the check', async () => {
+  const { rep } = await byId({ env: {}, fetchFn: healthy, only: ['imf', 'nyfed'] });
+  assert.deepEqual(rep.results.map((r) => r.id), ['imf', 'nyfed']);
+});

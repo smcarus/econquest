@@ -15,6 +15,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
+import { checkConnections, type ConnectionReport } from './src/utils/connectionCheck';
 import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
@@ -2291,6 +2292,39 @@ async function startServer() {
       res.json({ items, fetchedAt: new Date().toISOString() });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
+    }
+  });
+
+  // 1b'. Data connection check: asks every outside source for one small real answer, through the
+  // same URLs and parsers the app uses, and says in words what connected and why anything did not.
+  // Kept 30 seconds so a double click does not hit rate-limited sources (GDELT) twice.
+  let connectionReportCache: { at: number; report: ConnectionReport } | null = null;
+  app.get('/api/data/connections', async (req, res) => {
+    try {
+      if (req.query.refresh !== '1' && connectionReportCache && Date.now() - connectionReportCache.at < 30000) {
+        return res.json(connectionReportCache.report);
+      }
+      const report = await checkConnections({
+        env: process.env,
+        ai: {
+          provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+          ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
+          ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
+          ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
+          openAiBaseUrl: serverGuiRuntimeConfig.openAiBaseUrl,
+        },
+        readFile: (p) => {
+          try {
+            return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
+          } catch {
+            return null;
+          }
+        },
+      });
+      connectionReportCache = { at: Date.now(), report };
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Connection check failed' });
     }
   });
 

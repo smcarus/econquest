@@ -269,3 +269,21 @@ test('council progress: each step reports as it finishes, honestly marked when n
   // An unknown id answers with no steps rather than an error.
   assert.deepEqual((await (await fetch(`${base}/api/council/progress/nope-nope`)).json()).steps, {});
 });
+
+test('data connections: every source gets a row; keys are never in the reply', async () => {
+  const res = await fetch(`${base}/api/data/connections?refresh=1`);
+  assert.equal(res.status, 200);
+  const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
+  const row = (id: string) => rep.results.find((r) => r.id === id)!;
+  assert.equal(rep.results.length, 20);
+  // The offline fixtures answer FRED's download, Brazil's Treasury and EVDS; everything else is down.
+  assert.equal(row('fred_csv').state, 'connected');
+  assert.equal(row('tesouro').state, 'connected');
+  assert.equal(row('evds').state, 'connected');
+  assert.equal(row('imf').state, 'no_answer');
+  assert.equal(row('fred_api').state, 'needs_setup', 'the fixture refuses the test key for the US series');
+  assert.equal(row('own_cds').state, 'connected');
+  assert.match(row('own_cds').detail, /1 country/);
+  const body = JSON.stringify(rep);
+  assert.doesNotMatch(body, /test-key|test-evds-key/);
+});

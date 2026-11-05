@@ -39,7 +39,12 @@ cp .env.example .env
 # 3. Launch full-stack Express + Vite development server on port 3000
 npm run dev
 
-# 4. Type-check, run the tests & build production bundle
+# 4. Check that every data source connects from this computer (one line per source:
+#    connected with a figure it returned, needs setup, off, or why it failed). The same check
+#    is on the Tools page under "Data connections".
+npm run check:data
+
+# 5. Type-check, run the tests & build production bundle
 npm run lint
 npm test
 npm run build
