@@ -178,6 +178,8 @@ export interface CouncilPlan {
   offWatchlistIso3?: string[];
   /** A chart and statistical tests asked for in the question (the Chart Agent answers it). */
   chart?: ChartRequest;
+  /** Explain mode (src/utils/explain.ts): the lenses to explain through, and the figure pointed at. */
+  explain?: import('./explain').ExplainPlan;
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -1113,6 +1115,8 @@ export interface CouncilBrief {
   points: string[];
   disagreements: string[];
   gaps: string[];
+  /** An explanation (src/utils/explain.ts): facts apart from interpretation, by lens. `points` holds the same sentences, flat. */
+  explain?: import('./explain').ExplainBrief;
 }
 
 export interface SynthesisResult {

@@ -260,6 +260,38 @@ test('council synthesis: a model brief keeps traceable sentences and drops inven
   assert.deepEqual(body.removed, ['Inflation should fall to 21% next year.']);
 });
 
+test('council explain: facts apart from interpretation, by lens; invented numbers and lenses without figures dropped', async () => {
+  const answers = [
+    {
+      id: 'cb',
+      name: 'Central Bank Watcher',
+      why: 'to explain what it means for households and firms',
+      findings: [{ iso3: 'TUR', countryName: 'Turkey', reading: 'Policy looks loose.', figures: [{ label: 'CPI inflation', value: '34.0%', source: 'IMF, live', tag: 'live' }], weight: 0.5 }],
+      missing: [],
+    },
+  ];
+  const res = await fetch(`${base}/api/council/synthesise`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question: 'Why is inflation so high, and what does it mean for households and politics?',
+      answers,
+      explain: { lenses: ['micro', 'politics', 'nonsense'], named: true, focus: { kind: 'figure', label: 'Ten-year yield', value: '27.5%', iso3: 'TUR', countryName: 'Turkey' } },
+      runtimeConfig: { providerMode: 'ollama', ollamaBaseUrl: 'http://fake-ollama.test:11434' },
+    }),
+  });
+  const body = await res.json();
+  const e = body.brief.explain;
+  assert.deepEqual(e.facts, ['CPI inflation is 34.0%.', 'The figure you pointed at is 27.5%.']);
+  assert.deepEqual(body.removed, ['Inflation should fall to 21% next year.']);
+  assert.deepEqual(e.lenses.map((l: { lens: string }) => l.lens), ['micro', 'politics']);
+  assert.equal(e.lenses[0].sentences.length, 1);
+  // No Politics & Events Agent figures: the model's sentence is not shown, the lens says Missing and why.
+  assert.deepEqual(e.lenses[1].sentences, []);
+  assert.match(e.lenses[1].missing, /Politics & Events Agent was not asked/);
+  assert.equal(e.focus.value, '27.5%');
+});
+
 test('council progress: each step reports as it finishes, honestly marked when no model answered', async () => {
   const progressId = 'test-progress-1';
   const run = await fetch(`${base}/api/council/phase1-and-cascade`, {
