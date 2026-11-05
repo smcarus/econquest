@@ -184,6 +184,8 @@ export interface PriceMove {
   latest: number;
   /** Percent change over about one month. */
   change1mPct?: number;
+  /** Percent change over about three months. */
+  change3mPct?: number;
   /** Percent change over about twelve months. */
   change12mPct?: number;
   /** Latest against the average of the last 36 months (monthly series only), percent. */
@@ -210,10 +212,12 @@ export function priceMove(s: PriceSeries): PriceMove | null {
   const last = s.points[s.points.length - 1];
   if (!last) return null;
   const m1 = onOrBefore(s.points, shiftPeriod(last.period, 1));
+  const m3 = onOrBefore(s.points, shiftPeriod(last.period, 3));
   const m12 = onOrBefore(s.points, shiftPeriod(last.period, 12));
   // A move only counts if the older point is within a few days/one month of the target.
   const near = (p: PricePoint | undefined, months: number) => (p && p.period > shiftPeriod(last.period, months + 1) ? p : undefined);
   const a1 = near(m1, 1);
+  const a3 = near(m3, 3);
   const a12 = near(m12, 12);
   const monthly = /^\d{4}-\d{2}$/.test(last.period);
   const last36 = monthly ? s.points.filter((p) => p.period > shiftPeriod(last.period, 36)) : [];
@@ -226,6 +230,7 @@ export function priceMove(s: PriceSeries): PriceMove | null {
     asOf: last.period,
     latest: last.value,
     ...(a1 ? { change1mPct: pct(last.value, a1.value) } : {}),
+    ...(a3 ? { change3mPct: pct(last.value, a3.value) } : {}),
     ...(a12 ? { change12mPct: pct(last.value, a12.value) } : {}),
     ...(avg !== undefined ? { vs3yAvgPct: pct(last.value, avg) } : {}),
   };

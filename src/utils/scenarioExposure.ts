@@ -83,6 +83,8 @@ export interface TradeExposure {
   exportMixYear?: string;
   /** Pink Sheet code -> actual 12-month price change, %. */
   priceMoves12m?: Record<string, number>;
+  /** Pink Sheet code -> actual 3-month price change, %, for the shock early warning. */
+  priceMoves3m?: Record<string, number>;
   /** Month of the latest prices (YYYY-MM). */
   pricesAsOf?: string;
   /** Latest monthly Brent price, $/bbl. */
@@ -176,33 +178,39 @@ export function scenarioImpact(id: ScenarioId, t: TradeExposure): ScenarioImpact
       basis: `exports to China${hasTw ? ' and Taiwan' : ''} about ${(toChina + toTaiwan).toFixed(1)}% of GDP (${shares}, ${partnerSrc(t)})`,
     };
   }
-  if (id === 'prices') {
-    const moves = t.priceMoves12m;
-    const mix = t.exportMixPct;
-    if (!moves || !mix || t.exportsPctGdp === undefined || t.importsPctGdp === undefined || t.fuelImportsPctMerch === undefined || moves.CRUDE_BRENT === undefined) return null;
-    const parts: Array<{ ch: string; effect: number; move: number }> = [];
-    for (const [ch, share] of Object.entries(mix)) {
-      const codes = (CHAPTER_PRICES[ch] || []).filter((c) => moves[c] !== undefined);
-      if (!codes.length || share <= 0) continue;
-      const move = codes.reduce((a, c) => a + moves[c], 0) / codes.length;
-      parts.push({ ch, move, effect: (share / 100) * t.exportsPctGdp * (move / 100) });
-    }
-    const exportEffect = parts.reduce((a, p) => a + p.effect, 0);
-    const fuelImports = (t.fuelImportsPctMerch / 100) * t.importsPctGdp;
-    const fuelBill = fuelImports * (moves.CRUDE_BRENT / 100);
-    const top = [...parts].sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect)).slice(0, 2);
-    const words = top.map((p) => `${CHAPTER_SHORT[p.ch] || `HS ${p.ch}`} ${mix[p.ch].toFixed(0)}% of exports, price ${signedPct(p.move)}`);
-    return {
-      pctGdp: r2(exportEffect - fuelBill),
-      basis: `${words.length ? words.join('; ') : 'no priced commodity in the export mix'}; fuel imports ${fuelImports.toFixed(1)}% of GDP with Brent ${signedPct(moves.CRUDE_BRENT)} (Pink Sheet to ${t.pricesAsOf}, UN Comtrade ${t.exportMixYear}, World Bank ${t.wbYear})`,
-    };
-  }
+  if (id === 'prices') return priceShock(t, t.priceMoves12m);
   if (t.russiaExportSharePct === undefined || t.russiaImportSharePct === undefined || t.exportsPctGdp === undefined || t.importsPctGdp === undefined) return null;
   const withRussia = (t.russiaExportSharePct / 100) * t.exportsPctGdp + (t.russiaImportSharePct / 100) * t.importsPctGdp;
   return { pctGdp: r2(-0.5 * withRussia), basis: `trade with Russia about ${withRussia.toFixed(1)}% of GDP (${partnerSrc(t)})` };
 }
 
 /** Countries ranked from hardest hit to most helped, for one scenario. */
+/**
+ * The actual price moves over a window applied to the export mix and the fuel bill, % of GDP, as if
+ * prices held at today's level for a year. Used with the 12-month moves for the scenario and with the
+ * 3-month moves for the shock early warning.
+ */
+export function priceShock(t: TradeExposure, moves: Record<string, number> | undefined): ScenarioImpact | null {
+  const mix = t.exportMixPct;
+  if (!moves || !mix || t.exportsPctGdp === undefined || t.importsPctGdp === undefined || t.fuelImportsPctMerch === undefined || moves.CRUDE_BRENT === undefined) return null;
+  const parts: Array<{ ch: string; effect: number; move: number }> = [];
+  for (const [ch, share] of Object.entries(mix)) {
+    const codes = (CHAPTER_PRICES[ch] || []).filter((c) => moves[c] !== undefined);
+    if (!codes.length || share <= 0) continue;
+    const move = codes.reduce((a, c) => a + moves[c], 0) / codes.length;
+    parts.push({ ch, move, effect: (share / 100) * t.exportsPctGdp * (move / 100) });
+  }
+  const exportEffect = parts.reduce((a, p) => a + p.effect, 0);
+  const fuelImports = (t.fuelImportsPctMerch / 100) * t.importsPctGdp;
+  const fuelBill = fuelImports * (moves.CRUDE_BRENT / 100);
+  const top = [...parts].sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect)).slice(0, 2);
+  const words = top.map((p) => `${CHAPTER_SHORT[p.ch] || `HS ${p.ch}`} ${mix[p.ch].toFixed(0)}% of exports, price ${signedPct(p.move)}`);
+  return {
+    pctGdp: r2(exportEffect - fuelBill),
+    basis: `${words.length ? words.join('; ') : 'no priced commodity in the export mix'}; fuel imports ${fuelImports.toFixed(1)}% of GDP with Brent ${signedPct(moves.CRUDE_BRENT)} (Pink Sheet to ${t.pricesAsOf}, UN Comtrade ${t.exportMixYear}, World Bank ${t.wbYear})`,
+  };
+}
+
 export function rankScenario(
   id: ScenarioId,
   items: Array<{ iso3: string; countryName: string; trade?: TradeExposure }>
@@ -233,6 +241,7 @@ export interface PriceMoveLike {
   source: string;
   asOf: string;
   latest: number;
+  change3mPct?: number;
   change12mPct?: number;
 }
 
@@ -263,6 +272,9 @@ export function enrichTrade(t: TradeExposure | undefined, comtrade?: ComtradeLik
     const p12: Record<string, number> = {};
     for (const mv of pink) if (mv.change12mPct !== undefined) p12[mv.code] = mv.change12mPct;
     if (Object.keys(p12).length) out.priceMoves12m = p12;
+    const p3: Record<string, number> = {};
+    for (const mv of pink) if (mv.change3mPct !== undefined) p3[mv.code] = mv.change3mPct;
+    if (Object.keys(p3).length) out.priceMoves3m = p3;
     const brent = pink.find((mv) => mv.code === 'CRUDE_BRENT');
     if (brent) {
       out.brentUsd = brent.latest;

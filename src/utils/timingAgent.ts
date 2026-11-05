@@ -18,6 +18,7 @@ import { toneTurn } from './gdeltTone';
 import { ticTrend, formatMonth as ticMonth } from './ticHoldings';
 import { formatPeriod } from './officialYields';
 import { formatMonth } from './oecdSdmx';
+import { shockSummary, shockWatch } from './shockWatch';
 
 export const TIMING_AGENT_NAME = 'Timing';
 export const TIMING_HORIZON_DAYS = 60;
@@ -34,7 +35,7 @@ const monthsBetween = (from: string, to: string) => {
 };
 
 export interface TimingSignal {
-  key: 'catalyst' | 'policy' | 'cycle' | 'positioning' | 'news' | 'flows' | 'yield';
+  key: 'catalyst' | 'policy' | 'cycle' | 'positioning' | 'news' | 'flows' | 'yield' | 'shock';
   text: string;
   /** True when this signal points to something changing now (a turn, an unwind, a shift), not a steady state. */
   pressure: boolean;
@@ -121,6 +122,18 @@ export function timingSignals(it: LiveWatchlistItem, now: Date): { signals: Timi
     figures.push({ label: '10Y yield, 3-month change', value: `${sg(bps, 0)} bps`, source: `official monthly average, ${formatPeriod(it.yield10YPeriod)}`, tag: 'official' });
   }
 
+  // Shock early warning: external and market pressure rules (alerts count as change underway).
+  const sw = shockWatch(it);
+  const alerts = sw.warnings.filter((x) => x.level === 'alert');
+  if (sw.warnings.length) {
+    signals.push({
+      key: 'shock',
+      text: `Shock early warning: ${shockSummary(sw)} (${sw.warnings.map((x) => x.label.toLowerCase()).join('; ')}).`,
+      pressure: alerts.length > 0,
+    });
+    for (const x of sw.warnings) figures.push({ label: `${x.level === 'alert' ? 'Alert' : 'Watch'}: ${x.label}`, value: x.detail, source: `rule: ${x.rule}`, tag: 'model' });
+  }
+
   return { signals, figures, missing, ...(events.length ? { nextDays: events[0].daysUntil } : {}) };
 }
 
@@ -135,6 +148,7 @@ export function timingSetup(signals: TimingSignal[], nextDays?: number): string 
     news: 'news tone turning more negative',
     flows: 'Treasury selling',
     yield: 'a large rise in the 10Y yield',
+    shock: 'a shock early-warning alert',
   };
   const near = nextDays !== undefined && nextDays <= 30;
   if (!pressing.length) return near ? `No signal points to a change underway; the next dated catalyst is ${nextDays} days away.` : 'No signal points to a change underway.';
