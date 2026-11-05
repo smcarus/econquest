@@ -41,6 +41,7 @@ import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
+import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
@@ -3479,20 +3480,27 @@ async function startServer() {
   });
 
   // Downloads (src/utils/csvExport.ts): CSV with unit, source and dates per value; Missing with its reason.
-  const sendCsv = (res: express.Response, name: string, csv: string) => {
+  // Each table downloads as .csv or .xlsx (src/utils/xlsxExport.ts): same rows, same columns.
+  type TableCell = string | number | null | undefined;
+  const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], rows: TableCell[][]) => {
+    if (req.params.fmt === 'xlsx') {
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.attachment(name.replace(/\.csv$/, '.xlsx'));
+      return res.send(Buffer.from(tableWorkbook(name.replace(/\.csv$/, ''), header, rows)));
+    }
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(name);
-    res.send(csv);
+    res.send(toCsv(header, rows));
   };
-  app.get('/api/export/world/series.csv', async (_req, res) => {
-    sendCsv(res, exportFileName('WORLD', 'commodity-prices'), toCsv(SERIES_HEADER, seriesRows('WORLD', await worldSeries())));
+  app.get('/api/export/world/series.:fmt(csv|xlsx)', async (req, res) => {
+    sendTable(req, res, exportFileName('WORLD', 'commodity-prices'), SERIES_HEADER, seriesRows('WORLD', await worldSeries()));
   });
-  app.get('/api/export/:iso3/series.csv', async (req, res) => {
+  app.get('/api/export/:iso3/series.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const set = await seriesFor(iso3);
-    sendCsv(res, exportFileName(iso3, 'series'), toCsv(SERIES_HEADER, seriesRows(iso3, set.series)));
+    sendTable(req, res, exportFileName(iso3, 'series'), SERIES_HEADER, seriesRows(iso3, set.series));
   });
-  app.get('/api/export/:iso3/series/:id.csv', async (req, res) => {
+  app.get('/api/export/:iso3/series/:id.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
@@ -3500,7 +3508,7 @@ async function startServer() {
       const miss = set.missing.find((m) => m.id === req.params.id);
       return res.status(404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.` });
     }
-    sendCsv(res, exportFileName(iso3, hit.id), toCsv(SERIES_HEADER, seriesRows(iso3, [hit])));
+    sendTable(req, res, exportFileName(iso3, hit.id), SERIES_HEADER, seriesRows(iso3, [hit]));
   });
   // Panel builder (src/utils/panelTable.ts): countries x figures, latest or full history.
   async function panelData(countriesRaw: unknown): Promise<PanelCountryData[]> {
@@ -3523,17 +3531,17 @@ async function startServer() {
     }
     res.json({ mode: 'latest', figures: PANEL_FIGURES.filter((f) => figures.includes(f.id)), cells: panelLatest(data, figures) });
   });
-  app.get('/api/export/panel.csv', async (req, res) => {
+  app.get('/api/export/panel.:fmt(csv|xlsx)', async (req, res) => {
     const figures = parseFigureIds(req.query.figures);
     const data = await panelData(req.query.countries);
     if (!data.length) return res.status(400).json({ error: 'NO_COUNTRIES', message: 'Pick at least one country.' });
     if (req.query.mode === 'history') {
-      return sendCsv(res, exportFileName('panel', 'history'), toCsv(SERIES_HEADER, panelHistoryRows(data, figures)));
+      return sendTable(req, res, exportFileName('panel', 'history'), SERIES_HEADER, panelHistoryRows(data, figures));
     }
-    sendCsv(res, exportFileName('panel', 'latest'), toCsv(PANEL_LATEST_HEADER, panelLatestRows(panelLatest(data, figures))));
+    sendTable(req, res, exportFileName('panel', 'latest'), PANEL_LATEST_HEADER, panelLatestRows(panelLatest(data, figures)));
   });
 
-  app.get('/api/export/:iso3/figures.csv', async (req, res) => {
+  app.get('/api/export/:iso3/figures.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     if (req.query.asOf !== undefined) {
       // The figures as the app held them on a past day, from the pull archive.
@@ -3541,10 +3549,10 @@ async function startServer() {
       if (!requested) return res.status(400).json({ error: 'BAD_DATE', message: 'asOf must be a date, YYYY-MM-DD.' });
       const past = archivedSnapshot(iso3, requested);
       if (!past) return res.status(404).json({ error: 'NOT_IN_ARCHIVE', message: `No archived pull for ${iso3} on or before ${requested}.` });
-      return sendCsv(res, exportFileName(iso3, `figures-as-of-${past.date}`), toCsv(FIGURES_HEADER, figureRows({ ...past.snapshot, fetchedAt: new Date(past.pulledAt).toISOString() })));
+      return sendTable(req, res, exportFileName(iso3, `figures-as-of-${past.date}`), FIGURES_HEADER, figureRows({ ...past.snapshot, fetchedAt: new Date(past.pulledAt).toISOString() }));
     }
     const snap = await fetchLiveOpenDataSnapshot(iso3, undefined, { cacheOnly: true });
-    sendCsv(res, exportFileName(iso3, 'figures'), toCsv(FIGURES_HEADER, figureRows(snap)));
+    sendTable(req, res, exportFileName(iso3, 'figures'), FIGURES_HEADER, figureRows(snap));
   });
 
   // As of a past day: the archived pull on or before the date, beside today's figures.

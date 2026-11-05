@@ -101,6 +101,11 @@ export const AsOfPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
                 Download these figures (CSV)
               </a>
             )}
+            {reply && (
+              <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/figures.xlsx?asOf=${encodeURIComponent(reply.date)}`} download>
+                Excel
+              </a>
+            )}
           </div>
         )}
         {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}

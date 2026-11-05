@@ -639,6 +639,19 @@ test('downloads: figures and series come as CSV files; a series with no history 
   assert.equal(world.status, 200);
 });
 
+test('downloads: the same tables come as Excel workbooks', async () => {
+  const figs = await fetch(`${base}/api/export/MEX/figures.xlsx`);
+  assert.equal(figs.status, 200);
+  assert.match(figs.headers.get('content-type') || '', /spreadsheetml\.sheet/);
+  assert.match(figs.headers.get('content-disposition') || '', /MEX-figures-\d{4}-\d{2}-\d{2}\.xlsx/);
+  const bytes = new Uint8Array(await figs.arrayBuffer());
+  assert.equal(String.fromCharCode(bytes[0], bytes[1]), 'PK');
+  assert.equal((await fetch(`${base}/api/export/MEX/series.xlsx`)).status, 200);
+  assert.equal((await fetch(`${base}/api/export/world/series.xlsx`)).status, 200);
+  assert.equal((await fetch(`${base}/api/export/panel.xlsx?countries=MEX,EGY&figures=policy_rate`)).status, 200);
+  assert.equal((await fetch(`${base}/api/export/EGY/series/policy_rate.xlsx`)).status, 404);
+});
+
 test('panel builder: countries x figures as JSON and CSV; missing cells say why', async () => {
   const r = await fetch(`${base}/api/panel?countries=MEX,EGY&figures=policy_rate,yield_10y`);
   assert.equal(r.status, 200);
