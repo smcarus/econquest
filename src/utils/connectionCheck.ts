@@ -15,6 +15,7 @@ import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHolding
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
+import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
@@ -222,6 +223,7 @@ export const SOURCE_IDS = [
   'worldbank_debt',
   'imf',
   'imf_reserves',
+  'imf_cofer',
   'gdelt',
   'polymarket',
   'kalshi',
@@ -359,6 +361,30 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       ...(status ? { httpStatus: status } : {}),
       setup: 'If an IMF indicator is not matched by name, set its series key in .env: IMF_RESERVES_KEY, IMF_CA_KEY, IMF_IMPORTS_KEY ({ISO3} for the country).',
     };
+  });
+
+  add('imf_cofer', async () => {
+    const def: Def = { id: 'imf_cofer', name: 'IMF COFER (reserve currency shares)', group: 'free', feeds: 'World shares of official FX reserves by currency, quarterly' };
+    const t0 = Date.now();
+    let r: Awaited<ReturnType<typeof pullCofer>>;
+    try {
+      r = await pullCofer({ fetchFn, env, timeoutMs: Math.max(T, 30000) });
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = 'If the world code or a currency is not found by name, set IMF_COFER_KEY in .env to the series key.';
+    if (r.cofer) {
+      return {
+        ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.note}.`, IMF_SDMX_HOST),
+        latencyMs,
+        sample: `World FX reserves ${formatImfPeriod(r.cofer.period)}: ${coferLine(r.cofer, 3)}`,
+        setup,
+      };
+    }
+    const status = r.httpStatus && r.httpStatus >= 400 ? r.httpStatus : Number(/HTTP (\d{3})/.exec(r.note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, r.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
   });
 
   add('gdelt', () =>

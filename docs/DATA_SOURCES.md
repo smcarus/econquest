@@ -32,6 +32,7 @@ estimated, invented or taken from built-in sample values.
 | World Bank debt statistics (IDS, QEDS) | External debt falling due by year and quarter (banker brief) | api.worldbank.org | 12 h |
 | IMF World Economic Outlook | Debt/GDP, inflation, GDP growth, primary balance | www.imf.org | 1 week (country snapshot) |
 | IMF reserves and balance of payments | Monthly official reserves (International Liquidity, IL); quarterly current account and imports of goods and services (BOP); import cover and current account % of GDP | api.imf.org | 1 day, on disk (structures 1 week) |
+| IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | Polymarket, Kalshi | Prediction-market odds | gamma-api.polymarket.com, api.elections.kalshi.com | per request |
 | New York Fed | Fed funds, SOFR, reverse repo | markets.newyorkfed.org | 3 min to 6 h |
@@ -132,6 +133,17 @@ Notes from the first check on Sam's Mac (2026-11-05):
   elsewhere the IMF figure stays and says IMF. Readings: the y/y rate, the change over three
   months, and a stated rule on it (up 0.5 pts or more = rising, down 0.5 pts or more = easing).
   A country the OECD answered without reads "OECD publishes no CPI" on the OECD rows.
+
+- **IMF COFER** (currency composition of official foreign exchange reserves) is quarterly and
+  published only for the world and country groups, never for one country. The app reads the
+  world figure: it finds the world code in the COFER country list by name, asks for every COFER
+  series for the world, and reads each currency from the series name. It uses the IMF's own share
+  series when there are any, otherwise claims in each currency over total allocated reserves
+  (stated on the row). Shown on every Country tab as a world reading, with the country's own
+  currency first when COFER names it (Japan, UK, US, China, euro area, Canada, Australia,
+  Switzerland), and given to the FX Valuation Agent for those currencies. Kept on disk in
+  `data/live/imf_cofer.json`, asked again after a day. `IMF_COFER_KEY` in `.env` sets the series
+  key if the names do not match.
 
 ## Free, with your own key
 

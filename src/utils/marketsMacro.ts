@@ -14,6 +14,7 @@ import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
 import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 import { cliMissing } from './oecdCli';
 import { cpiMissing, cpiSource } from './oecdInflation';
+import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
 
@@ -219,6 +220,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
     {
       title: 'Reserves and balance of payments (IMF)',
       rows: imfRows(self),
+    },
+    {
+      title: 'World reserve currencies (IMF COFER, quarterly)',
+      rows: coferRows(self, run.iso3),
     },
     {
       title: 'Market pricing',
@@ -440,4 +445,30 @@ export function oecdCpiRows(self: LiveWatchlistItem | undefined): BriefRow[] {
         ]
       : []),
   ];
+}
+
+/**
+ * COFER rows for the Country tab: the world's currency shares of allocated FX reserves (a world
+ * reading, the same on every country), with the country's own currency first when COFER names it.
+ */
+export function coferRows(self: LiveWatchlistItem | undefined, iso3: string): BriefRow[] {
+  const c = self?.cofer;
+  if (!c) {
+    return [
+      missingRow('Currency shares of world FX reserves', {
+        kind: 'unreachable',
+        short: 'IMF COFER did not answer',
+        help: 'The free IMF data API (api.imf.org) did not answer, or COFER could not be read. Run npm run check:data for the reason.',
+      }),
+    ];
+  }
+  const src = `official, IMF COFER, world (${c.area.id}), ${formatImfPeriod(c.period)}${c.method === 'claims over allocated' ? ', claims in each currency over total allocated reserves' : ''} (pulled ${c.pulledAt.slice(0, 10)})`;
+  const own = COFER_CCY_BY_ISO3[iso3];
+  const list = [...c.shares].sort((a, b) => (a.ccy === own ? -1 : b.ccy === own ? 1 : b.pct - a.pct)).slice(0, own && !c.shares.slice(0, 5).some((x) => x.ccy === own) ? 6 : 5);
+  return list.map((x) => ({
+    label: `${x.ccy === own ? 'Own currency: ' : ''}${ccyName(x.ccy)} share of world FX reserves`,
+    value: `${x.pct.toFixed(1)}%${x.change4qPts !== undefined ? ` (${x.change4qPts >= 0 ? '+' : ''}${x.change4qPts.toFixed(1)} pts on the year)` : ''}`,
+    source: src,
+    verified: true,
+  }));
 }

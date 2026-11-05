@@ -144,6 +144,8 @@ const json = (body: unknown) => new Response(JSON.stringify(body), { status: 200
 export function imfFetch(urls: string[] = []) {
   return async (url: string): Promise<Response> => {
     urls.push(url);
+    if (url.includes('/structure/dataflow/IMF.STA/COFER/')) return json(coferStructureJson());
+    if (url.includes('/data/dataflow/IMF.STA/COFER/')) return json(coferDataJson());
     const s = /\/structure\/dataflow\/IMF\.STA\/(IL|BOP)\//.exec(url);
     if (s) return json(imfStructureJson(s[1] as 'IL' | 'BOP'));
     const d = /\/data\/dataflow\/IMF\.STA\/(IL|BOP)\/\+\/([^?]+)/.exec(url);
@@ -155,4 +157,70 @@ export function imfFetch(urls: string[] = []) {
     if (url.includes('datamapper/api/v1/NGDPD/BRA')) return json({ values: { NGDPD: { BRA: { '2024': 2200, '2025': 2400 } } } });
     return new Response('not found', { status: 404 });
   };
+}
+
+// ---- COFER (world only) ----------------------------------------------------------------------
+
+export function coferStructureJson(): unknown {
+  return {
+    data: {
+      dataStructures: [
+        {
+          id: 'DSD_COFER',
+          dataStructureComponents: {
+            dimensionList: {
+              dimensions: [
+                { id: 'COUNTRY', position: 0, localRepresentation: { enumeration: urn('CL_COFER_COUNTRY') } },
+                { id: 'INDICATOR', position: 1, localRepresentation: { enumeration: urn('CL_COFER_INDICATOR') } },
+                { id: 'UNIT', position: 2 },
+                { id: 'FREQUENCY', position: 3 },
+              ],
+            },
+          },
+        },
+      ],
+      codelists: [
+        { id: 'CL_COFER_COUNTRY', codes: [{ id: 'G110', name: 'Advanced Economies' }, { id: 'G001', name: 'World' }] },
+        { id: 'CL_COFER_INDICATOR', codes: [{ id: 'AFXR', name: 'Allocated reserves' }, { id: 'SH_USD', name: 'Shares of U.S. dollars' }] },
+      ],
+    },
+  };
+}
+
+const COFER_NAMES = {
+  UNIT: { USD: 'US dollar', PT: 'Percent' },
+  FREQUENCY: { Q: 'Quarterly' },
+  INDICATOR: {
+    SH_USD: 'Shares of U.S. dollars',
+    SH_EUR: 'Shares of euros',
+    SH_CNY: 'Shares of Chinese renminbi',
+    SH_JPY: 'Shares of Japanese yen',
+    SH_GBP: 'Shares of pounds sterling',
+    AFXR: 'Allocated reserves',
+    CL_USD: 'Allocated reserves, claims in U.S. dollars',
+    CL_JPY: 'Allocated reserves, claims in Japanese yen',
+  },
+};
+
+const q8 = ['2024-Q1', '2024-Q2', '2024-Q3', '2024-Q4', '2025-Q1', '2025-Q2'];
+const qs = (v: (i: number) => number): Array<[string, number]> => q8.map((p, i) => [p, v(i)]);
+
+/** withShares false: only value series, so shares are worked out as claims over allocated reserves. */
+export function coferDataJson(withShares = true): unknown {
+  const ids = ['COUNTRY', 'INDICATOR', 'UNIT', 'FREQUENCY'];
+  if (withShares) {
+    return message(ids, COFER_NAMES, [
+      { dims: ['G001', 'SH_USD', 'PT', 'Q'], obs: qs((i) => (i === 1 ? 58.2 : i === 5 ? 56.3 : 57)) },
+      { dims: ['G001', 'SH_EUR', 'PT', 'Q'], obs: qs(() => 20.1) },
+      { dims: ['G001', 'SH_CNY', 'PT', 'Q'], obs: qs(() => 2.1) },
+      { dims: ['G001', 'SH_JPY', 'PT', 'Q'], obs: qs((i) => (i === 1 ? 5.6 : i === 5 ? 5.9 : 5.7)) },
+      { dims: ['G001', 'SH_GBP', 'PT', 'Q'], obs: qs(() => 4.7) },
+      { dims: ['G001', 'AFXR', 'USD', 'Q'], obs: qs(() => 12000000) },
+    ]);
+  }
+  return message(ids, COFER_NAMES, [
+    { dims: ['G001', 'AFXR', 'USD', 'Q'], obs: qs((i) => (i === 5 ? 12000000 : 11000000)) },
+    { dims: ['G001', 'CL_USD', 'USD', 'Q'], obs: qs((i) => (i === 5 ? 6756000 : 6400000)) },
+    { dims: ['G001', 'CL_JPY', 'USD', 'Q'], obs: qs(() => 660000) },
+  ]);
 }
