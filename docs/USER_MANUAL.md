@@ -136,7 +136,9 @@ the DV01 cost of a 10 bp move and dates to watch. The client brief says the same
 
 Templates built on the briefs: country note, issuer note, sustainability assessment, portfolio
 review, client portfolio review and the council brief. Each shows its sources, and missing inputs
-are named rather than filled. Download as Markdown or PDF.
+are named rather than filled. Sourced figures carry a reference number, and a **References** list at
+the end names each source once with the publisher's page and the date the app read it; figures
+worked out by a stated rule keep their method beside them. Download as Markdown or PDF.
 
 ---
 

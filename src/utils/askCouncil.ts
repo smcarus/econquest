@@ -12,6 +12,7 @@
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
+import { isCitable, References } from './citations';
 import { taylorCheck, taylorMethod, taylorSentence } from './taylorRule';
 import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
 import { oddsMoveText } from './oddsMoves';
@@ -1193,6 +1194,7 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
   agents: 'What each agent found',
   gaps: 'Gaps',
   method: 'Method',
+  references: 'References',
 };
 
 export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: string) => boolean): Array<{ heading: string; lines: string[] }> {
@@ -1244,13 +1246,17 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
     if (!d.replies) lines.push('', `No AI replies (${d.reason || 'no AI model answered'}); the challenges come from stated rules on the agents' figures.`);
     out.push({ heading: COUNCIL_SECTIONS.debate, lines });
   }
+  const refs = new References();
   if (on('agents')) {
     const lines: string[] = [];
     for (const a of b.answers) {
       if (lines.length) lines.push('');
       lines.push(`**${a.name} Agent**, asked because ${a.why}.`);
       for (const f of a.findings) {
-        lines.push(`- ${f.countryName}: ${f.reading} ${f.figures.map((g) => `${g.label} ${g.value} (${tagLabel(g.tag, a.name)}, ${g.source})`).join('; ')}.`);
+        // Sourced figures carry a reference number; rule readings keep their method beside them.
+        const fig = (g: AgentFigure) =>
+          isCitable(g.source, g.tag) ? `${g.label} ${g.value} (${tagLabel(g.tag, a.name)}) [${refs.cite(g.source)}]` : `${g.label} ${g.value} (${tagLabel(g.tag, a.name)}, ${g.source})`;
+        lines.push(`- ${f.countryName}: ${f.reading} ${f.figures.map(fig).join('; ')}.`);
       }
       if (!a.findings.length) lines.push('- No reading from the figures on hand.');
     }
@@ -1269,5 +1275,6 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
       ],
     });
   }
+  if (on('references') && refs.list.length) out.push({ heading: COUNCIL_SECTIONS.references, lines: refs.lines(b.askedAt) });
   return out;
 }
