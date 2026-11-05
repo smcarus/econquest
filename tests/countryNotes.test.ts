@@ -44,7 +44,7 @@ test('no built-in figures: without live feeds every figure reads Missing with a 
   assert.notEqual(debt.value, 'Missing');
   const policy = live.groups.flatMap((g) => g.rows).find((r) => r.label === 'Policy rate')!;
   assert.equal(policy.value, 'Missing');
-  assert.equal(policy.source, 'No source yet');
+  assert.equal(policy.source, 'BIS did not answer');
 });
 
 test('AI web-search estimates count as missing', () => {

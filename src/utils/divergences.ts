@@ -63,7 +63,11 @@ function make(d: Omit<Divergence, 'score'>): Divergence {
 export const cpiTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.cpiSource === 'live' ? { q: 'live', src: 'IMF, live' } : { q: 'sample', src: 'sample' };
 export const policyTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
-  it.policyRateSource === 'ai_estimate' ? { q: 'estimate', src: 'AI estimate' } : { q: 'sample', src: 'sample' };
+  it.policyRateSource === 'bis'
+    ? { q: 'live', src: `BIS${it.policyRateBank ? ` (${it.policyRateBank})` : ''}${it.policyRateDate ? `, ${it.policyRateDate.length === 7 ? 'end of ' : ''}${it.policyRateDate}` : ''}${it.policyRateStale ? ', may be out of date' : ''}` }
+    : it.policyRateSource === 'ai_estimate'
+      ? { q: 'estimate', src: 'AI estimate' }
+      : { q: 'sample', src: 'sample' };
 export const yieldTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.yield10YSource === 'official' && it.yield10YPeriod
     ? { q: 'live', src: `official, ${formatPeriod(it.yield10YPeriod)}` }

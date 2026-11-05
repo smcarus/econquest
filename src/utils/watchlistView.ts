@@ -103,7 +103,10 @@ export const COLUMNS: ColumnDef[] = [
     figure: 'policy',
     value: (it) => it.policyRatePct,
     text: (it) => num(it.policyRatePct, 2, '%'),
-    note: (it) => (it.policyRatePct === undefined ? undefined : 'AI estimate'),
+    note: (it) =>
+      it.policyRatePct === undefined || it.policyRateSource !== 'bis'
+        ? undefined
+        : `BIS, ${it.policyRateDate || 'date not given'}${it.policyRateStale ? ', may be out of date' : ''}`,
   },
   {
     id: 'reer',

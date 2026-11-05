@@ -3,7 +3,7 @@
  * disagree. Every figure keeps its source tag; the readings in the agent groups (Central Bank Watcher Agent, Relative Value Agent) are simple, stated rules
  * on those figures (tagged model), never data.
  */
-import type { CouncilAssessmentRun, LiveWatchlistItem, WatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, LiveWatchlistItem, OpenDataSnapshot, WatchlistItem } from '../types/council';
 import { missingReason } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
@@ -139,6 +139,17 @@ export function policyStance(realRatePct: number, inflationGapPts: number | unde
   return 'close to neutral with inflation near target';
 }
 
+/** The BIS history behind the policy rate: change over 12 months and the last move. Shown only with a BIS figure. */
+export function policyHistoryRows(b: OpenDataSnapshot['bisPolicyRate']): BriefRow[] {
+  if (!b) return [];
+  const rows: BriefRow[] = [];
+  if (b.change12mPts !== undefined)
+    rows.push({ label: 'Policy rate change over 12 months', value: `${b.change12mPts >= 0 ? '+' : ''}${b.change12mPts.toFixed(2)} pts`, source: 'official, BIS month-end figures', verified: true });
+  if (b.lastMove)
+    rows.push({ label: 'Last policy rate move', value: `${pct(b.lastMove.fromPct, 2)} to ${pct(b.lastMove.toPct, 2)} in ${formatPeriod(b.lastMove.period)}`, source: 'official, BIS', verified: true });
+  return rows;
+}
+
 export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlistItem[]): CountryBrief & { screen: ReturnType<typeof peerScreen> } {
   const open = run.openData;
   const status = getSnapshotDataStatus(open);
@@ -193,6 +204,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
           ? { label: 'Inflation target', value: `${pct(target.pct)}${target.bandPts ? ` ± ${target.bandPts}` : ''}`, source: targetSource(target), verified: target.checked }
           : noSourceRow('Inflation target', 'No official inflation target on file for this country.'),
         liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
+        ...policyHistoryRows(policy !== undefined ? open.bisPolicyRate : undefined),
         liveRow(status, 'Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`, open),
         liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
         liveRow(status, 'Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`, open),

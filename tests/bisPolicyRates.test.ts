@@ -105,3 +105,61 @@ test('URLs: one request per frequency for every area, euro area once, 25 months 
   assert.equal(currentRateName(''), undefined);
   assert.equal(currentRateName('Policy rate'), 'Policy rate');
 });
+
+/* ---- Wired into the Central Bank Watcher, the stance check and the watchlist ---- */
+import { checkBrief, planCouncil, runCouncil } from '../src/utils/askCouncil.ts';
+import { policyTag } from '../src/utils/divergences.ts';
+import { toLive } from '../src/utils/liveFigures.ts';
+import type { WatchlistItem } from '../src/types/council.ts';
+
+const mexRate = policyRateFor('MEX', pull(), NOW)!;
+const MEX = toLive({
+  iso3: 'MEX',
+  countryName: 'Mexico',
+  cpiInflationPct: 3.8,
+  cpiSource: 'live',
+  policyRatePct: mexRate.ratePct,
+  policyRateSource: 'bis',
+  policyRateDate: mexRate.date,
+  policyRateBank: mexRate.bank,
+  policyRateStale: mexRate.stale,
+  policyRateChange12mPts: mexRate.change12mPts,
+  policyRateLastMove: mexRate.lastMove,
+} as WatchlistItem);
+
+test('Central Bank Watcher: the BIS rate is an official figure with its date, plus the 12-month change and last move', () => {
+  assert.deepEqual(policyTag(MEX), { q: 'live', src: 'BIS (Bank of Mexico), 2026-10-27' });
+  const q = 'Is the Mexico central bank tight?';
+  const [cb] = runCouncil(q, planCouncil(q, [MEX]), [MEX], NOW);
+  const f = cb.findings[0];
+  const fig = (label: string) => f.figures.find((x) => x.label === label)!;
+  assert.deepEqual([fig('Policy rate').value, fig('Policy rate').tag, fig('Policy rate').source], ['6.50%', 'official', 'BIS (Bank of Mexico), 2026-10-27']);
+  assert.equal(fig('Policy rate change over 12 months').value, '-0.50 pts');
+  assert.equal(fig('Last policy rate move').value, '6.75% to 6.50% in 2026-10');
+  assert.equal(fig('Real policy rate').value, '2.7%');
+  assert.equal(f.stance![0].dim, 'policy');
+});
+
+test('stance check now fires on policy: a summary calling Mexico the opposite way is removed', () => {
+  const q = 'Is the Mexico central bank tight?';
+  const answers = runCouncil(q, planCouncil(q, [MEX]), [MEX], NOW);
+  const call = answers[0].findings[0].stance![0].call;
+  const opposite = call === 'loose' ? 'tight' : 'loose';
+  const { brief, contradicted } = checkBrief(
+    { headline: '', points: [`Mexico's monetary policy is ${opposite}.`, `Mexico's monetary policy is ${call}.`], disagreements: [], gaps: [] },
+    q,
+    answers
+  );
+  assert.deepEqual(brief.points, [`Mexico's monetary policy is ${call}.`]);
+  assert.match(contradicted[0].reason, new RegExp(`Central Bank Watcher Agent reads it as ${call}`));
+});
+
+test('Country tab: the 12-month change and last move appear under the policy rate', async () => {
+  const { policyHistoryRows } = await import('../src/utils/marketsMacro.ts');
+  const { iso3: _i, area: _a, ...b } = mexRate;
+  const rows = policyHistoryRows(b);
+  assert.deepEqual(rows.map((r) => r.label), ['Policy rate change over 12 months', 'Last policy rate move']);
+  assert.equal(rows[0].value, '-0.50 pts');
+  assert.match(rows[1].value, /^6\.75% to 6\.50% in /);
+  assert.deepEqual(policyHistoryRows(undefined), []);
+});

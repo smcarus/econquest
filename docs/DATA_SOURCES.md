@@ -81,6 +81,8 @@ Notes from the first check on Sam's Mac (2026-11-05):
   old is flagged as possibly out of date. The US figure is the mid-point of the Fed's target
   range; the EU benchmark uses the ECB deposit rate. Egypt is not in the dataset and reads Missing
   for that reason. `GET /api/data/policy-rates` lists what the app holds for each country.
+  The rate feeds the watchlist column, the Country tab (with the 12-month change and last move),
+  the Central Bank Watcher Agent and the stance check (policy tight / neutral / loose).
 
 ## Free, with your own key
 
@@ -101,7 +103,8 @@ The check reads your file and says how many countries it found and how old the l
 appear in the check, the app or its logs.
 
 Not built yet (planned, also own-account only): Bloomberg, EPFR/IIF flows, consensus forecasts.
-Policy rates have no source yet and read Missing.
+Policy rates come from the free BIS dataset (see above); only Egypt, which the BIS does not cover,
+reads Missing.
 
 ## AI model
 

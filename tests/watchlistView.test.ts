@@ -63,7 +63,9 @@ test('figures keep their source labels; a missing figure shows a dash and why, n
   assert.equal(cellMissing(COLUMN_BY_ID.cpi, zaf)?.short, 'IMF did not answer');
   assert.equal(cellMissing(COLUMN_BY_ID.cds, zaf)?.kind, 'setup');
   assert.equal(cellMissing(COLUMN_BY_ID.cpi, TUR), undefined);
-  assert.equal(COLUMN_BY_ID.policy.note!(it('A', 'A', { policyRatePct: 5, policyRateSource: 'ai_estimate' })), 'AI estimate');
+  assert.equal(COLUMN_BY_ID.policy.note!(it('A', 'A', { policyRatePct: 5, policyRateSource: 'ai_estimate' })), undefined);
+  assert.equal(COLUMN_BY_ID.policy.note!(it('A', 'A', { policyRatePct: 6.5, policyRateSource: 'bis', policyRateDate: '2026-10-27' })), 'BIS, 2026-10-27');
+  assert.equal(COLUMN_BY_ID.policy.note!(it('A', 'A', { policyRatePct: 37, policyRateSource: 'bis', policyRateDate: '2026-09', policyRateStale: true })), 'BIS, 2026-09, may be out of date');
   assert.equal(COLUMN_BY_ID.data.text(POL), 'No live feed');
 });
 
