@@ -81,7 +81,9 @@ Notes from the first check on Sam's Mac (2026-11-05):
   country is either actor; an article counts when it names a place in the country. Theme groups are
   GDELT theme names listed in `GKG_THEME_GROUPS` (for example ECON_INFLATION, ECON_CENTRALBANK,
   ECON_DEBT, ECON_CURRENCY*, ECON_TAXATION, ECON_DEVELOPMENTORGS). With GKG sampling the figures shown
-  are shares of the articles read, and the share of files read is shown with them.
+  are shares of the articles read, and the share of files read is shown with them. The pull is the
+  last step of *Download all country data* (no per-step time limit; Stop works mid-pull). After the
+  first pull the server tops it up weekly (`GDELT_REFRESH_DAYS`), new files only.
 - **Brazil Treasury** serves the whole price history, about 15 MB, slowly (60 seconds on the Mac).
   The app allows 90 seconds, downloads it once at a time, and keeps the answer on disk
   (`data/live/tesouro.json`) so a restart does not download it again.

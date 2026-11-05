@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
-import { EMPTY_PRELOAD_STATE, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
+import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
@@ -130,7 +130,7 @@ import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.t
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
-import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState } from './src/utils/gdeltRawStore.ts';
+import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { polymarketMoves } from './src/utils/oddsMoves.ts';
 import {
   FRED_10Y_SERIES,
@@ -2149,6 +2149,32 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       if (!m?.pink && !m?.eia) return { outcome: 'failed', note: 'World Bank Pink Sheet did not answer' };
       return { outcome: 'done', note: m?.eia ? undefined : 'EIA needs a key in Settings; Pink Sheet saved' };
     }
+    case 'world:gdelt_raw': {
+      const cfg = gdeltRawConfig(process.env);
+      const label = preloadState.current?.label || step.label;
+      let lastSave = 0;
+      let lastPct = -1;
+      const r = await runGdeltRawPull(
+        () => preloadStopAsked,
+        (done, total) => {
+          const pct = Math.floor((100 * done) / total);
+          if (pct % 10 === 0 && pct !== lastPct) {
+            lastPct = pct;
+            console.log(`[preload] GDELT raw files: ${done} of ${total} (${pct}%)`);
+          }
+          if (!preloadState.current || Date.now() - lastSave < 3000) return;
+          lastSave = Date.now();
+          preloadState.current = { ...preloadState.current, label: `${label}: ${done} of ${total} files` };
+          savePreloadState();
+        },
+      );
+      const read = r.read.events + r.read.gkg;
+      const left = r.left.events + r.left.gkg;
+      const what = `${cfg.weeks} weeks; ${r.note}${left ? `; ${left} files left for next time` : ''}`;
+      if (r.note === 'Up to date' || (read && !left)) return { outcome: 'done', note: what };
+      if (read) return { outcome: 'failed', note: `partly saved: ${what}` };
+      return { outcome: 'failed', note: r.note };
+    }
     case 'world:comtrade': {
       if (!(process.env.COMTRADE_API_KEY || '').trim()) return { outcome: 'skipped', note: 'add a UN Comtrade key in Menu > Settings' };
       const file = await fetchComtrade();
@@ -2199,7 +2225,7 @@ function preloadDisk() {
     return snap && hist ? snap + hist : 0;
   });
   const left = full.filter((b) => b === 0).length;
-  const bytes = folderBytes(SNAPSHOT_DIR) + folderBytes(HISTORY_DIR) + folderBytes(ARCHIVE_DIR);
+  const bytes = folderBytes(SNAPSHOT_DIR) + folderBytes(HISTORY_DIR) + folderBytes(ARCHIVE_DIR) + folderBytes(gdeltRawDir(DATA_DIR));
   return { bytes, remainingEstimateBytes: estimateRemainingBytes(full, left), countriesOnDisk: countries.length - left };
 }
 function preloadReply() {
@@ -2239,7 +2265,7 @@ function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = 
             PRELOAD_STEP_TIMEOUT_MS
           );
         });
-        result = { ...(await Promise.race([runPreloadStep(step), limit])), at: new Date().toISOString() };
+        result = { ...(await (NO_TIME_LIMIT_STEPS.has(step.id) ? runPreloadStep(step) : Promise.race([runPreloadStep(step), limit]))), at: new Date().toISOString() };
         clearTimeout(timer);
       } catch (err: any) {
         result = { outcome: 'failed', note: String(err?.message || err).slice(0, 200), at: new Date().toISOString() };
@@ -2350,6 +2376,39 @@ function gdeltRawSeriesFor(iso3: string): GdeltRawSeries | null {
 function gdeltRawReadingFor(iso3: string): GdeltRawReading | null {
   return gdeltRawReading(gdeltRawSeriesFor(iso3));
 }
+/**
+ * One GDELT raw-file pull at a time, from the Offline window, the weekly refresh or the terminal.
+ * progress is shown in the Offline window while it runs.
+ */
+let gdeltRawJob: Promise<GdeltRawPullResult> | null = null;
+let gdeltRawProgress: { done: number; total: number } | null = null;
+function runGdeltRawPull(shouldStop?: () => boolean, onProgress?: (done: number, total: number) => void): Promise<GdeltRawPullResult> {
+  if (gdeltRawJob) return gdeltRawJob;
+  gdeltRawJob = pullGdeltRaw({
+    dataDir: DATA_DIR,
+    cfg: gdeltRawConfig(process.env),
+    shouldStop,
+    onProgress: ({ done, total }) => {
+      gdeltRawProgress = { done, total };
+      onProgress?.(done, total);
+    },
+  }).finally(() => {
+    gdeltRawJob = null;
+    gdeltRawProgress = null;
+  });
+  return gdeltRawJob;
+}
+/**
+ * Weekly top-up, only once a first pull has been made (the first one is large, so it is started
+ * by you from Menu > Offline data or npm run gdelt:pull). Same interval as the DOC API pull.
+ */
+function topUpGdeltRaw(): void {
+  const st = loadGdeltRawPullState(gdeltRawDir(DATA_DIR));
+  if (!st.pulledAt || gdeltRawJob || preloadJob) return;
+  if (Date.now() - Date.parse(st.pulledAt) < GDELT_REFRESH_MS) return;
+  void runGdeltRawPull().then((r) => console.log(`[GDELT raw] weekly top-up: ${r.note}`)).catch((err) => console.warn(`[GDELT raw] weekly top-up failed: ${err?.message || err}`));
+}
+
 function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
   if (reading) return { ...snapshot, gdeltRaw: reading };
@@ -7058,6 +7117,8 @@ ${String(documentText).slice(0, 12000)}
     setTimeout(() => void refreshStaleSnapshots(), 5000);
     // Hourly check: a full pull is redone after a week, a short one (a feed failed) after an hour.
     setInterval(() => void refreshStaleSnapshots(), SNAPSHOT_RETRY_MS).unref();
+    // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
+    setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });
 }
 

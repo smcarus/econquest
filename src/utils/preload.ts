@@ -73,6 +73,15 @@ export function countrySteps(iso3: string, name?: string): PreloadStep[] {
   ];
 }
 
+/**
+ * Long world pulls that go after the countries, so the country figures are ready first. They run
+ * without the per-step time limit (each saves as it goes and can be stopped at any point).
+ */
+export const LAST_STEPS: PreloadStep[] = [
+  { id: 'world:gdelt_raw', kind: 'world', label: 'GDELT events and news themes (raw 15-minute files, weeks back as set)' },
+];
+export const NO_TIME_LIMIT_STEPS = new Set(LAST_STEPS.map((s) => s.id));
+
 export function planPreload(countries: Array<{ iso3: string; countryName?: string }>): PreloadStep[] {
   const seen = new Set<string>();
   const list = countries.filter((c) => {
@@ -81,7 +90,7 @@ export function planPreload(countries: Array<{ iso3: string; countryName?: strin
     seen.add(k);
     return true;
   });
-  return [...WORLD_STEPS, ...list.flatMap((c) => countrySteps(c.iso3.toUpperCase(), c.countryName))];
+  return [...WORLD_STEPS, ...list.flatMap((c) => countrySteps(c.iso3.toUpperCase(), c.countryName)), ...LAST_STEPS];
 }
 
 /** A finished step counts for this long; after that a new run downloads it again. */
