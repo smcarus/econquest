@@ -12,6 +12,7 @@ import { isCoreCountryTab } from '../utils/simpleMode';
 import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 import { MarketsMacroPanel } from './MarketsMacroPanel';
 import { AsOfPanel } from './AsOfPanel';
+import { DecisionReplayPanel } from './DecisionReplayPanel';
 import { PanelBoundary } from './PanelBoundary';
 import { HistoryPanel } from './HistoryPanel';
 
@@ -382,6 +383,9 @@ export const CountryPage: React.FC<{
           <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
           <PanelBoundary name="As of a past day">
             <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+          </PanelBoundary>
+          <PanelBoundary name="Replicate a rate decision">
+            <DecisionReplayPanel key={`replay-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
           </PanelBoundary>
         </div>
       )}

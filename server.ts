@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
+import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
+import { INFLATION_TARGETS } from './src/utils/marketsMacro';
 import { BCB_IPCA_12M, BCB_LONG, BCB_SHORT, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, bcbSgsUrl, eurostatHicpUrl, mergeNationalCpi, parseBcbSgs, parseEurostatHicp, type NationalCpiSeries } from './src/utils/nationalCpi';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
 import {
@@ -3403,6 +3405,33 @@ async function startServer() {
     const hit = (await worldSeries()).find((s) => s.id === req.params.id);
     if (!hit) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id} for world prices.` });
     res.json(hit);
+  });
+  // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
+  app.get('/api/decision-replay/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const policy = pick('policy_rate');
+    const why = (id: string) => set.missing.find((m) => m.id === id)?.reason;
+    const target = INFLATION_TARGETS[iso3];
+    const base = {
+      iso3,
+      decisions: decisionsFrom(policy),
+      policySource: policy?.source ?? null,
+      first: policy?.points[0]?.date ?? null,
+      last: policy?.points[policy.points.length - 1]?.date ?? null,
+      ...(policy ? {} : { policyMissing: why('policy_rate') || 'No BIS policy rate history' }),
+      target: target ?? null,
+    };
+    if (req.query.date === undefined) return res.json(base);
+    const date = String(req.query.date);
+    if (!/^\d{4}-\d{2}(-\d{2})?$/.test(date)) return res.status(400).json({ error: 'BAD_DATE', message: 'date must be YYYY-MM-DD or YYYY-MM.' });
+    const cpi = pick('cpi_monthly');
+    const cli = pick('cli');
+    const replay = replayDecision({ iso3, date, policy, cpi, cli, target });
+    if ('error' in replay) return res.status(404).json({ error: 'NO_REPLAY', message: replay.error, ...base });
+    if (!cpi && why('cpi_monthly')) replay.missing = replay.missing.map((m) => (m === 'monthly inflation' ? `monthly inflation (${why('cpi_monthly')})` : m));
+    res.json({ ...base, replay, sentence: replaySentence(replay) });
   });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

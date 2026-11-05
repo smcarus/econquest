@@ -130,6 +130,13 @@ uses the pull before it. Each value keeps its own source and period; hover for t
 reason a value reads Missing. *Download these figures* saves that day's figures as CSV. The archive
 gains a day with each pull, so the choice of dates grows from the day you install this version.
 
+*Replicate a rate decision* (below that): pick one of the central bank's moves from the BIS series, or
+any date, and see the policy rate the week before, the latest monthly inflation before the decision
+month, the bank's target, the OECD leading indicator, what a simple Taylor rule pointed to (raise,
+cut, or hold within 1 pt) and what the bank did. Two caveats are always shown: today's series may hold
+revised figures rather than the first release, and the output gap is left out because the IMF's is
+revised every vintage. A teaching and checking tool, not a model of how the bank decides.
+
 With Menu > Show all tools, more tabs appear (Debt & fiscal, Markets, Politics & geo, Scenarios,
 Restructuring) holding the older desks.
 
