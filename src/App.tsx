@@ -170,7 +170,9 @@ import {
   Cpu,
   Settings2,
   Presentation,
+  KeyRound,
 } from 'lucide-react';
+import { OPEN_SETTINGS_EVENT, SettingsDialog } from './components/SettingsDialog';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 const AnnotatedChartsDeck = lazyNamed(() => import('./components/AnnotatedChartsDeck'), 'AnnotatedChartsDeck');
@@ -693,6 +695,24 @@ export default function App() {
   const [isSessionModalOpen, setIsSessionModalOpen] = useState<boolean>(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  // Settings opens from the Menu, from Cmd/Ctrl + comma (as in most desktop apps), or from any
+  // panel that dispatches OPEN_SETTINGS_EVENT (Data connections does, next to a missing key).
+  useEffect(() => {
+    const open = () => setIsSettingsOpen(true);
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === ',') {
+        e.preventDefault();
+        open();
+      }
+    };
+    window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener(OPEN_SETTINGS_EVENT, open);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, []);
 
   // Persistent Custom Watchlists
   const [watchlists, setWatchlists] = useState<WatchlistGroup[]>(() => {
@@ -2401,6 +2421,14 @@ export default function App() {
                   {(
                     [
                       {
+                        key: 'settings',
+                        icon: <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Settings',
+                        hint: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,',
+                        onClick: () => setIsSettingsOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'runtime',
                         icon: <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
                         label: 'AI model and data connections',
@@ -3352,6 +3380,8 @@ export default function App() {
         isOpen={isManualModalOpen}
         onClose={() => setIsManualModalOpen(false)}
       />
+
+      <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onOpenAiModel={() => setIsRuntimeModalOpen(true)} />
 
       <SelfHostAndOllamaRuntimeModal
         isOpen={isRuntimeModalOpen}

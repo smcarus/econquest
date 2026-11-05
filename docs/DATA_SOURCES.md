@@ -178,9 +178,17 @@ Notes from the first check on Sam's Mac (2026-11-05):
 
 ## Free, with your own key
 
+Keys marked "Settings or .env" can be pasted in the app under **Menu > Settings > Data API keys**
+(or Cmd/Ctrl + comma). The app saves them on this computer only, in `data/local/settings.json`
+(file readable by your user only, not in git), shows them masked, and sends each one only to its
+own source. A key saved in Settings is used instead of the same key in `.env`; removing it there
+goes back to `.env`. Each key has a Test button that runs the same check as Data connections.
+`npm run check:data` reads the saved keys too. Keys can only be changed from the computer running
+the app (set `SETTINGS_ALLOW_REMOTE="true"` under Docker).
+
 | Source | Fills | Settings |
 | --- | --- | --- |
-| FRED API | The same yields as the FRED download, through the official API | `FRED_API_KEY` (optional; the download is used without it) |
+| FRED API | The same yields as the FRED download, through the official API | Settings or .env: `FRED_API_KEY` (optional; the download is used without it) |
 | Turkey central bank (EVDS) | Turkey 10Y yield | `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` (both needed) |
 | US EIA open data | Daily Brent and WTI spot prices | `EIA_API_KEY` (optional; free at eia.gov/opendata > Register; without it oil comes monthly from the Pink Sheet). Pulled every 12 h, on disk with the Pink Sheet |
 
