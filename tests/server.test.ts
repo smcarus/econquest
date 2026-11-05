@@ -313,3 +313,12 @@ test('no stand-in data when sources are down: prediction markets, connector test
   assert.equal(sweep.status, 'PARTIAL_WARN', 'the health check reports real failures instead of passing everything');
   assert.ok(sweep.checks.some((c: { id: string; status: string }) => c.id === 'imf' && c.status === 'WARN'));
 });
+
+test('GDELT: after one refusal the app sends nothing more to GDELT for a while', async () => {
+  await snapshot('MEX');
+  await snapshot('ZAF');
+  await fetch(`${base}/api/data/connections?refresh=1`);
+  const asked = log.split('\n').filter((l) => l.startsWith('[offline-fetch] https://api.gdeltproject.org')).length;
+  assert.equal(asked, 1, `GDELT was asked ${asked} times`);
+  assert.match(log, /\[GDELT\] HTTP 429/);
+});

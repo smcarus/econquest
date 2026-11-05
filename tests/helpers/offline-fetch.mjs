@@ -30,6 +30,8 @@ globalThis.fetch = async (input, init = {}) => {
     };
     return json({ message: { role: 'assistant', content: JSON.stringify(brief) } });
   }
+  // GDELT: always refuses for too many requests, as it did on Sam's Mac (2026-11-05).
+  if (url.includes('api.gdeltproject.org')) return new Response('Please limit requests to one every 5 seconds', { status: 429 });
   // FRED API: answers for Mexico only, refuses South Africa so the CSV fallback is exercised.
   if (url.includes('api.stlouisfed.org')) {
     if (url.includes('IRLTLT01MXM156N')) {
