@@ -103,7 +103,7 @@ test('reply: covered commodities have figures; the rest say Missing and why', as
   assert.equal(r.pinkSheet!.latestMonth, '2026-10');
   assert.ok(r.moves.some((m) => m.code === 'CRUDE_BRENT'));
   assert.match(r.missing.find((m) => m.code === 'GOLD')!.reason, /Not found in the Pink Sheet/);
-  assert.match(r.missing.find((m) => m.code === 'RBRTE')!.reason, /Needs setup: EIA_API_KEY/);
+  assert.match(r.missing.find((m) => m.code === 'RBRTE')!.reason, /Needs setup: free EIA key \(Menu > Settings, or EIA_API_KEY\)/);
   const none = buildCommodityReply(null, null, true);
   assert.equal(none.moves.length, 0);
   assert.match(none.missing.find((m) => m.code === 'CRUDE_BRENT')!.reason, /did not answer/);

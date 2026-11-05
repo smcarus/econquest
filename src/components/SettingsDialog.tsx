@@ -93,7 +93,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {k.getKeySteps}{' '}
         <a href={k.getKeyUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 text-blue-700 dark:text-blue-400 hover:underline">
-          How to get a key <ExternalLink className="w-3 h-3" aria-hidden />
+          {k.secret ? 'How to get a key' : 'Where to find it'} <ExternalLink className="w-3 h-3" aria-hidden />
         </a>
       </p>
       {k.source === 'app' && k.envAlsoSet && (
@@ -110,16 +110,16 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
         <div className="relative flex-1 min-w-[14rem]">
           <input
             id={inputId}
-            type={show ? 'text' : 'password'}
+            type={show || !k.secret ? 'text' : 'password'}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={!canEdit ? 'Locked (see the note above)' : k.source === 'none' ? 'Paste your key' : 'Paste a new key to replace it'}
+            placeholder={!canEdit ? 'Locked (see the note above)' : !k.secret ? (k.source === 'none' ? 'Type the code' : 'Type a new code to replace it') : k.source === 'none' ? 'Paste your key' : 'Paste a new key to replace it'}
             autoComplete="off"
             spellCheck={false}
             disabled={!canEdit}
             className="w-full px-2 py-1.5 pr-8 text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white disabled:opacity-60"
           />
-          <button
+          {k.secret && (<button
             type="button"
             onClick={() => setShow((v) => !v)}
             aria-label={show ? 'Hide key' : 'Show key'}
@@ -127,10 +127,10 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
             className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
           >
             {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>
+          </button>)}
         </div>
         <button type="button" className="ui-btn" disabled={!canEdit || !!busy || (!value.trim() && k.source === 'none')} onClick={() => call('test')}>
-          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : 'Test current key'}
+          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.secret ? 'Test current key' : 'Test current code'}
         </button>
         <button type="submit" className="ui-btn ui-btn-primary" disabled={!canEdit || !!busy || !value.trim()}>
           {busy === 'save' ? 'Saving…' : 'Save'}

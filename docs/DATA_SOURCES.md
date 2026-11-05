@@ -151,8 +151,8 @@ Notes from the first check on Sam's Mac (2026-11-05):
   a request and allows few requests, so the app asks two small questions per country (every
   partner's total, then exports and imports by HS chapter), one at a time 1.5 seconds apart, and
   only once every 30 days (data/live/comtrade.json). It asks for the year two back, then three
-  back if that year is not reported yet; every figure carries its year. A free key in
-  `COMTRADE_API_KEY` (comtradeplus.un.org > My Comtrade > My API portal) switches to the keyed
+  back if that year is not reported yet; every figure carries its year. A free key (Menu > Settings, or
+  `COMTRADE_API_KEY` in `.env`; comtradeplus.un.org > My Comtrade > My API portal) switches to the keyed
   route with higher limits; the key is sent in a header, never in the address. Comtrade files
   Taiwan as "Other Asia, nes" (code 490) and the app labels it Taiwan. Readings: goods exports
   and imports, the share with China, Taiwan, Russia and the Gulf producers (Iran, Iraq, Kuwait,
@@ -193,8 +193,8 @@ folder, so a key saved while the app runs in Docker also works with `npm run dev
 | Source | Fills | Settings |
 | --- | --- | --- |
 | FRED API | The same yields as the FRED download, through the official API | Settings or .env: `FRED_API_KEY` (optional; the download is used without it) |
-| Turkey central bank (EVDS) | Turkey 10Y yield | `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` (both needed) |
-| US EIA open data | Daily Brent and WTI spot prices | `EIA_API_KEY` (optional; free at eia.gov/opendata > Register; without it oil comes monthly from the Pink Sheet). Pulled every 12 h, on disk with the Pink Sheet |
+| Turkey central bank (EVDS) | Turkey 10Y yield | Settings or .env: `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` (both needed) |
+| US EIA open data | Daily Brent and WTI spot prices | Settings or .env: `EIA_API_KEY` (optional; free at eia.gov/opendata > Register; without it oil comes monthly from the Pink Sheet). Pulled every 12 h, on disk with the Pink Sheet |
 
 ## Your own paid data (off unless you switch it on)
 

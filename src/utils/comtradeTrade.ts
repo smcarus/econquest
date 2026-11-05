@@ -279,10 +279,10 @@ export function buildProfile(iso3: string, partnerRows: ComtradeRow[], productRo
 export function comtradeMissing(iso3: string, keyed: boolean): { short: string; help: string } {
   if (!COMTRADE_REPORTERS[iso3]) return { short: 'Not in the app’s Comtrade list', help: 'This country has no Comtrade reporter code in the app yet.' };
   return keyed
-    ? { short: 'Comtrade did not answer', help: 'UN Comtrade did not answer with the key in COMTRADE_API_KEY, or this country has not reported the last two years.' }
+    ? { short: 'Comtrade did not answer', help: 'UN Comtrade did not answer with your key, or this country has not reported the last two years.' }
     : {
         short: 'Comtrade did not answer',
-        help: 'The free Comtrade preview did not answer (it allows few requests), or this country has not reported the last two years. A free key in COMTRADE_API_KEY gives higher limits.',
+        help: 'The free Comtrade preview did not answer (it allows few requests), or this country has not reported the last two years. A free key (Menu > Settings, or COMTRADE_API_KEY) gives higher limits.',
       };
 }
 

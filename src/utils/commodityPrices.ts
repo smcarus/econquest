@@ -265,7 +265,7 @@ export function buildCommodityReply(
     const s = eia?.series[code];
     const mv = s ? priceMove(s) : null;
     if (mv) moves.push(mv);
-    else missing.push({ code, name: def.name, reason: eiaKeySet ? 'EIA did not answer.' : 'Needs setup: EIA_API_KEY (free). Monthly oil comes from the Pink Sheet meanwhile.' });
+    else missing.push({ code, name: def.name, reason: eiaKeySet ? 'EIA did not answer.' : 'Needs setup: free EIA key (Menu > Settings, or EIA_API_KEY). Monthly oil comes from the Pink Sheet meanwhile.' });
   }
   const latest = (series: Record<string, PriceSeries> | undefined) =>
     Object.values(series || {}).map((s) => s.points[s.points.length - 1]?.period || '').sort().pop() || '';
