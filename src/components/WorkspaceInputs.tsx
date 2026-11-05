@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { PANEL_LABEL, workspaceInputs, type InputChip, type InputId, type WorkspaceInputsState } from '../utils/workspaceInputs';
+import { PANEL_LABEL, panelUses, type InputChip, type InputId, type PanelId, type WorkspaceInputsState } from '../utils/workspaceInputs';
 
 /**
  * Workspace > Your inputs: one chip per input (watchlist, open country, feeds, keys, AI model,
@@ -11,7 +11,7 @@ const ALL_PANELS = Object.keys(PANEL_LABEL).length;
 type Keys = NonNullable<WorkspaceInputsState['keys']>;
 
 /** Keys and saved-research counts from the app server, refreshed when the window regains focus. */
-function useServerInputs(): { keys?: Keys; research?: { briefs: number; docs: number } } {
+export function useServerInputs(): { keys?: Keys; research?: { briefs: number; docs: number } } {
   const [keys, setKeys] = useState<Keys | undefined>();
   const [research, setResearch] = useState<{ briefs: number; docs: number } | undefined>();
   useEffect(() => {
@@ -51,11 +51,11 @@ const DOT: Record<InputChip['state'], string> = {
 };
 
 export const WorkspaceInputs: React.FC<{
-  state: Omit<WorkspaceInputsState, 'keys' | 'research'>;
+  chips: InputChip[];
   onAction: (id: InputId) => void;
-}> = ({ state, onAction }) => {
-  const server = useServerInputs();
-  const chips = workspaceInputs({ ...state, ...server });
+  /** The chip under the pointer or keyboard focus, so the page can outline the panels it feeds. */
+  onHighlight?: (id: InputId | null) => void;
+}> = ({ chips, onAction, onHighlight }) => {
   const toFix = chips.filter((c) => c.state === 'setup').length;
 
   return (
@@ -65,7 +65,7 @@ export const WorkspaceInputs: React.FC<{
           Your inputs
         </h2>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          {toFix ? `${toFix} need setup. ` : ''}Each one names the panels it feeds. Press one to change it.
+          {toFix ? `${toFix} need setup. ` : ''}Point at one to outline the panels it feeds; press it to change it.
         </p>
       </header>
       <ul className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
@@ -76,6 +76,10 @@ export const WorkspaceInputs: React.FC<{
               data-input={c.id}
               data-input-state={c.state}
               onClick={() => onAction(c.id)}
+              onMouseEnter={() => onHighlight?.(c.id)}
+              onMouseLeave={() => onHighlight?.(null)}
+              onFocus={() => onHighlight?.(c.id)}
+              onBlur={() => onHighlight?.(null)}
               title={`${c.note} ${c.action}.`}
               className="w-full h-full flex flex-col items-start justify-start text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
@@ -95,5 +99,27 @@ export const WorkspaceInputs: React.FC<{
         ))}
       </ul>
     </section>
+  );
+};
+
+/** "Uses: Watchlist · Data feeds (Missing) · …" under a panel title. Each name opens that input. */
+export const UsesLine: React.FC<{ chips: InputChip[]; panel: PanelId; onAction: (id: InputId) => void }> = ({ chips, panel, onAction }) => {
+  const uses = panelUses(chips, panel);
+  if (!uses.length) return null;
+  return (
+    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400" data-uses={panel}>
+      Uses:{' '}
+      {uses.map((c, i) => (
+        <React.Fragment key={c.id}>
+          {i > 0 && ' · '}
+          <button type="button" className="hover:underline text-slate-700 dark:text-slate-300" onClick={() => onAction(c.id)} title={`${c.label}: ${c.value}. ${c.action}.`}>
+            {c.label}
+          </button>
+          {c.state === 'setup' && (
+            <span className="text-amber-800 dark:text-amber-300"> ({c.note.startsWith('Missing') ? 'Missing' : 'Needs setup'})</span>
+          )}
+        </React.Fragment>
+      ))}
+    </p>
   );
 };

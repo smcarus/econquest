@@ -10,7 +10,7 @@ import { evaluateRules, parseRules, type WatchRule } from '../utils/watchRules';
  */
 const KIND_LABEL: Record<DigestKind, string> = { policy: 'Rate move', inflation: 'Inflation', cycle: 'Cycle', yield: '10Y yield', alert: 'Alert' };
 
-export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?: (item: LiveWatchlistItem) => void }> = ({ items, onOpenCountry }) => {
+export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?: (item: LiveWatchlistItem) => void; uses?: React.ReactNode }> = ({ items, onOpenCountry, uses }) => {
   const [last] = useState(() => loadDigestVisit());
   const [rules, setRules] = useState<WatchRule[]>([]);
   useEffect(() => {
@@ -46,6 +46,7 @@ export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?:
               ? 'Rate moves, new inflation prints, leading-indicator turns, 10Y moves of 25 bp or more and new watch alerts. Live figures only.'
               : `First visit on this browser: policy moves in the last ${FIRST_VISIT_DAYS} days. From your next visit this lists everything that moved in between.`}
           </p>
+          {uses}
         </div>
       </header>
       <div className="p-4">

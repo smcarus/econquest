@@ -11,8 +11,8 @@ import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvent
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
 import { PanelBoundary } from './PanelBoundary';
-import { WorkspaceInputs } from './WorkspaceInputs';
-import type { InputId } from '../utils/workspaceInputs';
+import { UsesLine, WorkspaceInputs, useServerInputs } from './WorkspaceInputs';
+import { workspaceInputs, type InputId, type PanelId } from '../utils/workspaceInputs';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
@@ -71,9 +71,10 @@ const Card: React.FC<{
   icon: React.ReactNode;
   note?: string;
   action?: React.ReactNode;
+  uses?: React.ReactNode;
   children: React.ReactNode;
   className?: string;
-}> = ({ title, icon, note, action, children, className = '' }) => (
+}> = ({ title, icon, note, action, uses, children, className = '' }) => (
   <section
     className={`ui-panel ${className}`}
   >
@@ -84,6 +85,7 @@ const Card: React.FC<{
           {title}
         </h2>
         {note && <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{note}</p>}
+        {uses}
       </div>
       {action}
     </header>
@@ -184,6 +186,26 @@ export const TodayPage: React.FC<{
   );
 
   const liveCount = watchlistItems.filter((w) => w.dataMode === 'live' || w.dataMode === 'partial').length;
+
+  // Your inputs, and the "Uses:" line on each panel that links back to them.
+  const server = useServerInputs();
+  const chips = workspaceInputs({
+    watchlistName,
+    watchlistCount: watchlistItems.length,
+    countryName: run.countryName,
+    holdingsCount,
+    liveCount,
+    aiProvider,
+    ...server,
+  });
+  const [highlight, setHighlight] = useState<InputId | null>(null);
+  const lit = (panel: PanelId) =>
+    highlight && chips.find((c) => c.id === highlight)?.drives.includes(panel) ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-950' : '';
+  const inputAction = (id: InputId) => {
+    if (id === 'research') document.getElementById('tool-council')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else onInputAction?.(id);
+  };
+  const uses = (panel: PanelId) => (onInputAction ? <UsesLine chips={chips} panel={panel} onAction={inputAction} /> : undefined);
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
     day: 'numeric',
@@ -226,26 +248,13 @@ export const TodayPage: React.FC<{
       <>
       {onInputAction && (
         <PanelBoundary name="Your inputs">
-          <WorkspaceInputs
-            state={{
-              watchlistName,
-              watchlistCount: watchlistItems.length,
-              countryName: run.countryName,
-              holdingsCount,
-              liveCount,
-              aiProvider,
-            }}
-            onAction={(id) => {
-              if (id === 'research') document.getElementById('tool-council')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              else onInputAction(id);
-            }}
-          />
+          <WorkspaceInputs chips={chips} onAction={inputAction} onHighlight={setHighlight} />
         </PanelBoundary>
       )}
 
-      <div id="tool-digest" className="scroll-mt-4">
+      <div id="tool-digest" className={`scroll-mt-4 transition-shadow ${lit('digest')}`}>
         <PanelBoundary name="Since your last visit">
-          <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+          <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('digest')} />
         </PanelBoundary>
       </div>
 
@@ -255,6 +264,8 @@ export const TodayPage: React.FC<{
           title="Watchlist"
           icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
           note={`${watchlistName} · ${watchlistItems.length} countries. Pop out for every column.`}
+          uses={uses('watchlist')}
+          className={`transition-shadow ${lit('watchlist')}`}
           action={
             <div className="flex flex-col items-end gap-1">
               <button
@@ -289,21 +300,22 @@ export const TodayPage: React.FC<{
           </PanelBoundary>
         </Card>
 
-        <div className="min-w-0 scroll-mt-4" id="tool-council">
+        <div className={`min-w-0 scroll-mt-4 transition-shadow ${lit('council')}`} id="tool-council">
         <PanelBoundary name="Ask the council">
         <AskCouncilPanel
           items={edgeItems}
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}
           onSendToReports={() => onSendCouncilToReports?.()}
           fullCouncil={fullCouncil}
+          uses={uses('council')}
         />
         </PanelBoundary>
         </div>
       </div>
 
-      <div id="tool-watch-alerts" className="scroll-mt-4">
+      <div id="tool-watch-alerts" className={`scroll-mt-4 transition-shadow ${lit('alerts')}`}>
         <PanelBoundary name="Watch alerts">
-          <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+          <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('alerts')} />
         </PanelBoundary>
       </div>
 
@@ -324,6 +336,8 @@ export const TodayPage: React.FC<{
           title="Next two weeks"
           icon={<CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
           note="Official central bank, statistics and election dates. Each row links to its source."
+          uses={uses('calendar')}
+          className={`transition-shadow ${lit('calendar')}`}
         >
           {upcoming.length === 0 ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">

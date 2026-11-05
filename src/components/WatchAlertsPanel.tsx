@@ -9,7 +9,9 @@ import { WATCH_METRICS, evaluateRules, ruleText, type WatchMetric, type WatchOp,
 export const WatchAlertsPanel: React.FC<{
   items: LiveWatchlistItem[];
   onOpenCountry: (item: LiveWatchlistItem) => void;
-}> = ({ items, onOpenCountry }) => {
+  /** "Uses:" line linking back to Workspace > Your inputs. */
+  uses?: React.ReactNode;
+}> = ({ items, onOpenCountry, uses }) => {
   const [rules, setRules] = useState<WatchRule[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -47,6 +49,7 @@ export const WatchAlertsPanel: React.FC<{
         <div>
           <h3 className="ui-section-title">Watch alerts</h3>
           <p className="ui-label">Thresholds you set on the timing figures. A missing figure never triggers. Kept on this computer.</p>
+          {uses}
         </div>
         <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setAdding((a) => !a)} data-watch-add-toggle="true">
           {adding ? 'Close' : 'Add a rule'}
