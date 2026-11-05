@@ -12,6 +12,7 @@
 ## 📖 Documentation Index
 
 - **Root Overview & Quick Reference**: [`README.md`](./README.md) *(this file)*
+- **Data sources and setup**: [`docs/DATA_SOURCES.md`](./docs/DATA_SOURCES.md) *(every source, its settings in `.env`, and the connection check)*
 - **Complete Institutional User Manual**: [`docs/USER_MANUAL.md`](./docs/USER_MANUAL.md) *(deep-dive operational manual covering all 40 modules, econometric equations, CSV backtesting schemas, persona workflows, and SMCR-1.0 compliance)*
 
 ---
@@ -20,11 +21,8 @@
 
 ### Prerequisites
 - **Node.js** `>= 20.x` (or **Bun** `>= 1.1.x`)
-- Optional: `GEMINI_API_KEY` in `.env` for live AI Council Phase 1–3 synthesis and MPC/IMF Article IV Document AI parsing (deterministic econometric engines and multilateral open-data APIs run out-of-the-box).
-- Optional: `FRED_API_KEY` in `.env` (free from fred.stlouisfed.org) to fetch official OECD 10-year yields through the FRED API. Without it the app uses FRED's public CSV download for the same figures.
-- Optional: `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` in `.env` for Turkey's official 10-year yield from the central bank's EVDS service (free key from evds3.tcmb.gov.tr; the series code is the one EVDS shows for the bond yield you want, starting with `TP.`). Without both, Turkey's yield is shown as a sample value.
-- Optional, own data: 5Y CDS from your own licensed source, switched on with `CDS_FEED` in `.env` (see `.env.example`). Either a CSV file you keep (for example an export from Bloomberg, LSEG or S&P/Markit) or LSEG Data Platform with your own login and RICs. Each CDS figure then names your provider and the quote date; countries your data does not cover stay labelled sample. Bloomberg needs its desktop API on the same machine, so use a file export for Bloomberg.
-- No key needed: government external debt falling due comes from the World Bank API. QEDS (source 22, compiled with the IMF) gives the next 12 months by quarter for countries that report to the IMF's SDDS; IDS (source 6, low- and middle-income countries only) gives projected public external debt service by year. Where neither answers, the banker brief keeps its sample maturity profile, labelled sample.
+- Data sources and AI model: every setting is optional and lives in one file, `.env` (start from `.env.example`). [`docs/DATA_SOURCES.md`](./docs/DATA_SOURCES.md) lists every source, what it fills and how to set it up. Run `npm run check:data` to see what connects from your computer.
+- No key needed: government external debt falling due comes from the World Bank API. QEDS (source 22, compiled with the IMF) gives the next 12 months by quarter for countries that report to the IMF's SDDS; IDS (source 6, low- and middle-income countries only) gives projected public external debt service by year. Where neither answers, the repayments read Missing.
 - No key needed: government debt securities come from the BIS SDMX API (stats.bis.org). WS_DEBT_SEC2_PUB gives government bonds in international markets, with the part due within a year and the foreign-currency part; WS_NA_SEC_DSS gives all government debt securities, domestic included (not available for Egypt).
 
 ### Installation & Startup
@@ -33,7 +31,7 @@
 # 1. Install dependencies
 npm install
 
-# 2. Configure environment variables (optional for AI synthesis)
+# 2. Settings for data keys and the AI model (all optional; see docs/DATA_SOURCES.md)
 cp .env.example .env
 
 # 3. Launch full-stack Express + Vite development server on port 3000
