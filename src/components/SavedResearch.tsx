@@ -4,6 +4,7 @@ import { downloadCouncilBrief } from '../utils/briefExport';
 import { councilBriefSections, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
 import type { PolicyDoc } from '../utils/policyDocs';
 import type { CouncilDocument } from '../utils/agentDocument';
+import { SignOffControl, refreshSignOffs } from './SignOffControl';
 import type { BriefSummary, CouncilDocSummary, DocSummary, Episode, EpisodeInput, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
 
 /** The research library on this computer (data/local/research.json), through the app server. */
@@ -32,6 +33,10 @@ export function useResearchLibrary() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+  // A report saved over (a follow-up) or deleted changes its sign-off state.
+  useEffect(() => {
+    void refreshSignOffs();
+  }, [briefs]);
   const send = async (method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<Record<string, unknown> | null> => {
     try {
       const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
@@ -162,6 +167,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
               <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{when(b.askedAt)} UTC</span>
             </div>
             {b.headline && <p className="text-xs text-slate-600 dark:text-slate-400">{b.headline}</p>}
+            <SignOffControl briefId={b.id} />
             {openId === b.id && (
               <div className="pt-2 space-y-2">
                 {open ? <BriefView brief={open} /> : <p className="text-xs text-slate-500">Opening…</p>}
