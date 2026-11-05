@@ -212,7 +212,7 @@ export function buildSections(
           `**${VERDICT_LABEL[sc.decisionVerdict] || sc.decisionVerdict}.** Stance: ${toDisplayCase(sc.marketTranslationLayer.regimeStance)}.`,
           inputs.deskEnginesLive
             ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${(sc.globalCoherenceScore * 100).toFixed(0)}%. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`
-            : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Press Refresh now on Country Research and re-run before taking this to committee.`,
+            : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Press Refresh now under Research > One country and re-run before taking this to committee.`,
         ]
       : ['No council run yet for this country. Run the council before taking this memo to committee.'];
     out.push({ id: 'recommendation', heading: SECTION_LABEL.recommendation, lines });
@@ -262,7 +262,7 @@ export function buildSections(
       out.push({
         id: 'portfolio',
         heading: SECTION_LABEL.portfolio,
-        lines: ['No holdings imported. Import holdings on the Portfolio page to show the book exposure here.'],
+        lines: ['No holdings imported. Import holdings under Research > My holdings > History & data to show the book exposure here.'],
       });
     } else {
       const book = summariseBook(holdings, riskLookup);
@@ -353,7 +353,7 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
   if (include.portfolio) {
     let lines: string[];
     if (!holdings.length) {
-      lines = ['Import the client’s holdings on the Portfolio page to describe their exposure here.'];
+      lines = ['Import the client’s holdings under Research > My holdings > History & data to describe their exposure here.'];
     } else {
       const book = summariseBook(holdings, riskLookup);
       const row = book.rows.find((r) => r.iso3 === run.iso3);
@@ -580,7 +580,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             </label>
           </fieldset>
           )}
-          <p className="ui-label">To write a memo on another country, switch country on the Country Research page, then come back.</p>
+          <p className="ui-label">To write a memo on another country, switch country under Research › One country, then come back.</p>
         </div>
       </section>
 

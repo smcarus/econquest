@@ -24,7 +24,7 @@ const VIEW_INFO: Record<BookBriefView, { label: string; title: string; note: str
 };
 
 /**
- * Start view for the portfolio manager and the private wealth adviser on the Portfolio page:
+ * Start view for the portfolio manager and the private wealth adviser under Research > My holdings > History & data:
  * the whole book, not one country. Either view can be switched to; the button opens the
  * matching report template.
  */

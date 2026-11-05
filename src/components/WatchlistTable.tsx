@@ -193,7 +193,7 @@ export const WatchlistTable: React.FC<{
             >
               <td className="py-1 pr-2 font-medium text-slate-900 dark:text-white">
                 {it.countryName.replace(/\s*\(.*\)$/, '')}
-                {it.iso3 === highlightIso3 && <span className="ml-1.5 font-normal text-blue-700 dark:text-blue-300" title="The country open in Country Research">Open</span>}
+                {it.iso3 === highlightIso3 && <span className="ml-1.5 font-normal text-blue-700 dark:text-blue-300" title="The country open under Research > One country">Open</span>}
                 {heldIso3?.has(it.iso3) && <span className="ml-1.5 font-normal text-emerald-700 dark:text-emerald-400" title="In your imported holdings" data-held={it.iso3}>Held</span>}
               </td>
               {cols.map((c) => (

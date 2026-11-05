@@ -244,7 +244,7 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
     judgements: j,
     groups,
     sampleWarning: noRisk.length
-      ? `Risk scores are missing for ${noRisk.join(', ')}: they need live IMF, World Bank and GDELT inputs. Press Refresh now on Country Research. Built-in scores are not used.`
+      ? `Risk scores are missing for ${noRisk.join(', ')}: they need live IMF, World Bank and GDELT inputs. Press Refresh now under Research > One country. Built-in scores are not used.`
       : undefined,
   };
 }
@@ -372,7 +372,7 @@ export function clientBrief(v: BookView, now: Date = new Date()): CountryBrief {
       },
     ],
     sampleWarning: unrated.length
-      ? `Risk levels are missing for ${unrated.map((l) => l.countryName).join(', ')} until the live data comes in. Press Refresh now on Country Research before sharing anything with a client.`
+      ? `Risk levels are missing for ${unrated.map((l) => l.countryName).join(', ')} until the live data comes in. Press Refresh now under Research > One country before sharing anything with a client.`
       : undefined,
   };
 }

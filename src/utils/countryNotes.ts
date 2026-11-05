@@ -72,8 +72,8 @@ export function pathMissing(status: SnapshotDataStatus, path: string): MissingRe
       ? { kind: 'unreachable', short: 'Not in World Bank data', help: 'The World Bank feed answered but has no recent figure for this country.' }
       : missingReason('reserves', status.iso3);
   if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx'))
-    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The free exchange-rate feed did not answer. Press Refresh now on Country Research.' };
-  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'The free GDELT news feed did not answer. Press Refresh now on Country Research.' };
+    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The free exchange-rate feed did not answer. Press Refresh now under Research > One country.' };
+  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'The free GDELT news feed did not answer. Press Refresh now under Research > One country.' };
   return { kind: 'setup', short: 'No source yet', help: 'No live or official source is connected for this figure yet.' };
 }
 
@@ -264,7 +264,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
-          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free QEDS feed did not answer, or does not cover this country. Press Refresh now on Country Research.' }),
+          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free QEDS feed did not answer, or does not cover this country. Press Refresh now under Research > One country.' }),
       ],
     },
     {

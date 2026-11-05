@@ -3,9 +3,9 @@
 How to use the terminal, page by page. For setup see the [README](../README.md); for every data
 source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md).
 
-The header has five pages: **Workspace · Country Research · Compare · Portfolio · Reports**. **Tools**
-is inside the **Settings** window (Menu > Tools, or the Tools tab in Settings).
-Workspace is the daily start; Compare holds the panels that set the watchlist side by side.
+The header has three pages: **Workspace · Research · Reports**. **Tools** is inside the **Settings**
+window (Menu > Tools, or the Tools tab in Settings). Workspace is the daily start; Research is where
+you look into one country, the watchlist side by side, or your own holdings.
 
 **Reading any figure.** A figure is shown only when a real source supplied it. Hover it for the
 source and date. A dash or **Missing** means no source answered, and the note beside it says why:
@@ -82,10 +82,29 @@ coming year (*Show all* for the rest), with countries where data and price disag
 
 ---
 
-## 2. Compare
+## 2. Research
 
-Your watchlist side by side, in this order. Opening Compare does not count as a visit for *Since
-your last visit*.
+One page, three scopes, chosen at the top: **One country: <name>**, **Compare countries** and **My
+holdings**. Every scope has the same four sections, so you learn the page once:
+
+| Section | One country | Compare countries | My holdings |
+| --- | --- | --- | --- |
+| **Summary** | The brief | Where data and price disagree; growth and inflation | Book brief; the book |
+| **Markets & signals** | MarketEdge | MarketEdge table; scenarios | Signals on your holdings |
+| **History & data** | Charts, As of, Replicate, Track record | Compare countries table | Import and edit holdings |
+| **Sources** | What is live for the country | Each key figure, Live or Missing, per country | The same, for the countries you hold |
+
+The section stays when you switch scope: from Brazil's *Markets & signals*, *Compare countries* opens
+on markets for the whole watchlist. Click a country in Compare or My holdings to open it on its own;
+*Back to Compare countries* (or *My holdings*) returns you. Research opens on the scope you used last.
+On a phone the scopes read *<country> · Compare · Holdings*.
+
+### Compare countries
+
+Your watchlist side by side. Opening it does not count as a visit for *Since your last visit*.
+**Summary** holds the first and third panels below, **Markets & signals** the second and fourth,
+**History & data** the table, and **Sources** a grid of every country and key figure, each Live or
+Missing with its reason.
 
 **Where data and price disagree.** One line per country, biggest gap first: cheap or rich spread
 against peers, policy rate against inflation, carry and currency valuation. Built from live figures
@@ -112,12 +131,12 @@ source and the reason for every missing cell, ready for Excel, R or Stata.
 
 ---
 
-## 3. Country Research
+### One country
 
 Pick a country from the list at the top. **Refresh now** pulls every source for it again at once.
-The tabs are Brief, MarketEdge, History and Sources.
+The sections are Summary (the brief), Markets & signals (MarketEdge), History & data and Sources.
 
-**Brief.** Three views of the open country, each a list of observations with the rule behind it:
+**Summary (the brief).** Three views of the open country, each a list of observations with the rule behind it:
 
 - *Economist*: growth, inflation, debt, reserves and the external position.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
@@ -126,7 +145,7 @@ The tabs are Brief, MarketEdge, History and Sources.
   stabilising primary balance and r minus g. Run only when debt, primary balance, growth, inflation
   and the official 10Y yield are all live; otherwise it lists what is missing.
 
-**MarketEdge.** Under three headings, *Economy and policy*, *Markets and positioning* and *Risks and
+**Markets & signals (MarketEdge).** Under three headings, *Economy and policy*, *Markets and positioning* and *Risks and
 links*. The country against its peers: CDS or real yield fitted on the risk score, policy
 stance (tight, neutral or loose), the cycle clock (hiking, cutting or on hold and for how long; the
 leading indicator phase and last turning point; next decision date), a policy rule check (the policy rate against a simple
@@ -134,9 +153,9 @@ Taylor rule: r* of 2%, inflation, half the gap to the bank's own target and half
 where the IMF publishes one; the term is left out and said so elsewhere), FX valuation, carry per unit of
 volatility, CFTC futures positioning, US Treasury TIC holdings, IMF reserves and balance of payments,
 world reserve currency shares (COFER), shock early warning and the signal track record. The same
-readings across the watchlist are on Compare.
+readings across the watchlist are under Compare countries.
 
-**History.** Every figure that has a run of real observations, as a chart with its source, how often it
+**History & data.** Every figure that has a run of real observations, as a chart with its source, how often it
 comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
 leading indicator, CFTC positioning and TIC holdings come with their own history; every other figure
 gains one point per weekly pull from the pull archive, each with what the source said that day. Click
@@ -180,9 +199,11 @@ Restructuring) holding the older desks.
 
 ---
 
-## 4. Portfolio
+### My holdings
 
-Import your holdings as CSV (Portfolio > Holdings; a template is provided). Holdings, watchlists,
+Import your holdings as CSV under **History & data** (a template is provided), or add positions one at
+a time. **Summary** shows the book brief and the book, **Markets & signals** the signals on your
+holdings, and **Sources** what is live for each country you hold. Holdings, watchlists,
 countries you added and the AI model settings are kept in `data/local/workspace.json`, so the app
 shows the same ones under Docker and `npm run dev`, and clearing the browser does not lose them. Without holdings the
 page uses your watchlist at equal weight. The book brief shows concentration, where the risk sits,
@@ -199,7 +220,7 @@ count. A signal against a position is a reason to look, not a call to trade.
 
 ---
 
-## 5. Reports
+## 3. Reports
 
 Templates built on the briefs: country note, issuer note, sustainability assessment, portfolio
 review, client portfolio review and the council brief. Each shows its sources, and missing inputs
@@ -223,7 +244,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ---
 
-## 6. Tools (Menu > Tools, inside Settings)
+## 4. Tools (Menu > Tools, inside Settings)
 
 - **Groups**: every working tool, grouped by use (Ask the council, Keep up, Screen and compare
   countries, Study one country, Look back, Your portfolio, Write and share). Click a group to open
@@ -235,7 +256,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ---
 
-## 7. Menu
+## 5. Menu
 
 - **Tools**: opens Settings on its Tools tab (section 6). Opening a tool closes Settings and goes to it.
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
@@ -246,7 +267,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ---
 
-## 8. When something looks wrong
+## 6. When something looks wrong
 
 - **Everything reads Missing.** Open Menu > Tools > Data connections. If every source fails, the computer
   is offline or a VPN or firewall blocks it; figures fill in within the hour once it is back.

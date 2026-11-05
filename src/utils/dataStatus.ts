@@ -113,7 +113,7 @@ export const DATA_MODE_HELP: Record<SnapshotDataMode, string> = {
   partial: 'Some feeds answered. Figures from feeds that did not answer read Missing.',
   sample: 'No data feed answered, so figures read Missing. No built-in values are shown.',
   unverified:
-    'This snapshot was saved by an older version that did not record which feeds answered. Press Refresh now on Country Research.',
+    'This snapshot was saved by an older version that did not record which feeds answered. Press Refresh now under Research > One country.',
 };
 
 export function formatAsOf(iso: string): string {

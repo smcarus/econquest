@@ -90,8 +90,8 @@ export function workspaceInputs(s: WorkspaceInputsState): InputChip[] {
       state: s.countryName ? 'ok' : 'empty',
       note: 'Marked Open in the watchlist; the full council runs on it. Pick another from the watchlist.',
       drives: ['watchlist', 'council'],
-      alsoFeeds: 'Country Research',
-      action: 'Open Country Research',
+      alsoFeeds: 'Research > One country',
+      action: 'Open Research > One country',
     },
     {
       id: 'feeds',

@@ -315,7 +315,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
         us
           ? { label: 'US 10Y Treasury', value: pct(us.valuePct, 2), source: `official, OECD via FRED, ${formatPeriod(us.period)} avg`, verified: true }
-          : missingRow('US 10Y Treasury', { kind: 'unreachable', short: 'FRED did not answer', help: 'The free FRED feed did not answer. Press Refresh now on Country Research, or add a free FRED key under Menu > Settings.' }),
+          : missingRow('US 10Y Treasury', { kind: 'unreachable', short: 'FRED did not answer', help: 'The free FRED feed did not answer. Press Refresh now under Research > One country, or add a free FRED key under Menu > Settings.' }),
         ...(spreadBps !== undefined ? [model('Spread over US 10Y', `${spreadBps} bps`, 'from the two yields above')] : []),
         liveRow(status, '5Y CDS', 'market.cds5YSpreadBps', (v) => `${Math.round(v)} bps`, open),
         fx !== undefined
@@ -329,7 +329,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
               source: `official, BIS${self.reerPeriod ? `, ${formatPeriod(self.reerPeriod)}` : ''}`,
               verified: true,
             }
-          : missingRow('Real exchange rate vs 10-year average', { kind: 'unreachable', short: 'BIS did not answer', help: 'The free BIS feed did not answer, or does not cover this currency. Press Refresh now on Country Research.' }),
+          : missingRow('Real exchange rate vs 10-year average', { kind: 'unreachable', short: 'BIS did not answer', help: 'The free BIS feed did not answer, or does not cover this currency. Press Refresh now under Research > One country.' }),
         self?.fxVol3mPct !== undefined
           ? { label: 'FX volatility against USD, 3 months', value: pct(self.fxVol3mPct), source: 'ECB reference rates, live', verified: true }
           : missingRow('FX volatility against USD, 3 months', { kind: 'unreachable', short: 'No ECB rate', help: 'The ECB publishes no reference rate for this currency, or the feed did not answer.' }),
@@ -422,7 +422,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
         const imp = self?.trade ? scenarioImpact(sc.id, self.trade) : null;
         return imp
           ? model(sc.name, `${imp.pctGdp > 0 ? '+' : ''}${imp.pctGdp.toFixed(1)}% of GDP`, `model: ${sc.shock} Basis: ${imp.basis}`)
-          : missingRow(sc.name, { kind: 'unreachable', short: 'Trade figures did not answer', help: 'A needed figure did not load: World Bank or WITS trade shares, or for commodity prices the UN Comtrade export mix and the World Bank Pink Sheet. Press Refresh now on Country Research.' });
+          : missingRow(sc.name, { kind: 'unreachable', short: 'Trade figures did not answer', help: 'A needed figure did not load: World Bank or WITS trade shares, or for commodity prices the UN Comtrade export mix and the World Bank Pink Sheet. Press Refresh now under Research > One country.' });
         }),
       ],
     },
