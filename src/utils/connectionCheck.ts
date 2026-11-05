@@ -267,6 +267,10 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   const T = opts.timeoutMs ?? 10000;
   const year = now.getUTCFullYear();
   const want = (id: SourceId) => !opts.only || opts.only.includes(id);
+  // How to name a key in a sentence: saved in Settings, or the .env name.
+  const keyPhrase = (envName: string) => (opts.keySources?.[envName] === 'app' ? 'the key saved in Settings' : `the key in ${envName}`);
+  const savedNote = (envName: string, r: ConnectionResult) =>
+    r.state === 'connected' && opts.keySources?.[envName] === 'app' ? { ...r, detail: `${r.detail} (key saved in Settings)` } : r;
   const provider = (opts.ai?.provider || env.DEFAULT_AI_PROVIDER || 'gemini').toLowerCase();
   const usesOllama = provider === 'ollama' || provider.startsWith('hybrid');
   const usesGemini = provider === 'gemini' || provider.startsWith('hybrid');
@@ -668,7 +672,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: key ? 'UN Comtrade (your free key)' : 'UN Comtrade (public preview)',
       group: 'free',
       feeds: 'Trade partners (China, Taiwan, Russia, Gulf) and export mix by HS chapter (spillover scenarios)',
-      setup: 'Nothing needed: the public preview answers without a key but allows few requests. For higher limits, COMTRADE_API_KEY="..." (free: comtradeplus.un.org > My Comtrade > My API portal).',
+      setup: 'Nothing needed: the public preview answers without a key but allows few requests. For higher limits, add a key in Menu > Settings, or COMTRADE_API_KEY="..." (free: comtradeplus.un.org > My Comtrade > My API portal).',
     };
     const reporter = COMTRADE_REPORTERS[SAMPLE_ISO3];
     // The year two back is usually reported; if not, the year before.
@@ -691,12 +695,12 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     }
     const res = last!;
     if (key && res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
-      return { ...res, state: 'needs_setup', detail: `Comtrade did not accept the key in COMTRADE_API_KEY (HTTP ${res.httpStatus}). Remove it to use the public preview.` };
+      return { ...res, state: 'needs_setup', detail: `Comtrade did not accept ${keyPhrase('COMTRADE_API_KEY')} (HTTP ${res.httpStatus}). Remove it to use the public preview.` };
     }
     if (!key && res.state === 'refused' && res.httpStatus === 429) {
-      return { ...res, detail: `${res.detail} The public preview allows few requests; a free key in COMTRADE_API_KEY gives more.` };
+      return { ...res, detail: `${res.detail} The public preview allows few requests; a free key (Menu > Settings or COMTRADE_API_KEY) gives more.` };
     }
-    return { ...res, detail: key ? res.detail.split(key).join('***') : res.detail };
+    return savedNote('COMTRADE_API_KEY', { ...res, detail: key ? res.detail.split(key).join('***') : res.detail });
   });
 
   add('fred_csv', () =>
@@ -737,16 +741,14 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     };
     const key = (env.FRED_API_KEY || '').trim();
     if (!key) return setRow(def, 'optional', 'No key set. The app uses the FRED download instead, which needs no key.', 'api.stlouisfed.org');
-    const where = opts.keySources?.FRED_API_KEY === 'app' ? 'the key saved in Settings' : 'the key in FRED_API_KEY';
     const res = await httpCheck(def, fetchFn, fredApiUrl(US_10Y_SERIES, key), T, (r) => {
       const o = parseFredApiLatest(parseJson(r.text), US_10Y_SERIES);
       return o ? `US 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
     });
     if (res.state === 'refused' && (res.httpStatus === 400 || res.httpStatus === 403)) {
-      return { ...res, state: 'needs_setup', detail: `FRED did not accept ${where} (HTTP ${res.httpStatus}). Check it was copied in full. The app falls back to the FRED download meanwhile.` };
+      return { ...res, state: 'needs_setup', detail: `FRED did not accept ${keyPhrase('FRED_API_KEY')} (HTTP ${res.httpStatus}). Check it was copied in full. The app falls back to the FRED download meanwhile.` };
     }
-    if (res.state === 'connected' && opts.keySources?.FRED_API_KEY === 'app') return { ...res, detail: `${res.detail} (key saved in Settings)` };
-    return res;
+    return savedNote('FRED_API_KEY', res);
   });
 
   add('evds', async () => {
@@ -755,21 +757,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'Turkey central bank (EVDS)',
       group: 'free_key',
       feeds: 'Turkey 10Y yield',
-      setup: 'EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key) and EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
+      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key) and EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
     };
     const key = (env.EVDS_API_KEY || '').trim();
     const series = (env.EVDS_TR10Y_SERIES || '').trim();
     if (!key && !series) return setRow(def, 'needs_setup', "Not set up. Turkey's 10Y yield reads Missing until it is.", 'evds3.tcmb.gov.tr');
-    if (!key) return setRow(def, 'needs_setup', 'EVDS_TR10Y_SERIES is set but EVDS_API_KEY is empty.', 'evds3.tcmb.gov.tr');
-    if (!isValidEvdsSeriesCode(series)) return setRow(def, 'needs_setup', series ? `EVDS_TR10Y_SERIES "${series}" is not a series code (it starts with "TP.").` : 'EVDS_API_KEY is set but EVDS_TR10Y_SERIES is empty.', 'evds3.tcmb.gov.tr');
+    if (!key) return setRow(def, 'needs_setup', 'The 10Y series code is set but the EVDS key is empty (Menu > Settings or EVDS_API_KEY).', 'evds3.tcmb.gov.tr');
+    if (!isValidEvdsSeriesCode(series)) return setRow(def, 'needs_setup', series ? `EVDS_TR10Y_SERIES "${series}" is not a series code (it starts with "TP.").` : 'The EVDS key is set but the 10Y series code is empty (Menu > Settings or EVDS_TR10Y_SERIES).', 'evds3.tcmb.gov.tr');
     const res = await httpCheck(def, fetchFn, evdsSeriesUrl(series, now), T, (r) => {
       const o = parseEvdsLatest(parseJson(r.text), series);
       return o ? `Turkey 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
     }, { headers: { key, Accept: 'application/json' } }, `EVDS answered, but series ${series} had no recent values. Check the series code.`);
     if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
-      return { ...res, state: 'needs_setup', detail: `EVDS did not accept the key in EVDS_API_KEY (HTTP ${res.httpStatus}).` };
+      return { ...res, state: 'needs_setup', detail: `EVDS did not accept ${keyPhrase('EVDS_API_KEY')} (HTTP ${res.httpStatus}).` };
     }
-    return res;
+    return savedNote('EVDS_API_KEY', res);
   });
 
   add('eia', async () => {
@@ -778,7 +780,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'US EIA oil prices (free key)',
       group: 'free_key',
       feeds: 'Daily Brent and WTI spot prices (spillover scenarios)',
-      setup: 'EIA_API_KEY="..." (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
+      setup: 'Menu > Settings > Data API keys, or EIA_API_KEY="..." in .env (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
     };
     const key = (env.EIA_API_KEY || '').trim();
     if (!key) return setRow(def, 'optional', 'No key set. Oil comes monthly from the World Bank Pink Sheet instead.', 'api.eia.gov');
@@ -788,10 +790,10 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       return mv ? moveSentence(mv).replace(/\.$/, '') : null;
     }, undefined, 'EIA answered, but with no Brent rows the app could read. The route or series code may have changed.');
     if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
-      return { ...res, state: 'needs_setup', detail: `EIA did not accept the key in EIA_API_KEY (HTTP ${res.httpStatus}). Oil comes monthly from the Pink Sheet meanwhile.` };
+      return { ...res, state: 'needs_setup', detail: `EIA did not accept ${keyPhrase('EIA_API_KEY')} (HTTP ${res.httpStatus}). Oil comes monthly from the Pink Sheet meanwhile.` };
     }
     // Never echo the key: EIA puts it in the URL, so make sure no reply text carries it.
-    return { ...res, detail: res.detail.split(key).join('***') };
+    return savedNote('EIA_API_KEY', { ...res, detail: res.detail.split(key).join('***') });
   });
 
   // ---- Your own paid account (off unless switched on) -------------------------------------------

@@ -3031,6 +3031,17 @@ async function startServer() {
     const report = await checkConnections({ env, only: [field.checkId], keySources: sources });
     return report.results[0] || null;
   };
+  // A changed key is used from the next pull: forget answers that were fetched without it.
+  const onKeyChanged = (id: string) => {
+    connectionReportCache = null;
+    if (id === 'FRED_API_KEY') {
+      fredSeriesCache.clear();
+      for (const [iso3, hit] of officialYieldCache) if (!hit.obs && iso3 !== 'BRA') officialYieldCache.delete(iso3);
+    }
+    if (id === 'EIA_API_KEY') commodityMemory = null;
+    if (id === 'COMTRADE_API_KEY' && comtradeMemory) comtradeMemory.triedAt = {};
+    if (id.startsWith('EVDS_')) officialYieldCache.delete('TUR');
+  };
   const refuseRemote = (req: express.Request, res: express.Response): boolean => {
     if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
     res.status(403).json({ error: `Keys can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}). Under Docker, pull the latest docker-compose.yml and rebuild, or set SETTINGS_ALLOW_REMOTE="true" in .env.` });
@@ -3048,7 +3059,7 @@ async function startServer() {
     }
     savedSettings = next.settings;
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
-    connectionReportCache = null;
+    onKeyChanged(req.params.id);
     const check = await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
     res.json({ ...keysReply(req), check });
   });
@@ -3063,7 +3074,7 @@ async function startServer() {
     }
     savedSettings = next;
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
-    connectionReportCache = null;
+    onKeyChanged(req.params.id);
     res.json(keysReply(req));
   });
   // Test a key before saving it (or the key in use when no value is sent). Nothing is saved.

@@ -49,7 +49,7 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
       };
     case 'yield':
       if (iso3 === 'TUR')
-        return { kind: 'setup', short: 'Needs EVDS key', help: 'Set EVDS_API_KEY (free from the central bank of Turkey) in .env.' };
+        return { kind: 'setup', short: 'Needs EVDS key', help: 'Add the free EVDS key and 10Y series code (central bank of Turkey) under Menu > Settings > Data API keys, or in .env.' };
       if (hasFreeOfficialYield(iso3))
         return { kind: 'unreachable', short: 'Feed did not answer', help: 'The official yield feed did not answer. Press Sync, or set FRED_API_KEY in .env for a steadier connection.' };
       return { kind: 'setup', short: 'No source yet', help: 'No free official 10Y series is wired in for this country. Upload a yields file with its official figures.' };

@@ -84,5 +84,24 @@ test('keys can be changed only from this computer unless SETTINGS_ALLOW_REMOTE i
 });
 
 test('the .env snapshot keeps only the known keys', () => {
-  assert.deepEqual(envKeySnapshot({ FRED_API_KEY: 'a', PATH: '/bin' }), { FRED_API_KEY: 'a' });
+  const snap = envKeySnapshot({ FRED_API_KEY: 'a', PATH: '/bin' });
+  assert.equal(snap.FRED_API_KEY, 'a');
+  assert.ok(!('PATH' in snap));
+  assert.deepEqual(Object.keys(snap).sort(), ['COMTRADE_API_KEY', 'EIA_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES', 'FRED_API_KEY']);
+});
+
+test('EIA, Comtrade and EVDS: keys checked loosely, the series code shown in full', () => {
+  assert.ok('error' in withKey({ apiKeys: {} }, 'EIA_API_KEY', 'has spaces in it ok'));
+  assert.ok('settings' in withKey({ apiKeys: {} }, 'EIA_API_KEY', 'A'.repeat(40)));
+  assert.ok('settings' in withKey({ apiKeys: {} }, 'COMTRADE_API_KEY', 'abcdef0123456789abcdef0123456789'));
+  assert.ok('settings' in withKey({ apiKeys: {} }, 'EVDS_API_KEY', 'AbC123xyz'));
+  assert.ok('error' in withKey({ apiKeys: {} }, 'EVDS_TR10Y_SERIES', 'not-a-code'));
+  const ok = withKey({ apiKeys: {} }, 'EVDS_TR10Y_SERIES', 'TP.ABC.D10');
+  assert.ok('settings' in ok);
+  const series = describeKeys({}, ok.settings).find((k) => k.id === 'EVDS_TR10Y_SERIES')!;
+  assert.equal(series.secret, false);
+  assert.equal(series.masked, 'TP.ABC.D10');
+  const evdsKey = describeKeys({}, { apiKeys: { EVDS_API_KEY: 'AbC123xyz0' } }).find((k) => k.id === 'EVDS_API_KEY')!;
+  assert.equal(evdsKey.secret, true);
+  assert.equal(evdsKey.masked, '••••xyz0');
 });

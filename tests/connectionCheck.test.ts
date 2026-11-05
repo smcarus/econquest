@@ -184,7 +184,7 @@ test('FRED: no key is optional (the download is used); a rejected key needs setu
 
 test('EVDS: missing pieces each get their own reason; the key goes in a header', async () => {
   assert.match((await byId({ env: {}, fetchFn: healthy })).row('evds').detail, /Not set up/);
-  assert.match((await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: healthy })).row('evds').detail, /EVDS_TR10Y_SERIES is empty/);
+  assert.match((await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: healthy })).row('evds').detail, /10Y series code is empty \(Menu > Settings or EVDS_TR10Y_SERIES\)/);
   assert.match((await byId({ env: { EVDS_API_KEY: 'k', EVDS_TR10Y_SERIES: 'bond' }, fetchFn: healthy })).row('evds').detail, /not a series code/);
   let sawHeader = false;
   const fetchFn: FetchFn = async (u, init) => {

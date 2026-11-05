@@ -63,7 +63,7 @@ const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
         {SETTINGS_CHECK_IDS.has(r.id) ? (
           <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             <button type="button" onClick={openSettings} className="text-blue-700 dark:text-blue-400 hover:underline">
-              {r.state === 'optional' ? 'Add your key in Settings' : 'Change the key in Settings'}
+              {r.state === 'optional' ? 'Add your key in Settings' : 'Add or change the key in Settings'}
             </button>
             <span> (or set it in .env)</span>
           </div>
