@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { missingReason } from '../utils/liveFigures';
-import { peerScreen, type RvLabel } from '../utils/marketsMacro';
+import { peerBasisNote, peerScreen, type RvLabel } from '../utils/marketsMacro';
 import { benchmarkRows, marketEdgePeers, type MarketEdgeAnchorsReply } from '../utils/marketEdgeAnchors';
 import { formatPeriod } from '../utils/officialYields';
 
@@ -49,7 +49,7 @@ export const MarketEdgeScreen: React.FC<{
 }> = ({ watchlist, anchors, highlightIso3, onOpenCountry, title = 'MarketEdge', intro }) => {
   const peers = useMemo(() => marketEdgePeers(watchlist, anchors?.peers || []), [watchlist, anchors]);
   const us = anchors?.us10Y;
-  const { rows, fit } = useMemo(() => peerScreen(peers, us?.valuePct), [peers, us]);
+  const { rows, fit, realFit, basis } = useMemo(() => peerScreen(peers, us?.valuePct), [peers, us]);
   const bench = useMemo(() => benchmarkRows(anchors?.anchors || [], peers.map((p) => p.iso3), us?.valuePct), [anchors, peers, us]);
   const anchorIso = new Set((anchors?.anchors || []).map((a) => a.iso3));
 
@@ -59,9 +59,7 @@ export const MarketEdgeScreen: React.FC<{
         <h3 className="ui-section-title">{title}</h3>
         <p className="ui-label">
           {intro ? `${intro} ` : ''}
-          {fit
-            ? `Sorted from cheapest to richest 5Y CDS for its risk score. Model: log CDS fitted on the app's risk score across ${fit.n} countries; more than 15% above the fit counts as cheap, more than 15% below as rich.`
-            : 'The cheap or rich reading needs 4 or more countries with a CDS figure.'}
+          {peerBasisNote(basis, fit, realFit)}
         </p>
       </header>
       <div className="overflow-x-auto">
@@ -81,7 +79,7 @@ export const MarketEdgeScreen: React.FC<{
               <th className="hidden lg:table-cell px-3 py-2 text-right font-normal" title="BIS real broad effective exchange rate against its 10-year average">
                 Real FX vs 10y avg
               </th>
-              <th className="px-4 py-2 text-right font-normal">CDS vs peers</th>
+              <th className="px-4 py-2 text-right font-normal">{basis === 'real_yield' ? 'Real yield vs peers' : 'CDS vs peers'}</th>
             </tr>
           </thead>
           <tbody>
@@ -116,9 +114,18 @@ export const MarketEdgeScreen: React.FC<{
                     <div className="tabular-nums">{item?.reerGapPct !== undefined ? `${item.reerGapPct >= 0 ? '+' : ''}${item.reerGapPct.toFixed(0)}%` : '–'}</div>
                     {item?.reerPeriod && <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">BIS, {formatPeriod(item.reerPeriod)}</div>}
                   </td>
-                  <td className={`px-4 py-2 text-right whitespace-nowrap ${r.rv ? RV_CLASS[r.rv.label] : ''}`}>
-                    {r.rv ? `${r.rv.gapPct >= 0 ? '+' : ''}${r.rv.gapPct.toFixed(0)}% ${r.rv.label}` : '–'}
-                  </td>
+                  {basis === 'real_yield' ? (
+                    <td
+                      className={`px-4 py-2 text-right whitespace-nowrap ${r.realRv ? RV_CLASS[r.realRv.label] : ''}`}
+                      title={r.realYieldPct !== undefined ? `Real 10Y yield ${r.realYieldPct.toFixed(1)}% against about ${r.realRv?.fittedPct.toFixed(1)}% for its risk score` : 'Needs a 10Y yield, inflation and a risk score'}
+                    >
+                      {r.realRv ? `${r.realRv.gapPts >= 0 ? '+' : ''}${r.realRv.gapPts.toFixed(1)} pts ${r.realRv.label}` : '–'}
+                    </td>
+                  ) : (
+                    <td className={`px-4 py-2 text-right whitespace-nowrap ${r.rv ? RV_CLASS[r.rv.label] : ''}`}>
+                      {r.rv ? `${r.rv.gapPct >= 0 ? '+' : ''}${r.rv.gapPct.toFixed(0)}% ${r.rv.label}` : '–'}
+                    </td>
+                  )}
                 </tr>
               );
             })}
