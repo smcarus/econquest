@@ -6,6 +6,8 @@ import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvent
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
 import { PanelBoundary } from './PanelBoundary';
+import { FirstRunGuide } from './FirstRunGuide';
+import type { FirstRunStepId } from '../utils/firstRun';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
@@ -101,6 +103,10 @@ export const TodayPage: React.FC<{
   fullCouncil?: FullCouncilStep;
   /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
   coreOnly?: boolean;
+  /** Menu > AI model choice, for the first-run guide. */
+  aiProvider?: string;
+  /** A first-run guide button was pressed. */
+  onFirstRunAction?: (id: FirstRunStepId) => void;
 }> = ({
   run,
   watchlistName,
@@ -114,6 +120,8 @@ export const TodayPage: React.FC<{
   onSendCouncilToReports,
   fullCouncil,
   coreOnly = false,
+  aiProvider,
+  onFirstRunAction,
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
@@ -192,6 +200,12 @@ export const TodayPage: React.FC<{
             : `Live data for ${liveCount} of ${watchlistItems.length} countries`}
         </p>
       </div>
+
+      {onFirstRunAction && (
+        <PanelBoundary name="Getting started">
+          <FirstRunGuide liveCount={liveCount} aiProvider={aiProvider} onAction={onFirstRunAction} />
+        </PanelBoundary>
+      )}
 
       {/* Watchlist as a small card in the top-left corner; the full table lives in the pop-out. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(16rem,22rem)_1fr] gap-4 items-start">

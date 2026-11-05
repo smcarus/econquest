@@ -1043,7 +1043,9 @@ export default function App() {
   const handlePullLiveOpenData = async (
     iso3Target = run.iso3,
     countryNameTarget = run.countryName,
-    silent = false
+    silent = false,
+    /** Pull every feed again now instead of serving the saved copy (Refresh now on the country page). */
+    force = false
   ) => {
     setIsFetchingOpenData(true);
     if (!silent) {
@@ -1056,7 +1058,7 @@ export default function App() {
       const res = await fetch(
         `/api/data/sovereign-snapshot?iso3=${encodeURIComponent(
           iso3Target
-        )}&countryName=${encodeURIComponent(countryNameTarget)}`
+        )}&countryName=${encodeURIComponent(countryNameTarget)}${force ? '&refresh=1' : ''}`
       );
       if (res.ok) {
         const raw = await res.json();
@@ -2897,6 +2899,17 @@ export default function App() {
                 openWorkspace('reports', 'ic_memo_builder');
               }}
               coreOnly={!showAllTools}
+              aiProvider={runtimeConfig.providerMode}
+              onFirstRunAction={(step) => {
+                if (step === 'fred') setIsSettingsOpen(true);
+                else if (step === 'ai') setIsRuntimeModalOpen(true);
+                else if (step === 'watchlist') setIsWatchlistCollapsed(false);
+                else if (showAllTools) setIsRuntimeModalOpen(true);
+                else {
+                  setAppArea('desks');
+                  window.setTimeout(() => document.querySelector('[data-connections-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
+                }
+              }}
             />
             </PanelBoundary>
           )}
@@ -2916,8 +2929,8 @@ export default function App() {
               onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
               onSelectCountry={handleSelectSovereign}
               onAddCountry={() => setIsCustomSovereignModalOpen(true)}
-              onSync={handleSyncLiveWorldBankAndTreasury}
-              isSyncing={isSyncingLiveMacro}
+              onSync={() => void handlePullLiveOpenData(run.iso3, run.countryName, false, true)}
+              isSyncing={isFetchingOpenData}
               onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}

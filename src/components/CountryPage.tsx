@@ -246,10 +246,10 @@ export const CountryPage: React.FC<{
               onClick={onSync}
               disabled={isSyncing}
               className="ui-btn inline-flex"
-              title="Fetch the latest World Bank and US Treasury figures for this country"
+              title="Pull every data feed for this country again now (normally once a week, or within the hour after a failed pull)"
             >
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Syncing…' : 'Sync'}
+              {isSyncing ? 'Refreshing…' : 'Refresh now'}
             </button>
             {!coreOnly && (
               <>
