@@ -88,6 +88,7 @@ import {
 import { PortfolioSummary } from './components/PortfolioSummary';
 import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
+import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
@@ -3013,6 +3014,9 @@ export default function App() {
                       openWorkspace('reports', 'ic_memo_builder');
                     }}
                   />
+                  <PanelBoundary name="Signals on your holdings">
+                    <PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={() => setIsHoldingsPanelOpen(true)} />
+                  </PanelBoundary>
                   <PortfolioSummary
                     watchlistItems={liveWatchlistItems}
                     riskLookup={liveRiskLookup}

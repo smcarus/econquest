@@ -161,6 +161,15 @@ Import your holdings as CSV (Portfolio > Holdings; a template is provided). With
 page uses your watchlist at equal weight. The book brief shows concentration, where the risk sits,
 the DV01 cost of a 10 bp move and dates to watch. The client brief says the same in plain language.
 
+*Signals on your holdings* lays each imported holding over the app's signals that bear on it and marks
+each signal as leaning with or against the position. Local-currency bonds get the Taylor rule check, the
+policy cycle and the 3-month move in the 10Y yield (25 bps or more counts): lower rates lean with a long
+bond and against a short. Every credit holding gets the shock early warning: an alert leans against a
+long bond or sold protection and with bought protection. FX and other holdings are listed but not
+marked, since the holdings file does not say which leg is long. The top line splits the gross notional
+into against, mixed, with and nothing either way. Missing inputs are named; built-in figures never
+count. A signal against a position is a reason to look, not a call to trade.
+
 ---
 
 ## 4. Reports
