@@ -202,7 +202,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, answers, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, answers, scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {
