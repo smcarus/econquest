@@ -124,5 +124,5 @@ export function benchmarkRows(anchors: MarketEdgeAnchor[], peerIso3: string[], u
 export function marketEdgePeers(watchlist: LiveWatchlistItem[], anchorPeers: LiveWatchlistItem[]): LiveWatchlistItem[] {
   const have = new Set(watchlist.map((w) => w.iso3));
   // Benchmark rows arrive raw from the server: drop their built-in figures too.
-  return [...watchlist, ...anchorPeers.filter((p) => !have.has(p.iso3)).map(toLive)];
+  return [...watchlist, ...anchorPeers.filter((p) => !have.has(p.iso3)).map((p) => ({ ...toLive(p), isBenchmark: true }))];
 }

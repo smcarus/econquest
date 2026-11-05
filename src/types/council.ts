@@ -451,6 +451,8 @@ export interface AnnotatedChartSpec {
 }
 
 export interface WatchlistItem {
+  /** A benchmark market added for peer comparisons (src/utils/marketEdgeAnchors.ts), not on your watchlist. */
+  isBenchmark?: boolean;
   iso3: string;
   countryName: string;
   region: string;

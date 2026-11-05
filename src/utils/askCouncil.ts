@@ -211,6 +211,14 @@ export function offWatchlistNote(names: string[]): string {
   return `${listNames(names)} ${verb} not on the watchlist, so the agents hold no figures for ${names.length === 1 ? 'it' : 'them'} yet. Use "Add for this question" to pull ${names.length === 1 ? 'its' : 'their'} figures and ask again`;
 }
 
+/** "the whole watchlist (5 countries) and 1 benchmark market": benchmarks are counted apart, so the number matches the watchlist. */
+export function wholeListNote(items: Array<{ isBenchmark?: boolean }>): string {
+  const bench = items.filter((i) => i.isBenchmark).length;
+  const own = items.length - bench;
+  const base = `the whole watchlist (${own} ${own === 1 ? 'country' : 'countries'})`;
+  return bench ? `${base} and ${bench} benchmark ${bench === 1 ? 'market' : 'markets'}` : base;
+}
+
 /** Which agents answer and for which countries. `scopeIso3` = a country picked in the box, overriding the question. */
 export function planCouncil(question: string, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const picked = scopeIso3 ? items.filter((i) => i.iso3 === scopeIso3) : [];
@@ -225,7 +233,7 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
       ? `${named.map((n) => baseName(n.countryName)).join(', ')}, named in the question`
       : off.length
         ? 'no country on the watchlist'
-        : `the whole watchlist (${items.length} countries), as no country was named`;
+        : `${wholeListNote(items)}, as no country was named`;
   const scopeNote = off.length ? `${baseNote}. ${offWatchlistNote(off)}` : baseNote;
 
   const agents: CouncilPlan['agents'] = [];
