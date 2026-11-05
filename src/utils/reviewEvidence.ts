@@ -205,7 +205,7 @@ export function perOption(options: OptionsStep, analyses: EvidenceAnalysis[], si
     const note = a.length
       ? `${a.length} analys${a.length === 1 ? 'is' : 'es'} in the pack speak to this ${o.lever} option.`
       : o.lever === 'external' || o.lever === 'other' || o.lever === 'fiscal'
-        ? `The pack has no statistical test for a ${o.lever} option yet; it rests on the diagnosis and the council's reasoning only.`
+        ? `The pack has no statistical test for ${o.lever === 'external' || o.lever === 'other' ? 'an' : 'a'} ${o.lever} option yet; it rests on the diagnosis and the council's reasoning only.`
         : 'The analyses for this option could not run: their series are Missing (see each analysis).';
     return { rank: o.rank, title: o.title, lever: o.lever, analyses: a.map((x) => x.id), signals: s.map((x) => x.id), note };
   });

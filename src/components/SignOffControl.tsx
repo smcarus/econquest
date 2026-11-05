@@ -10,6 +10,7 @@ const LABEL: Record<SignOffStatus, string> = { draft: 'Draft', reviewed: 'Review
 const TONE: Record<SignOffStatus, string> = { draft: '', reviewed: 'ui-badge-accent', approved: 'ui-badge-positive', changed: 'ui-badge-warning' };
 const NAME_KEY = 'econquest.signoffName.v1';
 
+/** Keyed "brief:<id>" or "review:<id>". */
 let cache: Record<string, SignOffView> | null = null;
 let loading: Promise<void> | null = null;
 const listeners = new Set<(v: Record<string, SignOffView> | null) => void>();
@@ -18,7 +19,12 @@ function reload(): Promise<void> {
   loading = fetch('/api/signoffs')
     .then((r) => (r.ok ? r.json() : null))
     .then((j) => {
-      if (j?.briefs) cache = j.briefs;
+      if (j?.briefs) {
+        const next: Record<string, SignOffView> = {};
+        for (const [id, v] of Object.entries(j.briefs as Record<string, SignOffView>)) next[`brief:${id}`] = v;
+        for (const [id, v] of Object.entries((j.reviews || {}) as Record<string, SignOffView>)) next[`review:${id}`] = v;
+        cache = next;
+      }
       listeners.forEach((l) => l(cache));
     })
     .catch(() => undefined)
@@ -48,9 +54,9 @@ const readName = () => {
   }
 };
 
-export function SignOffControl({ briefId }: { briefId: string }) {
+export function SignOffControl({ briefId, kind = 'brief' }: { briefId: string; kind?: 'brief' | 'review' }) {
   const all = useSignOffs();
-  const view = all?.[briefId];
+  const view = all?.[`${kind}:${briefId}`];
   const status: SignOffStatus = view?.status ?? 'draft';
   const [pending, setPending] = useState<SignOffStep | null>(null);
   const [name, setName] = useState(readName);
@@ -65,7 +71,7 @@ export function SignOffControl({ briefId }: { briefId: string }) {
       /* not remembered: fine */
     }
     try {
-      const r = await fetch(`/api/signoffs/brief/${encodeURIComponent(briefId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: pending, by: name }) });
+      const r = await fetch(`/api/signoffs/${kind}/${encodeURIComponent(briefId)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step: pending, by: name }) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
       setPending(null);
@@ -108,11 +114,11 @@ export function SignOffControl({ briefId }: { briefId: string }) {
         ))}
       {pending && (
         <span className="inline-flex flex-wrap items-center gap-1">
-          <label className="sr-only" htmlFor={`signoff-name-${briefId}`}>
+          <label className="sr-only" htmlFor={`signoff-name-${kind}-${briefId}`}>
             Your name
           </label>
           <input
-            id={`signoff-name-${briefId}`}
+            id={`signoff-name-${kind}-${briefId}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && void sign()}
