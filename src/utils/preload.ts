@@ -62,6 +62,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:cofer', kind: 'world', label: 'IMF COFER reserve currencies' },
   { id: 'world:commodities', kind: 'world', label: 'Commodity prices (World Bank Pink Sheet, EIA)' },
   { id: 'world:comtrade', kind: 'world', label: 'UN Comtrade trade partners' },
+  { id: 'world:market_extras', kind: 'world', label: 'US 10Y, fed funds and FX valuation (FRED, NY Fed, BIS, ECB)' },
 ];
 
 /** Per country: the full snapshot (every feed the country page uses) and the full yearly history. */

@@ -450,13 +450,56 @@ async function fetchFredLatest(seriesId: string): Promise<OfficialYieldObservati
   }
 }
 
+/**
+ * Market extras saved to disk (data/live/market-extras.json): the US 10Y and other FRED
+ * benchmarks, the BIS real exchange rate gap and three-month FX volatility per country, and the
+ * NY Fed fed funds rate. Each keeps its own source date. A good answer is saved; when a feed does
+ * not answer (offline, or down) the last saved figure is used, so the screens built on them (carry,
+ * spread over Treasuries, real exchange rate) keep their saved figures with their dates instead of
+ * reading Missing.
+ */
+type MarketExtrasFile = {
+  fred: Record<string, { at: string; value: OfficialYieldObservation }>;
+  fx: Record<string, { at: string; reer?: ReerGap; vol?: FxVol }>;
+  effr?: { at: string; value: { pct: number; date: string } };
+};
+let marketExtras: MarketExtrasFile | null = null;
+function marketExtrasFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'market-extras.json');
+}
+function loadMarketExtras(): MarketExtrasFile {
+  if (marketExtras) return marketExtras;
+  let f: MarketExtrasFile = { fred: {}, fx: {} };
+  try {
+    const saved = JSON.parse(fs.readFileSync(marketExtrasFile(), 'utf8')) as Partial<MarketExtrasFile>;
+    f = { fred: saved.fred && typeof saved.fred === 'object' ? saved.fred : {}, fx: saved.fx && typeof saved.fx === 'object' ? saved.fx : {}, ...(saved.effr ? { effr: saved.effr } : {}) };
+  } catch {
+    // never saved
+  }
+  marketExtras = f;
+  return f;
+}
+function saveMarketExtras(change: (f: MarketExtrasFile) => void) {
+  const f = loadMarketExtras();
+  change(f);
+  try {
+    fs.mkdirSync(path.dirname(marketExtrasFile()), { recursive: true });
+    writeFileAtomic(marketExtrasFile(), JSON.stringify(f));
+  } catch (err: any) {
+    console.warn(`[market extras] could not save: ${err?.message || err}`);
+  }
+}
+
 /** A FRED yield series kept for 12 hours (1 hour after a miss). Used for MarketEdge benchmarks. */
-const fredSeriesCache = new Map<string, { at: number; value: OfficialYieldObservation | null }>();
+const fredSeriesCache = new Map<string, { at: number; value: OfficialYieldObservation | null; fallback?: boolean }>();
 async function fetchFredCached(seriesId: string): Promise<OfficialYieldObservation | null> {
   const hit = fredSeriesCache.get(seriesId);
-  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const value = await fetchFredLatest(seriesId);
-  fredSeriesCache.set(seriesId, { at: Date.now(), value });
+  if (hit && Date.now() - hit.at < (hit.value && !hit.fallback ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  const got = await fetchFredLatest(seriesId);
+  if (got) saveMarketExtras((f) => (f.fred[seriesId] = { at: new Date().toISOString(), value: got }));
+  const value = got ?? loadMarketExtras().fred[seriesId]?.value ?? null;
+  // A saved figure stands in, but the feed is asked again within the hour.
+  fredSeriesCache.set(seriesId, { at: Date.now(), value, ...(got ? {} : { fallback: true }) });
   return value;
 }
 
@@ -469,7 +512,7 @@ function fetchUs10YYield(): Promise<OfficialYieldObservation | null> {
  * FX valuation per currency (see src/utils/fxValuation.ts): BIS real exchange rate gap and
  * three-month realised volatility against the dollar. Kept 12 hours (1 hour after a miss).
  */
-type FxValuation = { reer: ReerGap | null; vol: FxVol | null };
+type FxValuation = { reer: ReerGap | null; vol: FxVol | null; fromSaved?: boolean; answered?: boolean };
 const fxValuationCache = new Map<string, { at: number; value: FxValuation; pending?: Promise<FxValuation> }>();
 async function fetchFxValuationUncached(iso3: string, ccy: string): Promise<FxValuation> {
   const iso2 = BIS_ISO2[iso3];
@@ -483,11 +526,14 @@ async function fetchFxValuationUncached(iso3: string, ccy: string): Promise<FxVa
   } catch {
     vol = null;
   }
-  return { reer: parseReer(reerText), vol };
+  const reer = parseReer(reerText);
+  if (reer || vol) saveMarketExtras((f) => (f.fx[iso3] = { at: new Date().toISOString(), ...(reer ? { reer } : f.fx[iso3]?.reer ? { reer: f.fx[iso3].reer } : {}), ...(vol ? { vol } : f.fx[iso3]?.vol ? { vol: f.fx[iso3].vol } : {}) }));
+  const saved = loadMarketExtras().fx[iso3];
+  return { reer: reer ?? saved?.reer ?? null, vol: vol ?? saved?.vol ?? null, ...((!reer && saved?.reer) || (!vol && saved?.vol) ? { fromSaved: true } : {}), answered: !!(reer || vol) };
 }
 async function fetchFxValuation(iso3: string, ccy: string): Promise<FxValuation> {
   const hit = fxValuationCache.get(iso3);
-  const fresh = hit && Date.now() - hit.at < (hit.value.reer || hit.value.vol ? 12 : 1) * 60 * 60 * 1000;
+  const fresh = hit && Date.now() - hit.at < ((hit.value.reer || hit.value.vol) && !hit.value.fromSaved ? 12 : 1) * 60 * 60 * 1000;
   if (fresh) return hit!.value;
   if (hit?.pending) return hit.pending;
   const pending = fetchFxValuationUncached(iso3, ccy).then((value) => {
@@ -499,9 +545,9 @@ async function fetchFxValuation(iso3: string, ccy: string): Promise<FxValuation>
 }
 
 /** US effective federal funds rate (NY Fed), the dollar leg of carry. 6h cache. */
-let effrCache: { at: number; value: { pct: number; date: string } | null } | null = null;
+let effrCache: { at: number; value: { pct: number; date: string } | null; fallback?: boolean } | null = null;
 async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
-  if (effrCache && Date.now() - effrCache.at < (effrCache.value ? 6 : 1) * 60 * 60 * 1000) return effrCache.value;
+  if (effrCache && Date.now() - effrCache.at < (effrCache.value && !effrCache.fallback ? 6 : 1) * 60 * 60 * 1000) return effrCache.value;
   let value: { pct: number; date: string } | null = null;
   try {
     const res = await fetchWithTimeout('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json', 4000);
@@ -509,7 +555,12 @@ async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
   } catch {
     value = null;
   }
-  effrCache = { at: Date.now(), value };
+  const fallback = !value;
+  if (value) {
+    const got = value;
+    saveMarketExtras((f) => (f.effr = { at: new Date().toISOString(), value: got }));
+  } else value = loadMarketExtras().effr?.value ?? null;
+  effrCache = { at: Date.now(), value, ...(fallback ? { fallback: true } : {}) };
   return value;
 }
 
@@ -2210,6 +2261,26 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const file = await fetchComtrade();
       const n = Object.keys(file.countries || {}).length;
       return n ? { outcome: 'done', note: `${n} countries saved` } : { outcome: 'failed', note: 'UN Comtrade did not answer' };
+    }
+    case 'world:market_extras': {
+      const fredIds = [...new Set([US_10Y_SERIES, ...MARKET_EDGE_ANCHORS.map((d) => d.fredSeries).filter((x): x is string => !!x)])];
+      const fred = await Promise.all(fredIds.map((id) => fetchFredLatest(id).then((v) => {
+        if (v) saveMarketExtras((f) => (f.fred[id] = { at: new Date().toISOString(), value: v }));
+        return v;
+      })));
+      fredSeriesCache.clear();
+      effrCache = null;
+      const effr = await fetchEffr();
+      const effrNew = !!effr && !(effrCache as { fallback?: boolean } | null)?.fallback;
+      let fx = 0;
+      for (const c of SOVEREIGN_CATALOG) {
+        fxValuationCache.delete(c.iso3);
+        const v = await fetchFxValuationUncached(c.iso3, c.currencyCode);
+        if (v.answered) fx++;
+      }
+      const got = [`${fred.filter(Boolean).length} of ${fredIds.length} FRED yields`, effrNew ? 'fed funds' : '', `FX valuation for ${fx} of ${SOVEREIGN_CATALOG.length} countries`].filter(Boolean);
+      const anyNew = fred.some(Boolean) || effrNew;
+      return anyNew || fx ? { outcome: 'done', note: got.join(', ') } : { outcome: 'failed', note: 'FRED, NY Fed, BIS and ECB did not answer' };
     }
     default:
       return { outcome: 'failed', note: 'Unknown step' };
