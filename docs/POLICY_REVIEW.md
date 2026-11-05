@@ -49,5 +49,7 @@ the questions sent to the AI model you chose in Menu > Settings.
 | `POST /api/reviews/:id/diagnose` | Step 2 from the saved pull on or before the As of day. |
 | `POST /api/reviews/:id/options` | Step 3: `{ userOptions, runtimeConfig }` asks the council (temperature 0, prompt hashed, numbers checked); `{ ownOnly: true }` saves your options unassessed. |
 | `POST /api/reviews/:id/evidence` | Step 4: the evidence pack (five charts and tests, past episodes, validation status), every series cut at the As of day. |
+| `POST /api/reviews/:id/memo` | Step 5: `{ recommended, rationale, watch, reviewDate }`; the memo is assembled from the saved steps with no AI. |
+| `POST /api/signoffs/review/:id` | Sign-off on the memo (Reviewed, Approved, Withdrawn) against the memo step's hash. An approved review cannot be deleted. |
 
 Later steps add their own routes as they are built.

@@ -1,8 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { ClipboardList, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { ClipboardList, Download, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
 import type { EvidenceStep } from '../utils/reviewEvidence';
+import { defaultMemoInputs, memoFileName, RESEARCH_BANNER, VALIDATED_BANNER, type MemoInputs, type MemoStep } from '../utils/reviewMemo';
+import { saveFile } from '../utils/briefExport';
+import { SignOffControl, refreshSignOffs } from './SignOffControl';
 import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, type PolicyOption, type UserOption } from '../utils/reviewOptions';
 
 /**
@@ -390,6 +393,96 @@ const EvidenceView: React.FC<{ e: EvidenceStep }> = ({ e }) => (
   </div>
 );
 
+/** A memo line: "- " is a list item, **x** is bold. */
+const MemoLine: React.FC<{ text: string }> = ({ text }) => {
+  if (!text.trim()) return <div className="h-1.5" />;
+  const bullet = text.startsWith('- ');
+  const body = (bullet ? text.slice(2) : text).split(/(\*\*[^*]+\*\*)/).map((part, i) => (part.startsWith('**') ? <strong key={i} className="font-semibold">{part.slice(2, -2)}</strong> : <React.Fragment key={i}>{part}</React.Fragment>));
+  return <p className={`text-sm text-slate-800 dark:text-slate-200 ${bullet ? 'pl-3 -indent-3' : ''}`}>{bullet ? '• ' : ''}{body}</p>;
+};
+
+const MemoView: React.FC<{ m: MemoStep }> = ({ m }) => (
+  <article className="space-y-3" data-review-memo="true">
+    <p className={m.researchOnly ? 'text-xs text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 p-2' : 'text-xs text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 p-2'}>
+      {m.researchOnly ? RESEARCH_BANNER : VALIDATED_BANNER}
+    </p>
+    {m.sections.map((s) =>
+      ['References', 'Method and reproducibility', 'Diagnosis', 'Gaps'].includes(s.heading) ? (
+        <details key={s.heading}>
+          <summary className="ui-section-title cursor-pointer">{s.heading}</summary>
+          <div className="mt-1 space-y-0.5">
+            {s.lines.map((l, i) => (
+              <MemoLine key={i} text={l} />
+            ))}
+          </div>
+        </details>
+      ) : (
+        <section key={s.heading} className="space-y-0.5">
+          <h5 className="ui-section-title">{s.heading}</h5>
+          {s.lines.map((l, i) => (
+            <MemoLine key={i} text={l} />
+          ))}
+        </section>
+      )
+    )}
+  </article>
+);
+
+const MemoForm: React.FC<{ options: OptionsStep; initial: MemoInputs; busy: boolean; onSubmit: (m: MemoInputs) => void }> = ({ options, initial, busy, onSubmit }) => {
+  const [m, setM] = useState<MemoInputs>(initial);
+  return (
+    <form
+      className="grid gap-3 sm:grid-cols-2"
+      data-review-memo-form="true"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit({ ...m, watch: m.watch.filter((w) => w.indicator.trim()) });
+      }}
+    >
+      <label className="block">
+        <span className="ui-label block mb-1">Recommend</span>
+        <select className={INPUT} value={m.recommended} onChange={(e) => setM({ ...m, recommended: Number(e.target.value) })}>
+          {options.options.map((o) => (
+            <option key={o.rank} value={o.rank}>
+              {o.rank}. {o.title}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <span className="ui-label block mb-1">Review on</span>
+        <input type="date" className={INPUT} value={m.reviewDate} onChange={(e) => setM({ ...m, reviewDate: e.target.value })} required />
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="ui-label block mb-1">Your reasoning (optional, quoted as yours in the memo)</span>
+        <textarea className={INPUT} rows={3} maxLength={3000} value={m.rationale} onChange={(e) => setM({ ...m, rationale: e.target.value })} placeholder="Why this option over the others, given the constraints." />
+      </label>
+      <fieldset className="sm:col-span-2 space-y-1.5">
+        <legend className="ui-label mb-1">What to watch (and what would change the recommendation)</legend>
+        {m.watch.map((w, i) => (
+          <div key={i} className="grid gap-1.5 sm:grid-cols-[1fr_1fr_auto]">
+            <input className={INPUT} value={w.indicator} maxLength={120} placeholder="e.g. Inflation [1]" aria-label={`Watch ${i + 1}`} onChange={(e) => setM({ ...m, watch: m.watch.map((x, j) => (j === i ? { ...x, indicator: e.target.value } : x)) })} />
+            <input className={INPUT} value={w.trigger || ''} maxLength={200} placeholder="e.g. still above target in six months" aria-label={`Trigger ${i + 1}`} onChange={(e) => setM({ ...m, watch: m.watch.map((x, j) => (j === i ? { ...x, trigger: e.target.value } : x)) })} />
+            <button type="button" className="ui-btn ui-btn-ghost" aria-label={`Remove watch ${i + 1}`} onClick={() => setM({ ...m, watch: m.watch.filter((_, j) => j !== i) })}>
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ))}
+        {m.watch.length < 8 && (
+          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setM({ ...m, watch: [...m.watch, { indicator: '' }] })}>
+            <Plus className="w-3.5 h-3.5" /> Add an indicator
+          </button>
+        )}
+      </fieldset>
+      <div className="sm:col-span-2">
+        <button type="submit" className="ui-btn ui-btn-primary" disabled={busy}>
+          {busy ? 'Writing…' : 'Write the memo'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
 export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: string }> = ({ countries = [], defaultIso3 = '' }) => {
   const [list, setList] = useState<ReviewSummary[]>([]);
   const [error, setError] = useState('');
@@ -441,6 +534,8 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const diagnosis = r?.steps.diagnose?.content as Diagnosis | undefined;
   const options = r?.steps.options?.content as OptionsStep | undefined;
   const evidence = r?.steps.evidence?.content as EvidenceStep | undefined;
+  const memo = r?.steps.memo?.content as MemoStep | undefined;
+  const [editingMemo, setEditingMemo] = useState(false);
   // Start the option editor from what was saved last time.
   useEffect(() => {
     setOwn(options?.userOptions ?? []);
@@ -676,10 +771,67 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               )}
             </section>
 
-            {REVIEW_STEPS.slice(4).map((s, i) => (
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="memo">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 className="ui-section-title">5. {STEP_LABEL.memo}</h4>
+                {memo && opened!.states.memo === 'done' && !editingMemo && (
+                  <div className="flex flex-wrap gap-1.5">
+                    <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setEditingMemo(true)}>
+                      <Pencil className="w-3.5 h-3.5" /> Change choices
+                    </button>
+                    <button type="button" className="ui-btn" onClick={() => saveFile(memoFileName(memo, 'md'), memo.markdown, 'text/markdown;charset=utf-8')}>
+                      <Download className="w-3.5 h-3.5" /> Markdown
+                    </button>
+                    <button
+                      type="button"
+                      className="ui-btn"
+                      onClick={() =>
+                        run('pdf', async () => {
+                          const { memoPdf } = await import('../utils/memoPdf');
+                          saveFile(memoFileName(memo, 'pdf'), await memoPdf(memo, r.steps.memo!.savedAt, r.steps.memo!.hash), 'application/pdf');
+                        })
+                      }
+                    >
+                      <Download className="w-3.5 h-3.5" /> PDF
+                    </button>
+                  </div>
+                )}
+              </div>
+              <p className="ui-label">{STEP_HINT.memo} No AI writes it: the same steps and choices give the same memo, word for word.</p>
+              {opened!.states.evidence !== 'done' && <p className="text-xs text-slate-500 dark:text-slate-400">Finish Evidence first.</p>}
+              {opened!.states.evidence === 'done' && options && diagnosis && frame && (!memo || editingMemo || opened!.states.memo !== 'done') && (
+                <>
+                  {opened!.states.memo === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">Out of date: an earlier step changed after the memo was written. Write it again.</p>}
+                  <MemoForm
+                    key={`${r.id}-${r.steps.evidence?.hash}`}
+                    options={options}
+                    initial={memo?.inputs && options.options.some((o) => o.rank === memo.inputs.recommended) ? memo.inputs : defaultMemoInputs(frame, diagnosis, options)}
+                    busy={busy === 'memo'}
+                    onSubmit={(m) =>
+                      run('memo', async () => {
+                        await apply(await api(`/api/reviews/${encodeURIComponent(r.id)}/memo`, { method: 'POST', body: JSON.stringify(m) }));
+                        setEditingMemo(false);
+                        await refreshSignOffs();
+                      })
+                    }
+                  />
+                </>
+              )}
+              {memo && opened!.states.memo === 'done' && (
+                <>
+                  <SignOffControl briefId={r.id} kind="review" />
+                  <MemoView m={memo} />
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Saved {r.steps.memo!.savedAt.slice(0, 16).replace('T', ' ')} · hash <span className="font-code">{short(r.steps.memo!.hash)}</span> · the sign-off records this hash; a memo written again reads "Changed after sign-off".
+                  </p>
+                </>
+              )}
+            </section>
+
+            {REVIEW_STEPS.slice(5).map((s, i) => (
               <section key={s} className="border border-slate-200 dark:border-slate-700 p-3" data-review-step={s}>
                 <h4 className="ui-section-title text-slate-500 dark:text-slate-400">
-                  {i + 5}. {STEP_LABEL[s]}
+                  {i + 6}. {STEP_LABEL[s]}
                 </h4>
                 <p className="ui-label">{STEP_HINT[s]}</p>
               </section>

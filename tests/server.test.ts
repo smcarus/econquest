@@ -821,6 +821,20 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     assert.equal(e.states.evidence, 'done');
     assert.equal(e.review.steps.evidence.content.analyses.length, 5);
     assert.equal(e.review.steps.evidence.content.researchOnly, true);
+    const memo = await fetch(`${base}/api/reviews/${review.id}/memo`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recommended: 1, reviewDate: '2099-01-01', watch: [{ indicator: 'Inflation [1]' }] }) });
+    assert.equal(memo.status, 200);
+    const m = await memo.json();
+    assert.equal(m.states.memo, 'done');
+    assert.match(m.review.steps.memo.content.markdown, /Research, not validated advice/);
+    const sign = (step: string) => fetch(`${base}/api/signoffs/review/${review.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ step, by: 'Sam' }) });
+    assert.equal((await sign('reviewed')).status, 200);
+    const approved = await (await sign('approved')).json();
+    assert.equal(approved.status, 'approved');
+    assert.equal(approved.selfApproved, true);
+    assert.equal((await fetch(`${base}/api/reviews/${review.id}`, { method: 'DELETE' })).status, 409);
+    const all = await (await fetch(`${base}/api/signoffs`)).json();
+    assert.equal(all.reviews[review.id].status, 'approved');
+    assert.equal((await sign('withdrawn')).status, 200);
   } else {
     assert.equal(diag.status, 409);
     assert.match((await diag.json()).error, /saved pull/);

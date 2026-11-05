@@ -38,8 +38,10 @@ export interface SignOffEntry {
   selfApproved?: boolean;
 }
 
+export type SignOffKind = 'brief' | 'review';
+
 export interface SignOffRecord {
-  kind: 'brief';
+  kind: SignOffKind;
   id: string;
   history: SignOffEntry[];
 }
@@ -87,7 +89,7 @@ export function signOffView(record: SignOffRecord | undefined, currentHash: stri
 /** Takes one step, or returns why it cannot be taken. */
 export function takeStep(
   record: SignOffRecord | undefined,
-  kind: 'brief',
+  kind: SignOffKind,
   id: string,
   currentHash: string,
   input: { step: unknown; by: unknown; note?: unknown },
@@ -132,6 +134,6 @@ export function saveSignOff(file: string, record: SignOffRecord): void {
   writeFileAtomic(file, JSON.stringify(all, null, 1), 0o600);
 }
 
-export function recordFor(all: SignOffFile, kind: 'brief', id: string): SignOffRecord | undefined {
+export function recordFor(all: SignOffFile, kind: SignOffKind, id: string): SignOffRecord | undefined {
   return all.records[key(kind, id)];
 }

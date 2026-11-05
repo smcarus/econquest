@@ -51,6 +51,7 @@ import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditS
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { buildDiagnosis, type Diagnosis } from './src/utils/reviewDiagnosis';
+import { buildMemo, parseMemoInputs } from './src/utils/reviewMemo';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from './src/utils/reviewEvidence';
 import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep } from './src/utils/reviewOptions';
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -4187,7 +4188,9 @@ async function startServer() {
     const all = loadSignOffs(SIGNOFF_FILE);
     const briefs: Record<string, ReturnType<typeof signOffView>> = {};
     for (const b of loadLibrary(RESEARCH_FILE).briefs) briefs[b.id] = signOffView(recordFor(all, 'brief', b.id), reportHash(b as any));
-    res.json({ briefs, file: 'data/local/signoffs.json' });
+    const reviews: Record<string, ReturnType<typeof signOffView>> = {};
+    for (const r of loadReviews(REVIEW_FILE).reviews) if (r.steps.memo) reviews[r.id] = signOffView(recordFor(all, 'review', r.id), r.steps.memo.hash);
+    res.json({ briefs, reviews, file: 'data/local/signoffs.json' });
   });
   app.post('/api/signoffs/brief/:id', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
@@ -4408,10 +4411,56 @@ async function startServer() {
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
+  // Step 5: the memo, assembled from the saved steps and the principal's choices (no AI).
+  app.post('/api/reviews/:id/memo', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).evidence !== 'done') return res.status(400).json({ error: 'Evidence must be done first.' });
+    const parsed = parseMemoInputs(req.body, r.steps.options!.content as OptionsStep, frame.asOf);
+    if ('error' in parsed) return res.status(400).json({ error: parsed.error });
+    const memo = buildMemo(r, parsed.inputs);
+    const out = saveStep(r, 'memo', memo);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Wrote the memo for policy review "${out.review.title}"`,
+      detail: { id: r.id, step: 'memo', hash: out.review.steps.memo?.hash, recommended: parsed.inputs.recommended, reviewDate: parsed.inputs.reviewDate, watch: parsed.inputs.watch, researchOnly: memo.researchOnly },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Sign-off on a review's memo: same steps as a saved report, on the memo step's hash.
+  app.post('/api/signoffs/review/:id', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).memo !== 'done') return res.status(400).json({ error: 'Write the memo first (and run it again if it is out of date).' });
+    const hash = r.steps.memo!.hash;
+    const out = takeStep(recordFor(loadSignOffs(SIGNOFF_FILE), 'review', r.id), 'review', r.id, hash, req.body || {});
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    try {
+      saveSignOff(SIGNOFF_FILE, out.record);
+    } catch (error: any) {
+      return res.status(500).json({ error: `Could not save the sign-off (${error?.code || error?.message || 'unknown error'}).` });
+    }
+    const view = signOffView(out.record, hash);
+    const verb = { reviewed: 'Reviewed', approved: out.entry.selfApproved ? 'Approved (self-approved, no second reviewer)' : 'Approved', withdrawn: 'Withdrew the sign-off on' }[out.entry.step];
+    appendAudit(AUDIT_FILES, {
+      kind: 'signoff',
+      summary: `${verb} the memo of policy review "${r.title.slice(0, 150)}" (${out.entry.by})`,
+      detail: { reviewId: r.id, step: out.entry.step, by: out.entry.by, contentHash: hash, status: SIGNOFF_LABEL[view.status], ...(out.entry.note ? { note: out.entry.note } : {}) },
+    });
+    res.json(view);
+  });
   app.delete('/api/reviews/:id', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (r.steps.memo && signOffView(recordFor(loadSignOffs(SIGNOFF_FILE), 'review', r.id), r.steps.memo.hash).status === 'approved') {
+      return res.status(409).json({ error: 'This review\'s memo is approved. Withdraw the approval first, then delete it.' });
+    }
     try {
       deleteReview(REVIEW_FILE, r.id);
     } catch (error: any) {
