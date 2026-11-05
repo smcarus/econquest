@@ -463,6 +463,31 @@ test('Saved research: conversations and documents are kept in data/local/researc
   assert.equal(empty.briefs.length + empty.docs.length, 0);
 });
 
+test('Research notebooks: group saved research by topic, keep notes, export as Markdown', async () => {
+  const send = (method: string, url: string, body: unknown) => fetch(`${base}${url}`, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const brief = { question: 'Where is the Selic going?', askedAt: '2026-11-05T07:00:00.000Z', scopeNote: 'Brazil', answers: [], synthesis: null };
+  const saved = await (await send('POST', '/api/research/briefs', brief)).json();
+  assert.equal((await send('POST', '/api/research/notebooks', { title: ' ' })).status, 400);
+  const made = await (await send('POST', '/api/research/notebooks', { title: 'Brazil rates', briefIds: [saved.id, 'b-nope'] })).json();
+  assert.ok(made.id);
+  assert.equal((await send('PUT', `/api/research/notebooks/${made.id}`, { notes: 'Copom next month.' })).status, 200);
+  assert.equal((await send('PUT', '/api/research/notebooks/n-missing', { notes: 'x' })).status, 404);
+  const list = await (await fetch(`${base}/api/research`)).json();
+  assert.deepEqual(list.notebooks.map((n: { title: string; briefIds: string[] }) => [n.title, n.briefIds]), [['Brazil rates', [saved.id]]]);
+  const file = await fetch(`${base}/api/export/notebook/${made.id}.md`);
+  assert.equal(file.status, 200);
+  assert.match(file.headers.get('content-disposition') || '', /notebook-brazil-rates-\d{4}-\d{2}-\d{2}\.md/);
+  const md = await file.text();
+  assert.match(md, /^# Brazil rates/);
+  assert.match(md, /Copom next month\./);
+  assert.match(md, /Where is the Selic going\?/);
+  await fetch(`${base}/api/research/briefs/${saved.id}`, { method: 'DELETE' });
+  const after = await (await fetch(`${base}/api/research/notebooks/${made.id}`)).json();
+  assert.deepEqual(after.briefIds, []);
+  await fetch(`${base}/api/research/notebooks/${made.id}`, { method: 'DELETE' });
+  assert.equal((await fetch(`${base}/api/export/notebook/${made.id}.md`)).status, 404);
+});
+
 test('Watch alerts: rules you set are kept in data/local/watch-rules.json; bad rules are dropped', async () => {
   const put = (body: unknown) => fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   assert.deepEqual((await (await fetch(`${base}/api/watch-rules`)).json()).rules, []);

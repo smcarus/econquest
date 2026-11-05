@@ -127,6 +127,13 @@ export const READY_TOOLS: ReadyTool[] = [
     sources: 'The briefs above',
     target: { area: 'reports' },
   },
+  {
+    id: 'notebooks',
+    title: 'Research notebooks',
+    what: 'Saved council conversations and documents grouped by topic, with your notes, downloaded as one Markdown file with every source and reference.',
+    sources: 'Your saved research (data/local/research.json)',
+    target: { area: 'reports' },
+  },
 ];
 
 export interface HiddenDesk {

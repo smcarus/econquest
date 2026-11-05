@@ -3,12 +3,13 @@ import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { downloadCouncilBrief } from '../utils/briefExport';
 import { councilBriefSections, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
 import type { PolicyDoc } from '../utils/policyDocs';
-import type { BriefSummary, DocSummary, SavedBriefEntry } from '../utils/researchLibrary';
+import type { BriefSummary, DocSummary, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
 
 /** The research library on this computer (data/local/research.json), through the app server. */
 export function useResearchLibrary() {
   const [briefs, setBriefs] = useState<BriefSummary[]>([]);
   const [docs, setDocs] = useState<DocSummary[]>([]);
+  const [notebooks, setNotebooks] = useState<NotebookSummary[]>([]);
   const [error, setError] = useState('');
   const refresh = useCallback(async () => {
     try {
@@ -17,6 +18,7 @@ export function useResearchLibrary() {
       const j = await r.json();
       setBriefs(Array.isArray(j.briefs) ? j.briefs : []);
       setDocs(Array.isArray(j.docs) ? j.docs : []);
+      setNotebooks(Array.isArray(j.notebooks) ? j.notebooks : []);
       setError('');
     } catch (e: any) {
       setError(`Saved research could not be read (${e?.message || 'the app server did not answer'}).`);
@@ -25,6 +27,18 @@ export function useResearchLibrary() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+  const send = async (method: 'POST' | 'PUT' | 'DELETE', url: string, body?: unknown): Promise<Record<string, unknown> | null> => {
+    try {
+      const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(j?.error || `HTTP ${r.status}`);
+      await refresh();
+      return j || {};
+    } catch (e: any) {
+      setError(`Not saved: ${e?.message || 'the app server did not answer'}.`);
+      return null;
+    }
+  };
   const write = async (method: 'POST' | 'DELETE', url: string, body?: unknown) => {
     try {
       const r = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}) });
@@ -39,7 +53,19 @@ export function useResearchLibrary() {
   return {
     briefs,
     docs,
+    notebooks,
     error,
+    refresh,
+    createNotebook: async (title: string, briefIds?: string[]): Promise<string | null> => {
+      const j = await send('POST', '/api/research/notebooks', { title, ...(briefIds ? { briefIds } : {}) });
+      return typeof j?.id === 'string' ? j.id : null;
+    },
+    updateNotebook: async (id: string, patch: NotebookPatch) => (await send('PUT', `/api/research/notebooks/${encodeURIComponent(id)}`, patch)) !== null,
+    deleteNotebook: async (id: string) => (await send('DELETE', `/api/research/notebooks/${encodeURIComponent(id)}`)) !== null,
+    loadNotebook: async (id: string): Promise<Notebook | null> => {
+      const r = await fetch(`/api/research/notebooks/${encodeURIComponent(id)}`).catch(() => null);
+      return r?.ok ? ((await r.json()) as Notebook) : null;
+    },
     saveBrief: (b: SavedCouncilBrief) => write('POST', '/api/research/briefs', b),
     deleteBrief: (id: string) => write('DELETE', `/api/research/briefs/${encodeURIComponent(id)}`),
     saveDoc: (d: PolicyDoc) => write('POST', '/api/research/docs', d),

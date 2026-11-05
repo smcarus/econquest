@@ -32,7 +32,8 @@ import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, ans
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
-import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
+import { addBrief, addDoc, addNotebook, briefId, isBrief, isDoc, removeBrief, removeDoc, removeNotebook, summarise, updateNotebook } from './src/utils/researchLibrary';
+import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
@@ -3325,6 +3326,44 @@ async function startServer() {
   app.delete('/api/research/docs/:id', (req, res) => {
     if (refuseRemoteResearch(req, res)) return;
     writeResearch(res, (lib) => removeDoc(lib, req.params.id));
+  });
+  // Research notebooks: conversations and documents grouped by topic, with notes, in the same file.
+  app.post('/api/research/notebooks', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const lib = loadLibrary(RESEARCH_FILE);
+    const made = addNotebook(lib, String(req.body?.title ?? ''));
+    if (!made) return res.status(400).json({ error: lib.notebooks.length >= 50 ? 'At most 50 notebooks; delete one first.' : 'A notebook needs a title.' });
+    const withContents = req.body && (Array.isArray(req.body.briefIds) || Array.isArray(req.body.docIds)) ? updateNotebook(made.lib, made.id, { briefIds: req.body.briefIds, docIds: req.body.docIds }) : made.lib;
+    writeResearch(res, () => withContents || made.lib, { id: made.id });
+  });
+  app.put('/api/research/notebooks/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    const b = req.body || {};
+    const patch = {
+      ...(typeof b.title === 'string' ? { title: b.title } : {}),
+      ...(typeof b.notes === 'string' ? { notes: b.notes } : {}),
+      ...(Array.isArray(b.briefIds) ? { briefIds: b.briefIds } : {}),
+      ...(Array.isArray(b.docIds) ? { docIds: b.docIds } : {}),
+    };
+    const next = updateNotebook(loadLibrary(RESEARCH_FILE), req.params.id, patch);
+    if (!next) return res.status(404).json({ error: 'No notebook with that id.' });
+    writeResearch(res, () => next);
+  });
+  app.delete('/api/research/notebooks/:id', (req, res) => {
+    if (refuseRemoteResearch(req, res)) return;
+    writeResearch(res, (lib) => removeNotebook(lib, req.params.id));
+  });
+  app.get('/api/research/notebooks/:id', (req, res) => {
+    const nb = loadLibrary(RESEARCH_FILE).notebooks.find((n) => n.id === req.params.id);
+    return nb ? res.json(nb) : res.status(404).json({ error: 'No notebook with that id.' });
+  });
+  app.get('/api/export/notebook/:id.md', (req, res) => {
+    const lib = loadLibrary(RESEARCH_FILE);
+    const nb = lib.notebooks.find((n) => n.id === req.params.id);
+    if (!nb) return res.status(404).json({ error: 'No notebook with that id.' });
+    res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="${notebookFileName(nb)}"`);
+    res.send(notebookMarkdown(nb, lib.briefs, lib.docs));
   });
   // Watch alerts: thresholds you set, kept in data/local/watch-rules.json. Evaluated in the page.
   // Series history (src/utils/seriesHistory.ts): every figure's run of real observations.

@@ -89,6 +89,7 @@ import { PortfolioSummary } from './components/PortfolioSummary';
 import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
+import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { PresentMode } from './components/PresentMode';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
 import { CORE_REPORTS, visibleReport } from './utils/simpleMode';
@@ -3028,6 +3029,7 @@ export default function App() {
               }
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
+                  <>
                   <IcMemoBuilder
                     key={`${d}-${requestedReport || DEFAULT_REPORT}-${reportNonce}`}
                     run={run}
@@ -3038,6 +3040,12 @@ export default function App() {
                     defaultAudience={visibleReport(requestedReport || DEFAULT_REPORT, showAllTools)}
                     audiences={showAllTools ? undefined : CORE_REPORTS}
                   />
+                  <div id="tool-notebooks" className="mt-3 scroll-mt-4">
+                    <PanelBoundary name="Research notebooks">
+                      <ResearchNotebooks countries={liveWatchlistItems} />
+                    </PanelBoundary>
+                  </div>
+                  </>
                 ) : (
                   <Suspense key={d} fallback={<DeskLoading />}>
                     <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
