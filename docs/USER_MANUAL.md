@@ -285,6 +285,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
 - **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
+- **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
+  (briefs, documents, notebooks, teaching episodes), watch alerts, holdings, watchlists, added
+  countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a
+  file holds, then *Restore this backup* replaces what is saved here with it; a copy of what was
+  here is saved first in `data/local/backups/`, and AI keys already on this computer are kept. Use it
+  to move to another computer or to keep a copy.
 
 ### Download all country data (for offline use)
 

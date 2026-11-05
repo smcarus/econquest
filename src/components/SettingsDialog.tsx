@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import { Archive, CheckCircle2, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
 import { AiModelSettings } from './AiModelSettings';
+import { BackupSettings } from './BackupSettings';
 import { STATE_LABEL, isFailure, type ConnectionResult } from '../utils/connectionCheck';
 import type { ApiKeyStatus } from '../utils/userSettings';
 
@@ -14,7 +15,7 @@ import type { ApiKeyStatus } from '../utils/userSettings';
 
 /**
  * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
- * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'tools' }).
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'backup' | 'tools' }).
  */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
 
@@ -193,19 +194,21 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'backup' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
 const PAGES: Array<{ id: SettingsTab; label: string; sections: Array<'free_key' | 'own_account' | 'ai'> }> = [
   { id: 'ai', label: 'AI model', sections: [] },
   { id: 'keys', label: 'Free data keys', sections: ['free_key'] },
   { id: 'paid', label: 'Your own paid data', sections: ['own_account'] },
+  { id: 'backup', label: 'Backup', sections: [] },
   { id: 'tools', label: 'Tools', sections: [] },
 ];
 const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   ai: <Cpu className="w-3.5 h-3.5" aria-hidden />,
   keys: <KeyRound className="w-3.5 h-3.5" aria-hidden />,
   paid: <Lock className="w-3.5 h-3.5" aria-hidden />,
+  backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
   tools: <Wrench className="w-3.5 h-3.5" aria-hidden />,
 };
 
@@ -292,6 +295,13 @@ export const SettingsDialog: React.FC<{
           {showTools ? (
             <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-label="Tools" data-settings-tools="true">
               {tools}
+            </section>
+          ) : tab === 'backup' ? (
+            <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-backup-title">
+              <h3 id="settings-backup-title" className="ui-section-title">Backup</h3>
+              <div className="mt-3">
+                <BackupSettings />
+              </div>
             </section>
           ) : showAi ? (
             <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-ai-title">

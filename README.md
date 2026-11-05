@@ -56,7 +56,8 @@ that country again at once. Slower sources (IMF reserves, CFTC, TIC, OECD, Comtr
 GDELT) keep their own caches; [DATA_SOURCES.md](./docs/DATA_SOURCES.md) lists each one's interval.
 Your holdings, watchlists, added countries and AI model settings are kept in
 `data/local/workspace.json` (shared by Docker and `npm run dev`), with saved research in
-`data/local/research.json` and keys in `data/local/settings.json`.
+`data/local/research.json` and keys in `data/local/settings.json`. Menu > Backup downloads all of it
+except the keys as one file, and restores such a file on another computer.
 Every pull is also kept by day in `data/archive/`, so the data as it stood on a past date is never
 lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 

@@ -1950,7 +1950,8 @@ export default function App() {
     } else if (item.actionType === 'OPEN_CUSTOM_SOVEREIGN_WIZARD') {
       setIsCustomSovereignModalOpen(true);
     } else if (item.actionType === 'OPEN_SESSION_MANAGER') {
-      setIsSessionModalOpen(true);
+      setSettingsTab('backup');
+      setIsSettingsOpen(true);
     } else if (item.actionType === 'EXPORT_SMCR_PDF') {
       exportSMCRPdfDossier(run);
     } else if (item.actionType === 'SYNC_LIVE_MACRO') {
@@ -2609,9 +2610,14 @@ export default function App() {
                       {
                         key: 'session',
                         icon: <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Save or restore session',
+                        label: 'Backup',
                         hint: '',
-                        onClick: () => setIsSessionModalOpen(true),
+                        // One backup for research, alerts, holdings and watchlists, saved by the server
+                        // (Settings > Backup); replaces the older browser-only session file.
+                        onClick: () => {
+                          setSettingsTab('backup');
+                          setIsSettingsOpen(true);
+                        },
                         className: '',
                       },
                       {
