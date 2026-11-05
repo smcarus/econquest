@@ -192,7 +192,9 @@ goes back to `.env`. Each key has a Test button that runs the same check as Data
 `npm run check:data` reads the saved keys too. Keys can only be changed from the computer running
 the app. Under Docker, `docker-compose.yml` publishes the app on this computer only
 (`127.0.0.1`) and turns on `SETTINGS_ALLOW_REMOTE`, because requests reach the container from
-Docker's network. Docker reads and writes the same `data/local/settings.json` in the project
+Docker's network. `npm run dev` listens on this computer only (`127.0.0.1`), so nobody else on your Wi-Fi can open the
+app, read saved research or change watch rules; set `HOST="0.0.0.0"` in `.env` to open it to your
+network on purpose. Docker reads and writes the same `data/local/settings.json` in the project
 folder, so a key saved while the app runs in Docker also works with `npm run dev` and
 `npm run check:data`, and the other way round.
 

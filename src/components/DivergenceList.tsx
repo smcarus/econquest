@@ -28,7 +28,7 @@ export const DivergenceList: React.FC<{
       <header className="ui-panel-header">
         <h3 className="ui-section-title">Where data and price disagree</h3>
         <p className="ui-label">
-          One line per country, biggest gap first. Gaps built on live data rank above gaps built on AI-estimated figures. Missing figures are left out, never filled in.
+          One line per country, biggest gap first, from live figures only. Missing figures are left out, never filled in.
         </p>
       </header>
       {shown.length === 0 ? (

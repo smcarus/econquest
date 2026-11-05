@@ -448,8 +448,8 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
       </div>
       {filteredItems.length > 0 && (
         <p className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-800">
-          A green 10Y yield is an official figure. Hover a yield to see its source and date. The others are sample
-          values or AI estimates, not market prices.
+          A green 10Y yield is an official figure. Hover a yield to see its source and date. A dash means no
+          source answered for that country.
         </p>
       )}
     </div>
