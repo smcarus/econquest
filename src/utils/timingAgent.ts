@@ -19,6 +19,7 @@ import { ticTrend, formatMonth as ticMonth } from './ticHoldings';
 import { formatPeriod } from './officialYields';
 import { formatMonth } from './oecdSdmx';
 import { shockSummary, shockWatch } from './shockWatch';
+import { SMALL_SAMPLE } from './signalRecord';
 
 export const TIMING_AGENT_NAME = 'Timing';
 export const TIMING_HORIZON_DAYS = 60;
@@ -66,7 +67,9 @@ export function timingSignals(it: LiveWatchlistItem, now: Date): { signals: Timi
   if (clock.cli) {
     const t = clock.cli.lastTurn;
     const fresh = !!t && monthsBetween(t.month, clock.cli.month) < FRESH_MONTHS + 1;
-    signals.push({ key: 'cycle', text: `Leading indicator: ${cliCycleText(clock.cli)}${fresh ? '. The turn is recent' : ''}.`, pressure: fresh });
+    const rec = it.signalRecord?.cliTurnToPolicy;
+    const recText = fresh && rec ? ` Here, a turn was followed by a matching policy move ${rec.followed} of ${rec.tested} times since ${formatMonth(rec.from)}${rec.tested < SMALL_SAMPLE ? ' (too few to lean on)' : ''}.` : '';
+    signals.push({ key: 'cycle', text: `Leading indicator: ${cliCycleText(clock.cli)}${fresh ? '. The turn is recent' : ''}.${recText}`, pressure: fresh });
     figures.push({ label: 'Leading indicator phase', value: clock.cli.phase, source: `OECD CLI via DBnomics, ${formatMonth(clock.cli.month)}`, tag: 'official' });
     if (t) figures.push({ label: 'Last turning point', value: `${t.kind}, ${formatMonth(t.month)} (${t.level.toFixed(2)})`, source: 'OECD CLI; two months each way', tag: 'model' });
   } else missing.push(`${it.countryName}: no OECD leading indicator`);
@@ -89,6 +92,9 @@ export function timingSignals(it: LiveWatchlistItem, now: Date): { signals: Timi
             : `Leveraged funds are ${label} the ${c.ccy} (${ordinal(c.percentile)} percentile${chgText}); a crowded position can unwind fast once it turns.`,
       pressure: turning,
     });
+    const rec = it.signalRecord?.crowdingUnwind;
+    if (label !== 'not stretched' && rec)
+      figures.push({ label: 'Crowded episodes that unwound within 8 weeks', value: `${rec.followed} of ${rec.tested}`, source: `CFTC TFF ${rec.from} to ${rec.to}; bands set with hindsight${rec.tested < SMALL_SAMPLE ? '; too few to lean on' : ''}`, tag: 'model' });
     figures.push({ label: 'Leveraged funds net, % of open interest', value: `${sg(c.levNetPctOi)}% (${ordinal(c.percentile)} percentile)`, source: `CFTC TFF, report ${c.reportDate}`, tag: 'official' });
     if (chg !== undefined) figures.push({ label: '4-week change in positioning', value: `${sg(chg)} pts`, source: `CFTC TFF, to ${c.reportDate}`, tag: 'official' });
   } else if (!c) missing.push(`${it.countryName}: no CFTC currency future`);

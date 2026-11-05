@@ -516,6 +516,8 @@ export interface WatchlistItem {
   oecdCli?: import('../utils/oecdCli').CliReading & { pulledAt: string };
   /** Set when the OECD answered but publishes no CLI for this country (so the reason can say so). */
   oecdCliPulledAt?: string;
+  /** How often timing signals were followed by what they point to, in this country's history (utils/signalRecord.ts). */
+  signalRecord?: import('../utils/signalRecord').SignalRecord;
   /** GDELT news tone and its shift (utils/gdeltTone.ts), with the date the app pulled it. */
   gdelt?: { pulledAt: string; tone: number; toneShift?: import('../utils/gdeltTone').GdeltToneShift };
   /** OECD monthly CPI inflation (utils/oecdInflation.ts), with the date the app pulled it. */

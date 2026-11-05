@@ -10,12 +10,14 @@ import {
   type OwnCdsQuote,
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, enrichTrade, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
-import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
+import { CFTC_CURRENCY_CODES, CFTC_HISTORY_WEEKS, cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
+import { cliTurnToPolicyRecord, crowdingUnwindRecord, type SignalRecord } from './src/utils/signalRecord';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, buildCommodityReply, eiaSpotUrl, findPinkSheetUrl, parseEiaSpot, parsePinkSheet, type CommodityReply, type PriceSeries } from './src/utils/commodityPrices';
 import { readXlsxSheet } from './src/utils/xlsxRead';
 import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
-import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { areaSeries } from './src/utils/oecdSdmx';
 import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
 import { pullImfExternal, type ImfExternal, type ImfStructure } from './src/utils/imfReserves';
@@ -1978,6 +1980,15 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const bisRate = policyRateFor(catItem.iso3, cbpol);
         const lead = cliFor(catItem.iso3, cli?.series);
         const prices = cpiFor(catItem.iso3, cpi?.series);
+        const record: SignalRecord = {};
+        {
+          const pts = areaSeries(catItem.iso3, cli?.series);
+          const r1 = pts && bisRate ? cliTurnToPolicyRecord(cliTurns(pts), bisRate.moves, bisRate.historyFrom, bisRate.date.slice(0, 7)) : null;
+          if (r1) record.cliTurnToPolicy = r1;
+          const code = CFTC_CURRENCY_CODES[catItem.iso3]?.code;
+          const r2 = code ? crowdingUnwindRecord(cftcWeeks.get(code)?.slice(-CFTC_HISTORY_WEEKS)) : null;
+          if (r2) record.crowdingUnwind = r2;
+        }
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
@@ -1986,6 +1997,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
+          ...(Object.keys(record).length ? { signalRecord: record } : {}),
           ...(snap.gdeltPull && (snap.liveFields || {})['gdelt.averageTone'] ? { gdelt: snap.gdeltPull } : {}),
           ...(comtrade?.countries[catItem.iso3] ? { comtrade: { ...comtrade.countries[catItem.iso3].profile, pulledAt: comtrade.countries[catItem.iso3].pulledAt } } : {}),
           ...(imf?.countries[catItem.iso3] ? { imf: { ...imf.countries[catItem.iso3], pulledAt: imf.pulledAt } } : {}),

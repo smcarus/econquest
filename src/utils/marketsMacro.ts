@@ -14,6 +14,7 @@ import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
 import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 import { cliMissing } from './oecdCli';
 import { shockSummary, shockWatch } from './shockWatch';
+import { TURN_WINDOW_MONTHS, UNWIND_PTS, UNWIND_WINDOW_WEEKS, recordText } from './signalRecord';
 import { HOLD_AFTER_MONTHS, cliCycleText, cycleClock, nextDecisionText, policyCycleText } from './cycleClock';
 import { cpiMissing, cpiSource } from './oecdInflation';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
@@ -380,6 +381,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       rows: shockRows(self),
     },
     {
+      title: 'Signal track record',
+      rows: signalRecordRows(self),
+    },
+    {
       title: 'Futures positioning (CFTC, weekly)',
       rows: positioningRows(self, run.iso3),
     },
@@ -600,6 +605,35 @@ export function shockRows(self: LiveWatchlistItem | undefined): BriefRow[] {
   const rows: BriefRow[] = [{ label: 'Summary', value: shockSummary(s), source: 'model, stated rules on the figures below; pressure building, not a forecast', verified: false }];
   for (const w of s.warnings) rows.push({ label: `${w.level === 'alert' ? 'Alert' : 'Watch'}: ${w.label}`, value: w.detail, source: `model rule: ${w.rule}`, verified: false });
   if (s.notChecked.length) rows.push({ label: 'Not checked', value: s.notChecked.join('; '), source: 'missing inputs', verified: false });
+  return rows;
+}
+
+/** How often the timing signals were followed by what they point to, in this country's own history. */
+export function signalRecordRows(self: LiveWatchlistItem | undefined): BriefRow[] {
+  const r = self?.signalRecord;
+  const rows: BriefRow[] = [];
+  const a = r?.cliTurnToPolicy;
+  rows.push(
+    a
+      ? {
+          label: 'Leading-indicator turn, then a policy move',
+          value: recordText(a, `${formatMonth(a.from)} to ${formatMonth(a.to)}`),
+          source: `model: OECD CLI turns against BIS policy moves; a peak counts if a cut follows within ${TURN_WINDOW_MONTHS} months, a trough if a hike does. Cases: ${a.cases.map((c) => `${formatMonth(c.when)} ${c.followed ? 'yes' : 'no'}`).join(', ')}`,
+          verified: false,
+        }
+      : noSourceRow('Leading-indicator turn, then a policy move', 'Needs an OECD leading-indicator turn with 6 months of BIS policy-rate history after it.')
+  );
+  const b = r?.crowdingUnwind;
+  rows.push(
+    b
+      ? {
+          label: 'Crowded positioning, then an unwind',
+          value: recordText(b, `${b.from} to ${b.to}`),
+          source: `model: CFTC leveraged funds entering the top or bottom 10% of the 3-year range (bands set with hindsight), then coming back ${UNWIND_PTS} pts of open interest within ${UNWIND_WINDOW_WEEKS} weeks`,
+          verified: false,
+        }
+      : noSourceRow('Crowded positioning, then an unwind', 'Needs a CFTC currency future with a year or more of weekly reports and at least one crowded episode.')
+  );
   return rows;
 }
 
