@@ -815,6 +815,12 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     assert.equal(o.states.options, 'done');
     assert.equal(o.review.steps.options.content.model, null);
     assert.equal(o.review.steps.options.content.temperature, 0);
+    const ev = await fetch(`${base}/api/reviews/${review.id}/evidence`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(ev.status, 200);
+    const e = await ev.json();
+    assert.equal(e.states.evidence, 'done');
+    assert.equal(e.review.steps.evidence.content.analyses.length, 5);
+    assert.equal(e.review.steps.evidence.content.researchOnly, true);
   } else {
     assert.equal(diag.status, 409);
     assert.match((await diag.json()).error, /saved pull/);

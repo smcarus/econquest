@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
+import type { EvidenceStep } from '../utils/reviewEvidence';
 import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, type PolicyOption, type UserOption } from '../utils/reviewOptions';
 
 /**
@@ -299,6 +300,96 @@ const OwnOptions: React.FC<{ value: UserOption[]; onChange: (v: UserOption[]) =>
   </fieldset>
 );
 
+const EvidenceView: React.FC<{ e: EvidenceStep }> = ({ e }) => (
+  <div className="space-y-3" data-review-evidence="true">
+    <p className={e.researchOnly ? 'text-xs text-amber-700 dark:text-amber-400' : 'text-xs text-emerald-700 dark:text-emerald-400'}>
+      {e.researchOnly
+        ? 'Research only: the signals these options lean on have not all passed a pre-registered backtest (Menu > Models & validation).'
+        : 'Every signal these options lean on has passed its pre-registered backtest. The options themselves are still a judgement, not a forecast.'}
+    </p>
+    <div>
+      <p className="ui-label mb-1">For each option</p>
+      <ul className="space-y-0.5">
+        {e.perOption.map((o) => (
+          <li key={o.rank} className="text-sm text-slate-800 dark:text-slate-200">
+            <span className="font-semibold">
+              {o.rank}. {o.title}:
+            </span>{' '}
+            {o.note}
+          </li>
+        ))}
+      </ul>
+    </div>
+    <details>
+      <summary className="ui-label cursor-pointer">Charts and tests ({e.analyses.filter((a) => a.ran).length} of {e.analyses.length} could run, data to {e.asOf})</summary>
+      <ul className="mt-2 space-y-2">
+        {e.analyses.map((a) => (
+          <li key={a.id} className="border-l-2 border-slate-200 dark:border-slate-700 pl-2" data-review-analysis={a.id}>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">{a.title}</p>
+            {a.tests.map((t) => (
+              <p key={t.test} className="text-sm text-slate-800 dark:text-slate-200">
+                <span className="ui-label">{t.title}:</span> {t.reading}
+                {t.caution ? <span className="block text-xs text-amber-700 dark:text-amber-400">{t.caution}</span> : null}
+              </p>
+            ))}
+            {a.missing.map((m) => (
+              <p key={m} className="text-xs text-amber-700 dark:text-amber-400">
+                {m}
+              </p>
+            ))}
+            {a.inputs.length > 0 && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Used: {a.inputs.map((x) => `${x.label} (${x.source}, ${x.first} to ${x.last}, ${x.n} points)`).join('; ')}
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+    </details>
+    <details>
+      <summary className="ui-label cursor-pointer">Past episodes in this country ({e.episodes.items.length})</summary>
+      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{e.episodes.method}</p>
+      {e.episodes.missing && <p className="text-xs text-amber-700 dark:text-amber-400">Missing: {e.episodes.missing}</p>}
+      {e.episodes.items.length > 0 && (
+        <table className="mt-1 text-sm">
+          <thead>
+            <tr className="text-left ui-label">
+              <th className="pr-3 font-normal">Date</th>
+              <th className="pr-3 font-normal">Move</th>
+              <th className="pr-3 font-normal">Inflation before</th>
+              <th className="pr-3 font-normal">12 months later</th>
+            </tr>
+          </thead>
+          <tbody className="tabular-nums">
+            {e.episodes.items.map((x) => (
+              <tr key={x.date} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="pr-3">{x.date}</td>
+                <td className="pr-3">
+                  {x.action} {x.fromPct}% to {x.toPct}%
+                </td>
+                <td className="pr-3">{x.inflationBefore ? `${x.inflationBefore.pct}% (${x.inflationBefore.month})` : 'Missing'}</td>
+                <td className="pr-3">{x.inflationAfter ? `${x.inflationAfter.pct}% (${x.inflationAfter.month})` : 'Missing'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {e.episodes.source && <p className="text-xs text-slate-500 dark:text-slate-400">Policy rate: {e.episodes.source}</p>}
+    </details>
+    <details>
+      <summary className="ui-label cursor-pointer">Validation status of the signals used ({e.signals.length})</summary>
+      <ul className="mt-1 space-y-0.5">
+        {e.signals.map((x) => (
+          <li key={x.id} className="text-sm text-slate-800 dark:text-slate-200">
+            {x.name}: <span className={x.status === 'passed' ? 'ui-badge ui-badge-positive' : 'ui-badge ui-badge-warning'}>{x.statusLabel}</span>
+            {x.verdict ? <span className="block text-xs text-slate-500 dark:text-slate-400">{x.verdict}</span> : null}
+          </li>
+        ))}
+      </ul>
+    </details>
+  </div>
+);
+
 export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: string }> = ({ countries = [], defaultIso3 = '' }) => {
   const [list, setList] = useState<ReviewSummary[]>([]);
   const [error, setError] = useState('');
@@ -349,6 +440,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const frame = r?.steps.frame?.content as ReviewFrame | undefined;
   const diagnosis = r?.steps.diagnose?.content as Diagnosis | undefined;
   const options = r?.steps.options?.content as OptionsStep | undefined;
+  const evidence = r?.steps.evidence?.content as EvidenceStep | undefined;
   // Start the option editor from what was saved last time.
   useEffect(() => {
     setOwn(options?.userOptions ?? []);
@@ -559,10 +651,35 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               )}
             </section>
 
-            {REVIEW_STEPS.slice(3).map((s, i) => (
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="evidence">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 className="ui-section-title">4. {STEP_LABEL.evidence}</h4>
+                {opened!.states.options === 'done' && (
+                  <button
+                    type="button"
+                    className={evidence && opened!.states.evidence === 'done' ? 'ui-btn' : 'ui-btn ui-btn-primary'}
+                    disabled={Boolean(busy)}
+                    onClick={() => run('evidence', async () => apply(await api(`/api/reviews/${encodeURIComponent(r.id)}/evidence`, { method: 'POST', body: '{}' })))}
+                  >
+                    <Play className="w-3.5 h-3.5" /> {busy === 'evidence' ? 'Running the tests…' : evidence ? 'Run again' : 'Gather evidence'}
+                  </button>
+                )}
+              </div>
+              <p className="ui-label">{STEP_HINT.evidence} Every series is cut at the As of day.</p>
+              {opened!.states.options !== 'done' && <p className="text-xs text-slate-500 dark:text-slate-400">Finish Options first.</p>}
+              {opened!.states.evidence === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">Out of date: an earlier step changed after this was run. Run it again.</p>}
+              {evidence && <EvidenceView e={evidence} />}
+              {r.steps.evidence && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Saved {r.steps.evidence.savedAt.slice(0, 16).replace('T', ' ')} · hash <span className="font-code">{short(r.steps.evidence.hash)}</span>
+                </p>
+              )}
+            </section>
+
+            {REVIEW_STEPS.slice(4).map((s, i) => (
               <section key={s} className="border border-slate-200 dark:border-slate-700 p-3" data-review-step={s}>
                 <h4 className="ui-section-title text-slate-500 dark:text-slate-400">
-                  {i + 4}. {STEP_LABEL[s]}
+                  {i + 5}. {STEP_LABEL[s]}
                 </h4>
                 <p className="ui-label">{STEP_HINT[s]}</p>
               </section>

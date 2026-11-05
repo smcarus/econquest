@@ -51,7 +51,9 @@ import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditS
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { buildDiagnosis, type Diagnosis } from './src/utils/reviewDiagnosis';
+import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from './src/utils/reviewEvidence';
 import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep } from './src/utils/reviewOptions';
+type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from './src/utils/policyReview';
 import { deleteReview, loadReviews, newReview, putReview, reviewFilePath, saveStep, verifyReview } from './src/utils/policyReviewStore';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
@@ -4348,6 +4350,61 @@ async function startServer() {
       kind: 'council',
       summary: `Options for policy review "${out.review.title}"${content.model ? '' : ' (your own, not assessed)'}`,
       detail: { id: r.id, step: 'options', hash: out.review.steps.options?.hash, model: content.model, temperature: 0, promptHash, templateVersion: OPTIONS_TEMPLATE_VERSION, options: content.options.map((o) => o.title), userOptions: userOptions.length, removedSentences: content.removed.length },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Step 4: the evidence pack (charts and tests, past episodes, validation status), all cut at the As of day.
+  app.post('/api/reviews/:id/evidence', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).options !== 'done') return res.status(400).json({ error: 'Options must be done first.' });
+    const options = r.steps.options!.content as OptionsStep;
+    const set = await seriesFor(frame.iso3);
+    const countryName = (await fetchLiveOpenDataSnapshot(frame.iso3, undefined, { cacheOnly: true }).catch(() => null))?.countryName || frame.iso3;
+    const fetchOne = (id: string): FetchedSeriesLike | { reason: string } => {
+      const hit = set.series.find((x) => x.id === id);
+      if (hit) {
+        const cut = cutAt(hit, frame.asOf);
+        return cut.points.length ? cut : { reason: `no points on or before ${frame.asOf}` };
+      }
+      return { reason: set.missing.find((m) => m.id === id)?.reason || 'the app holds no history for it yet' };
+    };
+    const analyses = packRequests({ iso3: frame.iso3, countryName }).map(({ id, informs, req: chart }) => {
+      const fetched = chart.series.map((ref) => {
+        const first = fetchOne(ref.id);
+        return 'reason' in first && ref.fallback ? (() => { const alt = fetchOne(ref.fallback!); return 'reason' in alt ? first : alt; })() : first;
+      });
+      return runAnalysis(id, informs, chart, fetched as any);
+    });
+    const policy = set.series.find((x) => x.id === 'policy_rate');
+    const cpi = set.series.find((x) => x.id === 'cpi_monthly');
+    const items = pastEpisodes(policy && cutAt(policy, frame.asOf), cpi && cutAt(cpi, frame.asOf), frame.asOf);
+    const v = loadValidation(VALIDATION_FILE);
+    const verdicts = Object.fromEntries(Object.entries(v.results).map(([k, x]) => [k, { status: x.status, verdict: x.verdict }]));
+    const signals = signalsFor(options, verdicts);
+    const content: EvidenceStep = {
+      templateVersion: EVIDENCE_TEMPLATE_VERSION,
+      asOf: frame.asOf,
+      analyses,
+      episodes: {
+        items,
+        method: EPISODE_METHOD,
+        ...(policy ? { source: policy.source } : { missing: set.missing.find((m) => m.id === 'policy_rate')?.reason || 'No BIS policy rate history' }),
+        ...(policy && !items.length ? { missing: `no policy-rate move at least a year before ${frame.asOf} in the history the app holds` } : {}),
+      },
+      signals,
+      perOption: perOption(options, analyses, signals),
+      researchOnly: isResearchOnly(signals),
+    };
+    const out = saveStep(r, 'evidence', content);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Evidence for policy review "${out.review.title}"`,
+      detail: { id: r.id, step: 'evidence', hash: out.review.steps.evidence?.hash, asOf: frame.asOf, analyses: analyses.map((a) => ({ id: a.id, tests: a.tests.length, missing: a.missing.length, inputs: a.inputs })), episodes: items.length, signals: signals.map((s) => `${s.id}: ${s.statusLabel}`), researchOnly: content.researchOnly },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
