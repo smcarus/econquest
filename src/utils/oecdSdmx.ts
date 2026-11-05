@@ -11,6 +11,26 @@
  */
 
 export const OECD_HOST = 'sdmx.oecd.org';
+
+/**
+ * Headers for every OECD call. The OECD's site sits behind Cloudflare, which answered requests
+ * that looked like a bare script (no Accept for CSV, a generic user agent) with a "Just a moment"
+ * bot check and HTTP 429 on Sam's Mac (2026-11-05). The app names itself honestly and asks for
+ * the SDMX-CSV it reads.
+ */
+export const OECD_HEADERS: Record<string, string> = {
+  Accept: 'application/vnd.sdmx.data+csv; charset=utf-8',
+  'User-Agent': 'EconQuest/1.0 (sovereign research terminal; +https://github.com/smcarus/econquest)',
+};
+
+/** After a refusal (429 or the bot check), the app leaves the OECD alone this long. */
+export const OECD_PAUSE_MS = 60 * 60 * 1000;
+
+/** True when the reply is Cloudflare's bot check page rather than data. */
+export function isBotCheck(status: number | undefined, text: string | undefined): boolean {
+  const t = (text || '').slice(0, 4000);
+  return (status === 403 || status === 429 || status === 503) && /just a moment|cf-chl|challenge-platform|cf_chl_opt|attention required/i.test(t);
+}
 export const OECD_API = `https://${OECD_HOST}/public/rest/data`;
 
 /** Country codes the OECD uses where they differ from the app's (the EU row is the euro area). */

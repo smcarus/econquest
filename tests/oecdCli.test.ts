@@ -6,7 +6,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { cliFor, cliMissing, cliPhase, cliSentence, cliUrl, parseCli } from '../src/utils/oecdCli.ts';
-import { parseSdmxCsv, splitCsvLine, startPeriod } from '../src/utils/oecdSdmx.ts';
+import { isBotCheck, parseSdmxCsv, splitCsvLine, startPeriod } from '../src/utils/oecdSdmx.ts';
 import { planCouncil, runCouncil } from '../src/utils/askCouncil.ts';
 import { cliRows } from '../src/utils/marketsMacro.ts';
 import { COLUMN_BY_ID } from '../src/utils/watchlistView.ts';
@@ -102,4 +102,11 @@ test('Country tab, watchlist and benchmarks: level with month and pull date, Mis
   assert.equal(col.note!(EGY), 'OECD publishes no CLI');
   const [chn] = benchmarkRows([{ iso3: 'CHN', countryName: 'China', cliPulledAt: pulledAt }], []);
   assert.equal(chn.cliNote, 'OECD leading indicator: Missing (OECD publishes no CLI)');
+});
+
+test('bot check: Cloudflare challenge pages are told apart from a plain refusal', () => {
+  assert.equal(isBotCheck(429, '<title>Just a moment...</title>'), true);
+  assert.equal(isBotCheck(403, '<script src="/cdn-cgi/challenge-platform/h/b"></script>'), true);
+  assert.equal(isBotCheck(429, 'Too many requests'), false);
+  assert.equal(isBotCheck(200, 'Just a moment'), false);
 });

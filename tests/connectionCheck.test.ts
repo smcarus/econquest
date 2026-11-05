@@ -84,7 +84,7 @@ const healthy: FetchFn = async (url) => {
 };
 
 const byId = async (opts: Parameters<typeof checkConnections>[0]) => {
-  const rep = await checkConnections({ now: NOW, ...opts });
+  const rep = await checkConnections({ now: NOW, oecdGapMs: 0, ...opts });
   return { rep, row: (id: string) => rep.results.find((r) => r.id === id)! };
 };
 
@@ -236,4 +236,25 @@ test('network errors in words', () => {
 test('only= limits the check', async () => {
   const { rep } = await byId({ env: {}, fetchFn: healthy, only: ['imf', 'nyfed'] });
   assert.deepEqual(rep.results.map((r) => r.id), ['imf', 'nyfed']);
+});
+
+test('OECD: own headers on every call, and a Cloudflare bot check reads as that, not as a data error', async () => {
+  const seen: Array<{ url: string; headers: Record<string, string> }> = [];
+  const cf: FetchFn = async (url, init) => {
+    seen.push({ url, headers: (init?.headers || {}) as Record<string, string> });
+    if (url.includes('sdmx.oecd.org'))
+      return new Response('<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title></head><body><script src="/cdn-cgi/challenge-platform/x"></script></body></html>', { status: 429 });
+    return healthy(url, init);
+  };
+  const { row } = await byId({ env: {}, fetchFn: cf, only: ['oecd_cli', 'oecd_cpi'] });
+  for (const id of ['oecd_cli', 'oecd_cpi']) {
+    assert.equal(row(id).state, 'refused');
+    assert.match(row(id).detail, /bot check \(a Cloudflare "Just a moment" page, HTTP 429\)/);
+  }
+  const oecd = seen.filter((s) => s.url.includes('sdmx.oecd.org'));
+  assert.equal(oecd.length, 2);
+  for (const s of oecd) {
+    assert.match(s.headers.Accept, /sdmx\.data\+csv/);
+    assert.match(s.headers['User-Agent'], /^EconQuest\//);
+  }
 });

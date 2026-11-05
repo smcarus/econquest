@@ -125,6 +125,12 @@ Notes from the first check on Sam's Mac (2026-11-05):
   Readings per commodity: latest month, change on the month and over 12 months, and the latest
   against its 3-year average. A commodity whose column is not found reads Missing and says so.
   Shown at `GET /api/data/commodities`; the spillover scenarios read it.
+- **OECD and Cloudflare.** On Sam's first check (2026-11-05) both OECD rows came back HTTP 429
+  with a Cloudflare "Just a moment" page, the OECD's bot check, not a data answer. The app now
+  sends an Accept header for SDMX-CSV and a named user agent on every OECD call, makes one OECD
+  call at a time at least 5 seconds apart, never retries the wider query after a refusal, and
+  sends nothing to the OECD for an hour after a 429 or a bot check. The check names a bot check
+  as such.
 - **OECD consumer prices** come from the same API (dataflow `OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL`,
   headline CPI, all items, monthly). The OECD's own y/y rate is used; where only the index is in
   the reply, y/y is worked out from the index 12 months apart and the source says so. Asked once
