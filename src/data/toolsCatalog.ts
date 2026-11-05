@@ -9,9 +9,9 @@
 
 export type ToolTarget =
   | { area: 'today'; anchor: string }
-  | { area: 'country'; tab: 'brief' | 'macro' | 'overview'; brief?: 'economist' | 'banker' | 'official' }
+  | { area: 'country'; tab: 'brief' | 'macro' | 'overview' | 'history'; brief?: 'economist' | 'banker' | 'official'; anchor?: string }
   | { area: 'reports' }
-  | { area: 'portfolio' };
+  | { area: 'portfolio'; anchor?: string };
 
 export interface ReadyTool {
   id: string;
@@ -114,11 +114,46 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'overview' },
   },
   {
+    id: 'history',
+    title: 'History',
+    what: 'A chart of every figure the app has kept for the open country, built from its saved weekly pulls, with the source and period of each point.',
+    sources: 'Saved pulls (data/archive), BIS policy rates, monthly inflation, OECD leading indicator',
+    target: { area: 'country', tab: 'history', anchor: 'tool-history' },
+  },
+  {
+    id: 'as_of',
+    title: 'As of a past day',
+    what: 'The figures the app held on a past day beside today\'s, each with its own source and period, downloadable as CSV or Excel.',
+    sources: 'Saved pulls (data/archive)',
+    target: { area: 'country', tab: 'history', anchor: 'tool-as-of' },
+  },
+  {
+    id: 'decision_replay',
+    title: 'Replicate a rate decision',
+    what: 'Pick one of the central bank\'s moves, or any date: the data the week before, what a simple Taylor rule pointed to, and what the bank did.',
+    sources: 'BIS policy rates, monthly inflation, central bank targets, IMF output gap',
+    target: { area: 'country', tab: 'history', anchor: 'tool-decision-replay' },
+  },
+  {
+    id: 'track_record',
+    title: 'Track record',
+    what: 'The rule call the app made on each saved pull and what the central bank did in the 90 days after. No odds, no hindsight on the inputs.',
+    sources: 'Saved pulls, BIS policy rates',
+    target: { area: 'country', tab: 'history', anchor: 'tool-track-record' },
+  },
+  {
     id: 'book',
     title: 'Book and client briefs',
     what: 'Concentration, where the risk sits and dates to watch across your holdings, or your watchlist at equal weight.',
     sources: 'Your holdings file, live risk scores, your CDS file, official yields',
     target: { area: 'portfolio' },
+  },
+  {
+    id: 'holdings_signals',
+    title: 'Signals on your holdings',
+    what: 'Each imported holding beside the signals that bear on it (Taylor rule, cycle, 10Y moves, shock alerts), marked as leaning with or against the position.',
+    sources: 'Your holdings file, BIS policy rates, OECD leading indicator, official 10Y yields',
+    target: { area: 'portfolio', anchor: 'tool-holdings-signals' },
   },
   {
     id: 'reports',
@@ -181,7 +216,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
       { id: 'quant_alpha_correlation', label: 'Correlation matrix', needs: 'Daily price history across countries.' },
       { id: 'persona_strategy_backtester_lab', label: 'Strategy backtester', needs: 'Historical price series.' },
       { id: 'decision_premortem_killswitch', label: 'Pre-mortem and stop levels', needs: 'Staged trades priced off live markets.' },
-      { id: 'decision_ledger_brier', label: 'Decision record', needs: 'Covered by Track record under Country Research > History: the rule call on each saved pull and what the bank did 90 days later.' },
+      { id: 'decision_ledger_brier', label: 'Decision record', needs: 'Covered by Track record under Country Research > History: the rule call on each saved pull and what the bank did 90 days later.', coveredBy: 'track_record' },
     ],
   },
   {

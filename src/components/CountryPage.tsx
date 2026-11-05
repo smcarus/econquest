@@ -386,13 +386,17 @@ export const CountryPage: React.FC<{
 
       {tab.id === 'history' && (
         <div className="space-y-3">
+          <div id="tool-history" className="scroll-mt-4" />
           <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
+          <div id="tool-as-of" className="scroll-mt-4" />
           <PanelBoundary name="As of a past day">
             <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
           </PanelBoundary>
+          <div id="tool-decision-replay" className="scroll-mt-4" />
           <PanelBoundary name="Replicate a rate decision">
             <DecisionReplayPanel key={`replay-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
           </PanelBoundary>
+          <div id="tool-track-record" className="scroll-mt-4" />
           <PanelBoundary name="Track record">
             <TrackRecordPanel key={`track-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
           </PanelBoundary>
