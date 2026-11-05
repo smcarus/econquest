@@ -162,6 +162,8 @@ export const CountryPage: React.FC<{
   onSync: () => void;
   isSyncing: boolean;
   onCompare: () => void;
+  /** Opens the Compare page (the watchlist side by side). */
+  onOpenCompare?: () => void;
   onOpenTickets: () => void;
   ticketCount: number;
   renderDesk: (deskId: string) => React.ReactNode;
@@ -181,6 +183,7 @@ export const CountryPage: React.FC<{
   onSync,
   isSyncing,
   onCompare,
+  onOpenCompare,
   onOpenTickets,
   ticketCount,
   renderDesk,
@@ -402,7 +405,7 @@ export const CountryPage: React.FC<{
           </PanelBoundary>
         </div>
       )}
-      {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} />}
+      {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} onOpenCompare={onOpenCompare} />}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 
       {/* Desk picker for this tab */}

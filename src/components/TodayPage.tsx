@@ -110,7 +110,13 @@ export const TodayPage: React.FC<{
   aiProvider?: string;
   /** A first-run guide button was pressed. */
   onFirstRunAction?: (id: FirstRunStepId) => void;
+  /** Workspace (daily start) or Compare (the watchlist side by side). Same data, different panels. */
+  section?: 'workspace' | 'compare';
+  /** Opens the Compare page. */
+  onOpenCompare?: () => void;
 }> = ({
+  section = 'workspace',
+  onOpenCompare,
   run,
   watchlistName,
   watchlistId,
@@ -130,10 +136,13 @@ export const TodayPage: React.FC<{
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
   const edgeAnchors = useMarketEdgeAnchors();
   const edgeItems = useMemo(() => marketEdgePeers(watchlistItems, edgeAnchors?.peers || []), [watchlistItems, edgeAnchors]);
+  const isCompare = section === 'compare';
   useEffect(() => {
+    // Only Workspace counts as a visit, so opening Compare does not reset "since your last visit".
+    if (isCompare) return;
     const t = window.setTimeout(() => saveVisit(watchlistItems), 5000);
     return () => window.clearTimeout(t);
-  }, [watchlistItems]);
+  }, [watchlistItems, isCompare]);
 
   // Columns and sort, shared with the pop-out window through this browser's storage.
   const [view, setView] = useState<WatchlistView>(() => loadView());
@@ -185,9 +194,11 @@ export const TodayPage: React.FC<{
     <div className="space-y-4" data-no-stat-ref="true">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Workspace</h1>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{isCompare ? 'Compare' : 'Workspace'}</h1>
           <p className="text-sm text-slate-500 dark:text-slate-400">
-            {today} · {watchlistName} · {watchlistItems.length} countries
+            {isCompare
+              ? `${watchlistName} side by side: where data and price disagree, market pricing, growth and inflation, scenarios and a table to download.`
+              : `${today} · ${watchlistName} · ${watchlistItems.length} countries`}
           </p>
         </div>
         <p
@@ -204,6 +215,8 @@ export const TodayPage: React.FC<{
         </p>
       </div>
 
+      {!isCompare && (
+      <>
       {onFirstRunAction && (
         <PanelBoundary name="Getting started">
           <FirstRunGuide liveCount={liveCount} aiProvider={aiProvider} onAction={onFirstRunAction} />
@@ -274,45 +287,16 @@ export const TodayPage: React.FC<{
         </PanelBoundary>
       </div>
 
-      <div id="tool-divergences" className="scroll-mt-4">
-        <PanelBoundary name="Where data and price disagree">
-        <DivergenceList
-          items={edgeItems}
-          lastLook={lastVisit?.rows}
-          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-        />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-marketedge" className="scroll-mt-4">
-        <PanelBoundary name="MarketEdge">
-        <MarketEdgeScreen
-          watchlist={watchlistItems}
-          anchors={edgeAnchors}
-          highlightIso3={run.iso3}
-          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-          intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
-        />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-scenarios" className="scroll-mt-4">
-        <PanelBoundary name="Scenarios">
-          <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-panel" className="scroll-mt-4">
-        <PanelBoundary name="Compare countries">
-          <PanelBuilder countries={watchlistItems.map((w) => ({ iso3: w.iso3, countryName: w.countryName }))} />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-regime" className="scroll-mt-4">
-        <PanelBoundary name="Growth and inflation">
-          <RegimeQuadrant items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
-        </PanelBoundary>
-      </div>
+      {onOpenCompare && (
+        <div className="ui-panel px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+          <p className="ui-body">
+            <span className="font-semibold">Compare your watchlist:</span> where data and price disagree, MarketEdge, growth and inflation, scenarios and the download table.
+          </p>
+          <button type="button" className="ui-btn" onClick={onOpenCompare}>
+            Open Compare
+          </button>
+        </div>
+      )}
 
       <div id="tool-calendar" className={`scroll-mt-4 ${coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}`}>
 
@@ -458,6 +442,53 @@ export const TodayPage: React.FC<{
           </ul>
         )}
       </Card>
+      )}
+      </>
+      )}
+
+      {isCompare && (
+      <>
+      <div id="tool-divergences" className="scroll-mt-4">
+        <PanelBoundary name="Where data and price disagree">
+        <DivergenceList
+          items={edgeItems}
+          lastLook={lastVisit?.rows}
+          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+        />
+        </PanelBoundary>
+      </div>
+
+      <div id="tool-marketedge" className="scroll-mt-4">
+        <PanelBoundary name="MarketEdge">
+        <MarketEdgeScreen
+          watchlist={watchlistItems}
+          anchors={edgeAnchors}
+          highlightIso3={run.iso3}
+          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+          intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
+        />
+        </PanelBoundary>
+      </div>
+
+      <div id="tool-regime" className="scroll-mt-4">
+        <PanelBoundary name="Growth and inflation">
+          <RegimeQuadrant items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        </PanelBoundary>
+      </div>
+
+      <div id="tool-scenarios" className="scroll-mt-4">
+        <PanelBoundary name="Scenarios">
+          <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+        </PanelBoundary>
+      </div>
+
+      <div id="tool-panel" className="scroll-mt-4">
+        <PanelBoundary name="Compare countries">
+          <PanelBuilder countries={watchlistItems.map((w) => ({ iso3: w.iso3, countryName: w.countryName }))} />
+        </PanelBoundary>
+      </div>
+
+      </>
       )}
     </div>
   );
