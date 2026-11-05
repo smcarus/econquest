@@ -13,6 +13,7 @@ import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, wit
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, buildCommodityReply, eiaSpotUrl, findPinkSheetUrl, parseEiaSpot, parsePinkSheet, type CommodityReply, type PriceSeries } from './src/utils/commodityPrices';
 import { readXlsxSheet } from './src/utils/xlsxRead';
+import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
@@ -803,6 +804,96 @@ async function fetchCpiPull(): Promise<CpiPull | null> {
     cpiInFlight = null;
   });
   return cpiInFlight;
+}
+
+/**
+ * UN Comtrade partners and export mix (src/utils/comtradeTrade.ts). Annual, so each country is
+ * pulled once every 30 days (6 hours after a miss) and saved to data/live/comtrade.json with its
+ * pull date. Two requests per country, sent one at a time with a gap, because the free preview
+ * allows few requests; COMTRADE_API_KEY (free) switches to the keyed route.
+ */
+type ComtradeEntry = { pulledAt: string; profile: ComtradeProfile };
+type ComtradeFile = { countries: Record<string, ComtradeEntry> };
+let comtradeMemory: { file: ComtradeFile; triedAt: Record<string, number> } | null = null;
+let comtradeInFlight: Promise<ComtradeFile> | null = null;
+function comtradeFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'comtrade.json');
+}
+const COMTRADE_GAP_MS = 1500;
+async function comtradeGet(url: string, key: string): Promise<ComtradeRow[] | null> {
+  try {
+    const res = await fetch(url, { headers: key ? { 'Ocp-Apim-Subscription-Key': key } : {}, signal: AbortSignal.timeout(20000) });
+    if (!res.ok) {
+      console.warn(`[Comtrade] refused (HTTP ${res.status})`);
+      return null;
+    }
+    return parseComtrade(await res.json());
+  } catch (e) {
+    console.warn(`[Comtrade] ${describeNetworkError(e, 20000)}`);
+    return null;
+  }
+}
+async function pullComtradeCountry(iso3: string, key: string): Promise<ComtradeProfile | null> {
+  const reporter = COMTRADE_REPORTERS[iso3];
+  if (!reporter) return null;
+  const pause = () => new Promise((r) => setTimeout(r, COMTRADE_GAP_MS));
+  for (const year of comtradeYears()) {
+    const partners = await comtradeGet(comtradeUrl(reporter, year, 'partners', !!key), key);
+    await pause();
+    if (partners === null) return null; // refused or no answer: stop, try again later
+    if (!partners.length) continue; // not reported that year yet
+    const products = (await comtradeGet(comtradeUrl(reporter, year, 'products', !!key), key)) || [];
+    await pause();
+    return buildProfile(iso3, partners, products);
+  }
+  return null;
+}
+async function fetchComtrade(): Promise<ComtradeFile> {
+  if (!comtradeMemory) {
+    let file: ComtradeFile = { countries: {} };
+    try {
+      const f = JSON.parse(fs.readFileSync(comtradeFile(), 'utf8')) as ComtradeFile;
+      if (f?.countries && typeof f.countries === 'object') file = f;
+    } catch {
+      // never pulled
+    }
+    comtradeMemory = { file, triedAt: {} };
+  }
+  const mem = comtradeMemory;
+  const day = 24 * 60 * 60 * 1000;
+  const due = SOVEREIGN_CATALOG.map((c) => c.iso3).filter((iso) => {
+    if (!COMTRADE_REPORTERS[iso]) return false;
+    const e = mem.file.countries[iso];
+    const fresh = e && Date.now() - Date.parse(e.pulledAt) < 30 * day;
+    const triedRecently = Date.now() - (mem.triedAt[iso] || 0) < day / 4;
+    return !fresh && !triedRecently;
+  });
+  if (!due.length) return mem.file;
+  if (comtradeInFlight) return comtradeInFlight;
+  const key = (process.env.COMTRADE_API_KEY || '').trim();
+  comtradeInFlight = (async () => {
+    let changed = false;
+    for (const iso of due) {
+      mem.triedAt[iso] = Date.now();
+      const profile = await pullComtradeCountry(iso, key);
+      if (profile) {
+        mem.file.countries[iso] = { pulledAt: new Date().toISOString(), profile };
+        changed = true;
+      }
+    }
+    if (changed) {
+      try {
+        fs.mkdirSync(path.dirname(comtradeFile()), { recursive: true });
+        fs.writeFileSync(comtradeFile(), JSON.stringify(mem.file));
+      } catch {
+        // keep the memory copy
+      }
+    }
+    return mem.file;
+  })().finally(() => {
+    comtradeInFlight = null;
+  });
+  return comtradeInFlight;
 }
 
 /**
@@ -1744,7 +1835,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, imf, cofer] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, comtrade, imf, cofer] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -1753,6 +1844,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     cbpolPullQuick(),
     Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    // Comtrade pulls one country at a time; the watchlist shows what is saved and the pull fills in later.
+    Promise.race([fetchComtrade(), new Promise<ComtradeFile | null>((resolve) => setTimeout(() => resolve(comtradeMemory?.file ?? null), 3000))]),
     // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
     Promise.race([fetchImfPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchCoferPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
@@ -1798,6 +1891,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
+          ...(comtrade?.countries[catItem.iso3] ? { comtrade: { ...comtrade.countries[catItem.iso3].profile, pulledAt: comtrade.countries[catItem.iso3].pulledAt } } : {}),
           ...(imf?.countries[catItem.iso3] ? { imf: { ...imf.countries[catItem.iso3], pulledAt: imf.pulledAt } } : {}),
           ...(cofer ? { cofer: { ...cofer.cofer, pulledAt: cofer.pulledAt } } : {}),
           ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
@@ -2905,6 +2999,26 @@ async function startServer() {
       res.json({ ...(await fetchCommodities()), fetchedAt: new Date().toISOString() });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Commodity prices failed' });
+    }
+  });
+
+  // 1d. UN Comtrade trade partners and export mix, per country, each with its year.
+  app.get('/api/data/trade-partners', async (_req, res) => {
+    try {
+      const file = await Promise.race([fetchComtrade(), new Promise<ComtradeFile | null>((resolve) => setTimeout(() => resolve(comtradeMemory?.file ?? null), 3000))]);
+      const keyed = !!(process.env.COMTRADE_API_KEY || '').trim();
+      res.json({
+        source: keyed ? 'UN Comtrade (your free key)' : 'UN Comtrade (public preview)',
+        countries: SOVEREIGN_CATALOG.map((c) => {
+          const e = file?.countries[c.iso3];
+          return e
+            ? { countryName: c.countryName, pulledAt: e.pulledAt, ...e.profile }
+            : { iso3: c.iso3, countryName: c.countryName, missing: comtradeMissing(c.iso3, keyed) };
+        }),
+        fetchedAt: new Date().toISOString(),
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Trade partners failed' });
     }
   });
 

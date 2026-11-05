@@ -17,6 +17,7 @@ import { cpiMissing, cpiSource } from './oecdInflation';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
+import { HS_CHAPTERS, PARTNER_GROUP_LABEL, comtradeMissing, type PartnerGroup } from './comtradeTrade';
 
 /**
  * Central bank inflation targets. "checked" = read on the central bank's own page on 2026-11-04.
@@ -291,6 +292,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       rows: ticRows(self, run.iso3),
     },
     {
+      title: 'Trade partners (UN Comtrade, annual)',
+      rows: comtradeRows(self, run.iso3),
+    },
+    {
       title: `${EDGE_AGENTS.fx} Agent`,
       rows: [
         self?.cftc?.percentile !== undefined
@@ -347,6 +352,47 @@ export function positioningRows(self: LiveWatchlistItem | undefined, iso3: strin
 }
 
 /** TIC rows for the Country tab: official figures with the month-end and the date the app pulled them. */
+/** UN Comtrade: exposure to the scenario counterparties, top partners and the export mix. */
+export function comtradeRows(self: LiveWatchlistItem | undefined, iso3: string): BriefRow[] {
+  const c = self?.comtrade;
+  if (!c) {
+    const why = comtradeMissing(iso3, false);
+    return [missingRow('Exports to China, Taiwan, Russia, the Gulf', { kind: 'unreachable', short: why.short, help: why.help })];
+  }
+  const src = `official, UN Comtrade ${c.year} (pulled ${c.pulledAt.slice(0, 10)})`;
+  const groups: PartnerGroup[] = ['china', 'taiwan', 'russia', 'gulf'];
+  const label = (g: PartnerGroup) => (g === 'gulf' ? 'the Gulf producers' : PARTNER_GROUP_LABEL[g]);
+  const rows: BriefRow[] = [
+    { label: 'Goods exports / imports', value: `$${c.exportsUsdBn.toFixed(1)}bn / $${c.importsUsdBn.toFixed(1)}bn`, source: src, verified: true },
+  ];
+  for (const g of groups) {
+    const x = c.exportSharePct[g];
+    const m = c.importSharePct[g];
+    if (x === undefined && m === undefined) continue;
+    rows.push({
+      label: `Trade with ${label(g)}`,
+      value: `${x !== undefined ? `${x.toFixed(1)}% of exports` : 'exports not listed'}, ${m !== undefined ? `${m.toFixed(1)}% of imports` : 'imports not listed'}`,
+      source: src,
+      verified: true,
+    });
+  }
+  if (c.topExportPartners.length)
+    rows.push({ label: 'Top export markets', value: c.topExportPartners.slice(0, 3).map((p) => `${p.name} ${p.sharePct.toFixed(0)}%`).join(', '), source: src, verified: true });
+  if (c.topImportPartners.length)
+    rows.push({ label: 'Top import sources', value: c.topImportPartners.slice(0, 3).map((p) => `${p.name} ${p.sharePct.toFixed(0)}%`).join(', '), source: src, verified: true });
+  if (c.exportMixPct && c.productYear) {
+    const top = Object.entries(c.exportMixPct)
+      .filter(([, v]) => v >= 1)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 4)
+      .map(([ch, v]) => `${HS_CHAPTERS[ch]?.name ?? `HS ${ch}`} ${v.toFixed(0)}%`);
+    if (top.length) rows.push({ label: 'Commodity share of exports', value: top.join(', '), source: `official, UN Comtrade ${c.productYear} by HS chapter (pulled ${c.pulledAt.slice(0, 10)})`, verified: true });
+  }
+  if (c.fuelImportSharePct !== undefined && c.productYear)
+    rows.push({ label: 'Fuels share of imports', value: `${c.fuelImportSharePct.toFixed(1)}%`, source: `official, UN Comtrade ${c.productYear}, HS 27 (pulled ${c.pulledAt.slice(0, 10)})`, verified: true });
+  return rows;
+}
+
 export function ticRows(self: LiveWatchlistItem | undefined, iso3: string): BriefRow[] {
   const t = self?.tic;
   if (!t) return [noSourceRow('Holdings of US Treasuries', ticMissing(iso3).help)];

@@ -37,6 +37,7 @@ import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, p
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
+import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
 
 export type ConnectionState =
   /** Answered, and the answer was read. */
@@ -239,6 +240,7 @@ export const SOURCE_IDS = [
   'pink_sheet',
   'oecd_cli',
   'oecd_cpi',
+  'comtrade',
   'fred_csv',
   'fred_api',
   'tesouro',
@@ -639,6 +641,44 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       'The OECD answered, but not with a monthly headline CPI series the app reads. The dataset layout may have changed.'
     )
   );
+
+  add('comtrade', async () => {
+    const key = (env.COMTRADE_API_KEY || '').trim();
+    const def: Def = {
+      id: 'comtrade',
+      name: key ? 'UN Comtrade (your free key)' : 'UN Comtrade (public preview)',
+      group: 'free',
+      feeds: 'Trade partners (China, Taiwan, Russia, Gulf) and export mix by HS chapter (spillover scenarios)',
+      setup: 'Nothing needed: the public preview answers without a key but allows few requests. For higher limits, COMTRADE_API_KEY="..." (free: comtradeplus.un.org > My Comtrade > My API portal).',
+    };
+    const reporter = COMTRADE_REPORTERS[SAMPLE_ISO3];
+    // The year two back is usually reported; if not, the year before.
+    let last: ConnectionResult | null = null;
+    for (const yr of comtradeYears(now)) {
+      const res = await httpCheck(
+        def,
+        fetchFn,
+        comtradeUrl(reporter, yr, 'partners', !!key),
+        Math.max(T, 20000),
+        (r) => {
+          const p = buildProfile(SAMPLE_ISO3, parseComtrade(parseJson(r.text)));
+          return p ? `${SAMPLE_NAME}: ${partnerSentence(p).replace(/\.$/, '')}` : null;
+        },
+        key ? { headers: { 'Ocp-Apim-Subscription-Key': key } } : undefined,
+        `Comtrade answered, but with no ${SAMPLE_NAME} trade totals for ${yr} the app could read.`
+      );
+      last = res;
+      if (res.state !== 'bad_reply') break;
+    }
+    const res = last!;
+    if (key && res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
+      return { ...res, state: 'needs_setup', detail: `Comtrade did not accept the key in COMTRADE_API_KEY (HTTP ${res.httpStatus}). Remove it to use the public preview.` };
+    }
+    if (!key && res.state === 'refused' && res.httpStatus === 429) {
+      return { ...res, detail: `${res.detail} The public preview allows few requests; a free key in COMTRADE_API_KEY gives more.` };
+    }
+    return { ...res, detail: key ? res.detail.split(key).join('***') : res.detail };
+  });
 
   add('fred_csv', () =>
     httpCheck(

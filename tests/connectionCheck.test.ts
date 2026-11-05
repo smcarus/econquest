@@ -62,6 +62,19 @@ const healthy: FetchFn = async (url) => {
     return url.includes('api_key=good-eia')
       ? json({ response: { data: [{ period: '2026-11-03', series: 'RBRTE', value: '64.10' }, { period: '2026-10-03', series: 'RBRTE', value: '62.00' }] } })
       : json({ error: { code: 'API_KEY_INVALID', message: 'bad key' } }, 403);
+  if (url.includes('comtradeapi.un.org')) {
+    if (url.includes('/data/v1/get/') ) return json({ statusCode: 401, message: 'Access denied due to invalid subscription key.' }, 401);
+    if (!url.includes('period=2024')) return json({ data: [] });
+    return json({
+      count: 4,
+      data: [
+        { period: '2024', reporterCode: 76, flowCode: 'X', partnerCode: 0, partnerDesc: 'World', cmdCode: 'TOTAL', partner2Code: 0, customsCode: 'C00', motCode: 0, primaryValue: 337e9 },
+        { period: '2024', reporterCode: 76, flowCode: 'X', partnerCode: 156, partnerDesc: 'China', cmdCode: 'TOTAL', partner2Code: 0, customsCode: 'C00', motCode: 0, primaryValue: 94.4e9 },
+        { period: '2024', reporterCode: 76, flowCode: 'M', partnerCode: 0, partnerDesc: 'World', cmdCode: 'TOTAL', partner2Code: 0, customsCode: 'C00', motCode: 0, primaryValue: 262e9 },
+        { period: '2024', reporterCode: 76, flowCode: 'M', partnerCode: 643, partnerDesc: 'Russian Federation', cmdCode: 'TOTAL', partner2Code: 0, customsCode: 'C00', motCode: 0, primaryValue: 10.5e9 },
+      ],
+    });
+  }
   if (url.includes('fredgraph.csv')) return new Response('observation_date,IRLTLT01USM156N\n2026-08-01,4.21\n2026-09-01,4.12\n');
   if (url.includes('api.stlouisfed.org')) return json({ error_code: 400, error_message: 'Bad Request. The value for variable api_key is not registered.' }, 400);
   if (url.includes('tesourotransparente')) return new Response('Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha\nTesouro Prefixado com Juros Semestrais;01/01/2037;30/10/2026;15,23\n');
@@ -98,6 +111,15 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.equal(row('pink_sheet').state, 'connected');
   assert.match(row('pink_sheet').sample!, /Brent crude \$105\/bbl \(2026-10\), \+1\.0% on the month/);
   assert.equal(row('pink_sheet').host, 'thedocs.worldbank.org');
+});
+
+test('Comtrade: the preview reads Brazil with no key; a rejected key needs setup and is never shown', async () => {
+  const { row } = await byId({ env: {}, fetchFn: healthy });
+  assert.equal(row('comtrade').state, 'connected');
+  assert.match(row('comtrade').sample!, /Brazil: Exports \$337\.0bn: China 28\.0%, Taiwan 0\.0%, Russia 0\.0%, Gulf 0\.0% of the total \(UN Comtrade 2024\)/);
+  const bad = await byId({ env: { COMTRADE_API_KEY: 'secret-ct-777' }, fetchFn: healthy });
+  assert.equal(bad.row('comtrade').state, 'needs_setup');
+  assert.doesNotMatch(JSON.stringify(bad.rep), /secret-ct-777/);
 });
 
 test('Pink Sheet: a page without the link, or a workbook in another layout, says what to do', async () => {
