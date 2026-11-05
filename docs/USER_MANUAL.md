@@ -68,8 +68,9 @@ full council and saved research.
   changing your watchlist.
 - *Agents*: chosen from the question's topic (or by the AI model, if set up). Each answers with
   figures and their sources: Central Bank (policy rate, stance, cycle), Fiscal & Debt (debt path,
-  stabilising primary balance, reserves against debt due), Politics & Events (GDELT tone, World Bank
-  stability rank, Polymarket odds), Relative Value (cheap or rich against peers), FX (real exchange
+  stabilising primary balance, reserves against debt due), Politics & Events (GDELT tone, weekly
+  event counts and economic news themes from the GDELT raw files, World Bank stability rank,
+  Polymarket odds), Relative Value (cheap or rich against peers), FX (real exchange
   rate against its history), Global Spillover (Hormuz, Taiwan, Russia, commodity prices), Calendar
   (dates in the next 60 days) and Timing (catalysts, cycle clock, positioning, tone shifts; dates,
   never probabilities).
@@ -291,7 +292,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 One pass over every free feed for every country the app covers: the world feeds once (BIS policy
 rates, OECD leading indicators and inflation, national inflation, CFTC, TIC, IMF reserves and COFER,
 commodity prices, UN Comtrade), then for each country its latest figures from every feed and the full
-World Bank and IMF history. Everything is saved under `data/` (live, history, archive), so pages,
+World Bank and IMF history, and last the GDELT raw files (see *GDELT events and news themes* below). Everything is saved under `data/` (live, history, archive), so pages,
 charts and the History tab then load from disk and keep working without a connection. Screens still
 show only the newest value; the full runs are behind History & data and the downloads.
 
@@ -320,6 +321,38 @@ in `.env` changes it) is recorded as not saved and the run moves on. GDELT allow
 run does not wait out its 15-minute pause; GDELT news tone fills in on a later hourly refresh. A feed that fails leaves its figures Missing with
 the reason; nothing is filled in.
 
+### GDELT events and news themes (raw files)
+
+GDELT publishes its data as files every 15 minutes, free to download. The app reads two tables:
+
+- **Events**: who did what to whom, coded by type (protest, sanction, assault and so on), with an
+  intensity score (Goldstein: -10 most conflictual, +10 most cooperative) and a place. An event
+  counts for a country when it happens there or the country is one of the two actors.
+- **Global Knowledge Graph (GKG)**: one row per news article, with its themes, the places, people and
+  organisations it names, and its tone. An article counts for a country when it names a place
+  there. Themes are grouped: inflation and prices, central bank and interest rates, debt and default,
+  currency and reserves, taxes and spending, IMF and other lenders, markets, jobs, trade, sanctions,
+  protests.
+
+Where it shows: Research > one country > Markets & signals > *News and events* (the latest complete
+week against the weeks before, theme shares, the most-named people and organisations, and a
+week-by-week table), the Politics & Events Agent, and the figures sent to the full council. Before
+the files are pulled, all three say Missing.
+
+How it is pulled: the last step of *Download all country data*, or from a terminal:
+
+```bash
+npm run gdelt:pull -- --estimate   # files left and download size, downloads nothing
+npm run gdelt:pull                 # pull (Ctrl+C stops; the next run carries on)
+```
+
+The first pull covers `GDELT_RAW_WEEKS` weeks (default 8: about 5,400 events files and 450 GKG
+files, roughly 3.4 GB to download). Each file is read and then thrown away; only a small summary per
+day is kept in `data/live/gdelt-raw/`. GKG files are large, so one every `GDELT_GKG_EVERY_HOURS`
+hours is read (default 3); theme figures are then shares of the articles read, and the panel says
+so. After the first pull the app tops it up once a week by itself (only the new files). Run either
+the app's download or the terminal pull, not both at once.
+
 ---
 
 ## 6. When something looks wrong
@@ -329,7 +362,8 @@ the reason; nothing is filled in.
 - **One panel shows "could not be drawn".** The rest of the app still works. Press Try again; if it
   keeps failing, the error text under it helps find the cause.
 - **GDELT says it is paused.** GDELT allows few requests; after a refusal the app waits 15 minutes.
-  Its figures are pulled weekly and show their pull date.
+  Its figures are pulled weekly and show their pull date. The raw-file pull (events and news themes)
+  is not limited this way; if it stops part way, run it again and it carries on.
 - **"This app only answers on localhost".** You opened it by a name other than localhost or
   127.0.0.1. Use `http://localhost:<port>`, or list the name in `ALLOWED_HOSTS` in `.env` if you
   opened the app to your network on purpose.

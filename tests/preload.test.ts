@@ -9,6 +9,7 @@ import {
   EMPTY_PRELOAD_STATE,
   PRELOAD_FRESH_MS,
   WORLD_STEPS,
+  LAST_STEPS,
   estimateRemainingBytes,
   formatBytes,
   planPreload,
@@ -23,8 +24,9 @@ const ago = (ms: number) => new Date(NOW - ms).toISOString();
 
 test('plan: world feeds once, then two steps per country; bad and repeated codes dropped', () => {
   const plan = planPreload([{ iso3: 'BRA', countryName: 'Brazil' }, { iso3: 'bra' }, { iso3: 'TUR' }, { iso3: 'X1' }]);
-  assert.equal(plan.length, WORLD_STEPS.length + 4);
-  assert.deepEqual(plan.slice(-4).map((s) => s.id), ['country:BRA:snapshot', 'country:BRA:history', 'country:TUR:snapshot', 'country:TUR:history']);
+  assert.equal(plan.length, WORLD_STEPS.length + 4 + LAST_STEPS.length);
+  assert.deepEqual(plan.slice(WORLD_STEPS.length, WORLD_STEPS.length + 4).map((s) => s.id), ['country:BRA:snapshot', 'country:BRA:history', 'country:TUR:snapshot', 'country:TUR:history']);
+  assert.equal(plan.at(-1)?.id, 'world:gdelt_raw', 'the long GDELT raw-file pull goes last');
   assert.match(plan[WORLD_STEPS.length].label, /^Brazil \(BRA\)/);
 });
 
@@ -127,7 +129,7 @@ test('npm run preload: runs offline against fixtures, saves progress, and a seco
   try {
     const first = run();
     assert.equal(first.status, 0, first.stderr.slice(-2000));
-    assert.match(first.stdout, /\[preload\] finished: \d+ of 12 steps saved/);
+    assert.match(first.stdout, /\[preload\] finished: \d+ of 13 steps saved/);
     assert.match(first.stdout, /needs setup UN Comtrade trade partners \(add a UN Comtrade key/);
     assert.ok(existsSync(path.join(dataDir, 'history', 'MEX.json')));
     const state = JSON.parse(readFileSync(path.join(dataDir, 'local', 'preload.json'), 'utf8'));
