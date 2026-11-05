@@ -69,6 +69,11 @@ peers. Sort by *Cheap to rich* or *Moving most*. Without a CDS file, cheap or ri
 sanctions, and the last 12 months of commodity prices, from UN Comtrade trade shares, World Bank
 Pink Sheet and EIA prices.
 
+**Compare countries.** Tick countries and figures, then *Build table*. *Latest values* gives one cell per
+country and figure, with its period underneath; hover for the source, or for the reason when it reads
+Missing. *Full history* counts every observation; *Download CSV* saves either view, with unit, period,
+source and the reason for every missing cell, ready for Excel, R or Stata.
+
 **Next two weeks.** Official rate decisions, CPI releases, elections, budget deadlines and IMF
 reviews, each linked to its source.
 
