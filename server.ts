@@ -35,6 +35,7 @@ import { pullCofer, type CoferReading } from './src/utils/imfCofer';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
+import { describeFailures, localStepTimeoutMs, type ModelAttempt } from './src/utils/modelFailure';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
@@ -3004,8 +3005,11 @@ async function executeResilientLlmStep<T>(options: {
   schemaVerified: boolean;
   usedFallback: boolean;
   providerUsed: string;
+  /** When usedFallback: why no model answered, in plain words (utils/modelFailure.ts). */
+  failure?: string;
 }> {
   const startMs = Date.now();
+  const attempts: ModelAttempt[] = [];
   const maxRetries = options.maxRetries ?? 2;
   let retriesUsed = 0;
 
@@ -3040,12 +3044,7 @@ async function executeResilientLlmStep<T>(options: {
 
     const customTimeoutSec =
       options.runtimeConfig.timeoutSeconds || serverGuiRuntimeConfig.timeoutSeconds;
-    const stepTimeoutMs =
-      typeof customTimeoutSec === 'number' && customTimeoutSec >= 5 && customTimeoutSec <= 180
-        ? Math.round(customTimeoutSec * 1000)
-        : isDeepCouncilStep
-        ? 25000
-        : 16000;
+    const stepTimeoutMs = localStepTimeoutMs(options.stepName, customTimeoutSec, isDeepCouncilStep);
 
     // Build candidate endpoints so Docker containers automatically resolve host.docker.internal or bundled ollama service
     const candidateUrls = [configuredBaseUrl];
@@ -3061,6 +3060,7 @@ async function executeResilientLlmStep<T>(options: {
     }
 
     for (const candidateUrl of candidateUrls) {
+      const where = isOllama ? `Ollama ${modelName} at ${candidateUrl}` : `${modelName} at ${candidateUrl}`;
       try {
         const rawText = await callOllamaOrOpenAICompatible(
           candidateUrl,
@@ -3089,8 +3089,10 @@ async function executeResilientLlmStep<T>(options: {
               : `OpenAI-Compatible (${modelName})`,
           };
         }
-      } catch {
+        attempts.push({ where, notJson: true });
+      } catch (error) {
         retriesUsed++;
+        attempts.push({ where, error, timeoutMs: stepTimeoutMs });
       }
     }
   }
@@ -3130,12 +3132,16 @@ async function executeResilientLlmStep<T>(options: {
                 : 'Hybrid Failover -> Google AI Studio (gemini-3.8-flash)',
           };
         }
-      } catch {
-        // Continue to next retry attempt
+        if (attempt === maxRetries) attempts.push({ where: 'Gemini', notJson: true });
+      } catch (error) {
+        // Continue to next retry attempt; the last error is the one reported.
+        if (attempt === maxRetries) attempts.push({ where: 'Gemini', error });
       }
     }
   }
 
+  const failure = describeFailures(attempts, Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY'));
+  console.warn(`[AI] ${options.stepName}: no model answered (${failure}).`);
   return {
     data: options.fallbackValue,
     latencyMs: Date.now() - startMs,
@@ -3143,6 +3149,7 @@ async function executeResilientLlmStep<T>(options: {
     schemaVerified: true,
     usedFallback: true,
     providerUsed: 'Quantitative Anchor Deterministic Engine',
+    failure,
   };
 }
 
@@ -5509,7 +5516,7 @@ ${MISSING_FIGURES_RULE}
         maxRetries: 0,
       });
       const out: AgentChoiceResult = step.usedFallback
-        ? { agents: null, reason: 'no AI model answered' }
+        ? { agents: null, reason: `no AI model answered (${step.failure || 'no model is set up'})` }
         : { agents: Array.isArray(step.data?.agents) ? step.data.agents.slice(0, 5) : [], provider: step.providerUsed };
       res.json(out);
     } catch (error: any) {
@@ -5558,7 +5565,7 @@ ${MISSING_FIGURES_RULE}
         maxRetries: 1,
       });
       if (step.usedFallback) {
-        const out: DebateResult = { challenges, replies: null, reason: 'no AI model answered' };
+        const out: DebateResult = { challenges, replies: null, reason: `no AI model answered (${step.failure || 'no model is set up'})` };
         return res.json(out);
       }
       const { ok, removed, contradicted } = sentenceCheck(question, answers);
@@ -5615,11 +5622,22 @@ ${MISSING_FIGURES_RULE}
         const out: SynthesisResult = {
           brief: null,
           removed: [],
-          reason: 'No AI model answered. Set up Gemini or Ollama under Menu > AI model and data connections to get a summary.',
+          reason: `No AI model answered: ${step.failure || 'no model is set up'}. Check Menu > AI model and data connections.`,
         };
         return res.json(out);
       }
       const checked = checkBrief(step.data || empty, question, answers);
+      if (!checked.brief.headline && !checked.brief.points.length) {
+        // The model answered but nothing it wrote survived the checks: say so rather than show an empty brief.
+        const out: SynthesisResult = {
+          brief: null,
+          removed: checked.removed,
+          contradicted: checked.contradicted,
+          provider: step.providerUsed,
+          reason: `${step.providerUsed} answered, but every sentence it wrote had a number not in the agents' figures or contradicted an agent, so nothing was kept.`,
+        };
+        return res.json(out);
+      }
       const out: SynthesisResult = { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
       res.json(out);
     } catch (error: any) {
