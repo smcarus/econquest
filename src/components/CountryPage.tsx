@@ -15,6 +15,7 @@ import { AsOfPanel } from './AsOfPanel';
 import { DecisionReplayPanel } from './DecisionReplayPanel';
 import { TrackRecordPanel } from './TrackRecordPanel';
 import { PanelBoundary } from './PanelBoundary';
+import { ResearchSectionNav } from './ResearchSections';
 import { lazyNamed, DeskLoading } from './LazyDesk';
 // Charts (recharts) load only when History opens, keeping them out of the first download.
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
@@ -298,23 +299,14 @@ export const CountryPage: React.FC<{
           </div>
         </div>
 
-        {/* Tabs */}
-        <nav className="mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label="Country sections">
-          {tabs.map((t) => {
-            const isActive = t.id === tab.id;
-            return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => onChangeTab(t.id)}
-                aria-current={isActive ? 'page' : undefined}
-                className={`ui-tab ${t.id === 'restructuring' ? 'text-rose-700 dark:text-rose-300' : ''}`}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </nav>
+        {/* Sections: the same four as Compare and My holdings, then the specialist desks */}
+        <ResearchSectionNav
+          ariaLabel="Country sections"
+          active={tab.id}
+          onChange={(id) => onChangeTab(id as CountryTabId)}
+          sections={tabs.filter((t) => !t.desks.length)}
+          extra={tabs.filter((t) => t.desks.length).map((t) => ({ id: t.id, label: t.label, className: t.id === 'restructuring' ? 'text-rose-700 dark:text-rose-300' : '' }))}
+        />
       </div>
 
       {tab.id === 'overview' && (

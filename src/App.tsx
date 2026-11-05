@@ -686,6 +686,11 @@ export default function App() {
   // The section (Summary, Markets & signals, History & data, Sources) carries across scopes, so
   // switching from Brazil's markets to Compare shows markets for the whole watchlist.
   const [researchSection, setResearchSection] = useState<ResearchSectionId>('summary');
+  // Set when a country is opened from Compare or My holdings, for the "Back to" link.
+  const [researchCameFrom, setResearchCameFrom] = useState<ResearchScope | null>(null);
+  useEffect(() => {
+    if (appArea !== 'country') setResearchCameFrom(null);
+  }, [appArea]);
   // My holdings with all tools on: a specialist desk tab is open instead of a section.
   const [portfolioDeskOpen, setPortfolioDeskOpen] = useState(false);
   useEffect(() => {
@@ -2907,6 +2912,7 @@ export default function App() {
               countryName={run.countryName}
               holdingsCount={holdings.length}
               onChange={openResearchScope}
+              cameFrom={researchCameFrom}
             />
           )}
 
@@ -2922,6 +2928,7 @@ export default function App() {
                   const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
                   if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
                   openCountryPage(tab);
+                  setResearchCameFrom('compare');
                 }}
               />
             </PanelBoundary>
@@ -3085,6 +3092,7 @@ export default function App() {
                         const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                         if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
                         openCountryPage();
+                        setResearchCameFrom('portfolio');
                       }}
                     />
                   </PanelBoundary>
@@ -3119,6 +3127,7 @@ export default function App() {
                       const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                       if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
                       openCountryPage('overview');
+                      setResearchCameFrom('portfolio');
                     }}
                   />
                 </PanelBoundary>
