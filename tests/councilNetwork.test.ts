@@ -35,3 +35,11 @@ test('ask network: planner and desk agents finish at once on app figures; synthe
   assert.equal(none[2].nodes[0].status, 'skipped');
   assert.match(none[2].nodes[0].note!, /no model answered/);
 });
+
+test('ask network: the planner says when the AI model picked the agents', () => {
+  const answers = [{ id: 'fx' as const, name: 'FX Valuation', why: 'the AI model judged: the lira drives it', findings: [], missing: [] }];
+  assert.match(askCouncilColumns(answers, false, null)[0].nodes[0].note!, /stated rules, not AI/);
+  const ai = askCouncilColumns(answers, false, null, 'ai');
+  assert.match(ai[0].nodes[0].task, /AI model picked/);
+  assert.equal(ai[1].nodes[0].task, 'AI pick: the lira drives it');
+});

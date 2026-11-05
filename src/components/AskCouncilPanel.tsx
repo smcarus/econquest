@@ -306,7 +306,7 @@ export const AskCouncilPanel: React.FC<{
           )}
           <AgentNetwork
             title={`Agents on your question, about ${asked.plan.scopeNote}`}
-            columns={askCouncilColumns(asked.answers, writing, synthesis)}
+            columns={askCouncilColumns(asked.answers, writing, synthesis, asked.plan.chosenBy)}
           />
           {asked.plan.chooserNote && (
             <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={asked.plan.chosenBy}>

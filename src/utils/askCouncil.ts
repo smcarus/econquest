@@ -3,8 +3,8 @@
  * figures the app already holds, and a synthesis agent may then write a short brief from those
  * answers alone.
  *
- * - The planner is a set of stated keyword rules, not AI, so the reason each agent was asked is
- *   visible and testable.
+ * - The AI model picks the agents when one is set up (applyAgentChoice); otherwise stated keyword
+ *   rules do. Either way the reason each agent was asked is shown.
  * - Agents are deterministic: every figure keeps its source and its tag (Live data, Official,
  *   AI estimate, Sample data, or the agent's own model reading).
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
