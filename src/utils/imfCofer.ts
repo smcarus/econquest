@@ -94,7 +94,8 @@ const indName = (x: ImfSeries, s?: ImfStructure) => {
   const parts = [ccyDim ? `${x.dims[ccyDim].name} ${x.dims[ccyDim].id}` : '', x.dims[s?.indicatorDim ?? 'INDICATOR']?.name || x.dims[s?.indicatorDim ?? 'INDICATOR']?.id || ''];
   return parts.filter(Boolean).join(' | ') || Object.values(x.dims).map((d) => d.name || d.id).join(' | ');
 };
-const ccyOf = (name: string) => COFER_CURRENCIES.find((c) => c.re.test(name.replace(/\bin U\.?S\.? dollars? terms\b/i, '')))?.ccy;
+/** Live codes join words with underscores (CI_AUD = claims in Australian dollars), so they are split first. */
+const ccyOf = (name: string) => COFER_CURRENCIES.find((c) => c.re.test(name.replace(/_/g, ' ').replace(/\bin U\.?S\.? dollars? terms\b/i, '')))?.ccy;
 /** A share series: "share" or "percent" in a name, or a percent code (…_PT, SHR…) on the transformation or unit. */
 const isShare = (x: ImfSeries) =>
   /share|percent|% of/i.test(Object.values(x.dims).map((d) => d.name).join(' | ')) ||

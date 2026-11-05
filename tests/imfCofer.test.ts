@@ -47,7 +47,7 @@ test('the whole pull with a fake IMF, and Missing with a reason when it does not
   assert.match(key.note, /series key from IMF_COFER_KEY/);
 });
 
-test('live layout: currency in its own dimension, percent code on the transformation, no country list in the structure', async () => {
+test('live layout (as on the Mac, 2026-11-05): currency codes like CI_USD in their own dimension, percent code on the transformation, no country list in the structure', async () => {
   const structure = {
     data: {
       dataStructures: [
@@ -80,7 +80,7 @@ test('live layout: currency in its own dimension, percent code on the transforma
             series: [
               { id: 'COUNTRY', values: [{ id: 'G001' }] },
               { id: 'INDICATOR', values: [{ id: 'AFXRA' }] },
-              { id: 'FXR_CURRENCY', values: rows.map((r) => ({ id: r.ccy })) },
+              { id: 'FXR_CURRENCY', values: rows.map((r) => ({ id: `CI_${r.ccy}` })) },
               { id: 'TYPE_OF_TRANSFORMATION', values: [{ id: 'SHRO_PT' }] },
               { id: 'FREQUENCY', values: [{ id: 'Q' }] },
             ],
