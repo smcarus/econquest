@@ -32,13 +32,14 @@ export interface CountryTabConfig {
   desks: string[];
 }
 
+// The first four use Research's shared section names (utils/researchSections.ts); ids stay so old links land.
 export const COUNTRY_TABS: CountryTabConfig[] = [
   // Role start view (economist, banker): figures with sources and a link to the report template. No desks.
-  { id: 'brief', label: 'Brief', desks: [] },
+  { id: 'brief', label: 'Summary', desks: [] },
   // MarketEdge: the economy, market pricing and model readings of where they disagree. No desks.
-  { id: 'macro', label: 'MarketEdge', desks: [] },
+  { id: 'macro', label: 'Markets & signals', desks: [] },
   // History: each figure's run of real observations as a chart (src/components/HistoryPanel.tsx). No desks.
-  { id: 'history', label: 'History', desks: [] },
+  { id: 'history', label: 'History & data', desks: [] },
   // Sources (id 'overview'): what is live for this country. Its old chart desks ran on built-in figures and were removed (Sam, 2026-11-04).
   { id: 'overview', label: 'Sources', desks: [] },
   {
