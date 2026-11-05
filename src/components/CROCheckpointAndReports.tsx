@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { CouncilPipelineReliabilityPanel } from './CouncilPipelineReliabilityPanel';
 import { RichTextWithStatRefs } from './StatRefTooltip';
+import { FigureCheckNote } from './FigureCheckNote';
 
 interface CROCheckpointAndReportsProps {
   run: CouncilAssessmentRun;
@@ -585,6 +586,8 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                 <RichTextWithStatRefs text={sc.executiveSummary} />
               </p>
             </div>
+            <FigureCheckNote check={run.figureCheck?.desks} what="desk debates" />
+            <FigureCheckNote check={run.figureCheck?.report} what="final report" />
 
             {/* Decision-Point & Catalyst Threshold Matrix */}
             <div className="space-y-2">

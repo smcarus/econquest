@@ -673,6 +673,11 @@ export interface CouncilAssessmentRun {
   croState: CROOverrideState;
   supremeCouncil?: SupremeCouncilOutput;
   pipelineExecutionTelemetry?: CouncilPipelineTelemetry;
+  /** Sentences removed because a number did not trace to what the council was given (utils/runFigureCheck.ts). */
+  figureCheck?: {
+    desks?: import('../utils/runFigureCheck').FigureCheck;
+    report?: import('../utils/runFigureCheck').FigureCheck;
+  };
 }
 
 export interface ForecastingShockInputs {

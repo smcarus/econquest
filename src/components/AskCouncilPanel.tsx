@@ -3,6 +3,7 @@ import { Copy, FileText } from 'lucide-react';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
 import { PolicyDocsPicker } from './PolicyDocsPicker';
+import { FigureCheckNote } from './FigureCheckNote';
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
@@ -52,7 +53,7 @@ export interface FullCouncilStep {
   deskState: CROOverrideState;
   draft: CROOverrideState;
   /** Set only for a report written in this session, never for the built-in example run. */
-  result?: { reportId: string; verdict: string; summary: string };
+  result?: { reportId: string; verdict: string; summary: string; figureCheck?: CouncilAssessmentRun['figureCheck'] };
   /** The run's id for live step progress; null until a run starts in this session. */
   progressId: string | null;
   onRun: () => void;
@@ -598,6 +599,8 @@ export const AskCouncilPanel: React.FC<{
                     {fullCouncil.countryName}: {VERDICT[fullCouncil.result.verdict] || fullCouncil.result.verdict}
                   </p>
                   <p className="text-sm text-slate-800 dark:text-slate-200">{fullCouncil.result.summary}</p>
+                  <FigureCheckNote check={fullCouncil.result.figureCheck?.desks} what="desk debates" />
+                  <FigureCheckNote check={fullCouncil.result.figureCheck?.report} what="final report" />
                   {fullCouncil.onOpenFullReview && (
                     <button type="button" className="ui-btn" onClick={fullCouncil.onOpenFullReview}>
                       Open the full report
