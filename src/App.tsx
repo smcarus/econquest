@@ -86,6 +86,7 @@ import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { PolicyReviews } from './components/PolicyReviews';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
+import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
@@ -2300,6 +2301,14 @@ export default function App() {
     const go = () => openWorkspace('reports', 'ic_memo_builder');
     window.addEventListener(START_REVIEW_EVENT, go);
     return () => window.removeEventListener(START_REVIEW_EVENT, go);
+  });
+  // "Explain" on a figure or chart: the chat answers; off Workspace, its side panel opens to show it.
+  useEffect(() => {
+    const show = () => {
+      if (appArea !== 'today') setChatDock(true);
+    };
+    window.addEventListener(EXPLAIN_EVENT, show);
+    return () => window.removeEventListener(EXPLAIN_EVENT, show);
   });
   // The chat sits on Workspace; elsewhere the header button opens it in a side panel.
   const chatDocked = isChatDockOpen && appArea !== 'today';
