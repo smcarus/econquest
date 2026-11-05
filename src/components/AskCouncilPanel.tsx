@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Copy, FileText } from 'lucide-react';
+import { Copy, Download, FileText } from 'lucide-react';
+import { councilBriefMarkdown, downloadCouncilBrief } from '../utils/briefExport';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
 import { PolicyDocsPicker } from './PolicyDocsPicker';
@@ -13,7 +14,6 @@ import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
 import {
-  councilBriefSections,
   planCouncil,
   planFollowUp,
   applyAgentChoice,
@@ -79,16 +79,7 @@ const EXAMPLES = [
   'What is coming up in the next month?',
 ];
 
-function toMarkdown(b: SavedCouncilBrief): string {
-  return [
-    '# Council brief',
-    '',
-    ...councilBriefSections(b, () => true).flatMap((s) => [`## ${s.heading}`, '', ...s.lines.flatMap((l) => (l.startsWith('- ') ? [l] : [l, ''])), '']),
-  ]
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-}
+const toMarkdown = councilBriefMarkdown;
 
 /**
  * Today > Ask the council. A question goes to the desk agents that cover it (stated keyword
@@ -576,6 +567,12 @@ export const AskCouncilPanel: React.FC<{
           <div className="flex flex-wrap gap-1.5 pt-1">
             <button type="button" className="ui-btn" onClick={copy} disabled={writing}>
               <Copy className="w-3.5 h-3.5" /> {copied ? 'Copied' : 'Copy brief'}
+            </button>
+            <button type="button" className="ui-btn" onClick={() => saved && void downloadCouncilBrief(saved, 'md')} disabled={writing || !saved} title="Save the brief as a Markdown file, with every figure's source">
+              <Download className="w-3.5 h-3.5" /> Markdown
+            </button>
+            <button type="button" className="ui-btn" onClick={() => saved && void downloadCouncilBrief(saved, 'pdf')} disabled={writing || !saved} title="Save the brief as a PDF, with every figure's source">
+              <Download className="w-3.5 h-3.5" /> PDF
             </button>
             <button type="button" className="ui-btn" onClick={send} disabled={writing}>
               <FileText className="w-3.5 h-3.5" /> Send to Reports
