@@ -763,3 +763,22 @@ test('backup: download carries no keys; restore refuses a non-backup and restore
   assert.deepEqual(rules.rules.map((r: { id: string }) => r.id), ['r9']);
   assert.ok(existsSync(path.join(dataDir, 'local', 'backups')));
 });
+
+test('morning brief: settings are checked and saved; Run now saves each answer to research', async () => {
+  const put = (settings: unknown) =>
+    fetch(`${base}/api/morning-brief`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ settings }) });
+  assert.equal((await put({ enabled: true, time: '25:00', timeZone: 'UTC', questions: ['x'] })).status, 400);
+  const ok = await put({ enabled: true, time: '23:59', timeZone: 'UTC', questions: ['How does inflation compare with the policy rate across my watchlist?'] });
+  assert.equal(ok.status, 200);
+  const status = await (await fetch(`${base}/api/morning-brief`)).json();
+  assert.equal(status.settings.time, '23:59');
+  assert.ok(status.watchlists.length > 0, 'lists the watchlists to choose from');
+  const run = await (await fetch(`${base}/api/morning-brief/run`, { method: 'POST' })).json();
+  assert.equal(run.lastRun.trigger, 'manual');
+  assert.equal(run.lastRun.results.length, 1);
+  const r = run.lastRun.results[0];
+  assert.ok(r.briefId, `saved: ${JSON.stringify(r)}`);
+  assert.ok(!r.headline, 'no AI model in the test, so no invented summary');
+  const lib = await (await fetch(`${base}/api/research`)).json();
+  assert.ok(lib.briefs.some((b: { question: string }) => b.question.startsWith('Morning brief: ')));
+});
