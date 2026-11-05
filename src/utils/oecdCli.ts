@@ -121,17 +121,41 @@ export function cliHistory(pts: { period: string; value: number }[]): Pick<CliRe
   let i = phases.length - 1;
   while (i > 0 && phases[i - 1] === now) i--;
   const out: ReturnType<typeof cliHistory> = { phaseSince: steps[i].period, monthsInPhase: phases.length - i, ...(i === 0 ? { phaseSinceAtStart: true } : {}) };
-  // Turning point: two months one way, then two months the other way. A one-month reversal is not
-  // counted on either side, so a single wobble is never called a turn.
-  for (let k = steps.length - 2; k > 0; k--) {
+  const turns = turnsIn(steps);
+  return turns.length ? { ...out, lastTurn: turns[turns.length - 1] } : out;
+}
+
+type Step = { period: string; level: number; change: number };
+
+/**
+ * Turning points: two months one way, then two months the other way. A one-month reversal is not
+ * counted on either side, so a single wobble is never called a turn. Oldest first.
+ */
+function turnsIn(steps: Step[]): CliTurn[] {
+  const out: CliTurn[] = [];
+  for (let k = 2; k < steps.length - 1; k++) {
     const a = steps[k - 1].change;
     const b = steps[k].change;
-    if (Math.sign(steps[k + 1].change) !== Math.sign(b)) continue;
-    if (k < 2 || Math.sign(steps[k - 2].change) !== Math.sign(a)) continue;
-    if (a > 0 && b < 0) return { ...out, lastTurn: { month: steps[k - 1].period, kind: 'peak', level: Number(steps[k - 1].level.toFixed(2)) } };
-    if (a < 0 && b > 0) return { ...out, lastTurn: { month: steps[k - 1].period, kind: 'trough', level: Number(steps[k - 1].level.toFixed(2)) } };
+    if (Math.sign(steps[k + 1].change) !== Math.sign(b) || Math.sign(steps[k - 2].change) !== Math.sign(a)) continue;
+    if (a > 0 && b < 0) out.push({ month: steps[k - 1].period, kind: 'peak', level: Number(steps[k - 1].level.toFixed(2)) });
+    if (a < 0 && b > 0) out.push({ month: steps[k - 1].period, kind: 'trough', level: Number(steps[k - 1].level.toFixed(2)) });
   }
   return out;
+}
+
+export interface CliTurn {
+  month: string;
+  kind: 'peak' | 'trough';
+  level: number;
+}
+
+/** Every turning point in the unbroken run of months that ends at the latest figure, oldest first. */
+export function cliTurns(pts: { period: string; value: number }[]): CliTurn[] {
+  let start = pts.length - 1;
+  while (start > 0 && nextMonth(pts[start - 1].period) === pts[start].period) start--;
+  const run = pts.slice(start);
+  if (run.length < 2) return [];
+  return turnsIn(run.slice(1).map((p, i) => ({ period: p.period, level: p.value, change: p.value - run[i].value })));
 }
 
 /** Why a country has no CLI figure: the OECD answered without it, or did not answer. */
