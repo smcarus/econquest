@@ -175,7 +175,9 @@ import {
   KeyRound,
   Wrench,
   MessageSquare,
+  HardDriveDownload,
 } from 'lucide-react';
+import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
 import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
 import { marketEdgePeers } from './utils/marketEdgeAnchors';
@@ -612,6 +614,8 @@ export default function App() {
     useState<ActivityPillarId | null>(null);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
+  const [isOfflineDataOpen, setIsOfflineDataOpen] = useState<boolean>(false);
+  const onlineStatus = useOnlineStatus();
   // Top-level area. The app always opens on Workspace; there are no roles (Sam, 2026-11-04).
   const [appArea, setAppArea] = useState<AppArea>('today');
   const [countryTab, setCountryTab] = useState<CountryTabId>(DEFAULT_COUNTRY_TAB_ID as CountryTabId);
@@ -2499,6 +2503,8 @@ export default function App() {
             )}
           </button>
 
+          <OfflinePill status={onlineStatus} onOpen={() => setIsOfflineDataOpen(true)} />
+
           <div className="relative" ref={headerMenuRef}>
             <button
               type="button"
@@ -2590,6 +2596,14 @@ export default function App() {
                         label: 'Model health check',
                         hint: `${liveIntegrityAuditReport.readinessScorePct}%`,
                         onClick: () => setIsIntegrityAuditOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'offline',
+                        icon: <HardDriveDownload className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Offline data',
+                        hint: onlineStatus?.preloadRunning ? 'Downloading' : onlineStatus && !onlineStatus.online ? 'Offline' : '',
+                        onClick: () => setIsOfflineDataOpen(true),
                         className: '',
                       },
                       {
@@ -3657,6 +3671,7 @@ export default function App() {
         </Suspense>
       )}
 
+      {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>
       <SovereignManualAndGithubModal

@@ -76,6 +76,24 @@ test('progress line says what happened and why', () => {
   assert.equal(progressLine(1, 12, step, { outcome: 'failed', at: '', note: 'BIS did not answer' }), `[preload 1/12] FAIL ${step.label} (BIS did not answer)`);
 });
 
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+test('npm run preload offline: says the feeds cannot be reached and downloads nothing', () => {
+  const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-off-'));
+  try {
+    const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
+      cwd: rootDir,
+      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(rootDir, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, OFFLINE_PROBE: 'down' },
+      encoding: 'utf8',
+      timeout: 60_000,
+    });
+    assert.equal(r.status, 0);
+    assert.match(r.stdout, /feeds cannot be reached from this computer/);
+    assert.ok(!existsSync(path.join(dataDir, 'history', 'MEX.json')));
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 test('npm run preload: runs offline against fixtures, saves progress, and a second run carries on', () => {
   const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-'));
@@ -90,7 +108,7 @@ test('npm run preload: runs offline against fixtures, saves progress, and a seco
     const first = run();
     assert.equal(first.status, 0, first.stderr.slice(-2000));
     assert.match(first.stdout, /\[preload\] finished: \d+ of 12 steps saved/);
-    assert.match(first.stdout, /skip UN Comtrade trade partners \(Needs setup: UN Comtrade key/);
+    assert.match(first.stdout, /needs setup UN Comtrade trade partners \(add a UN Comtrade key/);
     assert.ok(existsSync(path.join(dataDir, 'history', 'MEX.json')));
     const state = JSON.parse(readFileSync(path.join(dataDir, 'local', 'preload.json'), 'utf8'));
     assert.equal(state.running, false);

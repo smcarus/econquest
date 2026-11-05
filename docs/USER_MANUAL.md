@@ -281,6 +281,9 @@ hold no figures of their own; the handout reads them from the app's series when 
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
+- **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
+  countries ready, size on this computer, an estimate for what is left, and anything not saved with
+  the reason.
 - **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
 
 ### Download all country data (for offline use)
@@ -292,6 +295,15 @@ World Bank and IMF history. Everything is saved under `data/` (live, history, ar
 charts and the History tab then load from disk and keep working without a connection. Screens still
 show only the newest value; the full runs are behind History & data and the downloads.
 
+In the app: Menu > Offline data > *Download all country data*. The window shows the step running,
+countries ready, the size on disk and an estimate for what is left (the average of the countries
+already saved; "known after the first country" until then). You can close it; the download carries
+on. *Stop after this step* stops it; *Carry on downloading* picks up where it stopped.
+
+**Offline.** When the free feeds cannot be reached from this computer, an *Offline* pill appears in
+the top bar with the date of the saved data. Pages, History and downloads keep working from disk; the
+app does not try its background refreshes until the feeds answer again (checked every minute).
+
 From a terminal in the app folder:
 
 ```bash
@@ -301,7 +313,7 @@ npm run preload -- --fresh             # download everything again, even what wa
 docker compose exec econquest npm run preload   # when the app runs in Docker
 ```
 
-Each step prints one line (ok, FAIL with the reason, or skip when a key is needed). Ctrl+C stops after
+Each step prints one line (ok, FAIL with the reason, or needs setup when a key is needed). Ctrl+C stops after
 the current step; the next run skips every step saved within the last day and carries on. Progress is
 kept in `data/local/preload.json`. GDELT allows few requests: after a refusal the run waits out
 GDELT's 15-minute pause before the next country. A feed that fails leaves its figures Missing with

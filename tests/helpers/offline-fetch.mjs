@@ -152,6 +152,11 @@ globalThis.fetch = async (input, init = {}) => {
   if (url.includes('imf.org/external/datamapper/api/v1/GGXWDG_NGDP/MEX')) {
     return json({ values: { GGXWDG_NGDP: { MEX: { 2020: 58.5, 2021: 56.9, 2030: 61.2 } } } });
   }
+  // The app's "are the feeds reachable" probe (Offline indicator). OFFLINE_PROBE=down plays offline.
+  if (url === 'https://api.worldbank.org/v2/country?format=json&per_page=1') {
+    if (process.env.OFFLINE_PROBE === 'down') throw new TypeError('offline: api.worldbank.org');
+    return json([{ page: 1 }, []]);
+  }
   // NY Fed effective federal funds rate.
   if (url.includes('markets.newyorkfed.org') && url.includes('/effr/')) {
     return json({ refRates: [{ effectiveDate: '2026-11-03', type: 'EFFR', percentRate: 3.83 }] });

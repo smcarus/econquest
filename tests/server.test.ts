@@ -721,3 +721,10 @@ test('offline data: the preload status lists every step, what is on disk, and no
   const stop = await fetch(`${base}/api/preload/stop`, { method: 'POST' });
   assert.equal(stop.status, 200);
 });
+
+test('online check: the feeds probe answers, with what is saved on disk', async () => {
+  const body = (await (await fetch(`${base}/api/online?recheck=1`)).json()) as { online: boolean; countriesTotal: number; countriesSaved: number; savedFrom: string | null };
+  assert.equal(body.online, true, 'the fixture answers the probe');
+  assert.ok(body.countriesTotal >= 10);
+  assert.ok(body.countriesSaved >= 0);
+});
