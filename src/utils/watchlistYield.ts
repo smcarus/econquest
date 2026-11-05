@@ -4,7 +4,7 @@ import { formatPeriod, type OfficialYieldObservation } from './officialYields';
 
 export type YieldSource = NonNullable<WatchlistItem['yield10YSource']>;
 
-type YieldFields = Pick<WatchlistItem, 'yield10YPct' | 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency'>;
+type YieldFields = Pick<WatchlistItem, 'yield10YPct' | 'yield10YSource' | 'yield10YPeriod' | 'yield10YFrequency' | 'yield10YChange3mPts' | 'yield10YChange12mPts'>;
 
 /**
  * The 10Y yield a watchlist row should show, and where it came from.
@@ -24,6 +24,8 @@ export function watchlistYieldFields(
       yield10YSource: 'official',
       yield10YPeriod: official.period,
       yield10YFrequency: official.frequency === 'daily' ? 'daily' : 'monthly',
+      ...(official.change3mPts !== undefined ? { yield10YChange3mPts: official.change3mPts } : {}),
+      ...(official.change12mPts !== undefined ? { yield10YChange12mPts: official.change12mPts } : {}),
     };
   }
   return {

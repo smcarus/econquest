@@ -106,6 +106,8 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
     delete out.yield10YPct;
     delete out.yield10YPeriod;
     delete out.yield10YFrequency;
+    delete out.yield10YChange3mPts;
+    delete out.yield10YChange12mPts;
   }
   if (!hasFigure(it, 'debt')) delete out.debtToGdpPct;
   if (!hasFigure(it, 'reserves')) delete out.fxReservesMonths;
