@@ -38,6 +38,7 @@ import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
+import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from './src/utils/refereeModel';
 import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
@@ -3333,12 +3334,13 @@ function resolveStepModelFromGuiConfig(
     serverGuiRuntimeConfig.ollamaQuickModel ||
     process.env.OLLAMA_QUICK_MODEL ||
     'qwen2.5:7b';
+  // The referee model (src/utils/refereeModel.ts): the old 8B default, from a saved setting or the
+  // Docker image's env, becomes qwen2.5:32b; with nothing set, the referee is never the fast model.
   const deepDefault =
-    cfg.ollamaDeepModel ||
-    serverGuiRuntimeConfig.ollamaDeepModel ||
-    cfg.ollamaQuickModel ||
-    process.env.OLLAMA_DEEP_MODEL ||
-    'deepseek-r1:8b';
+    refereeModelOrDefault(cfg.ollamaDeepModel) ||
+    refereeModelOrDefault(serverGuiRuntimeConfig.ollamaDeepModel) ||
+    refereeModelOrDefault(process.env.OLLAMA_DEEP_MODEL) ||
+    DEFAULT_REFEREE_MODEL;
 
   if (stepName === 'STAGE_1_GEO_DESK') {
     return (
@@ -3605,9 +3607,9 @@ async function executeResilientLlmStep<T>(options: {
   const maxRetries = options.maxRetries ?? 2;
   let retriesUsed = 0;
 
-  const isDeepCouncilStep =
-    options.stepName === 'STAGE_3_SUPREME_COUNCIL' ||
-    options.thinkingLevel === ThinkingLevel.HIGH;
+  // Referee steps (Supreme Council final step, chat summary and explanations, debate) run on the
+  // large "Referee model", never on the fast one (src/utils/refereeModel.ts).
+  const isDeepCouncilStep = isRefereeStep(options.stepName) || options.thinkingLevel === ThinkingLevel.HIGH;
 
   const schemaKeysHint = options.responseSchema?.properties
     ? Object.keys(options.responseSchema.properties)
@@ -3695,7 +3697,7 @@ async function executeResilientLlmStep<T>(options: {
             schemaVerified: true,
             usedFallback: false,
             providerUsed: isOllama
-              ? `Local Ollama (${modelName} · ${isDeepCouncilStep ? 'Phase 3 Deep' : 'Phase 1-2 Sub-Agents'})`
+              ? `Local Ollama (${modelName} · ${isRefereeStep(options.stepName) ? 'Referee' : isDeepCouncilStep ? 'Phase 3 Deep' : 'Phase 1-2 Sub-Agents'})`
               : `OpenAI-Compatible (${modelName})`,
           };
         }
@@ -5223,7 +5225,7 @@ async function startServer() {
       ollamaQuickModel:
         serverGuiRuntimeConfig.ollamaQuickModel || process.env.OLLAMA_QUICK_MODEL || 'qwen2.5:7b',
       ollamaDeepModel:
-        serverGuiRuntimeConfig.ollamaDeepModel || process.env.OLLAMA_DEEP_MODEL || 'deepseek-r1:8b',
+        refereeModelOrDefault(serverGuiRuntimeConfig.ollamaDeepModel) || refereeModelOrDefault(process.env.OLLAMA_DEEP_MODEL) || DEFAULT_REFEREE_MODEL,
       openAiBaseUrl:
         serverGuiRuntimeConfig.openAiBaseUrl ||
         process.env.OPENAI_COMPATIBLE_BASE_URL ||
@@ -5287,7 +5289,7 @@ async function startServer() {
         `DEFAULT_AI_PROVIDER=${incoming.providerMode || 'ollama'}`,
         `OLLAMA_BASE_URL=${incoming.ollamaBaseUrl || 'http://host.docker.internal:11434'}`,
         `OLLAMA_QUICK_MODEL=${incoming.ollamaQuickModel || 'qwen2.5:7b'}`,
-        `OLLAMA_DEEP_MODEL=${incoming.ollamaDeepModel || 'deepseek-r1:8b'}`,
+        `OLLAMA_DEEP_MODEL=${refereeModelOrDefault(incoming.ollamaDeepModel) || DEFAULT_REFEREE_MODEL}`,
         `OLLAMA_KEEP_ALIVE=${dockerCfg.keepAlive || '24h'}`,
         `OLLAMA_ORIGINS=${dockerCfg.corsOrigins || '*'}`,
         `OPENAI_COMPATIBLE_BASE_URL=${incoming.openAiBaseUrl || 'http://localhost:8000/v1'}`,
@@ -5301,7 +5303,7 @@ async function startServer() {
       res.json({
         status: 'OK',
         savedAt: new Date().toISOString(),
-        message: `Saved GUI Configuration to server: Provider=${incoming.providerMode || 'ollama'}, Phase 1–2=${incoming.ollamaQuickModel || 'qwen2.5:7b'}, Phase 3=${incoming.ollamaDeepModel || 'deepseek-r1:8b'}, Active API/Host Connectors=${activeConnectorCount}.`,
+        message: `Saved GUI Configuration to server: Provider=${incoming.providerMode || 'ollama'}, Phase 1–2=${incoming.ollamaQuickModel || 'qwen2.5:7b'}, Referee=${refereeModelOrDefault(incoming.ollamaDeepModel) || DEFAULT_REFEREE_MODEL}, Active API/Host Connectors=${activeConnectorCount}.`,
         runtimeConfig: withoutSecrets(serverGuiRuntimeConfig),
         generatedEnvContent,
       });
@@ -6960,7 +6962,7 @@ ${MISSING_FIGURES_RULE}
     const t0 = Date.now();
     try {
       const step = await executeResilientLlmStep<{ reply: string }>({
-        stepName: 'AI_MODEL_TEST',
+        stepName: req.body?.referee ? 'AI_MODEL_TEST_REFEREE' : 'AI_MODEL_TEST',
         providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
         runtimeConfig: req.body?.runtimeConfig || {},
         thinkingLevel: ThinkingLevel.LOW,

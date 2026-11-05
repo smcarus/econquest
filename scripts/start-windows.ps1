@@ -10,7 +10,7 @@ $ProjectRoot = Split-Path -Parent $ScriptDir
 Set-Location $ProjectRoot
 
 $QuickModel = if ($env:OLLAMA_QUICK_MODEL) { $env:OLLAMA_QUICK_MODEL } else { "qwen2.5:7b" }
-$DeepModel  = if ($env:OLLAMA_DEEP_MODEL)  { $env:OLLAMA_DEEP_MODEL }  else { "deepseek-r1:8b" }
+$DeepModel  = if ($env:OLLAMA_DEEP_MODEL)  { $env:OLLAMA_DEEP_MODEL }  else { "qwen2.5:32b" }
 $Port       = if ($env:PORT)               { $env:PORT }               else { "3737" }
 
 Write-Host "==============================================================================" -ForegroundColor Cyan

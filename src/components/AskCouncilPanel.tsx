@@ -36,6 +36,7 @@ import {
   type SynthesisResult,
 } from '../utils/askCouncil';
 
+import { smallRefereeNote } from '../utils/refereeModel';
 import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
@@ -401,6 +402,11 @@ export const AskCouncilPanel: React.FC<{
                 {t.synthesis && t.synthesis.removed.length > 0 && ` ${t.synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
                 {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && ` ${t.synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
               </p>
+              {smallRefereeNote(t.synthesis?.provider) && (
+                <p className="text-xs text-amber-800 dark:text-amber-300" data-council-small-referee="true">
+                  <SettingsText text={smallRefereeNote(t.synthesis?.provider)!} />
+                </p>
+              )}
               {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && (
                 <details className="text-xs text-amber-800 dark:text-amber-300" data-council-contradicted="true">
                   <summary className="cursor-pointer">Show sentences that contradicted an agent</summary>

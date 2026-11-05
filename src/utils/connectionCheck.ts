@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
@@ -909,7 +910,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   add('ollama', async () => {
     const base = (opts.ai?.ollamaBaseUrl || env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
     const quick = opts.ai?.ollamaQuickModel || env.OLLAMA_QUICK_MODEL || 'qwen2.5:7b';
-    const deep = opts.ai?.ollamaDeepModel || env.OLLAMA_DEEP_MODEL || 'deepseek-r1:8b';
+    const deep = refereeModelOrDefault(opts.ai?.ollamaDeepModel) || refereeModelOrDefault(env.OLLAMA_DEEP_MODEL) || DEFAULT_REFEREE_MODEL;
     const def: Def = {
       id: 'ollama',
       name: 'Ollama (on this computer)',

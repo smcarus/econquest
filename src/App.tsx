@@ -87,6 +87,7 @@ import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { PolicyReviews } from './components/PolicyReviews';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
 import { EXPLAIN_EVENT } from './utils/explainHandoff';
+import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
@@ -914,7 +915,8 @@ export default function App() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && parsed.providerMode) {
-          return parsed as AIRuntimeConfig;
+          // The old 8B referee default moves to qwen2.5:32b (src/utils/refereeModel.ts).
+          return { ...parsed, ollamaDeepModel: refereeModelOrDefault(parsed.ollamaDeepModel) || DEFAULT_REFEREE_MODEL } as AIRuntimeConfig;
         }
       }
     } catch {
@@ -926,7 +928,7 @@ export default function App() {
       geminiDeepModel: 'gemini-3.8-flash',
       ollamaBaseUrl: 'http://localhost:11434',
       ollamaQuickModel: 'qwen2.5:7b',
-      ollamaDeepModel: 'deepseek-r1:8b',
+      ollamaDeepModel: DEFAULT_REFEREE_MODEL,
       openAiBaseUrl: 'http://localhost:8000/v1',
       openAiModel: 'gpt-4o',
       webhookTargetUrl: '',

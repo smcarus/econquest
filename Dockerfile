@@ -34,7 +34,7 @@ ENV PORT=3000
 ENV DEFAULT_AI_PROVIDER=ollama
 ENV OLLAMA_BASE_URL=http://host.docker.internal:11434
 ENV OLLAMA_QUICK_MODEL=qwen2.5:7b
-ENV OLLAMA_DEEP_MODEL=deepseek-r1:8b
+ENV OLLAMA_DEEP_MODEL=qwen2.5:32b
 
 # Copy package files and node_modules from builder
 COPY --from=builder /app/package.json ./package.json
