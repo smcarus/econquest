@@ -35,7 +35,7 @@ import { pullCofer, type CoferReading } from './src/utils/imfCofer';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
-import { describeFailures, localStepTimeoutMs, type ModelAttempt } from './src/utils/modelFailure';
+import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
@@ -2855,7 +2855,9 @@ async function callOllamaOrOpenAICompatible(
   isOllama: boolean,
   timeoutMs = 20000,
   schemaKeysHint?: string[],
-  inferenceOptions?: { temperature?: number; numCtx?: number }
+  inferenceOptions?: { temperature?: number; numCtx?: number },
+  /** Ollama only: stream the answer and time out on silence instead of on total length. */
+  wait?: StreamWait
 ): Promise<string> {
   const cleanUrl = baseUrl.replace(/\/+$/, '');
   const endpoint = isOllama ? `${cleanUrl}/api/chat` : `${cleanUrl}/chat/completions`;
@@ -2884,9 +2886,12 @@ async function callOllamaOrOpenAICompatible(
         stream: false,
         // Reasoning models with <think> blocks work best when allowed to emit or when format: 'json' is paired with explicit key hints
         ...(isReasoningModel ? {} : { format: 'json' }),
+        ...(wait ? { stream: true, keep_alive: '30m' } : {}),
         options: {
           temperature,
           num_ctx: numCtx,
+          // A cap so a model that keeps emitting blank JSON padding cannot run on forever.
+          ...(wait ? { num_predict: isReasoningModel ? 4096 : 2048 } : {}),
         },
         messages: [
           { role: 'system', content: `${systemPrompt}${schemaInstruction}` },
@@ -2902,6 +2907,8 @@ async function callOllamaOrOpenAICompatible(
           { role: 'user', content: userPrompt },
         ],
       };
+
+  if (isOllama && wait) return streamOllamaChat(endpoint, body, wait);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -2919,6 +2926,64 @@ async function callOllamaOrOpenAICompatible(
     return isOllama ? json?.message?.content || '{}' : json?.choices?.[0]?.message?.content || '{}';
   } finally {
     clearTimeout(timer);
+  }
+}
+
+/** Reads an Ollama /api/chat stream; times out on no first word, on a stall, or on total length. */
+async function streamOllamaChat(endpoint: string, body: Record<string, unknown>, wait: StreamWait): Promise<string> {
+  const controller = new AbortController();
+  let gotFirst = false;
+  let why: ModelWaitError | null = null;
+  let idleTimer: NodeJS.Timeout | undefined;
+  const arm = () => {
+    clearTimeout(idleTimer);
+    const ms = gotFirst ? wait.idleMs : wait.firstTokenMs;
+    idleTimer = setTimeout(() => {
+      why = new ModelWaitError(gotFirst ? 'idle' : 'first', ms);
+      controller.abort();
+    }, ms);
+  };
+  const totalTimer = setTimeout(() => {
+    why = new ModelWaitError('total', wait.totalMs);
+    controller.abort();
+  }, wait.totalMs);
+  arm();
+  let text = '';
+  try {
+    const postRes = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: controller.signal,
+    });
+    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
+    if (!postRes.body) throw new Error(`Model endpoint ${endpoint} sent no body`);
+    const decoder = new TextDecoder();
+    let buf = '';
+    for await (const chunk of postRes.body as unknown as AsyncIterable<Uint8Array>) {
+      buf += decoder.decode(chunk, { stream: true });
+      let nl: number;
+      while ((nl = buf.indexOf('\n')) >= 0) {
+        const line = buf.slice(0, nl).trim();
+        buf = buf.slice(nl + 1);
+        if (!line) continue;
+        const msg = JSON.parse(line);
+        if (msg?.error) throw new Error(`Model endpoint ${endpoint} said: ${String(msg.error).slice(0, 160)}`);
+        const piece = msg?.message?.content;
+        if (typeof piece === 'string' && piece) {
+          text += piece;
+          if (piece.trim()) gotFirst = true;
+        }
+        if (msg?.done) return text || '{}';
+      }
+      arm();
+    }
+    return text || '{}';
+  } catch (error) {
+    throw why ?? error;
+  } finally {
+    clearTimeout(idleTimer);
+    clearTimeout(totalTimer);
   }
 }
 
@@ -3060,8 +3125,23 @@ async function executeResilientLlmStep<T>(options: {
       }
     }
 
+    const wait = isOllama && LONG_CHAT_STEPS.has(options.stepName) ? streamWaitFor(options.stepName, stepTimeoutMs) : undefined;
     for (const candidateUrl of candidateUrls) {
       const where = isOllama ? `Ollama ${modelName} at ${candidateUrl}` : `${modelName} at ${candidateUrl}`;
+      if (wait) {
+        // A quick check first, so a dead address or a model that is not downloaded fails in seconds.
+        try {
+          const tags = await fetch(`${candidateUrl.replace(/\/+$/, '')}/api/tags`, { signal: AbortSignal.timeout(4000) });
+          if (!tags.ok) throw new Error(`HTTP ${tags.status}`);
+          if (!ollamaHasModel(await tags.json().catch(() => null), modelName)) {
+            attempts.push({ where, notPulled: modelName });
+            continue;
+          }
+        } catch (error) {
+          attempts.push({ where, error: (error as Error)?.name === 'TimeoutError' ? new Error('fetch failed') : error });
+          continue;
+        }
+      }
       try {
         const rawText = await callOllamaOrOpenAICompatible(
           candidateUrl,
@@ -3075,7 +3155,8 @@ async function executeResilientLlmStep<T>(options: {
             temperature:
               options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2,
             numCtx: options.runtimeConfig.numCtx ?? serverGuiRuntimeConfig.numCtx ?? 8192,
-          }
+          },
+          wait
         );
         const { parsed, schemaVerified } = sanitizeAndParseJson<T>(rawText, options.fallbackValue);
         if (schemaVerified) {

@@ -26,11 +26,20 @@ export interface ModelAttempt {
   timeoutMs?: number;
   /** The model answered, but not with a JSON object. */
   notJson?: boolean;
+  /** Ollama is running but this model is not downloaded (the model name). */
+  notPulled?: string;
 }
 
 /** One short sentence for one failed attempt. */
 export function describeAttempt(a: ModelAttempt): string {
   if (a.notJson) return `${a.where} answered, but not in the format the app needs`;
+  if (a.notPulled) return `${a.where}: that model is not downloaded (run "ollama pull ${a.notPulled}" on this computer)`;
+  if (a.error instanceof ModelWaitError) {
+    const s = Math.round(a.error.waitedMs / 1000);
+    if (a.error.kind === 'first') return `${a.where} is running but wrote nothing within ${s} s (the model may still be loading, or the computer is short of memory: check "ollama ps")`;
+    if (a.error.kind === 'idle') return `${a.where} stopped writing for ${s} s partway through its answer`;
+    return `${a.where} was still writing after ${s} s`;
+  }
   const e = a.error as { name?: string; message?: string; cause?: { code?: string } } | undefined;
   const msg = String(e?.message || e || '').trim();
   const code = e?.cause?.code || '';
@@ -52,8 +61,46 @@ export function describeAttempt(a: ModelAttempt): string {
  */
 export function describeFailures(attempts: ModelAttempt[], geminiKeySet: boolean): string {
   const lines = attempts.map(describeAttempt);
-  const useful = lines.filter((l) => !/(host\.docker\.internal|ollama:11434).*could not be (found|reached)/.test(l));
+  const dockerReached = lines.some((l) => /host\.docker\.internal/.test(l) && !/could not be (found|reached)/.test(l));
+  const useful = lines.filter(
+    (l) =>
+      !/(host\.docker\.internal|ollama:11434).*could not be (found|reached)/.test(l) &&
+      // Inside Docker, "localhost is not running" is expected once the host address was reached.
+      !(dockerReached && /(localhost|127\.0\.0\.1)(:\d+)? is not running/.test(l))
+  );
   const shown = useful.length ? useful : lines;
   if (!geminiKeySet) shown.push('no Gemini key is set');
   return shown.length ? shown.join('; ') : 'no model is set up';
+}
+
+/** Steps that may stream: how long to wait for the first word, between words, and in all. */
+export interface StreamWait {
+  firstTokenMs: number;
+  idleMs: number;
+  totalMs: number;
+}
+
+/**
+ * Summary and debate: the first word may take as long as the step timeout (a cold model loads first),
+ * then the model may keep writing for up to five minutes as long as it does not stall for a minute.
+ */
+export function streamWaitFor(stepName: string, stepTimeoutMs: number): StreamWait {
+  if (!LONG_CHAT_STEPS.has(stepName)) return { firstTokenMs: stepTimeoutMs, idleMs: stepTimeoutMs, totalMs: stepTimeoutMs };
+  return { firstTokenMs: stepTimeoutMs, idleMs: 60_000, totalMs: Math.max(300_000, stepTimeoutMs) };
+}
+
+/** Thrown when a streaming local model stops short of a full answer. */
+export class ModelWaitError extends Error {
+  constructor(public readonly kind: 'first' | 'idle' | 'total', public readonly waitedMs: number) {
+    super(`model wait: ${kind} after ${waitedMs} ms`);
+    this.name = 'ModelWaitError';
+  }
+}
+
+/** True when Ollama's /api/tags list has the model ("qwen2.5:7b", or "llama3" meaning "llama3:latest"). */
+export function ollamaHasModel(tags: unknown, model: string): boolean {
+  const list = (tags as { models?: Array<{ name?: string; model?: string }> } | null)?.models;
+  if (!Array.isArray(list)) return true; // unknown shape: do not block the call
+  const want = model.includes(':') ? model : `${model}:latest`;
+  return list.some((m) => m?.name === want || m?.model === want || m?.name === model || m?.model === model);
 }
