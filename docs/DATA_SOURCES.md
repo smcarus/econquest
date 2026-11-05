@@ -31,6 +31,8 @@ estimated, invented or taken from built-in sample values.
 | World Bank indicators | Reserves, current account, external debt, political stability, trade shares | api.worldbank.org | 1 week (country snapshot) |
 | World Bank debt statistics (IDS, QEDS) | External debt falling due by year and quarter (banker brief) | api.worldbank.org | 12 h |
 | IMF World Economic Outlook | Debt/GDP, inflation, GDP growth, primary balance | www.imf.org | 1 week (country snapshot) |
+| IMF reserves and balance of payments | Monthly official reserves (International Liquidity, IL); quarterly current account and imports of goods and services (BOP); import cover and current account % of GDP | api.imf.org | 1 day, on disk (structures 1 week) |
+| IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | Polymarket, Kalshi | Prediction-market odds | gamma-api.polymarket.com, api.elections.kalshi.com | per request |
 | New York Fed | Fed funds, SOFR, reverse repo | markets.newyorkfed.org | 3 min to 6 h |
@@ -98,6 +100,21 @@ Notes from the first check on Sam's Mac (2026-11-05):
   for that reason. `GET /api/data/policy-rates` lists what the app holds for each country.
   The rate feeds the watchlist column, the Country tab (with the 12-month change and last move),
   the Central Bank Watcher Agent and the stance check (policy tight / neutral / loose).
+- **IMF reserves and balance of payments** come from the IMF data portal's SDMX 3.0 API
+  (api.imf.org, no key). IFS was retired in 2025 and split into topic datasets: monthly reserves
+  are in **IL** (International Liquidity) and the balance of payments in **BOP**. The IMF also
+  changed its codes, so the app does not hard-code them: it reads each dataset's structure,
+  picks the indicator whose IMF name fits ("Reserve assets, total", "Current account",
+  "Goods and services" imports), then asks for that series for each country and checks the
+  series is in US dollars and states its unit (millions, billions). Every figure shows the IMF
+  series key and period. If a name does not match (the check says which), set the series key in
+  `.env`: `IMF_RESERVES_KEY`, `IMF_CA_KEY`, `IMF_IMPORTS_KEY`, with `{ISO3}` for the country.
+  Kept on disk in `data/live/imf_external.json` and asked again after a day. Readings: reserves
+  and their 12-month change; months of imports (reserves over the last four quarters of imports,
+  divided by 12; stated rule: under 3 = thin, 3 to 6 = adequate, over 6 = ample, tagged as the
+  Central Bank Watcher Agent's reading); current account in the latest quarter and over four
+  quarters as % of GDP, with GDP from the IMF World Economic Outlook for that year. A country the
+  IMF has not published reads Missing with the reason.
 - **World Bank Pink Sheet** is released early each month (around the third working day) with
   monthly average prices up to the month before, in nominal US dollars. The workbook's address
   changes with every release, so the app reads the World Bank's commodity markets page
@@ -130,6 +147,16 @@ Notes from the first check on Sam's Mac (2026-11-05):
   Qatar, Saudi Arabia, UAE, Bahrain, Oman), the top three markets and suppliers, the commodity
   share of exports, and fuels as a share of imports. On the Country tab and at
   `GET /api/data/trade-partners`.
+- **IMF COFER** (currency composition of official foreign exchange reserves) is quarterly and
+  published only for the world and country groups, never for one country. The app reads the
+  world figure: it finds the world code in the COFER country list by name, asks for every COFER
+  series for the world, and reads each currency from the series name. It uses the IMF's own share
+  series when there are any, otherwise claims in each currency over total allocated reserves
+  (stated on the row). Shown on every Country tab as a world reading, with the country's own
+  currency first when COFER names it (Japan, UK, US, China, euro area, Canada, Australia,
+  Switzerland), and given to the FX Valuation Agent for those currencies. Kept on disk in
+  `data/live/imf_cofer.json`, asked again after a day. `IMF_COFER_KEY` in `.env` sets the series
+  key if the names do not match.
 
 ## Free, with your own key
 

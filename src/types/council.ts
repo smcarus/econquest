@@ -508,6 +508,8 @@ export interface WatchlistItem {
   cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
   /** TIC holdings of US Treasuries (utils/ticHoldings.ts), with the date the app pulled them. */
   tic?: import('../utils/ticHoldings').TicHolding & { pulledAt: string };
+  /** IMF official reserves and balance of payments (utils/imfReserves.ts), with the date the app pulled them. */
+  imf?: import('../utils/imfReserves').ImfExternal & { pulledAt: string };
   /** OECD composite leading indicator (utils/oecdCli.ts), with the date the app pulled it. */
   oecdCli?: import('../utils/oecdCli').CliReading & { pulledAt: string };
   /** Set when the OECD answered but publishes no CLI for this country (so the reason can say so). */
@@ -518,6 +520,8 @@ export interface WatchlistItem {
   oecdCpiPulledAt?: string;
   /** UN Comtrade partners and export mix (utils/comtradeTrade.ts), with the date the app pulled them. */
   comtrade?: import('../utils/comtradeTrade').ComtradeProfile & { pulledAt: string };
+  /** IMF COFER world currency shares of FX reserves (utils/imfCofer.ts); the same world reading on every row. */
+  cofer?: import('../utils/imfCofer').CoferReading & { pulledAt: string };
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }

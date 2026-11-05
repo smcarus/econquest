@@ -179,3 +179,29 @@ test('agent choice prompt lists every agent by id and the earlier questions', ()
   for (const id of ['cb', 'rv', 'fx', 'spill', 'calendar']) assert.match(p, new RegExp(`- ${id}: `));
   assert.match(p, /Earlier questions[\s\S]*Is Turkey cheap\?[\s\S]*Question: And the currency\?/);
 });
+
+test('Central Bank Watcher answers with IMF reserves and current account even without a policy rate', async () => {
+  const { runCouncil: run, planCouncil: plan } = await import('../src/utils/askCouncil.ts');
+  const bra = {
+    iso3: 'BRA',
+    countryName: 'Brazil',
+    imf: {
+      iso3: 'BRA',
+      pulledAt: '2026-11-05T03:00:00Z',
+      reserves: { key: 'BRA.TRA.USD.M', period: '2025-09', usdBn: 345, change12mPct: 2.4 },
+      imports4q: { usdBn: 400, through: '2025-Q2', key: 'BRA.DB.GS.USD.Q' },
+      monthsOfImports: 10.3,
+      currentAccount: { key: 'BRA.NETCD.CAB.USD.Q', period: '2025-Q2', usdBn: -18 },
+      currentAccount4q: { usdBn: -60, through: '2025-Q2', pctGdp: -2.5, gdpYear: '2025', gdpUsdBn: 2400 },
+    },
+  } as never;
+  const q = 'How strong are Brazil reserves and the current account?';
+  const p = plan(q, [bra]);
+  assert.ok(p.agents.some((a) => a.id === 'cb'));
+  const cb = run(q, p, [bra]).find((a) => a.id === 'cb')!;
+  const f = cb.findings[0];
+  assert.match(f.reading, /Official reserves \$345\.0bn \(IMF, Sep 2025\)/);
+  assert.ok(f.figures.some((x) => x.label === 'Reserves in months of imports' && x.tag === 'model'));
+  assert.ok(f.figures.some((x) => x.label === 'Official reserves' && x.tag === 'official'));
+  assert.match(cb.missing.join(' '), /policy rate/);
+});

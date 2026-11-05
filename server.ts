@@ -17,6 +17,8 @@ import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtrad
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
+import { pullImfExternal, type ImfExternal, type ImfStructure } from './src/utils/imfReserves';
+import { pullCofer, type CoferReading } from './src/utils/imfCofer';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
@@ -895,6 +897,127 @@ async function fetchComtrade(): Promise<ComtradeFile> {
 }
 
 /**
+ * IMF reserves and balance of payments (src/utils/imfReserves.ts): monthly official reserves (IL)
+ * and quarterly current account and imports (BOP) for each catalog country, from api.imf.org.
+ * Saved to data/live/imf_external.json with its pull date and pulled again after a day; the
+ * datasets' structures (dimensions, indicator names) are kept a week. A failed pull keeps the
+ * last good figures per country and is retried after an hour.
+ */
+type ImfPull = { pulledAt: string; structuresAt?: string; structures?: Record<string, ImfStructure>; countries: Record<string, ImfExternal> };
+let imfMemory: { pull: ImfPull | null; triedAt: number } | null = null;
+let imfInFlight: Promise<ImfPull | null> | null = null;
+function imfFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'imf_external.json');
+}
+async function fetchImfPull(): Promise<ImfPull | null> {
+  if (!imfMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(imfFile(), 'utf8')) as ImfPull;
+      if (saved?.pulledAt && saved.countries && typeof saved.countries === 'object') imfMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  const prev = imfMemory?.pull ?? null;
+  if (prev && Date.now() - Date.parse(prev.pulledAt) < 24 * 60 * 60 * 1000) return prev;
+  if (imfMemory && Date.now() - imfMemory.triedAt < 60 * 60 * 1000) return prev;
+  if (imfInFlight) return imfInFlight;
+  imfInFlight = (async () => {
+    const weekOld = !prev?.structuresAt || Date.now() - Date.parse(prev.structuresAt) > 7 * 24 * 60 * 60 * 1000;
+    let structures: Record<string, ImfStructure> = weekOld ? {} : { ...(prev?.structures || {}) };
+    const countries: Record<string, ImfExternal> = {};
+    let any = false;
+    for (const c of SOVEREIGN_CATALOG) {
+      try {
+        const r = await pullImfExternal({ fetchFn: (u, i) => fetch(u, i), env: process.env, timeoutMs: 30000, structures }, c.iso3);
+        structures = r.structures;
+        const got = r.external.reserves || r.external.currentAccount;
+        if (got) any = true;
+        // Keep the last good figures when this pull got nothing for the country.
+        countries[c.iso3] = got || !prev?.countries[c.iso3] ? r.external : prev.countries[c.iso3];
+        const bad = r.steps.filter((s) => !s.ok);
+        if (bad.length) console.warn(`[IMF] ${c.iso3}: ${bad.map((s) => `${s.measure}: ${s.note}`).join(' | ')}`);
+      } catch (e) {
+        console.warn(`[IMF] ${c.iso3}: ${describeNetworkError(e, 30000)}`);
+        if (prev?.countries[c.iso3]) countries[c.iso3] = prev.countries[c.iso3];
+      }
+    }
+    if (!any) {
+      imfMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: ImfPull = {
+      pulledAt: new Date().toISOString(),
+      structuresAt: weekOld ? new Date().toISOString() : prev?.structuresAt,
+      structures,
+      countries,
+    };
+    imfMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(imfFile()), { recursive: true });
+      fs.writeFileSync(imfFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    imfInFlight = null;
+  });
+  return imfInFlight;
+}
+
+/**
+ * IMF COFER (src/utils/imfCofer.ts): world currency shares of official FX reserves, quarterly.
+ * One small request. Saved to data/live/imf_cofer.json with its pull date, pulled again after a
+ * day; a failed pull keeps the last good one and is retried after an hour.
+ */
+type CoferPull = { pulledAt: string; cofer: CoferReading; structures?: Record<string, ImfStructure> };
+let coferMemory: { pull: CoferPull | null; triedAt: number } | null = null;
+let coferInFlight: Promise<CoferPull | null> | null = null;
+function coferFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'imf_cofer.json');
+}
+async function fetchCoferPull(): Promise<CoferPull | null> {
+  if (!coferMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(coferFile(), 'utf8')) as CoferPull;
+      if (saved?.pulledAt && saved.cofer?.shares) coferMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  const prev = coferMemory?.pull ?? null;
+  if (prev && Date.now() - Date.parse(prev.pulledAt) < 24 * 60 * 60 * 1000) return prev;
+  if (coferMemory && Date.now() - coferMemory.triedAt < 60 * 60 * 1000) return prev;
+  if (coferInFlight) return coferInFlight;
+  coferInFlight = (async () => {
+    let fresh: CoferPull | null = null;
+    try {
+      const r = await pullCofer({ fetchFn: (u, i) => fetch(u, i), env: process.env, timeoutMs: 30000, structures: prev?.structures });
+      if (r.cofer) fresh = { pulledAt: new Date().toISOString(), cofer: r.cofer, structures: r.structures };
+      else console.warn(`[IMF] COFER: ${r.note}`);
+    } catch (e) {
+      console.warn(`[IMF] COFER: ${describeNetworkError(e, 30000)}`);
+    }
+    if (!fresh) {
+      coferMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    coferMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(coferFile()), { recursive: true });
+      fs.writeFileSync(coferFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    coferInFlight = null;
+  });
+  return coferInFlight;
+}
+
+/**
  * Trade exposure for the scenario ranking (src/utils/scenarioExposure.ts): World Bank fuel and
  * trade shares, and WITS partner shares with China and Russia. Kept 24 hours (1 hour after a miss).
  */
@@ -1712,7 +1835,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, comtrade] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, comtrade, imf, cofer] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -1723,6 +1846,9 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     // Comtrade pulls one country at a time; the watchlist shows what is saved and the pull fills in later.
     Promise.race([fetchComtrade(), new Promise<ComtradeFile | null>((resolve) => setTimeout(() => resolve(comtradeMemory?.file ?? null), 3000))]),
+    // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
+    Promise.race([fetchImfPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    Promise.race([fetchCoferPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1766,6 +1892,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
           ...(comtrade?.countries[catItem.iso3] ? { comtrade: { ...comtrade.countries[catItem.iso3].profile, pulledAt: comtrade.countries[catItem.iso3].pulledAt } } : {}),
+          ...(imf?.countries[catItem.iso3] ? { imf: { ...imf.countries[catItem.iso3], pulledAt: imf.pulledAt } } : {}),
+          ...(cofer ? { cofer: { ...cofer.cofer, pulledAt: cofer.pulledAt } } : {}),
           ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,

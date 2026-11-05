@@ -18,7 +18,9 @@ import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, p
 import { carryToVol, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
+import { IMF_BOP_LABEL, IMF_RESERVES_LABEL, formatImfPeriod, imfSentence, reserveCover } from './imfReserves';
 import { cpiSentence } from './oecdInflation';
+import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
@@ -64,8 +66,8 @@ export interface AgentAnswer {
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
   cb: {
     name: 'Central Bank Watcher',
-    covers: 'inflation against target (OECD monthly where published), policy rate, real rates',
-    topic: /central bank|monetary|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
+    covers: 'inflation against target (OECD monthly where published), policy rate, real rates, official reserves and import cover, current account (IMF)',
+    topic: /central bank|monetary|reserves?\b|import cover|balance of payments|\bbop\b|current account|external (?:position|balance|financing)|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
   },
   rv: {
     name: 'Relative Value',
@@ -74,8 +76,8 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   fx: {
     name: 'FX Valuation',
-    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC)',
-    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
+    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC), the currency\'s share of world reserves (IMF COFER)',
+    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|\bcofer\b|reserve currenc|de-?dollari|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
   },
   spill: {
     name: 'Global Spillover',
@@ -261,6 +263,41 @@ const p2 = (v: number) => `${v.toFixed(2)}%`;
 const sgn = (v: number, d = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(d)}`;
 const MAX_FINDINGS = 6;
 
+/** IMF reserves and balance-of-payments figures for the council, each with its series and period. */
+export function imfFigures(it: LiveWatchlistItem): { figures: AgentFigure[]; reading: string; weight: number } {
+  const e = it.imf;
+  if (!e || (!e.reserves && !e.currentAccount)) return { figures: [], reading: '', weight: 0 };
+  const figures: AgentFigure[] = [];
+  let weight = 0;
+  if (e.reserves) {
+    figures.push({ label: 'Official reserves', value: `$${e.reserves.usdBn.toFixed(1)}bn`, source: `${IMF_RESERVES_LABEL}, ${formatImfPeriod(e.reserves.period)}`, tag: 'official' });
+    if (e.reserves.change12mPct !== undefined) {
+      figures.push({ label: 'Reserves, change over 12 months', value: `${sgn(e.reserves.change12mPct)}%`, source: `IMF IL, to ${formatImfPeriod(e.reserves.period)}`, tag: 'official' });
+    }
+  }
+  if (e.monthsOfImports !== undefined && e.imports4q) {
+    figures.push({
+      label: 'Reserves in months of imports',
+      value: `${e.monthsOfImports.toFixed(1)} months (${reserveCover(e.monthsOfImports)})`,
+      source: `IMF reserves over IMF BOP imports, four quarters to ${formatImfPeriod(e.imports4q.through)}; under 3 = thin, 3 to 6 = adequate, over 6 = ample`,
+      tag: 'model',
+    });
+    if (e.monthsOfImports < 3) weight = Math.max(weight, Math.min(1, (3 - e.monthsOfImports) / 3 + 0.4));
+  }
+  if (e.currentAccount4q?.pctGdp !== undefined) {
+    figures.push({
+      label: 'Current account, last four quarters',
+      value: `${sgn(e.currentAccount4q.pctGdp)}% of GDP`,
+      source: `${IMF_BOP_LABEL} to ${formatImfPeriod(e.currentAccount4q.through)}, over IMF WEO GDP ${e.currentAccount4q.gdpYear}`,
+      tag: 'model',
+    });
+    if (e.currentAccount4q.pctGdp < -3) weight = Math.max(weight, Math.min(1, Math.abs(e.currentAccount4q.pctGdp) / 8));
+  } else if (e.currentAccount) {
+    figures.push({ label: 'Current account, latest quarter', value: `${sgn(e.currentAccount.usdBn)}bn USD`, source: `${IMF_BOP_LABEL}, ${formatImfPeriod(e.currentAccount.period)}`, tag: 'official' });
+  }
+  return { figures, reading: imfSentence(e), weight };
+}
+
 function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
@@ -271,6 +308,11 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         it.policyRatePct === undefined ? `policy rate (${missingReason('policy', it.iso3).short})` : '',
       ].filter(Boolean);
       missing.push(`${it.countryName}: missing ${why.join(' and ')}`);
+      // Reserves and the balance of payments still answer without inflation or a policy rate.
+      const ext = imfFigures(it);
+      if (ext.figures.length) {
+        findings.push({ iso3: it.iso3, countryName: it.countryName, reading: ext.reading, figures: ext.figures, weight: ext.weight });
+      }
       continue;
     }
     const c = cpiTag(it);
@@ -312,12 +354,13 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       );
     }
     const stanceText = policyStance(real, gap);
+    const ext = imfFigures(it);
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading: `${it.oecdCpi ? `${cpiSentence(it.oecdCpi)} ` : ''}Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
-      figures,
-      weight: sig?.score ?? 0,
+      reading: `${it.oecdCpi ? `${cpiSentence(it.oecdCpi)} ` : ''}Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}${ext.reading ? ` ${ext.reading}` : ''}`,
+      figures: [...figures, ...ext.figures],
+      weight: Math.max(sig?.score ?? 0, ext.weight),
       stance: [{ dim: 'policy', call: policyCall(stanceText) }],
     });
   }
@@ -440,6 +483,18 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       }
       parts.push(ticSentence(t));
     }
+    // COFER: the currency's share of world FX reserves, when COFER names it.
+    const ownCcy = COFER_CCY_BY_ISO3[it.iso3];
+    const share = ownCcy ? it.cofer?.shares.find((x) => x.ccy === ownCcy) : undefined;
+    if (share && it.cofer) {
+      figures.push({
+        label: `${ccyName(ownCcy)} share of world FX reserves`,
+        value: `${share.pct.toFixed(1)}%${share.change4qPts !== undefined ? ` (${sgn(share.change4qPts)} pts on the year)` : ''}`,
+        source: `IMF COFER, world, ${formatImfPeriod(it.cofer.period)}`,
+        tag: 'official',
+      });
+      parts.push(`Central banks hold ${share.pct.toFixed(1)}% of world allocated FX reserves in the ${ccyName(ownCcy)} (IMF COFER, ${formatImfPeriod(it.cofer.period)}).`);
+    }
     if (!parts.length) {
       missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate, CFTC positioning or TIC holdings`);
       continue;
@@ -490,6 +545,15 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
           tag: 'model' as const,
         }))
       );
+      // Where the current account starts from, so the shock can be read against it.
+      if (it.imf?.currentAccount4q?.pctGdp !== undefined) {
+        figures.push({
+          label: 'Current account now, last four quarters',
+          value: `${sgn(it.imf.currentAccount4q.pctGdp)}% of GDP`,
+          source: `${IMF_BOP_LABEL} to ${formatImfPeriod(it.imf.currentAccount4q.through)}, over IMF WEO GDP ${it.imf.currentAccount4q.gdpYear}`,
+          tag: 'model',
+        });
+      }
     }
     let cycle = 0;
     if (cli) {
