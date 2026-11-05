@@ -82,7 +82,7 @@ try {
     await page.goto(base, { waitUntil: 'networkidle', timeout: 90_000 });
     await settle('Workspace');
 
-    for (const area of ['Workspace', 'Country Research', 'Portfolio', 'Reports', 'Tools']) {
+    for (const area of ['Workspace', 'Country Research', 'Compare', 'Portfolio', 'Reports', 'Tools']) {
       const nav = page.getByRole('button', { name: area, exact: true }).first();
       if (!(await nav.count())) continue;
       await nav.click();

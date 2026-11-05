@@ -9,6 +9,7 @@
 
 export type ToolTarget =
   | { area: 'today'; anchor: string }
+  | { area: 'compare'; anchor: string }
   | { area: 'country'; tab: 'brief' | 'macro' | 'overview' | 'history'; brief?: 'economist' | 'banker' | 'official'; anchor?: string }
   | { area: 'reports' }
   | { area: 'portfolio'; anchor?: string };
@@ -34,21 +35,21 @@ export const READY_TOOLS: ReadyTool[] = [
     title: 'MarketEdge screen',
     what: 'Your watchlist plus the US, China, Russia, UK, EU and India: 10Y yield, spread over the US, CDS, risk score and real FX against its own history.',
     sources: 'Official 10Y yields (FRED/OECD, Tesouro, EVDS), your CDS file, BIS real exchange rates',
-    target: { area: 'today', anchor: 'tool-marketedge' },
+    target: { area: 'compare', anchor: 'tool-marketedge' },
   },
   {
     id: 'panel_builder',
     title: 'Compare countries',
     what: 'Pick countries and figures for one table, latest values or full history, and download it as CSV with the source and period of every value.',
     sources: 'Every live figure and series in the app',
-    target: { area: 'today', anchor: 'tool-panel' },
+    target: { area: 'compare', anchor: 'tool-panel' },
   },
   {
     id: 'regime_quadrant',
     title: 'Growth and inflation',
     what: 'Each country placed by the 6-month change in its OECD leading indicator and the 3-month change in its monthly inflation, with what each quadrant means for policy.',
     sources: 'OECD leading indicator via DBnomics; monthly inflation (OECD, BCB, Eurostat)',
-    target: { area: 'today', anchor: 'tool-regime' },
+    target: { area: 'compare', anchor: 'tool-regime' },
   },
   {
     id: 'digest',
@@ -62,14 +63,14 @@ export const READY_TOOLS: ReadyTool[] = [
     title: 'Where data and price disagree',
     what: 'One line per country, biggest gap first: cheap or rich CDS against peers, policy rate against inflation, carry and currency valuation.',
     sources: 'Live IMF and World Bank figures, official yields, your CDS file, BIS',
-    target: { area: 'today', anchor: 'tool-divergences' },
+    target: { area: 'compare', anchor: 'tool-divergences' },
   },
   {
     id: 'scenarios',
     title: 'Scenario exposure',
     what: 'Who is most exposed to a Hormuz closure, a Taiwan blockade or tighter Russia sanctions, from trade and energy shares.',
     sources: 'World Bank and WITS trade data',
-    target: { area: 'today', anchor: 'tool-scenarios' },
+    target: { area: 'compare', anchor: 'tool-scenarios' },
   },
   {
     id: 'calendar',
@@ -237,7 +238,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
     desks: [
       { id: 'charts_watchlists', label: 'Macro map and horizon charts', needs: 'Live history for each charted series.', coveredBy: 'what_is_live' },
       { id: 'global_liquidity', label: 'Global liquidity', needs: 'Cross-currency basis and funding spreads (licensed).' },
-      { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Its stress grid ran on built-in inputs; the live growth and inflation quadrant is on Workspace.', coveredBy: 'regime_quadrant' },
+      { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Its stress grid ran on built-in inputs; the live growth and inflation quadrant is on Compare.', coveredBy: 'regime_quadrant' },
       { id: 'fx_beer_feer_equilibrium', label: 'FX equilibrium models', needs: 'Productivity and terms-of-trade series.', coveredBy: 'country_marketedge' },
       { id: 'quant_matrix_econometrics', label: 'Econometrics', needs: 'Historical series for the regressions.' },
       { id: 'quant_macro_surprise', label: 'Data surprises', needs: 'Consensus forecasts (licensed).' },

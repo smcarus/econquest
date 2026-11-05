@@ -51,7 +51,7 @@ export function firstRunSteps(input: FirstRunInput): FirstRunStep[] {
     {
       id: 'watchlist',
       title: 'Pick the countries you follow',
-      why: 'Workspace, MarketEdge and Ask the council all work from your watchlist.',
+      why: 'Workspace, Compare and Ask the council all work from your watchlist.',
       done: input.watchlistTouched,
       action: 'Edit watchlist',
     },

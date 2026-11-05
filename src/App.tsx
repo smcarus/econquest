@@ -105,7 +105,7 @@ import type { WorkspaceTab } from './components/WorkspacePage';
 
 import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
 
-type AppArea = 'today' | 'country' | 'portfolio' | 'reports' | 'desks';
+type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
 import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
 import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
 import { ScenarioDeltaComparatorDrawer } from './components/ScenarioDeltaComparatorModal';
@@ -1879,8 +1879,8 @@ export default function App() {
   const scrollToAnchor = (anchor: string) =>
     window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   const openTool = (t: ToolTarget) => {
-    if (t.area === 'today') {
-      setAppArea('today');
+    if (t.area === 'today' || t.area === 'compare') {
+      setAppArea(t.area);
       // Wait for Workspace to render, then bring the section into view.
       window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
     } else if (t.area === 'country') {
@@ -2215,6 +2215,18 @@ export default function App() {
                   className="ui-pill inline-flex items-center whitespace-nowrap"
                 >
                   Country Research
+                </button>
+              ),
+              compare: (
+                <button
+                  type="button"
+                  onClick={() => setAppArea('compare')}
+                  aria-current={appArea === 'compare' ? 'page' : undefined}
+                  aria-pressed={appArea === 'compare'}
+                  title="Your watchlist side by side: MarketEdge, gaps, growth and inflation, scenarios and the compare table"
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                >
+                  Compare
                 </button>
               ),
               portfolio: (
@@ -2741,6 +2753,16 @@ export default function App() {
                   Country Research
                 </button>
               ),
+              compare: (
+                <button
+                  type="button"
+                  onClick={() => setAppArea('compare')}
+                  aria-pressed={appArea === 'compare'}
+                  className="ui-pill whitespace-nowrap shrink-0"
+                >
+                  Compare
+                </button>
+              ),
               portfolio: (
                 <button
                   type="button"
@@ -2867,9 +2889,14 @@ export default function App() {
             />
           )}
 
-          {appArea === 'today' && (
-            <PanelBoundary name="Workspace" resetKey={run.iso3}>
+          {(appArea === 'today' || appArea === 'compare') && (
+            <PanelBoundary name={appArea === 'compare' ? 'Compare' : 'Workspace'} resetKey={run.iso3}>
             <TodayPage
+              section={appArea === 'compare' ? 'compare' : 'workspace'}
+              onOpenCompare={() => {
+                setAppArea('compare');
+                window.scrollTo({ top: 0 });
+              }}
               run={run}
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}
@@ -2940,6 +2967,10 @@ export default function App() {
               onSync={() => void handlePullLiveOpenData(run.iso3, run.countryName, false, true)}
               isSyncing={isFetchingOpenData}
               onCompare={() => setIsComparatorDrawerOpen(true)}
+              onOpenCompare={() => {
+                setAppArea('compare');
+                window.scrollTo({ top: 0 });
+              }}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
               briefView={countryBriefView}
