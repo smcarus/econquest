@@ -20,6 +20,8 @@ globalThis.fetch = async (input, init = {}) => {
   const url = String(input instanceof Request ? input.url : input);
   const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
   process.stderr.write(`[offline-fetch] ${url} key=${headers.has('key') ? 'present' : 'missing'}\n`);
+  // OFFLINE_HANG=<host part>: that host never answers (for the preload step time limit).
+  if (process.env.OFFLINE_HANG && url.includes(process.env.OFFLINE_HANG)) return new Promise(() => {});
 
   // A stand-in Ollama for the council synthesis test: one traceable sentence, one invented number.
   if (url === 'http://fake-ollama.test:11434/api/tags') return json({ models: [{ name: 'qwen2.5:7b' }] });

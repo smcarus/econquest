@@ -94,6 +94,26 @@ test('npm run preload offline: says the feeds cannot be reached and downloads no
   }
 });
 
+test('npm run preload: a step that never answers is recorded as not saved and the run moves on', () => {
+  const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-hang-'));
+  try {
+    const r = spawnSync(process.execPath, ['--import', 'tsx', path.join(rootDir, 'server.ts'), '--preload', '--countries=MEX'], {
+      cwd: rootDir,
+      env: { ...process.env, NODE_OPTIONS: `--import ${path.join(rootDir, 'tests/helpers/offline-fetch.mjs')}`, DATA_DIR: dataDir, OFFLINE_HANG: 'stats.bis.org/api', PRELOAD_STEP_TIMEOUT_S: '5' },
+      encoding: 'utf8',
+      timeout: 90_000,
+    });
+    assert.equal(r.status, 0, r.stderr.slice(-1500));
+    assert.match(r.stdout, /FAIL BIS central bank policy rates.*took longer than 5 s; moved on/);
+    assert.match(r.stdout, /\[preload\] finished:/);
+    const state = JSON.parse(readFileSync(path.join(dataDir, 'local', 'preload.json'), 'utf8'));
+    assert.equal(state.steps['world:bis'].outcome, 'failed');
+    assert.equal(state.steps['country:MEX:history'].outcome, 'done');
+  } finally {
+    rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 test('npm run preload: runs offline against fixtures, saves progress, and a second run carries on', () => {
   const dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-preload-'));
