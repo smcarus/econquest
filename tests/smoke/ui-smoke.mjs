@@ -83,7 +83,9 @@ try {
     await settle('Workspace');
 
     for (const area of ['Workspace', 'Country Research', 'Compare', 'Portfolio', 'Reports', 'Tools']) {
-      const nav = page.getByRole('button', { name: area, exact: true }).first();
+      // Tools sits in Menu, next to Settings, unless the full desk library is on.
+      if (area === 'Tools' && !allTools) await page.getByRole('button', { name: 'Menu', exact: true }).click();
+      const nav = (area === 'Tools' && !allTools ? page.getByRole('menuitem', { name: /^Tools/ }) : page.getByRole('button', { name: area, exact: true })).first();
       if (!(await nav.count())) continue;
       await nav.click();
       await settle(area);

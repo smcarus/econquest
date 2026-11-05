@@ -62,7 +62,7 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
     case 'policy':
       if (!CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3))
         return { kind: 'setup', short: 'Not in BIS policy rates', help: 'The BIS central bank policy rates dataset has no series for this country. Add your own figure through a data connector to fill it.' };
-      return { kind: 'unreachable', short: 'BIS did not answer', help: 'The BIS policy rates feed (free, no key) did not answer. Press Refresh now on Country Research, or check the connection under Tools > Data connections.' };
+      return { kind: 'unreachable', short: 'BIS did not answer', help: 'The BIS policy rates feed (free, no key) did not answer. Press Refresh now on Country Research, or check the connection under Menu > Tools > Data connections.' };
   }
 }
 

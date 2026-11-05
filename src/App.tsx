@@ -167,6 +167,7 @@ import {
   Settings2,
   Presentation,
   KeyRound,
+  Wrench,
 } from 'lucide-react';
 import { OPEN_SETTINGS_EVENT, SettingsDialog } from './components/SettingsDialog';
 import { PanelBoundary } from './components/PanelBoundary';
@@ -2250,17 +2251,8 @@ export default function App() {
                   Reports
                 </button>
               ),
-              desks: !showAllTools ? (
-                <button
-                  type="button"
-                  onClick={() => setAppArea('desks')}
-                  aria-current={appArea === 'desks' ? 'page' : undefined}
-                  aria-pressed={appArea === 'desks'}
-                  className="ui-pill inline-flex items-center whitespace-nowrap"
-                >
-                  Tools
-                </button>
-              ) : (
+              // Tools lives in Menu, next to Settings (Sam, 2026-11-05); the full desk library keeps its header menu.
+              desks: !showAllTools ? null : (
                 <div
                   className="relative"
                   onMouseEnter={() => setIsToolsMenuOpen(true)}
@@ -2444,13 +2436,6 @@ export default function App() {
                   </div>
                 </div>
 
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">Tools</div>
-                  <p className="text-slate-500 dark:text-slate-400" data-show-all-tools="true">
-                    The older desks are hidden: they ran on built-in figures, not live data. Each comes back once it has a live source.
-                  </p>
-                </div>
-
                 <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
                   {(
                     [
@@ -2460,6 +2445,14 @@ export default function App() {
                         label: 'Settings',
                         hint: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,',
                         onClick: () => setIsSettingsOpen(true),
+                        className: '',
+                      },
+                      {
+                        key: 'tools',
+                        icon: <Wrench className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Tools',
+                        hint: '',
+                        onClick: () => setAppArea('desks'),
                         className: '',
                       },
                       {
@@ -2782,7 +2775,7 @@ export default function App() {
                   Reports
                 </button>
               ),
-              desks: (
+              desks: showAllTools ? (
                 <button
                   type="button"
                   onClick={() => {
@@ -2794,7 +2787,7 @@ export default function App() {
                 >
                   Tools
                 </button>
-              )
+              ) : null
                 } as Record<WorkflowArea, React.ReactNode>)[area]}
               </React.Fragment>
             ))}
