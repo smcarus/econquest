@@ -3974,7 +3974,7 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
         return res.json(out);
       }
       const checked = checkBrief(step.data || empty, question, answers);
-      const out: SynthesisResult = { brief: checked.brief, removed: checked.removed, provider: step.providerUsed };
+      const out: SynthesisResult = { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
       res.json(out);
     } catch (error: any) {
       const out: SynthesisResult = { brief: null, removed: [], reason: `The summary step failed (${error?.message || 'unknown error'}).` };
