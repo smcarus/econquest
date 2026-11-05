@@ -699,8 +699,9 @@ async function fetchCommodities(): Promise<CommodityReply> {
 }
 
 /**
- * One way to call the OECD (sdmx.oecd.org): its own headers, one call at a time at least 5 seconds
- * apart, and nothing at all for an hour after a refusal (HTTP 429 or Cloudflare's bot check).
+ * One way to fetch OECD data (now through DBnomics, api.db.nomics.world): named headers, one call
+ * at a time at least 5 seconds apart, and nothing at all for an hour after a refusal (HTTP 429 or
+ * a Cloudflare bot check).
  */
 let oecdQueue: Promise<unknown> = Promise.resolve();
 let oecdLastCallAt = 0;
@@ -721,7 +722,7 @@ async function oecdFetch(url: string, timeoutMs: number): Promise<{ status: numb
       const text = await res.text();
       if (res.status === 429 || isBotCheck(res.status, text)) {
         oecdPausedUntil = Date.now() + OECD_PAUSE_MS;
-        console.warn(`[OECD] ${isBotCheck(res.status, text) ? "blocked by the OECD's bot check" : 'too many requests'} (HTTP ${res.status}); pausing OECD calls for an hour`);
+        console.warn(`[OECD via DBnomics] ${isBotCheck(res.status, text) ? 'blocked by a bot check' : 'too many requests'} (HTTP ${res.status}); pausing these calls for an hour`);
       }
       return { status: res.status, text };
     } finally {
@@ -764,14 +765,15 @@ async function fetchCliPull(): Promise<CliPull | null> {
       try {
         res = await oecdFetch(cliUrl({ wide }), 30000);
       } catch (e) {
-        console.warn(`[OECD] leading indicators: ${describeNetworkError(e, 30000)}`);
+        console.warn(`[OECD via DBnomics] leading indicators: ${describeNetworkError(e, 30000)}`);
         break;
       }
       if (!res) break;
       if (res.status >= 200 && res.status < 300) series = parseCli(res.text);
-      else console.warn(`[OECD] leading indicators refused (HTTP ${res.status})`);
-      // Ask for the whole dataflow only when the narrow query itself was refused as unknown.
-      if (series || !(res.status === 400 || res.status === 404)) break;
+      else console.warn(`[OECD via DBnomics] leading indicators refused (HTTP ${res.status})`);
+      // Ask again without the adjustment filter only when the narrow query found nothing or was
+      // refused as unknown; never after a 429 or a bot check.
+      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
     }
     const prev = cliMemory?.pull ?? null;
     if (!series) {
@@ -818,12 +820,18 @@ async function fetchCpiPull(): Promise<CpiPull | null> {
   if (cpiInFlight) return cpiInFlight;
   cpiInFlight = (async () => {
     let series: CpiSeries | null = null;
-    try {
-      const res = await oecdFetch(cpiUrl(), 30000);
-      if (res && res.status >= 200 && res.status < 300) series = parseCpi(res.text);
-      else if (res) console.warn(`[OECD] consumer prices refused (HTTP ${res.status})`);
-    } catch (e) {
-      console.warn(`[OECD] consumer prices: ${describeNetworkError(e, 30000)}`);
+    for (const wide of [false, true]) {
+      let res: { status: number; text: string } | null = null;
+      try {
+        res = await oecdFetch(cpiUrl({ wide }), 60000);
+      } catch (e) {
+        console.warn(`[OECD via DBnomics] consumer prices: ${describeNetworkError(e, 60000)}`);
+        break;
+      }
+      if (!res) break;
+      if (res.status >= 200 && res.status < 300) series = parseCpi(res.text);
+      else console.warn(`[OECD via DBnomics] consumer prices refused (HTTP ${res.status})`);
+      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
     }
     const prev = cpiMemory?.pull ?? null;
     if (!series) {

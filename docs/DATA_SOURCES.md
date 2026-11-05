@@ -44,8 +44,8 @@ estimated, invented or taken from built-in sample values.
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
-| OECD leading indicators | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | sdmx.oecd.org | 1 day, on disk |
-| OECD consumer prices | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | sdmx.oecd.org | 1 day, on disk |
+| OECD leading indicators (via DBnomics) | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | api.db.nomics.world | 1 day, on disk |
+| OECD consumer prices (via DBnomics) | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | api.db.nomics.world | 1 day, on disk |
 | UN Comtrade | Annual goods trade by partner (shares with China, Taiwan, Russia and the Gulf producers; top partners) and the export mix by HS chapter (fuels, ores, metals, farm goods) | comtradeapi.un.org | 30 days per country, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
@@ -78,12 +78,12 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
-- **OECD leading indicators** come from the OECD Data Explorer API (dataflow
-  `OECD.SDD.STES,DSD_STES@DF_CLI`, measure LI, amplitude adjusted). The OECD publishes around
+- **OECD leading indicators** come from the OECD's dataflow `DSD_STES@DF_CLI` (measure LI,
+  amplitude adjusted), read through DBnomics (see "OECD via DBnomics" below). The OECD publishes around
   mid-month; the newest month is usually one to two months old and always shows with the date the
   app pulled it. The app asks once a day for every area at once (the OECD asks users to keep calls
-  modest), keeps it on disk (`data/live/oecd-cli.json`), and if the OECD refuses the narrow query
-  asks once for the whole dataflow and reads it the same way. The EU benchmark reads the euro
+  modest), keeps it on disk (`data/live/oecd-cli.json`), and if the narrow query finds nothing it
+  asks once without the adjustment filter and reads it the same way. The EU benchmark reads the euro
   area. Readings: the level, the change on the month and over six months, and the OECD's cycle
   phase as a stated rule (above 100 and rising = expansion, above and falling = downturn, below
   and falling = slowdown, below and rising = recovery; tagged as the Global Spillover Agent's
@@ -125,13 +125,15 @@ Notes from the first check on Sam's Mac (2026-11-05):
   Readings per commodity: latest month, change on the month and over 12 months, and the latest
   against its 3-year average. A commodity whose column is not found reads Missing and says so.
   Shown at `GET /api/data/commodities`; the spillover scenarios read it.
-- **OECD and Cloudflare.** On Sam's first check (2026-11-05) both OECD rows came back HTTP 429
-  with a Cloudflare "Just a moment" page, the OECD's bot check, not a data answer. The app now
-  sends an Accept header for SDMX-CSV and a named user agent on every OECD call, makes one OECD
-  call at a time at least 5 seconds apart, never retries the wider query after a refusal, and
-  sends nothing to the OECD for an hour after a 429 or a bot check. The check names a bot check
-  as such.
-- **OECD consumer prices** come from the same API (dataflow `OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL`,
+- **OECD via DBnomics.** On Sam's first check (2026-11-05) the OECD's own API (sdmx.oecd.org)
+  answered both OECD rows with HTTP 429 and a Cloudflare "Just a moment" page, its bot check.
+  Sam chose DBnomics (03:33Z): a free mirror of the OECD's datasets under the OECD's own codes,
+  no key. The app now reads `DSD_STES@DF_CLI` and `DSD_PRICES@DF_PRICES_ALL` from
+  `api.db.nomics.world/v22/series/OECD/...`, filtered by dimension name, keeps the last 40 months
+  of each series on disk, makes one call at a time at least 5 seconds apart, and pauses an hour
+  after a 429 or a bot check. Figures say "OECD via DBnomics". DBnomics refreshes its OECD copy
+  on its own schedule, so a new OECD month can appear a few days later than on the OECD's site.
+- **OECD consumer prices** come from the same route (dataflow `OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL`,
   headline CPI, all items, monthly). The OECD's own y/y rate is used; where only the index is in
   the reply, y/y is worked out from the index 12 months apart and the source says so. Asked once
   a day for every area, kept on disk (`data/live/oecd-cpi.json`). Where the OECD has a figure it

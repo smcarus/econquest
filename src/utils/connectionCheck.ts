@@ -615,13 +615,13 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       clearTimeout(timer);
     }
   });
-  // The OECD sits behind Cloudflare: one call at a time, the CPI check after the CLI one.
+  // OECD data via DBnomics: one call at a time, the CPI check after the CLI one.
   let oecdGate: Promise<unknown> = Promise.resolve();
   add('oecd_cli', () => {
     const job = httpCheck(
-      { id: 'oecd_cli', name: 'OECD leading indicators', group: 'free', feeds: 'Monthly composite leading indicator (amplitude adjusted, 100 = long-term average) for the countries the OECD covers' },
+      { id: 'oecd_cli', name: 'OECD leading indicators (via DBnomics)', group: 'free', feeds: 'Monthly OECD composite leading indicator (amplitude adjusted, 100 = long-term average) for the countries the OECD covers' },
       fetchFn,
-      cliUrl({ areas: ['USA', SAMPLE_ISO3], months: 6 }),
+      cliUrl({ areas: ['USA', SAMPLE_ISO3] }),
       Math.max(T, 20000),
       (r) => {
         const s = parseCli(r.text);
@@ -629,7 +629,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} leading indicator ${fmt(c.level, 2)} (${formatMonth(c.month)}${c.phase ? `, ${c.phase}` : ''})` : null;
       },
       { headers: OECD_HEADERS },
-      'The OECD answered, but not with an amplitude-adjusted leading indicator series the app reads. The dataset layout may have changed.'
+      'DBnomics answered, but with no amplitude-adjusted OECD leading indicator series the app reads (dataset DSD_STES@DF_CLI). The dataset code or dimension names may differ.'
     );
     oecdGate = job;
     return job;
@@ -639,9 +639,9 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     await oecdGate.catch(() => undefined);
     await new Promise((r) => setTimeout(r, opts.oecdGapMs ?? 3000));
     return httpCheck(
-      { id: 'oecd_cpi', name: 'OECD consumer prices', group: 'free', feeds: 'Monthly headline CPI inflation, y/y, for the countries the OECD covers' },
+      { id: 'oecd_cpi', name: 'OECD consumer prices (via DBnomics)', group: 'free', feeds: 'Monthly OECD headline CPI inflation, y/y, for the countries the OECD covers' },
       fetchFn,
-      cpiUrl({ areas: ['USA', SAMPLE_ISO3], months: 15 }),
+      cpiUrl({ areas: ['USA', SAMPLE_ISO3] }),
       Math.max(T, 20000),
       (r) => {
         const s = parseCpi(r.text);
@@ -649,7 +649,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})` : null;
       },
       { headers: OECD_HEADERS },
-      'The OECD answered, but not with a monthly headline CPI series the app reads. The dataset layout may have changed.'
+      'DBnomics answered, but with no monthly OECD headline CPI growth series the app reads (dataset DSD_PRICES@DF_PRICES_ALL). The dataset code or dimension names may differ.'
     );
   });
 

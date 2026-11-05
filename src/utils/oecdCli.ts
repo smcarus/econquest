@@ -2,9 +2,10 @@
  * OECD Composite Leading Indicators (CLI), monthly (Sam, 2026-11-05: "OECD composite leading
  * indicators and inflation, monthly, no key").
  *
- * Source: OECD Data Explorer API, dataflow OECD.SDD.STES / DSD_STES@DF_CLI, measure LI, the
- * amplitude-adjusted series (long-term average = 100). Free, no key. The OECD publishes it around
- * mid-month; the newest month is usually one to two months old.
+ * Source: the OECD's dataflow DSD_STES@DF_CLI, measure LI, the amplitude-adjusted series
+ * (long-term average = 100), read through DBnomics (api.db.nomics.world, free, no key) because
+ * the OECD's own API refused the app with a bot check. The OECD publishes it around mid-month;
+ * the newest month is usually one to two months old.
  *
  * The app asks once a day for every area at once and keeps the reply on disk (data/live/oecd-cli.json).
  * Countries the OECD does not publish a CLI for (Egypt, for one) read Missing with that reason.
@@ -13,27 +14,31 @@
  * OECD's own cycle phases as a stated rule: above 100 and rising = expansion, above 100 and
  * falling = downturn, below 100 and falling = slowdown, below 100 and rising = recovery.
  */
-import { OECD_API, OECD_AREA_FOR, areaSeries, formatMonth, parseSdmxCsv, seriesByArea, startPeriod } from './oecdSdmx';
+import { OECD_AREA_FOR, areaSeries, dbnomicsUrl, formatMonth, parseOecdReply, seriesByArea } from './oecdSdmx';
 
-export const CLI_LABEL = 'OECD Composite Leading Indicator (amplitude adjusted, long-term average = 100)';
-export const CLI_FLOW = 'OECD.SDD.STES,DSD_STES@DF_CLI,';
+export const CLI_LABEL = 'OECD Composite Leading Indicator via DBnomics (amplitude adjusted, long-term average = 100)';
+export const CLI_DATASET = 'DSD_STES@DF_CLI';
 
 /**
- * Query for the CLI. With no area, every area the OECD publishes (one call for the whole app).
- * Key order: REF_AREA.FREQ.MEASURE.UNIT_MEASURE.ACTIVITY.ADJUSTMENT.TRANSFORMATION.TIME_HORIZ.METHODOLOGY.
- * `wide` asks for the whole dataflow, used if the OECD refuses the narrow key (a changed layout).
+ * DBnomics query for the CLI. With no area, every area (one call for the whole app). Filtered to
+ * monthly, measure LI, amplitude adjusted; `wide` drops the adjustment filter (used if the narrow
+ * query finds nothing) and the reader still keeps only amplitude-adjusted series.
  */
-export function cliUrl(opts: { areas?: string[]; months?: number; wide?: boolean; now?: Date } = {}): string {
-  const area = (opts.areas || []).flatMap((a) => OECD_AREA_FOR[a] || [a]).join('+');
-  const key = opts.wide ? (area ? `${area}........` : 'all') : `${area}.M.LI......`;
-  return `${OECD_API}/${CLI_FLOW}/${key}?startPeriod=${startPeriod(opts.months ?? 24, opts.now)}&format=csvfile`;
+export function cliUrl(opts: { areas?: string[]; wide?: boolean } = {}): string {
+  const areas = (opts.areas || []).flatMap((a) => OECD_AREA_FOR[a] || [a]);
+  return dbnomicsUrl(CLI_DATASET, {
+    ...(areas.length ? { REF_AREA: areas } : {}),
+    FREQ: ['M'],
+    MEASURE: ['LI'],
+    ...(opts.wide ? {} : { ADJUSTMENT: ['AA'] }),
+  });
 }
 
 export type CliSeries = Record<string, { period: string; value: number }[]>;
 
 /** Reads the OECD reply into one amplitude-adjusted CLI series per area. Null when nothing usable. */
 export function parseCli(text: unknown): CliSeries | null {
-  const obs = parseSdmxCsv(text);
+  const obs = parseOecdReply(text);
   if (!obs?.length) return null;
   const s = seriesByArea(
     obs,
@@ -67,8 +72,14 @@ export function cliFor(iso3: string, series: CliSeries | null | undefined): CliR
   const pts = areaSeries(iso3, series);
   if (!pts?.length) return null;
   const last = pts[pts.length - 1];
-  const prev = pts.length > 1 ? pts[pts.length - 2] : undefined;
-  const six = pts.length > 6 ? pts[pts.length - 7] : undefined;
+  // By calendar month, so a gap in the series is never read as a one-month change.
+  const back = (n: number) => {
+    const [y, m] = last.period.split('-').map(Number);
+    const want = new Date(Date.UTC(y, m - 1 - n, 1)).toISOString().slice(0, 7);
+    return pts.find((p) => p.period === want);
+  };
+  const prev = back(1);
+  const six = back(6);
   const r2 = (v: number) => Number(v.toFixed(2));
   const change1m = prev ? r2(last.value - prev.value) : undefined;
   return {
@@ -84,7 +95,7 @@ export function cliFor(iso3: string, series: CliSeries | null | undefined): CliR
 export function cliMissing(pulled: boolean): { short: string; help: string } {
   return pulled
     ? { short: 'OECD publishes no CLI', help: 'The OECD answered, but publishes no composite leading indicator for this country.' }
-    : { short: 'OECD did not answer', help: 'The OECD Data Explorer did not answer yet; the app asks again within the hour.' };
+    : { short: 'DBnomics did not answer', help: 'DBnomics (the free mirror the app reads OECD data from) did not answer yet; the app asks again within the hour.' };
 }
 
 const sg = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;

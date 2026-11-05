@@ -51,10 +51,10 @@ const healthy: FetchFn = async (url) => {
       { report_date_as_yyyy_mm_dd: '2026-10-20T00:00:00.000', cftc_contract_market_code: '095741', open_interest_all: '278165', asset_mgr_positions_long: '53063', asset_mgr_positions_short: '77127', lev_money_positions_long: '91748', lev_money_positions_short: '27934' },
       { report_date_as_yyyy_mm_dd: '2026-10-27T00:00:00.000', cftc_contract_market_code: '095741', open_interest_all: '279359', asset_mgr_positions_long: '48101', asset_mgr_positions_short: '73302', lev_money_positions_long: '99625', lev_money_positions_short: '31290' },
     ]);
-  if (url.includes('sdmx.oecd.org') && url.includes('DF_CLI'))
-    return new Response('STRUCTURE,STRUCTURE_ID,ACTION,REF_AREA,FREQ,MEASURE,UNIT_MEASURE,ACTIVITY,ADJUSTMENT,TRANSFORMATION,TIME_HORIZ,METHODOLOGY,TIME_PERIOD,OBS_VALUE\nDATAFLOW,OECD.SDD.STES:DSD_STES@DF_CLI(4.1),I,BRA,M,LI,IX,_Z,AA,IX,_Z,H,2026-08,99.71\nDATAFLOW,OECD.SDD.STES:DSD_STES@DF_CLI(4.1),I,BRA,M,LI,IX,_Z,AA,IX,_Z,H,2026-09,99.80\n');
-  if (url.includes('sdmx.oecd.org') && url.includes('DF_PRICES_ALL'))
-    return new Response('STRUCTURE,STRUCTURE_ID,ACTION,REF_AREA,FREQ,METHODOLOGY,MEASURE,UNIT_MEASURE,EXPENDITURE,ADJUSTMENT,TRANSFORMATION,TIME_PERIOD,OBS_VALUE\nDATAFLOW,OECD.SDD.TPS:DSD_PRICES@DF_PRICES_ALL(1.0),I,BRA,M,N,CPI,PA,_T,N,GY,2026-09,4.2\n');
+  if (url.includes('api.db.nomics.world') && url.includes('DF_CLI'))
+    return json({ series: { num_found: 1, docs: [{ series_code: 'BRA.M.LI.IX._Z.AA.IX._Z.H', dimensions: { REF_AREA: 'BRA', FREQ: 'M', MEASURE: 'LI', UNIT_MEASURE: 'IX', ADJUSTMENT: 'AA', METHODOLOGY: 'H' }, period: ['2026-08', '2026-09'], value: [99.71, 99.8] }] } });
+  if (url.includes('api.db.nomics.world') && url.includes('DF_PRICES_ALL'))
+    return json({ series: { num_found: 1, docs: [{ series_code: 'BRA.M.N.CPI.PA._T.N.GY', dimensions: { REF_AREA: 'BRA', FREQ: 'M', METHODOLOGY: 'N', MEASURE: 'CPI', UNIT_MEASURE: 'PA', EXPENDITURE: '_T', ADJUSTMENT: 'N', TRANSFORMATION: 'GY' }, period: ['2026-08', '2026-09'], value: ['NA', 4.2] }] } });
   if (url.includes('ticdata.treasury.gov')) return new Response('Table 5\nCountry\t2026-08\t2026-07\nJapan\t1068.3\t1103.9\nBrazil\t168.4\t168.0\nGrand Total\t9331.7\t9248.4\n');
   if (url.includes('www.worldbank.org/en/research/commodity-markets')) return new Response(`<a href="${PINK_LINK}">October 2026 (XLS)</a>`);
   if (url === PINK_LINK) return new Response(PINK_XLSX as BodyInit);
@@ -242,7 +242,7 @@ test('OECD: own headers on every call, and a Cloudflare bot check reads as that,
   const seen: Array<{ url: string; headers: Record<string, string> }> = [];
   const cf: FetchFn = async (url, init) => {
     seen.push({ url, headers: (init?.headers || {}) as Record<string, string> });
-    if (url.includes('sdmx.oecd.org'))
+    if (url.includes('api.db.nomics.world'))
       return new Response('<!DOCTYPE html><html lang="en-US"><head><title>Just a moment...</title></head><body><script src="/cdn-cgi/challenge-platform/x"></script></body></html>', { status: 429 });
     return healthy(url, init);
   };
@@ -251,10 +251,10 @@ test('OECD: own headers on every call, and a Cloudflare bot check reads as that,
     assert.equal(row(id).state, 'refused');
     assert.match(row(id).detail, /bot check \(a Cloudflare "Just a moment" page, HTTP 429\)/);
   }
-  const oecd = seen.filter((s) => s.url.includes('sdmx.oecd.org'));
+  const oecd = seen.filter((s) => s.url.includes('api.db.nomics.world'));
   assert.equal(oecd.length, 2);
   for (const s of oecd) {
-    assert.match(s.headers.Accept, /sdmx\.data\+csv/);
+    assert.equal(s.headers.Accept, 'application/json');
     assert.match(s.headers['User-Agent'], /^EconQuest\//);
   }
 });

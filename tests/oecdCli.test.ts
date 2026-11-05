@@ -54,15 +54,35 @@ test('not SDMX-CSV, no series; the OECD phase rule as stated', () => {
   assert.equal(cliPhase(99.8, -0.1), 'slowdown');
   assert.equal(cliPhase(99.8, 0.1), 'recovery');
   assert.equal(cliMissing(true).short, 'OECD publishes no CLI');
-  assert.equal(cliMissing(false).short, 'OECD did not answer');
+  assert.equal(cliMissing(false).short, 'DBnomics did not answer');
 });
 
-test('query: one call for every area, euro area for the EU row, months back from today', () => {
-  const now = new Date('2026-11-05T00:00:00Z');
-  assert.equal(startPeriod(24, now), '2024-11');
-  assert.equal(cliUrl({ now }), 'https://sdmx.oecd.org/public/rest/data/OECD.SDD.STES,DSD_STES@DF_CLI,/.M.LI......?startPeriod=2024-11&format=csvfile');
-  assert.match(cliUrl({ areas: ['USA', 'EUU'], months: 6, now }), /\/USA\+EA20\+EA19\+EA\.M\.LI\.{6}\?startPeriod=2026-05/);
-  assert.match(cliUrl({ wide: true, now }), /DF_CLI,\/all\?/);
+test('query: DBnomics, one call for every area, filtered by dimension name; euro area for the EU row', () => {
+  assert.equal(startPeriod(24, new Date('2026-11-05T00:00:00Z')), '2024-11');
+  const u = new URL(cliUrl());
+  assert.equal(u.host, 'api.db.nomics.world');
+  assert.equal(decodeURIComponent(u.pathname), '/v22/series/OECD/DSD_STES@DF_CLI');
+  assert.deepEqual(JSON.parse(u.searchParams.get('dimensions')!), { FREQ: ['M'], MEASURE: ['LI'], ADJUSTMENT: ['AA'] });
+  assert.equal(u.searchParams.get('observations'), '1');
+  assert.deepEqual(JSON.parse(new URL(cliUrl({ areas: ['USA', 'EUU'] })).searchParams.get('dimensions')!).REF_AREA, ['USA', 'EA20', 'EA19', 'EA']);
+  assert.equal(JSON.parse(new URL(cliUrl({ wide: true })).searchParams.get('dimensions')!).ADJUSTMENT, undefined);
+});
+
+test('reads the DBnomics reply: dimensions by name, NA skipped, only the amplitude-adjusted LI', () => {
+  const reply = JSON.stringify({
+    series: {
+      docs: [
+        { series_code: 'USA.M.LI.IX._Z.AA.IX._Z.H', dimensions: { REF_AREA: 'USA', FREQ: 'M', MEASURE: 'LI', ADJUSTMENT: 'AA', METHODOLOGY: 'H' }, period: ['2026-07', '2026-08', '2026-09'], value: [100.4, 'NA', 100.6] },
+        { series_code: 'USA.M.LI.IX._Z.NOR.IX._Z.H', dimensions: { REF_AREA: 'USA', FREQ: 'M', MEASURE: 'LI', ADJUSTMENT: 'NOR' }, period: ['2026-09'], value: [1.1] },
+      ],
+    },
+  });
+  const usa = cliFor('USA', parseCli(reply))!;
+  assert.equal(usa.level, 100.6);
+  assert.equal(usa.month, '2026-09');
+  assert.equal(usa.change1m, undefined, 'August is NA, so there is no month-on-month change');
+  assert.equal(parseCli('{"series":{"docs":[]}}'), null);
+  assert.equal(parseCli('{"message":"Dataset not found"}'), null);
 });
 
 const s = parseCli(CSV)!;

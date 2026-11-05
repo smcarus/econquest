@@ -43,7 +43,7 @@ test('reads OECD y/y by column name; works it out from the index when only the i
   assert.equal(bra.change3mPts, 0.5);
   assert.equal(cpiFor('EUU', s)!.yoyPct, 2.6);
   assert.equal(cpiFor('MEX', s), null);
-  assert.match(cpiSentence(bra), /Inflation 4\.0% y\/y \(OECD, Sep 2026 \(y\/y worked out from the OECD CPI index\)\), \+0\.5 pts over 3 months: rising\./);
+  assert.match(cpiSentence(bra), /Inflation 4\.0% y\/y \(OECD via DBnomics, Sep 2026 \(y\/y worked out from the OECD CPI index\)\), \+0\.5 pts over 3 months: rising\./);
 });
 
 test('not SDMX-CSV, no series; the trend rule as stated; one call for every area', () => {
@@ -52,10 +52,10 @@ test('not SDMX-CSV, no series; the trend rule as stated; one call for every area
   assert.equal(cpiTrend(0.4), 'steady');
   assert.equal(cpiTrend(-0.5), 'easing');
   assert.equal(cpiMissing(true).short, 'OECD publishes no CPI');
-  assert.equal(
-    cpiUrl({ now: new Date('2026-11-05T00:00:00Z') }),
-    'https://sdmx.oecd.org/public/rest/data/OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL,/.M..CPI.._T..?startPeriod=2024-08&format=csvfile'
-  );
+  const u = new URL(cpiUrl());
+  assert.equal(decodeURIComponent(u.pathname), '/v22/series/OECD/DSD_PRICES@DF_PRICES_ALL');
+  assert.deepEqual(JSON.parse(u.searchParams.get('dimensions')!), { FREQ: ['M'], MEASURE: ['CPI'], EXPENDITURE: ['_T'], TRANSFORMATION: ['GY'] });
+  assert.equal(JSON.parse(new URL(cpiUrl({ wide: true })).searchParams.get('dimensions')!).TRANSFORMATION, undefined);
 });
 
 const s = parseCpi(CSV)!;
@@ -78,7 +78,7 @@ test('the OECD figure counts as live, says OECD with its month, and the watchlis
 test('Country tab: OECD rows with month and pull date, Missing with the reason', () => {
   const rows = oecdCpiRows(TUR);
   assert.equal(rows[0].value, '30.6%');
-  assert.match(rows[0].source, /OECD, Sep 2026 \(pulled 2026-11-05\)/);
+  assert.match(rows[0].source, /OECD via DBnomics, Sep 2026 \(pulled 2026-11-05\)/);
   assert.equal(rows.find((r) => r.label === 'Inflation trend')!.value, 'easing');
   const egy = oecdCpiRows(EGY);
   assert.equal(egy[0].value, 'Missing');
@@ -95,7 +95,7 @@ test('Central Bank Watcher: inflation from the OECD with its month, trend tagged
     const f = cb.findings[0];
     assert.equal(f.figures.find((x) => x.label === 'CPI inflation')!.source, 'OECD monthly, Sep 2026');
     assert.equal(f.figures.find((x) => x.label === 'Inflation trend')!.tag, 'model');
-    assert.match(f.reading, /Inflation 30\.6% y\/y \(OECD, Sep 2026\), -1\.2 pts over 3 months: easing\./);
+    assert.match(f.reading, /Inflation 30\.6% y\/y \(OECD via DBnomics, Sep 2026\), -1\.2 pts over 3 months: easing\./);
   } else {
     assert.ok(cb!.missing.some((m) => /Turkey: missing policy rate/.test(m)));
     assert.ok(!cb!.missing.some((m) => /Turkey: missing inflation/.test(m)));
