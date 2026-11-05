@@ -50,8 +50,9 @@ export function councilInputs(snapshot: OpenDataSnapshot): CouncilInputs {
     live.push(f.label);
     return `- ${f.label}: ${f.fmt(v, snapshot)} (${snapshot.liveFields?.[f.path] || 'live'})`;
   });
-  const p = snapshot.polymarketContracts?.[0];
-  lines.push(`- Polymarket key contract: ${p ? `"${p.question}" (${p.probabilityPct}% odds)` : 'none found for this country'}`);
+  // Polymarket only when the feed answered in this pull; the built-in example contracts never count.
+  const p = snapshot.liveFields?.['polymarket.contracts'] ? snapshot.polymarketContracts?.[0] : undefined;
+  lines.push(`- Polymarket key contract: ${p ? `"${p.question}" (${p.probabilityPct}% odds, ${snapshot.liveFields?.['polymarket.contracts']})` : 'MISSING (Polymarket did not answer)'}`);
   const missingDeskInputs = DESK_ENGINE_INPUTS.filter((path) => !status.isLive(path));
   return { lines, live, missing, deskEnginesLive: missingDeskInputs.length === 0, missingDeskInputs };
 }

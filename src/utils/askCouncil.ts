@@ -28,12 +28,13 @@ import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
+import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 
 /** Desk agents the planner (or the AI model) can pick. */
-export type CoreAgentId = 'cb' | 'fiscal' | 'rv' | 'fx' | 'spill' | 'calendar';
+export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar';
 /** 'doc' = the Policy Document Agent, asked whenever you have added documents. */
 export type AgentId = CoreAgentId | 'doc';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
@@ -78,6 +79,11 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
     covers: 'government debt and the IMF projection of it, primary balance and the balance that would hold debt steady, external debt falling due in the next year and how far reserves cover it (IMF WEO, World Bank QEDS and IDS, BIS)',
     topic: /\bdebt|fiscal|deficit|primary (?:balance|surplus)|sustainab|solvenc|amorti[sz]|refinanc|roll-?over|maturit|eurobond|debt service|borrowing|austerity|consolidation|imf program/i,
   },
+  politics: {
+    name: 'Politics & Events',
+    covers: 'news tone and the latest headlines (GDELT, weekly), political stability rank (World Bank governance indicators), prediction-market odds on contracts that name the country (Polymarket)',
+    topic: /politic|election|\bvot(?:e|es|ing|ers?)\b|protest|unrest|\briots?\b|\bstrikes?\b|\bcoup|cabinet|parliament|congress|president|prime minister|\bministers?\b|populis|governance|instability|\bnews\b|headline|sentiment|\btone\b|polymarket|prediction market|\bodds\b|betting|violence/i,
+  },
   rv: {
     name: 'Relative Value',
     covers: 'CDS against risk peers, carry over the US rate',
@@ -100,7 +106,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
 };
 
-export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'rv', 'fx', 'spill', 'calendar'];
+export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar'];
 export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
   live: 'Live data',
   official: 'Official',
@@ -237,6 +243,7 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
 const FOLLOW_UP: Record<CoreAgentId, string> = {
   cb: 'How does inflation compare with the policy rate?',
   fiscal: 'Is the debt on a rising path, and what falls due next year?',
+  politics: 'What is the news tone, and what do prediction markets say?',
   rv: 'Is CDS cheap or rich against peers?',
   fx: 'Is the currency strong or weak for its history?',
   spill: 'How exposed are they to a Hormuz closure?',
@@ -516,6 +523,55 @@ function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     });
   }
   return { id: 'fiscal', name: COUNCIL_AGENTS.fiscal.name, findings, missing };
+}
+
+/** Politics & Events Agent: news tone and headlines, political stability rank, prediction-market odds. */
+function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
+  const findings: AgentFinding[] = [];
+  const missing: string[] = [];
+  for (const it of countries) {
+    const p = it.politics;
+    if (!p) {
+      missing.push(`${it.countryName}: no news tone, stability rank or prediction-market odds (GDELT, World Bank and Polymarket did not answer)`);
+      continue;
+    }
+    const figures: AgentFigure[] = [];
+    const parts: string[] = [];
+    let weight = 0;
+    if (p.tone) {
+      const band = toneBand(p.tone.value);
+      figures.push(
+        { label: 'News tone', value: sgn(p.tone.value, 2), source: `${GDELT_SHORT}, pulled ${p.tone.pulledAt}`, tag: 'live' },
+        { label: 'News tone reading', value: band, source: `GDELT tone bands: ${TONE_RULE}`, tag: 'model' }
+      );
+      parts.push(`News coverage is ${band} in tone.`);
+      if (band === 'very negative') weight = Math.max(weight, 0.7);
+      else if (band === 'negative') weight = Math.max(weight, 0.4);
+    } else missing.push(`${it.countryName}: news tone missing (GDELT did not answer or is in its pause)`);
+    if (p.stability) {
+      const band = stabilityBand(p.stability.percentile);
+      figures.push(
+        { label: 'Political stability rank', value: `${p.stability.percentile.toFixed(0)}th percentile (${band})`, source: `${WGI_SHORT}${p.stability.year ? `, ${p.stability.year}` : ''}; ${STABILITY_RULE}`, tag: 'official' }
+      );
+      parts.push(`Political stability ranks ${band} among countries.`);
+      if (band === 'low') weight = Math.max(weight, 0.6);
+    } else missing.push(`${it.countryName}: political stability rank missing (World Bank did not answer)`);
+    for (const m of p.markets || []) {
+      figures.push({
+        label: `Prediction market: ${m.question}`,
+        value: `${m.probabilityPct}% yes${m.volumeUsd ? ` (${formatUsd(m.volumeUsd)} traded)` : ''}`,
+        source: `${POLYMARKET_SHORT}, pulled ${p.marketsPulledAt || 'today'}; market odds, not a forecast by the app`,
+        tag: 'live',
+      });
+    }
+    if (p.markets?.length) parts.push(`Prediction markets price ${p.markets.length === 1 ? 'one contract that names' : `${p.markets.length} contracts that name`} the country.`);
+    for (const h of p.headlines || []) {
+      figures.push({ label: 'Headline', value: h.title, source: `${h.source}${h.publishedAt ? `, ${h.publishedAt.slice(0, 10)}` : ''} (GDELT, pulled ${p.headlinesPulledAt || ''})`, tag: 'live' });
+    }
+    if (!figures.length) continue;
+    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' ') || 'Headlines on hand, but no tone or stability reading.', figures, weight });
+  }
+  return { id: 'politics', name: COUNCIL_AGENTS.politics.name, findings, missing };
 }
 
 function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
@@ -829,7 +885,9 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
         ? cbAgent(plan.countries)
         : id === 'fiscal'
           ? fiscalAgent(plan.countries)
-          : id === 'rv'
+          : id === 'politics'
+            ? politicsAgent(plan.countries)
+            : id === 'rv'
           ? rvAgent(plan.countries, all)
           : id === 'fx'
             ? fxAgent(plan.countries)

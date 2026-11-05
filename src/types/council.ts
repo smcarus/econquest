@@ -523,6 +523,8 @@ export interface WatchlistItem {
   trade?: import('../utils/scenarioExposure').TradeExposure;
   /** Public debt and fiscal figures from live feeds only, each with its year (utils/fiscalDebt.ts). */
   fiscal?: import('../utils/fiscalDebt').FiscalFigures;
+  /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
+  politics?: import('../utils/politicsEvents').PoliticsFigures;
 }
 
 /** Built-in figures on a watchlist row; LiveWatchlistItem leaves each out unless a live source filled it. */
