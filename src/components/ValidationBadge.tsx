@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { registerEntry, registerForPanel, STATUS_LABEL, type RegisterEntry, type ValidationStatus } from '../data/modelRegister';
-import { effectiveStatus, useValidation } from './useValidation';
+import { effectiveStatus, failsStricterCheck, useValidation } from './useValidation';
 
 export const OPEN_REGISTER_EVENT = 'econquest:open-model-register';
 
@@ -24,7 +24,10 @@ const TONE: Record<ValidationStatus, string> = {
 function Badge({ entry }: { entry: RegisterEntry }) {
   const v = useValidation();
   const status = effectiveStatus(entry.id, entry.status, v);
-  const verdict = v?.results?.[entry.id]?.verdict;
+  const r = v?.results?.[entry.id];
+  const stricter = failsStricterCheck(entry.id, v);
+  const verdict = r ? `${r.verdict}${r.robustness && (r.framework ?? 1) === 1 ? ` Stricter check (method 2): ${r.robustness.verdict}` : ''}` : undefined;
+  const label = stricter ? 'Passed, fails stricter check' : STATUS_LABEL[status];
   return (
     <button
       type="button"
@@ -33,10 +36,11 @@ function Badge({ entry }: { entry: RegisterEntry }) {
         openModelRegister(entry.id);
       }}
       data-validation-status={status}
-      title={`${entry.name}: ${STATUS_LABEL[status]}. ${verdict || entry.testPlan} Click for the register.`}
-      className={`ui-badge ${TONE[status]} whitespace-nowrap font-normal cursor-pointer`}
+      data-stricter-check={r?.robustness?.status}
+      title={`${entry.name}: ${label}. ${verdict || entry.testPlan} Click for the register.`}
+      className={`ui-badge ${stricter ? 'ui-badge-warning' : TONE[status]} whitespace-nowrap font-normal cursor-pointer`}
     >
-      {STATUS_LABEL[status]}
+      {label}
     </button>
   );
 }

@@ -14,7 +14,9 @@ export interface ValidationSpecInfo {
   version?: number;
   registeredOn?: string;
   hypothesis?: string;
-  passMark?: { minCases: number; minLiftPts: number; maxPValue: number };
+  passMark?: { minCases: number; minLiftPts: number; maxPValue: number; minSeriesShare?: number; minYears?: number };
+  framework?: 1 | 2;
+  retestOf?: { version: number; verdict: string; change: string };
   params?: Record<string, number>;
   sample?: { from: string; to?: string };
   knownLimits?: string[];
@@ -73,6 +75,12 @@ export function useValidation(): ValidationReply | null {
     };
   }, []);
   return v;
+}
+
+/** True when a test passed as registered (method 1) but fails the stricter method 2 check. */
+export function failsStricterCheck(id: string, v: ValidationReply | null): boolean {
+  const r = v?.results?.[id];
+  return !!r && r.status === 'passed' && (r.framework ?? 1) === 1 && r.robustness?.status === 'failed';
 }
 
 /** The status to show: a backtest verdict when one exists for this id, else the register's own. */

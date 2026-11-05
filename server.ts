@@ -4643,7 +4643,7 @@ async function startServer() {
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
-    const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits } : {}) }));
+    const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
     res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json' });
   });
   app.post('/api/validation/run', async (req, res) => {
@@ -4658,7 +4658,7 @@ async function startServer() {
           appendAudit(AUDIT_FILES, {
             kind: 'validation',
             summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`,
-            detail: { verdict: r.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
+            detail: { verdict: r.verdict, framework: r.framework ?? 1, stricterCheck: r.robustness?.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
           }),
       });
       res.json(out);

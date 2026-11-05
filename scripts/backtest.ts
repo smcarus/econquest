@@ -17,9 +17,12 @@ const out = await runBacktests({
     appendAudit(auditFiles(dataDir), {
       kind: 'validation',
       summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')} (npm run backtest)`,
-      detail: { verdict: r.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
+      detail: { verdict: r.verdict, framework: r.framework ?? 1, stricterCheck: r.robustness?.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
     }),
 });
-for (const r of Object.values(out.results)) console.log(`${r.id} (v${r.specVersion}, ${r.series.length} series, ${r.span.from} to ${r.span.to}): ${r.verdict}`);
+for (const r of Object.values(out.results)) {
+  console.log(`${r.id} (v${r.specVersion}, method ${r.framework ?? 1}, ${r.series.length} series, ${r.span.from} to ${r.span.to}): ${r.verdict}`);
+  if (r.robustness && (r.framework ?? 1) === 1) console.log(`  Stricter check (method 2): ${r.robustness.verdict}`);
+}
 for (const p of out.problems) console.log(`Problem: ${p}`);
 console.log(`Saved in ${path.relative(root, validationFilePath(dataDir))}.`);

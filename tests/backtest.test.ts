@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, judge, monthlyRuns, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
+import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
 import { targetIn } from '../src/data/inflationTargetHistory';
 import { loadSpecs, runBacktests, sha256 } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
@@ -170,4 +170,70 @@ test('taylorGapCases: no move within the window is a miss, and no target means n
   assert.equal(cases[0].when, '2014-05');
   assert.equal(cases[0].hit, false, 'the cut comes 12 months later');
   assert.deepEqual(taylorGapCases(s, 'TUR', inflation, policy), []);
+});
+
+/* ------------------------------------------------------------------ method 2 */
+
+const yearCases = (years: number, perYear: number, hitsPerYear: number, base: number, where = (y: number, i: number) => `S${i % 4}`): BacktestCase[] =>
+  Array.from({ length: years }, (_, y) =>
+    Array.from({ length: perYear }, (_, i) => ({ where: where(y, i), when: `${2000 + y}-0${(i % 9) + 1}`, what: '', hit: i < hitsPerYear, base }))
+  ).flat();
+
+test('method 2: the same cases always give the same p-value (fixed seed)', () => {
+  const cases = yearCases(15, 8, 5, 0.4);
+  const a = robustness(spec(), cases);
+  const b = robustness(spec(), cases);
+  assert.equal(a.pValue, b.pValue);
+  assert.deepEqual(a.liftRangePts, b.liftRangePts);
+  assert.equal(a.years, 15);
+});
+
+test('method 2: a lift spread evenly over many years and series passes', () => {
+  const r = robustness(spec({ passMark: { minCases: 30, minLiftPts: 10, maxPValue: 0.05 } }), yearCases(20, 8, 5, 0.4));
+  assert.equal(r.status, 'passed', r.verdict);
+  assert.ok(r.liftRangePts[0] > 0);
+  assert.equal(r.seriesPositive, r.seriesTested);
+});
+
+test('method 2: a lift that comes from two clustered years fails, though method 1 passes', () => {
+  // 18 quiet years at the base rate, then two years where every case is a hit.
+  const quiet = yearCases(18, 6, 2, 0.35);
+  const burst = Array.from({ length: 2 }, (_, y) => Array.from({ length: 30 }, (_, i) => ({ where: `S${i % 4}`, when: `${2030 + y}-01`, what: '', hit: true, base: 0.35 }))).flat();
+  const cases = [...quiet, ...burst];
+  const s = spec({ passMark: { minCases: 30, minLiftPts: 10, maxPValue: 0.05 } });
+  assert.equal(judge(s, cases).status, 'passed', 'independent cases: looks strong');
+  const r = robustness(s, cases);
+  assert.equal(r.status, 'failed', r.verdict);
+  assert.match(r.verdict, /same year/);
+});
+
+test('method 2: a lift carried by one series fails the spread check and names it', () => {
+  const cases = yearCases(20, 8, 0, 0.3, () => 'B').map((c, i) => (i % 2 ? c : { ...c, where: 'A', hit: true }));
+  const s = spec({ passMark: { minCases: 30, minLiftPts: 10, maxPValue: 0.05 } });
+  const r = robustness(s, cases);
+  assert.equal(r.seriesTested, 2);
+  assert.equal(r.seriesPositive, 1);
+  assert.equal(r.worstWithoutOne?.without, 'A');
+  assert.ok(r.worstWithoutOne!.liftPts < 0);
+});
+
+test('method 2: too few years is too few cases', () => {
+  const r = robustness(spec({ passMark: { minCases: 5, minLiftPts: 10, maxPValue: 0.05 } }), yearCases(4, 10, 8, 0.3));
+  assert.equal(r.status, 'too_few_cases');
+});
+
+test('judgeWithRobustness: a method 1 test keeps its verdict; a framework 2 test is judged by method 2', () => {
+  const quiet = yearCases(18, 6, 2, 0.35);
+  const burst = Array.from({ length: 2 }, (_, y) => Array.from({ length: 30 }, (_, i) => ({ where: `S${i % 4}`, when: `${2030 + y}-01`, what: '', hit: true, base: 0.35 }))).flat();
+  const cases = [...quiet, ...burst];
+  const pm = { minCases: 30, minLiftPts: 10, maxPValue: 0.05 };
+  const v1 = judgeWithRobustness(spec({ passMark: pm }), cases);
+  assert.equal(v1.framework, 1);
+  assert.equal(v1.status, 'passed');
+  assert.equal(v1.robustness.status, 'failed');
+  const v2 = judgeWithRobustness(spec({ passMark: pm, framework: 2 }), cases);
+  assert.equal(v2.framework, 2);
+  assert.equal(v2.status, 'failed');
+  assert.equal(v2.pValue, v2.robustness.pValue);
+  assert.match(v2.verdict, /method 2/);
 });

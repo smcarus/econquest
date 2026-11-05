@@ -364,6 +364,16 @@ hold no figures of their own; the handout reads them from the app's series when 
   indicator turn to policy move, CFTC crowding to unwind, and the policy rule check (Taylor gap:
   does a tight reading come before a cut, and a loose one before a hike, within 6 months, judged
   against each bank's inflation target as it stood at the time, from `src/data/inflationTargetHistory.ts`).
+  Every verdict also carries a *stricter check* (method 2). Method 1 counts each case as independent;
+  but turns and policy moves bunch in global cycles, and CFTC entries in several USD crosses land in
+  the same weeks, so method 1 overstates how sure a result is. Method 2 redraws whole calendar years
+  of cases together 4,000 times (fixed seed, so the same data give the same answer), reports a 90%
+  range for the lift and a p-value (how often the lift vanishes when the years are redrawn), and asks
+  that the lift is positive in at least half the series with five or more cases. It also shows the
+  lift by series and what is left when any one series is dropped. A test registered under method 1
+  keeps its verdict; when it passed but fails method 2 the badge reads *Passed, fails stricter check*.
+  A test file with `"framework": 2` is judged by method 2. A new version of a failed rule carries
+  `retestOf` (the earlier version, its verdict and what changed) and is shown as a re-test.
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it

@@ -9,6 +9,14 @@
  * only with enough cases, a lift of at least the stated points, and a one-sided binomial p-value
  * at or below the stated level. Fewer cases than the minimum = "too few cases to test".
  *
+ * Method 2 (the stricter check, 2026-11-05): cases close in time are not independent. Turns and
+ * policy moves cluster in global cycles, and CFTC entries in several USD crosses land in the same
+ * weeks. So method 2 resamples whole calendar years of cases together (a block bootstrap, fixed
+ * seed so every run gives the same answer), reports a 90% range for the lift, and asks that the
+ * lift is positive in at least half the series with five or more cases. A test registered as
+ * method 1 keeps its verdict; the method 2 reading is shown beside it. A test registered as
+ * framework 2 is judged by method 2.
+ *
  * The data are read as the app pulls them: BIS monthly policy rates, the OECD leading indicator via
  * DBnomics (today's vintage), CFTC weekly positioning. Pure functions: the runner fetches.
  */
@@ -28,8 +36,41 @@ export interface BacktestSpec {
   method: BacktestMethod;
   params: Record<string, number>;
   sample: { from: string; to?: string };
-  passMark: { minCases: number; minLiftPts: number; maxPValue: number };
+  passMark: { minCases: number; minLiftPts: number; maxPValue: number; minSeriesShare?: number; minYears?: number };
   knownLimits: string[];
+  /** Which method judges the verdict: 1 (cases independent, binomial p) unless set to 2. */
+  framework?: 1 | 2;
+  /** Set when this version re-tests a rule whose earlier version failed: what changed and why. */
+  retestOf?: { version: number; verdict: string; change: string };
+}
+
+export interface SeriesLift {
+  where: string;
+  cases: number;
+  hits: number;
+  hitRatePct: number;
+  baseRatePct: number;
+  liftPts: number;
+}
+
+/** The stricter reading (method 2). */
+export interface Robustness {
+  method: 2;
+  status: 'passed' | 'failed' | 'too_few_cases';
+  verdict: string;
+  /** Calendar years with at least one case: the units resampled. */
+  years: number;
+  resamples: number;
+  /** One-sided p-value from resampling whole years. */
+  pValue: number;
+  /** 90% range of the lift, in points. */
+  liftRangePts: [number, number];
+  bySeries: SeriesLift[];
+  /** Series with five or more cases, and how many of them show a positive lift. */
+  seriesTested: number;
+  seriesPositive: number;
+  /** The lowest lift left when any one series is dropped. */
+  worstWithoutOne: { without: string; liftPts: number } | null;
 }
 
 export interface BacktestCase {
@@ -59,6 +100,10 @@ export interface BacktestResult {
   series: string[];
   data: string;
   sample: BacktestCase[];
+  /** Method that gave status and verdict (absent on results saved before method 2 = 1). */
+  framework?: 1 | 2;
+  /** The method 2 reading, on every result run since 2026-11-05. */
+  robustness?: Robustness;
 }
 
 /* ------------------------------------------------------------------ statistics */
@@ -80,14 +125,110 @@ export function binomialUpperTail(n: number, k: number, p: number): number {
   return Math.min(1, total);
 }
 
-/** Verdict from the cases and the pass mark fixed in the spec. */
+/** Deterministic random numbers (mulberry32): the same cases always give the same p-value. */
+export function seededRandom(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const r1 = (x: number) => Number(x.toFixed(1));
+
+function liftOf(cases: BacktestCase[]): SeriesLift & { lift: number } {
+  const n = cases.length;
+  const hits = cases.filter((c) => c.hit).length;
+  const base = n ? cases.reduce((s, c) => s + c.base, 0) / n : 0;
+  const rate = n ? hits / n : 0;
+  return { where: '', cases: n, hits, hitRatePct: r1(rate * 100), baseRatePct: r1(base * 100), liftPts: r1((rate - base) * 100), lift: rate - base };
+}
+
+export const RESAMPLES = 4000;
+const SERIES_MIN_CASES = 5;
+
+/**
+ * Method 2: block bootstrap by calendar year. Each resample draws as many years as there are,
+ * with replacement, and takes every case in each drawn year, so cases in the same year (any
+ * country) stay together. p = share of resampled lifts at or below zero (how often the edge
+ * vanishes when the years are redrawn), with the usual +1 correction. When a lift comes from a
+ * few unusual years, many redraws leave those years out and p rises.
+ */
+export function robustness(spec: BacktestSpec, cases: BacktestCase[], resamples = RESAMPLES): Robustness {
+  const byYear = new Map<string, { hits: number; base: number; n: number }>();
+  for (const c of cases) {
+    const y = c.when.slice(0, 4);
+    const b = byYear.get(y) || { hits: 0, base: 0, n: 0 };
+    b.n++;
+    b.base += c.base;
+    if (c.hit) b.hits++;
+    byYear.set(y, b);
+  }
+  const blocks = [...byYear.values()];
+  const all = liftOf(cases);
+  const rand = seededRandom(20261105);
+  const draws: number[] = [];
+  if (blocks.length) {
+    for (let b = 0; b < resamples; b++) {
+      let h = 0;
+      let base = 0;
+      let n = 0;
+      for (let k = 0; k < blocks.length; k++) {
+        const x = blocks[Math.floor(rand() * blocks.length)];
+        h += x.hits;
+        base += x.base;
+        n += x.n;
+      }
+      draws.push(n ? (h - base) / n : 0);
+    }
+  }
+  draws.sort((a, b) => a - b);
+  const q = (p: number) => (draws.length ? draws[Math.min(draws.length - 1, Math.max(0, Math.floor(p * draws.length)))] : 0);
+  const beyond = draws.filter((d) => d <= 0).length;
+  const pValue = draws.length ? Number(((beyond + 1) / (draws.length + 1)).toPrecision(3)) : 1;
+  const groups = new Map<string, BacktestCase[]>();
+  for (const c of cases) groups.set(c.where, [...(groups.get(c.where) || []), c]);
+  const bySeries = [...groups.entries()].map(([where, cs]) => {
+    const { lift: _l, ...rest } = liftOf(cs);
+    return { ...rest, where };
+  }).sort((a, b) => b.cases - a.cases || a.where.localeCompare(b.where));
+  const tested = bySeries.filter((s) => s.cases >= SERIES_MIN_CASES);
+  const positive = tested.filter((s) => s.liftPts > 0).length;
+  let worst: Robustness['worstWithoutOne'] = null;
+  if (groups.size > 1) {
+    for (const where of groups.keys()) {
+      const l = liftOf(cases.filter((c) => c.where !== where)).liftPts;
+      if (!worst || l < worst.liftPts) worst = { without: where, liftPts: l };
+    }
+  }
+  const m = spec.passMark;
+  const share = m.minSeriesShare ?? 0.5;
+  const minYears = m.minYears ?? 8;
+  const out = { method: 2 as const, years: blocks.length, resamples: draws.length, pValue, liftRangePts: [r1(q(0.05) * 100), r1(q(0.95) * 100)] as [number, number], bySeries, seriesTested: tested.length, seriesPositive: positive, worstWithoutOne: worst };
+  const spread = tested.length ? `Positive in ${positive} of ${tested.length} series with ${SERIES_MIN_CASES} or more cases` : `No series has ${SERIES_MIN_CASES} or more cases`;
+  const drop = worst ? `; dropping ${worst.without} leaves a lift of ${worst.liftPts} points` : '';
+  const reading = `Lift ${all.liftPts} points, 90% range ${out.liftRangePts[0]} to ${out.liftRangePts[1]}, p = ${pValue} with whole years resampled together (${blocks.length} years). ${spread}${drop}.`;
+  if (cases.length < m.minCases || blocks.length < minYears)
+    return { ...out, status: 'too_few_cases', verdict: `Too few cases for the stricter check: ${cases.length} cases in ${blocks.length} years; it needs ${m.minCases} cases in ${minYears} years.` };
+  const why: string[] = [];
+  if (all.liftPts < m.minLiftPts) why.push(`the lift is below ${m.minLiftPts} points`);
+  if (pValue > m.maxPValue) why.push(`p is above ${m.maxPValue} once cases in the same year are not counted as independent`);
+  if (!tested.length || positive < Math.ceil(share * tested.length)) why.push(`it holds in fewer than ${Math.round(share * 100)}% of the series`);
+  return why.length
+    ? { ...out, status: 'failed', verdict: `Fails the stricter check: ${why.join('; ')}. ${reading}` }
+    : { ...out, status: 'passed', verdict: `Passes the stricter check. ${reading}` };
+}
+
+/** Verdict from the cases and the pass mark fixed in the spec (method 1: cases independent). */
 export function judge(spec: BacktestSpec, cases: BacktestCase[]): Pick<BacktestResult, 'status' | 'verdict' | 'cases' | 'hits' | 'hitRatePct' | 'baseRatePct' | 'liftPts' | 'pValue'> {
   const n = cases.length;
   const hits = cases.filter((c) => c.hit).length;
   const base = n ? cases.reduce((s, c) => s + c.base, 0) / n : 0;
   const rate = n ? hits / n : 0;
   const pValue = n ? binomialUpperTail(n, hits, base) : 1;
-  const r1 = (x: number) => Number(x.toFixed(1));
   const out = { cases: n, hits, hitRatePct: r1(rate * 100), baseRatePct: r1(base * 100), liftPts: r1((rate - base) * 100), pValue: Number(pValue.toPrecision(3)) };
   const m = spec.passMark;
   if (n < m.minCases) return { ...out, status: 'too_few_cases', verdict: `Too few cases to test: ${n} found, the test needs ${m.minCases}.` };
@@ -96,6 +237,19 @@ export function judge(spec: BacktestSpec, cases: BacktestCase[]): Pick<BacktestR
   return pass
     ? { ...out, status: 'passed', verdict: `Passed. ${reading} The pass mark was a lift of ${m.minLiftPts} points or more with p at or below ${m.maxPValue}.` }
     : { ...out, status: 'failed', verdict: `Failed. ${reading} The pass mark was a lift of ${m.minLiftPts} points or more with p at or below ${m.maxPValue}.` };
+}
+
+/**
+ * The full verdict: method 1 or method 2 as the spec was registered, plus the method 2 reading.
+ * A framework 2 test passes only when method 2 passes.
+ */
+export function judgeWithRobustness(spec: BacktestSpec, cases: BacktestCase[]): ReturnType<typeof judge> & { framework: 1 | 2; robustness: Robustness } {
+  const v1 = judge(spec, cases);
+  const rob = robustness(spec, cases);
+  const framework = spec.framework === 2 ? 2 : 1;
+  if (framework === 1) return { ...v1, framework, robustness: rob };
+  const verdict = rob.verdict.replace(/the stricter check/g, 'method 2 (the method this test was registered under)');
+  return { ...v1, status: rob.status, verdict, pValue: rob.pValue, framework, robustness: rob };
 }
 
 /* ------------------------------------------------------------------ month helpers */

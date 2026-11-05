@@ -15,7 +15,7 @@ import { CPI_LABEL, cpiUrl, parseCpi } from './oecdInflation';
 import { TARGET_HISTORY } from '../data/inflationTargetHistory';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, taylorGapCases, judge, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
+import { cftcCrowdingCases, cliTurnPolicyCases, taylorGapCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
 import { writeFileAtomic } from './atomicWrite';
 
 export interface ValidationFile {
@@ -142,7 +142,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
         continue;
       }
-      const result: BacktestResult = { id: s.id, specVersion: s.version, specHash: hash, ranAt: at, ...judge(s, cases), span: spanOf(cases), series, data, sample: sampleCases(cases) };
+      const result: BacktestResult = { id: s.id, specVersion: s.version, specHash: hash, ranAt: at, ...judgeWithRobustness(s, cases), span: spanOf(cases), series, data, sample: sampleCases(cases) };
       file.results[s.id] = result;
       opts.onResult?.(result);
     }
