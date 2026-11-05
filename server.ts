@@ -105,6 +105,7 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
+import { polymarketMoves } from './src/utils/oddsMoves.ts';
 import {
   FRED_10Y_SERIES,
   US_10Y_SERIES,
@@ -1665,6 +1666,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
                 volumeUsd: vol > 0 ? vol : 0,
                 category: relevance >= 25 ? `${baseline.countryName} Event` : 'Global Macro / Geopolitics',
                 url: ev?.slug ? `https://polymarket.com/event/${ev.slug}` : 'https://polymarket.com',
+                ...polymarketMoves(market),
               };
               return { contract, relevance, vol };
             })

@@ -231,6 +231,10 @@ export interface PolymarketContract {
   volumeUsd: number;
   category: string;
   url: string;
+  /** Polymarket's own reported change in the price, over a day, a week and a month, in percentage points. */
+  change1dPts?: number;
+  change1wPts?: number;
+  change1mPts?: number;
 }
 
 export interface GdeltEventItem {

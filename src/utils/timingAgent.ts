@@ -5,6 +5,7 @@
  * - Cycle clock: policy cycle (BIS moves) and business cycle (OECD leading indicator, last turn).
  * - Positioning: CFTC leveraged-fund crowding and its 4-week change (crowded and turning = unwind setup).
  * - News: the GDELT tone shift (latest week against the earlier weeks of the same pull).
+ * - Prediction markets: Polymarket contracts naming the country whose odds moved 10 pts or more in a week.
  * - Flows: TIC holdings of US Treasuries over 12 months.
  * - Markets: the 3-month change in the official 10Y yield.
  * It describes the setup with dates. It never gives a probability or says what will happen.
@@ -20,6 +21,7 @@ import { formatPeriod } from './officialYields';
 import { formatMonth } from './oecdSdmx';
 import { shockSummary, shockWatch } from './shockWatch';
 import { SMALL_SAMPLE } from './signalRecord';
+import { fastestOddsMove, oddsMoveText } from './oddsMoves';
 
 export const TIMING_AGENT_NAME = 'Timing';
 export const TIMING_HORIZON_DAYS = 60;
@@ -36,7 +38,7 @@ const monthsBetween = (from: string, to: string) => {
 };
 
 export interface TimingSignal {
-  key: 'catalyst' | 'policy' | 'cycle' | 'positioning' | 'news' | 'flows' | 'yield' | 'shock';
+  key: 'catalyst' | 'policy' | 'cycle' | 'positioning' | 'news' | 'odds' | 'flows' | 'yield' | 'shock';
   text: string;
   /** True when this signal points to something changing now (a turn, an unwind, a shift), not a steady state. */
   pressure: boolean;
@@ -112,6 +114,17 @@ export function timingSignals(it: LiveWatchlistItem, now: Date): { signals: Timi
   } else if (g) missing.push(`${it.countryName}: GDELT tone has no shift yet (the next weekly pull adds it)`);
   else missing.push(`${it.countryName}: no GDELT pull`);
 
+  // Prediction-market odds moving fast (Polymarket's own reported weekly change)
+  const fast = fastestOddsMove(it.politics?.markets);
+  if (fast) {
+    signals.push({
+      key: 'odds',
+      text: `Prediction-market odds moving fast: "${fast.question}" at ${fast.probabilityPct}% yes, ${oddsMoveText(fast)} (Polymarket, pulled ${it.politics?.marketsPulledAt || 'today'}; market prices, not a forecast).`,
+      pressure: true,
+    });
+    figures.push({ label: `Prediction market: ${fast.question}`, value: `${fast.probabilityPct}% yes; ${oddsMoveText(fast)}`, source: `Polymarket, pulled ${it.politics?.marketsPulledAt || 'today'}; market odds, not a forecast by the app`, tag: 'live' });
+  }
+
   // Flows
   const t = it.tic;
   if (t?.change12mPct !== undefined) {
@@ -152,6 +165,7 @@ export function timingSetup(signals: TimingSignal[], nextDays?: number): string 
     cycle: 'a recent leading-indicator turn',
     positioning: 'crowded positioning starting to unwind',
     news: 'news tone turning more negative',
+    odds: 'prediction-market odds moving fast',
     flows: 'Treasury selling',
     yield: 'a large rise in the 10Y yield',
     shock: 'a shock early-warning alert',
