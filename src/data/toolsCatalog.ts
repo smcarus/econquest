@@ -14,8 +14,29 @@ export type ToolTarget =
   | { area: 'reports' }
   | { area: 'portfolio'; anchor?: string };
 
+export type ToolCategoryId = 'council' | 'monitor' | 'screen' | 'country' | 'history' | 'portfolio' | 'write';
+
+export interface ToolCategory {
+  id: ToolCategoryId;
+  title: string;
+  /** One line on what the group is for. */
+  purpose: string;
+}
+
+/** Groups on the Tools page, by what you are trying to do, in page order. */
+export const TOOL_CATEGORIES: ToolCategory[] = [
+  { id: 'council', title: 'Ask the council', purpose: 'Put a question to the agents and get an answer built only from live figures.' },
+  { id: 'monitor', title: 'Keep up', purpose: 'What changed since you last looked, and what is coming up.' },
+  { id: 'screen', title: 'Screen and compare countries', purpose: 'Line countries up side by side to find the outliers.' },
+  { id: 'country', title: 'Study one country', purpose: 'Briefs and checks for the country you have open.' },
+  { id: 'history', title: 'Look back', purpose: 'Past figures, past decisions and how the rule calls held up.' },
+  { id: 'portfolio', title: 'Your portfolio', purpose: 'Your holdings against the risks and signals.' },
+  { id: 'write', title: 'Write and share', purpose: 'Notes, briefs and handouts to download as Markdown or PDF.' },
+];
+
 export interface ReadyTool {
   id: string;
+  category: ToolCategoryId;
   title: string;
   what: string;
   sources: string;
@@ -25,6 +46,7 @@ export interface ReadyTool {
 export const READY_TOOLS: ReadyTool[] = [
   {
     id: 'ask_council',
+    category: 'council',
     title: 'Ask the council',
     what: 'Ask a question about your watchlist. Desk agents answer from live figures with their sources, and a synthesis agent may quote only those figures.',
     sources: 'Live figures below; Gemini or Ollama for the summary, if set up',
@@ -32,6 +54,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'marketedge',
+    category: 'screen',
     title: 'MarketEdge screen',
     what: 'Your watchlist plus the US, China, Russia, UK, EU and India: 10Y yield, spread over the US, CDS, risk score and real FX against its own history.',
     sources: 'Official 10Y yields (FRED/OECD, Tesouro, EVDS), your CDS file, BIS real exchange rates',
@@ -39,6 +62,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'panel_builder',
+    category: 'screen',
     title: 'Compare countries',
     what: 'Pick countries and figures for one table, latest values or full history, and download it as CSV with the source and period of every value.',
     sources: 'Every live figure and series in the app',
@@ -46,6 +70,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'regime_quadrant',
+    category: 'screen',
     title: 'Growth and inflation',
     what: 'Each country placed by the 6-month change in its OECD leading indicator and the 3-month change in its monthly inflation, with what each quadrant means for policy.',
     sources: 'OECD leading indicator via DBnomics; monthly inflation (OECD, BCB, Eurostat)',
@@ -53,6 +78,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'digest',
+    category: 'monitor',
     title: 'Since your last visit',
     what: 'Policy rate moves, new inflation prints, leading-indicator turns, 10Y moves of 25 bp or more and watch alerts that started firing since you last opened Workspace.',
     sources: 'BIS policy rates, monthly inflation, OECD leading indicator, official 10Y yields, your watch rules',
@@ -60,6 +86,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'divergences',
+    category: 'screen',
     title: 'Where data and price disagree',
     what: 'One line per country, biggest gap first: cheap or rich CDS against peers, policy rate against inflation, carry and currency valuation.',
     sources: 'Live IMF and World Bank figures, official yields, your CDS file, BIS',
@@ -67,6 +94,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'scenarios',
+    category: 'screen',
     title: 'Scenario exposure',
     what: 'Who is most exposed to a Hormuz closure, a Taiwan blockade or tighter Russia sanctions, from trade and energy shares.',
     sources: 'World Bank and WITS trade data',
@@ -74,6 +102,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'calendar',
+    category: 'monitor',
     title: 'Official calendar',
     what: 'Rate decisions, CPI releases, elections, budget deadlines and IMF reviews, each linked to its source.',
     sources: 'Central bank, statistics office and election calendars on file',
@@ -81,6 +110,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'economist_brief',
+    category: 'country',
     title: 'Country economist brief',
     what: 'Growth, inflation, debt, reserves and the external position for the open country, with the rule behind each observation.',
     sources: 'IMF WEO, World Bank, official yields',
@@ -88,6 +118,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'issuer_brief',
+    category: 'country',
     title: 'Issuer note',
     what: 'Market access, debt falling due in the next 12 months, distress tests and pricing against peers on official yields.',
     sources: 'World Bank/IMF QEDS, BIS debt securities, official yields, your CDS file',
@@ -95,6 +126,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'sustainability',
+    category: 'country',
     title: 'Debt sustainability',
     what: 'Debt path under baseline and shock scenarios, the stabilising primary balance and r minus g, run only when every input is live.',
     sources: 'IMF WEO debt, growth, inflation and primary balance; official 10Y yield',
@@ -102,6 +134,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'country_marketedge',
+    category: 'country',
     title: 'Country markets and macro',
     what: 'The open country against its peers: CDS fitted on the risk score, policy stance, FX valuation, carry per unit of volatility, futures positioning, US Treasury holdings, the OECD leading indicator, IMF reserves and balance of payments, and world reserve currency shares.',
     sources: 'Live feeds, official yields, BIS, ECB exchange rates, CFTC Commitments of Traders, US Treasury TIC, OECD, IMF IL, BOP and COFER, your CDS file',
@@ -109,6 +142,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'what_is_live',
+    category: 'country',
     title: 'What is live',
     what: 'Every figure the country pages use, with its source, or why it is missing and what would fill it.',
     sources: 'All connected feeds',
@@ -116,6 +150,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'history',
+    category: 'history',
     title: 'History',
     what: 'A chart of every figure the app has kept for the open country, built from its saved weekly pulls, with the source and period of each point.',
     sources: 'Saved pulls (data/archive), BIS policy rates, monthly inflation, OECD leading indicator',
@@ -123,6 +158,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'as_of',
+    category: 'history',
     title: 'As of a past day',
     what: 'The figures the app held on a past day beside today\'s, each with its own source and period, downloadable as CSV or Excel.',
     sources: 'Saved pulls (data/archive)',
@@ -130,6 +166,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'decision_replay',
+    category: 'history',
     title: 'Replicate a rate decision',
     what: 'Pick one of the central bank\'s moves, or any date: the data the week before, what a simple Taylor rule pointed to, and what the bank did.',
     sources: 'BIS policy rates, monthly inflation, central bank targets, IMF output gap',
@@ -137,6 +174,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'track_record',
+    category: 'history',
     title: 'Track record',
     what: 'The rule call the app made on each saved pull and what the central bank did in the 90 days after. No odds, no hindsight on the inputs.',
     sources: 'Saved pulls, BIS policy rates',
@@ -144,6 +182,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'book',
+    category: 'portfolio',
     title: 'Book and client briefs',
     what: 'Concentration, where the risk sits and dates to watch across your holdings, or your watchlist at equal weight.',
     sources: 'Your holdings file, live risk scores, your CDS file, official yields',
@@ -151,6 +190,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'holdings_signals',
+    category: 'portfolio',
     title: 'Signals on your holdings',
     what: 'Each imported holding beside the signals that bear on it (Taylor rule, cycle, 10Y moves, shock alerts), marked as leaning with or against the position.',
     sources: 'Your holdings file, BIS policy rates, OECD leading indicator, official 10Y yields',
@@ -158,6 +198,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'reports',
+    category: 'write',
     title: 'Reports',
     what: 'Country note, issuer note, sustainability assessment, portfolio and client reviews, and the council brief, as Markdown or PDF.',
     sources: 'The briefs above',
@@ -165,6 +206,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'notebooks',
+    category: 'write',
     title: 'Research notebooks',
     what: 'Saved council conversations and documents grouped by topic, with your notes, downloaded as one Markdown file with every source and reference.',
     sources: 'Your saved research (data/local/research.json)',
@@ -172,6 +214,7 @@ export const READY_TOOLS: ReadyTool[] = [
   },
   {
     id: 'teaching_episodes',
+    category: 'write',
     title: 'Teaching episodes',
     what: 'A country, a past rate decision and your questions; a student handout with the data the week before and a teacher copy with what the bank did.',
     sources: 'BIS policy rates, monthly inflation, OECD leading indicator, central bank targets',

@@ -80,7 +80,8 @@ const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
   </li>
 );
 
-export const DataConnectionsPanel: React.FC = () => {
+export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ startCollapsed = false }) => {
+  const [open, setOpen] = useState(!startCollapsed);
   const [report, setReport] = useState<ConnectionReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -124,14 +125,21 @@ export const DataConnectionsPanel: React.FC = () => {
             </p>
           )}
         </div>
-        <button type="button" className="ui-pill inline-flex items-center gap-1.5" onClick={() => void run(true)} disabled={loading}>
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden />
-          {loading ? 'Checking…' : 'Check again'}
-        </button>
+        <div className="flex items-center gap-2">
+          {startCollapsed && (
+            <button type="button" className="ui-pill" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-connections-toggle="true">
+              {open ? 'Hide sources' : 'Show every source'}
+            </button>
+          )}
+          <button type="button" className="ui-pill inline-flex items-center gap-1.5" onClick={() => void run(true)} disabled={loading}>
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden />
+            {loading ? 'Checking…' : 'Check again'}
+          </button>
+        </div>
       </header>
       {error && <p className="px-4 py-3 text-sm text-rose-700 dark:text-rose-400">{error}</p>}
       {!report && loading && <p className="px-4 py-3 text-sm text-slate-500">Checking every source (up to 20 seconds)…</p>}
-      {report && (
+      {report && open && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 px-4 pb-3">
           {(['free', 'free_key', 'own_account', 'ai'] as ConnectionGroup[]).map((g) => {
             const rows = report.results.filter((r) => r.group === g);
