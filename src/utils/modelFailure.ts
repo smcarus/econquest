@@ -4,7 +4,7 @@
  */
 
 /** Steps that summarise a whole conversation (and Settings > AI model > Test, which waits the same way). */
-export const LONG_CHAT_STEPS = new Set(['COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'AI_MODEL_TEST']);
+export const LONG_CHAT_STEPS = new Set(['COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'AI_MODEL_TEST', 'REVIEW_OPTIONS']);
 
 /** A local model (Ollama on a laptop) can take a minute or more to read the agents' answers. */
 export const LONG_CHAT_STEP_MIN_MS = 120_000;

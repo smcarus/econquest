@@ -46,4 +46,7 @@ the questions sent to the AI model you chose in Menu > Settings.
 | `PUT /api/reviews/:id/frame` | Change the frame (later steps go Out of date). |
 | `DELETE /api/reviews/:id` | Delete a review. |
 
+| `POST /api/reviews/:id/diagnose` | Step 2 from the saved pull on or before the As of day. |
+| `POST /api/reviews/:id/options` | Step 3: `{ userOptions, runtimeConfig }` asks the council (temperature 0, prompt hashed, numbers checked); `{ ownOnly: true }` saves your options unassessed. |
+
 Later steps add their own routes as they are built.
