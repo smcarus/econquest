@@ -114,7 +114,7 @@ export const MissingSources: React.FC<{ items: LiveWatchlistItem[]; compact?: bo
     <details className={`mb-3 border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/20 ${compact ? 'px-2 py-1 text-xs' : 'px-3 py-2 text-sm'}`} data-missing-sources="true">
       <summary className="cursor-pointer text-amber-900 dark:text-amber-200">
         {compact
-          ? `– means missing (${rows.length} ${rows.length === 1 ? 'figure' : 'figures'}). What to set up`
+          ? `A dash (–) means missing: ${rows.length} ${rows.length === 1 ? 'figure' : 'figures'}. What to set up`
           : `Some figures are missing: ${rows.map((r) => FIGURE_LABEL[r.key]).join(', ')}. No built-in values are shown in their place. What to set up`}
       </summary>
       <ul className="mt-2 space-y-1.5">

@@ -306,3 +306,9 @@ test('synthesis task: asks for an interpreted answer and ends with the question'
   assert.match(SYNTHESIS_INSTRUCTION, /interpret, not to list/);
   assert.match(SYNTHESIS_INSTRUCTION, /do not calculate new numbers/);
 });
+
+test('whole-list note counts benchmark markets apart from the watchlist', async () => {
+  const { wholeListNote } = await import('../src/utils/askCouncil.ts');
+  assert.equal(wholeListNote([{}, {}, {}, {}, {}, { isBenchmark: true }]), 'the whole watchlist (5 countries) and 1 benchmark market');
+  assert.equal(wholeListNote([{}, {}]), 'the whole watchlist (2 countries)');
+});
