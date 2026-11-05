@@ -11,7 +11,7 @@ import {
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
-import { SYNTHESIS_INSTRUCTION, answersAsText, checkBrief, earlierAsText, type AgentAnswer, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
+import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
 import dotenv from 'dotenv';
@@ -3937,6 +3937,45 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
   // Ask the council: the synthesis agent writes a brief from the desk agents' answers only.
   // The agents run in the browser on figures the app already holds; this step only summarises,
   // and checkBrief removes any sentence with a number that is not in the agents' figures.
+  app.post('/api/council/choose-agents', async (req, res) => {
+    const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
+    if (!question) return res.status(400).json({ error: 'A question is needed.' });
+    const earlier = Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [];
+    try {
+      const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
+        stepName: 'COUNCIL_CHOOSE_AGENTS',
+        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
+        runtimeConfig: req.body?.runtimeConfig || {},
+        thinkingLevel: ThinkingLevel.LOW,
+        systemInstruction: AGENT_CHOICE_INSTRUCTION,
+        prompt: agentChoicePrompt(question, earlier),
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            agents: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: { id: { type: Type.STRING, description: 'Agent id from the list.' }, why: { type: Type.STRING, description: 'Short reason.' } },
+                required: ['id', 'why'],
+              },
+            },
+          },
+          required: ['agents'],
+        },
+        fallbackValue: { agents: [] },
+        maxRetries: 0,
+      });
+      const out: AgentChoiceResult = step.usedFallback
+        ? { agents: null, reason: 'no AI model answered' }
+        : { agents: Array.isArray(step.data?.agents) ? step.data.agents.slice(0, 5) : [], provider: step.providerUsed };
+      res.json(out);
+    } catch (error: any) {
+      const out: AgentChoiceResult = { agents: null, reason: `the AI step failed (${error?.message || 'unknown error'})` };
+      res.json(out);
+    }
+  });
+
   app.post('/api/council/synthesise', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
     const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 5) : [];

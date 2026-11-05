@@ -8,6 +8,8 @@ import {
   councilBriefSections,
   planCouncil,
   planFollowUp,
+  applyAgentChoice,
+  type AgentChoiceResult,
   suggestFollowUps,
   type EarlierTurn,
   runCouncil,
@@ -97,6 +99,26 @@ export const AskCouncilPanel: React.FC<{
   // Earlier turns of this conversation, oldest first. A question in the top box starts a new one.
   const [earlier, setEarlier] = useState<Array<EarlierTurn & { scopeNote: string; points: string[] }>>([]);
   const [followUp, setFollowUp] = useState('');
+  const [choosing, setChoosing] = useState(false);
+
+  /** Ask the AI model which agents should answer; null when it cannot be reached in time. */
+  const chooseAgents = async (question: string, history: EarlierTurn[]): Promise<AgentChoiceResult | null> => {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 15000);
+    try {
+      const r = await fetch('/api/council/choose-agents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, earlier: history.map((t) => ({ question: t.question })), runtimeConfig: runtimeConfig() }),
+        signal: ctl.signal,
+      });
+      return r.ok ? ((await r.json()) as AgentChoiceResult) : { agents: null, reason: `the AI step did not answer (HTTP ${r.status})` };
+    } catch {
+      return { agents: null, reason: ctl.signal.aborted ? 'the AI model took too long' : 'the app server did not answer' };
+    } finally {
+      clearTimeout(timer);
+    }
+  };
 
   const ask = async (q: string, asFollowUp = false) => {
     const text = q.trim();
@@ -104,7 +126,10 @@ export const AskCouncilPanel: React.FC<{
     const history = asFollowUp && asked ? [...earlier, { question: asked.question, headline: synthesis?.brief?.headline || undefined, scopeNote: asked.plan.scopeNote, points: synthesis?.brief?.points || [] }] : [];
     setEarlier(history);
     setFollowUp('');
-    const plan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
+    const wordPlan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
+    setChoosing(true);
+    const plan = applyAgentChoice(wordPlan, await chooseAgents(text, history));
+    setChoosing(false);
     const answers = runCouncil(text, plan, items);
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt });
@@ -218,7 +243,7 @@ export const AskCouncilPanel: React.FC<{
               ))}
             </select>
           </label>
-          <button type="submit" className="ui-btn ui-btn-primary" disabled={!question.trim() || writing}>
+          <button type="submit" className="ui-btn ui-btn-primary" disabled={!question.trim() || writing || choosing}>
             Ask
           </button>
         </div>
@@ -238,6 +263,12 @@ export const AskCouncilPanel: React.FC<{
           ))}
         </div>
       </form>
+
+      {choosing && (
+        <p className="px-4 pt-3 text-sm text-slate-500 dark:text-slate-400" data-council-choosing="true">
+          Asking the AI model which agents should answer…
+        </p>
+      )}
 
       {asked && earlier.length > 0 && (
         <ol className="px-4 pt-3 space-y-1.5" data-council-earlier="true" aria-label="Earlier in this conversation">
@@ -275,8 +306,13 @@ export const AskCouncilPanel: React.FC<{
           )}
           <AgentNetwork
             title={`Agents on your question, about ${asked.plan.scopeNote}`}
-            columns={askCouncilColumns(asked.answers, writing, synthesis)}
+            columns={askCouncilColumns(asked.answers, writing, synthesis, asked.plan.chosenBy)}
           />
+          {asked.plan.chooserNote && (
+            <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={asked.plan.chosenBy}>
+              {asked.plan.chooserNote}
+            </p>
+          )}
 
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-council-summary="true">
             <div className="ui-label">Synthesis agent</div>
@@ -401,13 +437,13 @@ export const AskCouncilPanel: React.FC<{
                 placeholder="For example: and the currency? or what about Egypt?"
                 className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
-              <button type="submit" className="ui-btn ui-btn-primary" disabled={!followUp.trim() || writing}>
+              <button type="submit" className="ui-btn ui-btn-primary" disabled={!followUp.trim() || writing || choosing}>
                 Ask
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {suggestFollowUps(asked.plan, asked.answers).map((s) => (
-                <button key={s} type="button" className="ui-pill" disabled={writing} onClick={() => void ask(s, true)}>
+                <button key={s} type="button" className="ui-pill" disabled={writing || choosing} onClick={() => void ask(s, true)}>
                   {s}
                 </button>
               ))}

@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  agentChoicePrompt,
   allowedNumbers,
+  applyAgentChoice,
   checkBrief,
   councilBriefSections,
   countriesInQuestion,
@@ -144,4 +146,36 @@ test('the saved brief lists earlier questions of the conversation', () => {
     (id) => id === 'question'
   )[0].lines;
   assert.ok(lines.includes('- Is Turkey behind the curve? (Policy looks tight.)'));
+});
+
+test('AI-chosen agents: valid picks replace word matching, in agent order; bad picks fall back with the reason', () => {
+  const base = planCouncil('Is Turkey cheap?', ALL);
+  assert.deepEqual(base.agents.map((a) => a.id), ['rv']);
+  const ai = applyAgentChoice(base, {
+    agents: [
+      { id: 'FX', why: 'the lira drives the answer.' },
+      { id: 'rv', why: 'CDS against peers' },
+      { id: 'rv', why: 'duplicate' },
+      { id: 'astrology', why: 'not an agent' },
+    ],
+    provider: 'gemini',
+  });
+  assert.equal(ai.chosenBy, 'ai');
+  assert.deepEqual(ai.agents.map((a) => a.id), ['rv', 'fx']);
+  assert.equal(ai.agents[1].why, 'the AI model judged: the lira drives the answer');
+  assert.match(ai.chooserNote!, /AI model \(gemini\)/);
+  assert.deepEqual(ai.countries.map((c) => c.iso3), ['TUR'], 'countries untouched');
+
+  const none = applyAgentChoice(base, { agents: null, reason: 'no AI model answered' });
+  assert.equal(none.chosenBy, 'words');
+  assert.deepEqual(none.agents, base.agents);
+  assert.match(none.chooserNote!, /matching words in the question, as no AI model answered/);
+  assert.match(applyAgentChoice(base, { agents: [{ id: 'x', why: '' }] }).chooserNote!, /named no agent on the list/);
+  assert.equal(applyAgentChoice(base, null).chosenBy, 'words');
+});
+
+test('agent choice prompt lists every agent by id and the earlier questions', () => {
+  const p = agentChoicePrompt('And the currency?', [{ question: 'Is Turkey cheap?' }]);
+  for (const id of ['cb', 'rv', 'fx', 'spill', 'calendar']) assert.match(p, new RegExp(`- ${id}: `));
+  assert.match(p, /Earlier questions[\s\S]*Is Turkey cheap\?[\s\S]*Question: And the currency\?/);
 });

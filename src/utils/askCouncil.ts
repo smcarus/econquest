@@ -3,8 +3,8 @@
  * figures the app already holds, and a synthesis agent may then write a short brief from those
  * answers alone.
  *
- * - The planner is a set of stated keyword rules, not AI, so the reason each agent was asked is
- *   visible and testable.
+ * - The AI model picks the agents when one is set up (applyAgentChoice); otherwise stated keyword
+ *   rules do. Either way the reason each agent was asked is shown.
  * - Agents are deterministic: every figure keeps its source and its tag (Live data, Official,
  *   AI estimate, Sample data, or the agent's own model reading).
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
@@ -105,6 +105,10 @@ export interface CouncilPlan {
   /** How the countries were picked, in words. */
   scopeNote: string;
   agents: Array<{ id: AgentId; why: string }>;
+  /** Who picked the agents: the AI model, or word matching in the question (the default). */
+  chosenBy?: 'ai' | 'words';
+  /** Why word matching was used when the AI was asked, or which model picked. */
+  chooserNote?: string;
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -188,6 +192,56 @@ export function earlierAsText(earlier: EarlierTurn[]): string {
     ...earlier.slice(-4).map((t) => `- Q: ${t.question.slice(0, 300)}${t.headline ? ` A: ${t.headline.slice(0, 300)}` : ''}`),
     '',
   ].join('\n');
+}
+
+/* ------------------------------------------------------------------------------------------
+ * AI-chosen agents (Sam, 2026-11-05). The AI model reads the question and picks which agents
+ * answer, with a reason for each. It only picks agents: countries still come from the question
+ * or the box, and the agents still answer from app data. If no model answers, or it names no
+ * valid agent, word matching decides as before and the panel says so.
+ * ------------------------------------------------------------------------------------------ */
+
+export const AGENT_CHOICE_INSTRUCTION = [
+  'You route a policy research question to the agents best placed to answer it.',
+  'Pick only from the agents listed, by id. Pick the fewest that cover the question, usually one to three.',
+  'Give each a short reason in plain words (under 20 words) that names what in the question it answers.',
+  'Do not answer the question and do not write any numbers.',
+].join(' ');
+
+export function agentChoicePrompt(question: string, earlier: EarlierTurn[] = []): string {
+  return [
+    'Agents:',
+    ...AGENT_ORDER.map((id) => `- ${id}: ${COUNCIL_AGENTS[id].name} Agent, covers ${COUNCIL_AGENTS[id].covers}`),
+    '',
+    ...(earlier.length ? ['Earlier questions in this conversation:', ...earlier.slice(-4).map((t) => `- ${t.question.slice(0, 300)}`), ''] : []),
+    `Question: ${question.slice(0, 500)}`,
+  ].join('\n');
+}
+
+export interface AgentChoiceResult {
+  /** The model's picks, unchecked; null when no model answered. */
+  agents: Array<{ id: string; why: string }> | null;
+  provider?: string;
+  reason?: string;
+}
+
+/** Use the model's picks when at least one names a real agent; otherwise keep the word-matched plan. */
+export function applyAgentChoice(plan: CouncilPlan, choice: AgentChoiceResult | null): CouncilPlan {
+  const seen = new Set<AgentId>();
+  const picked: CouncilPlan['agents'] = [];
+  for (const a of choice?.agents || []) {
+    const id = String(a?.id || '').trim().toLowerCase() as AgentId;
+    if (!AGENT_ORDER.includes(id) || seen.has(id)) continue;
+    seen.add(id);
+    const why = String(a?.why || '').replace(/\s+/g, ' ').replace(/[.\s]+$/, '').trim().slice(0, 200);
+    picked.push({ id, why: why ? `the AI model judged: ${why}` : 'the AI model picked it' });
+  }
+  if (picked.length) {
+    picked.sort((x, y) => AGENT_ORDER.indexOf(x.id) - AGENT_ORDER.indexOf(y.id));
+    return { ...plan, agents: picked, chosenBy: 'ai', chooserNote: `Agents picked by the AI model${choice?.provider ? ` (${choice.provider})` : ''}.` };
+  }
+  const why = choice?.agents ? 'the AI model named no agent on the list' : choice?.reason || 'no AI model answered';
+  return { ...plan, chosenBy: 'words', chooserNote: `Agents picked by matching words in the question, as ${why}.` };
 }
 
 /* ------------------------------------------------------------------------------------------ */

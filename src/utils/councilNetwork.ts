@@ -49,7 +49,7 @@ export function fullCouncilColumns(steps: ProgressSteps, phase: FullCouncilPhase
 }
 
 /** Ask the council: the planner, the desk agents it chose, then the synthesis agent. */
-export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synthesis: SynthesisResult | null): AgentColumn[] {
+export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synthesis: SynthesisResult | null, chosenBy: 'ai' | 'words' = 'words'): AgentColumn[] {
   const synth: { status: AgentStatus; note?: string } = writing
     ? { status: 'running' }
     : synthesis?.brief
@@ -58,13 +58,20 @@ export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synt
         ? { status: 'skipped', note: 'no model answered, so no summary' }
         : { status: 'waiting' };
   return [
-    { title: '1. Planner', nodes: [{ id: 'planner', label: 'Planner', task: 'Picks agents from words in your question', status: 'done', note: 'stated rules, not AI' }] },
+    {
+      title: '1. Planner',
+      nodes: [
+        chosenBy === 'ai'
+          ? { id: 'planner', label: 'Planner', task: 'The AI model picked the agents for your question', status: 'done', note: 'AI pick, checked against the agent list' }
+          : { id: 'planner', label: 'Planner', task: 'Picks agents from words in your question', status: 'done', note: 'stated rules, not AI' },
+      ],
+    },
     {
       title: '2. Desk agents, on the app’s figures',
       nodes: answers.map((a) => ({
         id: a.id,
         label: `${a.name} Agent`,
-        task: a.why.replace(/^the question mentions/, 'Asked: you mentioned'),
+        task: a.why.replace(/^the question mentions/, 'Asked: you mentioned').replace(/^the AI model judged:/, 'AI pick:'),
         status: 'done' as const,
         note: a.findings.length ? `${a.findings.length} ${a.findings.length === 1 ? 'country' : 'countries'}` : 'nothing to report',
       })),
