@@ -26,6 +26,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
+import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
@@ -1667,6 +1668,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
 
           if (scoredEvents.length > 0) {
             baseline.polymarketContracts = scoredEvents.slice(0, 4).map((s) => s.contract);
+            markLive('polymarket.contracts', `Polymarket, pulled ${new Date().toISOString().slice(0, 10)}`);
             activeSources.push('Polymarket Gamma API (100% Live Contracts)');
           }
         }
@@ -1684,7 +1686,9 @@ async function fetchLiveOpenDataSnapshotNetwork(
       // Scale negative GDELT tone (-8..+2) into a 0..100 conflict intensity index
       baseline.gdeltMetrics.conflictIntensityIndex = Math.round(Math.max(18, Math.min(94, 42 + Math.max(0, -pull.tone) * 9.5)));
       markLive('gdelt.conflictIntensityIndex', `GDELT, pulled ${day}`);
-      if (pull.headlines.length) baseline.gdeltMetrics.topHeadlines = pull.headlines;
+      // The pull's own headlines replace any built-in ones, even when it found none.
+      baseline.gdeltMetrics.topHeadlines = pull.headlines;
+      if (pull.headlines.length) markLive('gdelt.topHeadlines', `GDELT, pulled ${day}`);
       activeSources.push(`GDELT news tone and headlines (pulled ${day}, refreshed every ${GDELT_REFRESH_DAYS} days)`);
     })(),
 
@@ -2030,6 +2034,10 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...((() => {
             const fiscal = fiscalFromSnapshot(snap);
             return fiscal ? { fiscal } : {};
+          })()),
+          ...((() => {
+            const politics = politicsFromSnapshot(snap);
+            return politics ? { politics } : {};
           })()),
           alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
           dataMode: status.mode,
