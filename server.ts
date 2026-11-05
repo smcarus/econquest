@@ -129,6 +129,8 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
+import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading } from './src/utils/gdeltRaw.ts';
+import { gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState } from './src/utils/gdeltRawStore.ts';
 import { polymarketMoves } from './src/utils/oddsMoves.ts';
 import {
   FRED_10Y_SERIES,
@@ -2326,7 +2328,36 @@ function cbpolPullQuick(): Promise<CbpolPull | null> {
  * (12 h) rather than the weekly snapshot. Without a BIS figure the policy rate stays unmarked,
  * so every screen reads it as Missing.
  */
+/**
+ * GDELT raw files (events and GKG) read from data/live/gdelt-raw/, laid over every served snapshot
+ * so a pull shows up without a new snapshot. The day files are read once per pull (pull.json date).
+ */
+let gdeltRawDaysCache: { stamp: string; days: GdeltRawDay[] } | null = null;
+function gdeltRawReadingFor(iso3: string): GdeltRawReading | null {
+  try {
+    const dir = gdeltRawDir(DATA_DIR);
+    const st = loadGdeltRawPullState(dir);
+    if (!st.pulledAt) return null;
+    const stamp = `${st.pulledAt}|${st.latestSlot || ''}`;
+    if (gdeltRawDaysCache?.stamp !== stamp) gdeltRawDaysCache = { stamp, days: loadAllGdeltRawDays(dir) };
+    return gdeltRawReading(buildGdeltRawSeries(String(iso3 || '').toUpperCase(), gdeltRawDaysCache.days, { pulledAt: st.pulledAt }));
+  } catch (err: any) {
+    console.warn(`[GDELT raw] could not read ${iso3}: ${err?.message || err}`);
+    return null;
+  }
+}
+function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const reading = gdeltRawReadingFor(snapshot.iso3);
+  if (reading) return { ...snapshot, gdeltRaw: reading };
+  const { gdeltRaw: _drop, ...rest } = snapshot;
+  return rest as OpenDataSnapshot;
+}
+
+/** Overlays laid on every served snapshot: the BIS policy rate and the GDELT raw-file reading. */
 async function withBisPolicyRate(snapshot: OpenDataSnapshot): Promise<OpenDataSnapshot> {
+  return withGdeltRaw(await withBisPolicyRateOnly(snapshot));
+}
+async function withBisPolicyRateOnly(snapshot: OpenDataSnapshot): Promise<OpenDataSnapshot> {
   const rate = policyRateFor(snapshot.iso3, await cbpolPullQuick());
   const liveFields = { ...(snapshot.liveFields || {}) };
   // Only an own-data connector may also fill it; nothing else counts.

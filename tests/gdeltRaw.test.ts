@@ -231,3 +231,67 @@ test('pull: HTTP 429 pauses 15 minutes and asks nothing in between; old days pru
     rmSync(dataDir, { recursive: true, force: true });
   }
 });
+
+import { gdeltRawReading, isEventSurge, type GdeltRawSeries, type GdeltRawWeek } from '../src/utils/gdeltRaw.ts';
+import { politicsFromSnapshot, rawGdeltFigures } from '../src/utils/politicsEvents.ts';
+import { councilInputs } from '../src/utils/councilInputs.ts';
+
+function week(weekStart: string, count: number, protests: number, inflationShare: number): GdeltRawWeek {
+  return {
+    weekStart,
+    coverage: { eventsFiles: 672, eventsMissing: 0, gkgFiles: 56, gkgMissing: 0, expectedFiles: 672 },
+    events: { count, byQuad: {}, topRoots: [], protests, sanctions: 0, violence: 1, goldsteinMean: -1, toneMean: -2, articles: count * 3 },
+    gkg: { articles: 1000, toneMean: -2.5, themes: { inflation: { label: 'Inflation and prices', articles: inflationShare * 10, sharePct: inflationShare, toneMean: -3 }, debt: { label: 'Debt, default and bankruptcy', articles: 0, sharePct: 0, toneMean: null } } },
+  };
+}
+const SERIES: GdeltRawSeries = {
+  iso3: 'BRA',
+  latestFileAt: '2026-11-05T18:00:00.000Z',
+  pulledAt: '2026-11-05T18:10:00.000Z',
+  weeks: [week('2026-10-05', 100, 4, 5), week('2026-10-12', 110, 5, 5), week('2026-10-19', 90, 3, 5), week('2026-10-26', 200, 12, 12), week('2026-11-02', 40, 1, 6)],
+  topPersons: [{ name: 'fernando haddad', articles: 40 }],
+  topOrgs: [{ name: 'central bank of brazil', articles: 30 }],
+  gkgSampleShare: 0.125,
+};
+
+test('reading: latest complete week against the weeks before; the week in progress is not used', () => {
+  const r = gdeltRawReading(SERIES)!;
+  assert.equal(r.weekStart, '2026-10-26');
+  assert.equal(r.complete, true);
+  assert.equal(r.baselineWeeks, 3);
+  assert.equal(r.events?.baseline?.count, 100);
+  assert.equal(r.events?.changePct, 100);
+  assert.ok(isEventSurge(r));
+  assert.deepEqual(r.gkg?.themes.map((t) => t.id), ['inflation'], 'themes with no articles are left out');
+  assert.equal(r.gkg?.themes[0].baselineSharePct, 5);
+  // Only a week in progress on disk: shown as in progress, no comparison, no surge.
+  const partial = gdeltRawReading({ ...SERIES, weeks: [week('2026-11-02', 40, 1, 6)] })!;
+  assert.equal(partial.complete, false);
+  assert.equal(partial.events?.baseline, undefined);
+  assert.equal(isEventSurge(partial), false);
+  assert.equal(gdeltRawReading(null), null);
+});
+
+test('Politics & Events Agent: event counts, surge rule and themes, each with its source', () => {
+  const r = gdeltRawReading(SERIES)!;
+  const { figures, sentences, surge } = rawGdeltFigures(r);
+  assert.equal(surge, true);
+  assert.match(figures[0].value, /^200 events: 12 protests, 0 sanctions or embargoes, 1 violent vs 100 a week on average over the 3 weeks before \(\+100%\)/);
+  assert.match(figures[0].source, /GDELT 2\.0 events files, pulled 2026-11-05/);
+  assert.ok(figures.some((f) => f.label === 'Event reading' && f.tag === 'model'));
+  const themes = figures.find((f) => f.label.startsWith('Economic themes'))!;
+  assert.match(themes.value, /Inflation and prices 12% \(before 5%\)/);
+  assert.match(themes.source, /12\.5% of GKG files read/);
+  assert.ok(sentences.some((s) => /Protests doubled/.test(s)));
+  assert.ok(sentences.some((s) => /inflation and prices/.test(s)));
+});
+
+test('council inputs: GDELT raw lines when pulled, MISSING otherwise', () => {
+  const base = { iso3: 'BRA', countryName: 'Brazil', currencyCode: 'BRL', liveFields: {}, imfIndicators: {}, worldBankIndicators: {}, monetaryAndMarket: {}, gdeltMetrics: { averageTone: 0, conflictIntensityIndex: 0, articleCount24h: 0, topHeadlines: [] } } as any;
+  const without = councilInputs(base).lines;
+  assert.ok(without.includes('- GDELT weekly events: MISSING (GDELT raw files not pulled yet)'));
+  const withRaw = councilInputs({ ...base, gdeltRaw: gdeltRawReading(SERIES) }).lines;
+  assert.ok(withRaw.some((l) => /^- GDELT events, week of 2026-10-26: 200 events, 12 protests/.test(l)));
+  assert.ok(withRaw.some((l) => /^- GDELT economic themes, share of 1000 articles .*Inflation and prices 12% \(before 5%\)/.test(l)));
+  assert.equal(politicsFromSnapshot({ ...base, gdeltRaw: gdeltRawReading(SERIES) })?.raw?.weekStart, '2026-10-26');
+});

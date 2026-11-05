@@ -33,7 +33,7 @@ import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
 import { MEASURE_LABEL, TOLERANCE, compareClaims, extractClaims, fmtMeasure } from './docFigureCheck';
-import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, stabilityBand, toneBand } from './politicsEvents';
+import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
@@ -87,7 +87,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   politics: {
     name: 'Politics & Events',
-    covers: 'news tone and the latest headlines (GDELT, weekly), political stability rank (World Bank governance indicators), prediction-market odds on contracts that name the country (Polymarket)',
+    covers: 'news tone and the latest headlines (GDELT, weekly), weekly event counts (protests, sanctions, violence) and economic themes in the news (GDELT raw files), political stability rank (World Bank governance indicators), prediction-market odds on contracts that name the country (Polymarket)',
     topic: /politic|election|\bvot(?:e|es|ing|ers?)\b|protest|unrest|\briots?\b|\bstrikes?\b|\bcoup|cabinet|parliament|congress|president|prime minister|\bministers?\b|populis|governance|instability|\bnews\b|headline|sentiment|\btone\b|polymarket|prediction market|\bodds\b|betting|violence/i,
   },
   rv: {
@@ -593,6 +593,12 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
       });
     }
     if (p.markets?.length) parts.push(`Prediction markets price ${p.markets.length === 1 ? 'one contract that names' : `${p.markets.length} contracts that name`} the country.`);
+    if (p.raw) {
+      const raw = rawGdeltFigures(p.raw);
+      figures.push(...raw.figures);
+      parts.push(...raw.sentences);
+      if (raw.surge) weight = Math.max(weight, 0.5);
+    } else missing.push(`${it.countryName}: weekly event counts and economic news themes missing (GDELT raw files not pulled yet: Menu > Offline data, or npm run gdelt:pull)`);
     for (const h of p.headlines || []) {
       figures.push({ label: 'Headline', value: h.title, source: `${h.source}${h.publishedAt ? `, ${h.publishedAt.slice(0, 10)}` : ''} (GDELT, pulled ${p.headlinesPulledAt || ''})`, tag: 'live' });
     }

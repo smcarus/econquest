@@ -480,3 +480,115 @@ export function estimatePullBytes(left: { events: number; gkg: number }, newest:
   if (!newest.events && !newest.gkg) return null;
   return left.events * (newest.events || 0) + left.gkg * (newest.gkg || 0);
 }
+
+/** A week counts as complete once the newest file read is past its end. */
+const WEEK_MS = 7 * 86400000;
+
+/**
+ * The short reading the council and the country page use: the latest complete week against the
+ * average of up to seven weeks before it. Every figure is a count or a mean from the files read.
+ */
+export interface GdeltRawReading {
+  weekStart: string;
+  /** False when no complete week is on disk yet and the reading is the week in progress. */
+  complete: boolean;
+  pulledAt?: string;
+  latestFileAt?: string;
+  /** Events files read in the week, and how many GDELT should have (672). */
+  eventsFilesRead: number;
+  eventsFilesExpected: number;
+  /** Weeks in the baseline (0 = no comparison). */
+  baselineWeeks: number;
+  events?: {
+    count: number;
+    protests: number;
+    sanctions: number;
+    violence: number;
+    goldsteinMean: number;
+    toneMean: number;
+    baseline?: { count: number; protests: number; sanctions: number; violence: number; goldsteinMean: number };
+    /** Latest count over the baseline average, minus 1, as a percent. */
+    changePct?: number;
+  };
+  gkg?: {
+    articles: number;
+    toneMean: number;
+    /** Share of GKG files read (1 = every file). */
+    sampleShare: number | null;
+    /** Theme groups with articles this week, largest share first. */
+    themes: Array<{ id: string; label: string; sharePct: number; baselineSharePct?: number; toneMean: number | null }>;
+  };
+  topPersons: Array<{ name: string; articles: number }>;
+  topOrgs: Array<{ name: string; articles: number }>;
+}
+
+/** Latest week at least this many times the baseline average reads as a surge. */
+export const EVENT_SURGE_RATIO = 1.5;
+export const EVENT_SURGE_RULE = `a week with at least ${EVENT_SURGE_RATIO}x the average events of the weeks before it reads as a surge`;
+export const GOLDSTEIN_RULE = 'Goldstein scale: -10 = most conflictual, +10 = most cooperative, averaged over the events';
+
+export function gdeltRawReading(s: GdeltRawSeries | null | undefined): GdeltRawReading | null {
+  if (!s || !s.weeks.length) return null;
+  const latestMs = s.latestFileAt ? Date.parse(s.latestFileAt) : 0;
+  const isComplete = (w: GdeltRawWeek) => Date.parse(`${w.weekStart}T00:00:00Z`) + WEEK_MS <= latestMs + SLOT_MS;
+  const completeWeeks = s.weeks.filter(isComplete);
+  const latest = completeWeeks.at(-1) || s.weeks.at(-1)!;
+  const complete = isComplete(latest);
+  const before = complete ? completeWeeks.slice(0, -1).slice(-7) : [];
+  const avg = (xs: number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
+  const out: GdeltRawReading = {
+    weekStart: latest.weekStart,
+    complete,
+    ...(s.pulledAt ? { pulledAt: s.pulledAt } : {}),
+    ...(s.latestFileAt ? { latestFileAt: s.latestFileAt } : {}),
+    eventsFilesRead: latest.coverage.eventsFiles,
+    eventsFilesExpected: latest.coverage.expectedFiles,
+    baselineWeeks: 0,
+    topPersons: s.topPersons.slice(0, 5),
+    topOrgs: s.topOrgs.slice(0, 5),
+  };
+  if (latest.events) {
+    const e = latest.events;
+    const base = before.filter((w) => w.events).map((w) => w.events!);
+    out.events = { count: e.count, protests: e.protests, sanctions: e.sanctions, violence: e.violence, goldsteinMean: e.goldsteinMean, toneMean: e.toneMean };
+    if (base.length) {
+      out.baselineWeeks = base.length;
+      const b = {
+        count: round(avg(base.map((x) => x.count)), 1),
+        protests: round(avg(base.map((x) => x.protests)), 1),
+        sanctions: round(avg(base.map((x) => x.sanctions)), 1),
+        violence: round(avg(base.map((x) => x.violence)), 1),
+        goldsteinMean: round(avg(base.map((x) => x.goldsteinMean))),
+      };
+      out.events.baseline = b;
+      if (b.count > 0) out.events.changePct = round((100 * e.count) / b.count - 100, 0);
+    }
+  }
+  if (latest.gkg) {
+    const g = latest.gkg;
+    const base = before.filter((w) => w.gkg).map((w) => w.gkg!);
+    out.baselineWeeks = Math.max(out.baselineWeeks, base.length);
+    out.gkg = {
+      articles: g.articles,
+      toneMean: g.toneMean,
+      sampleShare: s.gkgSampleShare,
+      themes: Object.entries(g.themes)
+        .filter(([, t]) => t.articles > 0)
+        .sort((a, b) => b[1].sharePct - a[1].sharePct)
+        .map(([id, t]) => ({
+          id,
+          label: t.label,
+          sharePct: t.sharePct,
+          ...(base.length ? { baselineSharePct: round(avg(base.map((w) => w.themes[id]?.sharePct || 0)), 1) } : {}),
+          toneMean: t.toneMean,
+        })),
+    };
+  }
+  return out;
+}
+
+/** True when the latest week is a surge against its baseline (needs at least 3 baseline weeks). */
+export function isEventSurge(r: GdeltRawReading | null | undefined): boolean {
+  const e = r?.events;
+  return !!e?.baseline && (r!.baselineWeeks >= 3) && e.baseline.count > 0 && e.count >= EVENT_SURGE_RATIO * e.baseline.count;
+}

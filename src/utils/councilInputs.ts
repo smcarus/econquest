@@ -53,6 +53,17 @@ export function councilInputs(snapshot: OpenDataSnapshot): CouncilInputs {
   // Polymarket only when the feed answered in this pull; the built-in example contracts never count.
   const p = snapshot.liveFields?.['polymarket.contracts'] ? snapshot.polymarketContracts?.[0] : undefined;
   lines.push(`- Polymarket key contract: ${p ? `"${p.question}" (${p.probabilityPct}% odds, ${snapshot.liveFields?.['polymarket.contracts']})` : 'MISSING (Polymarket did not answer)'}`);
+  // GDELT raw files (events and GKG): only when they have been pulled; never a built-in value.
+  const raw = snapshot.gdeltRaw;
+  if (raw?.events) {
+    const e = raw.events;
+    const base = e.baseline ? `; ${raw.baselineWeeks}-week average before: ${e.baseline.count} events, ${e.baseline.protests} protests, Goldstein ${e.baseline.goldsteinMean}` : '';
+    lines.push(`- GDELT events, week of ${raw.weekStart}${raw.complete ? '' : ' (in progress)'}: ${e.count} events, ${e.protests} protests, ${e.sanctions} sanctions or embargoes, ${e.violence} violent, mean Goldstein ${e.goldsteinMean}${base} (GDELT 2.0 events files, pulled ${raw.pulledAt?.slice(0, 10) || 'date unknown'})`);
+  } else lines.push('- GDELT weekly events: MISSING (GDELT raw files not pulled yet)');
+  if (raw?.gkg?.themes.length) {
+    const t = raw.gkg.themes.slice(0, 5).map((x) => `${x.label} ${x.sharePct}%${x.baselineSharePct !== undefined ? ` (before ${x.baselineSharePct}%)` : ''}`).join(', ');
+    lines.push(`- GDELT economic themes, share of ${raw.gkg.articles} articles naming the country, week of ${raw.weekStart}: ${t}; GKG tone ${raw.gkg.toneMean} (GDELT Global Knowledge Graph, pulled ${raw.pulledAt?.slice(0, 10) || 'date unknown'})`);
+  } else lines.push('- GDELT economic themes: MISSING (GDELT raw files not pulled yet)');
   const missingDeskInputs = DESK_ENGINE_INPUTS.filter((path) => !status.isLive(path));
   return { lines, live, missing, deskEnginesLive: missingDeskInputs.length === 0, missingDeskInputs };
 }

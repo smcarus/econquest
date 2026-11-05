@@ -385,6 +385,8 @@ export interface OpenDataSnapshot {
   polymarketContracts: PolymarketContract[];
   /** GDELT pull for this country (tone, its shift over the timeline, the date pulled). Set only when GDELT answered. */
   gdeltPull?: { pulledAt: string; tone: number; toneShift?: import('../utils/gdeltTone').GdeltToneShift };
+  /** GDELT 2.0 raw files (events and GKG), latest complete week against the weeks before; laid over when served (utils/gdeltRaw.ts). */
+  gdeltRaw?: import('../utils/gdeltRaw').GdeltRawReading;
   gdeltMetrics: {
     conflictIntensityIndex: number;
     averageTone: number;
