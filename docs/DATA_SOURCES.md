@@ -104,9 +104,11 @@ Notes from the first check on Sam's Mac (2026-11-05):
   (api.imf.org, no key). IFS was retired in 2025 and split into topic datasets: monthly reserves
   are in **IL** (International Liquidity) and the balance of payments in **BOP**. The IMF also
   changed its codes, so the app does not hard-code them: it reads each dataset's structure,
-  picks the indicator whose IMF name fits ("Reserve assets, total", "Current account",
-  "Goods and services" imports), then asks for that series for each country and checks the
-  series is in US dollars and states its unit (millions, billions). Every figure shows the IMF
+  picks the indicator whose IMF name fits ("Total reserves (gold at market value)", "Current
+  account balance", "Goods and services" debit for imports), then asks for that series for each
+  country and checks the series is in US dollars and states its unit (millions, billions). The
+  live API states millions on some series whose values are whole dollars; when the stated unit
+  would put a value above $100 trillion, the app reads the values as dollars. Every figure shows the IMF
   series key and period. If a name does not match (the check says which), set the series key in
   `.env`: `IMF_RESERVES_KEY`, `IMF_CA_KEY`, `IMF_IMPORTS_KEY`, with `{ISO3}` for the country.
   `npm run check:imf` prints the live IMF dimension order, the indicator codes whose names look

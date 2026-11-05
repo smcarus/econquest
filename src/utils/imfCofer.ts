@@ -15,7 +15,7 @@
  * otherwise claims in the currency over total allocated reserves (stated). IMF_COFER_KEY in .env
  * sets the series key directly.
  */
-import { IMF_SDMX_HOST, getJson, imfDataUrl, loadStructures, parseImfData, toUsdBn, type ImfFetch, type ImfSeries, type ImfStructure } from './imfReserves';
+import { IMF_SDMX_HOST, getJson, imfDataUrl, loadStructures, parseImfData, seriesScale, toUsdBn, type ImfFetch, type ImfSeries, type ImfStructure } from './imfReserves';
 
 export const COFER_FLOW = 'COFER';
 export const COFER_LABEL = 'IMF COFER (currency composition of official FX reserves)';
@@ -94,7 +94,8 @@ const indName = (x: ImfSeries, s?: ImfStructure) => {
   const parts = [ccyDim ? `${x.dims[ccyDim].name} ${x.dims[ccyDim].id}` : '', x.dims[s?.indicatorDim ?? 'INDICATOR']?.name || x.dims[s?.indicatorDim ?? 'INDICATOR']?.id || ''];
   return parts.filter(Boolean).join(' | ') || Object.values(x.dims).map((d) => d.name || d.id).join(' | ');
 };
-const ccyOf = (name: string) => COFER_CURRENCIES.find((c) => c.re.test(name.replace(/\bin U\.?S\.? dollars? terms\b/i, '')))?.ccy;
+/** Live codes join words with underscores (CI_AUD = claims in Australian dollars), so they are split first. */
+const ccyOf = (name: string) => COFER_CURRENCIES.find((c) => c.re.test(name.replace(/_/g, ' ').replace(/\bin U\.?S\.? dollars? terms\b/i, '')))?.ccy;
 /** A share series: "share" or "percent" in a name, or a percent code (…_PT, SHR…) on the transformation or unit. */
 const isShare = (x: ImfSeries) =>
   /share|percent|% of/i.test(Object.values(x.dims).map((d) => d.name).join(' | ')) ||
@@ -144,7 +145,7 @@ export function readCofer(series: ImfSeries[], area: { id: string; name: string 
     shares.push({ ccy, pct: round(pct, 2), ...(ago && tAgo ? { change4qPts: round(pct - (ago.value / tAgo) * 100, 2) } : {}) });
   }
   if (!shares.length) return null;
-  const bn = toUsdBn(tNow, total.x.scale);
+  const bn = toUsdBn(tNow, seriesScale(total.x));
   return { period, area, shares: order(shares), ...(bn !== null ? { totalAllocatedUsdBn: round(bn, 0) } : {}), method: 'claims over allocated' };
 }
 

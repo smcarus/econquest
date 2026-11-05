@@ -19,6 +19,7 @@ import {
   pullImfExternal,
   reserveCover,
   seriesKey,
+  seriesScale,
   toUsdBn,
 } from '../src/utils/imfReserves.ts';
 import { imfStructureJson, imfDataJson, imfFetch } from './helpers/imfFixtures.ts';
@@ -157,4 +158,65 @@ test('looser names still match: "Balance of payments, current account, total" an
   const s = { flow: 'X', dims: ['COUNTRY', 'INDICATOR'], indicatorDim: 'INDICATOR', indicators: [{ id: 'BCA', name: 'Balance of payments, current account, total' }, { id: 'ORA', name: 'Official reserves' }, { id: 'ORXG', name: 'Official reserves excluding gold' }] };
   assert.deepEqual(matchIndicators(s, IMF_MEASURES.currentAccount).map((c) => c.id), ['BCA']);
   assert.deepEqual(matchIndicators(s, IMF_MEASURES.reserves).map((c) => c.id), ['ORA']);
+});
+
+test('live IMF names (Nov 2026): IL picks total reserves at market value, BOP picks the current account balance', () => {
+  const il = {
+    flow: 'IL', dims: ['COUNTRY', 'INDICATOR', 'UNIT', 'FREQUENCY'], indicatorDim: 'INDICATOR',
+    indicators: [
+      { id: 'RXF11ORA_REVS', name: 'Reserves excluding gold, other reserve assets' },
+      { id: 'RXF11FX_REVS', name: 'Reserves excluding gold, foreign exchange' },
+      { id: 'RXF11_REVS', name: 'Reserves excluding gold' },
+      { id: 'RXDR_REVS', name: 'Reserves, Special Drawing Rights (SDRs)' },
+      { id: 'TRGMV_REVS', name: 'Total reserves (gold at market value)' },
+      { id: 'TRRPIMF_REVS', name: 'Reserves, reserve position in the IMF' },
+      { id: 'RGOLDNV_REVS', name: 'Gold reserves at national valuation' },
+      { id: 'RGOLDMV_REVS', name: 'Gold reserves at market value' },
+      { id: 'TRGNV_REVS', name: 'Total reserves (gold at national valuation)' },
+      { id: 'TRG35XDR_REVS', name: 'Total reserves (gold at 35 SDRs per ounce)' },
+      { id: 'GOLD35P_REVS', name: 'Gold reserves at 35 SDRs per ounce' },
+      { id: 'RXF11_REVS_WIMP', name: 'Reserves excluding gold, In weeks of imports' },
+      { id: 'RGV_REVS', name: 'Gold reserves (volume)' },
+    ],
+  };
+  assert.deepEqual(matchIndicators(il, IMF_MEASURES.reserves).map((c) => c.id), ['TRGMV_REVS']);
+  const bop = {
+    flow: 'BOP', dims: ['COUNTRY', 'BOP_ACCOUNTING_ENTRY', 'INDICATOR', 'UNIT', 'FREQUENCY'], indicatorDim: 'INDICATOR',
+    indicators: [
+      { id: 'GS', name: 'Goods and services' },
+      { id: 'CABXEF', name: 'Current account balance excluding exceptional financing' },
+      { id: 'TCDCA', name: 'Total current account credit/revenue' },
+      { id: 'TDBCA', name: 'Total current account debit/expenditure' },
+      { id: 'CAB', name: 'Current account balance (credit less debit)' },
+      { id: 'GSIN1', name: 'Goods, services and primary income' },
+    ],
+  };
+  assert.deepEqual(matchIndicators(bop, IMF_MEASURES.currentAccount).map((c) => c.id), ['CAB']);
+  assert.deepEqual(matchIndicators(bop, IMF_MEASURES.imports).map((c) => c.id), ['GS']);
+});
+
+test('the indicator name "credit less debit" does not rule out the net current account series', () => {
+  const dims = (entry: string, name: string) => ({
+    COUNTRY: { id: 'BRA', name: '' },
+    BOP_ACCOUNTING_ENTRY: { id: entry, name },
+    INDICATOR: { id: 'CAB', name: 'Current account balance (credit less debit)' },
+    UNIT: { id: 'USD', name: '' },
+    FREQUENCY: { id: 'Q', name: '' },
+  });
+  const obs = [{ period: '2026-Q3', value: -9e9 }];
+  const series = [
+    { key: 'BRA.CD_T.CAB.USD.Q', dims: dims('CD_T', ''), scale: 6, obs },
+    { key: 'BRA.NETCD_T.CAB.USD.Q', dims: dims('NETCD_T', ''), scale: 6, obs },
+  ];
+  assert.equal(pickSeries(series, IMF_MEASURES.currentAccount)?.key, 'BRA.NETCD_T.CAB.USD.Q');
+});
+
+test('stated scale 6 on whole-dollar values (as on the live API) is read as dollars, not millions', () => {
+  const live = { scale: 6, obs: [{ period: '2026-Q3', value: 113520669001.43 }] };
+  assert.equal(seriesScale(live), 0);
+  assert.equal(Number(toUsdBn(live.obs[0].value, seriesScale(live))!.toFixed(1)), 113.5);
+  const millions = { scale: 6, obs: [{ period: '2026-09', value: 352000 }] };
+  assert.equal(seriesScale(millions), 6);
+  assert.equal(toUsdBn(352000, seriesScale(millions)), 352);
+  assert.equal(seriesScale({ obs: [{ period: '2026-09', value: 1 }] }), undefined);
 });
