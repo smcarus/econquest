@@ -614,13 +614,13 @@ export const AskCouncilPanel: React.FC<{
     >
       <header className={`flex items-center justify-between gap-2 ${page ? 'pb-2' : 'ui-panel-header'}`}>
         <div className="min-w-0">
-          <h3 className="ui-section-title">Council chat</h3>
+          <h3 className="ui-section-title whitespace-nowrap">Council chat</h3>
           {uses}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 shrink-0">
           {(asked || fullCouncilInChat) && (
-            <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true">
-              New conversation
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true" aria-label="New conversation">
+              New<span className="hidden sm:inline">&nbsp;conversation</span>
             </button>
           )}
           {toolbar}

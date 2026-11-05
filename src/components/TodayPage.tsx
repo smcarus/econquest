@@ -260,9 +260,10 @@ export const TodayPage: React.FC<{
       aria-expanded={briefing}
       aria-controls="ws-briefing"
       data-briefing-toggle="true"
+      aria-label="Briefing"
       title="Your inputs, watchlist, what moved, the next two weeks and watch alerts"
     >
-      <PanelRight className="w-3.5 h-3.5" /> Briefing
+      <PanelRight className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Briefing</span>
       {toFix > 0 && <span className="ml-0.5 inline-block w-1.5 h-1.5 rounded-full bg-amber-500" aria-label={`${toFix} inputs need setup`} />}
     </button>
   );
@@ -275,9 +276,10 @@ export const TodayPage: React.FC<{
       aria-expanded={agentsOpen}
       aria-controls="ws-agents"
       data-agents-toggle="true"
+      aria-label="Agents"
       title="The agents working on your question, each with its live status"
     >
-      <PanelLeft className="w-3.5 h-3.5" /> Agents
+      <PanelLeft className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Agents</span>
     </button>
   );
 
