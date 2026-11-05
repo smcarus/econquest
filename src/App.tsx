@@ -169,7 +169,7 @@ import {
   KeyRound,
   Wrench,
 } from 'lucide-react';
-import { OPEN_SETTINGS_EVENT, SettingsDialog } from './components/SettingsDialog';
+import { OPEN_SETTINGS_EVENT, SettingsDialog, type SettingsTab } from './components/SettingsDialog';
 import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 
@@ -702,10 +702,14 @@ export default function App() {
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('keys');
   // Settings opens from the Menu, from Cmd/Ctrl + comma (as in most desktop apps), or from any
   // panel that dispatches OPEN_SETTINGS_EVENT (Data connections does, next to a missing key).
   useEffect(() => {
-    const open = () => setIsSettingsOpen(true);
+    const open = () => {
+      setSettingsTab('keys');
+      setIsSettingsOpen(true);
+    };
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === ',') {
         e.preventDefault();
@@ -2444,7 +2448,10 @@ export default function App() {
                         icon: <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'Settings',
                         hint: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,',
-                        onClick: () => setIsSettingsOpen(true),
+                        onClick: () => {
+                          setSettingsTab('keys');
+                          setIsSettingsOpen(true);
+                        },
                         className: '',
                       },
                       {
@@ -2452,7 +2459,10 @@ export default function App() {
                         icon: <Wrench className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'Tools',
                         hint: '',
-                        onClick: () => setAppArea('desks'),
+                        onClick: () => {
+                          setSettingsTab('tools');
+                          setIsSettingsOpen(true);
+                        },
                         className: '',
                       },
                       {
@@ -3485,7 +3495,25 @@ export default function App() {
         </Suspense>
       )}
 
-      <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onOpenAiModel={() => setIsRuntimeModalOpen(true)} />
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onOpenAiModel={() => setIsRuntimeModalOpen(true)}
+        tab={settingsTab}
+        onTabChange={setSettingsTab}
+        tools={
+          <ToolsPage
+            run={run}
+            items={liveWatchlistItems}
+            watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
+            onOpen={(t) => {
+              setIsSettingsOpen(false);
+              openTool(t);
+            }}
+            inDialog
+          />
+        }
+      />
 
       {isRuntimeModalOpen && (
         <Suspense fallback={null}>

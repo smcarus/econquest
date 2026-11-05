@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Settings2, X, XCircle } from 'lucide-react';
+import { CheckCircle2, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import { STATE_LABEL, isFailure, type ConnectionResult } from '../utils/connectionCheck';
 import type { ApiKeyStatus } from '../utils/userSettings';
 
@@ -184,7 +184,19 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; onOpenAiModel?: () => void }> = ({ isOpen, onClose, onOpenAiModel }) => {
+export type SettingsTab = 'keys' | 'tools';
+
+export const SettingsDialog: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  onOpenAiModel?: () => void;
+  /** Which part is showing: Data API keys, or the Tools page (Sam, 2026-11-05: Tools inside Settings). */
+  tab?: SettingsTab;
+  onTabChange?: (tab: SettingsTab) => void;
+  /** The Tools page, drawn when the Tools part is open. */
+  tools?: React.ReactNode;
+}> = ({ isOpen, onClose, onOpenAiModel, tab = 'keys', onTabChange, tools }) => {
+  const showTools = tab === 'tools' && !!tools;
   const [reply, setReply] = useState<KeysReply | null>(null);
   const [error, setError] = useState('');
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -219,7 +231,7 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
         role="dialog"
         aria-modal="true"
         aria-labelledby="settings-title"
-        className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl"
+        className={`w-full ${showTools ? 'max-w-6xl' : 'max-w-3xl'} max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl`}
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 id="settings-title" className="ui-title inline-flex items-center gap-2">
@@ -232,23 +244,45 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
 
         <div className="flex flex-col sm:flex-row min-h-0 flex-1">
           <nav aria-label="Settings sections" className="sm:w-48 shrink-0 border-b sm:border-b-0 sm:border-r border-slate-200 dark:border-slate-800 p-2 flex sm:flex-col gap-1">
-            <button type="button" aria-current="page" className="ui-tab inline-flex items-center gap-2 text-left" aria-pressed="true">
+            <button
+              type="button"
+              aria-current={!showTools ? 'page' : undefined}
+              aria-pressed={!showTools}
+              className="ui-tab inline-flex items-center gap-2 text-left"
+              onClick={() => onTabChange?.('keys')}
+            >
               <KeyRound className="w-3.5 h-3.5" aria-hidden /> Data API keys
             </button>
-            <button
-              type="button"
-              className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
-              onClick={() => document.getElementById('settings-section-own_account')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            >
-              Your own paid data
-            </button>
-            <button
-              type="button"
-              className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
-              onClick={() => document.getElementById('settings-section-ai')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            >
-              AI model key
-            </button>
+            {!showTools && (
+              <>
+                <button
+                  type="button"
+                  className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
+                  onClick={() => document.getElementById('settings-section-own_account')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  Your own paid data
+                </button>
+                <button
+                  type="button"
+                  className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
+                  onClick={() => document.getElementById('settings-section-ai')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                >
+                  AI model key
+                </button>
+              </>
+            )}
+            {tools && (
+              <button
+                type="button"
+                aria-current={showTools ? 'page' : undefined}
+                aria-pressed={showTools}
+                className="ui-tab inline-flex items-center gap-2 text-left"
+                onClick={() => onTabChange?.('tools')}
+                data-settings-tools-tab="true"
+              >
+                <Wrench className="w-3.5 h-3.5" aria-hidden /> Tools
+              </button>
+            )}
             {onOpenAiModel && (
               <button
                 type="button"
@@ -263,6 +297,11 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
             )}
           </nav>
 
+          {showTools ? (
+            <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-label="Tools" data-settings-tools="true">
+              {tools}
+            </section>
+          ) : (
           <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-keys-title">
             <h3 id="settings-keys-title" className="ui-section-title">Data API keys</h3>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
@@ -300,6 +339,7 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
                 );
               })}
           </section>
+          )}
         </div>
       </div>
     </div>

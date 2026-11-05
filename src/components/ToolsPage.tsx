@@ -100,7 +100,9 @@ export const ToolsPage: React.FC<{
   items: LiveWatchlistItem[];
   watchlistName: string;
   onOpen: (target: ToolTarget) => void;
-}> = ({ run, items, watchlistName, onOpen }) => {
+  /** Drawn inside the Settings window, which already carries the title. */
+  inDialog?: boolean;
+}> = ({ run, items, watchlistName, onOpen, inDialog = false }) => {
   const statuses = useMemo(() => Object.fromEntries(READY_TOOLS.map((t) => [t.id, toolStatus(t, items, run)])), [items, run]);
   const hiddenCount = HIDDEN_GROUPS.reduce((a, g) => a + g.desks.length, 0);
   const [showSources, setShowSources] = useState(false);
@@ -124,7 +126,11 @@ export const ToolsPage: React.FC<{
     <div className="space-y-5" data-no-stat-ref="true" data-no-provenance-overlay="true">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Tools</h1>
+          {inDialog ? (
+            <h3 className="ui-section-title">Tools</h3>
+          ) : (
+            <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Tools</h1>
+          )}
           <p className="text-sm text-slate-500 dark:text-slate-400">
             Grouped by what you want to do: open a group to see its tools. Every tool runs on live feeds, official series or your own files; a figure without a source reads Missing.
             Status is for {watchlistName} and {run.countryName}.

@@ -4,7 +4,7 @@ How to use the terminal, page by page. For setup see the [README](../README.md);
 source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md).
 
 The header has five pages: **Workspace · Country Research · Compare · Portfolio · Reports**. **Tools**
-is in **Menu**, next to Settings.
+is inside the **Settings** window (Menu > Tools, or the Tools tab in Settings).
 Workspace is the daily start; Compare holds the panels that set the watchlist side by side.
 
 **Reading any figure.** A figure is shown only when a real source supplied it. Hover it for the
@@ -218,7 +218,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ---
 
-## 6. Tools (Menu > Tools)
+## 6. Tools (Menu > Tools, inside Settings)
 
 - **Groups**: every working tool, grouped by use (Ask the council, Keep up, Screen and compare
   countries, Study one country, Look back, Your portfolio, Write and share). Click a group to open
@@ -232,7 +232,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ## 7. Menu
 
-- **Tools**: the Tools page (section 6).
+- **Tools**: opens Settings on its Tools tab (section 6). Opening a tool closes Settings and goes to it.
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.

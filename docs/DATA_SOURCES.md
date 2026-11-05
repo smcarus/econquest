@@ -7,7 +7,7 @@ one file, `.env` (start from `.env.example`). After a change, restart the app an
 npm run check:data        # one line per source, from this computer
 ```
 
-The same check is on the **Tools** page (Menu > Tools) under **Data connections**. Each source is asked for one
+The same check is on the **Tools** page (Menu > Tools, inside Settings) under **Data connections**. Each source is asked for one
 small real answer, through the same address and reader the app uses, and comes back as:
 
 | Status | Meaning |

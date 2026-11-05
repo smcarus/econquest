@@ -71,7 +71,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 | **Compare** | The watchlist side by side: where data and price disagree, MarketEdge, growth and inflation, scenarios, and a Compare countries table to download |
 | **Portfolio** | Your holdings (CSV import) or your watchlist at equal weight: concentration, where the risk sits, dates to watch |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
-| **Tools** (in Menu) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |
+| **Tools** (Settings > Tools) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |
 
 About 40 older desks are hidden while their inputs are not live. Menu > Show all tools brings them
 back; their code is kept.
