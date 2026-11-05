@@ -62,7 +62,7 @@ import {
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
-import { TodayPage } from './components/TodayPage';
+import { REVEAL_EVENT, TodayPage } from './components/TodayPage';
 import { CouncilApprovalCard } from './components/CouncilApprovalCard';
 import {
   COUNTRY_TABS,
@@ -1962,8 +1962,11 @@ export default function App() {
     if (t.area === 'today' || t.area === 'compare') {
       if (t.area === 'compare') setResearchSection(sectionForAnchor(t.anchor));
       setAppArea(t.area);
-      // Wait for Workspace to render, then bring the section into view.
-      window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+      // Wait for Workspace to render, open the Briefing panel if the section lives there, then bring it into view.
+      const reveal = () => window.dispatchEvent(new CustomEvent(REVEAL_EVENT, { detail: t.anchor }));
+      window.setTimeout(reveal, 80);
+      window.setTimeout(reveal, 300);
+      window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 360);
     } else if (t.area === 'country') {
       if (t.brief) setCountryBriefView(t.brief);
       setCountryTab(t.tab as CountryTabId);
@@ -2268,7 +2271,7 @@ export default function App() {
   // The chat sits on Workspace; elsewhere the header button opens it in a side panel.
   const chatDocked = isChatDockOpen && appArea !== 'today';
   const openChat = () => {
-    if (appArea === 'today') document.getElementById('tool-council')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (appArea === 'today') document.getElementById('council-question')?.focus();
     else setChatDock(!isChatDockOpen);
   };
 

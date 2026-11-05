@@ -313,7 +313,11 @@ export const AskCouncilPanel: React.FC<{
   uses?: React.ReactNode;
   /** Shown in the side panel on other pages: no height cap, a Close button in the header. */
   onClose?: () => void;
-}> = ({ onOpenCountry, onSendToReports, fullCouncil, uses, onClose }) => {
+  /** Workspace: the chat fills the page like an AI chat app, with the input box pinned at the bottom. */
+  page?: boolean;
+  /** Extra buttons for the chat's top bar (Workspace puts Briefing there). */
+  toolbar?: React.ReactNode;
+}> = ({ onOpenCountry, onSendToReports, fullCouncil, uses, onClose, page, toolbar }) => {
   const {
     items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, choosing, docs, setDocs,
     debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy,
@@ -602,13 +606,16 @@ export const AskCouncilPanel: React.FC<{
   };
 
   return (
-    <section className={`ui-panel flex flex-col ${onClose ? 'h-full' : ''}`} data-ask-council="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
-      <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
-        <div>
+    <section
+      className={`flex flex-col ${page ? 'h-full' : 'ui-panel'} ${onClose ? 'h-full' : ''}`}
+      data-ask-council="true"
+      data-council-layout={page ? 'page' : onClose ? 'dock' : 'card'}
+      data-no-provenance-overlay="true"
+      data-no-stat-ref="true"
+    >
+      <header className={`flex items-center justify-between gap-2 ${page ? 'pb-2' : 'ui-panel-header'}`}>
+        <div className="min-w-0">
           <h3 className="ui-section-title">Council chat</h3>
-          <p className="ui-label">
-            Ask about your watchlist. Agents answer in this chat from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only. The same conversation carries on across pages (Council chat in the header).
-          </p>
           {uses}
         </div>
         <div className="flex items-center gap-1">
@@ -617,6 +624,7 @@ export const AskCouncilPanel: React.FC<{
               New conversation
             </button>
           )}
+          {toolbar}
           {onClose && (
             <button type="button" className="ui-btn ui-btn-ghost" onClick={onClose} aria-label="Close Council chat" data-council-close="true">
               <X className="w-3.5 h-3.5" /> Close
@@ -625,13 +633,17 @@ export const AskCouncilPanel: React.FC<{
         </div>
       </header>
 
-      <div ref={scrollRef} className={`px-4 py-3 space-y-4 overflow-y-auto ${onClose ? 'flex-1 min-h-0' : 'max-h-[70vh] min-h-[16rem]'}`} data-council-chat="true" aria-live="polite">
+      <div ref={scrollRef} className={`overflow-y-auto ${page || onClose ? 'flex-1 min-h-0' : 'max-h-[70vh] min-h-[16rem]'}`} data-council-chat="true" aria-live="polite">
+        <div className={`space-y-4 py-3 ${page ? 'max-w-3xl mx-auto px-1 sm:px-4' : 'px-4'}`}>
         {!asked && !choosing && !fullCouncilInChat && (
-          <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-2" data-council-welcome="true">
-            <p className="text-sm text-slate-800 dark:text-slate-200">
-              Ask a question about your watchlist, or pick one to start. Follow-ups keep the same countries and agents unless you name others.
+          <div className={page ? 'pt-[12vh] text-center space-y-4' : 'border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-2'} data-council-welcome="true">
+            <p className={page ? 'text-xl font-semibold text-slate-900 dark:text-white' : 'text-sm text-slate-800 dark:text-slate-200'}>
+              What do you want to know about your watchlist?
             </p>
-            <div className="flex flex-wrap gap-1.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Agents answer from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.
+            </p>
+            <div className={`flex flex-wrap gap-1.5 ${page ? 'justify-center' : ''}`}>
               {EXAMPLES.map((ex) => (
                 <button key={ex} type="button" className="ui-pill" disabled={busy} onClick={() => void ask(ex, 'new')}>
                   {ex}
@@ -709,10 +721,11 @@ export const AskCouncilPanel: React.FC<{
             </div>
           </>
         )}
+        </div>
       </div>
 
       <form
-        className="px-4 py-3 border-t border-slate-100 dark:border-slate-800 space-y-2"
+        className={page ? 'w-full max-w-3xl mx-auto pt-2 pb-1 space-y-2' : 'px-4 py-3 border-t border-slate-100 dark:border-slate-800 space-y-2'}
         data-council-composer="true"
         onSubmit={(e) => {
           e.preventDefault();
@@ -731,7 +744,7 @@ export const AskCouncilPanel: React.FC<{
         <label htmlFor="council-question" className="sr-only">
           {asked ? 'Follow-up question' : 'Question'}
         </label>
-        <div className="flex gap-2 items-end">
+        <div className={`flex gap-2 items-end ${page ? 'p-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm' : ''}`}>
           <textarea
             id="council-question"
             rows={2}
@@ -745,12 +758,18 @@ export const AskCouncilPanel: React.FC<{
               }
             }}
             placeholder={asked ? 'Ask a follow-up, for example: and the currency? or what about Egypt?' : "For example: Is Turkey's central bank behind the curve, and what would a Hormuz closure do?"}
-            className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
+            className={`flex-1 min-w-0 px-2 py-1.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${page ? 'border-0 focus:outline-none resize-none' : 'border border-slate-200 dark:border-slate-700'}`}
           />
           <button type="submit" className="ui-btn ui-btn-primary" disabled={!question.trim() || busy}>
             Send
           </button>
         </div>
+        <details className="group" data-council-options="true">
+          <summary className="cursor-pointer select-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+            Options: countries, policy documents, full council{lib.briefs.length ? ', saved research' : ''}
+            {docs.length ? ` · ${docs.length} document${docs.length === 1 ? '' : 's'} in use` : ''}
+          </summary>
+          <div className="mt-2 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {!asked && (
             <label className="ui-label flex items-center gap-1.5">
@@ -777,8 +796,10 @@ export const AskCouncilPanel: React.FC<{
         </div>
         <PolicyDocsPicker docs={docs} onChange={changeDocs} disabled={busy} />
         <SavedDocsRow lib={lib} activeIds={docs.map((d) => d.id)} canAdd={docs.length < MAX_DOCS && !busy} onUse={(d) => setDocs((cur) => (cur.some((x) => x.id === d.id) || cur.length >= MAX_DOCS ? cur : [...cur, d]))} />
+            <SavedResearchList lib={lib} toMarkdown={toMarkdown} onSendToReports={onSendToReports} />
+          </div>
+        </details>
       </form>
-      <SavedResearchList lib={lib} toMarkdown={toMarkdown} onSendToReports={onSendToReports} />
     </section>
   );
 };
