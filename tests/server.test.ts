@@ -623,6 +623,16 @@ test('series: every figure lists its history or why it has none; unknown series 
   for (const id of ['policy_rate', 'cpi_monthly', 'cli', 'cftc_lev_net', 'tic_holdings', 'debt_gdp', 'yield_10y']) assert.ok(ids.includes(id), id);
   for (const m of list.missing) assert.ok(m.reason.length > 0, m.id);
   for (const s of list.series) assert.ok(s.count > 0, s.id);
+  // Full official history: every published year, blank years left out, IMF projections marked.
+  const reserves = (await (await fetch(`${base}/api/series/MEX/reserves_months`)).json()) as { freq: string; source: string; points: Array<{ date: string; value: number }> };
+  assert.equal(reserves.freq, 'annual');
+  assert.match(reserves.source, /World Bank Open Data \(FI\.RES\.TOTL\.MO\)/);
+  assert.deepEqual(reserves.points.map((p) => [p.date, p.value]), [['2022', 4.1], ['2024', 3.9]]);
+  const debt = (await (await fetch(`${base}/api/series/MEX/debt_gdp`)).json()) as { points: Array<{ date: string; note?: string }> };
+  assert.deepEqual(debt.points.map((p) => p.date), ['2020', '2021', '2030']);
+  assert.equal(debt.points[2].note, 'IMF projection');
+  assert.equal(debt.points[0].note, undefined);
+  assert.ok(existsSync(path.join(dataDir, 'history', 'MEX.json')), 'history saved to disk');
   const egypt = await fetch(`${base}/api/series/EGY/policy_rate`);
   assert.equal(egypt.status, 404);
   assert.match(((await egypt.json()) as { message: string }).message, /Missing\. Not in BIS policy rates/);

@@ -16,6 +16,7 @@ import { areaSeries } from './oecdSdmx';
 import { type CliSeries } from './oecdCli';
 import { type CpiBasis } from './oecdInflation';
 import { type TicTable } from './ticHoldings';
+import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './officialHistory';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
 
@@ -70,6 +71,8 @@ export interface SeriesInputs {
   cpiOecdAnswered?: boolean;
   /** Saved pulls for the country, any order. */
   archive?: ArchivedSnapshot[];
+  /** Full World Bank / IMF history for the country (src/utils/officialHistory.ts), when downloaded. */
+  official?: OfficialHistoryFile | null;
 }
 
 /** Figures given a history from the pull archive: the live-field key and where the value sits. */
@@ -217,6 +220,19 @@ export function archiveSeries(archive: ArchivedSnapshot[] | undefined, fig: (typ
 
 const isSeries = (x: Series | SeriesMissing): x is Series => 'points' in x;
 
+/**
+ * A figure's history: the full official run when it has been downloaded (every year the World Bank
+ * or IMF publish), otherwise the saved pulls. With neither, Missing with both reasons.
+ */
+function figureHistory(fig: (typeof ARCHIVE_FIGURES)[number], inputs: SeriesInputs): Series | SeriesMissing {
+  const def = OFFICIAL_FIGURES.find((o) => o.id === fig.id);
+  const official = def ? officialSeries(inputs.official, def) : null;
+  if (official && isSeries(official)) return official;
+  const archived = archiveSeries(inputs.archive, fig);
+  if (isSeries(archived) || !official) return archived;
+  return { id: fig.id, label: fig.label, reason: inputs.official ? official.reason : `${archived.reason}; full history not downloaded yet` };
+}
+
 /** Every history the app has for a country, and what is missing with the reason. */
 export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
   const code = String(iso3 || '').toUpperCase();
@@ -226,7 +242,8 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     leadingIndicator(code, inputs.cli),
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
-    ...ARCHIVE_FIGURES.map((f) => archiveSeries(inputs.archive, f)),
+    ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
+    ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];
   return { iso3: code, series: all.filter(isSeries), missing: all.filter((x): x is SeriesMissing => !isSeries(x)) };
 }
@@ -247,9 +264,13 @@ export function commoditySeries(prices: PriceSeries[], pulledAt: Record<'pink_sh
 }
 
 /** A series without its points, for lists. */
-export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number } {
+export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; projectedTo?: string } {
   const { points, ...rest } = s;
-  return { ...rest, count: points.length, first: points[0]?.date, last: points[points.length - 1]?.date, latest: points[points.length - 1]?.value };
+  // The latest figure is the newest outturn; IMF projection years are counted but never shown as "latest".
+  const actual = points.filter((p) => p.note !== 'IMF projection');
+  const lastActual = actual[actual.length - 1] ?? points[points.length - 1];
+  const projectedTo = actual.length < points.length ? points[points.length - 1]?.date : undefined;
+  return { ...rest, count: points.length, first: points[0]?.date, last: lastActual?.date, latest: lastActual?.value, ...(projectedTo ? { projectedTo } : {}) };
 }
 
 /** Months between two YYYY-MM periods. */
