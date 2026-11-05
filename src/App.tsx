@@ -85,6 +85,7 @@ import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
 import { PolicyReviews } from './components/PolicyReviews';
+import { START_REVIEW_EVENT } from './utils/reviewHandoff';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
@@ -2294,6 +2295,12 @@ export default function App() {
     setReportNonce((n) => n + 1);
     openWorkspace('reports', 'ic_memo_builder');
   };
+  // "Start a policy review" from a Council chat answer: open Reports, where the panel picks up the prefill.
+  useEffect(() => {
+    const go = () => openWorkspace('reports', 'ic_memo_builder');
+    window.addEventListener(START_REVIEW_EVENT, go);
+    return () => window.removeEventListener(START_REVIEW_EVENT, go);
+  });
   // The chat sits on Workspace; elsewhere the header button opens it in a side panel.
   const chatDocked = isChatDockOpen && appArea !== 'today';
   const openChat = () => {

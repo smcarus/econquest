@@ -831,6 +831,11 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     const approved = await (await sign('approved')).json();
     assert.equal(approved.status, 'approved');
     assert.equal(approved.selfApproved, true);
+    const oc = await fetch(`${base}/api/reviews/${review.id}/outcomes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(oc.status, 200);
+    const ocj = await oc.json();
+    assert.equal(ocj.states.outcomes, 'done');
+    assert.equal(ocj.review.steps.outcomes.content.early, true);
     assert.equal((await fetch(`${base}/api/reviews/${review.id}`, { method: 'DELETE' })).status, 409);
     const all = await (await fetch(`${base}/api/signoffs`)).json();
     assert.equal(all.reviews[review.id].status, 'approved');

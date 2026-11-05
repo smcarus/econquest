@@ -6,6 +6,8 @@ import type { EvidenceStep } from '../utils/reviewEvidence';
 import { defaultMemoInputs, memoFileName, RESEARCH_BANNER, VALIDATED_BANNER, type MemoInputs, type MemoStep } from '../utils/reviewMemo';
 import { saveFile } from '../utils/briefExport';
 import { SignOffControl, refreshSignOffs } from './SignOffControl';
+import { GOAL_MOVE_LABEL, type OutcomesStep } from '../utils/reviewOutcomes';
+import { START_REVIEW_EVENT, takeReviewPrefill } from '../utils/reviewHandoff';
 import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, type PolicyOption, type UserOption } from '../utils/reviewOptions';
 
 /**
@@ -483,6 +485,63 @@ const MemoForm: React.FC<{ options: OptionsStep; initial: MemoInputs; busy: bool
   );
 };
 
+const cellText = (v: { value: number | null; reason: string }, unit: string) => (v.value === null ? `Missing: ${v.reason}` : `${v.value}${unit === '%' ? '%' : ` ${unit}`}`);
+
+const OutcomesView: React.FC<{ o: OutcomesStep }> = ({ o }) => {
+  const row = (x: OutcomesStep['rows'][number]) => (
+    <tr key={x.ref} className="border-t border-slate-100 dark:border-slate-800" data-review-outcome={x.ref}>
+      <td className="py-1 pr-2 text-slate-500 tabular-nums">[{x.ref}]</td>
+      <td className="py-1 pr-2">{x.label}</td>
+      <td className="py-1 pr-2 tabular-nums">{cellText(x.then, x.unit)}</td>
+      <td className="py-1 pr-2 tabular-nums">{cellText(x.now, x.unit)}</td>
+      <td className="py-1 pr-2 tabular-nums">{x.change === null ? '' : `${x.change > 0 ? '+' : ''}${x.change}`}</td>
+    </tr>
+  );
+  const head = (
+    <thead>
+      <tr className="text-left ui-label">
+        <th className="py-1 pr-2 font-normal">#</th>
+        <th className="py-1 pr-2 font-normal">Indicator</th>
+        <th className="py-1 pr-2 font-normal">At the review</th>
+        <th className="py-1 pr-2 font-normal">Now ({o.pullDate})</th>
+        <th className="py-1 pr-2 font-normal">Change</th>
+      </tr>
+    </thead>
+  );
+  const watched = o.rows.filter((x) => x.watched);
+  return (
+    <div className="space-y-2" data-review-outcomes={o.goal.move}>
+      <p className="text-sm">
+        <span className="font-semibold">{o.goal.label}:</span>{' '}
+        <span className={o.goal.move === 'right_way' ? 'ui-badge ui-badge-positive' : o.goal.move === 'wrong_way' ? 'ui-badge ui-badge-negative' : 'ui-badge'}>{GOAL_MOVE_LABEL[o.goal.move]}</span>
+        {o.goal.targetText ? <span className="text-xs text-slate-500 dark:text-slate-400"> (target {o.goal.targetText})</span> : null}
+      </p>
+      {watched.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-slate-800 dark:text-slate-200">
+            {head}
+            <tbody>{watched.map(row)}</tbody>
+          </table>
+        </div>
+      )}
+      <details>
+        <summary className="ui-label cursor-pointer">All {o.rows.length} indicators</summary>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm text-slate-800 dark:text-slate-200">
+            {head}
+            <tbody>{o.rows.map(row)}</tbody>
+          </table>
+        </div>
+      </details>
+      <ul className="list-disc pl-5 text-xs text-slate-500 dark:text-slate-400">
+        {o.caveats.map((c) => (
+          <li key={c}>{c}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
 export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: string }> = ({ countries = [], defaultIso3 = '' }) => {
   const [list, setList] = useState<ReviewSummary[]>([]);
   const [error, setError] = useState('');
@@ -491,6 +550,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const [editingFrame, setEditingFrame] = useState(false);
   const [busy, setBusy] = useState('');
   const [own, setOwn] = useState<UserOption[]>([]);
+  const [prefill, setPrefill] = useState<{ frame: ReviewFrame; previousId?: string } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -503,6 +563,21 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   useEffect(() => {
     void refresh();
   }, [refresh]);
+  // A review started from Council chat (or elsewhere): open the frame form filled in.
+  useEffect(() => {
+    const pick = () => {
+      const p = takeReviewPrefill();
+      if (!p) return;
+      setOpened(null);
+      setPrefill({ frame: { ...emptyFrame(p.iso3 || defaultIso3), problem: (p.problem || '').slice(0, 600) }, previousId: p.previousId });
+      setCreating(true);
+      document.getElementById('tool-policy-reviews')?.scrollIntoView({ block: 'start' });
+    };
+    pick();
+    window.addEventListener(START_REVIEW_EVENT, pick);
+    return () => window.removeEventListener(START_REVIEW_EVENT, pick);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const open = async (id: string | null) => {
     setEditingFrame(false);
@@ -535,6 +610,14 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const options = r?.steps.options?.content as OptionsStep | undefined;
   const evidence = r?.steps.evidence?.content as EvidenceStep | undefined;
   const memo = r?.steps.memo?.content as MemoStep | undefined;
+  const outcomes = r?.steps.outcomes?.content as OutcomesStep | undefined;
+  const previous = r?.previousId ? list.find((x) => x.id === r.previousId) : undefined;
+  const reviewAgain = () => {
+    if (!r || !frame) return;
+    setOpened(null);
+    setPrefill({ frame: { ...frame, asOf: today() }, previousId: r.id });
+    setCreating(true);
+  };
   const [editingMemo, setEditingMemo] = useState(false);
   // Start the option editor from what was saved last time.
   useEffect(() => {
@@ -572,19 +655,27 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
           </button>
         )}
         {creating && (
+          <>
+          {prefill?.previousId && <p className="ui-label">Review again: the frame is copied from the earlier review with today as the As of day. Change anything that is different now.</p>}
           <FrameForm
+            key={JSON.stringify(prefill)}
             countries={countries}
-            initial={emptyFrame(defaultIso3)}
+            initial={prefill?.frame ?? emptyFrame(defaultIso3)}
             submitLabel="Start review"
-            onCancel={() => setCreating(false)}
+            onCancel={() => {
+              setCreating(false);
+              setPrefill(null);
+            }}
             onSubmit={(f) =>
               run('create', async () => {
-                const out = await api<{ review: PolicyReview; states: Record<ReviewStep, StepState> }>('/api/reviews', { method: 'POST', body: JSON.stringify({ frame: f }) });
+                const out = await api<{ review: PolicyReview; states: Record<ReviewStep, StepState> }>('/api/reviews', { method: 'POST', body: JSON.stringify({ frame: f, ...(prefill?.previousId ? { previousId: prefill.previousId } : {}) }) });
                 setCreating(false);
+                setPrefill(null);
                 await apply(out);
               })
             }
           />
+          </>
         )}
 
         {!r && !creating && list.length === 0 && !error && <p className="ui-body">No policy reviews yet. Start one to frame a problem for a country and work through it with the council.</p>}
@@ -625,6 +716,15 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               </button>
             </div>
             <h3 className="ui-section-title">{r.title}</h3>
+            {r.previousId && (
+              <p className="ui-label">
+                Started with Review again from{' '}
+                <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" onClick={() => void open(r.previousId!)}>
+                  {previous?.title || 'an earlier review'}
+                </button>
+                .
+              </p>
+            )}
             {opened!.changed.length > 0 && (
               <p className="text-xs text-rose-700 dark:text-rose-400" role="alert">
                 The saved {opened!.changed.map((s) => STEP_LABEL[s]).join(', ')} no longer match{opened!.changed.length === 1 ? 'es' : ''} its hash: the file was changed outside the app. Run
@@ -828,14 +928,35 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               )}
             </section>
 
-            {REVIEW_STEPS.slice(5).map((s, i) => (
-              <section key={s} className="border border-slate-200 dark:border-slate-700 p-3" data-review-step={s}>
-                <h4 className="ui-section-title text-slate-500 dark:text-slate-400">
-                  {i + 6}. {STEP_LABEL[s]}
-                </h4>
-                <p className="ui-label">{STEP_HINT[s]}</p>
-              </section>
-            ))}
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="outcomes">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 className="ui-section-title">6. {STEP_LABEL.outcomes}</h4>
+                <div className="flex flex-wrap gap-1.5">
+                  {opened!.states.memo === 'done' && memo && (
+                    <button
+                      type="button"
+                      className={today() >= memo.inputs.reviewDate && !outcomes ? 'ui-btn ui-btn-primary' : 'ui-btn'}
+                      disabled={Boolean(busy)}
+                      onClick={() => run('outcomes', async () => apply(await api(`/api/reviews/${encodeURIComponent(r.id)}/outcomes`, { method: 'POST', body: '{}' })))}
+                    >
+                      <Play className="w-3.5 h-3.5" /> {busy === 'outcomes' ? 'Checking…' : today() < memo.inputs.reviewDate ? `Check now (review date ${memo.inputs.reviewDate})` : outcomes ? 'Check again' : 'Check outcomes'}
+                    </button>
+                  )}
+                  <button type="button" className="ui-btn ui-btn-ghost" onClick={reviewAgain} data-review-again="true">
+                    Review again
+                  </button>
+                </div>
+              </div>
+              <p className="ui-label">{STEP_HINT.outcomes} Review again copies the frame onto today's data as a new review linked to this one.</p>
+              {opened!.states.memo !== 'done' && <p className="text-xs text-slate-500 dark:text-slate-400">Write the memo first.</p>}
+              {opened!.states.outcomes === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">Out of date: the memo changed after this check. Check again.</p>}
+              {outcomes && <OutcomesView o={outcomes} />}
+              {r.steps.outcomes && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Checked {outcomes?.checkedOn} · hash <span className="font-code">{short(r.steps.outcomes.hash)}</span>
+                </p>
+              )}
+            </section>
           </div>
         )}
       </div>
