@@ -57,6 +57,8 @@ export interface SnapshotInputs {
   askedAt: string;
   /** The data date the figures come from: a locked As of day (YYYY-MM-DD), or null for the latest pull. */
   asOf: string | null;
+  /** Set when the conversation was pinned to its figures: the time they were pinned (ISO). */
+  dataPinnedAt?: string;
   /** The agents' answers exactly as the summary read them. */
   answers: AgentAnswer[];
 }
@@ -117,6 +119,7 @@ export interface SnapshotSummary {
   seed: number;
   askedAt: string;
   asOf: string | null;
+  dataPinnedAt?: string;
   agents: string[];
   figures: SnapshotFigure[];
   documents: SnapshotDocument[];
@@ -136,6 +139,7 @@ export function summariseSnapshot(s: AnswerSnapshot): SnapshotSummary {
     seed: s.settings.seed,
     askedAt: s.inputs.askedAt,
     asOf: s.inputs.asOf,
+    ...(s.inputs.dataPinnedAt ? { dataPinnedAt: s.inputs.dataPinnedAt } : {}),
     agents: s.inputs.answers.map((a) => a.name),
     figures: s.figures,
     documents: s.documents ?? [],
