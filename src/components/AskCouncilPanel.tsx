@@ -323,10 +323,11 @@ export const AskCouncilPanel: React.FC<{
     items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, choosing, docs, setDocs,
     debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy,
   } = useCouncilChat();
-  const send = (b: SavedCouncilBrief | null) => {
+  /** Save to Reports: the answer becomes the council brief there, and each document is kept. Stays in the chat. */
+  const saveAnswer = (b: SavedCouncilBrief | null, docs: CouncilDocument[]) => {
     if (!b) return;
     saveCouncilBrief(b);
-    onSendToReports();
+    void lib.saveCouncilDocs(docs);
   };
 
   const fc = fullCouncil;
@@ -368,6 +369,7 @@ export const AskCouncilPanel: React.FC<{
     const docCtx = { question: t.asked.question, askedAt: t.asked.askedAt, scope: t.asked.plan.scopeNote, countriesAsked: t.asked.plan.countries.length };
     const agentDocs = toAgentDocuments(t.asked.answers, docCtx);
     const synthDoc = toSynthesisDocument(agentDocs, t.synthesis, docCtx);
+    const allDocsSaved = !writingNow && [synthDoc, ...agentDocs].every((d) => savedDocIds.has(d.id));
     return (
       <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-3" data-council-result={live ? 'true' : 'earlier'}>
         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -454,11 +456,12 @@ export const AskCouncilPanel: React.FC<{
           writing={writingNow}
           onOpen={setOpenDoc}
           savedIds={savedDocIds}
-          onSaveAll={() => void lib.saveCouncilDocs([synthDoc, ...agentDocs])}
+          note={
+            <span data-council-agents="true">
+              {withFindings} of {t.asked.answers.length} {t.asked.answers.length === 1 ? 'agent' : 'agents'} answered with figures
+            </span>
+          }
         />
-        <p className="text-xs text-slate-500 dark:text-slate-400" data-council-agents="true">
-          {withFindings} of {t.asked.answers.length} agents answered with figures.
-        </p>
         {!page && (
           <details className="group">
             <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">Show the agent layout</summary>
@@ -561,21 +564,45 @@ export const AskCouncilPanel: React.FC<{
           </div>
         )}
 
-        <div className="flex flex-wrap items-center gap-1.5">
+        {/* One row of actions for the whole answer: save it (brief + every document), copy, download. */}
+        <div className="flex flex-wrap items-center gap-1.5" data-council-answer-actions="true">
+          {allDocsSaved ? (
+            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400" data-council-saved="true">
+              <FileText className="w-3.5 h-3.5" /> Saved to Reports
+              <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" onClick={onSendToReports}>
+                Open Reports
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="ui-btn"
+              disabled={writingNow || !savedT}
+              onClick={() => saveAnswer(savedT, [synthDoc, ...agentDocs])}
+              title="Keeps this answer and each document in Reports (data/local/research.json)"
+              data-council-save="true"
+            >
+              <FileText className="w-3.5 h-3.5" /> Save to Reports
+            </button>
+          )}
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
             <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? 'Copied' : 'Copy'}
           </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void downloadCouncilBrief(savedT, 'md')} disabled={writingNow} title="Save this answer as a Markdown file, with every figure's source">
-            <Download className="w-3.5 h-3.5" /> Markdown
-          </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void downloadCouncilBrief(savedT, 'pdf')} disabled={writingNow} title="Save this answer as a PDF, with every figure's source">
-            <Download className="w-3.5 h-3.5" /> PDF
-          </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => send(savedT)} disabled={writingNow}>
-            <FileText className="w-3.5 h-3.5" /> Send to Reports
-          </button>
-          <span className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. For discussion, not investment advice.</span>
+          <details className="relative" data-council-download="true">
+            <summary className={`ui-btn ui-btn-ghost list-none cursor-pointer ${writingNow ? 'pointer-events-none opacity-50' : ''}`}>
+              <Download className="w-3.5 h-3.5" /> Download
+            </summary>
+            <div className="absolute z-20 mt-1 left-0 min-w-[10rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm py-1">
+              <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'md'); }}>
+                Markdown (.md)
+              </button>
+              <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'pdf'); }}>
+                PDF
+              </button>
+            </div>
+          </details>
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. For discussion, not investment advice.</p>
       </div>
     );
   };

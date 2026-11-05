@@ -1247,7 +1247,7 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
 };
 
 export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: string) => boolean): Array<{ heading: string; lines: string[] }> {
-  if (!b) return [{ heading: 'No council brief yet', lines: ['Ask a question in Council chat on Workspace, then choose "Send to Reports" on the answer.'] }];
+  if (!b) return [{ heading: 'No council brief yet', lines: ['Ask a question in Council chat on Workspace, then choose "Save to Reports" under the answer.'] }];
   const out: Array<{ heading: string; lines: string[] }> = [];
   const s = b.synthesis?.brief;
   if (on('question'))

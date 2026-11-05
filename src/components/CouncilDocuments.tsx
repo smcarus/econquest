@@ -78,13 +78,15 @@ export const DocumentCards: React.FC<{
   onSaveAll?: () => void;
   /** Ids already saved to Reports. */
   savedIds?: ReadonlySet<string>;
-}> = ({ agents, synthesis, writing, onOpen, onSaveAll, savedIds }) => {
+  /** Short note beside the Documents label (how many agents answered with figures). */
+  note?: React.ReactNode;
+}> = ({ agents, synthesis, writing, onOpen, onSaveAll, savedIds, note }) => {
   const all = [...(synthesis && !writing ? [synthesis] : []), ...agents];
   const allSaved = all.length > 0 && all.every((d) => savedIds?.has(d.id));
   return (
   <div className="space-y-1.5" data-council-documents={agents.length}>
     <div className="flex flex-wrap items-center justify-between gap-2">
-      <div className="ui-label">Documents</div>
+      <div className="ui-label">Documents{note ? <> · {note}</> : null}</div>
       {onSaveAll && all.length > 0 && (
         <button type="button" className="text-xs text-blue-700 dark:text-blue-300 hover:underline disabled:text-slate-500 disabled:no-underline" onClick={onSaveAll} disabled={allSaved || writing} data-council-docs-save-all="true">
           {allSaved ? 'All saved to Reports' : 'Save all to Reports'}
