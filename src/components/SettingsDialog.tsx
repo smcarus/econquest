@@ -225,7 +225,7 @@ export const SettingsDialog: React.FC<{
   onTabChange?: (tab: SettingsTab) => void;
   /** The Tools page, drawn when the Tools part is open. */
   tools?: React.ReactNode;
-  /** The AI model choice (Menu > AI model), for the AI model page. */
+  /** The AI model choice (Menu > Settings > AI model), for the AI model page. */
   aiConfig?: AIRuntimeConfig;
   onAiConfigChange?: (next: AIRuntimeConfig) => void;
 }> = ({ isOpen, onClose, onOpenAiModel, tab = 'ai', onTabChange, tools, aiConfig, onAiConfigChange }) => {

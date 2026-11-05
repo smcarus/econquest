@@ -39,7 +39,7 @@ started** card that ticks itself off:
    source as connected (with a figure it returned), needs setup, off, or why it failed.
 2. **Add a free FRED key** in Menu > Settings (⌘, or Ctrl+,). It fills official 10Y yields for the
    US, Mexico, South Africa, Japan, the UK, Poland and Chile.
-3. **Choose an AI model** in Menu > AI model: Ollama on this computer, or Gemini with a key. Needed
+3. **Choose an AI model** in Menu > Settings > AI model: Ollama on this computer, or Gemini with a key. Needed
    only for the council summary, the debate and agent picks; every figure works without it.
 4. **Pick your countries** with Edit on the watchlist card.
 
@@ -56,7 +56,7 @@ that country again at once. Slower sources (IMF reserves, CFTC, TIC, OECD, Comtr
 GDELT) keep their own caches; [DATA_SOURCES.md](./docs/DATA_SOURCES.md) lists each one's interval.
 Your holdings, watchlists, added countries and AI model settings are kept in
 `data/local/workspace.json` (shared by Docker and `npm run dev`), with saved research in
-`data/local/research.json` and keys in `data/local/settings.json`. Menu > Backup downloads all of it
+`data/local/research.json` and keys in `data/local/settings.json`. Menu > Settings > Backup downloads all of it
 except the keys as one file, and restores such a file on another computer.
 Every pull is also kept by day in `data/archive/`, so the data as it stood on a past date is never
 lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).

@@ -99,9 +99,10 @@ try {
         await page.waitForSelector('[data-settings-tools] [data-ready-tools]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Tools did not open Tools in Settings`));
         await settle('Settings > Tools');
         await page.keyboard.press('Escape');
-        // Menu > Backup opens Settings on the Backup page, which says what is saved here.
+        // Menu > Settings > Backup says what is saved here.
         await page.getByRole('button', { name: 'Menu', exact: true }).click();
-        await page.getByRole('menuitem', { name: /^Backup/ }).first().click();
+        await page.getByRole('menuitem', { name: /^Settings/ }).first().click();
+        await page.locator('[data-settings-tab="backup"]').click().catch(() => failures.push(`${mode}: no Backup page in Settings`));
         await page.waitForSelector('[data-backup-current]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Backup did not open Settings > Backup`));
         await page.waitForFunction(() => /On this computer now:/.test(document.querySelector('[data-backup-current]')?.textContent || ''), null, { timeout: 15_000 }).catch(() => failures.push(`${mode}: Backup did not say what is saved`));
         await settle('Settings > Backup');

@@ -112,7 +112,7 @@ export const TodayPage: React.FC<{
   fullCouncil?: FullCouncilStep;
   /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
   coreOnly?: boolean;
-  /** Menu > AI model choice, for Your inputs. */
+  /** Menu > Settings > AI model choice, for Your inputs. */
   aiProvider?: string;
   /** Imported holdings: the count for Your inputs, the countries for the Held mark in the watchlist. */
   holdingsCount?: number;

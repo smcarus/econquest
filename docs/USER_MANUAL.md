@@ -85,7 +85,7 @@ full council and saved research.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your
-  approval before the final report, which also appears in the chat. It needs Gemini or Ollama (Menu > AI model). If no model answers, the
+  approval before the final report, which also appears in the chat. It needs Gemini or Ollama (Menu > Settings > AI model). If no model answers, the
   council gives no assessment and no verdict and says so; a desk whose model did not answer is left
   empty. Agent confidence is shown only when the model gave one.
 
@@ -391,5 +391,5 @@ the app's download or the terminal pull, not both at once.
   127.0.0.1. Use `http://localhost:<port>`, or list the name in `ALLOWED_HOSTS` in `.env` if you
   opened the app to your network on purpose.
 - **The full council says no AI model answered.** Same check as below; nothing is filled in for it.
-- **The AI summary does not appear.** Menu > AI model: check Ollama is running, or a Gemini key is
+- **The AI summary does not appear.** Menu > Settings > AI model: check Ollama is running, or a Gemini key is
   saved. Every figure and agent answer works without it.

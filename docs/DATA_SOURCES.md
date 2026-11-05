@@ -253,12 +253,12 @@ reads Missing.
 | Gemini | `DEFAULT_AI_PROVIDER="gemini"`, and the key in Menu > Settings > AI model key or `GEMINI_API_KEY` | Reads the model's description, so the key and model name are checked without spending tokens |
 | OpenAI-style server | `DEFAULT_AI_PROVIDER="openai_compatible"`, `OPENAI_COMPATIBLE_BASE_URL`, `OPENAI_COMPATIBLE_MODEL` | Lists its models |
 
-The provider can also be changed in the app (Menu > AI model and data connections). That setting
+The provider can also be changed in the app (Menu > Settings > AI model and data connections). That setting
 wins while the app runs; `npm run check:data` reads only `.env`.
 
 ## Your own connectors
 
-Menu > AI model and data connections > connectors lets you point the app at your own JSON
+Menu > Settings > AI model and data connections > connectors lets you point the app at your own JSON
 address (an internal data lake, for example) and map its fields. Figures from a connector are
 labelled with the connector's name. When a connector cannot be reached, its test says so and
 maps nothing.

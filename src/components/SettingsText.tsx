@@ -2,7 +2,7 @@ import React from 'react';
 import { splitSettingsLinks } from '../utils/settingsLinks';
 import { openSettings } from './SettingsDialog';
 
-/** Help text in which "Menu > Settings > …" and "Menu > AI model" open that page of Settings. */
+/** Help text in which "Menu > Settings > …" and "Menu > Settings > AI model" open that page of Settings. */
 export const SettingsText: React.FC<{ text: string }> = ({ text }) => (
   <>
     {splitSettingsLinks(text).map((part, i) =>
