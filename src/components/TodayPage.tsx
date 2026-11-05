@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DigestPanel } from './DigestPanel';
-import { CalendarClock, ExternalLink, PanelRight, Ticket, X } from 'lucide-react';
+import { CalendarClock, ExternalLink, PanelLeft, PanelRight, Ticket, X } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
@@ -11,7 +11,7 @@ import { UsesLine, WorkspaceInputs, useServerInputs } from './WorkspaceInputs';
 import { workspaceInputs, type InputId, type PanelId } from '../utils/workspaceInputs';
 import { useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
-import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
+import { AskCouncilPanel, CouncilAgentsPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
 import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView } from '../utils/watchlistView';
@@ -27,6 +27,7 @@ const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
 /** Panels that live in the Briefing side panel; a link to one of them opens it. */
 const BRIEFING_IDS = ['ws-inputs', 'ws-watchlist', 'tool-digest', 'tool-calendar', 'tool-watch-alerts'];
 const BRIEFING_KEY = 'econquest.briefing.v1';
+const AGENTS_KEY = 'econquest.agentsPanel.v1';
 /** App asks a page to show an anchor before scrolling to it (the Briefing panel opens for its panels). */
 export const REVEAL_EVENT = 'econquest:reveal';
 /** Elections, budgets and IMF dates listed before "Show all". */
@@ -211,6 +212,24 @@ export const TodayPage: React.FC<{
       /* private window */
     }
   };
+  // The Agents side panel on the left: open by default on a wide screen, closed on a phone; remembered.
+  const [agentsOpen, setAgentsOpenState] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem(AGENTS_KEY);
+      if (v) return v === 'open';
+    } catch {
+      /* private window */
+    }
+    return typeof window !== 'undefined' && window.matchMedia?.('(min-width: 1024px)').matches === true;
+  });
+  const setAgentsOpen = (open: boolean) => {
+    setAgentsOpenState(open);
+    try {
+      localStorage.setItem(AGENTS_KEY, open ? 'open' : 'closed');
+    } catch {
+      /* private window */
+    }
+  };
   useEffect(() => {
     const onReveal = (e: Event) => {
       if (BRIEFING_IDS.includes(String((e as CustomEvent).detail))) setBriefing(true);
@@ -248,15 +267,47 @@ export const TodayPage: React.FC<{
     </button>
   );
 
+  const agentsButton = (
+    <button
+      type="button"
+      className={`ui-btn ${agentsOpen ? 'ui-btn-primary' : 'ui-btn-ghost'}`}
+      onClick={() => setAgentsOpen(!agentsOpen)}
+      aria-expanded={agentsOpen}
+      aria-controls="ws-agents"
+      data-agents-toggle="true"
+      title="The agents working on your question, each with its live status"
+    >
+      <PanelLeft className="w-3.5 h-3.5" /> Agents
+    </button>
+  );
+
   return (
     <div className="space-y-4" data-no-stat-ref="true">
       {/* Workspace is a chat page: the conversation fills the screen, input box at the bottom. Everything else sits in Briefing. */}
       <div className="flex gap-4 h-[calc(100dvh-9.5rem)] lg:h-[calc(100dvh-7.5rem)]">
+        {agentsOpen && (
+          <aside
+            id="ws-agents"
+            aria-label="Agents"
+            data-agents-panel="true"
+            className="fixed inset-0 z-30 overflow-y-auto bg-slate-50 dark:bg-[#0B0F17] p-3 space-y-3 lg:static lg:z-auto lg:p-0 lg:pr-4 lg:bg-transparent lg:w-[20rem] lg:shrink-0 lg:border-r lg:border-slate-200 lg:dark:border-slate-800"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="ui-section-title">Agents</h2>
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setAgentsOpen(false)} aria-label="Close Agents" data-agents-close="true">
+                <X className="w-3.5 h-3.5" /> Close
+              </button>
+            </div>
+            <PanelBoundary name="Agents">
+              <CouncilAgentsPanel fullCouncil={fullCouncil} />
+            </PanelBoundary>
+          </aside>
+        )}
         <div className={`min-w-0 flex-1 transition-shadow ${lit('council')}`} id="tool-council">
           <PanelBoundary name="Council chat">
             <AskCouncilPanel
               page
-              toolbar={briefingButton}
+              toolbar={<>{agentsButton}{briefingButton}</>}
               onOpenCountry={(item) => onOpenCountry(item, 'macro')}
               onSendToReports={() => onSendCouncilToReports?.()}
               fullCouncil={fullCouncil}

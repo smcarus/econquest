@@ -287,6 +287,14 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
   };
 }
 
+function fullCouncilPhase(fc: FullCouncilStep | undefined): FullCouncilPhase {
+  if (!fc) return 'idle';
+  if (fc.isRunning) return 'debating';
+  if (fc.stage === 'AWAITING_CRO_APPROVAL') return 'awaiting_review';
+  if (fc.isApproving) return 'writing_report';
+  return fc.result ? 'done' : 'idle';
+}
+
 type CouncilChat = ReturnType<typeof useCouncilChatState>;
 const CouncilChatContext = React.createContext<CouncilChat | null>(null);
 
@@ -329,18 +337,9 @@ export const AskCouncilPanel: React.FC<{
   };
 
   const fc = fullCouncil;
-  const phase: FullCouncilPhase = !fc
-    ? 'idle'
-    : fc.isRunning
-      ? 'debating'
-      : fc.stage === 'AWAITING_CRO_APPROVAL'
-        ? 'awaiting_review'
-        : fc.isApproving
-          ? 'writing_report'
-          : fc.result
-            ? 'done'
-            : 'idle';
-  const steps = useCouncilProgress(fc?.progressId ?? null, Boolean(fc && (fc.isRunning || fc.isApproving)));
+  const phase = fullCouncilPhase(fc);
+  // On Workspace the agents sit in their own side panel (CouncilAgentsPanel), which does the polling.
+  const steps = useCouncilProgress(page ? null : fc?.progressId ?? null, Boolean(!page && fc && (fc.isRunning || fc.isApproving)));
   const fullCouncilInChat = Boolean(fc && (phase !== 'idle' || fc.result));
   const busy = writing || choosing;
 
@@ -453,8 +452,8 @@ export const AskCouncilPanel: React.FC<{
             {withFindings} of {t.asked.answers.length} agents answered with figures: {t.asked.answers.map((a) => a.name).join(', ')}
           </summary>
           <div className="mt-2 space-y-3">
-            <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
-            {t.asked.plan.chooserNote && (
+            {!page && <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />}
+            {!page && t.asked.plan.chooserNote && (
               <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
                 {t.asked.plan.chooserNote}
               </p>
@@ -681,7 +680,7 @@ export const AskCouncilPanel: React.FC<{
             {userMessage(`Run the full council on ${fc.countryName}`)}
             <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-3" data-full-council={fc.stage}>
               <p className="text-xs text-slate-500 dark:text-slate-400"><span className="font-medium text-slate-700 dark:text-slate-200">Full council</span> · {fc.countryName}</p>
-              {fc.progressId && phase !== 'idle' && (
+              {!page && fc.progressId && phase !== 'idle' && (
                 <AgentNetwork
                   title={`Full council on ${fc.countryName}`}
                   columns={fullCouncilColumns(steps, phase)}
@@ -801,5 +800,56 @@ export const AskCouncilPanel: React.FC<{
         </details>
       </form>
     </section>
+  );
+};
+
+/**
+ * Workspace > Agents: the agents on the latest question (and the full council, when one runs),
+ * each with its live status, beside the chat instead of inside it. Statuses are the same ones
+ * the chat used to show: from the browser for Council chat, from the server for the full council.
+ */
+export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = ({ fullCouncil: fc }) => {
+  const { asked, synthesis, writing, choosing } = useCouncilChat();
+  const phase = fullCouncilPhase(fc);
+  const steps = useCouncilProgress(fc?.progressId ?? null, Boolean(fc && (fc.isRunning || fc.isApproving)));
+  const showFull = Boolean(fc?.progressId && phase !== 'idle');
+  return (
+    <div className="space-y-4" data-council-agents-panel="true">
+      {choosing && (
+        <p className="text-sm text-slate-500 dark:text-slate-400" data-agents-choosing="true">
+          Asking the AI model which agents should answer…
+        </p>
+      )}
+      {asked && !choosing && (
+        <div className="space-y-2" data-agents-question="true">
+          <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2" title={asked.question}>
+            “{asked.question}”
+          </p>
+          <AgentNetwork
+            stacked
+            title={`About ${asked.plan.scopeNote}`}
+            columns={askCouncilColumns(asked.answers, writing, synthesis, asked.plan.chosenBy)}
+          />
+          {asked.plan.chooserNote && (
+            <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={asked.plan.chosenBy}>
+              {asked.plan.chooserNote}
+            </p>
+          )}
+        </div>
+      )}
+      {fc && showFull && (
+        <AgentNetwork
+          stacked
+          title={`Full council on ${fc.countryName}`}
+          columns={fullCouncilColumns(steps, phase)}
+          footnote="Each desk’s three analysts and its devil’s advocate debate run as one model call, so they finish together."
+        />
+      )}
+      {!asked && !choosing && !showFull && (
+        <p className="text-sm text-slate-500 dark:text-slate-400" data-agents-empty="true">
+          No question yet. When you ask one, the agents that answer show here, each with its live status.
+        </p>
+      )}
+    </div>
   );
 };

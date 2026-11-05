@@ -93,7 +93,13 @@ function StatusLine({ node, elapsedMs }: { node: AgentNode; elapsedMs?: number }
  * Statuses come from the server as each step actually starts and finishes; nothing is animated
  * on a timer.
  */
-export const AgentNetwork: React.FC<{ title: string; columns: AgentColumn[]; footnote?: string }> = ({ title, columns, footnote }) => {
+export const AgentNetwork: React.FC<{
+  title: string;
+  columns: AgentColumn[];
+  footnote?: string;
+  /** Steps always run top to bottom (the narrow Agents side panel on Workspace). */
+  stacked?: boolean;
+}> = ({ title, columns, footnote, stacked }) => {
   // Seconds on a running node, counted from when this screen first saw it running.
   const seen = useRef<Record<string, number>>({});
   const [now, setNow] = useState(() => Date.now());
@@ -119,12 +125,12 @@ export const AgentNetwork: React.FC<{ title: string; columns: AgentColumn[]; foo
           {finished} of {total} finished
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row lg:items-stretch gap-2">
+      <div className={`flex flex-col gap-2 ${stacked ? '' : 'lg:flex-row lg:items-stretch'}`}>
         {columns.map((col, ci) => (
           <React.Fragment key={col.title}>
             {ci > 0 && (
-              <div className="flex lg:flex-col items-center justify-center text-slate-400" aria-hidden="true">
-                <ChevronRight className="w-4 h-4 rotate-90 lg:rotate-0" />
+              <div className={`flex items-center justify-center text-slate-400 ${stacked ? '' : 'lg:flex-col'}`} aria-hidden="true">
+                <ChevronRight className={`w-4 h-4 rotate-90 ${stacked ? '' : 'lg:rotate-0'}`} />
               </div>
             )}
             <div className="flex-1 min-w-0 space-y-1.5">
