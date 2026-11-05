@@ -486,6 +486,8 @@ export interface WatchlistItem {
   usFedFundsDate?: string;
   /** CFTC currency futures positioning (utils/cftcPositioning.ts), with the date the app pulled it. */
   cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
+  /** TIC holdings of US Treasuries (utils/ticHoldings.ts), with the date the app pulled them. */
+  tic?: import('../utils/ticHoldings').TicHolding & { pulledAt: string };
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }

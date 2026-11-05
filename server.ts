@@ -11,6 +11,7 @@ import {
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
+import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
@@ -472,6 +473,58 @@ async function fetchCftcPull(): Promise<CftcPull | null> {
     cftcInFlight = null;
   });
   return cftcInFlight;
+}
+
+/**
+ * TIC foreign holdings of US Treasuries (src/utils/ticHoldings.ts). Monthly, one small text file
+ * for every country. Saved to data/live/tic.json with its pull date and pulled again after a day;
+ * a failed pull keeps the last good one and is retried after an hour.
+ */
+type TicPull = { pulledAt: string; table: TicTable };
+let ticMemory: { pull: TicPull | null; triedAt: number } | null = null;
+let ticInFlight: Promise<TicPull | null> | null = null;
+function ticFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'tic.json');
+}
+async function fetchTicPull(): Promise<TicPull | null> {
+  if (!ticMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(ticFile(), 'utf8')) as TicPull;
+      if (saved?.pulledAt && saved.table?.months) ticMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (ticMemory?.pull && Date.now() - Date.parse(ticMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return ticMemory.pull;
+  if (ticMemory && Date.now() - ticMemory.triedAt < 60 * 60 * 1000) return ticMemory.pull;
+  if (ticInFlight) return ticInFlight;
+  ticInFlight = (async () => {
+    let table: TicTable | null = null;
+    try {
+      const res = await fetchWithTimeout(TIC_URL, 15000);
+      if (res.ok) table = parseTicTable(await res.text());
+      else console.warn(`[TIC] Treasury holdings refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[TIC] Treasury holdings: ${describeNetworkError(e, 15000)}`);
+    }
+    const prev = ticMemory?.pull ?? null;
+    if (!table) {
+      ticMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: TicPull = { pulledAt: new Date().toISOString(), table };
+    ticMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(ticFile()), { recursive: true });
+      fs.writeFileSync(ticFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    ticInFlight = null;
+  });
+  return ticInFlight;
 }
 
 /**
@@ -1248,11 +1301,12 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc] = await Promise.all([
+  const [effr, tradeAll, cftc, tic] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
     Promise.race([fetchCftcPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    Promise.race([fetchTicPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1283,12 +1337,14 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           new Promise<FxValuation>((resolve) => setTimeout(() => resolve({ reer: null, vol: null }), 8000)),
         ]);
         const pos = positioningFor(catItem.iso3, cftcWeeks);
+        const ust = ticHoldingFor(catItem.iso3, tic?.table);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
           ...(fx.vol ? { fxVol3mPct: fx.vol.volPct, fxVolTo: fx.vol.to } : {}),
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
+          ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
           ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,

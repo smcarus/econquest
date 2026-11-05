@@ -41,6 +41,7 @@ const healthy: FetchFn = async (url) => {
       { report_date_as_yyyy_mm_dd: '2026-10-20T00:00:00.000', cftc_contract_market_code: '095741', open_interest_all: '278165', asset_mgr_positions_long: '53063', asset_mgr_positions_short: '77127', lev_money_positions_long: '91748', lev_money_positions_short: '27934' },
       { report_date_as_yyyy_mm_dd: '2026-10-27T00:00:00.000', cftc_contract_market_code: '095741', open_interest_all: '279359', asset_mgr_positions_long: '48101', asset_mgr_positions_short: '73302', lev_money_positions_long: '99625', lev_money_positions_short: '31290' },
     ]);
+  if (url.includes('ticdata.treasury.gov')) return new Response('Table 5\nCountry\t2026-08\t2026-07\nJapan\t1068.3\t1103.9\nBrazil\t168.4\t168.0\nGrand Total\t9331.7\t9248.4\n');
   if (url.includes('fredgraph.csv')) return new Response('observation_date,IRLTLT01USM156N\n2026-08-01,4.21\n2026-09-01,4.12\n');
   if (url.includes('api.stlouisfed.org')) return json({ error_code: 400, error_message: 'Bad Request. The value for variable api_key is not registered.' }, 400);
   if (url.includes('tesourotransparente')) return new Response('Tipo Titulo;Data Vencimento;Data Base;Taxa Compra Manha\nTesouro Prefixado com Juros Semestrais;01/01/2037;30/10/2026;15,23\n');
@@ -64,6 +65,7 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.match(row('wits').sample!, /30\.7%/);
   assert.match(row('bis_reer').sample!, /real exchange rate/);
   assert.equal(row('cftc').state, 'connected');
+  assert.match(row('tic').sample!, /Brazil holds \$168\.4bn of US Treasuries \(Aug 2026\)/);
   assert.match(row('cftc').sample!, /Leveraged funds net MXN \+24\.5% of open interest \(as of 2026-10-27, 2 weeks\)/);
   assert.equal(row('worldbank_debt').state, 'connected', 'an empty but valid reply still proves the connection');
 });

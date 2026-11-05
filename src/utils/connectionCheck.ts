@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { idsUrl, parseIds } from './debtSchedule';
@@ -224,6 +225,7 @@ export const SOURCE_IDS = [
   'bis_debt',
   'wits',
   'cftc',
+  'tic',
   'fred_csv',
   'fred_api',
   'tesouro',
@@ -438,6 +440,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'The CFTC answered, but with no Mexican peso rows the app could read. The report format may have changed.'
+    )
+  );
+
+  add('tic', () =>
+    httpCheck(
+      { id: 'tic', name: 'US Treasury TIC (foreign holders)', group: 'free', feeds: 'Monthly holdings of US Treasuries by country (about 20 named holders)' },
+      fetchFn,
+      TIC_URL,
+      Math.max(T, 15000),
+      (r) => {
+        const t = parseTicTable(r.text);
+        const h = ticHoldingFor(SAMPLE_ISO3, t) || ticHoldingFor('JPN', t);
+        return h ? `${h.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'Japan'} holds $${fmt(h.holdingsUsdBn)}bn of US Treasuries (${formatMonth(h.month)})` : null;
+      },
+      undefined,
+      'Treasury answered, but the table was not in the layout the app reads (a Country row with YYYY-MM months). The file may have changed.'
     )
   );
 

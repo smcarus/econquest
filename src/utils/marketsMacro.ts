@@ -10,6 +10,7 @@ import { formatPeriod } from './officialYields';
 import { liveRow, missingNote, missingRow, noSourceRow, pct, pts, type BriefRow, type CountryBrief } from './countryNotes';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { carryToVol, reerLabel } from './fxValuation';
+import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
 
@@ -249,6 +250,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       rows: positioningRows(self, run.iso3),
     },
     {
+      title: 'US Treasury holdings (TIC, monthly)',
+      rows: ticRows(self, run.iso3),
+    },
+    {
       title: `${EDGE_AGENTS.fx} Agent`,
       rows: [
         self?.cftc?.percentile !== undefined
@@ -258,6 +263,9 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
               `model: ${self.cftc.weeks} weekly CFTC reports; 90th or above = crowded long, 10th or below = crowded short`
             )
           : needs('Leveraged funds against their last 3 years', CFTC_CURRENCY_CODES[run.iso3] ? 'a year or more of CFTC reports' : 'a CFTC-reported currency future'),
+        self?.tic?.change12mPct !== undefined
+          ? model('US Treasury holdings trend', ticTrend(self.tic.change12mPct), 'model: 12-month TIC change; -10% or less = selling, +10% or more = buying')
+          : needs('US Treasury holdings trend', '13 months of TIC holdings for this country'),
       ],
     },
     {
@@ -293,5 +301,21 @@ export function positioningRows(self: LiveWatchlistItem | undefined, iso3: strin
     ...(c.levNetWeekChange !== undefined
       ? [{ label: 'Leveraged funds, change on the week', value: `${c.levNetWeekChange >= 0 ? '+' : ''}${c.levNetWeekChange.toLocaleString('en-US')} contracts`, source: src, verified: true }]
       : []),
+  ];
+}
+
+/** TIC rows for the Country tab: official figures with the month-end and the date the app pulled them. */
+export function ticRows(self: LiveWatchlistItem | undefined, iso3: string): BriefRow[] {
+  const t = self?.tic;
+  if (!t) return [noSourceRow('Holdings of US Treasuries', ticMissing(iso3).help)];
+  const src = `official, US Treasury TIC, ${formatMonth(t.month)} (pulled ${t.pulledAt.slice(0, 10)})`;
+  const sg = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;
+  return [
+    { label: 'Holdings of US Treasuries', value: `$${t.holdingsUsdBn.toFixed(1)}bn`, source: src, verified: true },
+    ...(t.change1mUsdBn !== undefined ? [{ label: 'Change on the month', value: `${sg(t.change1mUsdBn)}bn`, source: src, verified: true }] : []),
+    ...(t.change12mUsdBn !== undefined && t.change12mPct !== undefined
+      ? [{ label: 'Change over 12 months', value: `${sg(t.change12mUsdBn)}bn (${sg(t.change12mPct)}%)`, source: src, verified: true }]
+      : []),
+    ...(t.shareOfForeignPct !== undefined ? [{ label: 'Share of all foreign holdings', value: `${t.shareOfForeignPct.toFixed(1)}%`, source: src, verified: true }] : []),
   ];
 }

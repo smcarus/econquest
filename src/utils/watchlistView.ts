@@ -7,6 +7,7 @@ import type { LiveWatchlistItem, WatchlistGroup, WatchlistItem } from '../types/
 import { missingReason, type FigureKey, type MissingReason } from './liveFigures';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { cftcMissing, positioningLabel } from './cftcPositioning';
+import { formatMonth, ticMissing } from './ticHoldings';
 
 export const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 export const WATCHLIST_VIEW_KEY = 'econquest.watchlistView.v1';
@@ -30,6 +31,7 @@ export type ColumnId =
   | 'reer'
   | 'fxvol'
   | 'positioning'
+  | 'ustHoldings'
   | 'data';
 
 export interface ColumnDef {
@@ -132,6 +134,18 @@ export const COLUMNS: ColumnDef[] = [
       it.cftc
         ? `CFTC, ${it.cftc.reportDate}${it.cftc.percentile !== undefined ? `, ${positioningLabel(it.cftc.percentile)}` : ''}`
         : cftcMissing(it.iso3).short,
+  },
+  {
+    id: 'ustHoldings',
+    label: 'UST holdings',
+    help: 'Holdings of US Treasuries, USD bn, US Treasury TIC monthly (only the ~20 holders Treasury names)',
+    align: 'right',
+    value: (it) => it.tic?.holdingsUsdBn,
+    text: (it) => num(it.tic?.holdingsUsdBn, 1),
+    note: (it) =>
+      it.tic
+        ? `TIC, ${formatMonth(it.tic.month)}${it.tic.change12mPct !== undefined ? `, ${signed(it.tic.change12mPct, 1, '%')} y/y` : ''}`
+        : ticMissing(it.iso3).short,
   },
   { id: 'data', label: 'Data', help: 'Whether the row came from live feeds', align: 'left', value: (it) => DATA_LABEL[it.dataMode || 'sample'], text: (it) => DATA_LABEL[it.dataMode || 'sample'] },
 ];
