@@ -388,15 +388,7 @@ export interface OpenDataSnapshot {
   factorBetas: FactorSensitivityRow[];
   liveCreditRating?: string;
   /** Official 10Y yield (OECD via FRED, monthly average) when the country is covered and the feed answered. */
-  official10YYield?: {
-    valuePct: number;
-    period: string;
-    source: string;
-    seriesId: string;
-    url: string;
-    frequency?: 'monthly' | 'daily';
-    instrument?: string;
-  };
+  official10YYield?: import('../utils/officialYields').OfficialYieldObservation;
   groundingCitations?: Array<{ title: string; uri: string }>;
   /** US 10Y Treasury yield (OECD monthly via FRED), the benchmark for the spread over Treasuries. */
   us10YYield?: import('../utils/officialYields').OfficialYieldObservation;
@@ -473,6 +465,9 @@ export interface WatchlistItem {
   /** Official figures only: YYYY-MM (monthly average) or YYYY-MM-DD (daily rate). */
   yield10YPeriod?: string;
   yield10YFrequency?: 'monthly' | 'daily';
+  /** Official monthly yields only: change against 3 and 12 calendar months earlier, percentage points. */
+  yield10YChange3mPts?: number;
+  yield10YChange12mPts?: number;
   /** Macro figures for the ranked divergence list (utils/divergences.ts). Set by the live watchlist. */
   cpiInflationPct?: number;
   policyRatePct?: number;

@@ -24,6 +24,32 @@ export interface OfficialYieldObservation {
   frequency?: 'monthly' | 'daily';
   /** The bond behind a daily rate, e.g. "NTN-F 2037". */
   instrument?: string;
+  /** Monthly series only: change against the same series 3 and 12 calendar months earlier, percentage points. */
+  change3mPts?: number;
+  change12mPts?: number;
+}
+
+/** YYYY-MM n calendar months before `period` (YYYY-MM). */
+export function monthsBefore(period: string, n: number): string {
+  const [y, m] = period.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1 - n, 1)).toISOString().slice(0, 7);
+}
+
+/**
+ * Adds the 3- and 12-month changes to the latest monthly observation, from the rest of the series.
+ * By calendar month, so a gap in the series never passes for a change over a shorter span.
+ */
+export function withMonthlyChanges(latest: OfficialYieldObservation, history: Map<string, number>): OfficialYieldObservation {
+  const out = { ...latest };
+  const chg = (n: number) => {
+    const then = history.get(monthsBefore(latest.period, n));
+    return then === undefined ? undefined : Number((latest.valuePct - then).toFixed(2));
+  };
+  const c3 = chg(3);
+  const c12 = chg(12);
+  if (c3 !== undefined) out.change3mPts = c3;
+  if (c12 !== undefined) out.change12mPts = c12;
+  return out;
 }
 
 /** Short and long descriptions for labels, e.g. "Sep 2026 avg" / "30 Oct 2026". */
@@ -66,7 +92,7 @@ export function fredCsvUrl(seriesId: string, now = new Date()): string {
 
 /** Official FRED API, newest observations first. */
 export function fredApiUrl(seriesId: string, apiKey: string): string {
-  const q = new URLSearchParams({ series_id: seriesId, api_key: apiKey, file_type: 'json', sort_order: 'desc', limit: '12' });
+  const q = new URLSearchParams({ series_id: seriesId, api_key: apiKey, file_type: 'json', sort_order: 'desc', limit: '13' });
   return `https://api.stlouisfed.org/fred/series/observations?${q.toString()}`;
 }
 
@@ -81,12 +107,7 @@ function toObservation(date: string, raw: string, seriesId: string, via: string)
 export function parseFredApiLatest(json: unknown, seriesId: string): OfficialYieldObservation | null {
   const obs = (json as { observations?: Array<{ date?: unknown; value?: unknown }> })?.observations;
   if (!Array.isArray(obs)) return null;
-  const sorted = [...obs].sort((a, b) => String(b.date).localeCompare(String(a.date)));
-  for (const o of sorted) {
-    const r = toObservation(String(o.date ?? ''), String(o.value ?? ''), seriesId, 'FRED API');
-    if (r !== undefined) return r;
-  }
-  return null;
+  return latestWithChanges(obs.map((o) => [String(o.date ?? ''), String(o.value ?? '')]), seriesId, 'FRED API');
 }
 
 /**
@@ -96,13 +117,23 @@ export function parseFredApiLatest(json: unknown, seriesId: string): OfficialYie
 export function parseFredCsvLatest(csv: string, seriesId: string): OfficialYieldObservation | null {
   const lines = csv.trim().split(/\r?\n/);
   if (lines.length < 2 || !/date/i.test(lines[0])) return null;
-  for (let i = lines.length - 1; i >= 1; i--) {
-    const [date, raw] = lines[i].split(',');
-    if (!date || raw === undefined) continue;
-    const r = toObservation(date, raw, seriesId, 'FRED');
-    if (r !== undefined) return r;
+  return latestWithChanges(lines.slice(1).map((l) => l.split(',') as [string, string]), seriesId, 'FRED');
+}
+
+/** The latest usable row, with its 3- and 12-month changes. An implausible latest value means a broken feed (null). */
+function latestWithChanges(rows: [string, string | undefined][], seriesId: string, via: string): OfficialYieldObservation | null {
+  const sorted = rows.filter(([d, v]) => d && v !== undefined).sort((a, b) => b[0].localeCompare(a[0]));
+  let latest: OfficialYieldObservation | null | undefined;
+  const history = new Map<string, number>();
+  for (const [date, raw] of sorted) {
+    const r = toObservation(date, raw as string, seriesId, via);
+    if (r === undefined) continue;
+    if (latest === undefined) {
+      if (r === null) return null;
+      latest = r;
+    } else if (r && !history.has(r.period)) history.set(r.period, r.valuePct);
   }
-  return null;
+  return latest ? withMonthlyChanges(latest, history) : null;
 }
 
 /** "Sep 2026" from "2026-09"; "30 Oct 2026" from "2026-10-30". */
