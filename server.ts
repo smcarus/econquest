@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
+import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
@@ -152,6 +153,7 @@ const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirna
 let savedSettings = loadSettings(SETTINGS_FILE);
 const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
 // Rebuilt when the Gemini key is changed in Menu > Settings.
@@ -3330,6 +3332,24 @@ async function startServer() {
       res.status(500).json({ error: `Could not save the research file (${error?.code || error?.message || 'unknown error'}).` });
     }
   };
+  // Holdings, watchlists, added countries and AI settings (data/local/workspace.json), shared by
+  // every address the app is opened at. See src/utils/workspaceStore.ts.
+  app.get('/api/workspace', (_req, res) => {
+    const w = loadWorkspace(WORKSPACE_FILE);
+    res.json({ values: w.values, updatedAt: w.updatedAt, file: 'data/local/workspace.json' });
+  });
+  app.put('/api/workspace/:key', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const value = req.body?.value === undefined ? null : req.body.value;
+    const problem = workspaceProblem(req.params.key, value);
+    if (problem) return res.status(400).json({ error: problem });
+    try {
+      const w = setWorkspaceValue(WORKSPACE_FILE, req.params.key, value);
+      res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
+    } catch (error: any) {
+      res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
+    }
+  });
   app.get('/api/research', (_req, res) => res.json({ ...summarise(loadLibrary(RESEARCH_FILE)), file: 'data/local/research.json' }));
   app.get('/api/research/briefs/:id', (req, res) => {
     const b = loadLibrary(RESEARCH_FILE).briefs.find((x) => x.id === req.params.id);
