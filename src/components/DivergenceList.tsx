@@ -1,3 +1,4 @@
+import { ValidationBadge } from './ValidationBadge';
 import React, { useMemo } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
@@ -26,7 +27,10 @@ export const DivergenceList: React.FC<{
   return (
     <section className="ui-panel" data-divergences="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
       <header className="ui-panel-header">
-        <h3 className="ui-section-title">Where data and price disagree</h3>
+        <h3 className="ui-section-title flex flex-wrap items-center gap-2">
+          Where data and price disagree
+          <ValidationBadge id="divergence_rank" />
+        </h3>
         <p className="ui-label">
           One line per country, biggest gap first, from live figures only. Missing figures are left out, never filled in.
         </p>

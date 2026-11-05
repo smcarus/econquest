@@ -167,6 +167,7 @@ import {
   Plus,
   Database,
   ScrollText,
+  ShieldQuestion,
   ChevronDown,
   Briefcase,
   BookOpen,
@@ -180,6 +181,8 @@ import {
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { AuditLogDialog } from './components/AuditLogDialog';
+import { ModelRegisterDialog } from './components/ModelRegisterDialog';
+import { OPEN_REGISTER_EVENT } from './components/ValidationBadge';
 import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
 import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
 import { marketEdgePeers } from './utils/marketEdgeAnchors';
@@ -619,6 +622,13 @@ export default function App() {
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   const [isOfflineDataOpen, setIsOfflineDataOpen] = useState<boolean>(false);
   const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
+  // Menu > Models & validation; a status badge anywhere opens it on its row (undefined = closed).
+  const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    const onOpen = (e: Event) => setRegisterFocus(((e as CustomEvent).detail as string | null) ?? null);
+    window.addEventListener(OPEN_REGISTER_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_REGISTER_EVENT, onOpen);
+  }, []);
   const onlineStatus = useOnlineStatus();
   // Top-level area. The app always opens on Workspace; there are no roles (Sam, 2026-11-04).
   const [appArea, setAppArea] = useState<AppArea>('today');
@@ -2619,6 +2629,14 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'register',
+                        icon: <ShieldQuestion className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Models & validation',
+                        hint: '',
+                        onClick: () => setRegisterFocus(null),
+                        className: '',
+                      },
+                      {
                         key: 'manual',
                         icon: <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'User manual',
@@ -3678,6 +3696,7 @@ export default function App() {
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
+      {registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>
       <SovereignManualAndGithubModal

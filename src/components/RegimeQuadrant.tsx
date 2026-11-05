@@ -1,3 +1,4 @@
+import { ValidationBadge } from './ValidationBadge';
 import React, { useMemo } from 'react';
 import { Compass } from 'lucide-react';
 import { CartesianGrid, LabelList, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
@@ -25,6 +26,7 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
             <Compass className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             Growth and inflation
+            <ValidationBadge id="regime_quadrant" />
           </h2>
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Right = OECD leading indicator up over 6 months; up = inflation higher than 3 months ago. A stated rule on live monthly data, for discussion, not a forecast.

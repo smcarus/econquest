@@ -1,3 +1,4 @@
+import { ValidationBadge } from './ValidationBadge';
 import React, { useEffect, useState } from 'react';
 import { ListChecks } from 'lucide-react';
 import type { TrackRecord } from '../utils/trackRecord';
@@ -40,6 +41,7 @@ export const TrackRecordPanel: React.FC<{ iso3: string; countryName: string }> =
         <h2 className="ui-section-title flex items-center gap-2">
           <ListChecks className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Track record, {countryName}
+          <ValidationBadge id="taylor_gap" />
         </h2>
         <p className="ui-label">
           The rule signal the app gave on each saved pull, read from that pull, and what the central bank did in the {reply?.horizonDays ?? 90} days after. No odds, no hindsight on the inputs.

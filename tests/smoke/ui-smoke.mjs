@@ -117,6 +117,12 @@ try {
         await page.waitForSelector('[data-testid="audit-check"]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Audit log did not show the log check`));
         await settle('Audit log');
         await page.keyboard.press('Escape');
+        // Menu > Models & validation lists every rule with its status.
+        await page.getByRole('button', { name: 'Menu', exact: true }).click();
+        await page.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
+        await page.waitForSelector('[data-register-counts]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Models & validation did not open`));
+        await settle('Models & validation');
+        await page.keyboard.press('Escape');
         continue;
       }
       const nav = page.getByRole('button', { name: navName, exact: true }).first();
