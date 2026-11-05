@@ -21,12 +21,17 @@ interface KeysReply {
   inDocker?: boolean;
 }
 
-const SECTIONS: Array<{ id: 'free_key' | 'own_account'; title: string; note: string }> = [
+const SECTIONS: Array<{ id: 'free_key' | 'own_account' | 'ai'; title: string; note: string }> = [
   { id: 'free_key', title: 'Free sources that take your own key', note: 'Free to register. Each one is optional unless it says otherwise.' },
   {
     id: 'own_account',
     title: 'Your own paid data (off unless you switch it on)',
     note: 'Licensed to you, not built into the app. Figures from here are labelled with whose data they are, so check your licence before sending them on.',
+  },
+  {
+    id: 'ai',
+    title: 'AI model key',
+    note: 'Which model the council uses (Gemini, Ollama, a local server) and the Ollama address are chosen under AI model.',
   },
 ];
 
@@ -236,6 +241,13 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
               onClick={() => document.getElementById('settings-section-own_account')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             >
               Your own paid data
+            </button>
+            <button
+              type="button"
+              className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
+              onClick={() => document.getElementById('settings-section-ai')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              AI model key
             </button>
             {onOpenAiModel && (
               <button

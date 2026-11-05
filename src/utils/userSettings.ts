@@ -36,7 +36,7 @@ export interface ApiKeyStatus {
   /** Where the key in use comes from: saved in the app, .env, or not set. */
   source: KeySource;
   secret: boolean;
-  section: 'free_key' | 'own_account';
+  section: 'free_key' | 'own_account' | 'ai';
   choices?: Array<{ value: string; label: string }>;
   placeholder?: string;
   /** Secret keys: last four characters only, e.g. "••••3f9a". Other settings: the value. Empty when not set. */

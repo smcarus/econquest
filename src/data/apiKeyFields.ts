@@ -21,7 +21,7 @@ export interface ApiKeyField {
   /** False for settings that are not secret (a series code, a file path): shown in full. Default true. */
   secret?: boolean;
   /** Where Settings lists it: free sources with your own key (default), or your own paid data. */
-  section?: 'free_key' | 'own_account';
+  section?: 'free_key' | 'own_account' | 'ai';
   /** Hint in the empty box, for settings that are not keys. */
   placeholder?: string;
   /** A pick-one setting (shown as a list) instead of a typed value. */
@@ -176,6 +176,19 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     secret: false,
     section: 'own_account',
     validate: (v) => (Object.keys(parseRicMap(v)).length ? null : 'List them as ISO3=RIC separated by commas, for example BRA=<ric>,TUR=<ric>.'),
+  },
+  // ---- AI model -------------------------------------------------------------------------------
+  {
+    id: 'GEMINI_API_KEY',
+    label: 'Google Gemini API key',
+    provider: 'Google AI Studio (Gemini)',
+    feeds: 'The council summary, agent debate replies and agent choice when the AI model is Gemini or hybrid. The key goes only to Google.',
+    withoutIt: "Without it use Ollama or a local server under AI model; the app's figures do not need an AI model.",
+    getKeyUrl: 'https://aistudio.google.com/app/apikey',
+    getKeySteps: 'Sign in at aistudio.google.com, then Get API key > Create API key.',
+    checkId: 'gemini',
+    section: 'ai',
+    validate: (v) => (/^[A-Za-z0-9_-]{20,128}$/.test(v) ? null : 'A Gemini key is a run of letters, digits, dashes and underscores (usually starting AIza). Check it was copied in full.'),
   },
 ];
 

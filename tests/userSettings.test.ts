@@ -125,3 +125,13 @@ test('own paid CDS data: a pick-one source, a full file path, LSEG password kept
   assert.ok(!JSON.stringify(keys).includes('hunter22secret'));
   assert.equal(keys.find((k) => k.id === 'FRED_API_KEY')!.section, 'free_key');
 });
+
+test('Gemini key: listed under AI model, masked, loosely checked', () => {
+  assert.ok('error' in withKey({ apiKeys: {} }, 'GEMINI_API_KEY', 'short'));
+  const ok = withKey({ apiKeys: {} }, 'GEMINI_API_KEY', 'AIzaSyA1234567890abcdefGHIJKLmnop_-xyz');
+  assert.ok('settings' in ok);
+  const g = describeKeys({}, ok.settings).find((k) => k.id === 'GEMINI_API_KEY')!;
+  assert.equal(g.section, 'ai');
+  assert.equal(g.checkId, 'gemini');
+  assert.equal(g.masked, '••••-xyz');
+});
