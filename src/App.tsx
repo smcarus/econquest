@@ -1876,6 +1876,8 @@ export default function App() {
 
   // One desk's content, by section id. Used by the desk view and by the Country page tabs.
   /** Opens a ready tool from the Tools page where it lives. */
+  const scrollToAnchor = (anchor: string) =>
+    window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
   const openTool = (t: ToolTarget) => {
     if (t.area === 'today') {
       setAppArea('today');
@@ -1885,8 +1887,11 @@ export default function App() {
       if (t.brief) setCountryBriefView(t.brief);
       setCountryTab(t.tab as CountryTabId);
       setAppArea('country');
-    } else if (t.area === 'portfolio') openWorkspace('portfolio');
-    else openWorkspace('reports');
+      if (t.anchor) scrollToAnchor(t.anchor);
+    } else if (t.area === 'portfolio') {
+      openWorkspace('portfolio');
+      if (t.anchor) scrollToAnchor(t.anchor);
+    } else openWorkspace('reports');
   };
 
   const renderDeskBody = (sec: NavSectionId) => (
@@ -3015,7 +3020,7 @@ export default function App() {
                     }}
                   />
                   <PanelBoundary name="Signals on your holdings">
-                    <PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={() => setIsHoldingsPanelOpen(true)} />
+                    <div id="tool-holdings-signals" className="scroll-mt-4" /><PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={() => setIsHoldingsPanelOpen(true)} />
                   </PanelBoundary>
                   <PortfolioSummary
                     watchlistItems={liveWatchlistItems}
