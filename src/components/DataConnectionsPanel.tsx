@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, CircleDashed, CircleOff, RefreshCw, Settings2, XCircle } from 'lucide-react';
+import { API_KEY_FIELDS } from '../data/apiKeyFields';
 import { STATE_LABEL, isFailure, type ConnectionGroup, type ConnectionReport, type ConnectionResult, type ConnectionState } from '../utils/connectionCheck';
 
 /**
@@ -8,6 +9,10 @@ import { STATE_LABEL, isFailure, type ConnectionGroup, type ConnectionReport, ty
  * whether it needs setting up or did not answer, and why. The same check runs in a terminal with
  * `npm run check:data`.
  */
+
+/** Rows whose key can be entered in Settings instead of .env. */
+const SETTINGS_CHECK_IDS = new Set(API_KEY_FIELDS.map((f) => f.checkId));
+const openSettings = () => window.dispatchEvent(new CustomEvent('econquest:open-settings'));
 
 const GROUP_TITLE: Record<ConnectionGroup, string> = {
   free: 'Free sources (no key)',
@@ -55,10 +60,20 @@ const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
             <span>{r.warning}</span>
           </div>
         )}
-        {r.setup && (r.state === 'needs_setup' || r.state === 'off') && (
+        {SETTINGS_CHECK_IDS.has(r.id) ? (
           <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            <span className="font-medium">Set up in .env:</span> <code className="break-words">{r.setup}</code>
+            <button type="button" onClick={openSettings} className="text-blue-700 dark:text-blue-400 hover:underline">
+              {r.state === 'optional' ? 'Add your key in Settings' : 'Change the key in Settings'}
+            </button>
+            <span> (or set it in .env)</span>
           </div>
+        ) : (
+          r.setup &&
+          (r.state === 'needs_setup' || r.state === 'off') && (
+            <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
+              <span className="font-medium">Set up in .env:</span> <code className="break-words">{r.setup}</code>
+            </div>
+          )
         )}
       </div>
     </div>

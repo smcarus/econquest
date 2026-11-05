@@ -382,3 +382,46 @@ test('GDELT: after one refusal the app sends nothing more to GDELT for a while',
   assert.equal(asked, 1, `GDELT was asked ${asked} times`);
   assert.match(log, /\[GDELT\] HTTP 429/);
 });
+
+test('Settings > Data API keys: a key saved in the app is masked, wins over .env and can be removed', async () => {
+  const GOOD = 'abcdef0123456789abcdef0123456789';
+  const keys = async () => (await fetch(`${base}/api/settings/keys`)).json();
+
+  const start = await keys();
+  const fred = start.keys.find((k: { id: string }) => k.id === 'FRED_API_KEY');
+  assert.equal(fred.source, 'env');
+  assert.equal(start.canEdit, true);
+  assert.ok(!JSON.stringify(start).includes('test-key'), 'the .env key itself never reaches the browser');
+
+  const bad = await fetch(`${base}/api/settings/keys/FRED_API_KEY`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"value":"nope"}' });
+  assert.equal(bad.status, 400);
+  assert.match((await bad.json()).error, /32 lower-case/);
+
+  const tested = await (
+    await fetch(`${base}/api/settings/keys/FRED_API_KEY/test`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: GOOD }) })
+  ).json();
+  assert.equal(tested.check.id, 'fred_api');
+  assert.equal((await keys()).keys[0].source, 'env', 'testing a key does not save it');
+
+  const saved = await (
+    await fetch(`${base}/api/settings/keys/FRED_API_KEY`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: GOOD }) })
+  ).json();
+  const after = saved.keys.find((k: { id: string }) => k.id === 'FRED_API_KEY');
+  assert.equal(after.source, 'app');
+  assert.equal(after.masked, '••••6789');
+  assert.equal(after.envAlsoSet, true);
+  assert.ok(!JSON.stringify(saved).includes(GOOD), 'the saved key never goes back to the browser');
+  // The offline FRED fixture refuses the US series, so the check says the saved key was not accepted.
+  assert.equal(saved.check.state, 'needs_setup');
+  assert.match(saved.check.detail, /key saved in Settings/);
+
+  const file = path.join(dataDir, 'local', 'settings.json');
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).apiKeys.FRED_API_KEY, GOOD);
+
+  const report = await (await fetch(`${base}/api/data/connections`)).json();
+  assert.match(report.results.find((r: { id: string }) => r.id === 'fred_api').detail, /key saved in Settings/);
+
+  const removed = await (await fetch(`${base}/api/settings/keys/FRED_API_KEY`, { method: 'DELETE' })).json();
+  assert.equal(removed.keys.find((k: { id: string }) => k.id === 'FRED_API_KEY').source, 'env');
+  assert.equal(JSON.parse(readFileSync(file, 'utf8')).apiKeys.FRED_API_KEY, undefined);
+});

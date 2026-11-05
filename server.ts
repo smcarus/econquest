@@ -26,6 +26,20 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
+import {
+  API_KEY_IDS,
+  apiKeyField,
+  applyKeysToEnv,
+  describeKeys,
+  envKeySnapshot,
+  isLocalRequest,
+  keySources,
+  loadSettings,
+  saveSettings,
+  settingsFilePath,
+  withKey,
+  withoutKey,
+} from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import dotenv from 'dotenv';
 import express from 'express';
@@ -103,6 +117,12 @@ dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Keys saved in the app (Menu > Settings > API keys) win over .env; see src/utils/userSettings.ts.
+const ENV_FILE_KEYS = envKeySnapshot(process.env);
+const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+let savedSettings = loadSettings(SETTINGS_FILE);
+applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -2995,10 +3015,74 @@ async function startServer() {
     }
   });
 
+  let connectionReportCache: { at: number; report: ConnectionReport } | null = null;
+  // 1a'. Settings > API keys: your own keys, saved on this computer only (src/utils/userSettings.ts).
+  // The browser gets masked values only; changes are accepted from this computer only.
+  const keysReply = (req: express.Request) => ({
+    keys: describeKeys(ENV_FILE_KEYS, savedSettings),
+    canEdit: isLocalRequest(req.socket.remoteAddress, process.env),
+    savedIn: path.relative(__dirname, SETTINGS_FILE).startsWith('..') ? SETTINGS_FILE : path.relative(__dirname, SETTINGS_FILE),
+  });
+  const runKeyCheck = async (id: string, env: Record<string, string | undefined>, sources: Record<string, 'app' | 'env' | 'none'>) => {
+    const field = apiKeyField(id);
+    if (!field) return null;
+    const report = await checkConnections({ env, only: [field.checkId], keySources: sources });
+    return report.results[0] || null;
+  };
+  const refuseRemote = (req: express.Request, res: express.Response): boolean => {
+    if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
+    res.status(403).json({ error: 'Keys can only be changed from the computer running the app. For Docker, set SETTINGS_ALLOW_REMOTE="true" in .env.' });
+    return true;
+  };
+  app.get('/api/settings/keys', (req, res) => res.json(keysReply(req)));
+  app.put('/api/settings/keys/:id', async (req, res) => {
+    if (refuseRemote(req, res)) return;
+    const next = withKey(savedSettings, req.params.id, req.body?.value);
+    if ('error' in next) return res.status(400).json({ error: next.error });
+    try {
+      saveSettings(SETTINGS_FILE, next.settings);
+    } catch (error: any) {
+      return res.status(500).json({ error: `Could not save the settings file (${error?.code || error?.message || 'unknown error'}).` });
+    }
+    savedSettings = next.settings;
+    applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
+    connectionReportCache = null;
+    const check = await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
+    res.json({ ...keysReply(req), check });
+  });
+  app.delete('/api/settings/keys/:id', async (req, res) => {
+    if (refuseRemote(req, res)) return;
+    if (!API_KEY_IDS.includes(req.params.id)) return res.status(400).json({ error: `Unknown key "${req.params.id}".` });
+    const next = withoutKey(savedSettings, req.params.id);
+    try {
+      saveSettings(SETTINGS_FILE, next);
+    } catch (error: any) {
+      return res.status(500).json({ error: `Could not save the settings file (${error?.code || error?.message || 'unknown error'}).` });
+    }
+    savedSettings = next;
+    applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
+    connectionReportCache = null;
+    res.json(keysReply(req));
+  });
+  // Test a key before saving it (or the key in use when no value is sent). Nothing is saved.
+  app.post('/api/settings/keys/:id/test', async (req, res) => {
+    if (refuseRemote(req, res)) return;
+    const field = apiKeyField(req.params.id);
+    if (!field) return res.status(400).json({ error: `Unknown key "${req.params.id}".` });
+    const value = typeof req.body?.value === 'string' ? req.body.value.trim() : '';
+    if (value) {
+      const problem = field.validate(value);
+      if (problem) return res.status(400).json({ error: problem });
+    }
+    const env = value ? { ...process.env, [field.id]: value } : process.env;
+    const sources = value ? { ...keySources(ENV_FILE_KEYS, savedSettings), [field.id]: 'app' as const } : keySources(ENV_FILE_KEYS, savedSettings);
+    const check = await runKeyCheck(field.id, env, sources).catch(() => null);
+    res.json({ check });
+  });
+
   // 1b'. Data connection check: asks every outside source for one small real answer, through the
   // same URLs and parsers the app uses, and says in words what connected and why anything did not.
   // Kept 30 seconds so a double click does not hit rate-limited sources (GDELT) twice.
-  let connectionReportCache: { at: number; report: ConnectionReport } | null = null;
   app.get('/api/data/connections', async (req, res) => {
     try {
       if (req.query.refresh !== '1' && connectionReportCache && Date.now() - connectionReportCache.at < 30000) {
@@ -3006,6 +3090,7 @@ async function startServer() {
       }
       const report = await checkConnections({
         env: process.env,
+        keySources: keySources(ENV_FILE_KEYS, savedSettings),
         // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {

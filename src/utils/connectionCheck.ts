@@ -98,6 +98,8 @@ export interface CheckOptions {
   readFile?: (path: string) => { text: string; modified: Date } | null;
   /** Only these source ids. */
   only?: string[];
+  /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
+  keySources?: Record<string, 'app' | 'env' | 'none'>;
   /** Pause between the two OECD checks, ms (default 3000; tests set 0). */
   oecdGapMs?: number;
 }
@@ -731,17 +733,19 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: 'FRED API (free key)',
       group: 'free_key',
       feeds: 'Same yields as the FRED download, through the official API',
-      setup: 'FRED_API_KEY="..." (free: fred.stlouisfed.org > My Account > API Keys). Without it the app uses the FRED download.',
+      setup: 'Menu > Settings > API keys, or FRED_API_KEY="..." in .env (free: fred.stlouisfed.org > My Account > API Keys). Without it the app uses the FRED download.',
     };
     const key = (env.FRED_API_KEY || '').trim();
     if (!key) return setRow(def, 'optional', 'No key set. The app uses the FRED download instead, which needs no key.', 'api.stlouisfed.org');
+    const where = opts.keySources?.FRED_API_KEY === 'app' ? 'the key saved in Settings' : 'the key in FRED_API_KEY';
     const res = await httpCheck(def, fetchFn, fredApiUrl(US_10Y_SERIES, key), T, (r) => {
       const o = parseFredApiLatest(parseJson(r.text), US_10Y_SERIES);
       return o ? `US 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
     });
     if (res.state === 'refused' && (res.httpStatus === 400 || res.httpStatus === 403)) {
-      return { ...res, state: 'needs_setup', detail: `FRED did not accept the key in FRED_API_KEY (HTTP ${res.httpStatus}). Check it was copied in full. The app falls back to the FRED download meanwhile.` };
+      return { ...res, state: 'needs_setup', detail: `FRED did not accept ${where} (HTTP ${res.httpStatus}). Check it was copied in full. The app falls back to the FRED download meanwhile.` };
     }
+    if (res.state === 'connected' && opts.keySources?.FRED_API_KEY === 'app') return { ...res, detail: `${res.detail} (key saved in Settings)` };
     return res;
   });
 
