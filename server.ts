@@ -11,8 +11,11 @@ import {
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
+import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, buildCommodityReply, eiaSpotUrl, findPinkSheetUrl, parseEiaSpot, parsePinkSheet, type CommodityReply, type PriceSeries } from './src/utils/commodityPrices';
+import { readXlsxSheet } from './src/utils/xlsxRead';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
 import { pullImfExternal, type ImfExternal, type ImfStructure } from './src/utils/imfReserves';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
@@ -593,6 +596,106 @@ async function fetchCbpolPull(): Promise<CbpolPull | null> {
 }
 
 /**
+ * Commodity prices (src/utils/commodityPrices.ts): World Bank Pink Sheet (monthly, no key) and EIA
+ * daily Brent/WTI (free key EIA_API_KEY, optional). Both are saved to data/live/commodities.json
+ * with their pull dates. The Pink Sheet is pulled again after a day, EIA after 12 hours; a failed
+ * pull keeps the last good one and is retried after an hour.
+ */
+type PinkPull = { url: string; pulledAt: string; series: Record<string, PriceSeries> };
+type EiaPull = { pulledAt: string; series: Record<string, PriceSeries> };
+type CommodityFile = { pink: PinkPull | null; eia: EiaPull | null };
+let commodityMemory: (CommodityFile & { pinkTried: number; eiaTried: number }) | null = null;
+let commodityInFlight: Promise<CommodityReply> | null = null;
+function commodityFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'commodities.json');
+}
+async function pullPinkSheet(): Promise<PinkPull | null> {
+  try {
+    let url = (process.env.PINK_SHEET_URL || '').trim();
+    if (!url) {
+      const page = await fetchWithTimeout(PINK_SHEET_PAGE, 15000);
+      if (!page.ok) {
+        console.warn(`[Pink Sheet] commodity markets page refused (HTTP ${page.status})`);
+        return null;
+      }
+      url = findPinkSheetUrl(await page.text()) || '';
+      if (!url) {
+        console.warn('[Pink Sheet] no "Monthly prices" workbook link on the commodity markets page; set PINK_SHEET_URL');
+        return null;
+      }
+    }
+    const res = await fetchWithTimeout(url, 45000);
+    if (!res.ok) {
+      console.warn(`[Pink Sheet] workbook refused (HTTP ${res.status})`);
+      return null;
+    }
+    const rows = await readXlsxSheet(await res.arrayBuffer(), PINK_SHEET_SHEET);
+    const series = rows ? parsePinkSheet(rows) : new Map();
+    if (series.size === 0) {
+      console.warn('[Pink Sheet] workbook read, but no commodity columns recognised');
+      return null;
+    }
+    return { url, pulledAt: new Date().toISOString(), series: Object.fromEntries(series) };
+  } catch (e) {
+    console.warn(`[Pink Sheet] ${describeNetworkError(e, 45000)}`);
+    return null;
+  }
+}
+async function pullEia(key: string): Promise<EiaPull | null> {
+  try {
+    const res = await fetchWithTimeout(eiaSpotUrl(key), 20000);
+    if (!res.ok) {
+      console.warn(`[EIA] spot prices refused (HTTP ${res.status})`);
+      return null;
+    }
+    const series = parseEiaSpot(await res.json());
+    return series.size ? { pulledAt: new Date().toISOString(), series: Object.fromEntries(series) } : null;
+  } catch (e) {
+    console.warn(`[EIA] ${describeNetworkError(e, 20000)}`);
+    return null;
+  }
+}
+async function fetchCommodities(): Promise<CommodityReply> {
+  const eiaKey = (process.env.EIA_API_KEY || '').trim();
+  if (!commodityMemory) {
+    let saved: CommodityFile = { pink: null, eia: null };
+    try {
+      const f = JSON.parse(fs.readFileSync(commodityFile(), 'utf8')) as CommodityFile;
+      saved = { pink: f?.pink?.pulledAt ? f.pink : null, eia: f?.eia?.pulledAt ? f.eia : null };
+    } catch {
+      // never pulled
+    }
+    commodityMemory = { ...saved, pinkTried: saved.pink ? Date.parse(saved.pink.pulledAt) : 0, eiaTried: saved.eia ? Date.parse(saved.eia.pulledAt) : 0 };
+  }
+  const mem = commodityMemory;
+  const hour = 60 * 60 * 1000;
+  const age = (p: { pulledAt: string } | null) => (p ? Date.now() - Date.parse(p.pulledAt) : Infinity);
+  const wantPink = age(mem.pink) > 24 * hour && Date.now() - mem.pinkTried > hour;
+  const wantEia = !!eiaKey && age(mem.eia) > 12 * hour && Date.now() - mem.eiaTried > hour;
+  if (!wantPink && !wantEia) return buildCommodityReply(mem.pink, mem.eia, !!eiaKey);
+  if (commodityInFlight) return commodityInFlight;
+  commodityInFlight = (async () => {
+    const [pink, eia] = await Promise.all([wantPink ? pullPinkSheet() : Promise.resolve(null), wantEia ? pullEia(eiaKey) : Promise.resolve(null)]);
+    if (wantPink) mem.pinkTried = Date.now();
+    if (wantEia) mem.eiaTried = Date.now();
+    if (pink) mem.pink = pink;
+    if (eia) mem.eia = eia;
+    if (pink || eia) {
+      try {
+        fs.mkdirSync(path.dirname(commodityFile()), { recursive: true });
+        fs.writeFileSync(commodityFile(), JSON.stringify({ pink: mem.pink, eia: mem.eia }));
+      } catch {
+        // keep the memory copy
+      }
+    }
+    return buildCommodityReply(mem.pink, mem.eia, !!eiaKey);
+  })().finally(() => {
+    commodityInFlight = null;
+  });
+  return commodityInFlight;
+}
+
+/**
  * OECD composite leading indicators (src/utils/oecdCli.ts). Monthly; one call for every area.
  * Saved to data/live/oecd-cli.json with its pull date and pulled again after a day; a failed pull
  * keeps the last good one and is retried after an hour. If the OECD refuses the narrow query
@@ -647,6 +750,58 @@ async function fetchCliPull(): Promise<CliPull | null> {
     cliInFlight = null;
   });
   return cliInFlight;
+}
+
+/**
+ * OECD consumer price inflation (src/utils/oecdInflation.ts). Monthly; one call for every area.
+ * Saved to data/live/oecd-cpi.json with its pull date and pulled again after a day; a failed pull
+ * keeps the last good one and is retried after an hour.
+ */
+type CpiPull = { pulledAt: string; series: CpiSeries };
+let cpiMemory: { pull: CpiPull | null; triedAt: number } | null = null;
+let cpiInFlight: Promise<CpiPull | null> | null = null;
+function cpiFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cpi.json');
+}
+async function fetchCpiPull(): Promise<CpiPull | null> {
+  if (!cpiMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cpiFile(), 'utf8')) as CpiPull;
+      if (saved?.pulledAt && saved.series) cpiMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (cpiMemory?.pull && Date.now() - Date.parse(cpiMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cpiMemory.pull;
+  if (cpiMemory && Date.now() - cpiMemory.triedAt < 60 * 60 * 1000) return cpiMemory.pull;
+  if (cpiInFlight) return cpiInFlight;
+  cpiInFlight = (async () => {
+    let series: CpiSeries | null = null;
+    try {
+      const res = await fetchWithTimeout(cpiUrl(), 30000);
+      if (res.ok) series = parseCpi(await res.text());
+      else console.warn(`[OECD] consumer prices refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[OECD] consumer prices: ${describeNetworkError(e, 30000)}`);
+    }
+    const prev = cpiMemory?.pull ?? null;
+    if (!series) {
+      cpiMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: CpiPull = { pulledAt: new Date().toISOString(), series };
+    cpiMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cpiFile()), { recursive: true });
+      fs.writeFileSync(cpiFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cpiInFlight = null;
+  });
+  return cpiInFlight;
 }
 
 /**
@@ -1537,7 +1692,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol, cli, imf] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, imf] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -1545,6 +1700,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     Promise.race([fetchTicPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     cbpolPullQuick(),
     Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
     Promise.race([fetchImfPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
@@ -1580,6 +1736,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
         const lead = cliFor(catItem.iso3, cli?.series);
+        const prices = cpiFor(catItem.iso3, cpi?.series);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
@@ -1602,6 +1759,12 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
+          // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
+          ...(prices && cpi
+            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: cpi.pulledAt } }
+            : cpi
+              ? { oecdCpiPulledAt: cpi.pulledAt }
+              : {}),
           // Policy rate: the BIS figure with its date, or nothing (the row reads Missing with the reason).
           ...(bisRate
             ? {
@@ -2679,6 +2842,15 @@ async function startServer() {
       res.json({ source: 'BIS WS_CBPOL', pulledAt: pull?.pulledAt ?? null, rows });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to load policy rates' });
+    }
+  });
+
+  // 1b''. Commodity prices (Pink Sheet monthly, EIA daily oil), each with its month or day.
+  app.get('/api/data/commodities', async (_req, res) => {
+    try {
+      res.json({ ...(await fetchCommodities()), fetchedAt: new Date().toISOString() });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Commodity prices failed' });
     }
   });
 

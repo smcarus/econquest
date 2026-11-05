@@ -13,6 +13,7 @@ import { carryToVol, reerLabel } from './fxValuation';
 import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
 import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 import { cliMissing } from './oecdCli';
+import { cpiMissing, cpiSource } from './oecdInflation';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
 
@@ -156,7 +157,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
   const open = run.openData;
   const status = getSnapshotDataStatus(open);
   const L = status.live;
-  const cpi = L('imf.cpiInflationPct');
+  const self = peers.find((p) => p.iso3 === run.iso3);
+  // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
+  const oecdCpi = self?.oecdCpi;
+  const cpi = oecdCpi?.yoyPct ?? L('imf.cpiInflationPct');
   const policy = L('market.policyRatePct');
   const y10 = L('market.sovereign10YBondYieldPct');
   const cds = L('market.cds5YSpreadBps');
@@ -170,7 +174,6 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
   const us = open.us10YYield;
   const spreadBps = us && y10 !== undefined ? Math.round((y10 - us.valuePct) * 100) : undefined;
   const screen = peerScreen(peers, us?.valuePct);
-  const self = peers.find((p) => p.iso3 === run.iso3);
   const rv = screen.fit && self?.compositeRisk !== undefined && cds !== undefined ? cdsVsPeers(cds, self.compositeRisk, screen.fit) : undefined;
   const cv = policy !== undefined && self?.fxVol3mPct !== undefined && self.usFedFundsPct !== undefined ? carryToVol(policy, self.usFedFundsPct, self.fxVol3mPct) : null;
   const model = (label: string, value: string, how = 'model, from figures above'): BriefRow => ({ label, value, source: how, verified: false });
@@ -179,7 +182,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
   const j: string[] = [];
   if (cpi !== undefined)
     j.push(
-      `Inflation is ${pct(cpi)}${target && gap !== undefined ? `, ${Math.abs(gap).toFixed(1)} pts ${gap >= 0 ? 'above' : 'below'} the ${pct(target.pct)} target` : ' (no inflation target on file)'}${
+      `Inflation is ${pct(cpi)}${oecdCpi ? ` (${cpiSource(oecdCpi)})` : ''}${target && gap !== undefined ? `, ${Math.abs(gap).toFixed(1)} pts ${gap >= 0 ? 'above' : 'below'} the ${pct(target.pct)} target` : ' (no inflation target on file)'}${
         realPolicy !== undefined && policy !== undefined ? `; with the policy rate at ${pct(policy, 2)}, the real rate is ${pct(realPolicy)}, so policy looks ${policyStance(realPolicy, gap)}` : ''
       }.`
     );
@@ -265,6 +268,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
           ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
           : needs('5Y CDS against risk peers', '4 or more countries with your CDS and a live risk score'),
       ],
+    },
+    {
+      title: 'OECD inflation (monthly)',
+      rows: oecdCpiRows(self),
     },
     {
       title: 'OECD leading indicator (monthly)',
@@ -411,5 +418,26 @@ export function cliRows(self: LiveWatchlistItem | undefined): BriefRow[] {
     { label, value: c.level.toFixed(2), source: src, verified: true },
     ...(c.change1m !== undefined ? [{ label: 'Change on the month', value: sg(c.change1m), source: src, verified: true }] : []),
     ...(c.change6m !== undefined ? [{ label: 'Change over 6 months', value: sg(c.change6m), source: src, verified: true }] : []),
+  ];
+}
+
+/** OECD monthly CPI rows for the Country tab, with the month and the date the app pulled it. */
+export function oecdCpiRows(self: LiveWatchlistItem | undefined): BriefRow[] {
+  const c = self?.oecdCpi;
+  const label = 'CPI inflation, y/y (latest month)';
+  if (!c) {
+    const why = cpiMissing(!!self?.oecdCpiPulledAt);
+    return [self?.oecdCpiPulledAt ? noSourceRow(label, why.help) : missingRow(label, { kind: 'unreachable', short: why.short, help: why.help })];
+  }
+  const src = `official, ${cpiSource(c)} (pulled ${c.pulledAt.slice(0, 10)})`;
+  const sg = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}`;
+  return [
+    { label, value: pct(c.yoyPct), source: src, verified: true },
+    ...(c.change3mPts !== undefined && c.trend
+      ? [
+          { label: 'Change over 3 months', value: `${sg(c.change3mPts)} pts`, source: src, verified: true },
+          { label: 'Inflation trend', value: c.trend, source: 'model: 3-month change; +0.5 pts or more = rising, -0.5 pts or more down = easing', verified: false },
+        ]
+      : []),
   ];
 }

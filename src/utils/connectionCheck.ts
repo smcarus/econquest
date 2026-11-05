@@ -14,6 +14,7 @@
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
+import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
@@ -33,6 +34,8 @@ import {
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
+import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
+import { readXlsxSheet } from './xlsxRead';
 
 export type ConnectionState =
   /** Answered, and the answer was read. */
@@ -231,11 +234,14 @@ export const SOURCE_IDS = [
   'wits',
   'cftc',
   'tic',
+  'pink_sheet',
   'oecd_cli',
+  'oecd_cpi',
   'fred_csv',
   'fred_api',
   'tesouro',
   'evds',
+  'eia',
   'own_cds',
   'gemini',
   'ollama',
@@ -526,6 +532,56 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     )
   );
 
+  add('pink_sheet', async () => {
+    const def: Def = {
+      id: 'pink_sheet',
+      name: 'World Bank Pink Sheet (commodity prices)',
+      group: 'free',
+      feeds: 'Monthly prices of oil, gas, coal, metals and farm goods (spillover scenarios)',
+      setup: 'Nothing needed. If the World Bank page changes, set PINK_SHEET_URL to the "Monthly prices" .xlsx link from worldbank.org/en/research/commodity-markets.',
+    };
+    const override = (env.PINK_SHEET_URL || '').trim();
+    let url = override;
+    if (!url) {
+      const page = await probe(fetchFn, PINK_SHEET_PAGE, Math.max(T, 15000));
+      const base = { host: hostOf(PINK_SHEET_PAGE), latencyMs: page.latencyMs, ...(page.status ? { httpStatus: page.status } : {}) };
+      if (page.networkError) return { ...setRow(def, 'no_answer', page.networkError, base.host), ...base };
+      if (!page.ok) return { ...setRow(def, 'refused', httpRefusal(page.status, page.text), base.host), ...base };
+      url = findPinkSheetUrl(page.text) || '';
+      if (!url) return { ...setRow(def, 'bad_reply', 'The World Bank commodity markets page answered, but had no "Monthly prices" workbook link. Set PINK_SHEET_URL to the .xlsx link.', base.host), ...base };
+    }
+    const t0 = Date.now();
+    const controller = new AbortController();
+    const wait = Math.max(T, 45000);
+    const timer = setTimeout(() => controller.abort(), wait);
+    try {
+      const res = await fetchFn(url, { signal: controller.signal });
+      const host = hostOf(url);
+      if (!res.ok) return { ...setRow(def, 'refused', httpRefusal(res.status, ''), host), httpStatus: res.status, latencyMs: Date.now() - t0 };
+      const buf = await res.arrayBuffer();
+      const latencyMs = Date.now() - t0;
+      let rows: string[][] | null = null;
+      try {
+        rows = await readXlsxSheet(buf, PINK_SHEET_SHEET);
+      } catch {
+        rows = null;
+      }
+      const series = rows ? parsePinkSheet(rows) : new Map();
+      const brent = series.get('CRUDE_BRENT') || [...series.values()][0];
+      const mv = brent ? priceMove(brent) : null;
+      if (!mv) return { ...setRow(def, 'bad_reply', `The workbook downloaded, but the "${PINK_SHEET_SHEET}" sheet was not in the layout the app reads (months like 2025M09 down the first column, commodity codes across the top).`, host), httpStatus: res.status, latencyMs };
+      return {
+        ...setRow(def, 'connected', `Answered in ${latencyMs} ms; ${series.size} commodities read${override ? ' (from PINK_SHEET_URL)' : ''}.`, host),
+        httpStatus: res.status,
+        latencyMs,
+        sample: moveSentence(mv).replace(/\.$/, ''),
+      };
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, wait), hostOf(url)), latencyMs: Date.now() - t0 };
+    } finally {
+      clearTimeout(timer);
+    }
+  });
   add('oecd_cli', () =>
     httpCheck(
       { id: 'oecd_cli', name: 'OECD leading indicators', group: 'free', feeds: 'Monthly composite leading indicator (amplitude adjusted, 100 = long-term average) for the countries the OECD covers' },
@@ -539,6 +595,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'The OECD answered, but not with an amplitude-adjusted leading indicator series the app reads. The dataset layout may have changed.'
+    )
+  );
+
+  add('oecd_cpi', () =>
+    httpCheck(
+      { id: 'oecd_cpi', name: 'OECD consumer prices', group: 'free', feeds: 'Monthly headline CPI inflation, y/y, for the countries the OECD covers' },
+      fetchFn,
+      cpiUrl({ areas: ['USA', SAMPLE_ISO3], months: 15 }),
+      Math.max(T, 20000),
+      (r) => {
+        const s = parseCpi(r.text);
+        const c = cpiFor(SAMPLE_ISO3, s) || cpiFor('USA', s);
+        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})` : null;
+      },
+      undefined,
+      'The OECD answered, but not with a monthly headline CPI series the app reads. The dataset layout may have changed.'
     )
   );
 
@@ -611,6 +683,28 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       return { ...res, state: 'needs_setup', detail: `EVDS did not accept the key in EVDS_API_KEY (HTTP ${res.httpStatus}).` };
     }
     return res;
+  });
+
+  add('eia', async () => {
+    const def: Def = {
+      id: 'eia',
+      name: 'US EIA oil prices (free key)',
+      group: 'free_key',
+      feeds: 'Daily Brent and WTI spot prices (spillover scenarios)',
+      setup: 'EIA_API_KEY="..." (free: eia.gov/opendata > Register). Without it oil comes monthly from the World Bank Pink Sheet.',
+    };
+    const key = (env.EIA_API_KEY || '').trim();
+    if (!key) return setRow(def, 'optional', 'No key set. Oil comes monthly from the World Bank Pink Sheet instead.', 'api.eia.gov');
+    const res = await httpCheck(def, fetchFn, eiaSpotUrl(key, now), Math.max(T, 20000), (r) => {
+      const s = parseEiaSpot(parseJson(r.text)).get('RBRTE');
+      const mv = s ? priceMove(s) : null;
+      return mv ? moveSentence(mv).replace(/\.$/, '') : null;
+    }, undefined, 'EIA answered, but with no Brent rows the app could read. The route or series code may have changed.');
+    if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
+      return { ...res, state: 'needs_setup', detail: `EIA did not accept the key in EIA_API_KEY (HTTP ${res.httpStatus}). Oil comes monthly from the Pink Sheet meanwhile.` };
+    }
+    // Never echo the key: EIA puts it in the URL, so make sure no reply text carries it.
+    return { ...res, detail: res.detail.split(key).join('***') };
   });
 
   // ---- Your own paid account (off unless switched on) -------------------------------------------

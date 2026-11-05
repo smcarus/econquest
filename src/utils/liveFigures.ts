@@ -80,7 +80,7 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
     case 'reserves':
       return it.reservesSource === 'live';
     case 'cpi':
-      return it.cpiSource === 'live';
+      return it.cpiSource === 'live' || it.cpiSource === 'oecd';
     case 'policy':
       // Only the BIS feed counts; an AI estimate or the sample does not.
       return it.policyRateSource === 'bis';
@@ -127,6 +127,8 @@ export const MISSING_KEYS: FigureKey[] = ['risk', 'cds', 'yield', 'debt', 'reser
 export function missingSummary(items: Array<WatchlistItem | LiveWatchlistItem>): Array<{ key: FigureKey; count: number; reason: MissingReason }> {
   return MISSING_KEYS.map((key) => {
     const rows = items.filter((it) => !hasFigure(it, key));
+    // Every row has this figure (a feed filled it for all of them): nothing to explain.
+    if (!rows.length) return null;
     // Prefer the setup reason when any row needs setup: that is the one the user can act on.
     const reasons = rows.map((it) => ({ it, r: missingReason(key, it.iso3) }));
     const first = (reasons.find((x) => x.r.kind === 'setup') || reasons[0]).r;
@@ -137,5 +139,5 @@ export function missingSummary(items: Array<WatchlistItem | LiveWatchlistItem>):
         ? helps.map((h) => `${reasons.filter((x) => x.r.help === h).map((x) => x.it.countryName).join(', ')}: ${h}`).join(' ')
         : first.help;
     return { key, count: rows.length, reason: { ...first, help } };
-  }).filter((r) => r.count > 0);
+  }).filter((r): r is { key: FigureKey; count: number; reason: MissingReason } => r !== null);
 }

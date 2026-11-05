@@ -59,3 +59,9 @@ test('summary counts missing figures across the list, setup reason first', () =>
   assert.ok(hasFigure(row({ cds5YSource: 'own' }), 'cds'));
   assert.ok(!hasFigure(row({ cds5YSource: 'ai_estimate' }), 'cds'));
 });
+
+test('summary skips a figure every row has (a feed filled it for all of them) instead of crashing', () => {
+  const s = missingSummary([row({ policyRateSource: 'bis', iso3: 'MEX' }), row({ policyRateSource: 'bis', iso3: 'BRA', countryName: 'Brazil' })]);
+  assert.equal(s.find((r) => r.key === 'policy'), undefined);
+  assert.equal(s.find((r) => r.key === 'cds')!.count, 2);
+});
