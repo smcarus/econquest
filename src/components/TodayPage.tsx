@@ -30,6 +30,8 @@ import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView
 
 // v2: only figures from real sources are recorded (v1 held built-in values, so it is ignored).
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
+/** Elections, budgets and IMF dates listed before "Show all". */
+const PF_SHOWN = 3;
 
 type VisitSnapshot = {
   savedAt: string;
@@ -118,11 +120,8 @@ export const TodayPage: React.FC<{
   onInputAction?: (id: Exclude<InputId, 'research'>) => void;
   /** Workspace (daily start) or Compare (the watchlist side by side). Same data, different panels. */
   section?: 'workspace' | 'compare';
-  /** Opens the Compare page. */
-  onOpenCompare?: () => void;
 }> = ({
   section = 'workspace',
-  onOpenCompare,
   run,
   watchlistName,
   watchlistId,
@@ -180,6 +179,7 @@ export const TodayPage: React.FC<{
         .sort((a, b) => Number(flaggedIsos.has(b.iso3)) - Number(flaggedIsos.has(a.iso3)) || a.daysUntil - b.daysUntil),
     [watchIsos, flaggedIsos]
   );
+  const [showAllPf, setShowAllPf] = useState(false);
   const noSchedule = useMemo(
     () => watchlistItems.filter((w) => !hasOfficialSchedule(w.iso3)),
     [watchlistItems]
@@ -263,7 +263,8 @@ export const TodayPage: React.FC<{
         <Card
           title="Watchlist"
           icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
-          note={`${watchlistName} · ${watchlistItems.length} countries. Pop out for every column.`}
+          note="Press a country to open it. Pop out for every column."
+
           uses={uses('watchlist')}
           className={`transition-shadow ${lit('watchlist')}`}
           action={
@@ -319,16 +320,6 @@ export const TodayPage: React.FC<{
         </PanelBoundary>
       </div>
 
-      {onOpenCompare && (
-        <div className="ui-panel px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-          <p className="ui-body">
-            <span className="font-semibold">Compare your watchlist:</span> where data and price disagree, MarketEdge, growth and inflation, scenarios and the download table.
-          </p>
-          <button type="button" className="ui-btn" onClick={onOpenCompare}>
-            Open Compare
-          </button>
-        </div>
-      )}
 
       <div id="tool-calendar" className={`scroll-mt-4 ${coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}`}>
 
@@ -387,13 +378,13 @@ export const TodayPage: React.FC<{
           <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800" data-political-fiscal="true">
             <h4 className="text-sm font-medium text-slate-900 dark:text-white">Elections, budgets and IMF, next 12 months</h4>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Countries on the ranked list above come first. Budget dates are the latest the constitution allows.
+              Countries where data and price disagree come first. Budget dates are the latest the constitution allows.
             </p>
             {politicalFiscal.length === 0 ? (
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">None on file for this watchlist.</p>
             ) : (
               <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
-                {politicalFiscal.map((ev) => (
+                {(showAllPf ? politicalFiscal : politicalFiscal.slice(0, PF_SHOWN)).map((ev) => (
                   <li key={`pf-${ev.iso3}-${ev.date}-${ev.title}`} data-pf-event={ev.iso3} className="py-2 flex items-start justify-between gap-3">
                     <div>
                       <button
@@ -404,7 +395,7 @@ export const TodayPage: React.FC<{
                         {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
                       </button>
                       <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">On the ranked list · </span>}
+                        {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">Data and price disagree · </span>}
                         <a
                           href={ev.sourceUrl}
                           target="_blank"
@@ -428,6 +419,11 @@ export const TodayPage: React.FC<{
                   </li>
                 ))}
               </ul>
+            )}
+            {politicalFiscal.length > PF_SHOWN && (
+              <button type="button" className="mt-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline" onClick={() => setShowAllPf((v) => !v)} data-pf-toggle="true">
+                {showAllPf ? 'Show fewer' : `Show all ${politicalFiscal.length}`}
+              </button>
             )}
           </div>
         </Card>

@@ -157,3 +157,15 @@ export function saveDigestVisit(v: DigestVisit): void {
     // Blocked storage: the digest just starts again next time.
   }
 }
+
+/**
+ * What an empty digest says. "Nothing moved" is only true when some feed answered; with no live
+ * figures nothing could be compared, so it reads Missing with the reason.
+ */
+export function digestEmptyNote(items: Pick<LiveWatchlistItem, 'dataMode'>[], sinceLastVisit: boolean): string {
+  if (!items.length) return 'Missing: the watchlist has no countries.';
+  const live = items.filter((i) => i.dataMode === 'live' || i.dataMode === 'partial').length;
+  if (!live) return 'Missing: no data feed has answered yet for these countries, so there is nothing to compare.';
+  const part = live < items.length ? ` (live figures for ${live} of ${items.length} countries)` : '';
+  return `Nothing moved${sinceLastVisit ? ' since then' : ''} in the live figures${part}.`;
+}

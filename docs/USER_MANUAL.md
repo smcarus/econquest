@@ -37,6 +37,7 @@ the inputs behind it, marks any that are Missing or need setup, and opens one wh
 moves (BIS), new monthly inflation prints, turns in the OECD leading indicator, 10Y yield moves of 25
 bp or more, and watch alerts that started firing. Each line has its date and source. On a first
 visit it lists policy moves from the last 30 days. Your last visit is remembered in this browser only.
+When no feed has answered for the watchlist it reads Missing with that reason, not "Nothing moved".
 
 **Watchlist.** A compact card with your list. *Pop out* opens the full table in its own window,
 with your choice of columns; *Edit* adds or removes countries and switches lists.
@@ -72,7 +73,8 @@ or above 90 for any country". There are no built-in thresholds, and a missing fi
 triggers. Rules are kept in `data/local/watch-rules.json`.
 
 **Next two weeks.** Official rate decisions, CPI releases, elections, budget deadlines and IMF
-reviews, each linked to its source.
+reviews, each linked to its source. Below it, the next three elections, budgets and IMF dates in the
+coming year (*Show all* for the rest), with countries where data and price disagree first.
 
 ---
 

@@ -286,7 +286,7 @@ export const AskCouncilPanel: React.FC<{
       <header className="ui-panel-header">
         <h3 className="ui-section-title">Ask the council</h3>
         <p className="ui-label">
-          Ask about your watchlist. The desk agents that cover your question answer from the app’s own figures, each with its source; a synthesis agent then writes a short brief from their answers only.
+          Agents answer from the app’s own figures, each with its source. With an AI model, a summary agent writes a short brief from their answers only.
         </p>
         {uses}
       </header>

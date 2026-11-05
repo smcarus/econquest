@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { History } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
-import { buildDigest, loadDigestVisit, saveDigestVisit, visitFrom, FIRST_VISIT_DAYS, type DigestKind } from '../utils/digest';
+import { buildDigest, digestEmptyNote, loadDigestVisit, saveDigestVisit, visitFrom, FIRST_VISIT_DAYS, type DigestKind } from '../utils/digest';
 import { evaluateRules, parseRules, type WatchRule } from '../utils/watchRules';
 
 /**
@@ -51,7 +51,7 @@ export const DigestPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCountry?:
       </header>
       <div className="p-4">
         {digest.length === 0 ? (
-          <p className="ui-body">Nothing moved{since ? ' since then' : ''} in the live figures for these countries.</p>
+          <p className={`ui-body ${digestEmptyNote(items, Boolean(since)).startsWith('Missing') ? 'text-amber-800 dark:text-amber-300' : ''}`}>{digestEmptyNote(items, Boolean(since))}</p>
         ) : (
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
             {digest.map((d, i) => {
