@@ -49,6 +49,11 @@ import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
+import { cleanSettings, isDue, localClock, morningQuestion, nextRunText, parseMorningFile, settingsProblem, type MorningBriefFile, type MorningBriefRun } from './src/utils/morningBrief';
+import { planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
+import { pickPrevious, whatChanged } from './src/utils/whatChanged';
+import { toLive } from './src/utils/liveFigures';
+import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { tableWorkbook } from './src/utils/xlsxExport';
@@ -2669,7 +2674,7 @@ const MAX_EXTRA_COUNTRIES = 5;
 
 /** Live rows for the countries asked for: catalog rows from the cache, others pulled for this request. */
 async function liveRowsFor(codes: string[]): Promise<WatchlistItem[]> {
-  const catalog = await fetchLiveWatchlistCatalog();
+  const catalog = await fetchLiveWatchlistCatalog([], true);
   const out = catalog.filter((c) => codes.includes(c.iso3));
   const names = new Map(Object.values(ISO_NUMERIC_TO_ISO3).map((c) => [c.iso3, c.name]));
   const extra: WatchlistItem[] = codes
@@ -3717,6 +3722,187 @@ function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeo
   );
 }
 
+/** The synthesis agent: a short brief from the agents' answers only, checked for untraceable numbers (Council chat and the morning brief). */
+async function synthesiseAnswers(
+  question: string,
+  answers: AgentAnswer[],
+  opts: { scope?: string; countries?: number; earlier?: Array<{ question: string; headline?: string }>; runtimeConfig?: any } = {}
+): Promise<SynthesisResult> {
+  const empty: CouncilBrief = { headline: '', points: [], disagreements: [], gaps: [] };
+  try {
+    const step = await executeResilientLlmStep<CouncilBrief>({
+      stepName: 'COUNCIL_SYNTHESIS',
+      providerMode: opts.runtimeConfig?.providerMode || 'gemini',
+      runtimeConfig: opts.runtimeConfig || {},
+      thinkingLevel: ThinkingLevel.LOW,
+      systemInstruction: SYNTHESIS_INSTRUCTION,
+      // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
+      prompt: (
+        earlierAsText(opts.earlier || []) +
+        documentsAsText(
+          toAgentDocuments(answers, {
+            question,
+            askedAt: new Date().toISOString(),
+            scope: opts.scope || 'the countries asked',
+            countriesAsked:
+              opts.countries && Number.isInteger(opts.countries) && opts.countries > 0 && opts.countries < 300
+                ? opts.countries
+                : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
+          })
+        )
+      ).slice(0, 22000) + synthesisTask(question),
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          headline: { type: Type.STRING, description: 'One sentence that answers the question.' },
+          points: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Three to six sentences, each tied to agent figures.' },
+          disagreements: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Where agents point different ways.' },
+          gaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'What the agents could not answer.' },
+        },
+        required: ['headline', 'points', 'disagreements', 'gaps'],
+      },
+      fallbackValue: empty,
+      maxRetries: 1,
+    });
+    if (step.usedFallback) {
+      const out: SynthesisResult = {
+        brief: null,
+        removed: [],
+        reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.`,
+      };
+      return out;
+    }
+    const checked = checkBrief(step.data || empty, question, answers);
+    if (!checked.brief.headline && !checked.brief.points.length) {
+      // The model answered but nothing it wrote survived the checks: say so rather than show an empty brief.
+      const out: SynthesisResult = {
+        brief: null,
+        removed: checked.removed,
+        contradicted: checked.contradicted,
+        provider: step.providerUsed,
+        reason: `${step.providerUsed} answered, but every sentence it wrote had a number not in the agents' figures or contradicted an agent, so nothing was kept.`,
+      };
+      return out;
+    }
+    const out: SynthesisResult = { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
+    return out;
+  } catch (error: any) {
+    const out: SynthesisResult = { brief: null, removed: [], reason: `The summary step failed (${error?.message || 'unknown error'}).` };
+    return out;
+  }
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Morning brief (src/utils/morningBrief.ts): the council's standing questions on a watchlist at a
+ * set time, each saved to research with what moved since the same question last ran.
+ * ------------------------------------------------------------------------------------------ */
+const MORNING_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'local', 'morning-brief.json');
+let morningRunning = false;
+
+function loadMorning(): MorningBriefFile {
+  try {
+    return parseMorningFile(JSON.parse(fs.readFileSync(MORNING_FILE, 'utf8')));
+  } catch {
+    return parseMorningFile(null);
+  }
+}
+
+function saveMorning(file: MorningBriefFile): void {
+  writeFileAtomic(MORNING_FILE, JSON.stringify(file, null, 1), 0o600);
+}
+
+/** The watchlists saved in the app (workspace file), or the starting ones. */
+function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> {
+  try {
+    const raw = loadWorkspace(WORKSPACE_FILE).values['sovereign_council_watchlists_v1'];
+    const groups = raw ? JSON.parse(raw) : null;
+    if (Array.isArray(groups) && groups.length) {
+      return groups
+        .filter((g: any) => g && typeof g.id === 'string' && Array.isArray(g.items))
+        .map((g: any) => ({ id: g.id, name: String(g.name || g.id), iso3: g.items.map((i: any) => String(i?.iso3 || '').toUpperCase()).filter((c: string) => /^[A-Z]{3}$/.test(c)) }));
+    }
+  } catch {
+    // unreadable: fall back to the starting watchlists
+  }
+  return DEFAULT_WATCHLISTS.map((g) => ({ id: g.id, name: g.name, iso3: g.items.map((i) => i.iso3) }));
+}
+
+function savedAiConfig(): any {
+  try {
+    const raw = loadWorkspace(WORKSPACE_FILE).values['econquest_ai_runtime_config_v1'];
+    return raw ? JSON.parse(raw) : serverGuiRuntimeConfig;
+  } catch {
+    return serverGuiRuntimeConfig;
+  }
+}
+
+async function runMorningBrief(trigger: MorningBriefRun['trigger']): Promise<MorningBriefRun | null> {
+  if (morningRunning) return null;
+  morningRunning = true;
+  try {
+    const file = loadMorning();
+    const s = file.settings;
+    const lists = savedWatchlists();
+    const list = lists.find((l) => l.id === s.watchlistId) || lists[0];
+    const codes = [...new Set(list?.iso3 || [])];
+    const catalog = await fetchLiveWatchlistCatalog([], true);
+    const inCatalog = catalog.filter((r) => codes.includes(r.iso3));
+    const others = codes.filter((c) => !inCatalog.some((r) => r.iso3 === c));
+    const rows = [...inCatalog, ...(others.length ? await liveRowsFor(others) : [])];
+    const items = rows.map((r) => toLive(r));
+    const runtimeConfig = savedAiConfig();
+    const now = new Date();
+    const results: MorningBriefRun['results'] = [];
+    for (const [i, q] of s.questions.entries()) {
+      if (!items.length) {
+        results.push({ question: q, note: 'The watchlist has no countries.' });
+        continue;
+      }
+      try {
+        const plan = planCouncil(q, items);
+        const answers = runCouncil(q, plan, items, now);
+        // One second apart so each question is its own saved entry.
+        const askedAt = new Date(now.getTime() + i * 1000).toISOString();
+        const id = briefId(askedAt);
+        const lib = loadLibrary(RESEARCH_FILE);
+        const prevSummary = pickPrevious(summarise(lib).briefs.filter((b) => b.question === morningQuestion(q)), id, answers);
+        const prev = prevSummary ? lib.briefs.find((b) => b.id === prevSummary.id) : undefined;
+        const synthesis = answers.some((a) => a.findings.length)
+          ? await synthesiseAnswers(q, answers, { scope: plan.scopeNote, countries: plan.countries.length, runtimeConfig })
+          : { brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' };
+        const brief: SavedCouncilBrief = {
+          question: morningQuestion(q),
+          askedAt,
+          startedAt: askedAt,
+          scopeNote: plan.scopeNote,
+          answers,
+          synthesis,
+          ...(plan.chooserNote ? { chooserNote: plan.chooserNote } : {}),
+          ...(prev ? { changes: whatChanged(prev, answers) } : {}),
+        };
+        saveLibrary(RESEARCH_FILE, addBrief(loadLibrary(RESEARCH_FILE), brief).lib);
+        results.push({ question: q, briefId: id, ...(synthesis.brief?.headline ? { headline: synthesis.brief.headline } : { note: synthesis.reason || 'Saved with the agents\' answers; no summary.' }) });
+      } catch (error: any) {
+        results.push({ question: q, note: `Could not run (${error?.message || 'unknown error'}).` });
+      }
+    }
+    const run: MorningBriefRun = { at: now.toISOString(), day: localClock(now, s.timeZone).day, trigger, watchlist: list?.name || 'Watchlist', countries: items.length, results };
+    const latest = loadMorning();
+    saveMorning({ ...latest, lastRun: run, ...(trigger === 'schedule' ? { lastScheduledDay: run.day } : {}) });
+    return run;
+  } finally {
+    morningRunning = false;
+  }
+}
+
+async function morningTick(): Promise<void> {
+  const file = loadMorning();
+  if (!isDue(file, new Date())) return;
+  // Mark the day first, so a slow run or a crash never repeats the brief within the day.
+  saveMorning({ ...file, lastScheduledDay: localClock(new Date(), file.settings.timeZone).day });
+  await runMorningBrief('schedule').catch((e) => console.error('[morning-brief]', e));
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -3919,6 +4105,29 @@ async function startServer() {
     } catch (error: any) {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
     }
+  });
+  // Morning brief settings and runs (src/utils/morningBrief.ts).
+  app.get('/api/morning-brief', (_req, res) => {
+    const file = loadMorning();
+    res.json({ ...file, next: nextRunText(file, new Date()), running: morningRunning, watchlists: savedWatchlists().map((l) => ({ id: l.id, name: l.name, countries: l.iso3.length })), file: 'data/local/morning-brief.json' });
+  });
+  app.put('/api/morning-brief', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const problem = settingsProblem(req.body?.settings);
+    if (problem) return res.status(400).json({ error: problem });
+    const file = loadMorning();
+    const settings = cleanSettings(req.body.settings);
+    // A new time later today still runs today.
+    const next: MorningBriefFile = { ...file, settings };
+    if (settings.time !== file.settings.time || settings.timeZone !== file.settings.timeZone) delete next.lastScheduledDay;
+    saveMorning(next);
+    res.json({ ...next, next: nextRunText(next, new Date()) });
+  });
+  app.post('/api/morning-brief/run', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    if (morningRunning) return res.status(409).json({ error: 'A morning brief is already running.' });
+    const run = await runMorningBrief('manual');
+    res.json({ lastRun: run });
   });
   app.get('/api/research', (_req, res) => res.json({ ...summarise(loadLibrary(RESEARCH_FILE)), file: 'data/local/research.json' }));
   app.get('/api/research/briefs/:id', (req, res) => {
@@ -6205,68 +6414,14 @@ ${MISSING_FIGURES_RULE}
     if (!question || !answers.length || !answers.every((a) => a && typeof a.name === 'string' && Array.isArray(a.findings) && Array.isArray(a.missing))) {
       return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
     }
-    const empty: CouncilBrief = { headline: '', points: [], disagreements: [], gaps: [] };
-    try {
-      const step = await executeResilientLlmStep<CouncilBrief>({
-        stepName: 'COUNCIL_SYNTHESIS',
-        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
+    res.json(
+      await synthesiseAnswers(question, answers, {
+        scope: typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : undefined,
+        countries: Number.isInteger(req.body?.countries) ? req.body.countries : undefined,
+        earlier: Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [],
         runtimeConfig: req.body?.runtimeConfig || {},
-        thinkingLevel: ThinkingLevel.LOW,
-        systemInstruction: SYNTHESIS_INSTRUCTION,
-        // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
-        prompt: (
-          earlierAsText(Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : []) +
-          documentsAsText(
-            toAgentDocuments(answers, {
-              question,
-              askedAt: new Date().toISOString(),
-              scope: typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : 'the countries asked',
-              countriesAsked:
-                Number.isInteger(req.body?.countries) && req.body.countries > 0 && req.body.countries < 300
-                  ? req.body.countries
-                  : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
-            })
-          )
-        ).slice(0, 22000) + synthesisTask(question),
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            headline: { type: Type.STRING, description: 'One sentence that answers the question.' },
-            points: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Three to six sentences, each tied to agent figures.' },
-            disagreements: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Where agents point different ways.' },
-            gaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'What the agents could not answer.' },
-          },
-          required: ['headline', 'points', 'disagreements', 'gaps'],
-        },
-        fallbackValue: empty,
-        maxRetries: 1,
-      });
-      if (step.usedFallback) {
-        const out: SynthesisResult = {
-          brief: null,
-          removed: [],
-          reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.`,
-        };
-        return res.json(out);
-      }
-      const checked = checkBrief(step.data || empty, question, answers);
-      if (!checked.brief.headline && !checked.brief.points.length) {
-        // The model answered but nothing it wrote survived the checks: say so rather than show an empty brief.
-        const out: SynthesisResult = {
-          brief: null,
-          removed: checked.removed,
-          contradicted: checked.contradicted,
-          provider: step.providerUsed,
-          reason: `${step.providerUsed} answered, but every sentence it wrote had a number not in the agents' figures or contradicted an agent, so nothing was kept.`,
-        };
-        return res.json(out);
-      }
-      const out: SynthesisResult = { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
-      res.json(out);
-    } catch (error: any) {
-      const out: SynthesisResult = { brief: null, removed: [], reason: `The summary step failed (${error?.message || 'unknown error'}).` };
-      res.json(out);
-    }
+      })
+    );
   });
 
   app.post('/api/council/analyze-policy-document', async (req, res) => {
@@ -7144,6 +7299,8 @@ ${String(documentText).slice(0, 12000)}
     setTimeout(() => void refreshStaleSnapshots(), 5000);
     // Hourly check: a full pull is redone after a week, a short one (a feed failed) after an hour.
     setInterval(() => void refreshStaleSnapshots(), SNAPSHOT_RETRY_MS).unref();
+    // Morning brief: checked every minute; runs once a day at the set time (Settings > Morning brief).
+    setInterval(() => void morningTick(), 60_000).unref();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });

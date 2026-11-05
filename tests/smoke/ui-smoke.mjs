@@ -105,6 +105,10 @@ try {
         await page.waitForSelector('[data-backup-current]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Backup did not open Settings > Backup`));
         await page.waitForFunction(() => /On this computer now:/.test(document.querySelector('[data-backup-current]')?.textContent || ''), null, { timeout: 15_000 }).catch(() => failures.push(`${mode}: Backup did not say what is saved`));
         await settle('Settings > Backup');
+        // Settings > Morning brief draws its time, watchlist and questions.
+        await page.locator('[data-settings-tab="morning"]').click().catch(() => failures.push(`${mode}: no Morning brief page in Settings`));
+        await page.waitForSelector('[data-morning-next]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Morning brief did not draw`));
+        await settle('Settings > Morning brief');
         await page.keyboard.press('Escape');
         continue;
       }

@@ -293,6 +293,14 @@ hold no figures of their own; the handout reads them from the app's series when 
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
 - **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
+- **Morning brief** (Settings > Morning brief): at a time you set, the council answers your standing
+  questions (up to four; three starting ones on policy stance, cheap or rich, and coming dates) about
+  the watchlist you pick, your AI model writes each summary, and each is saved to Reports > Saved
+  research as "Morning brief: <question>", with what moved since the same question last ran. *Run
+  now* runs it at once. The time is read in your browser's time zone (right under Docker too). The app
+  must be running; a brief missed while it was closed runs when it next starts that day. Without an AI
+  model the agents' answers are saved with no summary. Settings are kept in
+  `data/local/morning-brief.json`.
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
   (briefs, documents, notebooks, teaching episodes), watch alerts, holdings, watchlists, added
   countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a
