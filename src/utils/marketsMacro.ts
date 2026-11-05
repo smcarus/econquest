@@ -13,6 +13,7 @@ import { carryToVol, reerLabel } from './fxValuation';
 import { formatMonth, ticMissing, ticTrend } from './ticHoldings';
 import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 import { cliMissing } from './oecdCli';
+import { shockSummary, shockWatch } from './shockWatch';
 import { HOLD_AFTER_MONTHS, cliCycleText, cycleClock, nextDecisionText, policyCycleText } from './cycleClock';
 import { cpiMissing, cpiSource } from './oecdInflation';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
@@ -375,6 +376,10 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
       rows: cycleClockRows(self, run.iso3),
     },
     {
+      title: 'Shock early warning',
+      rows: shockRows(self),
+    },
+    {
       title: 'Futures positioning (CFTC, weekly)',
       rows: positioningRows(self, run.iso3),
     },
@@ -585,6 +590,16 @@ export function cycleClockRows(self: LiveWatchlistItem | undefined, iso3: string
       ? { label: 'Next rate decision', value: nextDecisionText(clock.nextDecision), source: `official calendar: ${clock.nextDecision.source}${clock.nextDecision.primary ? '' : ', secondary source'}`, verified: clock.nextDecision.primary }
       : noSourceRow('Next rate decision', 'No rate decision date on file in the official calendar for this country.')
   );
+  return rows;
+}
+
+/** Shock early warning rows: each warning with its rule, then what could not be checked. */
+export function shockRows(self: LiveWatchlistItem | undefined): BriefRow[] {
+  if (!self) return [missingRow('Shock early warning', { kind: 'setup', short: 'Needs the live watchlist row', help: 'The checks read the live figures on this country\'s watchlist row.' })];
+  const s = shockWatch(self);
+  const rows: BriefRow[] = [{ label: 'Summary', value: shockSummary(s), source: 'model, stated rules on the figures below; pressure building, not a forecast', verified: false }];
+  for (const w of s.warnings) rows.push({ label: `${w.level === 'alert' ? 'Alert' : 'Watch'}: ${w.label}`, value: w.detail, source: `model rule: ${w.rule}`, verified: false });
+  if (s.notChecked.length) rows.push({ label: 'Not checked', value: s.notChecked.join('; '), source: 'missing inputs', verified: false });
   return rows;
 }
 
