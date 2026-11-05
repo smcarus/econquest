@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PanelBuilder } from './PanelBuilder';
+import { RegimeQuadrant } from './RegimeQuadrant';
 import { CalendarClock, ExternalLink, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
@@ -297,6 +298,12 @@ export const TodayPage: React.FC<{
       <div id="tool-panel" className="scroll-mt-4">
         <PanelBoundary name="Compare countries">
           <PanelBuilder countries={watchlistItems.map((w) => ({ iso3: w.iso3, countryName: w.countryName }))} />
+        </PanelBoundary>
+      </div>
+
+      <div id="tool-regime" className="scroll-mt-4">
+        <PanelBoundary name="Growth and inflation">
+          <RegimeQuadrant items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
         </PanelBoundary>
       </div>
 

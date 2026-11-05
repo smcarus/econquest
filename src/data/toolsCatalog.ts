@@ -44,6 +44,13 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'today', anchor: 'tool-panel' },
   },
   {
+    id: 'regime_quadrant',
+    title: 'Growth and inflation',
+    what: 'Each country placed by the 6-month change in its OECD leading indicator and the 3-month change in its monthly inflation, with what each quadrant means for policy.',
+    sources: 'OECD leading indicator via DBnomics; monthly inflation (OECD, BCB, Eurostat)',
+    target: { area: 'today', anchor: 'tool-regime' },
+  },
+  {
     id: 'divergences',
     title: 'Where data and price disagree',
     what: 'One line per country, biggest gap first: cheap or rich CDS against peers, policy rate against inflation, carry and currency valuation.',
@@ -174,7 +181,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
     desks: [
       { id: 'charts_watchlists', label: 'Macro map and horizon charts', needs: 'Live history for each charted series.', coveredBy: 'what_is_live' },
       { id: 'global_liquidity', label: 'Global liquidity', needs: 'Cross-currency basis and funding spreads (licensed).' },
-      { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Live growth and inflation history.' },
+      { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Its stress grid ran on built-in inputs; the live growth and inflation quadrant is on Workspace.', coveredBy: 'regime_quadrant' },
       { id: 'fx_beer_feer_equilibrium', label: 'FX equilibrium models', needs: 'Productivity and terms-of-trade series.', coveredBy: 'country_marketedge' },
       { id: 'quant_matrix_econometrics', label: 'Econometrics', needs: 'Historical series for the regressions.' },
       { id: 'quant_macro_surprise', label: 'Data surprises', needs: 'Consensus forecasts (licensed).' },
