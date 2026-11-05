@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { MAX_SAVED_DOCS, EMPTY_LIBRARY, addBrief, addDoc, parseLibrary, removeBrief, summarise } from '../src/utils/researchLibrary.ts';
+import { MAX_SAVED_DOCS, EMPTY_LIBRARY, addBrief, addDoc, parseLibrary, removeBrief, removeDoc, summarise } from '../src/utils/researchLibrary.ts';
 
 const brief = (askedAt: string, o = {}) => ({ question: `Q ${askedAt}`, askedAt, scopeNote: 'Brazil', answers: [], synthesis: null, ...o });
 
@@ -21,6 +21,36 @@ test('documents: same id replaces, capped, and a broken file reads as empty', ()
   assert.equal(lib.docs[0].id, `d${MAX_SAVED_DOCS + 2}`);
   lib = addDoc(lib, { id: 'd5', title: 'New title', text: 'text', addedAt: '2026-11-05' });
   assert.equal(lib.docs.filter((d) => d.id === 'd5').length, 1);
-  assert.deepEqual(parseLibrary(null), { briefs: [], docs: [] });
-  assert.deepEqual(parseLibrary({ briefs: [{ nope: 1 }], docs: [{ id: 'x', title: 't', text: '' }] }), { briefs: [], docs: [] });
+  assert.deepEqual(parseLibrary(null), { briefs: [], docs: [], notebooks: [] });
+  assert.deepEqual(parseLibrary({ briefs: [{ nope: 1 }], docs: [{ id: 'x', title: 't', text: '' }] }), { briefs: [], docs: [], notebooks: [] });
+});
+
+test('notebooks: group conversations and documents by topic; deleting an item takes it out', async () => {
+  const { addNotebook, updateNotebook, removeNotebook, suggestedTopics } = await import('../src/utils/researchLibrary.ts');
+  let lib = addBrief(EMPTY_LIBRARY, brief('2026-11-05T01:00:00Z')).lib;
+  lib = addDoc(lib, { id: 'd1', title: 'Copom', text: 'Selic unchanged.', addedAt: '2026-11-05' });
+  assert.equal(addNotebook(lib, '   '), null);
+  const made = addNotebook(lib, 'Brazil fiscal', new Date('2026-11-05T06:00:00Z'))!;
+  const bid = lib.briefs[0].id;
+  const next = updateNotebook(made.lib, made.id, { briefIds: [bid, 'b-missing', bid], docIds: ['d1'], notes: 'Watch the primary balance.' })!;
+  const nb = next.notebooks[0];
+  assert.deepEqual([nb.title, nb.briefIds, nb.docIds, nb.notes], ['Brazil fiscal', [bid], ['d1'], 'Watch the primary balance.']);
+  assert.equal(updateNotebook(next, 'n-nope', { notes: 'x' }), null);
+  // Blank title keeps the old one.
+  assert.equal(updateNotebook(next, made.id, { title: '' })!.notebooks[0].title, 'Brazil fiscal');
+  const afterDelete = removeDoc(removeBrief(next, bid), 'd1');
+  assert.deepEqual([afterDelete.notebooks[0].briefIds, afterDelete.notebooks[0].docIds], [[], []]);
+  assert.equal(removeNotebook(next, made.id).notebooks.length, 0);
+  // Survives a round trip through the file format; junk notebooks are dropped.
+  const parsed = parseLibrary(JSON.parse(JSON.stringify({ ...next, notebooks: [...next.notebooks, { id: '', title: 'x' }] })));
+  assert.deepEqual(parsed.notebooks, next.notebooks);
+  assert.equal(summarise(next).notebooks[0].notesChars, 26);
+  // Suggested topics: countries with two or more conversations, not already a notebook.
+  const sums = [
+    { id: 'a', countries: ['BRA', 'MEX'] },
+    { id: 'b', countries: ['BRA'] },
+    { id: 'c', countries: ['TUR'] },
+  ] as any;
+  assert.deepEqual(suggestedTopics(sums, [], { BRA: 'Brazil' }), [{ iso3: 'BRA', title: 'Brazil', briefIds: ['a', 'b'] }]);
+  assert.deepEqual(suggestedTopics(sums, [{ title: 'brazil' }], { BRA: 'Brazil' }), []);
 });

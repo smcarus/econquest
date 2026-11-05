@@ -145,6 +145,13 @@ are named rather than filled. Sourced figures carry a reference number, and a **
 the end names each source once with the publisher's page and the date the app read it; figures
 worked out by a stated rule keep their method beside them. Download as Markdown or PDF.
 
+**Research notebooks.** Below the templates. Start a notebook for a topic ("Brazil fiscal"), or pick
+a suggested country where you have two or more saved conversations. Tick the saved council
+conversations and documents that belong in it and write your own notes. *Download notebook* gives one
+Markdown file: your notes, each conversation as its full council brief with sources and references,
+and the opening of each document. Deleting a notebook keeps the conversations and documents; deleting
+a conversation takes it out of every notebook. Kept in `data/local/research.json`.
+
 ---
 
 ## 5. Tools
