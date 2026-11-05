@@ -405,6 +405,7 @@ export function adf(values: number[], maxLag?: number): AdfResult | Failed {
   const T = best.reg.n;
   const crit = Object.fromEntries(Object.entries(ADF_CRIT).map(([k, [b0, b1, b2]]) => [k, b0 + b1 / T + b2 / (T * T)])) as AdfResult['critical'];
   const stat = best.reg.t[1];
+  if (!Number.isFinite(stat) || best.reg.rss <= 1e-12) return { error: 'The series follows an exact pattern, so the ADF test has nothing to measure.' };
   return { stat, lags: best.lags, n: T, critical: crit, stationary: stat < crit['5%'] };
 }
 

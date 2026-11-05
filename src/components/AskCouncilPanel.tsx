@@ -25,12 +25,19 @@ import {
   suggestFollowUps,
   type EarlierTurn,
   runCouncil,
+  chartAnswer,
+  answersForModel,
   saveCouncilBrief,
   type AgentAnswer,
   type CouncilPlan,
   type SavedCouncilBrief,
   type SynthesisResult,
 } from '../utils/askCouncil';
+
+import { computeChart, fetchChartSeries } from '../utils/councilChart';
+import { lazyNamed } from './LazyDesk';
+// The chart card (recharts) loads only when an answer has a chart.
+const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
 
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 function runtimeConfig(): Record<string, unknown> {
@@ -132,7 +139,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/debate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: asked.question, answers: asked.answers, runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: asked.question, answers: answersForModel(asked.answers), runtimeConfig: runtimeConfig() }),
       });
       if (r.ok) setDebate((await r.json()) as DebateResult);
       else setDebate((d) => d && { ...d, reason: `the debate step did not answer (HTTP ${r.status})` });
@@ -180,7 +187,9 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     setChoosing(true);
     const plan = applyAgentChoice(wordPlan, await chooseAgents(text, history));
     setChoosing(false);
-    const answers = runCouncil(text, plan, items, new Date(), docs);
+    const desk = runCouncil(text, plan, items, new Date(), docs);
+    // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
+    const answers = plan.chart ? [chartAnswer(plan.chart, computeChart(plan.chart, await fetchChartSeries(plan.chart))), ...desk] : desk;
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt, startedAt: (asFollowUp || mode === 'replace') && asked ? asked.startedAt : askedAt });
     setSynthesis(null);
@@ -195,7 +204,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, answers, scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {
@@ -454,6 +463,15 @@ export const AskCouncilPanel: React.FC<{
             </p>
           )}
         </div>
+
+        {/* The Chart Agent's chart and test results, when the question asked for one. */}
+        {t.asked.answers
+          .filter((a) => a.chart)
+          .map((a) => (
+            <React.Suspense key={`chart-${t.asked.askedAt}`} fallback={<p className="text-xs text-slate-500 dark:text-slate-400">Drawing the chart…</p>}>
+              <CouncilChartCard result={a.chart!} />
+            </React.Suspense>
+          ))}
 
         {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
         <DocumentCards
