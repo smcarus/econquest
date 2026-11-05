@@ -315,6 +315,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   CFTC since 2006), so they need a connection. A verdict (passed, failed, too few cases) replaces the
   badge and is saved in `data/local/validation/results.json` and in the audit log. First tests:
   leading-indicator turn to policy move, and CFTC crowding to unwind.
+- **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
+  Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
+  SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it
+  reads *Changed after sign-off* until reviewed again. While you are the only user the approval says
+  "self-approved, no second reviewer". An approved report cannot be deleted until the approval is
+  withdrawn. Steps are kept in `data/local/signoffs.json` and in the audit log.
 - **Audit log**: every council answer (the question, the AI model that wrote the summary or "none",
   and each figure the agents used with its source and period, plus what was missing) and every save,
   delete, download, settings, key and AI model change, newest first. Search it or pick a kind, and

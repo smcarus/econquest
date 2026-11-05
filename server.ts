@@ -49,6 +49,7 @@ import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
+import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
@@ -174,6 +175,8 @@ const AUDIT_FILES = auditFiles(process.env.DATA_DIR || path.join(__dirname, 'dat
 const VALIDATION_FILE = validationFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const SPEC_DIR = path.join(__dirname, 'docs', 'validation', 'preregistered');
 let validationRunning = false;
+// Report sign-off (Reports > Saved research). See src/utils/signoff.ts.
+const SIGNOFF_FILE = signOffFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
@@ -4169,6 +4172,34 @@ async function startServer() {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
     }
   });
+  // Report sign-off: where each saved council conversation stands, and one step at a time.
+  app.get('/api/signoffs', (_req, res) => {
+    const all = loadSignOffs(SIGNOFF_FILE);
+    const briefs: Record<string, ReturnType<typeof signOffView>> = {};
+    for (const b of loadLibrary(RESEARCH_FILE).briefs) briefs[b.id] = signOffView(recordFor(all, 'brief', b.id), reportHash(b as any));
+    res.json({ briefs, file: 'data/local/signoffs.json' });
+  });
+  app.post('/api/signoffs/brief/:id', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const b = loadLibrary(RESEARCH_FILE).briefs.find((x) => x.id === req.params.id);
+    if (!b) return res.status(404).json({ error: 'No saved conversation with that id.' });
+    const hash = reportHash(b as any);
+    const out = takeStep(recordFor(loadSignOffs(SIGNOFF_FILE), 'brief', b.id), 'brief', b.id, hash, req.body || {});
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    try {
+      saveSignOff(SIGNOFF_FILE, out.record);
+    } catch (error: any) {
+      return res.status(500).json({ error: `Could not save the sign-off (${error?.code || error?.message || 'unknown error'}).` });
+    }
+    const view = signOffView(out.record, hash);
+    const verb = { reviewed: 'Reviewed', approved: out.entry.selfApproved ? 'Approved (self-approved, no second reviewer)' : 'Approved', withdrawn: 'Withdrew the sign-off on' }[out.entry.step];
+    appendAudit(AUDIT_FILES, {
+      kind: 'signoff',
+      summary: `${verb} "${String(b.question).slice(0, 150)}" (${out.entry.by})`,
+      detail: { id: b.id, step: out.entry.step, by: out.entry.by, contentHash: hash, status: SIGNOFF_LABEL[view.status], ...(out.entry.note ? { note: out.entry.note } : {}) },
+    });
+    res.json(view);
+  });
   // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
@@ -4232,6 +4263,10 @@ async function startServer() {
   });
   app.delete('/api/research/briefs/:id', (req, res) => {
     if (refuseRemoteResearch(req, res)) return;
+    const b = loadLibrary(RESEARCH_FILE).briefs.find((x) => x.id === req.params.id);
+    if (b && signOffView(recordFor(loadSignOffs(SIGNOFF_FILE), 'brief', b.id), reportHash(b as any)).status === 'approved') {
+      return res.status(409).json({ error: 'This report is approved. Withdraw the approval first, then delete it.' });
+    }
     writeResearch(res, (lib) => removeBrief(lib, req.params.id));
   });
   // Standard council documents (agent and synthesis) saved to Reports from Council chat.
