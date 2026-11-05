@@ -11,8 +11,8 @@ import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvent
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
 import { PanelBoundary } from './PanelBoundary';
-import { FirstRunGuide } from './FirstRunGuide';
-import type { FirstRunStepId } from '../utils/firstRun';
+import { WorkspaceInputs } from './WorkspaceInputs';
+import type { InputId } from '../utils/workspaceInputs';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { DivergenceList } from './DivergenceList';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
@@ -108,10 +108,12 @@ export const TodayPage: React.FC<{
   fullCouncil?: FullCouncilStep;
   /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
   coreOnly?: boolean;
-  /** Menu > AI model choice, for the first-run guide. */
+  /** Menu > AI model choice, for Your inputs. */
   aiProvider?: string;
-  /** A first-run guide button was pressed. */
-  onFirstRunAction?: (id: FirstRunStepId) => void;
+  /** Imported holdings, for Your inputs. */
+  holdingsCount?: number;
+  /** A Your inputs chip was pressed (saved research is handled here: it scrolls to Ask the council). */
+  onInputAction?: (id: Exclude<InputId, 'research'>) => void;
   /** Workspace (daily start) or Compare (the watchlist side by side). Same data, different panels. */
   section?: 'workspace' | 'compare';
   /** Opens the Compare page. */
@@ -132,7 +134,8 @@ export const TodayPage: React.FC<{
   fullCouncil,
   coreOnly = false,
   aiProvider,
-  onFirstRunAction,
+  holdingsCount = 0,
+  onInputAction,
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
@@ -200,9 +203,10 @@ export const TodayPage: React.FC<{
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {isCompare
               ? `${watchlistName} side by side: where data and price disagree, market pricing, growth and inflation, scenarios and a table to download.`
-              : `${today} · ${watchlistName} · ${watchlistItems.length} countries`}
+              : today}
           </p>
         </div>
+        {isCompare && (
         <p
           className={`text-xs px-2 py-1 border ${
             liveCount === 0
@@ -215,13 +219,27 @@ export const TodayPage: React.FC<{
             ? 'No live data yet: figures read Missing until a source answers'
             : `Live data for ${liveCount} of ${watchlistItems.length} countries`}
         </p>
+        )}
       </div>
 
       {!isCompare && (
       <>
-      {onFirstRunAction && (
-        <PanelBoundary name="Getting started">
-          <FirstRunGuide liveCount={liveCount} aiProvider={aiProvider} onAction={onFirstRunAction} />
+      {onInputAction && (
+        <PanelBoundary name="Your inputs">
+          <WorkspaceInputs
+            state={{
+              watchlistName,
+              watchlistCount: watchlistItems.length,
+              countryName: run.countryName,
+              holdingsCount,
+              liveCount,
+              aiProvider,
+            }}
+            onAction={(id) => {
+              if (id === 'research') document.getElementById('tool-council')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              else onInputAction(id);
+            }}
+          />
         </PanelBoundary>
       )}
 
