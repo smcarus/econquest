@@ -287,3 +287,29 @@ test('data connections: every source gets a row; keys are never in the reply', a
   const body = JSON.stringify(rep);
   assert.doesNotMatch(body, /test-key|test-evds-key/);
 });
+
+test('no stand-in data when sources are down: prediction markets, connector test, Ollama models, health check', async () => {
+  const pm = await (await fetch(`${base}/api/data/prediction-markets?iso3=BRA&countryName=Brazil`)).json();
+  assert.deepEqual(pm.contracts, []);
+  assert.match(pm.activeSourcesLabel, /^Missing/);
+
+  const ping = await (
+    await fetch(`${base}/api/connectors/ping-and-inspect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ connector: { id: 'x', name: 'My lake', url: 'http://lake.invalid/{{ISO3}}', category: 'macro_rest', telemetryMappings: { debtToGdp: 'telemetry.debtToGdpPct' } }, sampleIso3: 'BRA' }),
+    })
+  ).json();
+  assert.equal(ping.ok, false);
+  assert.equal(ping.isSimulatedPreview, false);
+  assert.equal(ping.jsonPreview, null);
+  assert.deepEqual(ping.extractedTelemetry, {});
+
+  const ollama = await (await fetch(`${base}/api/ai/ollama-status`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"ollamaBaseUrl":"http://ollama-down.invalid:11434"}' })).json();
+  assert.equal(ollama.connected, false);
+  assert.deepEqual(ollama.models, []);
+
+  const sweep = await (await fetch(`${base}/api/health/full-sweep?iso3=BRA`)).json();
+  assert.equal(sweep.status, 'PARTIAL_WARN', 'the health check reports real failures instead of passing everything');
+  assert.ok(sweep.checks.some((c: { id: string; status: string }) => c.id === 'imf' && c.status === 'WARN'));
+});

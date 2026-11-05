@@ -15,7 +15,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
-import { checkConnections, type ConnectionReport } from './src/utils/connectionCheck';
+import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
@@ -69,7 +69,6 @@ import {
   simulateSovereignRestructuringAndRating,
 } from './src/utils/institutionalRiskDeskEngine.ts';
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
-import { buildFallbackPredictionContracts } from './src/utils/decisionCommandEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
@@ -121,21 +120,54 @@ async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response
  * Uses the official FRED API when FRED_API_KEY is set, and falls back to the no-key CSV download.
  */
 /**
- * Brazil: the Treasury's Tesouro Direto CSV holds the whole history (several MB), so the parsed
- * result is kept for 6 hours rather than downloaded on every snapshot.
+ * Brazil: the Treasury's Tesouro Direto CSV holds the whole price history. On Sam's Mac
+ * (2026-11-05) it was 14.6 MB and took 60 seconds, so it gets 90 seconds, one download at a time,
+ * and the parsed answer is kept 6 hours in memory and on disk (data/live/tesouro.json) so a restart
+ * does not download it again. A failed download is retried after 30 minutes.
  */
+const TESOURO_TIMEOUT_MS = 90000;
 let tesouroCache: { at: number; obs: OfficialYieldObservation | null } | null = null;
+let tesouroPending: Promise<OfficialYieldObservation | null> | null = null;
+function tesouroFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'tesouro.json');
+}
 async function fetchTesouroDiretoYield(): Promise<OfficialYieldObservation | null> {
-  if (tesouroCache && Date.now() - tesouroCache.at < 6 * 60 * 60 * 1000) return tesouroCache.obs;
-  try {
-    const res = await fetchWithTimeout(TESOURO_DIRETO_CSV_URL, 20000);
-    if (!res.ok) return null;
-    const obs = parseTesouroDiretoLatest(await res.text());
-    tesouroCache = { at: Date.now(), obs };
-    return obs;
-  } catch {
-    return null;
+  if (!tesouroCache) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(tesouroFile(), 'utf8'));
+      if (saved?.obs && typeof saved.at === 'number') tesouroCache = saved;
+    } catch {
+      // nothing saved yet
+    }
   }
+  if (tesouroCache && Date.now() - tesouroCache.at < (tesouroCache.obs ? 6 * 60 : 30) * 60 * 1000) return tesouroCache.obs;
+  if (tesouroPending) return tesouroPending;
+  tesouroPending = (async () => {
+    let obs: OfficialYieldObservation | null = null;
+    try {
+      const res = await fetchWithTimeout(TESOURO_DIRETO_CSV_URL, TESOURO_TIMEOUT_MS);
+      if (res.ok) obs = parseTesouroDiretoLatest(await res.text());
+      else console.warn(`[Tesouro] Brazil yield file refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[Tesouro] Brazil yield file: ${describeNetworkError(e, TESOURO_TIMEOUT_MS)}`);
+    }
+    if (obs) {
+      tesouroCache = { at: Date.now(), obs };
+      try {
+        fs.mkdirSync(path.dirname(tesouroFile()), { recursive: true });
+        fs.writeFileSync(tesouroFile(), JSON.stringify(tesouroCache));
+      } catch {
+        // keep the memory copy
+      }
+    } else {
+      // Keep serving the last good figure (it carries its own date); retry in 30 minutes.
+      tesouroCache = { at: Date.now() - (tesouroCache?.obs ? 6 * 60 - 30 : 0) * 60 * 1000, obs: tesouroCache?.obs ?? null };
+    }
+    return tesouroCache.obs;
+  })().finally(() => {
+    tesouroPending = null;
+  });
+  return tesouroPending;
 }
 
 /**
@@ -447,38 +479,29 @@ async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
   return { anchors, peers, ...(us10Y ? { us10Y } : {}), fetchedAt: new Date().toISOString() };
 }
 
-// Start-of-year USD FX anchors for computing live YTD currency performance
-const FX_SOY_ANCHORS_PER_USD: Record<string, number> = {
-  BRL: 6.18,
-  TRY: 35.35,
-  EGP: 50.8,
-  ZAR: 18.85,
-  MXN: 20.82,
-  IDR: 16180,
-  JPY: 157.2,
-  GBP: 0.799,
-  EUR: 0.965,
-  CHF: 0.907,
-  CAD: 1.438,
-  AUD: 1.615,
-  CNY: 7.299,
-  INR: 85.65,
-};
-
-interface CachedMarketGrounding {
-  timestamp: number;
-  policyRatePct?: number;
-  sovereign10YBondYieldPct?: number;
-  yield2Y?: number;
-  yield5Y?: number;
-  yield30Y?: number;
-  cds5YSpreadBps?: number;
-  creditRating?: string;
-  citations: Array<{ title: string; uri: string }>;
+/**
+ * Last ECB reference rates of the previous year (Frankfurter answers a date with the latest
+ * business day on or before it), for each currency's move since the start of the year. Only the
+ * currencies the ECB publishes get a figure; for the rest the move is left out. Kept 24 hours.
+ */
+let fxYearEndCache: { year: number; at: number; date: string; rates: Record<string, number> } | null = null;
+async function fetchFxYearEnd(): Promise<{ date: string; rates: Record<string, number> } | null> {
+  const year = new Date().getUTCFullYear();
+  if (fxYearEndCache && fxYearEndCache.year === year && Date.now() - fxYearEndCache.at < 24 * 60 * 60 * 1000) return fxYearEndCache;
+  try {
+    const res = await fetchWithTimeout(`https://api.frankfurter.dev/v1/${year - 1}-12-31?from=USD`, 5000);
+    if (!res.ok) return null;
+    const body: any = await res.json();
+    if (!body?.rates || typeof body.rates !== 'object') return null;
+    const rates: Record<string, number> = {};
+    for (const [ccy, v] of Object.entries(body.rates)) if (typeof v === 'number' && v > 0) rates[ccy.toUpperCase()] = v;
+    rates.USD = 1;
+    fxYearEndCache = { year, at: Date.now(), date: String(body.date || `${year - 1}-12-31`), rates };
+    return fxYearEndCache;
+  } catch {
+    return null;
+  }
 }
-
-const groundedMarketCache = new Map<string, CachedMarketGrounding>();
-const GROUNDED_CACHE_TTL_MS = 5 * 60 * 1000;
 
 let cachedPlumbing: {
   timestamp: number;
@@ -516,7 +539,7 @@ async function fetchGlobalLivePlumbing() {
           return;
         }
       }
-      const frankRes = await fetchWithTimeout('https://api.frankfurter.app/latest?from=USD', 3500);
+      const frankRes = await fetchWithTimeout('https://api.frankfurter.dev/v1/latest?from=USD', 3500);
       if (frankRes.ok) {
         const fData: any = await frankRes.json();
         if (fData?.rates && typeof fData.rates === 'object') {
@@ -593,88 +616,24 @@ async function fetchGlobalLivePlumbing() {
   return cachedPlumbing;
 }
 
-async function fetchGroundedMarketTelemetry(
-  iso3: string,
-  countryName: string,
-  currencyCode: string
-): Promise<CachedMarketGrounding | null> {
-  if (!process.env.GEMINI_API_KEY) return null;
-  const cached = groundedMarketCache.get(iso3);
-  if (cached && Date.now() - cached.timestamp < GROUNDED_CACHE_TTL_MS) {
-    return cached;
-  }
-
-  try {
-    const prompt = `Search for the latest current real-world sovereign market data for ${countryName} (${iso3}, currency ${currencyCode}):
-1. Central Bank benchmark policy interest rate (%)
-2. 10-Year sovereign local-currency government bond yield (%)
-3. 2-Year, 5-Year, and 30-Year government bond yields (%)
-4. 5-Year USD Sovereign Credit Default Swap (CDS) spread in basis points (bps)
-5. Current S&P / Fitch / Moody's long-term foreign-currency sovereign credit rating (e.g., BB, BB-, B+, BBB, A+, AA-)
-
-Return ONLY a valid JSON object matching this exact structure (no markdown fences):
-{"policyRatePct": number, "sovereign10YBondYieldPct": number, "yield2Y": number, "yield5Y": number, "yield30Y": number, "cds5YSpreadBps": number, "creditRating": "string"}`;
-
-    const resp = await ai.models.generateContent({
-      model: 'gemini-3.8-flash',
-      contents: prompt,
-      config: {
-        tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
-      },
-    });
-
-    const rawText = (resp.text || '').trim();
-    const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) return null;
-
-    const parsed: any = JSON.parse(jsonMatch[0]);
-    const chunks = resp.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-    const citations = chunks
-      .filter((c: any) => c?.web?.uri)
-      .slice(0, 5)
-      .map((c: any) => ({
-        title: String(c.web.title || `${countryName} Sovereign Market Telemetry`),
-        uri: String(c.web.uri),
-      }));
-
-    const entry: CachedMarketGrounding = {
-      timestamp: Date.now(),
-      policyRatePct:
-        typeof parsed.policyRatePct === 'number' && parsed.policyRatePct >= 0 && parsed.policyRatePct <= 80
-          ? Number(parsed.policyRatePct.toFixed(2))
-          : undefined,
-      sovereign10YBondYieldPct:
-        typeof parsed.sovereign10YBondYieldPct === 'number' &&
-        parsed.sovereign10YBondYieldPct > 0 &&
-        parsed.sovereign10YBondYieldPct <= 70
-          ? Number(parsed.sovereign10YBondYieldPct.toFixed(2))
-          : undefined,
-      yield2Y:
-        typeof parsed.yield2Y === 'number' && parsed.yield2Y > 0 && parsed.yield2Y <= 75
-          ? Number(parsed.yield2Y.toFixed(2))
-          : undefined,
-      yield5Y:
-        typeof parsed.yield5Y === 'number' && parsed.yield5Y > 0 && parsed.yield5Y <= 75
-          ? Number(parsed.yield5Y.toFixed(2))
-          : undefined,
-      yield30Y:
-        typeof parsed.yield30Y === 'number' && parsed.yield30Y > 0 && parsed.yield30Y <= 75
-          ? Number(parsed.yield30Y.toFixed(2))
-          : undefined,
-      cds5YSpreadBps:
-        typeof parsed.cds5YSpreadBps === 'number' && parsed.cds5YSpreadBps >= 8 && parsed.cds5YSpreadBps <= 4000
-          ? Math.round(parsed.cds5YSpreadBps)
-          : undefined,
-      creditRating: typeof parsed.creditRating === 'string' ? parsed.creditRating.trim() : undefined,
-      citations,
-    };
-
-    groundedMarketCache.set(iso3, entry);
-    return entry;
-  } catch {
-    return null;
-  }
+/**
+ * GDELT allows one request every 5 seconds and answers HTTP 429 otherwise (seen on Sam's Mac,
+ * 2026-11-05). Every GDELT request takes the next free slot, 5.5 seconds apart. A request that
+ * would wait more than 30 seconds is not sent; its figures read Missing until the next refresh.
+ */
+const GDELT_GAP_MS = 5500;
+const GDELT_MAX_WAIT_MS = 30000;
+let gdeltNextSlot = 0;
+function gdeltSlot(): Promise<void> {
+  const now = Date.now();
+  const slot = Math.max(now, gdeltNextSlot);
+  if (slot - now > GDELT_MAX_WAIT_MS) return Promise.reject(new Error('GDELT queue full'));
+  gdeltNextSlot = slot + GDELT_GAP_MS;
+  return new Promise((resolve) => setTimeout(resolve, slot - now));
+}
+async function fetchGdelt(url: string, timeoutMs: number): Promise<Response> {
+  await gdeltSlot();
+  return fetchWithTimeout(url, timeoutMs);
 }
 
 function parseGdeltSeenDate(seenDate?: string): string {
@@ -700,8 +659,7 @@ function getLatestImfValue(series: Record<string, number> | undefined, targetYea
 
 async function fetchLiveOpenDataSnapshotNetwork(
   iso3: string,
-  countryNameHint?: string,
-  includeSearchGrounding = true
+  countryNameHint?: string
 ): Promise<OpenDataSnapshot> {
   const normalizedIso = (iso3 || 'BRA').toUpperCase().trim();
   const baseline = buildBaselineOpenData(normalizedIso);
@@ -717,9 +675,6 @@ async function fetchLiveOpenDataSnapshotNetwork(
   };
   let liveReservesUsdBn: number | undefined;
   let liveShortTermDebtPctReserves: number | undefined;
-  let yield2YOverride: number | undefined;
-  let yield5YOverride: number | undefined;
-  let yield30YOverride: number | undefined;
 
   await Promise.allSettled([
     // 1. Expanded World Bank Open Data v2 API (6 structural & external balance indicators)
@@ -862,19 +817,19 @@ async function fetchLiveOpenDataSnapshotNetwork(
               const title = String(ev?.title || market?.question || '').trim();
               if (!title) return null;
 
-              let prob = 50;
+              let prob: number | null = null;
               try {
                 const rawPrices = market?.outcomePrices;
                 const prices = typeof rawPrices === 'string' ? JSON.parse(rawPrices) : rawPrices;
                 if (Array.isArray(prices) && prices.length > 0) {
                   const p0 = Number(prices[0]);
-                  if (!Number.isNaN(p0)) {
-                    prob = Math.round(p0 * 100);
-                  }
+                  if (Number.isFinite(p0) && p0 >= 0 && p0 <= 1) prob = Math.round(p0 * 100);
                 }
               } catch {
-                prob = 50;
+                prob = null;
               }
+              // No price means no odds to show: skip it rather than show 50%.
+              if (prob === null) return null;
 
               const lower = title.toLowerCase();
               let relevance = 0;
@@ -889,8 +844,8 @@ async function fetchLiveOpenDataSnapshotNetwork(
               const contract: PolymarketContract = {
                 id: String(ev?.id || `pm-live-${idx}`),
                 question: title,
-                probabilityPct: Math.max(2, Math.min(98, prob)),
-                volumeUsd: vol > 0 ? vol : 125000,
+                probabilityPct: prob,
+                volumeUsd: vol > 0 ? vol : 0,
                 category: relevance >= 25 ? `${baseline.countryName} Event` : 'Global Macro / Geopolitics',
                 url: ev?.slug ? `https://polymarket.com/event/${ev.slug}` : 'https://polymarket.com',
               };
@@ -911,14 +866,8 @@ async function fetchLiveOpenDataSnapshotNetwork(
     (async () => {
       const q = encodeURIComponent(`"${baseline.countryName}" (economy OR central bank OR debt OR inflation OR sanctions)`);
       const [artRes, toneRes] = await Promise.allSettled([
-        fetchWithTimeout(
-          `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&format=json&maxrecords=6`,
-          3800
-        ),
-        fetchWithTimeout(
-          `https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=timelinetone&format=json`,
-          3800
-        ),
+        fetchGdelt(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&format=json&maxrecords=6`, 8000),
+        fetchGdelt(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=timelinetone&format=json`, 8000),
       ]);
 
       let liveTone = baseline.gdeltMetrics.averageTone;
@@ -951,10 +900,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
           const articles = Array.isArray(data?.articles) ? data.articles : [];
           if (articles.length > 0) {
             activeSources.push('GDELT 2.0 DOC & Tone Stream (Live)');
-            baseline.gdeltMetrics.articleCount24h = Math.max(
-              articles.length * 48,
-              baseline.gdeltMetrics.articleCount24h
-            );
+            // GDELT returns a capped list, not a 24-hour count, so no count is claimed.
             baseline.gdeltMetrics.topHeadlines = articles.slice(0, 4).map((art: any, idx: number) => {
               const titleStr = String(art?.title || 'Global Macro Dispatch');
               const lowerTitle = titleStr.toLowerCase();
@@ -992,11 +938,12 @@ async function fetchLiveOpenDataSnapshotNetwork(
         baseline.monetaryAndMarket.exchangeRatePerUsd = Number(
           liveFx.toFixed(liveFx > 100 ? 1 : liveFx > 10 ? 2 : 3)
         ); markLive('market.exchangeRatePerUsd', 'Live FX');
-        const soyAnchor = FX_SOY_ANCHORS_PER_USD[ccy];
-        if (typeof soyAnchor === 'number' && soyAnchor > 0) {
-          // Positive fxYtdChangePct = local currency appreciation vs USD; negative = depreciation vs USD
-          const ytdPct = ((soyAnchor - liveFx) / soyAnchor) * 100;
-          baseline.monetaryAndMarket.fxYtdChangePct = Number(ytdPct.toFixed(2)); markLive('market.fxYtdChangePct', 'Live FX');
+        const yearEnd = await fetchFxYearEnd();
+        const base = yearEnd?.rates[ccy];
+        if (typeof base === 'number' && base > 0) {
+          // Positive = the local currency gained against the dollar since the last close of last year.
+          const ytdPct = ((base - liveFx) / base) * 100;
+          baseline.monetaryAndMarket.fxYtdChangePct = Number(ytdPct.toFixed(2)); markLive('market.fxYtdChangePct', `Live FX vs ECB rate of ${yearEnd!.date}`);
         }
       }
       baseline.livePlumbingOverrides = {
@@ -1008,40 +955,9 @@ async function fetchLiveOpenDataSnapshotNetwork(
       };
     })(),
 
-    // 6. Gemini Search Grounding for High-Frequency Yields, Policy Rate, 5Y CDS & Credit Rating
-    (async () => {
-      if (!includeSearchGrounding) return;
-      const grounded = await fetchGroundedMarketTelemetry(
-        normalizedIso,
-        baseline.countryName,
-        baseline.currencyCode
-      );
-      if (grounded) {
-        if (typeof grounded.policyRatePct === 'number') {
-          baseline.monetaryAndMarket.policyRatePct = grounded.policyRatePct; markLive('market.policyRatePct', 'AI estimate');
-        }
-        if (typeof grounded.sovereign10YBondYieldPct === 'number') {
-          baseline.monetaryAndMarket.sovereign10YBondYieldPct = grounded.sovereign10YBondYieldPct; markLive('market.sovereign10YBondYieldPct', 'AI estimate');
-        }
-        if (typeof grounded.cds5YSpreadBps === 'number') {
-          baseline.monetaryAndMarket.cds5YSpreadBps = grounded.cds5YSpreadBps; markLive('market.cds5YSpreadBps', 'AI estimate');
-        }
-        if (grounded.creditRating) {
-          baseline.liveCreditRating = grounded.creditRating; markLive('market.creditRating', 'AI estimate');
-        }
-        if (grounded.citations.length > 0) {
-          baseline.groundingCitations = grounded.citations;
-        }
-        yield2YOverride = grounded.yield2Y;
-        yield5YOverride = grounded.yield5Y;
-        yield30YOverride = grounded.yield30Y;
-        activeSources.push('Gemini web search (AI-estimated yields, policy rate & CDS)');
-      }
-    })(),
   ]);
 
-  // 6b. Official 10Y yield (OECD via FRED, or Brazil's Treasury). A published figure beats an AI
-  // estimate, so it replaces the Gemini figure when both exist; the date is kept for the labels.
+  // 6b. Official 10Y yield (OECD via FRED, Brazil's Treasury or Turkey's EVDS), with its date.
   const officialYield = await fetchOfficial10YYield(normalizedIso);
   if (officialYield) {
     baseline.monetaryAndMarket.sovereign10YBondYieldPct = officialYield.valuePct; markLive('market.sovereign10YBondYieldPct', 'Official');
@@ -1055,7 +971,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
   if (us10Y) baseline.us10YYield = us10Y;
   else delete baseline.us10YYield;
 
-  // 6b'. Own-account 5Y CDS. The user's licensed quote beats an AI estimate or the sample value.
+  // 6b'. Own-account 5Y CDS: the user's licensed quote, the only CDS source.
   const ownCds = (await loadOwnCds()).get(normalizedIso);
   if (ownCds) {
     baseline.monetaryAndMarket.cds5YSpreadBps = Math.round(ownCds.bps); markLive('market.cds5YSpreadBps', `Your data, ${ownCds.source}`);
@@ -1080,9 +996,6 @@ async function fetchLiveOpenDataSnapshotNetwork(
 
   // Dynamically recompute DSA (r - g), Greenspan-Guidotti Debt Rollover, Yield Curve & Real Policy Rate
   recomputeDerivedOpenDataAnalytics(baseline, {
-    yield2Y: yield2YOverride,
-    yield5Y: yield5YOverride,
-    yield30Y: yield30YOverride,
     liquidReservesUsdBn: liveReservesUsdBn,
     shortTermDebtPctReserves: liveShortTermDebtPctReserves,
   });
@@ -1125,7 +1038,7 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
   if (existing) return existing;
   const job = (async () => {
     try {
-      const snapshot = await fetchLiveOpenDataSnapshotNetwork(iso3, countryName, true);
+      const snapshot = await fetchLiveOpenDataSnapshotNetwork(iso3, countryName);
       const entry = { snapshot, pulledAt: Date.now() };
       snapshotStore.set(iso3, entry);
       fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
@@ -1152,7 +1065,6 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
 async function fetchLiveOpenDataSnapshot(
   iso3: string,
   countryNameHint?: string,
-  _includeSearchGrounding = true,
   opts: { cacheOnly?: boolean; forceRefresh?: boolean } = {}
 ): Promise<OpenDataSnapshot> {
   const key = (iso3 || 'BRA').toUpperCase().trim();
@@ -1218,9 +1130,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
   const items = await Promise.all(
     SOVEREIGN_CATALOG.map(async (catItem) => {
       try {
-        // Use cached search grounding if already warm, otherwise fast IMF + World Bank + Live FX
-        const hasWarmGrounding = groundedMarketCache.has(catItem.iso3);
-        const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, hasWarmGrounding, {
+        const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, {
           cacheOnly: true,
         });
         const run = buildDefaultAssessmentRun(catItem.iso3, snap);
@@ -1256,14 +1166,14 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           compositeRisk: comp,
           ...watchlistYieldFields(snap, fetchedOfficial),
           cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
-          cds5YSource: status.ownCds ? 'own' : lf['market.cds5YSpreadBps'] ? 'ai_estimate' : 'sample',
+          cds5YSource: status.ownCds ? 'own' : 'sample',
           ...(status.ownCds ? { cds5YDate: status.ownCds.date, cds5YProvider: status.ownCds.source } : {}),
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           policyRatePct: snap.monetaryAndMarket.policyRatePct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
-          policyRateSource: lf['market.policyRatePct'] ? 'ai_estimate' : 'sample',
+          policyRateSource: 'sample',
           debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
           reservesSource: lf['wb.fxReservesMonthsImport'] ? 'live' : 'sample',
           // The risk scores are a model on the snapshot; they count only when its main inputs are live.
@@ -1307,7 +1217,7 @@ export const DEFAULT_SERVER_API_CONNECTORS: ExternalInternalConnectorConfig[] = 
       gdpGrowth: '1.0.value',
     },
     injectIntoCouncilPrompt: true,
-    lastStatus: 'ok',
+    lastStatus: 'untested',
   },
   {
     id: 'conn-imf-debt',
@@ -1323,7 +1233,7 @@ export const DEFAULT_SERVER_API_CONNECTORS: ExternalInternalConnectorConfig[] = 
       debtToGdp: 'values.GGXWDG_NGDP.{{ISO3}}.2025',
     },
     injectIntoCouncilPrompt: true,
-    lastStatus: 'ok',
+    lastStatus: 'untested',
   },
   {
     id: 'conn-internal-lake',
@@ -1386,9 +1296,9 @@ export const DEFAULT_SERVER_API_CONNECTORS: ExternalInternalConnectorConfig[] = 
 
 export const DEFAULT_INTEGRATION_CONFIG: TopLevelIntegrationConfig = {
   requireApiKey: false,
-  apiKey: process.env.SMCR_INTEGRATION_API_KEY || 'smcr_live_9f8a7b6c5d4e3f2a1b',
+  apiKey: process.env.SMCR_INTEGRATION_API_KEY || `smcr_${crypto.randomBytes(16).toString('hex')}`,
   webhookHmacSecret:
-    process.env.SMCR_WEBHOOK_HMAC_SECRET || 'whsec_econquest_smcr_v1_hmac_secret',
+    process.env.SMCR_WEBHOOK_HMAC_SECRET || `whsec_${crypto.randomBytes(24).toString('hex')}`,
   autoBroadcastOnRun: true,
   defaultScope: 'all_desks_bundle',
   includeSubAgents: true,
@@ -1402,25 +1312,7 @@ let serverGuiRuntimeConfig: Partial<AIRuntimeConfig> = {
 
 const latestRunsByIso3 = new Map<string, CouncilAssessmentRun>();
 const sseClients = new Set<express.Response>();
-const integrationDeliveryLog: IntegrationDeliveryReceipt[] = [
-  {
-    deliveryId: 'DLV-SMCR-BOOT-01',
-    timestamp: new Date(Date.now() - 180000).toISOString(),
-    iso3: 'BRA',
-    countryName: 'Brazil',
-    scope: 'all_desks_bundle',
-    eventType: 'system.boot.ready',
-    targetName: 'Top-Level REST Pull & SSE Bus',
-    targetUrl: '/api/v1/integration/bundle/BRA',
-    transport: 'REST_PULL',
-    statusCode: 200,
-    ok: true,
-    latencyMs: 4,
-    hmacSignature: 'sha256=8f4e2b9a1c7d3e5f0a2b4c6d8e0f1a3b5c7d9e1f2a4b6c8d0e2f4a6b8c0d2e4f',
-    payloadBytes: 18420,
-    responsePreview: '{"schemaVersion":"SMCR-1.0","status":"READY_FOR_DOWNSTREAM_CONSUMERS"}',
-  },
-];
+const integrationDeliveryLog: IntegrationDeliveryReceipt[] = [];
 
 function computeHmacSha256(payloadStr: string, secret: string): string {
   return `sha256=${crypto
@@ -1803,33 +1695,37 @@ async function applyGuiMacroConnectorsToSnapshot(
         if (!res.ok) return;
         const json = await res.json();
         const mapped = extractMappedTelemetryFromPayload(json, conn.telemetryMappings, iso3);
+        // Figures from your own connector are recorded with its name, like any other source.
+        const markOwn = (p: string) => {
+          snapshot.liveFields = { ...(snapshot.liveFields || {}), [p]: `Your connector: ${conn.name}` };
+        };
         let appliedAny = false;
         if (typeof mapped.gdpGrowth === 'number') {
-          snapshot.imfIndicators.realGdpGrowthPct = mapped.gdpGrowth;
+          snapshot.imfIndicators.realGdpGrowthPct = mapped.gdpGrowth; markOwn('imf.realGdpGrowthPct');
           appliedAny = true;
         }
         if (typeof mapped.cpiInflation === 'number') {
-          snapshot.imfIndicators.cpiInflationPct = mapped.cpiInflation;
+          snapshot.imfIndicators.cpiInflationPct = mapped.cpiInflation; markOwn('imf.cpiInflationPct');
           appliedAny = true;
         }
         if (typeof mapped.debtToGdp === 'number') {
-          snapshot.imfIndicators.debtToGdpPct = mapped.debtToGdp;
+          snapshot.imfIndicators.debtToGdpPct = mapped.debtToGdp; markOwn('imf.debtToGdpPct');
           appliedAny = true;
         }
         if (typeof mapped.cds5yBps === 'number') {
-          snapshot.monetaryAndMarket.cds5YSpreadBps = Math.round(mapped.cds5yBps);
+          snapshot.monetaryAndMarket.cds5YSpreadBps = Math.round(mapped.cds5yBps); markOwn('market.cds5YSpreadBps');
           appliedAny = true;
         }
         if (typeof mapped.fxReservesMonths === 'number') {
-          snapshot.worldBankIndicators.fxReservesMonthsImport = mapped.fxReservesMonths;
+          snapshot.worldBankIndicators.fxReservesMonthsImport = mapped.fxReservesMonths; markOwn('wb.fxReservesMonthsImport');
           appliedAny = true;
         }
         if (typeof mapped.policyRate === 'number') {
-          snapshot.monetaryAndMarket.policyRatePct = mapped.policyRate;
+          snapshot.monetaryAndMarket.policyRatePct = mapped.policyRate; markOwn('market.policyRatePct');
           appliedAny = true;
         }
         if (typeof mapped.politicalStability === 'number') {
-          snapshot.worldBankIndicators.politicalStabilityPercentile = mapped.politicalStability;
+          snapshot.worldBankIndicators.politicalStabilityPercentile = mapped.politicalStability; markOwn('wb.politicalStabilityPercentile');
           appliedAny = true;
         }
         if (appliedAny) {
@@ -2255,7 +2151,7 @@ async function startServer() {
     try {
       const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
       const countryName = req.query.countryName ? String(req.query.countryName) : undefined;
-      const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true, {
+      const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, {
         forceRefresh: req.query.refresh === '1',
       });
       const charts = buildAnnotatedChartsForSovereign(snapshot);
@@ -2270,7 +2166,7 @@ async function startServer() {
   app.get('/api/open-data/:iso3', async (req, res) => {
     try {
       const iso3 = String(req.params.iso3 || req.query.iso3 || 'BRA').toUpperCase();
-      const snapshot = await fetchLiveOpenDataSnapshot(iso3, undefined, req.query.grounding !== '0');
+      const snapshot = await fetchLiveOpenDataSnapshot(iso3);
       const charts = buildAnnotatedChartsForSovereign(snapshot);
       const run = buildDefaultAssessmentRun(iso3, snapshot);
       res.json({ snapshot, charts, run });
@@ -2306,6 +2202,8 @@ async function startServer() {
       }
       const report = await checkConnections({
         env: process.env,
+        // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
+        fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltSlot().then(() => fetch(u, i)) : fetch(u, i)),
         ai: {
           provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
           ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
@@ -2528,57 +2426,17 @@ async function startServer() {
         });
       } catch (networkErr: any) {
         const latencyMs = Math.max(1, Date.now() - t0);
-        const baselineSnap = buildBaselineOpenData(iso3);
-        const simulatedInternalPayload =
-          connector.category === 'llm_gateway'
-            ? {
-                status: 'INTERNAL_HOST_SIMULATED_PREVIEW',
-                endpoint: resolvedUrl,
-                models: [
-                  { name: 'qwen2.5:7b', family: 'qwen2', quantization: 'Q4_K_M' },
-                  { name: 'deepseek-r1:8b', family: 'deepseek', quantization: 'Q4_K_M' },
-                ],
-              }
-            : connector.category === 'webhook_bus'
-            ? {
-                dispatched: true,
-                simulatedBusAck: `ACK-${iso3}-${Date.now().toString().slice(-5)}`,
-                schemaVersion: 'SMCR-1.0',
-                receivedAt: new Date().toISOString(),
-              }
-            : {
-                iso3,
-                countryName: baselineSnap.countryName,
-                source: `${connector.name} (Simulated Internal Host Schema Preview)`,
-                telemetry: {
-                  gdpGrowthPct: baselineSnap.imfIndicators.realGdpGrowthPct,
-                  cpiInflationPct: baselineSnap.imfIndicators.cpiInflationPct,
-                  debtToGdpPct: baselineSnap.imfIndicators.debtToGdpPct,
-                  cds5ySpreadBps: baselineSnap.monetaryAndMarket.cds5YSpreadBps,
-                  fxReservesMonths: baselineSnap.worldBankIndicators.fxReservesMonthsImport,
-                  policyRatePct: baselineSnap.monetaryAndMarket.policyRatePct,
-                  politicalStabilityPctl:
-                    baselineSnap.worldBankIndicators.politicalStabilityPercentile,
-                },
-              };
-
-        const extractedTelemetry = extractMappedTelemetryFromPayload(
-          simulatedInternalPayload,
-          effectiveMappings,
-          iso3
-        );
-
         return res.json({
           ok: false,
           status: 0,
-          statusText: 'OFFLINE_OR_INTERNAL_LAN',
+          statusText: 'NO_ANSWER',
           resolvedUrl,
           latencyMs,
           testedAt: new Date().toISOString(),
-          isSimulatedPreview: true,
-          extractedTelemetry,
-          jsonPreview: simulatedInternalPayload,
-          message: `Direct connection to ${resolvedUrl} could not be established from this container (${networkErr?.message || 'connection refused'}). Showing interactive schema preview so you can test JSON dot-path telemetry mappings before running inside your local Docker network.`,
+          isSimulatedPreview: false,
+          extractedTelemetry: {},
+          jsonPreview: null,
+          message: `No answer from ${resolvedUrl}: ${describeNetworkError(networkErr, timeoutMs)} Nothing was read, so no figures were mapped.`,
         });
       } finally {
         clearTimeout(timer);
@@ -2637,7 +2495,7 @@ async function startServer() {
       connected: false,
       endpoint: cleanUrl,
       latencyMs: 0,
-      models: ['qwen2.5:7b', 'deepseek-r1:8b', 'qwen2.5:32b', 'deepseek-r1:32b', 'llama3.1:8b'],
+      models: [],
       modelDetails: [],
       message: `Local Ollama endpoint (${cleanUrl}) is not currently reachable from this server instance. When running via Docker on your Mac or Windows machine, EconQuest automatically connects to http://host.docker.internal:11434 or the bundled Ollama container.`,
     });
@@ -2796,7 +2654,7 @@ async function startServer() {
       // Stage 0: Refresh live institutional & grounded market data first
       const stage0Start = Date.now();
       progress.start('data');
-      const liveSnapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, true);
+      const liveSnapshot = await fetchLiveOpenDataSnapshot(iso3, countryName);
       const liveCount = getSnapshotDataStatus(liveSnapshot).liveFeeds.length;
       progress.finish('data', false, liveCount ? `${liveCount} live ${liveCount === 1 ? "source" : "sources"}` : 'No live source answered: figures missing');
       const stage0Latency = Date.now() - stage0Start;
@@ -4135,7 +3993,7 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
       const snapshot: OpenDataSnapshot =
         openData && openData.iso3
           ? openData
-          : await fetchLiveOpenDataSnapshot(String(iso3), undefined, false);
+          : await fetchLiveOpenDataSnapshot(String(iso3));
 
       const deterministicBaseline = computeDeterministicDocumentAnalysis(
         snapshot,
@@ -4369,8 +4227,6 @@ ${String(documentText).slice(0, 12000)}
     try {
       const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
       const countryName = String(req.query.countryName || 'Brazil');
-      const baselineSnapshot = buildBaselineOpenData(iso3);
-      const fallbackContracts = buildFallbackPredictionContracts(baselineSnapshot);
 
       const classifyEventCategory = (text: string): PredictionEventCategory => {
         const lower = text.toLowerCase();
@@ -4422,7 +4278,7 @@ ${String(documentText).slice(0, 12000)}
           if (!title || !keywords.some((kw) => lower.includes(kw))) continue;
 
           const firstMarket = Array.isArray(ev?.markets) && ev.markets[0] ? ev.markets[0] : null;
-          let probPct = 35;
+          let probPct: number | null = null;
           if (firstMarket?.outcomePrices) {
             try {
               const parsed =
@@ -4430,19 +4286,16 @@ ${String(documentText).slice(0, 12000)}
                   ? JSON.parse(firstMarket.outcomePrices)
                   : firstMarket.outcomePrices;
               const rawP = Number(parsed?.[0]);
-              if (!Number.isNaN(rawP) && rawP > 0 && rawP < 1) {
-                probPct = Math.max(2, Math.min(98, Math.round(rawP * 100)));
-              }
+              if (Number.isFinite(rawP) && rawP >= 0 && rawP <= 1) probPct = Math.round(rawP * 100);
             } catch {
-              // keep default
+              probPct = null;
             }
           }
+          // No price, no contract: odds are never assumed.
+          if (probPct === null) continue;
           const cat = classifyEventCategory(title);
-          const spreadCents = 2;
-          const counterKalshiCents = Math.max(
-            2,
-            Math.min(98, probPct + ((title.length % 5) - 2) * 2)
-          );
+          // Polymarket's events list carries no order book, so no spread or matched Kalshi price is claimed.
+          const spreadCents = 0;
           livePolyContracts.push({
             contractId: `PM-LIVE-${ev.id || livePolyContracts.length + 1}`,
             venue: 'POLYMARKET',
@@ -4453,7 +4306,6 @@ ${String(documentText).slice(0, 12000)}
             noPriceCents: 100 - probPct,
             bidAskSpreadCents: spreadCents,
             impliedProbabilityPct: probPct,
-            counterVenuePriceCents: counterKalshiCents,
             isLiveApiSourced: true,
             url: ev.slug ? `https://polymarket.com/event/${ev.slug}` : 'https://polymarket.com',
           });
@@ -4484,15 +4336,8 @@ ${String(documentText).slice(0, 12000)}
               : 0;
           if (midCents < 2 || midCents > 98) continue;
 
-          const spreadCents =
-            yesBid > 0 && yesAsk >= yesBid
-              ? Math.max(1, Math.min(12, Math.round(yesAsk - yesBid)))
-              : 2;
+          const spreadCents = yesBid > 0 && yesAsk >= yesBid ? Math.round(yesAsk - yesBid) : 0;
           const cat = classifyEventCategory(title);
-          const counterPolyCents = Math.max(
-            2,
-            Math.min(98, midCents + ((title.length % 5) - 2) * 2)
-          );
 
           liveKalshiContracts.push({
             contractId: `KL-LIVE-${mkt.ticker || liveKalshiContracts.length + 1}`,
@@ -4504,7 +4349,6 @@ ${String(documentText).slice(0, 12000)}
             noPriceCents: 100 - midCents,
             bidAskSpreadCents: spreadCents,
             impliedProbabilityPct: midCents,
-            counterVenuePriceCents: counterPolyCents,
             isLiveApiSourced: true,
             url: 'https://kalshi.com/markets',
           });
@@ -4513,28 +4357,17 @@ ${String(documentText).slice(0, 12000)}
         if (liveKalshiContracts.length > 0) kalshiLiveOk = true;
       }
 
-      // Always keep the sovereign-calibrated structural contracts for the active country
-      // plus any live-fetched Polymarket Gamma and Kalshi v2 contracts
-      const mergedContracts: RawVenueEventContract[] = [
-        ...fallbackContracts.slice(0, 4),
-        ...livePolyContracts.slice(0, 2),
-        ...liveKalshiContracts.slice(0, 2),
-      ];
-
-      if (mergedContracts.length < 6) {
-        for (const fb of fallbackContracts.slice(4)) {
-          if (mergedContracts.length < 6) mergedContracts.push(fb);
-        }
-      }
+      // Only contracts the venues actually listed; nothing is made up when a venue is down.
+      const mergedContracts: RawVenueEventContract[] = [...livePolyContracts.slice(0, 3), ...liveKalshiContracts.slice(0, 3)];
 
       const activeSourcesLabel =
         polyLiveOk && kalshiLiveOk
-          ? 'Live Polymarket Gamma API + Kalshi Trade API v2 + Sovereign ISDA Anchor'
+          ? 'Polymarket and Kalshi (live)'
           : polyLiveOk
-          ? 'Live Polymarket Gamma API + Sovereign Kalshi Parity Anchor'
+          ? 'Polymarket (live); Kalshi did not answer'
           : kalshiLiveOk
-          ? 'Live Kalshi Trade API v2 + Sovereign Polymarket Parity Anchor'
-          : 'Deterministic Dual-Venue Polymarket + Kalshi Sovereign Fallback';
+          ? 'Kalshi (live); Polymarket did not answer'
+          : 'Missing: neither Polymarket nor Kalshi answered';
 
       res.json({
         iso3,
@@ -4546,13 +4379,12 @@ ${String(documentText).slice(0, 12000)}
     } catch (err: any) {
       const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
       const countryName = String(req.query.countryName || 'Brazil');
-      const baselineSnapshot = buildBaselineOpenData(iso3);
       res.json({
         iso3,
         countryName,
-        activeSourcesLabel: 'Deterministic Dual-Venue Polymarket + Kalshi Sovereign Fallback',
+        activeSourcesLabel: 'Missing: the prediction-market request failed',
         fetchedAt: new Date().toISOString(),
-        contracts: buildFallbackPredictionContracts(baselineSnapshot),
+        contracts: [],
       });
     }
   });
@@ -4612,183 +4444,54 @@ ${String(documentText).slice(0, 12000)}
   // ---------------------------------------------------------------------------
   // End-to-End Automated Backend & Engine Health Sweep (/api/health/full-sweep)
   // ---------------------------------------------------------------------------
+  // Health check. It used to pass every item by checking built-in sample values; it now reports
+  // the real data connection check (GET /api/data/connections), one item per source.
   app.get('/api/health/full-sweep', async (req, res) => {
     const startedAt = Date.now();
     const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
-    const checks: Array<{
-      id: string;
-      category: 'API_ROUTE' | 'QUANT_ENGINE' | 'DOCS_GIT';
-      name: string;
-      endpointOrModule: string;
-      status: 'PASS' | 'WARN';
-      latencyMs: number;
-      detail: string;
-    }> = [];
-
-    // 1. Sovereign Snapshot & Multilateral Open-Data Baseline
-    const t0 = Date.now();
-    const snapshot = buildBaselineOpenData(iso3);
-    checks.push({
-      id: 'SWEEP-API-01',
-      category: 'API_ROUTE',
-      name: 'Sovereign Open-Data Snapshot Route',
-      endpointOrModule: `GET /api/data/sovereign-snapshot?iso3=${iso3}`,
-      status: snapshot && snapshot.imfIndicators.debtToGdpPct > 0 ? 'PASS' : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t0),
-      detail: `Verified ${snapshot.countryName} (${snapshot.iso3}) Debt/GDP ${snapshot.imfIndicators.debtToGdpPct.toFixed(1)}%, 10Y Yield ${snapshot.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}%, 5Y CDS ${snapshot.monetaryAndMarket.cds5YSpreadBps} bps`,
-    });
-
-    // 2. Watchlist Catalog Engine
-    const t1 = Date.now();
-    const catalogCount = SOVEREIGN_CATALOG.length;
-    checks.push({
-      id: 'SWEEP-API-02',
-      category: 'API_ROUTE',
-      name: 'Live Watchlist Cross-Country Matrix',
-      endpointOrModule: 'GET /api/data/watchlist-live',
-      status: catalogCount >= 8 ? 'PASS' : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t1),
-      detail: `${catalogCount} sovereigns indexed with composite geo/sovereign/macro risk telemetry`,
-    });
-
-    // 3. 9-Agent Adversarial Council & CRO Gate (Phase 1-2 & Phase 3)
-    const t2 = Date.now();
-    const defaultRun = buildDefaultAssessmentRun(iso3, snapshot);
-    const subAgentsOk = defaultRun.subAgents.length === 9 && Boolean(defaultRun.deskDebates.geopolitical);
-    checks.push({
-      id: 'SWEEP-API-03',
-      category: 'API_ROUTE',
-      name: '9-Agent Council & CRO Gate Orchestrator',
-      endpointOrModule: 'POST /api/council/phase1-and-cascade & /supreme-synthesis',
-      status: subAgentsOk && Boolean(defaultRun.supremeCouncil) ? 'PASS' : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t2),
-      detail: `${defaultRun.subAgents.length} sub-agents, 3 desk debate arenas, Report ID: ${defaultRun.supremeCouncil?.reportId || 'SMCR-1.0'}`,
-    });
-
-    // 4. Econometric, Geopolitical & Global Liquidity Engines
-    const t3 = Date.now();
-    const geoSuite = computeGeopoliticalRiskDeskSuite(snapshot, DEFAULT_WARGAME_PARAMS);
-    const econSuite = computeFullEconometricForecastSuite(
-      snapshot,
-      geoSuite.portfolioTransmission.propagatedForecastShocks
-    );
-    const liqSuite = computeGlobalLiquidityFundingSuite(snapshot, DEFAULT_LIQUIDITY_STRESS_PARAMS);
-    checks.push({
-      id: 'SWEEP-ENG-04',
-      category: 'QUANT_ENGINE',
-      name: 'Econometric, Geopolitical & Global Liquidity Engines',
-      endpointOrModule: 'Hubs 1–4 Quant Suites (BVAR, Taylor Rule, Sanctions, Swap Lines)',
-      status:
-        econSuite.imfSrdsfGfn.totalGfnPctGdp > 0 &&
-        geoSuite.chokepoints.length > 0 &&
-        typeof liqSuite.globalLiquidityStressIndexZScore === 'number'
-          ? 'PASS'
-          : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t3),
-      detail: `IMF GFN ${econSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP, ${geoSuite.chokepoints.length} maritime chokepoints, Liquidity Z-Score ${liqSuite.globalLiquidityStressIndexZScore.toFixed(2)}σ`,
-    });
-
-    // 5. Restructuring, Kelly LOB & Cross-Currency Basis Engines
-    const t4 = Date.now();
-    const restruct = simulateSovereignRestructuringAndRating(snapshot);
-    const kellyLob = computeCouncilKellyAndLobExecution(defaultRun);
-    const xccy = computeCrossCurrencyAndLegalBasis(snapshot);
-    checks.push({
-      id: 'SWEEP-ENG-05',
-      category: 'QUANT_ENGINE',
-      name: 'Restructuring NPV, Kelly LOB & XCCY Basis Engines',
-      endpointOrModule: 'Hubs 5–9 Quant Suites (ISDA CAC, Almgren-Chriss, Shadow Rating)',
-      status:
-        restruct.restructuredNpvRecoveryCents > 0 &&
-        typeof kellyLob.totalHalfKellyGrossNavPct === 'number' &&
-        typeof xccy.fiveYearXccyBasisBps === 'number'
-          ? 'PASS'
-          : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t4),
-      detail: `NPV Recovery ${restruct.restructuredNpvRecoveryCents.toFixed(1)}¢, Half-Kelly ${kellyLob.totalHalfKellyGrossNavPct.toFixed(1)}%, 5Y XCCY ${xccy.fiveYearXccyBasisBps} bps`,
-    });
-
-    // 6. Dual-Venue Prediction Markets & Policy Document NLP Engine
-    const t5 = Date.now();
-    const predContracts = buildFallbackPredictionContracts(snapshot);
-    const docAnalysis = computeDeterministicDocumentAnalysis(
-      snapshot,
-      'Monetary Policy Communique Check',
-      'Central Bank maintains hawkish policy rate stance amid fiscal consolidation targets.'
-    );
-    checks.push({
-      id: 'SWEEP-API-06',
-      category: 'API_ROUTE',
-      name: 'Prediction Markets & Policy Document NLP Lab',
-      endpointOrModule: 'GET /api/data/prediction-markets & POST /api/council/analyze-policy-document',
-      status: predContracts.length >= 6 && docAnalysis.extractedClauses.length > 0 ? 'PASS' : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t5),
-      detail: `${predContracts.length} Polymarket/Kalshi binary contracts & ${docAnalysis.extractedClauses.length} policy clauses verified`,
-    });
-
-    // 7. Documentation & GitHub Repository Assets Check
-    const t6 = Date.now();
-    const hasReadme = fs.existsSync(path.join(__dirname, 'README.md'));
-    const hasManual = fs.existsSync(path.join(__dirname, 'docs', 'USER_MANUAL.md'));
-    const hasLogo = fs.existsSync(
-      path.join(__dirname, 'src', 'assets', 'images', 'econquest_logo.png')
-    );
-    const hasGit = fs.existsSync(path.join(__dirname, '.git'));
-    checks.push({
-      id: 'SWEEP-GIT-07',
-      category: 'DOCS_GIT',
-      name: 'GitHub Documentation, Institutional Logo & Git Status',
-      endpointOrModule: 'README.md · docs/USER_MANUAL.md · .git',
-      status: hasReadme && hasManual && hasLogo ? 'PASS' : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t6),
-      detail: `README.md (${hasReadme ? 'OK' : 'MISSING'}), docs/USER_MANUAL.md (${hasManual ? 'OK' : 'MISSING'}), Logo Asset (${hasLogo ? 'OK' : 'MISSING'}), Git Repo (${hasGit ? 'INITIALIZED' : 'READY'})`,
-    });
-
-    // 8. Cross-Platform Docker & Local Ollama Self-Hosting Stack Check
-    const t7 = Date.now();
-    const hasDockerfile = fs.existsSync(path.join(__dirname, 'Dockerfile'));
-    const hasCompose = fs.existsSync(path.join(__dirname, 'docker-compose.yml'));
-    const hasMacScript = fs.existsSync(path.join(__dirname, 'scripts', 'start-mac.sh'));
-    const hasWinScript = fs.existsSync(path.join(__dirname, 'scripts', 'start-windows.ps1'));
-    checks.push({
-      id: 'SWEEP-DOCKER-08',
-      category: 'DOCS_GIT',
-      name: 'Cross-Platform Docker & Local Ollama Self-Host Stack',
-      endpointOrModule: 'Dockerfile · docker-compose.yml · start-mac.sh · start-windows.ps1',
-      status: hasDockerfile && hasCompose && hasMacScript && hasWinScript ? 'PASS' : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t7),
-      detail: `Dockerfile (${hasDockerfile ? 'OK' : 'MISSING'}), docker-compose.yml (${hasCompose ? 'OK' : 'MISSING'}), macOS Launcher (${hasMacScript ? 'OK' : 'MISSING'}), Windows Launcher (${hasWinScript ? 'OK' : 'MISSING'})`,
-    });
-
-    // 9. Top-Level External Application Integration Bus Check
-    const t8 = Date.now();
-    const sampleIntegrationPayload = buildTopLevelIntegrationPayload(defaultRun, 'all_desks_bundle');
-    checks.push({
-      id: 'SWEEP-INT-09',
-      category: 'API_ROUTE',
-      name: 'Top-Level External App Integration Bus (REST + Webhooks + SSE + OpenAPI 3.1)',
-      endpointOrModule: 'GET /api/v1/integration/desks/:iso3 · /bundle/:iso3 · /stream · /openapi.json',
-      status:
-        sampleIntegrationPayload.schemaVersion === 'SMCR-1.0' &&
-        Boolean(sampleIntegrationPayload.desks?.geopolitical) &&
-        Boolean(sampleIntegrationPayload.signature?.value)
-          ? 'PASS'
-          : 'WARN',
-      latencyMs: Math.max(1, Date.now() - t8),
-      detail: `SMCR-1.0 Desks (Geo/Sov/Macro + 9 Sub-Agents + Quant Suites), HMAC-SHA256 (${sampleIntegrationPayload.signature.value.slice(0, 18)}...), SSE Stream & OpenAPI 3.1 verified`,
-    });
-
-    const passedCount = checks.filter((c) => c.status === 'PASS').length;
-    res.json({
-      status: passedCount === checks.length ? 'ALL_SYSTEMS_NOMINAL' : 'PARTIAL_WARN',
-      sweptAt: new Date().toISOString(),
-      totalLatencyMs: Math.max(1, Date.now() - startedAt),
-      activeIso3: iso3,
-      passedCount,
-      totalChecks: checks.length,
-      gitInitialized: hasGit,
-      checks,
-    });
+    try {
+      const report = await checkConnections({
+        env: process.env,
+        fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltSlot().then(() => fetch(u, i)) : fetch(u, i)),
+        ai: {
+          provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+          ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
+          ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
+          ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
+          openAiBaseUrl: serverGuiRuntimeConfig.openAiBaseUrl,
+        },
+        readFile: (p) => {
+          try {
+            return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
+          } catch {
+            return null;
+          }
+        },
+      });
+      const checks = report.results.map((r) => ({
+        id: r.id,
+        category: 'API_ROUTE' as const,
+        name: r.name,
+        endpointOrModule: r.host,
+        status: (r.state === 'connected' ? 'PASS' : 'WARN') as 'PASS' | 'WARN',
+        latencyMs: r.latencyMs ?? 0,
+        detail: [r.state === 'connected' && r.sample ? r.sample : r.detail, r.warning].filter(Boolean).join(' '),
+      }));
+      const passedCount = checks.filter((c) => c.status === 'PASS').length;
+      const failed = report.results.some((r) => isFailure(r.state));
+      res.json({
+        status: failed ? 'PARTIAL_WARN' : 'ALL_SYSTEMS_NOMINAL',
+        sweptAt: report.checkedAt,
+        totalLatencyMs: Math.max(1, Date.now() - startedAt),
+        activeIso3: iso3,
+        passedCount,
+        totalChecks: checks.length,
+        gitInitialized: fs.existsSync(path.join(__dirname, '.git')),
+        checks,
+      });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Health check failed' });
+    }
   });
 
   // ---------------------------------------------------------------------------

@@ -3241,7 +3241,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                   c.id === conn.id
                     ? {
                         ...c,
-                        lastStatus: (data.ok || data.isSimulatedPreview ? 'ok' : 'error') as
+                        lastStatus: (data.ok ? 'ok' : 'error') as
                           | 'ok'
                           | 'error',
                         lastLatencyMs: data.latencyMs,

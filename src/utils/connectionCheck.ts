@@ -79,7 +79,7 @@ export interface CheckOptions {
   env: Record<string, string | undefined>;
   fetchFn?: FetchFn;
   now?: Date;
-  /** Per request, ms. The Brazil Treasury file gets at least 20 s because it is several MB. */
+  /** Per request, ms. The Brazil Treasury file gets at least 90 s because it is about 15 MB from a slow server. */
   timeoutMs?: number;
   /** AI settings as the app uses them (the in-app settings win over .env). */
   ai?: { provider?: string; ollamaBaseUrl?: string; ollamaQuickModel?: string; ollamaDeepModel?: string; openAiBaseUrl?: string; geminiModel?: string };
@@ -312,6 +312,10 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'It answered with text instead of data. GDELT does this when asked too often (one request every 5 seconds); check again in a minute.'
+    ).then((r) =>
+      r.state === 'refused' && r.httpStatus === 429
+        ? { ...r, detail: 'GDELT allows one request every 5 seconds and this one came too soon. If the app is running it may have just used the slot; check again in a minute. (HTTP 429)' }
+        : r
     )
   );
 
@@ -437,7 +441,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       { id: 'tesouro', name: 'Brazil Treasury (Tesouro Direto)', group: 'free', feeds: 'Brazil 10Y yield (NTN-F)' },
       fetchFn,
       TESOURO_DIRETO_CSV_URL,
-      Math.max(T, 20000),
+      // The whole history, about 15 MB from a slow server: 60 s on Sam's Mac (2026-11-05).
+      Math.max(T, 90000),
       (r) => {
         const o = parseTesouroDiretoLatest(r.text || '');
         return o ? `Brazil NTN-F ${fmt(o.valuePct, 2)}% (${o.period})` : null;
