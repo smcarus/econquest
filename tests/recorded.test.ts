@@ -101,13 +101,21 @@ test('recorded replies: every country figure live at recording is still live', {
 });
 
 test('recorded replies: every watchlist figure filled at recording is still filled', { skip, timeout: 300_000 }, async () => {
-  const wl = await get('/api/data/watchlist-live?refresh=1');
-  const rows = Object.fromEntries((wl.items || []).map((it: { iso3: string }) => [it.iso3, it]));
-  const lost: string[] = [];
-  for (const [iso3, keys] of Object.entries(index.expected.watchlist as Record<string, string[]>)) {
-    const have = new Set(rows[iso3] ? filled(rows[iso3]) : []);
-    const gone = keys.filter((k) => !have.has(k));
-    if (gone.length) lost.push(`${iso3}: ${gone.join(', ')}`);
+  // Paced background feeds (UN Comtrade, about one request every 2 s) fill the cache in their own
+  // time, so ask again until every figure is back or two minutes pass.
+  const deadline = Date.now() + 120_000;
+  let lost: string[] = [];
+  for (;;) {
+    const wl = await get('/api/data/watchlist-live?refresh=1');
+    const rows = Object.fromEntries((wl.items || []).map((it: { iso3: string }) => [it.iso3, it]));
+    lost = [];
+    for (const [iso3, keys] of Object.entries(index.expected.watchlist as Record<string, string[]>)) {
+      const have = new Set(rows[iso3] ? filled(rows[iso3]) : []);
+      const gone = keys.filter((k) => !have.has(k));
+      if (gone.length) lost.push(`${iso3}: ${gone.join(', ')}`);
+    }
+    if (!lost.length || Date.now() > deadline) break;
+    await new Promise((r) => setTimeout(r, 5_000));
   }
   assert.deepEqual(lost, [], `watchlist figures no longer filled from the recorded replies:\n${lost.join('\n')}\n${notRecorded()}`);
 });

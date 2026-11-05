@@ -45,6 +45,16 @@ globalThis.fetch = async (input, init = {}) => {
   if (skipHost(url)) return realFetch(input, init);
   const method = String(init.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
   const masked = maskUrl(url);
+  // Reachability probes (HEAD) are not recorded: a host with recorded replies counts as reachable.
+  if (method === 'HEAD') {
+    let origin = '';
+    try {
+      origin = new URL(masked).origin;
+    } catch {
+      // not a URL
+    }
+    if (origin && index.requests.some((r) => r.url.startsWith(origin))) return new Response(null, { status: 200 });
+  }
   let hit = byUrl.get(`${method} ${masked}`);
   if (!hit) {
     const near = byStem.get(`${method} ${urlStem(masked)}`) || [];
