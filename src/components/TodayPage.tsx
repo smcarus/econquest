@@ -1,9 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { PanelBuilder } from './PanelBuilder';
 import { DigestPanel } from './DigestPanel';
-import { lazyNamed, DeskLoading } from './LazyDesk';
-// Charts (recharts) load only when Compare opens, keeping them out of the first download.
-const RegimeQuadrant = lazyNamed(() => import('./RegimeQuadrant'), 'RegimeQuadrant');
 import { CalendarClock, ExternalLink, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
@@ -13,10 +9,8 @@ import { formatAsOf } from '../utils/dataStatus';
 import { PanelBoundary } from './PanelBoundary';
 import { UsesLine, WorkspaceInputs, useServerInputs } from './WorkspaceInputs';
 import { workspaceInputs, type InputId, type PanelId } from '../utils/workspaceInputs';
-import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
-import { DivergenceList } from './DivergenceList';
+import { useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { WatchAlertsPanel } from './WatchAlertsPanel';
-import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { AskCouncilPanel, type FullCouncilStep } from './AskCouncilPanel';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { MissingSources, WatchlistTable } from './WatchlistTable';
@@ -128,10 +122,7 @@ export const TodayPage: React.FC<{
   heldIso3?: string[];
   /** A Your inputs chip was pressed (saved research is handled here: it scrolls to Ask the council). */
   onInputAction?: (id: Exclude<InputId, 'research'>) => void;
-  /** Workspace (daily start) or Compare (the watchlist side by side). Same data, different panels. */
-  section?: 'workspace' | 'compare';
 }> = ({
-  section = 'workspace',
   run,
   watchlistName,
   watchlistId,
@@ -153,13 +144,11 @@ export const TodayPage: React.FC<{
   const [lastVisit] = useState<VisitSnapshot | null>(() => loadLastVisit());
   const edgeAnchors = useMarketEdgeAnchors();
   const edgeItems = useMemo(() => marketEdgePeers(watchlistItems, edgeAnchors?.peers || []), [watchlistItems, edgeAnchors]);
-  const isCompare = section === 'compare';
   useEffect(() => {
-    // Only Workspace counts as a visit, so opening Compare does not reset "since your last visit".
-    if (isCompare) return;
+    // Only Workspace counts as a visit; Research > Compare only reads it (ResearchCompare.tsx).
     const t = window.setTimeout(() => saveVisit(watchlistItems), 5000);
     return () => window.clearTimeout(t);
-  }, [watchlistItems, isCompare]);
+  }, [watchlistItems]);
 
   // Columns and sort, shared with the pop-out window through this browser's storage.
   const [view, setView] = useState<WatchlistView>(() => loadView());
@@ -233,31 +222,11 @@ export const TodayPage: React.FC<{
     <div className="space-y-4" data-no-stat-ref="true">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">{isCompare ? 'Compare' : 'Workspace'}</h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {isCompare
-              ? `${watchlistName} side by side: where data and price disagree, market pricing, growth and inflation, scenarios and a table to download.`
-              : today}
-          </p>
+          <h1 className="text-xl font-semibold text-slate-900 dark:text-white">Workspace</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400">{today}</p>
         </div>
-        {isCompare && (
-        <p
-          className={`text-xs px-2 py-1 border ${
-            liveCount === 0
-              ? 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600'
-              : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900'
-          }`}
-          title="A country counts as live when at least one public data feed answered on its last pull."
-        >
-          {liveCount === 0
-            ? 'No live data yet: figures read Missing until a source answers'
-            : `Live data for ${liveCount} of ${watchlistItems.length} countries`}
-        </p>
-        )}
       </div>
 
-      {!isCompare && (
-      <>
       {/* Inputs on the left (sticky on a desktop), outputs on the right in the order you check them. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(18rem,22rem)_1fr] gap-4 items-start pb-16 lg:pb-0">
         <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" aria-label="Your inputs and watchlist">
@@ -503,55 +472,6 @@ export const TodayPage: React.FC<{
           </ul>
         )}
       </Card>
-      )}
-      </>
-      )}
-
-      {isCompare && (
-      <>
-      <div id="tool-divergences" className="scroll-mt-4">
-        <PanelBoundary name="Where data and price disagree">
-        <DivergenceList
-          items={edgeItems}
-          lastLook={lastVisit?.rows}
-          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-        />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-marketedge" className="scroll-mt-4">
-        <PanelBoundary name="MarketEdge">
-        <MarketEdgeScreen
-          watchlist={watchlistItems}
-          anchors={edgeAnchors}
-          highlightIso3={run.iso3}
-          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-          intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
-        />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-regime" className="scroll-mt-4">
-        <PanelBoundary name="Growth and inflation">
-          <React.Suspense fallback={<DeskLoading />}>
-            <RegimeQuadrant items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
-          </React.Suspense>
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-scenarios" className="scroll-mt-4">
-        <PanelBoundary name="Scenarios">
-          <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
-        </PanelBoundary>
-      </div>
-
-      <div id="tool-panel" className="scroll-mt-4">
-        <PanelBoundary name="Compare countries">
-          <PanelBuilder countries={watchlistItems.map((w) => ({ iso3: w.iso3, countryName: w.countryName }))} />
-        </PanelBoundary>
-      </div>
-
-      </>
       )}
     </div>
   );
