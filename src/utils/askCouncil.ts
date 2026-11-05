@@ -33,6 +33,7 @@ import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, fo
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
+import { changeLines } from './whatChanged';
 
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar';
@@ -1132,6 +1133,8 @@ export interface SavedCouncilBrief {
   debate?: DebateResult;
   /** When the conversation's first question was asked; follow-ups keep it, so the saved copy is one entry. */
   startedAt?: string;
+  /** What moved since the latest saved conversation on the same countries (utils/whatChanged.ts). */
+  changes?: import('./whatChanged').ChangeReport;
 }
 
 const STORE_KEY = 'econquest.councilBrief.v1';
@@ -1158,6 +1161,7 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
   question: 'Question',
   summary: 'Summary',
   disagreements: 'Where the agents disagree',
+  changes: 'What changed since last time',
   debate: 'Agent debate',
   agents: 'What each agent found',
   gaps: 'Gaps',
@@ -1194,6 +1198,12 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
     });
   }
   if (on('disagreements') && s?.disagreements.length) out.push({ heading: COUNCIL_SECTIONS.disagreements, lines: s.disagreements.map((d) => `- ${d}`) });
+  if (on('changes') && b.changes) {
+    out.push({
+      heading: COUNCIL_SECTIONS.changes,
+      lines: [`Compared with your saved question of ${b.changes.sinceAskedAt.slice(0, 16).replace('T', ' ')} UTC: “${b.changes.sinceQuestion}”.`, ...changeLines(b.changes)],
+    });
+  }
   if (on('debate') && b.debate?.challenges.length) {
     const d = b.debate;
     const lines: string[] = [];

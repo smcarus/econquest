@@ -36,6 +36,9 @@ export interface BriefSummary {
   headline?: string;
   /** Questions in the conversation, counting this one. */
   turns: number;
+  /** Countries the agents answered on (ISO3) and the agents asked, for "what changed since last time". */
+  countries: string[];
+  agents: string[];
 }
 
 export interface DocSummary {
@@ -95,6 +98,8 @@ export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs:
       scopeNote: b.scopeNote,
       ...(b.synthesis?.brief?.headline ? { headline: b.synthesis.brief.headline } : {}),
       turns: (b.earlier?.length || 0) + 1,
+      countries: [...new Set(b.answers.flatMap((a) => (a.findings || []).filter((f) => !String(f.iso3).startsWith('doc:')).map((f) => f.iso3)))],
+      agents: [...new Set(b.answers.map((a) => a.id))],
     })),
     docs: lib.docs.map((d) => ({ id: d.id, title: d.title, addedAt: d.addedAt, ...(d.pages ? { pages: d.pages } : {}), chars: d.text.length })),
   };

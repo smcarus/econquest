@@ -6,6 +6,8 @@ import { PolicyDocsPicker } from './PolicyDocsPicker';
 import { FigureCheckNote } from './FigureCheckNote';
 import { SavedDocsRow, SavedResearchList, useResearchLibrary } from './SavedResearch';
 import { MAX_DOCS } from '../utils/policyDocs';
+import { briefId } from '../utils/researchLibrary';
+import { changeLines, pickPrevious, whatChanged, type ChangeReport } from '../utils/whatChanged';
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
@@ -102,6 +104,7 @@ export const AskCouncilPanel: React.FC<{
   const [scope, setScope] = useState('');
   const [asked, setAsked] = useState<{ question: string; plan: CouncilPlan; answers: AgentAnswer[]; askedAt: string; startedAt: string } | null>(null);
   const lib = useResearchLibrary();
+  const [changes, setChanges] = useState<ChangeReport | null>(null);
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [writing, setWriting] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -198,8 +201,24 @@ export const AskCouncilPanel: React.FC<{
         ...(asked.plan.chooserNote ? { chooserNote: asked.plan.chooserNote } : {}),
         ...(debate && !debating ? { debate } : {}),
         startedAt: asked.startedAt,
+        ...(changes ? { changes } : {}),
       }
     : null;
+  // Compare with the latest saved conversation on the same countries, once per question.
+  useEffect(() => {
+    setChanges(null);
+    if (!asked) return;
+    const prev = pickPrevious(lib.briefs, briefId(asked.startedAt), asked.answers);
+    if (!prev) return;
+    let live = true;
+    void lib.loadBrief(prev.id).then((b) => {
+      if (live && b) setChanges(whatChanged(b, asked.answers));
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [asked?.askedAt]);
   // Keep each conversation on this computer once its answer is in (and again after a debate or follow-up).
   const settled = Boolean(saved) && !writing && !debating && !choosing;
   useEffect(() => {
@@ -362,6 +381,21 @@ export const AskCouncilPanel: React.FC<{
             <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={asked.plan.chosenBy}>
               {asked.plan.chooserNote}
             </p>
+          )}
+
+          {changes && (
+            <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={changes.changes.length + changes.stanceChanges.length}>
+              <div className="ui-label">
+                What changed since your saved question of {changes.sinceAskedAt.slice(0, 16).replace('T', ' ')} UTC (“{changes.sinceQuestion}”)
+              </div>
+              <ul className="text-sm text-slate-800 dark:text-slate-200 space-y-0.5">
+                {changeLines(changes).map((l, i) => (
+                  <li key={i} className={l.startsWith('- ') ? 'pl-3' : 'text-xs text-slate-500 dark:text-slate-400'}>
+                    {l.replace(/^- /, '• ')}
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
 
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-council-summary="true">
