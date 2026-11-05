@@ -42,6 +42,7 @@ estimated, invented or taken from built-in sample values.
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
 | OECD leading indicators | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | sdmx.oecd.org | 1 day, on disk |
+| OECD consumer prices | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | sdmx.oecd.org | 1 day, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
@@ -95,6 +96,15 @@ Notes from the first check on Sam's Mac (2026-11-05):
   for that reason. `GET /api/data/policy-rates` lists what the app holds for each country.
   The rate feeds the watchlist column, the Country tab (with the 12-month change and last move),
   the Central Bank Watcher Agent and the stance check (policy tight / neutral / loose).
+- **OECD consumer prices** come from the same API (dataflow `OECD.SDD.TPS,DSD_PRICES@DF_PRICES_ALL`,
+  headline CPI, all items, monthly). The OECD's own y/y rate is used; where only the index is in
+  the reply, y/y is worked out from the index 12 months apart and the source says so. Asked once
+  a day for every area, kept on disk (`data/live/oecd-cpi.json`). Where the OECD has a figure it
+  becomes the app's inflation figure (watchlist, Central Bank Watcher, real rates, the
+  divergence list), shown as "OECD, <month>", because it is monthly and the IMF's is annual;
+  elsewhere the IMF figure stays and says IMF. Readings: the y/y rate, the change over three
+  months, and a stated rule on it (up 0.5 pts or more = rising, down 0.5 pts or more = easing).
+  A country the OECD answered without reads "OECD publishes no CPI" on the OECD rows.
 
 ## Free, with your own key
 

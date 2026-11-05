@@ -18,6 +18,7 @@ import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, p
 import { carryToVol, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
+import { cpiSentence } from './oecdInflation';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
@@ -63,7 +64,7 @@ export interface AgentAnswer {
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
   cb: {
     name: 'Central Bank Watcher',
-    covers: 'inflation against target, policy rate, real rates',
+    covers: 'inflation against target (OECD monthly where published), policy rate, real rates',
     topic: /central bank|monetary|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
   },
   rv: {
@@ -304,11 +305,17 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         ? [{ label: 'Real 10Y yield', value: p1(real10), source: `10Y yield ${p2(it.yield10YPct)} (${y.src}) minus inflation`, tag: 'model' as const }]
         : []),
     ];
+    if (it.oecdCpi?.change3mPts !== undefined && it.oecdCpi.trend) {
+      figures.push(
+        { label: 'Change in inflation over 3 months', value: `${sgn(it.oecdCpi.change3mPts)} pts`, source: c.src, tag: 'official' },
+        { label: 'Inflation trend', value: it.oecdCpi.trend, source: '3-month change: +0.5 pts or more = rising, -0.5 pts or more down = easing', tag: 'model' }
+      );
+    }
     const stanceText = policyStance(real, gap);
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading: `Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
+      reading: `${it.oecdCpi ? `${cpiSentence(it.oecdCpi)} ` : ''}Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
       figures,
       weight: sig?.score ?? 0,
       stance: [{ dim: 'policy', call: policyCall(stanceText) }],
