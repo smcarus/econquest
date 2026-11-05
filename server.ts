@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
+import { BCB_IPCA_12M, BCB_LONG, BCB_SHORT, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, bcbSgsUrl, eurostatHicpUrl, mergeNationalCpi, parseBcbSgs, parseEurostatHicp, type NationalCpiSeries } from './src/utils/nationalCpi';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
 import {
   OWN_CDS_LABEL,
@@ -889,6 +890,87 @@ async function fetchCpiPull(): Promise<CpiPull | null> {
     cpiInFlight = null;
   });
   return cpiInFlight;
+}
+
+/**
+ * Fresher monthly inflation (src/utils/nationalCpi.ts): Brazil's central bank (BCB SGS, IPCA 12
+ * months) and Eurostat HICP for EU members on the country list. Asked once a day, kept on disk
+ * (data/live/national-cpi.json); a failed pull keeps the last good series per country.
+ */
+type NationalCpiPull = { pulledAt: string; series: Record<string, NationalCpiSeries> };
+let nationalCpiMemory: { pull: NationalCpiPull | null; triedAt: number } | null = null;
+let nationalCpiInFlight: Promise<NationalCpiPull | null> | null = null;
+function nationalCpiFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'national-cpi.json');
+}
+async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
+  if (!nationalCpiMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(nationalCpiFile(), 'utf8')) as NationalCpiPull;
+      if (saved?.pulledAt && saved.series) nationalCpiMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (nationalCpiMemory?.pull && Date.now() - Date.parse(nationalCpiMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return nationalCpiMemory.pull;
+  if (nationalCpiMemory && Date.now() - nationalCpiMemory.triedAt < 60 * 60 * 1000) return nationalCpiMemory.pull;
+  if (nationalCpiInFlight) return nationalCpiInFlight;
+  nationalCpiInFlight = (async () => {
+    const prev = nationalCpiMemory?.pull ?? null;
+    const series: Record<string, NationalCpiSeries> = { ...(prev?.series || {}) };
+    let answered = 0;
+    const isoInCatalog = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+    await Promise.allSettled([
+      (async () => {
+        if (!isoInCatalog.has('BRA')) return;
+        try {
+          const res = await fetchWithTimeout(bcbSgsUrl(BCB_IPCA_12M), 15000);
+          if (!res.ok) return console.warn(`[BCB SGS] IPCA refused (HTTP ${res.status})`);
+          const pts = parseBcbSgs(await res.json());
+          if (pts.length) {
+            series.BRA = { points: pts, short: BCB_SHORT, long: BCB_LONG };
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[BCB SGS] IPCA: ${describeNetworkError(e, 15000)}`);
+        }
+      })(),
+      (async () => {
+        const eu = SOVEREIGN_CATALOG.filter((c) => EUROSTAT_GEO[c.iso3]);
+        if (!eu.length) return;
+        try {
+          const res = await fetchWithTimeout(eurostatHicpUrl(eu.map((c) => EUROSTAT_GEO[c.iso3])), 20000);
+          if (!res.ok) return console.warn(`[Eurostat] HICP refused (HTTP ${res.status})`);
+          const byGeo = parseEurostatHicp(await res.json());
+          for (const c of eu) {
+            const pts = byGeo[EUROSTAT_GEO[c.iso3]];
+            if (pts?.length) {
+              series[c.iso3] = { points: pts, short: EUROSTAT_SHORT, long: EUROSTAT_LONG };
+              answered++;
+            }
+          }
+        } catch (e) {
+          console.warn(`[Eurostat] HICP: ${describeNetworkError(e, 20000)}`);
+        }
+      })(),
+    ]);
+    if (!answered) {
+      nationalCpiMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: NationalCpiPull = { pulledAt: new Date().toISOString(), series };
+    nationalCpiMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(nationalCpiFile()), { recursive: true });
+      fs.writeFileSync(nationalCpiFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    nationalCpiInFlight = null;
+  });
+  return nationalCpiInFlight;
 }
 
 /**
@@ -1958,7 +2040,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, comtrade, imf, cofer, commodities] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -1967,6 +2049,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     cbpolPullQuick(),
     Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchCpiPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    Promise.race([fetchNationalCpi(), new Promise<NationalCpiPull | null>((resolve) => setTimeout(() => resolve(nationalCpiMemory?.pull ?? null), 8000))]),
     // Comtrade pulls one country at a time; the watchlist shows what is saved and the pull fills in later.
     Promise.race([fetchComtrade(), new Promise<ComtradeFile | null>((resolve) => setTimeout(() => resolve(comtradeMemory?.file ?? null), 3000))]),
     // IMF reserves and BOP: many small requests; the first pull fills the cache for next time.
@@ -2007,7 +2090,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
         const lead = cliFor(catItem.iso3, cli?.series);
-        const prices = cpiFor(catItem.iso3, cpi?.series);
+        // Monthly inflation: a national or Eurostat series where it is at least as new as the OECD's.
+        const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}));
         const record: SignalRecord = {};
         {
           const pts = areaSeries(catItem.iso3, cli?.series);
@@ -2048,8 +2132,8 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
-          ...(prices && cpi
-            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: cpi.pulledAt } }
+          ...(prices && (cpi || nationalCpi)
+            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
             : cpi
               ? { oecdCpiPulledAt: cpi.pulledAt }
               : {}),

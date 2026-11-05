@@ -317,7 +317,10 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 30);
+  assert.equal(rep.results.length, 32);
+  assert.equal(row('bcb_ipca').state, 'connected');
+  assert.match(row('bcb_ipca').sample || '', /Brazil IPCA 4\.58% over 12 months \(Sep 2026\)/);
+  assert.equal(row('eurostat_hicp').state, 'no_answer');
   // The offline fixtures answer FRED's download, Brazil's Treasury and EVDS; everything else is down.
   assert.equal(row('fred_csv').state, 'connected');
   assert.equal(row('tesouro').state, 'connected');
@@ -489,4 +492,13 @@ test('a snapshot served with every feed down carries no figures', async () => {
       if (k !== 'sourceUrl') assert.equal(v, null, `${section}.${k}`);
     }
   }
+});
+
+test("monthly inflation: Brazil's central bank figure is used and says so", async () => {
+  const r = (await (await fetch(`${base}/api/data/watchlist-live`)).json()) as { items: Array<Record<string, any>> };
+  const bra = r.items.find((i) => i.iso3 === 'BRA')!;
+  assert.equal(bra.cpiInflationPct, 4.58);
+  assert.equal(bra.cpiMonth, '2026-09');
+  assert.equal(bra.oecdCpi.short, 'BCB IPCA');
+  assert.equal(bra.oecdCpi.basis, 'national');
 });

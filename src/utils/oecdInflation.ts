@@ -37,8 +37,9 @@ export function cpiUrl(opts: { areas?: string[]; wide?: boolean } = {}): string 
   });
 }
 
-export type CpiBasis = 'oecd_yoy' | 'from_index';
-export type CpiSeries = Record<string, { basis: CpiBasis; points: { period: string; value: number }[] }>;
+/** 'national': a central bank or Eurostat series that is newer than the OECD's (utils/nationalCpi.ts). */
+export type CpiBasis = 'oecd_yoy' | 'from_index' | 'national';
+export type CpiSeries = Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }>;
 
 /** Reads the OECD reply into one y/y series per area. Null when nothing usable. */
 export function parseCpi(text: unknown): CpiSeries | null {
@@ -78,6 +79,9 @@ export interface CpiReading {
   month: string;
   yoyPct: number;
   basis: CpiBasis;
+  /** For a national series: short and long source labels. */
+  short?: string;
+  long?: string;
   /** y/y rate now minus three months earlier, in points. */
   change3mPts?: number;
   trend?: CpiTrend;
@@ -97,12 +101,15 @@ export function cpiFor(iso3: string, series: CpiSeries | null | undefined): CpiR
     month: last.period,
     yoyPct: Number(last.value.toFixed(2)),
     basis: s.basis,
+    ...(s.short ? { short: s.short } : {}),
+    ...(s.long ? { long: s.long } : {}),
     ...(change3mPts !== undefined ? { change3mPts, trend: cpiTrend(change3mPts) } : {}),
   };
 }
 
 /** Source line for a figure. */
-export function cpiSource(c: { month: string; basis: CpiBasis }): string {
+export function cpiSource(c: { month: string; basis: CpiBasis; long?: string }): string {
+  if (c.basis === 'national' && c.long) return `${c.long}, ${formatMonth(c.month)}`;
   return `OECD via DBnomics, ${formatMonth(c.month)}${c.basis === 'from_index' ? ' (y/y worked out from the OECD CPI index)' : ''}`;
 }
 

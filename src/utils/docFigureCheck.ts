@@ -88,7 +88,7 @@ export function appFigure(it: LiveWatchlistItem, measure: DocMeasure): { value: 
         : undefined;
     case 'cpi':
       return it.cpiInflationPct !== undefined && (it.cpiSource === 'oecd' || it.cpiSource === 'live')
-        ? { value: it.cpiInflationPct, source: it.cpiSource === 'oecd' && it.cpiMonth ? `OECD monthly, ${formatPeriod(it.cpiMonth)}` : 'IMF WEO, annual', tag: 'live' }
+        ? { value: it.cpiInflationPct, source: it.cpiSource === 'oecd' && it.cpiMonth ? `${it.oecdCpi?.short || 'OECD'} monthly, ${formatPeriod(it.cpiMonth)}` : 'IMF WEO, annual', tag: 'live' }
         : undefined;
     case 'debt':
       return it.fiscal?.debtPctGdp ? { value: it.fiscal.debtPctGdp.value, source: `IMF WEO, ${it.fiscal.debtPctGdp.year}`, tag: 'official' } : undefined;

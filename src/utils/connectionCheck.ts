@@ -16,6 +16,7 @@ import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from '.
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
+import { BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
@@ -247,6 +248,8 @@ export const SOURCE_IDS = [
   'pink_sheet',
   'oecd_cli',
   'oecd_cpi',
+  'bcb_ipca',
+  'eurostat_hicp',
   'comtrade',
   'fred_csv',
   'fred_api',
@@ -664,6 +667,38 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       'DBnomics answered, but with no monthly OECD headline CPI growth series the app reads (dataset DSD_PRICES@DF_PRICES_ALL). The dataset code or dimension names may differ.'
     );
   });
+
+  add('bcb_ipca', () =>
+    httpCheck(
+      { id: 'bcb_ipca', name: 'Banco Central do Brasil (SGS)', group: 'free', feeds: "Brazil's monthly IPCA inflation over 12 months, fresher than the OECD mirror" },
+      fetchFn,
+      bcbSgsUrl(BCB_IPCA_12M, 3),
+      T,
+      (r) => {
+        const pts = parseBcbSgs(parseJson(r.text));
+        const last = pts[pts.length - 1];
+        return last ? `Brazil IPCA ${fmt(last.value, 2)}% over 12 months (${formatMonth(last.period)})` : null;
+      },
+      {},
+      'The BCB answered, but not with the SGS series 13522 rows the app reads.'
+    )
+  );
+
+  add('eurostat_hicp', () =>
+    httpCheck(
+      { id: 'eurostat_hicp', name: 'Eurostat HICP', group: 'free', feeds: 'Monthly inflation for EU members (Poland on the default lists), fresher than the OECD mirror' },
+      fetchFn,
+      eurostatHicpUrl(['PL'], 3),
+      T,
+      (r) => {
+        const pts = parseEurostatHicp(parseJson(r.text)).PL;
+        const last = pts?.[pts.length - 1];
+        return last ? `Poland HICP ${fmt(last.value, 1)}% y/y (${formatMonth(last.period)})` : null;
+      },
+      {},
+      'Eurostat answered, but not with the prc_hicp_minr annual-rate figures the app reads (all items, coicop18 TOTAL).'
+    )
+  );
 
   add('comtrade', async () => {
     const key = (env.COMTRADE_API_KEY || '').trim();

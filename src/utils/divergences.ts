@@ -63,7 +63,7 @@ function make(d: Omit<Divergence, 'score'>): Divergence {
 
 export const cpiTag = (it: LiveWatchlistItem): { q: Quality; src: string } =>
   it.cpiSource === 'oecd' && it.cpiMonth
-    ? { q: 'live', src: `OECD monthly, ${formatMonth(it.cpiMonth)}` }
+    ? { q: 'live', src: `${it.oecdCpi?.short || 'OECD'} monthly, ${formatMonth(it.cpiMonth)}` }
     : it.cpiSource === 'live'
       ? { q: 'live', src: 'IMF, live' }
       : { q: 'sample', src: 'sample' };
