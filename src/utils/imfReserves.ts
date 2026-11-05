@@ -143,9 +143,11 @@ export const IMF_MEASURES: Record<ImfMeasureId, ImfMeasure> = {
     freq: 'M',
     label: 'Official reserve assets',
     envKey: 'IMF_RESERVES_KEY',
-    want: /reserve assets|total reserves|international reserves|official reserves|^reserves\b/i,
-    avoid: /gold|sdr|special drawing|reserve position|imf|other reserve|foreign currency reserves|securities|deposits|financial derivatives|loans|liabilit|drain|memo|forward|net|predetermined|contingent/i,
-    prefer: [/total/i],
+    // Live IL names (Nov 2026): "Total reserves (gold at market value)" TRGMV_REVS, also at national
+    // valuation and at 35 SDRs per ounce; components ("Reserves excluding gold", SDRs, gold) are avoided.
+    want: /^total reserves|reserve assets|official reserves|international reserves/i,
+    avoid: /national valuation|\bsdrs?\b|per ounce|volume|excluding|weeks|imports|reserve position|special drawing|^gold|^reserves,|other reserve|securities|deposits|derivatives|loans|liabilit|drain|memo|forward|predetermined|contingent/i,
+    prefer: [/total/i, /market value/i],
     reject: /domestic currency|national currency|percent|% of|index|ounce|troy/i,
   },
   currentAccount: {
@@ -154,8 +156,11 @@ export const IMF_MEASURES: Record<ImfMeasureId, ImfMeasure> = {
     freq: 'Q',
     label: 'Current account balance',
     envKey: 'IMF_CA_KEY',
+    // Live BOP name (Nov 2026): "Current account balance (credit less debit)" CAB. The words credit and
+    // debit sit inside that name, so they are not avoided here; the series pick drops the credit and
+    // debit entries by their accounting-entry code instead.
     want: /current account/i,
-    avoid: /goods|services|income|transfer|exceptional|supplement|excluding|credit|debit|of which/i,
+    avoid: /^total current account|credit\/revenue|debit\/expenditure|goods|services|income|transfer|exceptional|supplement|excluding|of which/i,
     prefer: [/net/i, /total/i],
     reject: /domestic currency|national currency|percent|% of|\bcredit\b|\bdebit\b|euro\b/i,
   },
@@ -305,8 +310,11 @@ export function pickSeries(series: ImfSeries[], m: ImfMeasure): ImfSeries | null
     .filter((s) => s.obs.length)
     .map((s) => {
       const l = labelOf(s);
+      // The indicator was already chosen by name, so its own name (e.g. "credit less debit") is not
+      // held against the series here: only the other dimensions (entry, unit, frequency) can rule it out.
+      const rest = labelOf({ ...s, dims: Object.fromEntries(Object.entries(s.dims).filter(([dim]) => !/INDICATOR/.test(dim))) });
       const usd = /us dollars?|\bUSD\b/i.test(l) || Object.values(s.dims).some((d) => d.id === 'USD');
-      if (!usd || m.reject.test(l)) return null;
+      if (!usd || m.reject.test(rest)) return null;
       const f = Object.entries(s.dims).find(([id]) => FREQ_DIMS.includes(id))?.[1]?.id;
       if (f && f !== m.freq) return null;
       return { s, score: m.prefer.reduce((n, re) => n + (re.test(l) ? 1 : 0), 0) - l.length / 1000 };
@@ -320,6 +328,21 @@ export function pickSeries(series: ImfSeries[], m: ImfMeasure): ImfSeries | null
 export function toUsdBn(value: number, scale: number | undefined): number | null {
   if (scale === undefined) return null;
   return value * Math.pow(10, scale - 9);
+}
+
+/** Above this many US dollars a single reading cannot be real (world reserves are about $13 trillion). */
+const IMPLAUSIBLE_USD = 1e14;
+
+/**
+ * The scale to use for a series. The live IMF API (Nov 2026) states SCALE 6 (millions) on series whose
+ * values are already in whole dollars (Brazil goods and services debit 113520669001.43 for one quarter).
+ * When the stated scale would put the largest value above $100 trillion, the values are read as whole
+ * dollars (scale 0). Otherwise the stated scale stands; undefined when the IMF stated none.
+ */
+export function seriesScale(s: Pick<ImfSeries, 'scale' | 'obs'>): number | undefined {
+  if (s.scale === undefined) return undefined;
+  const max = s.obs.reduce((m, o) => Math.max(m, Math.abs(o.value)), 0);
+  return max * Math.pow(10, s.scale) > IMPLAUSIBLE_USD ? 0 : s.scale;
 }
 
 // ---- Readings -------------------------------------------------------------------------------
@@ -387,7 +410,7 @@ export function buildExternal(
   const res = picked.reserves;
   if (res?.obs.length) {
     const last = res.obs[res.obs.length - 1];
-    const bn = toUsdBn(last.value, res.scale);
+    const bn = toUsdBn(last.value, seriesScale(res));
     if (bn === null) miss.reserves = 'The IMF did not state the unit (millions or billions) for this series.';
     else {
       const [y, mo] = last.period.split('-');
@@ -403,13 +426,13 @@ export function buildExternal(
   const ca = picked.currentAccount;
   if (ca?.obs.length) {
     const last = ca.obs[ca.obs.length - 1];
-    const bn = toUsdBn(last.value, ca.scale);
+    const bn = toUsdBn(last.value, seriesScale(ca));
     if (bn === null) miss.currentAccount = 'The IMF did not state the unit (millions or billions) for this series.';
     else {
       out.currentAccount = { key: ca.key, period: last.period, usdBn: round(bn, 2) };
       const four = lastFourQuarters(ca.obs);
       if (four) {
-        const sumBn = toUsdBn(four.sum, ca.scale)!;
+        const sumBn = toUsdBn(four.sum, seriesScale(ca))!;
         const yr = four.through.slice(0, 4);
         const gdp = gdpByYear?.[yr];
         out.currentAccount4q = {
@@ -423,7 +446,7 @@ export function buildExternal(
   const im = picked.imports;
   if (im?.obs.length) {
     const four = lastFourQuarters(im.obs);
-    const bn = four ? toUsdBn(four.sum, im.scale) : null;
+    const bn = four ? toUsdBn(four.sum, seriesScale(im)) : null;
     if (four && bn !== null && bn > 0) {
       out.imports4q = { usdBn: round(bn, 1), through: four.through, key: im.key };
       if (out.reserves) out.monthsOfImports = round(out.reserves.usdBn / (bn / 12), 1);
