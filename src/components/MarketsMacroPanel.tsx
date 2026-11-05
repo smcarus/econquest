@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { toLive } from '../utils/liveFigures';
-import { marketsMacroBrief } from '../utils/marketsMacro';
+import { emptyGroupReasons, marketsMacroBrief, splitEmptyGroups } from '../utils/marketsMacro';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { BriefGroups, BriefSummary } from './CountryBriefPanel';
 import { useMarketEdgeAnchors } from './MarketEdgeScreen';
@@ -33,7 +33,9 @@ export const MarketsMacroPanel: React.FC<{
   onOpenCountry: (item: WatchlistItem) => void;
   /** Opens Compare, where the peer screen lives. */
   onOpenCompare?: () => void;
-}> = ({ run, peers, onOpenCompare }) => {
+  /** Shown right under the MarketEdge summary (News and events). */
+  afterSummary?: React.ReactNode;
+}> = ({ run, peers, onOpenCompare, afterSummary }) => {
   const anchors = useMarketEdgeAnchors();
   // Peers without their built-in figures (utils/liveFigures.ts).
   const livePeers = useMemo(() => peers.map(toLive), [peers]);
@@ -55,6 +57,16 @@ export const MarketsMacroPanel: React.FC<{
         .map(({ g }) => g),
     }));
   }, [brief]);
+  // Panels with no figure at all fold into one list at the end, so the page leads with what is held.
+  const split = useMemo(() => {
+    const empty: typeof brief.groups = [];
+    const shown = sections.map((sec) => {
+      const s = splitEmptyGroups(sec.groups);
+      empty.push(...s.empty);
+      return { title: sec.title, groups: s.filled };
+    });
+    return { shown, empty };
+  }, [sections]);
 
   return (
     <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true" data-markets-macro="true">
@@ -65,13 +77,32 @@ export const MarketsMacroPanel: React.FC<{
         </header>
         <BriefSummary brief={brief} />
       </section>
-      {sections.map((sec) =>
+      {afterSummary}
+      {split.shown.map((sec) =>
         sec.groups.length ? (
           <div key={sec.title} className="space-y-2">
             <h3 className="ui-section-title pt-2">{sec.title}</h3>
             <BriefGroups brief={{ ...brief, groups: sec.groups }} />
           </div>
         ) : null
+      )}
+
+      {split.empty.length > 0 && (
+        <details className="ui-panel" data-empty-panels={split.empty.length}>
+          <summary className="cursor-pointer px-4 py-3 ui-body">
+            Not available yet: {split.empty.length} {split.empty.length === 1 ? 'panel has' : 'panels have'} no figures for {run.countryName}
+            <span className="block ui-label">{split.empty.map((g) => g.title).join(' · ')}. Open for what each needs.</span>
+          </summary>
+          <ul className="border-t border-slate-100 dark:border-slate-800">
+            {split.empty.map((g) => (
+              <li key={g.title} className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+                <span className="ui-body">{g.title}</span>
+                <span className="block text-xs text-amber-700 dark:text-amber-400">{emptyGroupReasons(g).join('; ')}</span>
+                <span className="block ui-label">{g.rows.map((r) => r.label).join(' · ')}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
       )}
 
       <div className="ui-panel px-4 py-3 flex flex-wrap items-center justify-between gap-2">

@@ -405,11 +405,18 @@ export const CountryPage: React.FC<{
           </PanelBoundary>
         </div>
       )}
-      {tab.id === 'macro' && <MarketsMacroPanel run={run} peers={watchlistItems} onOpenCountry={onSelectCountry} onOpenCompare={onOpenCompare} />}
       {tab.id === 'macro' && (
-        <PanelBoundary name="News and events">
-          <GdeltEventsPanel key={`gdelt-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
-        </PanelBoundary>
+        <MarketsMacroPanel
+          run={run}
+          peers={watchlistItems}
+          onOpenCountry={onSelectCountry}
+          onOpenCompare={onOpenCompare}
+          afterSummary={
+            <PanelBoundary name="News and events">
+              <GdeltEventsPanel key={`gdelt-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </PanelBoundary>
+          }
+        />
       )}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
 
