@@ -33,7 +33,20 @@ globalThis.fetch = async (input, init = {}) => {
       disagreements: [],
       gaps: ['No CDS reading was asked for.'],
     };
-    const content = JSON.stringify(brief);
+    // Explain mode (src/utils/explain.ts) asks for facts apart from interpretation, by lens.
+    const explain = {
+      headline: 'Inflation is far above the policy rate, so policy is loose in real terms.',
+      facts: ['CPI inflation is 34.0%.', 'The figure you pointed at is 27.5%.', 'Inflation should fall to 21% next year.'],
+      reasons: ['Prices are rising faster than the policy rate, so borrowing is cheap in real terms.'],
+      lenses: [
+        { lens: 'micro', text: 'Savers lose and borrowers gain while prices outrun the policy rate.' },
+        { lens: 'politics', text: 'Protests are likely.' },
+      ],
+      watch: ['A policy rate above inflation would change this reading.'],
+      gaps: [],
+    };
+    const isExplain = String(init.body || '').includes('explaining a number or a pattern');
+    const content = JSON.stringify(isExplain ? explain : brief);
     if (JSON.parse(String(init.body || '{}')).stream) {
       // Streamed the way Ollama does: one JSON line per piece, then done.
       const lines = content.match(/.{1,40}/g).map((c) => JSON.stringify({ message: { role: 'assistant', content: c }, done: false }) + '\n');

@@ -38,6 +38,7 @@ import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
+import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
@@ -3762,6 +3763,9 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
       figures: figuresFromAnswers(answers),
       missing: answers.flatMap((a) => (a.missing || []).map((m) => `${a.name}: ${String(m).slice(0, 200)}`)).slice(0, 60),
       removedSentences: (out.removed?.length ?? 0) + (out.contradicted?.length ?? 0),
+      ...(out.brief?.explain
+        ? { mode: 'explain', lenses: out.brief.explain.lenses.map((l) => l.lens), ...(out.brief.explain.focus ? { explained: out.brief.explain.focus } : {}) }
+        : {}),
     },
   });
 }
@@ -3769,9 +3773,10 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
 async function synthesiseAnswers(
   question: string,
   answers: AgentAnswer[],
-  opts: { scope?: string; countries?: number; earlier?: Array<{ question: string; headline?: string }>; runtimeConfig?: any } = {}
+  opts: { scope?: string; countries?: number; earlier?: Array<{ question: string; headline?: string }>; runtimeConfig?: any; explain?: ExplainPlan } = {}
 ): Promise<SynthesisResult> {
   const empty: CouncilBrief = { headline: '', points: [], disagreements: [], gaps: [] };
+  if (opts.explain) return explainAnswers(question, answers, opts as typeof opts & { explain: ExplainPlan });
   try {
     const step = await executeResilientLlmStep<CouncilBrief>({
       stepName: 'COUNCIL_SYNTHESIS',
@@ -3780,20 +3785,7 @@ async function synthesiseAnswers(
       thinkingLevel: ThinkingLevel.LOW,
       systemInstruction: SYNTHESIS_INSTRUCTION,
       // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
-      prompt: (
-        earlierAsText(opts.earlier || []) +
-        documentsAsText(
-          toAgentDocuments(answers, {
-            question,
-            askedAt: new Date().toISOString(),
-            scope: opts.scope || 'the countries asked',
-            countriesAsked:
-              opts.countries && Number.isInteger(opts.countries) && opts.countries > 0 && opts.countries < 300
-                ? opts.countries
-                : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
-          })
-        )
-      ).slice(0, 22000) + synthesisTask(question),
+      prompt: (earlierAsText(opts.earlier || []) + councilDocsText(question, answers, opts)).slice(0, 22000) + synthesisTask(question),
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -3833,6 +3825,84 @@ async function synthesiseAnswers(
     const out: SynthesisResult = { brief: null, removed: [], reason: `The summary step failed (${error?.message || 'unknown error'}).` };
     return out;
   }
+}
+
+/** The council's documents as the synthesis reads them (shared by the summary and explain mode). */
+function councilDocsText(question: string, answers: AgentAnswer[], opts: { scope?: string; countries?: number }): string {
+  return documentsAsText(
+    toAgentDocuments(answers, {
+      question,
+      askedAt: new Date().toISOString(),
+      scope: opts.scope || 'the countries asked',
+      countriesAsked:
+        opts.countries && Number.isInteger(opts.countries) && opts.countries > 0 && opts.countries < 300
+          ? opts.countries
+          : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
+    })
+  );
+}
+
+/** Explain mode (src/utils/explain.ts): facts apart from interpretation, by lens, every sentence checked. */
+async function explainAnswers(
+  question: string,
+  answers: AgentAnswer[],
+  opts: { scope?: string; countries?: number; earlier?: Array<{ question: string; headline?: string }>; runtimeConfig?: any; explain: ExplainPlan }
+): Promise<SynthesisResult> {
+  const coverage = lensCoverage(opts.explain.lenses, answers);
+  try {
+    const step = await executeResilientLlmStep<RawExplain>({
+      stepName: 'COUNCIL_SYNTHESIS',
+      providerMode: opts.runtimeConfig?.providerMode || 'gemini',
+      runtimeConfig: opts.runtimeConfig || {},
+      thinkingLevel: ThinkingLevel.LOW,
+      systemInstruction: EXPLAIN_INSTRUCTION,
+      prompt: (earlierAsText(opts.earlier || []) + focusAsText(opts.explain.focus) + councilDocsText(question, answers, opts)).slice(0, 22000) + explainTask(question, coverage),
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          headline: { type: Type.STRING, description: 'One sentence that answers the question in plain words.' },
+          facts: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Data only: what the figures are, quoted as written.' },
+          reasons: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'Why the figure or pattern is where it is.' },
+          lenses: {
+            type: Type.ARRAY,
+            items: { type: Type.OBJECT, properties: { lens: { type: Type.STRING }, text: { type: Type.STRING } }, required: ['lens', 'text'] },
+            description: 'One entry per lens listed in the prompt.',
+          },
+          watch: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'What in the figures would change the reading.' },
+          gaps: { type: Type.ARRAY, items: { type: Type.STRING }, description: 'What the agents could not answer.' },
+        },
+        required: ['headline', 'facts', 'reasons', 'lenses', 'watch', 'gaps'],
+      },
+      fallbackValue: {},
+      maxRetries: 1,
+    });
+    if (step.usedFallback) {
+      return { brief: null, removed: [], reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.` };
+    }
+    const checked = checkExplain(step.data || {}, question, answers, opts.explain);
+    const e = checked.brief.explain;
+    if (!checked.brief.headline && !e.facts.length && !e.reasons.length && !e.lenses.some((l) => l.sentences.length)) {
+      return {
+        brief: null,
+        removed: checked.removed,
+        contradicted: checked.contradicted,
+        provider: step.providerUsed,
+        reason: `${step.providerUsed} answered, but every sentence it wrote had a number not in the agents' figures or contradicted an agent, so nothing was kept.`,
+      };
+    }
+    return { brief: checked.brief, removed: checked.removed, contradicted: checked.contradicted, provider: step.providerUsed };
+  } catch (error: any) {
+    return { brief: null, removed: [], reason: `The explanation step failed (${error?.message || 'unknown error'}).` };
+  }
+}
+
+/** Reads explain mode from a request body: the lenses (checked against the list) and the figure pointed at. */
+function explainFromBody(body: any): ExplainPlan | undefined {
+  const e = body?.explain;
+  if (!e || typeof e !== 'object') return undefined;
+  const lenses: LensId[] = (Array.isArray(e.lenses) ? (e.lenses as unknown[]) : []).filter((l): l is LensId => LENS_ORDER.includes(l as LensId));
+  const focus = cleanFocus(e.focus);
+  return { lenses: lenses.length ? [...new Set(lenses)] : LENS_ORDER, named: Boolean(e.named) && lenses.length > 0, ...(focus ? { focus } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -6844,6 +6914,7 @@ ${MISSING_FIGURES_RULE}
       countries: Number.isInteger(req.body?.countries) ? req.body.countries : undefined,
       earlier: Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [],
       runtimeConfig: req.body?.runtimeConfig || {},
+      explain: explainFromBody(req.body),
     });
     auditCouncilAnswer(question, answers, out, scope, 'Council chat');
     res.json(out);

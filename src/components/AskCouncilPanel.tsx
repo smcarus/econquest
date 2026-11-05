@@ -35,6 +35,7 @@ import {
   type SynthesisResult,
 } from '../utils/askCouncil';
 
+import { withExplainAgents } from '../utils/explain';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
 import { lazyNamed } from './LazyDesk';
 // The chart card (recharts) loads only when an answer has a chart.
@@ -186,7 +187,8 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     setQuestion('');
     const wordPlan = asFollowUp && asked ? planFollowUp(text, asked.plan, items) : planCouncil(text, items, scope || undefined);
     setChoosing(true);
-    const plan = applyAgentChoice(wordPlan, await chooseAgents(text, history));
+    // Explain questions ("why…", "what does it mean for…") also bring the agents for each lens.
+    const plan = withExplainAgents(applyAgentChoice(wordPlan, await chooseAgents(text, history)), text);
     setChoosing(false);
     const desk = runCouncil(text, plan, items, new Date(), docs);
     // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
@@ -205,7 +207,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: plan.explain } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {
