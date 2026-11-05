@@ -5,18 +5,20 @@ import { buildBaselineOpenData, buildDefaultAssessmentRun, SOVEREIGN_CATALOG } f
 const OWN_SNAPSHOT = ['BRA', 'TUR', 'EGY'];
 const OTHERS = SOVEREIGN_CATALOG.map((c) => c.iso3).filter((i) => !OWN_SNAPSHOT.includes(i));
 
-test('countries without their own snapshot get no borrowed contracts or headlines', () => {
-  assert.ok(OTHERS.includes('POL') && OTHERS.includes('ZAF'));
-  for (const iso3 of OTHERS) {
+test('no country gets built-in contracts, headlines or figures', () => {
+  for (const { iso3 } of SOVEREIGN_CATALOG) {
     const s = buildBaselineOpenData(iso3);
     assert.deepEqual(s.polymarketContracts, [], iso3);
     assert.deepEqual(s.gdeltMetrics.topHeadlines, [], iso3);
     assert.equal(s.gdeltMetrics.articleCount24h, 0, iso3);
-    const item = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)!;
-    assert.equal(s.gdeltMetrics.conflictIntensityIndex, Math.round(item.geopoliticalRisk * 100), iso3);
+    assert.ok(Number.isNaN(s.gdeltMetrics.conflictIntensityIndex), iso3);
+    for (const section of [s.imfIndicators, s.worldBankIndicators, s.monetaryAndMarket] as unknown as Record<string, unknown>[]) {
+      for (const [k, v] of Object.entries(section)) if (typeof v === 'number') assert.ok(Number.isNaN(v), `${iso3} ${k} = ${v}`);
+    }
+    assert.deepEqual(s.yieldCurve.tenors, [], iso3);
+    assert.deepEqual(s.debtRollover.buckets, [], iso3);
+    assert.deepEqual(s.factorBetas, [], iso3);
   }
-  // Brazil keeps its own sample entries.
-  assert.ok(buildBaselineOpenData('BRA').polymarketContracts.length > 0);
 });
 
 test('the sample council for another country never mentions Brazil and quotes no odds', () => {

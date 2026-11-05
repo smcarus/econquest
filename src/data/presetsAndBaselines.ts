@@ -92,6 +92,8 @@ export function registerCustomSovereignInCatalog(
   return newItem;
 }
 
+// Countries the app knows. No built-in figures: every number is NaN (Missing) until a feed fills it.
+const N = Number.NaN;
 export const SOVEREIGN_CATALOG: WatchlistItem[] = [
   {
     iso3: 'BRA',
@@ -99,14 +101,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Latin America',
     currencyCode: 'BRL',
     focusTheme: 'Fiscal Primary Target Credibility vs. Selic Terminal Rate & Real Yield Cushion',
-    geopoliticalRisk: 0.34,
-    sovereignRisk: 0.64,
-    macroRisk: 0.58,
-    compositeRisk: 0.52,
-    yield10YPct: 12.85,
-    cds5YBps: 168,
-    debtToGdpPct: 86.4,
-    fxReservesMonths: 14.2,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'ELEVATED',
   },
   {
@@ -115,14 +117,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'EMEA',
     currencyCode: 'TRY',
     focusTheme: 'Orthodox Monetary Disinflation Path, Net FX Reserve Rebuilding & Energy Import Sensitivity',
-    geopoliticalRisk: 0.68,
-    sovereignRisk: 0.61,
-    macroRisk: 0.72,
-    compositeRisk: 0.67,
-    yield10YPct: 28.4,
-    cds5YBps: 264,
-    debtToGdpPct: 31.8,
-    fxReservesMonths: 4.1,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'CRITICAL',
   },
   {
@@ -131,14 +133,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'MENA / Chokepoint',
     currencyCode: 'EGP',
     focusTheme: 'Bab el-Mandeb Maritime Transit Revenue Shock, IMF EFF Tranche & Rollover Wall',
-    geopoliticalRisk: 0.84,
-    sovereignRisk: 0.78,
-    macroRisk: 0.74,
-    compositeRisk: 0.79,
-    yield10YPct: 24.1,
-    cds5YBps: 540,
-    debtToGdpPct: 90.2,
-    fxReservesMonths: 3.4,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'CRITICAL',
   },
   {
@@ -147,14 +149,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Sub-Saharan Africa',
     currencyCode: 'ZAR',
     focusTheme: 'Coalition Fiscal Consolidation, Logistics Bottlenecks & Commodity Terms-of-Trade',
-    geopoliticalRisk: 0.45,
-    sovereignRisk: 0.62,
-    macroRisk: 0.54,
-    compositeRisk: 0.54,
-    yield10YPct: 10.45,
-    cds5YBps: 205,
-    debtToGdpPct: 75.8,
-    fxReservesMonths: 5.3,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'ELEVATED',
   },
   {
@@ -163,14 +165,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Latin America',
     currencyCode: 'MXN',
     focusTheme: 'North American Trade Tariff Renegotiation, Judicial Reform & Quasi-Sovereign Contingent Liability',
-    geopoliticalRisk: 0.56,
-    sovereignRisk: 0.53,
-    macroRisk: 0.49,
-    compositeRisk: 0.53,
-    yield10YPct: 9.95,
-    cds5YBps: 132,
-    debtToGdpPct: 54.6,
-    fxReservesMonths: 4.6,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'ELEVATED',
   },
   {
@@ -179,14 +181,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Asia-Pacific',
     currencyCode: 'IDR',
     focusTheme: 'Fiscal Deficit 3% Cap Discipline, Commodity Downstreaming & DXY Spillover Resilience',
-    geopoliticalRisk: 0.31,
-    sovereignRisk: 0.39,
-    macroRisk: 0.42,
-    compositeRisk: 0.37,
-    yield10YPct: 6.75,
-    cds5YBps: 74,
-    debtToGdpPct: 39.6,
-    fxReservesMonths: 6.2,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'STABLE',
   },
   {
@@ -195,14 +197,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'G10 / Asia-Pacific',
     currencyCode: 'JPY',
     focusTheme: 'BoJ Yield Curve Normalization, JGB Duration Supply & Yen Carry Trade Unwind Spillover',
-    geopoliticalRisk: 0.38,
-    sovereignRisk: 0.57,
-    macroRisk: 0.51,
-    compositeRisk: 0.49,
-    yield10YPct: 1.18,
-    cds5YBps: 24,
-    debtToGdpPct: 251.2,
-    fxReservesMonths: 15.8,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'ELEVATED',
   },
   {
@@ -211,14 +213,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'G10 / Europe',
     currencyCode: 'GBP',
     focusTheme: 'Gilt Issuance Supply Absorption, Fiscal Headroom Rules & Services Inflation Persistence',
-    geopoliticalRisk: 0.32,
-    sovereignRisk: 0.48,
-    macroRisk: 0.47,
-    compositeRisk: 0.42,
-    yield10YPct: 4.42,
-    cds5YBps: 31,
-    debtToGdpPct: 101.4,
-    fxReservesMonths: 3.1,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'STABLE',
   },
   {
@@ -227,14 +229,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'CEE / Europe',
     currencyCode: 'PLN',
     focusTheme: 'Defence Spending and the EU Deficit Procedure, NBP Easing Path & Frontline Geopolitical Premium',
-    geopoliticalRisk: 0.47,
-    sovereignRisk: 0.41,
-    macroRisk: 0.43,
-    compositeRisk: 0.44,
-    yield10YPct: 5.45,
-    cds5YBps: 72,
-    debtToGdpPct: 58.2,
-    fxReservesMonths: 7.4,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'STABLE',
   },
   {
@@ -243,14 +245,14 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Latin America',
     currencyCode: 'CLP',
     focusTheme: 'Fiscal Rule Credibility, Copper Terms-of-Trade & BCCh Easing Room',
-    geopoliticalRisk: 0.22,
-    sovereignRisk: 0.34,
-    macroRisk: 0.39,
-    compositeRisk: 0.32,
-    yield10YPct: 5.6,
-    cds5YBps: 64,
-    debtToGdpPct: 42.1,
-    fxReservesMonths: 5.8,
+    geopoliticalRisk: N,
+    sovereignRisk: N,
+    macroRisk: N,
+    compositeRisk: N,
+    yield10YPct: N,
+    cds5YBps: N,
+    debtToGdpPct: N,
+    fxReservesMonths: N,
     alertStatus: 'STABLE',
   },
 ];
@@ -353,422 +355,86 @@ export function noNewsMetrics(geopoliticalRisk: number): OpenDataSnapshot['gdelt
   };
 }
 
+/**
+ * The empty shape of a country snapshot, before any feed answers. Every figure is NaN (shown as
+ * Missing), every list is empty: no built-in numbers, headlines, prediction markets, curves or
+ * shock betas (Sam, 2026-11-04: no built-in figures unless live, real or historic). The server fills
+ * in what the feeds return and records it in `liveFields`; `recomputeDerivedOpenDataAnalytics` then
+ * works out the debt and curve analytics from those live figures only.
+ */
 export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
   const item = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3) || SOVEREIGN_CATALOG[0];
-
-  const snapshots: Record<string, Partial<OpenDataSnapshot>> = {
-    BRA: {
-      imfIndicators: {
-        debtToGdpPct: 86.4,
-        debtToGdpForecast2027Pct: 91.2,
-        primaryFiscalBalancePct: -0.6,
-        realGdpGrowthPct: 2.8,
-        cpiInflationPct: 4.55,
-        sourceUrl: 'https://www.imf.org/external/datamapper/GGXWDG_NGDP@WEO/BRA',
-      },
-      worldBankIndicators: {
-        fxReservesMonthsImport: 14.2,
-        externalDebtPctGni: 29.4,
-        currentAccountPctGdp: -1.7,
-        politicalStabilityPercentile: 38.5,
-        sourceUrl: 'https://data.worldbank.org/country/brazil',
-      },
-      monetaryAndMarket: {
-        policyRatePct: 11.75,
-        realPolicyRatePct: 7.20,
-        sovereign10YBondYieldPct: 12.85,
-        cds5YSpreadBps: 168,
-        exchangeRatePerUsd: 5.74,
-        fxYtdChangePct: -14.8,
-        chokepointExposureIndex: 34,
-      },
-      polymarketContracts: [
-        {
-          id: 'pm-bra-selic',
-          question: 'Will Banco Central do Brasil hike Selic above 12.50% in H1?',
-          probabilityPct: 68,
-          volumeUsd: 1420000,
-          category: 'Monetary Policy',
-          url: 'https://polymarket.com',
-        },
-        {
-          id: 'pm-bra-fiscal',
-          question: 'Will Brazil achieve a 0.0% Primary Fiscal Deficit target this fiscal year?',
-          probabilityPct: 24,
-          volumeUsd: 890000,
-          category: 'Sovereign Fiscal',
-          url: 'https://polymarket.com',
-        },
-      ],
-      gdeltMetrics: {
-        conflictIntensityIndex: 36,
-        averageTone: -1.8,
-        articleCount24h: 312,
-        topHeadlines: [
-          {
-            title: 'Brazilian Treasury signals commitment to fiscal framework amid rising DI swap yields',
-            sourceDomain: 'valorinternational.globo.com',
-            publishedAt: new Date(Date.now() - 2 * 3600_000).toISOString(),
-            toneScore: -2.1,
-            url: 'https://valorinternational.globo.com',
-          },
-          {
-            title: 'BCB Monetary Policy Committee (Copom) minutes highlight unanchored inflation expectations',
-            sourceDomain: 'bcb.gov.br',
-            publishedAt: new Date(Date.now() - 6 * 3600_000).toISOString(),
-            toneScore: -3.4,
-            url: 'https://www.bcb.gov.br',
-          },
-        ],
-      },
-    },
-    TUR: {
-      imfIndicators: {
-        debtToGdpPct: 31.8,
-        debtToGdpForecast2027Pct: 33.4,
-        primaryFiscalBalancePct: -1.9,
-        realGdpGrowthPct: 3.1,
-        cpiInflationPct: 44.3,
-        sourceUrl: 'https://www.imf.org/external/datamapper/GGXWDG_NGDP@WEO/TUR',
-      },
-      worldBankIndicators: {
-        fxReservesMonthsImport: 4.1,
-        externalDebtPctGni: 47.2,
-        currentAccountPctGdp: -1.8,
-        politicalStabilityPercentile: 19.4,
-        sourceUrl: 'https://data.worldbank.org/country/turkiye',
-      },
-      monetaryAndMarket: {
-        policyRatePct: 50.0,
-        realPolicyRatePct: 5.7,
-        sovereign10YBondYieldPct: 28.4,
-        cds5YSpreadBps: 264,
-        exchangeRatePerUsd: 34.65,
-        fxYtdChangePct: -16.2,
-        chokepointExposureIndex: 69,
-      },
-      polymarketContracts: [
-        {
-          id: 'pm-tur-cbrt',
-          question: 'Will CBRT maintain policy rate >= 45% through Q2?',
-          probabilityPct: 74,
-          volumeUsd: 1180000,
-          category: 'Central Banks',
-          url: 'https://polymarket.com',
-        },
-        {
-          id: 'pm-tur-rating',
-          question: 'Will Turkey receive an additional sovereign credit rating upgrade within 6 months?',
-          probabilityPct: 61,
-          volumeUsd: 640000,
-          category: 'Sovereign Credit',
-          url: 'https://polymarket.com',
-        },
-      ],
-      gdeltMetrics: {
-        conflictIntensityIndex: 64,
-        averageTone: -3.1,
-        articleCount24h: 498,
-        topHeadlines: [
-          {
-            title: 'CBRT net FX reserves excluding swaps expand as local deposit dollarization declines',
-            sourceDomain: 'tcmb.gov.tr',
-            publishedAt: new Date(Date.now() - 3 * 3600_000).toISOString(),
-            toneScore: 1.6,
-            url: 'https://www.tcmb.gov.tr',
-          },
-          {
-            title: 'Eastern Mediterranean and regional energy transit corridors face heightened security premiums',
-            sourceDomain: 'reuters.com',
-            publishedAt: new Date(Date.now() - 5 * 3600_000).toISOString(),
-            toneScore: -4.2,
-            url: 'https://www.reuters.com',
-          },
-        ],
-      },
-    },
-    EGY: {
-      imfIndicators: {
-        debtToGdpPct: 90.2,
-        debtToGdpForecast2027Pct: 82.6,
-        primaryFiscalBalancePct: 2.1,
-        realGdpGrowthPct: 3.6,
-        cpiInflationPct: 26.5,
-        sourceUrl: 'https://www.imf.org/external/datamapper/GGXWDG_NGDP@WEO/EGY',
-      },
-      worldBankIndicators: {
-        fxReservesMonthsImport: 3.4,
-        externalDebtPctGni: 42.8,
-        currentAccountPctGdp: -3.4,
-        politicalStabilityPercentile: 16.2,
-        sourceUrl: 'https://data.worldbank.org/country/egypt-arab-rep',
-      },
-      monetaryAndMarket: {
-        policyRatePct: 27.25,
-        realPolicyRatePct: 0.75,
-        sovereign10YBondYieldPct: 24.1,
-        cds5YSpreadBps: 540,
-        exchangeRatePerUsd: 49.3,
-        fxYtdChangePct: -37.1,
-        chokepointExposureIndex: 92,
-      },
-      polymarketContracts: [
-        {
-          id: 'pm-egy-suez',
-          question: 'Will Red Sea / Suez Canal container transit volumes recover above 65% of pre-crisis baseline this quarter?',
-          probabilityPct: 19,
-          volumeUsd: 2350000,
-          category: 'Geopolitics & Trade',
-          url: 'https://polymarket.com',
-        },
-        {
-          id: 'pm-egy-imf',
-          question: 'Will IMF Executive Board complete Egypt EFF review without fiscal waiver delay?',
-          probabilityPct: 79,
-          volumeUsd: 520000,
-          category: 'Multilateral Policy',
-          url: 'https://polymarket.com',
-        },
-      ],
-      gdeltMetrics: {
-        conflictIntensityIndex: 82,
-        averageTone: -4.9,
-        articleCount24h: 640,
-        topHeadlines: [
-          {
-            title: 'IMF PortWatch reports Suez Canal daily transit volume remains 58% below historical average',
-            sourceDomain: 'portwatch.imf.org',
-            publishedAt: new Date(Date.now() - 1 * 3600_000).toISOString(),
-            toneScore: -5.4,
-            url: 'https://portwatch.imf.org',
-          },
-          {
-            title: 'Central Bank of Egypt maintains tight monetary stance to anchor FX unification gains',
-            sourceDomain: 'cbe.org.eg',
-            publishedAt: new Date(Date.now() - 8 * 3600_000).toISOString(),
-            toneScore: -1.2,
-            url: 'https://www.cbe.org.eg',
-          },
-        ],
-      },
-    },
-  };
-
-  const specific = CUSTOM_SOVEREIGN_OVERRIDES[item.iso3] || snapshots[item.iso3] || {};
+  // A country the user added by hand carries the figures they typed in (see registerCustomSovereignInCatalog).
+  const specific = CUSTOM_SOVEREIGN_OVERRIDES[item.iso3] || {};
+  const N = Number.NaN;
+  const missing = 'Missing: needs live figures from the data feeds.';
+  const now = new Date().toISOString();
 
   const imf = specific.imfIndicators || {
-    debtToGdpPct: item.debtToGdpPct,
-    debtToGdpForecast2027Pct: Number((item.debtToGdpPct * 1.04).toFixed(1)),
-    primaryFiscalBalancePct: -0.8,
-    realGdpGrowthPct: 2.5,
-    cpiInflationPct: 4.8,
+    debtToGdpPct: N,
+    debtToGdpForecast2027Pct: N,
+    primaryFiscalBalancePct: N,
+    realGdpGrowthPct: N,
+    cpiInflationPct: N,
     sourceUrl: `https://www.imf.org/external/datamapper/GGXWDG_NGDP@WEO/${item.iso3}`,
   };
-
   const wb = specific.worldBankIndicators || {
-    fxReservesMonthsImport: item.fxReservesMonths,
-    externalDebtPctGni: 34.5,
-    currentAccountPctGdp: -1.9,
-    politicalStabilityPercentile: 42.0,
+    fxReservesMonthsImport: N,
+    externalDebtPctGni: N,
+    currentAccountPctGdp: N,
+    politicalStabilityPercentile: N,
     sourceUrl: `https://api.worldbank.org/v2/country/${item.iso3}`,
   };
-
   const mkt = specific.monetaryAndMarket || {
-    policyRatePct: Number((item.yield10YPct * 0.92).toFixed(2)),
-    realPolicyRatePct: 3.4,
-    sovereign10YBondYieldPct: item.yield10YPct,
-    cds5YSpreadBps: item.cds5YBps,
-    exchangeRatePerUsd: 18.4,
-    fxYtdChangePct: -8.4,
-    chokepointExposureIndex: Math.round(item.geopoliticalRisk * 100),
+    policyRatePct: N,
+    realPolicyRatePct: N,
+    sovereign10YBondYieldPct: N,
+    cds5YSpreadBps: N,
+    exchangeRatePerUsd: N,
+    fxYtdChangePct: N,
+    chokepointExposureIndex: N,
   };
-
-  // Compute IMF Debt Sustainability Analysis (r - g) Math
-  const rEff = Number(Math.max(1.2, mkt.sovereign10YBondYieldPct - imf.cpiInflationPct * 0.75).toFixed(2));
-  const gReal = imf.realGdpGrowthPct;
-  const rMinusG = Number((rEff - gReal).toFixed(2));
-  const pbStar = Number((((rEff - gReal) / (100 + gReal)) * imf.debtToGdpPct).toFixed(2));
-  const fiscalGap = Number((pbStar - imf.primaryFiscalBalancePct).toFixed(2));
-
-  // Compute Debt Rollover & Maturity Wall Profile
-  const liquidReservesBn = Number((wb.fxReservesMonthsImport * 24.5).toFixed(1));
-  const stExtDebtBn = Number(Math.max(18, liquidReservesBn / (wb.fxReservesMonthsImport >= 6 ? 2.45 : 1.18)).toFixed(1));
-  const ggRatio = Math.round((liquidReservesBn / stExtDebtBn) * 100);
-  const floatShare = item.iso3 === 'BRA' ? 42.8 : item.iso3 === 'EGY' ? 48.5 : item.iso3 === 'TUR' ? 36.2 : 28.4;
-
-  const base10Y = mkt.sovereign10YBondYieldPct;
-  const basePol = mkt.policyRatePct;
 
   return {
     iso3: item.iso3,
     countryName: item.countryName,
     region: item.region,
     currencyCode: item.currencyCode,
-    fetchedAt: new Date().toISOString(),
-    // Built-in sample values: no feed has answered yet, so nothing is labelled live.
+    fetchedAt: now,
     liveApiSourcesActive: [],
-    dataStatus: { verifiedLiveSources: [], checkedAt: new Date().toISOString() },
+    dataStatus: { verifiedLiveSources: [], checkedAt: now },
     imfIndicators: imf,
     worldBankIndicators: wb,
     monetaryAndMarket: mkt,
-    // Countries without their own sample snapshot get no prediction-market contracts and no
-    // headlines (the live pull fills both when Polymarket and GDELT answer). The conflict index
-    // is the catalog's geopolitical score, like the other fallback fields above.
-    polymarketContracts: specific.polymarketContracts || [],
-    gdeltMetrics: specific.gdeltMetrics || noNewsMetrics(item.geopoliticalRisk),
+    polymarketContracts: [],
+    gdeltMetrics: { conflictIntensityIndex: N, averageTone: N, articleCount24h: 0, topHeadlines: [] },
     dsaAnalytics: {
-      effectiveRealInterestRatePct: rEff,
-      realGdpGrowthRatePct: gReal,
-      rMinusGDifferentialPct: rMinusG,
-      debtStabilizingPrimaryBalancePct: pbStar,
-      actualPrimaryBalancePct: imf.primaryFiscalBalancePct,
-      fiscalConsolidationGapPct: fiscalGap,
-      dsaInterpretation:
-        fiscalGap > 0.5
-          ? `Borrowing costs are higher than economic growth, so government debt will keep rising unless the budget cuts spending or raises taxes by ${fiscalGap.toFixed(2)}% of GDP (Ref: Gross Debt = ${imf.debtToGdpPct.toFixed(1)}% GDP · r - g = +${rMinusG.toFixed(2)}% · Required Primary Surplus = +${pbStar.toFixed(2)}% GDP).`
-          : `The government's current budget balance is strong enough to keep national debt from snowballing relative to the economy (Ref: Actual Primary Balance = ${imf.primaryFiscalBalancePct.toFixed(1)}% GDP vs. Stabilizing Threshold = ${pbStar.toFixed(2)}% GDP).`,
+      effectiveRealInterestRatePct: N,
+      realGdpGrowthRatePct: N,
+      rMinusGDifferentialPct: N,
+      debtStabilizingPrimaryBalancePct: N,
+      actualPrimaryBalancePct: N,
+      fiscalConsolidationGapPct: N,
+      dsaInterpretation: missing,
     },
     debtRollover: {
-      greenspanGuidottiRatioPct: ggRatio,
-      shortTermExternalDebtUsdBn: stExtDebtBn,
-      liquidFxReservesUsdBn: liquidReservesBn,
-      weightedAvgMaturityYears: item.iso3 === 'BRA' ? 4.1 : item.iso3 === 'EGY' ? 3.2 : 5.4,
-      floatingRateDebtSharePct: floatShare,
-      foreignHoldingsSharePct: item.iso3 === 'BRA' ? 9.8 : item.iso3 === 'MEX' ? 16.4 : 21.5,
-      rolloverVerdict:
-        ggRatio >= 150
-          ? `The central bank holds more than enough US dollars to pay all foreign debt due in the next year, though local-currency debt costs rise quickly when interest rates go up (Ref: Greenspan-Guidotti Reserve Cover = ${ggRatio}% vs. 100% IMF Floor · Floating-Rate Debt = ${floatShare}%).`
-          : `Hard-currency reserves are tight compared to foreign debt coming due over the next 12 months, meaning continued IMF or multilateral funding is essential (Ref: Greenspan-Guidotti Reserve Cover = ${ggRatio}% vs. 100% IMF Minimum Floor).`,
-      buckets: [
-        {
-          periodLabel: 'Next 90D (Q1)',
-          domesticLocalPctGdp: Number((imf.debtToGdpPct * 0.045).toFixed(1)),
-          externalHardCurrencyPctGdp: 0.6,
-          totalUsdBn: 28.4,
-          avgCouponPct: Number((basePol * 0.96).toFixed(2)),
-        },
-        {
-          periodLabel: 'Q2 Rollover',
-          domesticLocalPctGdp: Number((imf.debtToGdpPct * 0.062).toFixed(1)),
-          externalHardCurrencyPctGdp: 1.1,
-          totalUsdBn: 41.2,
-          avgCouponPct: Number((base10Y * 0.95).toFixed(2)),
-          isPeakRollover: true,
-        },
-        {
-          periodLabel: 'Q3 Rollover',
-          domesticLocalPctGdp: Number((imf.debtToGdpPct * 0.048).toFixed(1)),
-          externalHardCurrencyPctGdp: 0.8,
-          totalUsdBn: 31.0,
-          avgCouponPct: Number((base10Y * 0.94).toFixed(2)),
-        },
-        {
-          periodLabel: 'Q4 Rollover',
-          domesticLocalPctGdp: Number((imf.debtToGdpPct * 0.051).toFixed(1)),
-          externalHardCurrencyPctGdp: 0.9,
-          totalUsdBn: 33.8,
-          avgCouponPct: Number((base10Y * 0.92).toFixed(2)),
-        },
-        {
-          periodLabel: 'FY 2027 Wall',
-          domesticLocalPctGdp: Number((imf.debtToGdpPct * 0.165).toFixed(1)),
-          externalHardCurrencyPctGdp: 2.9,
-          totalUsdBn: 112.5,
-          avgCouponPct: Number((base10Y * 0.90).toFixed(2)),
-          isPeakRollover: true,
-        },
-        {
-          periodLabel: 'FY 2028 Wall',
-          domesticLocalPctGdp: Number((imf.debtToGdpPct * 0.142).toFixed(1)),
-          externalHardCurrencyPctGdp: 2.4,
-          totalUsdBn: 96.0,
-          avgCouponPct: Number((base10Y * 0.88).toFixed(2)),
-        },
-      ],
+      greenspanGuidottiRatioPct: N,
+      shortTermExternalDebtUsdBn: N,
+      liquidFxReservesUsdBn: N,
+      weightedAvgMaturityYears: N,
+      floatingRateDebtSharePct: N,
+      foreignHoldingsSharePct: N,
+      rolloverVerdict: missing,
+      buckets: [],
     },
     yieldCurve: {
-      slope2s10sBps: Math.round((base10Y - (basePol * 0.96)) * 100),
-      curveRegimeLabel:
-        base10Y >= basePol
-          ? 'Bear Steepening (Fiscal Term-Premium Expansion)'
-          : 'Inverted Monetary Restriction (Front-End Anchored by Hawkish CB)',
-      localVsUsdBasisSummary: `Local 10-year government bonds pay extra yield above US Treasuries even after insuring against default, reflecting investor caution over inflation and currency swings (Ref: 10Y Local Yield = ${base10Y.toFixed(2)}% · Local vs. USD Basis Pickup = +${Math.round(
-        (base10Y - 4.35) * 100 - mkt.cds5YSpreadBps
-      )} bps · 5Y CDS = ${mkt.cds5YSpreadBps} bps).`,
-      tenors: [
-        {
-          tenor: '3M',
-          currentYieldPct: Number((basePol * 0.98).toFixed(2)),
-          prior90DYieldPct: Number((basePol * 0.92).toFixed(2)),
-          usdHedgedBasisBps: -15,
-        },
-        {
-          tenor: '1Y',
-          currentYieldPct: Number((basePol * 1.01).toFixed(2)),
-          prior90DYieldPct: Number((basePol * 0.94).toFixed(2)),
-          usdHedgedBasisBps: 22,
-        },
-        {
-          tenor: '2Y',
-          currentYieldPct: Number((base10Y * 0.96).toFixed(2)),
-          prior90DYieldPct: Number((base10Y * 0.90).toFixed(2)),
-          usdHedgedBasisBps: 48,
-        },
-        {
-          tenor: '5Y',
-          currentYieldPct: Number((base10Y * 0.98).toFixed(2)),
-          prior90DYieldPct: Number((base10Y * 0.92).toFixed(2)),
-          usdHedgedBasisBps: 85,
-        },
-        {
-          tenor: '10Y',
-          currentYieldPct: base10Y,
-          prior90DYieldPct: Number((base10Y - 0.65).toFixed(2)),
-          usdHedgedBasisBps: 118,
-        },
-        {
-          tenor: '30Y',
-          currentYieldPct: Number((base10Y + 0.35).toFixed(2)),
-          prior90DYieldPct: Number((base10Y - 0.35).toFixed(2)),
-          usdHedgedBasisBps: 142,
-        },
-      ],
+      slope2s10sBps: N,
+      curveRegimeLabel: 'Missing',
+      localVsUsdBasisSummary: missing,
+      tenors: [],
     },
     catalystCalendar: buildOfficialCatalystCalendar(item.iso3, mkt.policyRatePct),
-    factorBetas: [
-      {
-        factorName: 'US 10Y Real Yield (TIPS) +50 bps Shock',
-        shockMagnitudeDescription: '+50 bps parallel rise in US real yields',
-        local10YYieldImpactBps: 68,
-        spotFxImpactPct: -3.4,
-        cds5YImpactBps: 28,
-        transmissionChannel: 'Tightens global USD financial conditions and raises minimum required EM real yield buffer.',
-      },
-      {
-        factorName: 'Broad USD Index (DXY) +3.0% Appreciation',
-        shockMagnitudeDescription: '+3.0% surge in trade-weighted USD',
-        local10YYieldImpactBps: 42,
-        spotFxImpactPct: -4.1,
-        cds5YImpactBps: 24,
-        transmissionChannel: 'Triggers FX pass-through into tradable CPI and increases local value of USD debt.',
-      },
-      {
-        factorName: 'Brent Crude & Maritime Freight +15% Spike',
-        shockMagnitudeDescription: '+15% energy & container shipping shock',
-        local10YYieldImpactBps: 55,
-        spotFxImpactPct: -2.2,
-        cds5YImpactBps: 32,
-        transmissionChannel: 'Raises headline CPI breakevens by +85–110bps and delays central bank easing cycles.',
-      },
-      {
-        factorName: 'Global / China Manufacturing PMI -2.0 pt Drop',
-        shockMagnitudeDescription: '-2.0 pt contraction in global industrial cycle',
-        local10YYieldImpactBps: 18,
-        spotFxImpactPct: -2.9,
-        cds5YImpactBps: 36,
-        transmissionChannel: 'Weakens commodity export terms-of-trade and widens the external current account deficit.',
-      },
-    ],
+    factorBetas: [],
   };
 }
 

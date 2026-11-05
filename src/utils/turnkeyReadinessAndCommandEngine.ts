@@ -386,7 +386,7 @@ export function buildCommandPaletteIndex(
       category: 'SOVEREIGN_SWITCH',
       categoryBadge: `${sov.iso3} · ${sov.currencyCode}`,
       title: `Switch Active Sovereign: ${sov.countryName} (${sov.iso3})`,
-      subtitle: `Debt/GDP ${sov.debtToGdpPct.toFixed(1)}% · 10Y Yield ${sov.yield10YPct.toFixed(2)}% · 5Y CDS ${sov.cds5YBps} bps · Reserves ${sov.fxReservesMonths.toFixed(1)}m`,
+      subtitle: `${sov.region} · ${sov.currencyCode}`,
       shortcutHint: sov.iso3,
       keywords: [
         sov.iso3.toLowerCase(),

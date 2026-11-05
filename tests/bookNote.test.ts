@@ -13,11 +13,12 @@ import {
 import { SOVEREIGN_CATALOG } from '../src/data/presetsAndBaselines.ts';
 import type { Holding } from '../src/utils/holdings.ts';
 import type { WatchlistItem } from '../src/types/council.ts';
+import { withTestFigures } from './helpers/testRows.ts';
 
 const NOW = new Date('2026-11-04T12:00:00Z');
 const cat = (iso: string) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso)!;
 /** The catalogue as if every risk score were live and every CDS your own. */
-const LIVE: WatchlistItem[] = SOVEREIGN_CATALOG.map((c) => ({ ...c, riskSource: 'live', cds5YSource: 'own', cds5YProvider: 'CSV', cds5YDate: '2026-11-03' }));
+const LIVE: WatchlistItem[] = withTestFigures(SOVEREIGN_CATALOG).map((c) => ({ ...c, riskSource: 'live', cds5YSource: 'own', cds5YProvider: 'CSV', cds5YDate: '2026-11-03' }));
 const h = (iso3: string, notional: number, extra: Partial<Holding> = {}): Holding => ({
   id: `${iso3}-${notional}`,
   iso3,
