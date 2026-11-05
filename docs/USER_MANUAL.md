@@ -25,10 +25,10 @@ shown when an input is missing.
 
 ## 1. Workspace
 
-The page the app opens on. Your inputs and the watchlist sit in a left column that stays in view on
-a desktop; the outputs (What moved, Next two weeks, Council chat, Watch alerts) run down the
-right in the order you would check them. On a phone it is one column, with a jump bar at the bottom
-of the screen (Inputs · Watchlist · Moved · Dates · Council · Alerts).
+The page the app opens on. Council chat is the main panel, at the top of the right column; What
+moved, Next two weeks and Watch alerts follow it. Your inputs and the watchlist sit in a left column
+that stays in view on a desktop. On a phone Council chat comes first, with a jump bar at the bottom
+of the screen (Council · Moved · Dates · Alerts · Inputs · Watchlist).
 
 **Your inputs.** One chip for each thing you set that changes what Workspace shows: watchlist, open
 country, data feeds, free keys, AI model, holdings and saved research. Each chip shows its state

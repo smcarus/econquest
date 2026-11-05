@@ -26,12 +26,12 @@ import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
 /** Phone jump bar targets, in page order. */
 const JUMPS: [string, string][] = [
-  ['ws-inputs', 'Inputs'],
-  ['ws-watchlist', 'Watchlist'],
+  ['tool-council', 'Council'],
   ['tool-digest', 'Moved'],
   ['tool-calendar', 'Dates'],
-  ['tool-council', 'Council'],
   ['tool-watch-alerts', 'Alerts'],
+  ['ws-inputs', 'Inputs'],
+  ['ws-watchlist', 'Watchlist'],
 ];
 /** Elections, budgets and IMF dates listed before "Show all". */
 const PF_SHOWN = 3;
@@ -227,9 +227,9 @@ export const TodayPage: React.FC<{
         </div>
       </div>
 
-      {/* Inputs on the left (sticky on a desktop), outputs on the right in the order you check them. */}
+      {/* Inputs on the left (sticky on a desktop), Council chat and the other outputs on the right. On a phone the chat comes first. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(18rem,22rem)_1fr] gap-4 items-start pb-16 lg:pb-0">
-        <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" aria-label="Your inputs and watchlist">
+        <aside className="order-2 lg:order-1 space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" aria-label="Your inputs and watchlist">
           <div id="ws-inputs" className="scroll-mt-36 lg:scroll-mt-20">
             {onInputAction && (
               <PanelBoundary name="Your inputs">
@@ -282,7 +282,20 @@ export const TodayPage: React.FC<{
           </div>
         </aside>
 
-        <div className="min-w-0 space-y-4">
+        <div className="min-w-0 space-y-4 order-1 lg:order-2">
+        {/* Council chat first and largest: the main thing to do on Workspace. */}
+        <div className={`min-w-0 scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('council')}`} id="tool-council">
+        <PanelBoundary name="Council chat">
+        <AskCouncilPanel
+          items={edgeItems}
+          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+          onSendToReports={() => onSendCouncilToReports?.()}
+          fullCouncil={fullCouncil}
+          uses={uses('council')}
+        />
+        </PanelBoundary>
+        </div>
+
         <div id="tool-digest" className={`scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('digest')}`}>
           <PanelBoundary name="Since your last visit">
             <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('digest')} />
@@ -396,17 +409,6 @@ export const TodayPage: React.FC<{
           </Card>
           </div>
 
-        <div className={`min-w-0 scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('council')}`} id="tool-council">
-        <PanelBoundary name="Council chat">
-        <AskCouncilPanel
-          items={edgeItems}
-          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-          onSendToReports={() => onSendCouncilToReports?.()}
-          fullCouncil={fullCouncil}
-          uses={uses('council')}
-        />
-        </PanelBoundary>
-        </div>
 
         <div id="tool-watch-alerts" className={`scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('alerts')}`}>
           <PanelBoundary name="Watch alerts">
