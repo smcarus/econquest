@@ -22,6 +22,7 @@ globalThis.fetch = async (input, init = {}) => {
   process.stderr.write(`[offline-fetch] ${url} key=${headers.has('key') ? 'present' : 'missing'}\n`);
 
   // A stand-in Ollama for the council synthesis test: one traceable sentence, one invented number.
+  if (url === 'http://fake-ollama.test:11434/api/tags') return json({ models: [{ name: 'qwen2.5:7b' }] });
   if (url.startsWith('http://fake-ollama.test:11434/api/chat')) {
     await new Promise((r) => setTimeout(r, 900)); // long enough to see a step running
     const brief = {
@@ -30,7 +31,14 @@ globalThis.fetch = async (input, init = {}) => {
       disagreements: [],
       gaps: ['No CDS reading was asked for.'],
     };
-    return json({ message: { role: 'assistant', content: JSON.stringify(brief) } });
+    const content = JSON.stringify(brief);
+    if (JSON.parse(String(init.body || '{}')).stream) {
+      // Streamed the way Ollama does: one JSON line per piece, then done.
+      const lines = content.match(/.{1,40}/g).map((c) => JSON.stringify({ message: { role: 'assistant', content: c }, done: false }) + '\n');
+      lines.push(JSON.stringify({ message: { role: 'assistant', content: '' }, done: true }) + '\n');
+      return new Response(new ReadableStream({ start(ctl) { for (const l of lines) ctl.enqueue(new TextEncoder().encode(l)); ctl.close(); } }), { status: 200 });
+    }
+    return json({ message: { role: 'assistant', content } });
   }
   // Brazil's central bank: IPCA over 12 months, as it answered on 2026-11-05.
   if (url.startsWith('https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/')) {

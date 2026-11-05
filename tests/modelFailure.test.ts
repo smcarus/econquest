@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { describeAttempt, describeFailures, localStepTimeoutMs, LONG_CHAT_STEP_MIN_MS } from '../src/utils/modelFailure.ts';
+import { describeAttempt, describeFailures, localStepTimeoutMs, LONG_CHAT_STEP_MIN_MS, ModelWaitError, ollamaHasModel, streamWaitFor } from '../src/utils/modelFailure.ts';
 
 test('summary and debate steps give a local model at least two minutes', () => {
   assert.equal(localStepTimeoutMs('COUNCIL_SYNTHESIS', undefined, false), LONG_CHAT_STEP_MIN_MS);
@@ -39,4 +39,33 @@ test('the Docker fallback addresses are left out when the main one says more', (
   assert.equal(reason, 'Ollama gemma4:31b at http://localhost:11434 did not answer within 120 s; no Gemini key is set');
   assert.equal(describeFailures([], false), 'no Gemini key is set');
   assert.equal(describeFailures([], true), 'no model is set up');
+});
+
+test('inside Docker, the localhost line is dropped once the host address was reached', () => {
+  const refused = Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } });
+  const reason = describeFailures(
+    [
+      { where: 'Ollama qwen2.5:7b at http://localhost:11434', error: refused },
+      { where: 'Ollama qwen2.5:7b at http://host.docker.internal:11434', error: new ModelWaitError('first', 120000) },
+    ],
+    true
+  );
+  assert.match(reason, /^Ollama qwen2.5:7b at http:\/\/host.docker.internal:11434 is running but wrote nothing within 120 s/);
+  assert.doesNotMatch(reason, /localhost/);
+});
+
+test('streaming waits: long chat steps wait on silence, quick steps keep one limit', () => {
+  assert.deepEqual(streamWaitFor('COUNCIL_SYNTHESIS', 120000), { firstTokenMs: 120000, idleMs: 60000, totalMs: 300000 });
+  assert.deepEqual(streamWaitFor('COUNCIL_CHOOSE_AGENTS', 16000), { firstTokenMs: 16000, idleMs: 16000, totalMs: 16000 });
+  assert.match(describeAttempt({ where: 'X', error: new ModelWaitError('idle', 60000) }), /stopped writing for 60 s/);
+  assert.match(describeAttempt({ where: 'X', error: new ModelWaitError('total', 300000) }), /still writing after 300 s/);
+  assert.match(describeAttempt({ where: 'X', notPulled: 'qwen2.5:7b' }), /ollama pull qwen2.5:7b/);
+});
+
+test('ollamaHasModel reads the /api/tags list', () => {
+  const tags = { models: [{ name: 'qwen2.5:7b' }, { name: 'llama3:latest' }] };
+  assert.equal(ollamaHasModel(tags, 'qwen2.5:7b'), true);
+  assert.equal(ollamaHasModel(tags, 'llama3'), true);
+  assert.equal(ollamaHasModel(tags, 'gemma4:31b'), false);
+  assert.equal(ollamaHasModel(null, 'gemma4:31b'), true);
 });
