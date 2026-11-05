@@ -12,7 +12,11 @@ import { STATE_LABEL, isFailure, type ConnectionGroup, type ConnectionReport, ty
 
 /** Rows whose key can be entered in Settings instead of .env. */
 const SETTINGS_CHECK_IDS = new Set(API_KEY_FIELDS.map((f) => f.checkId));
-const openSettings = () => window.dispatchEvent(new CustomEvent('econquest:open-settings'));
+/** Opens the Settings page that holds this source's key (AI model, free keys or your own paid data). */
+const openSettingsFor = (checkId: string) => {
+  const section = API_KEY_FIELDS.find((f) => f.checkId === checkId)?.section;
+  window.dispatchEvent(new CustomEvent('econquest:open-settings', { detail: { tab: section === 'ai' ? 'ai' : section === 'own_account' ? 'paid' : 'keys' } }));
+};
 
 const GROUP_TITLE: Record<ConnectionGroup, string> = {
   free: 'Free sources (no key)',
@@ -62,7 +66,7 @@ const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
         )}
         {SETTINGS_CHECK_IDS.has(r.id) ? (
           <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-            <button type="button" onClick={openSettings} className="text-blue-700 dark:text-blue-400 hover:underline">
+            <button type="button" onClick={() => openSettingsFor(r.id)} className="text-blue-700 dark:text-blue-400 hover:underline">
               {r.state === 'optional' ? 'Add your key in Settings' : 'Add or change the key in Settings'}
             </button>
             <span> (or set it in .env)</span>

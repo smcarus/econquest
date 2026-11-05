@@ -1,3 +1,4 @@
+import { SettingsText } from './SettingsText';
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronRight, Columns3, X } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';

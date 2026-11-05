@@ -3027,7 +3027,7 @@ function sanitizeAndParseJson<T>(rawText: string, fallback: T): { parsed: T; sch
 /** Shown where a council desk's AI model did not answer: nothing is filled in from built-in text. */
 const NO_MODEL_DESK = 'No AI model answered for this part, so it is left empty.';
 const NO_MODEL_COUNCIL =
-  'No AI model answered, so the council gave no assessment and no verdict. Nothing was filled in from built-in text. Check Menu > AI model (a Gemini key, or Ollama running).';
+  'No AI model answered, so the council gave no assessment and no verdict. Nothing was filled in from built-in text. Set it up or test it under Menu > Settings > AI model.';
 
 function clampScoreToAnchor(
   rawScore: unknown,
@@ -5689,6 +5689,27 @@ ${MISSING_FIGURES_RULE}
     }
   });
 
+  // Settings > AI model > Test: one short call through the same path, and the same waits, as the chat summary.
+  app.post('/api/ai/try-model', async (req, res) => {
+    const t0 = Date.now();
+    try {
+      const step = await executeResilientLlmStep<{ reply: string }>({
+        stepName: 'AI_MODEL_TEST',
+        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
+        runtimeConfig: req.body?.runtimeConfig || {},
+        thinkingLevel: ThinkingLevel.LOW,
+        systemInstruction: 'You check that the model answers. Reply with a JSON object.',
+        prompt: 'Return {"reply": "ready"}.',
+        responseSchema: { type: Type.OBJECT, properties: { reply: { type: Type.STRING } }, required: ['reply'] },
+        fallbackValue: { reply: '' },
+        maxRetries: 0,
+      });
+      res.json(step.usedFallback ? { ok: false, ms: Date.now() - t0, reason: step.failure || 'no model is set up' } : { ok: true, ms: Date.now() - t0, provider: step.providerUsed });
+    } catch (error: any) {
+      res.json({ ok: false, ms: Date.now() - t0, reason: error?.message || 'unknown error' });
+    }
+  });
+
   app.post('/api/council/synthesise', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
     const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 9) : [];
@@ -5735,7 +5756,7 @@ ${MISSING_FIGURES_RULE}
         const out: SynthesisResult = {
           brief: null,
           removed: [],
-          reason: `No AI model answered: ${step.failure || 'no model is set up'}. Check Menu > AI model and data connections.`,
+          reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.`,
         };
         return res.json(out);
       }
