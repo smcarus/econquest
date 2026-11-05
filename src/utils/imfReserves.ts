@@ -143,7 +143,7 @@ export const IMF_MEASURES: Record<ImfMeasureId, ImfMeasure> = {
     freq: 'M',
     label: 'Official reserve assets',
     envKey: 'IMF_RESERVES_KEY',
-    want: /reserve assets|total reserves|international reserves/i,
+    want: /reserve assets|total reserves|international reserves|official reserves|^reserves\b/i,
     avoid: /gold|sdr|special drawing|reserve position|imf|other reserve|foreign currency reserves|securities|deposits|financial derivatives|loans|liabilit|drain|memo|forward|net|predetermined|contingent/i,
     prefer: [/total/i],
     reject: /domestic currency|national currency|percent|% of|index|ounce|troy/i,
@@ -154,10 +154,10 @@ export const IMF_MEASURES: Record<ImfMeasureId, ImfMeasure> = {
     freq: 'Q',
     label: 'Current account balance',
     envKey: 'IMF_CA_KEY',
-    want: /^current account\b/i,
+    want: /current account/i,
     avoid: /goods|services|income|transfer|exceptional|supplement|excluding|credit|debit|of which/i,
     prefer: [/net/i, /total/i],
-    reject: /domestic currency|national currency|percent|% of|credit\b|debit\b|euro\b/i,
+    reject: /domestic currency|national currency|percent|% of|\bcredit\b|\bdebit\b|euro\b/i,
   },
   imports: {
     id: 'imports',
@@ -165,10 +165,10 @@ export const IMF_MEASURES: Record<ImfMeasureId, ImfMeasure> = {
     freq: 'Q',
     label: 'Imports of goods and services',
     envKey: 'IMF_IMPORTS_KEY',
-    want: /^goods and services\b|imports of goods and services/i,
+    want: /^goods and services\b|goods and services$|imports of goods and services/i,
     avoid: /net\b|balance|credit|exports|of which|supplement|excluding/i,
     prefer: [/debit/i],
-    reject: /domestic currency|national currency|percent|% of|credit\b|net\b|euro\b/i,
+    reject: /domestic currency|national currency|percent|% of|\bcredit\b|net\b|euro\b/i,
   },
 };
 
@@ -283,7 +283,21 @@ export function parseImfData(json: unknown): ImfSeries[] {
   return out;
 }
 
-const labelOf = (s: ImfSeries) => Object.values(s.dims).map((d) => d.name || d.id).join(' | ');
+/**
+ * Words a series' codes stand for, for when the IMF data answer carries codes without names
+ * (seen on Sam's Mac 2026-11-05: BOP entry CD_T came back with no name). CD = credit, DB = debit,
+ * N/NET = net, by the IMF's BPM6 accounting-entry codes.
+ */
+function codeWords(dim: string, id: string): string {
+  if (/ACCOUNTING_ENTRY/.test(dim)) return /^CD/i.test(id) ? 'credit' : /^DB/i.test(id) ? 'debit' : /^N/i.test(id) ? 'net' : '';
+  if (/UNIT/.test(dim) && id === 'USD') return 'US dollar';
+  if (/UNIT/.test(dim) && /^XDC/.test(id)) return 'domestic currency';
+  return '';
+}
+export const labelOf = (s: ImfSeries) =>
+  Object.entries(s.dims)
+    .map(([dim, d]) => [d.name, d.id, codeWords(dim, d.id)].filter(Boolean).join(' '))
+    .join(' | ');
 
 /** The one series that fits the measure: right frequency, in US dollars, not ruled out; best score wins. */
 export function pickSeries(series: ImfSeries[], m: ImfMeasure): ImfSeries | null {

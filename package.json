@@ -11,7 +11,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "test": "tsx --test \"tests/*.test.ts\"",
-    "check:data": "tsx scripts/check-connections.ts"
+    "check:data": "tsx scripts/check-connections.ts",
+    "check:imf": "tsx scripts/imf-codes.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
