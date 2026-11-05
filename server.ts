@@ -1303,6 +1303,41 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
  * older than a week. Without a stored copy it waits for one live pull (or, with
  * cacheOnly, returns the static baseline and warms the store in the background).
  */
+/** BIS pull for a request: never holds a page more than 8 s; a slow pull fills the cache for next time. */
+function cbpolPullQuick(): Promise<CbpolPull | null> {
+  return Promise.race([fetchCbpolPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
+}
+
+/**
+ * Lays the BIS policy rate over a snapshot as it is served, so it is as fresh as the BIS pull
+ * (12 h) rather than the weekly snapshot. Without a BIS figure the policy rate stays unmarked,
+ * so every screen reads it as Missing.
+ */
+async function withBisPolicyRate(snapshot: OpenDataSnapshot): Promise<OpenDataSnapshot> {
+  const rate = policyRateFor(snapshot.iso3, await cbpolPullQuick());
+  const liveFields = { ...(snapshot.liveFields || {}) };
+  // Only an own-data connector may also fill it; nothing else counts.
+  if (!rate) {
+    if (liveFields['market.policyRatePct']?.startsWith('BIS')) delete liveFields['market.policyRatePct'];
+    const { bisPolicyRate: _drop, ...rest } = snapshot;
+    return { ...rest, liveFields };
+  }
+  if (liveFields['market.policyRatePct'] && !liveFields['market.policyRatePct'].startsWith('BIS')) return snapshot;
+  liveFields['market.policyRatePct'] = `BIS, ${rate.freq === 'monthly' ? 'end of ' : ''}${rate.date}${rate.bank ? ` (${rate.bank})` : ''}`;
+  const { iso3: _i, area: _a, ...bisPolicyRate } = rate;
+  const cpi = snapshot.imfIndicators.cpiInflationPct;
+  return {
+    ...snapshot,
+    liveFields,
+    bisPolicyRate,
+    monetaryAndMarket: {
+      ...snapshot.monetaryAndMarket,
+      policyRatePct: rate.ratePct,
+      realPolicyRatePct: Number((rate.ratePct - cpi).toFixed(2)),
+    },
+  };
+}
+
 async function fetchLiveOpenDataSnapshot(
   iso3: string,
   countryNameHint?: string,
@@ -1311,7 +1346,7 @@ async function fetchLiveOpenDataSnapshot(
   const key = (iso3 || 'BRA').toUpperCase().trim();
   if (opts.forceRefresh) {
     const fresh = await refreshStoredSnapshot(key, countryNameHint);
-    if (fresh) return fresh;
+    if (fresh) return withBisPolicyRate(fresh);
   }
   const stored = loadStoredSnapshot(key);
   if (stored) {
@@ -1319,7 +1354,7 @@ async function fetchLiveOpenDataSnapshot(
       void refreshStoredSnapshot(key, countryNameHint);
     }
     // Saved snapshots may predate the official calendar; always rebuild it from today.
-    const snap = withOfficialCalendar(stored.snapshot);
+    const snap = withOfficialCalendar(await withBisPolicyRate(stored.snapshot));
     return countryNameHint ? { ...snap, countryName: countryNameHint } : snap;
   }
   if (opts.cacheOnly) {
@@ -1329,7 +1364,7 @@ async function fetchLiveOpenDataSnapshot(
     return baseline;
   }
   const fresh = await refreshStoredSnapshot(key, countryNameHint);
-  if (fresh) return fresh;
+  if (fresh) return withBisPolicyRate(fresh);
   const baseline = buildBaselineOpenData(key);
   if (countryNameHint) baseline.countryName = countryNameHint;
   return baseline;
@@ -1364,12 +1399,13 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
     Promise.race([fetchCftcPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchTicPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+    cbpolPullQuick(),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1401,6 +1437,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         ]);
         const pos = positioningFor(catItem.iso3, cftcWeeks);
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
+        const bisRate = policyRateFor(catItem.iso3, cbpol);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
@@ -1420,9 +1457,19 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           debtToGdpPct: snap.imfIndicators.debtToGdpPct,
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
-          policyRatePct: snap.monetaryAndMarket.policyRatePct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
-          policyRateSource: 'sample',
+          // Policy rate: the BIS figure with its date, or nothing (the row reads Missing with the reason).
+          ...(bisRate
+            ? {
+                policyRatePct: bisRate.ratePct,
+                policyRateSource: 'bis',
+                policyRateDate: bisRate.date,
+                ...(bisRate.bank ? { policyRateBank: bisRate.bank } : {}),
+                policyRateStale: bisRate.stale,
+                ...(bisRate.change12mPts !== undefined ? { policyRateChange12mPts: bisRate.change12mPts } : {}),
+                ...(bisRate.lastMove ? { policyRateLastMove: bisRate.lastMove } : {}),
+              }
+            : { policyRateSource: 'sample' }),
           debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
           reservesSource: lf['wb.fxReservesMonthsImport'] ? 'live' : 'sample',
           // The risk scores are a model on the snapshot; they count only when its main inputs are live.

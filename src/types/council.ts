@@ -336,6 +336,18 @@ export interface OpenDataSnapshot {
    * label. Any figure not listed is a built-in value and must not be shown as data.
    */
   liveFields?: Record<string, string>;
+  /** The BIS central bank policy rate behind market.policyRatePct, when the feed has one (src/utils/bisPolicyRates.ts). */
+  bisPolicyRate?: {
+    ratePct: number;
+    date: string;
+    freq: 'daily' | 'monthly';
+    bank?: string;
+    rate?: string;
+    change12mPts?: number;
+    lastMove?: { period: string; fromPct: number; toPct: number };
+    stale: boolean;
+    pulledAt: string;
+  };
   imfIndicators: {
     debtToGdpPct: number;
     debtToGdpForecast2027Pct: number;
@@ -464,8 +476,14 @@ export interface WatchlistItem {
   policyRatePct?: number;
   /** 'live' when the IMF feed answered for this country's CPI, else 'sample'. */
   cpiSource?: 'live' | 'sample';
-  /** Policy rate from the AI market prompt or the sample. */
-  policyRateSource?: 'ai_estimate' | 'sample';
+  /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
+  policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
+  /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */
+  policyRateDate?: string;
+  policyRateBank?: string;
+  policyRateStale?: boolean;
+  policyRateChange12mPts?: number;
+  policyRateLastMove?: { period: string; fromPct: number; toPct: number };
   /** 'live' when the IMF filled debt/GDP, or the World Bank filled reserves; else built-in. */
   debtSource?: 'live' | 'sample';
   reservesSource?: 'live' | 'sample';

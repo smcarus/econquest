@@ -31,12 +31,18 @@ test('figures from real sources stay: IMF, World Bank, official yield, your CDS;
   assert.equal(toLive(row({ yield10YSource: 'ai_estimate' })).yield10YPct, undefined);
   assert.equal(toLive(row({ yield10YSource: 'sample' })).yield10YPct, undefined);
   assert.equal(toLive(row({ cpiSource: 'sample' })).cpiInflationPct, undefined);
+  // The BIS policy rate counts, with its date; any other policy-rate source drops the date too.
+  const bis = toLive(row({ policyRateSource: 'bis', policyRateDate: '2026-10-27', policyRateBank: 'Bank of Mexico' }));
+  assert.deepEqual([bis.policyRatePct, bis.policyRateDate, hasFigure(bis, 'policy')], [9.15, '2026-10-27', true]);
+  assert.equal(toLive(row({ policyRateSource: 'sample', policyRateDate: '2026-10-27' })).policyRateDate, undefined);
 });
 
 test('missing reasons say whether to set something up or that a free feed did not answer', () => {
   assert.equal(missingReason('cds', 'MEX').kind, 'setup');
   assert.match(missingReason('cds', 'MEX').help, /CDS_FEED=csv/);
-  assert.equal(missingReason('policy', 'MEX').short, 'No source yet');
+  assert.equal(missingReason('policy', 'MEX').short, 'BIS did not answer');
+  assert.equal(missingReason('policy', 'MEX').kind, 'unreachable');
+  assert.equal(missingReason('policy', 'EGY').short, 'Not in BIS policy rates');
   assert.doesNotMatch(missingReason('cds', 'MEX').help, /Gemini/);
   assert.equal(missingReason('debt', 'MEX').kind, 'unreachable');
   assert.equal(missingReason('yield', 'MEX').kind, 'unreachable'); // free FRED series exists

@@ -5,6 +5,7 @@
  */
 import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { FRED_10Y_SERIES } from './officialYields';
+import { CBPOL_AREA, CBPOL_NOT_COVERED } from './bisPolicyRates';
 
 export type FigureKey = 'risk' | 'cds' | 'yield' | 'debt' | 'reserves' | 'cpi' | 'policy';
 
@@ -59,7 +60,9 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
     case 'reserves':
       return { kind: 'unreachable', short: 'World Bank did not answer', help: 'The World Bank feed (free, no key) did not answer. Press Sync, or check the connection.' };
     case 'policy':
-      return { kind: 'setup', short: 'No source yet', help: 'No policy-rate feed is connected yet. Central bank rates need an official source wired in (planned), or your own data.' };
+      if (!CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3))
+        return { kind: 'setup', short: 'Not in BIS policy rates', help: 'The BIS central bank policy rates dataset has no series for this country. Add your own figure through a data connector to fill it.' };
+      return { kind: 'unreachable', short: 'BIS did not answer', help: 'The BIS policy rates feed (free, no key) did not answer. Press Sync, or check the connection under Tools > Data connections.' };
   }
 }
 
@@ -79,8 +82,8 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
     case 'cpi':
       return it.cpiSource === 'live';
     case 'policy':
-      // The only policy-rate source today is an AI web-search estimate, which does not count.
-      return false;
+      // Only the BIS feed counts; an AI estimate or the sample does not.
+      return it.policyRateSource === 'bis';
   }
 }
 
@@ -107,7 +110,14 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
   if (!hasFigure(it, 'debt')) delete out.debtToGdpPct;
   if (!hasFigure(it, 'reserves')) delete out.fxReservesMonths;
   if (!hasFigure(it, 'cpi')) delete out.cpiInflationPct;
-  if (!hasFigure(it, 'policy')) delete out.policyRatePct;
+  if (!hasFigure(it, 'policy')) {
+    delete out.policyRatePct;
+    delete out.policyRateDate;
+    delete out.policyRateBank;
+    delete out.policyRateStale;
+    delete out.policyRateChange12mPts;
+    delete out.policyRateLastMove;
+  }
   return out;
 }
 

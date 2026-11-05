@@ -161,6 +161,15 @@ test('watchlist: official yields carry a date, everything else says sample', asy
   assert.equal(byIso.get('MEX')?.cds5YSource, 'own');
   assert.equal(byIso.get('MEX')?.cds5YDate, '2026-11-03');
   assert.equal(byIso.get('BRA')?.cds5YSource, 'sample');
+  // Policy rate: BIS where the feed has one (Mexico daily, Turkey month-end), else no figure.
+  assert.deepEqual(
+    [byIso.get('MEX')?.policyRatePct, byIso.get('MEX')?.policyRateSource, byIso.get('MEX')?.policyRateDate, byIso.get('MEX')?.policyRateBank],
+    [6.5, 'bis', '2026-10-27', 'Bank of Mexico']
+  );
+  assert.deepEqual(byIso.get('MEX')?.policyRateLastMove, { period: '2026-10', fromPct: 6.75, toPct: 6.5 });
+  assert.equal(byIso.get('TUR')?.policyRateDate, '2026-09');
+  assert.equal(byIso.get('EGY')?.policyRateSource, 'sample');
+  assert.equal(byIso.get('EGY')?.policyRateDate, undefined);
   // FX valuation: BIS real exchange rate gap and ECB-rate volatility where they answered (South Africa).
   assert.equal(byIso.get('ZAF')?.reerGapPct, -14.9);
   assert.equal(byIso.get('ZAF')?.reerPeriod, '2026-09');
@@ -268,6 +277,18 @@ test('council progress: each step reports as it finishes, honestly marked when n
   assert.equal(steps.search.status, 'skipped');
   // An unknown id answers with no steps rather than an error.
   assert.deepEqual((await (await fetch(`${base}/api/council/progress/nope-nope`)).json()).steps, {});
+});
+
+test('country snapshot: the BIS policy rate is marked live with its date; Egypt stays unmarked', async () => {
+  const mex = await (await fetch(`${base}/api/data/sovereign-snapshot?iso3=MEX`)).json();
+  const snap = (mex.snapshot || mex) as import('../src/types/council.ts').OpenDataSnapshot;
+  assert.equal(snap.monetaryAndMarket.policyRatePct, 6.5);
+  assert.equal(snap.liveFields?.['market.policyRatePct'], 'BIS, 2026-10-27 (Bank of Mexico)');
+  assert.equal(snap.bisPolicyRate?.lastMove?.toPct, 6.5);
+  const egy = await (await fetch(`${base}/api/data/sovereign-snapshot?iso3=EGY`)).json();
+  const e = (egy.snapshot || egy) as import('../src/types/council.ts').OpenDataSnapshot;
+  assert.equal(e.liveFields?.['market.policyRatePct'], undefined);
+  assert.equal(e.bisPolicyRate, undefined);
 });
 
 test('policy rates: BIS figures with their dates, kept on disk; missing countries say why', async () => {

@@ -284,7 +284,20 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       t
         ? { label: 'Inflation target', value: `${p1(t.pct)}${t.bandPts ? ` ± ${t.bandPts}` : ''}`, source: targetSource(t), tag: 'official' }
         : { label: 'Inflation target', value: 'not on file', source: 'central bank page not reachable', tag: 'sample' },
-      { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: pr.q },
+      { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: it.policyRateSource === 'bis' ? 'official' : pr.q },
+      ...(it.policyRateSource === 'bis' && it.policyRateChange12mPts !== undefined
+        ? [{ label: 'Policy rate change over 12 months', value: `${sgn(it.policyRateChange12mPts, 2)} pts`, source: 'BIS, month-end figures', tag: 'official' as const }]
+        : []),
+      ...(it.policyRateSource === 'bis' && it.policyRateLastMove
+        ? [
+            {
+              label: 'Last policy rate move',
+              value: `${p2(it.policyRateLastMove.fromPct)} to ${p2(it.policyRateLastMove.toPct)} in ${it.policyRateLastMove.period}`,
+              source: 'BIS',
+              tag: 'official' as const,
+            },
+          ]
+        : []),
       { label: 'Real policy rate', value: p1(real), source: 'policy rate minus inflation', tag: 'model' },
       ...(real10 !== undefined && it.yield10YPct !== undefined
         ? [{ label: 'Real 10Y yield', value: p1(real10), source: `10Y yield ${p2(it.yield10YPct)} (${y.src}) minus inflation`, tag: 'model' as const }]

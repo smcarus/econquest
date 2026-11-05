@@ -76,7 +76,7 @@ test('agents answer only from figures on hand, each figure tagged, and say what 
   assert.ok(by.calendar.findings.length + by.calendar.missing.length > 0);
   // Egypt has no inflation or policy rate figure: the central bank agent says which source is missing.
   const wide = runCouncil('inflation', planCouncil('inflation', ALL), ALL);
-  assert.ok(wide[0].missing.some((m) => /Egypt.*missing inflation \(IMF did not answer\) and policy rate \(No source yet\)/.test(m)));
+  assert.ok(wide[0].missing.some((m) => /Egypt.*missing inflation \(IMF did not answer\) and policy rate \(Not in BIS policy rates\)/.test(m)));
 });
 
 test('number check: a sentence survives only when its numbers trace back to an agent figure', () => {
