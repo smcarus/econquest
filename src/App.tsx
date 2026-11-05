@@ -90,7 +90,10 @@ import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { PresentMode } from './components/PresentMode';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
-import { CORE_REPORTS, visibleNav, visibleReport } from './utils/simpleMode';
+import { CORE_REPORTS, visibleReport } from './utils/simpleMode';
+import { ToolsPage } from './components/ToolsPage';
+import type { BriefView } from './components/CountryBriefPanel';
+import type { ToolTarget } from './data/toolsCatalog';
 
 /** Off: the desks behind the old "Show all tools" switch run only on built-in figures. */
 const SHOW_BUILT_IN_DESKS = false;
@@ -594,6 +597,7 @@ export default function App() {
   // Top-level area. The app always opens on Workspace; there are no roles (Sam, 2026-11-04).
   const [appArea, setAppArea] = useState<AppArea>('today');
   const [countryTab, setCountryTab] = useState<CountryTabId>(DEFAULT_COUNTRY_TAB_ID as CountryTabId);
+  const [countryBriefView, setCountryBriefView] = useState<BriefView>('economist');
   const [portfolioTab, setPortfolioTab] = useState<string>(PORTFOLIO_TABS[0].id);
   const [reportsTab, setReportsTab] = useState<string>(REPORTS_TABS[0].id);
   // Report template asked for from a brief or Workspace; otherwise the council brief.
@@ -606,14 +610,11 @@ export default function App() {
   const [councilProgressId, setCouncilProgressId] = useState<string | null>(null);
   const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
   const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
-  // Core view by default: everything outside the core set is behind Menu > Show all tools.
   // The old desks all compute from built-in figures, so they are hidden until each runs on live
   // inputs (Sam, 2026-11-04: no built-in figures). Their code stays; flip this to bring them back.
   const showAllTools = SHOW_BUILT_IN_DESKS;
-  const navAreas = visibleNav(NAV, showAllTools);
-  useEffect(() => {
-    if (!showAllTools && appArea === 'desks') setAppArea('today');
-  }, [showAllTools, appArea]);
+  // Tools is always shown: without the old desks it is the page of tools that run on live data.
+  const navAreas = NAV;
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
   const [isHoldingsPanelOpen, setIsHoldingsPanelOpen] = useState<boolean>(false);
   const setHoldings = (next: Holding[]) => {
@@ -1836,6 +1837,20 @@ export default function App() {
   };
 
   // One desk's content, by section id. Used by the desk view and by the Country page tabs.
+  /** Opens a ready tool from the Tools page where it lives. */
+  const openTool = (t: ToolTarget) => {
+    if (t.area === 'today') {
+      setAppArea('today');
+      // Wait for Workspace to render, then bring the section into view.
+      window.setTimeout(() => document.getElementById(t.anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    } else if (t.area === 'country') {
+      if (t.brief) setCountryBriefView(t.brief);
+      setCountryTab(t.tab as CountryTabId);
+      setAppArea('country');
+    } else if (t.area === 'portfolio') openWorkspace('portfolio');
+    else openWorkspace('reports');
+  };
+
   const renderDeskBody = (sec: NavSectionId) => (
     <>
               {sec === 'charts_watchlists' && (
@@ -2181,7 +2196,17 @@ export default function App() {
                   Reports
                 </button>
               ),
-              desks: (
+              desks: !showAllTools ? (
+                <button
+                  type="button"
+                  onClick={() => setAppArea('desks')}
+                  aria-current={appArea === 'desks' ? 'page' : undefined}
+                  aria-pressed={appArea === 'desks'}
+                  className="ui-pill inline-flex items-center whitespace-nowrap"
+                >
+                  Tools
+                </button>
+              ) : (
                 <div
                   className="relative"
                   onMouseEnter={() => setIsToolsMenuOpen(true)}
@@ -2483,9 +2508,9 @@ export default function App() {
       </header>
 
       {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
-      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea !== 'desks' ? 'lg:hidden' : ''}`}>
+      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea !== 'desks' || !showAllTools ? 'lg:hidden' : ''}`}>
         <div className="max-w-[1600px] mx-auto flex flex-col gap-2">
-          {appArea === 'desks' && (
+          {appArea === 'desks' && showAllTools && (
           <>
           {/* Row 1: Contextual Sub-Groups & Modules for Active Activity Pillar */}
           <PillarSubNavigationStrip
@@ -2852,7 +2877,7 @@ export default function App() {
               onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               ticketCount={stagedTradeTickets.length}
-              briefView="economist"
+              briefView={countryBriefView}
               onWriteNote={(view) => {
                 setRequestedReport(view);
                 openWorkspace('reports', 'ic_memo_builder');
@@ -2965,7 +2990,16 @@ export default function App() {
             />
           )}
 
-          {appArea === 'desks' && (
+          {appArea === 'desks' && !showAllTools && (
+            <ToolsPage
+              run={run}
+              items={liveWatchlistItems}
+              watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
+              onOpen={openTool}
+            />
+          )}
+
+          {appArea === 'desks' && showAllTools && (
           <>
           {/* CONSOLIDATED 1-LINE STATUS BAR WITH SLIDE-OVER DRAWERS (MORNING RADAR, EXECUTIVE BLUF, DESK GUIDE) */}
           <CompactTopStatusAndDrawersBar

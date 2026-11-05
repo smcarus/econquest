@@ -229,7 +229,7 @@ export const TodayPage: React.FC<{
           />
         </Card>
 
-        <div className="min-w-0">
+        <div className="min-w-0 scroll-mt-4" id="tool-council">
         <AskCouncilPanel
           items={edgeItems}
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}
@@ -239,23 +239,29 @@ export const TodayPage: React.FC<{
         </div>
       </div>
 
-      <DivergenceList
-        items={edgeItems}
-        lastLook={lastVisit?.rows}
-        onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-      />
+      <div id="tool-divergences" className="scroll-mt-4">
+        <DivergenceList
+          items={edgeItems}
+          lastLook={lastVisit?.rows}
+          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+        />
+      </div>
 
-      <MarketEdgeScreen
-        watchlist={watchlistItems}
-        anchors={edgeAnchors}
-        highlightIso3={run.iso3}
-        onOpenCountry={(item) => onOpenCountry(item, 'macro')}
-        intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
-      />
+      <div id="tool-marketedge" className="scroll-mt-4">
+        <MarketEdgeScreen
+          watchlist={watchlistItems}
+          anchors={edgeAnchors}
+          highlightIso3={run.iso3}
+          onOpenCountry={(item) => onOpenCountry(item, 'macro')}
+          intro="Your watchlist plus the US, China, Russia, UK, EU and India, always shown."
+        />
+      </div>
 
-      <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+      <div id="tool-scenarios" className="scroll-mt-4">
+        <ScenarioExposurePanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+      </div>
 
-      <div className={coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+      <div id="tool-calendar" className={`scroll-mt-4 ${coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}`}>
 
         <Card
           title="Next two weeks"
