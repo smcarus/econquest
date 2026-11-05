@@ -12,6 +12,7 @@ import {
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
+import { cliFor, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
@@ -591,6 +592,63 @@ async function fetchCbpolPull(): Promise<CbpolPull | null> {
 }
 
 /**
+ * OECD composite leading indicators (src/utils/oecdCli.ts). Monthly; one call for every area.
+ * Saved to data/live/oecd-cli.json with its pull date and pulled again after a day; a failed pull
+ * keeps the last good one and is retried after an hour. If the OECD refuses the narrow query
+ * (a changed layout), the whole dataflow is asked for once and read the same way.
+ */
+type CliPull = { pulledAt: string; series: CliSeries };
+let cliMemory: { pull: CliPull | null; triedAt: number } | null = null;
+let cliInFlight: Promise<CliPull | null> | null = null;
+function cliFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cli.json');
+}
+async function fetchCliPull(): Promise<CliPull | null> {
+  if (!cliMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cliFile(), 'utf8')) as CliPull;
+      if (saved?.pulledAt && saved.series) cliMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (cliMemory?.pull && Date.now() - Date.parse(cliMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cliMemory.pull;
+  if (cliMemory && Date.now() - cliMemory.triedAt < 60 * 60 * 1000) return cliMemory.pull;
+  if (cliInFlight) return cliInFlight;
+  cliInFlight = (async () => {
+    let series: CliSeries | null = null;
+    for (const wide of [false, true]) {
+      try {
+        const res = await fetchWithTimeout(cliUrl({ wide }), 30000);
+        if (res.ok) series = parseCli(await res.text());
+        else console.warn(`[OECD] leading indicators refused (HTTP ${res.status})${wide ? '' : '; trying the whole dataflow'}`);
+      } catch (e) {
+        console.warn(`[OECD] leading indicators: ${describeNetworkError(e, 30000)}`);
+        break;
+      }
+      if (series) break;
+    }
+    const prev = cliMemory?.pull ?? null;
+    if (!series) {
+      cliMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: CliPull = { pulledAt: new Date().toISOString(), series };
+    cliMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cliFile()), { recursive: true });
+      fs.writeFileSync(cliFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cliInFlight = null;
+  });
+  return cliInFlight;
+}
+
+/**
  * Trade exposure for the scenario ranking (src/utils/scenarioExposure.ts): World Bank fuel and
  * trade shares, and WITS partner shares with China and Russia. Kept 24 hours (1 hour after a miss).
  */
@@ -650,9 +708,18 @@ async function fetchTradeExposure(): Promise<Map<string, TradeExposure>> {
 
 /** MarketEdge benchmarks always on screen (see src/utils/marketEdgeAnchors.ts). */
 async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
-  const [ownCds, catalog, us10Y] = await Promise.all([loadOwnCds(), fetchLiveWatchlistCatalog(), fetchUs10YYield()]);
+  const [ownCds, catalog, us10Y, cli] = await Promise.all([
+    loadOwnCds(),
+    fetchLiveWatchlistCatalog(),
+    fetchUs10YYield(),
+    Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
+  ]);
   const anchors = await Promise.all(
-    MARKET_EDGE_ANCHORS.map(async (def) => buildAnchor(def, def.fredSeries ? await fetchFredCached(def.fredSeries) : null, ownCds.get(def.iso3)))
+    MARKET_EDGE_ANCHORS.map(async (def) => {
+      const a = buildAnchor(def, def.fredSeries ? await fetchFredCached(def.fredSeries) : null, ownCds.get(def.iso3));
+      const lead = cliFor(def.iso3, cli?.series);
+      return lead && cli ? { ...a, cli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { ...a, cliPulledAt: cli.pulledAt } : a;
+    })
   );
   const peers = catalog.filter((c) => MARKET_EDGE_ANCHOR_ISO3.includes(c.iso3));
   return { anchors, peers, ...(us10Y ? { us10Y } : {}), fetchedAt: new Date().toISOString() };
@@ -1399,13 +1466,14 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll, cftc, tic, cbpol] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
     Promise.race([fetchCftcPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     Promise.race([fetchTicPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     cbpolPullQuick(),
+    Promise.race([fetchCliPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1438,6 +1506,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
         const pos = positioningFor(catItem.iso3, cftcWeeks);
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
+        const lead = cliFor(catItem.iso3, cli?.series);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
@@ -1445,6 +1514,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
+          ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
           ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,

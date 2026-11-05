@@ -81,8 +81,8 @@ export const READY_TOOLS: ReadyTool[] = [
   {
     id: 'country_marketedge',
     title: 'Country markets and macro',
-    what: 'The open country against its peers: CDS fitted on the risk score, policy stance, FX valuation, carry per unit of volatility, futures positioning and US Treasury holdings.',
-    sources: 'Live feeds, official yields, BIS, ECB exchange rates, CFTC Commitments of Traders, US Treasury TIC, your CDS file',
+    what: 'The open country against its peers: CDS fitted on the risk score, policy stance, FX valuation, carry per unit of volatility, futures positioning, US Treasury holdings and the OECD leading indicator.',
+    sources: 'Live feeds, official yields, BIS, ECB exchange rates, CFTC Commitments of Traders, US Treasury TIC, OECD, your CDS file',
     target: { area: 'country', tab: 'macro' },
   },
   {
