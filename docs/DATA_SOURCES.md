@@ -186,8 +186,9 @@ goes back to `.env`. Each key has a Test button that runs the same check as Data
 `npm run check:data` reads the saved keys too. Keys can only be changed from the computer running
 the app. Under Docker, `docker-compose.yml` publishes the app on this computer only
 (`127.0.0.1`) and turns on `SETTINGS_ALLOW_REMOTE`, because requests reach the container from
-Docker's network. Keys saved in Settings under Docker live in the container's data volume, so
-`npm run check:data` run on the Mac itself does not see them; use Tools > Data connections instead.
+Docker's network. Docker reads and writes the same `data/local/settings.json` in the project
+folder, so a key saved while the app runs in Docker also works with `npm run dev` and
+`npm run check:data`, and the other way round.
 
 | Source | Fills | Settings |
 | --- | --- | --- |

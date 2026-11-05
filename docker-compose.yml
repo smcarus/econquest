@@ -46,6 +46,9 @@ services:
       - OPENAI_COMPATIBLE_MODEL=${OPENAI_COMPATIBLE_MODEL:-gpt-4o}
     volumes:
       - econquest_data:/app/data
+      # Menu > Settings keys live in the project folder (data/local/, not in git), shared with
+      # `npm run dev` and `npm run check:data`, so a key saved in either way of starting works in both.
+      - ./data/local:/app/data/local
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
