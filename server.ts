@@ -3289,6 +3289,7 @@ async function startServer() {
     return countrySeries(iso3, {
       cbpol,
       cli,
+      cpiOecdAnswered: Boolean(cpi),
       cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
       tic,

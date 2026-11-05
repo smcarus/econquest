@@ -66,6 +66,8 @@ export interface SeriesInputs {
   cpi?: { pulledAt: string; series: Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }> } | null;
   cftc?: { pulledAt: string; weeks: Record<string, CftcWeek[]> } | null;
   tic?: { pulledAt: string; table: TicTable } | null;
+  /** False when the OECD inflation pull itself has not answered (national series may still be in cpi). */
+  cpiOecdAnswered?: boolean;
   /** Saved pulls for the country, any order. */
   archive?: ArchivedSnapshot[];
 }
@@ -141,11 +143,13 @@ function leadingIndicator(iso3: string, pull: SeriesInputs['cli']): Series | Ser
   };
 }
 
-function inflation(iso3: string, pull: SeriesInputs['cpi']): Series | SeriesMissing {
+function inflation(iso3: string, pull: SeriesInputs['cpi'], oecdAnswered = true): Series | SeriesMissing {
   const label = 'Inflation, monthly';
   if (!pull) return { id: 'cpi_monthly', label, reason: 'Monthly inflation has not answered yet' };
   const s = areaSeries(iso3, pull.series);
-  if (!s?.points?.length) return { id: 'cpi_monthly', label, reason: 'No monthly inflation source for this country yet' };
+  if (!s?.points?.length) {
+    return { id: 'cpi_monthly', label, reason: oecdAnswered ? 'No monthly inflation source for this country yet' : 'OECD inflation has not answered yet' };
+  }
   return {
     id: 'cpi_monthly',
     label,
@@ -218,7 +222,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
   const code = String(iso3 || '').toUpperCase();
   const all: Array<Series | SeriesMissing> = [
     policyRate(code, inputs.cbpol),
-    inflation(code, inputs.cpi),
+    inflation(code, inputs.cpi, inputs.cpiOecdAnswered !== false),
     leadingIndicator(code, inputs.cli),
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
@@ -246,4 +250,28 @@ export function commoditySeries(prices: PriceSeries[], pulledAt: Record<'pink_sh
 export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number } {
   const { points, ...rest } = s;
   return { ...rest, count: points.length, first: points[0]?.date, last: points[points.length - 1]?.date, latest: points[points.length - 1]?.value };
+}
+
+/** Months between two YYYY-MM periods. */
+function monthGap(a: string, b: string): number {
+  const [ya, ma] = a.split('-').map(Number);
+  const [yb, mb] = b.split('-').map(Number);
+  return (yb - ya) * 12 + (mb - ma);
+}
+
+/**
+ * Stretches where a regular series has no observation: more than one month apart for monthly
+ * series, more than ten days for weekly ones. Daily and per-pull series are not checked (a daily
+ * policy rate skips weekends and holidays; pulls are weekly by design). Each gap names the last
+ * point before it and the first after it.
+ */
+export function seriesGaps(s: Pick<Series, 'freq' | 'points'>): Array<{ after: string; before: string }> {
+  const out: Array<{ after: string; before: string }> = [];
+  for (let i = 1; i < s.points.length; i++) {
+    const a = s.points[i - 1].date;
+    const b = s.points[i].date;
+    if (s.freq === 'monthly' && /^\d{4}-\d{2}$/.test(a) && /^\d{4}-\d{2}$/.test(b) && monthGap(a, b) > 1) out.push({ after: a, before: b });
+    if (s.freq === 'weekly' && Date.parse(b) - Date.parse(a) > 10 * 24 * 60 * 60 * 1000) out.push({ after: a, before: b });
+  }
+  return out;
 }

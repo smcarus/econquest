@@ -1005,6 +1005,8 @@ export const GlobalTerminalProvenanceAndStatRefController: React.FC<{
     );
     chartNodes.forEach((chartNode) => {
       const el = chartNode as HTMLElement;
+      // Panels that state their own source per chart (e.g. Country > History) opt out, as tables do.
+      if (el.closest('[data-no-provenance-overlay="true"]')) return;
       const container = (el.parentElement || el) as HTMLElement;
       if (!container) return;
 

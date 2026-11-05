@@ -6,7 +6,7 @@
  * Core set
  * - Top bar: Workspace, Country Research, Portfolio, Reports, Menu.
  * - Today: watchlist, MarketEdge screen and the official calendar.
- * - Country: Brief, MarketEdge, and Overview.
+ * - Country: Brief, MarketEdge, Overview and History.
  * - Portfolio: holdings import, book brief and summary (no desk tabs).
  * - Reports: the note builder with the brief-based templates.
  */
@@ -30,7 +30,7 @@ export function saveShowAllTools(on: boolean): void {
   }
 }
 
-export const CORE_COUNTRY_TABS = ['brief', 'macro', 'overview'] as const;
+export const CORE_COUNTRY_TABS = ['brief', 'macro', 'overview', 'history'] as const;
 
 /** Report templates in the core view: the ones built on the role briefs. */
 export const CORE_REPORTS: ReportTemplate[] = ['economist', 'banker', 'official', 'book', 'client_review', 'council'];
