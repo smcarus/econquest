@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ClipboardList, Pencil, Play, Plus, Trash2 } from 'lucide-react';
 import { REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
 import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
+import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, type PolicyOption, type UserOption } from '../utils/reviewOptions';
 
 /**
  * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
@@ -27,6 +28,15 @@ async function api<T>(url: string, init?: RequestInit): Promise<T> {
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body?.error || `The app answered ${res.status}.`);
   return body as T;
+}
+
+const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
+function runtimeConfig(): Record<string, unknown> {
+  try {
+    return JSON.parse(localStorage.getItem(AI_RUNTIME_STORAGE_KEY) || '{}') || {};
+  } catch {
+    return {};
+  }
 }
 
 const emptyFrame = (iso3: string): ReviewFrame => ({ iso3, problem: '', goal: { indicator: '', direction: 'lower' }, constraints: [], asOf: today() });
@@ -186,6 +196,109 @@ const DiagnosisView: React.FC<{ d: Diagnosis }> = ({ d }) => {
   );
 };
 
+
+const OptionCard: React.FC<{ o: PolicyOption }> = ({ o }) => {
+  const rows: Array<[string, string]> = [
+    ['How it works', o.how],
+    ['Effect on the goal', o.effect],
+    ['Time to effect', o.timeToEffect],
+    ['Trade-offs', o.tradeoffs],
+    ['Who bears the cost', o.whoBears],
+    ['What must be true', o.mustBeTrue],
+    ['Risks', o.risks],
+  ];
+  const views = LENSES.filter((l) => o.views[l]);
+  return (
+    <li className="border border-slate-200 dark:border-slate-700 p-2 space-y-1.5" data-review-option={o.rank}>
+      <div className="flex flex-wrap items-baseline gap-1.5">
+        <span className="text-sm font-semibold text-slate-900 dark:text-white">
+          {o.rank}. {o.title}
+        </span>
+        {!(o.fromUser && !o.effect) && <span className="ui-badge ui-badge-accent">{LEVER_LABEL[o.lever]}</span>}
+        {o.fromUser && <span className="ui-badge">Your option</span>}
+        {o.refs.length > 0 && <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">rests on {o.refs.map((n) => `[${n}]`).join(' ')}</span>}
+      </div>
+      <dl className="grid gap-x-3 gap-y-0.5 sm:grid-cols-[9rem_1fr] text-sm">
+        {rows
+          .filter(([, v]) => v)
+          .map(([k, v]) => (
+            <React.Fragment key={k}>
+              <dt className="ui-label">{k}</dt>
+              <dd className="text-slate-800 dark:text-slate-200">{v}</dd>
+            </React.Fragment>
+          ))}
+      </dl>
+      {views.length > 0 && (
+        <details>
+          <summary className="ui-label cursor-pointer">What each council lens says</summary>
+          <ul className="mt-1 space-y-0.5">
+            {views.map((l) => (
+              <li key={l} className="text-sm text-slate-800 dark:text-slate-200">
+                <span className="font-semibold">{LENS_LABEL[l]} Agent:</span> {o.views[l]}
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </li>
+  );
+};
+
+const OptionsView: React.FC<{ s: OptionsStep }> = ({ s }) => (
+  <div className="space-y-2" data-review-options="true">
+    {s.ranking && <p className="ui-body">{s.ranking}</p>}
+    {!s.model && <p className="text-xs text-amber-700 dark:text-amber-400">Your own options, not assessed by the council ({s.reason}).</p>}
+    <ol className="space-y-1.5">
+      {s.options.map((o) => (
+        <OptionCard key={o.rank} o={o} />
+      ))}
+    </ol>
+    {s.gaps.length > 0 && (
+      <div>
+        <p className="ui-label">What the missing figures stop the council from judging</p>
+        <ul className="list-disc pl-5 text-sm text-slate-800 dark:text-slate-200">
+          {s.gaps.map((g) => (
+            <li key={g}>{g}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+    {s.removed.length > 0 && (
+      <details>
+        <summary className="ui-label cursor-pointer">{s.removed.length} sentence{s.removed.length === 1 ? '' : 's'} removed: a number did not trace to the diagnosis</summary>
+        <ul className="list-disc pl-5 text-xs text-slate-500 dark:text-slate-400">
+          {s.removed.map((x, i) => (
+            <li key={i}>{x}</li>
+          ))}
+        </ul>
+      </details>
+    )}
+    <p className="text-xs text-slate-500 dark:text-slate-400">
+      {s.model ? `Written by ${s.model} at temperature ${s.temperature}` : 'No AI model used'} · template {s.templateVersion} · prompt hash <span className="font-code">{s.promptHash.slice(0, 12)}</span>
+    </p>
+  </div>
+);
+
+const OwnOptions: React.FC<{ value: UserOption[]; onChange: (v: UserOption[]) => void }> = ({ value, onChange }) => (
+  <fieldset className="space-y-1.5" data-review-own-options="true">
+    <legend className="ui-label mb-1">Options you want assessed (optional, up to {MAX_USER_OPTIONS})</legend>
+    {value.map((o, i) => (
+      <div key={i} className="grid gap-1.5 sm:grid-cols-[1fr_2fr_auto]">
+        <input className={INPUT} maxLength={120} value={o.title} placeholder="e.g. Raise the policy rate" onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))} aria-label={`Option ${i + 1} title`} />
+        <input className={INPUT} maxLength={400} value={o.how} placeholder="How it would work (optional)" onChange={(e) => onChange(value.map((x, j) => (j === i ? { ...x, how: e.target.value } : x)))} aria-label={`Option ${i + 1} how`} />
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={() => onChange(value.filter((_, j) => j !== i))} aria-label={`Remove option ${i + 1}`}>
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    ))}
+    {value.length < MAX_USER_OPTIONS && (
+      <button type="button" className="ui-btn ui-btn-ghost" onClick={() => onChange([...value, { title: '', how: '' }])}>
+        <Plus className="w-3.5 h-3.5" /> Add an option
+      </button>
+    )}
+  </fieldset>
+);
+
 export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: string }> = ({ countries = [], defaultIso3 = '' }) => {
   const [list, setList] = useState<ReviewSummary[]>([]);
   const [error, setError] = useState('');
@@ -193,6 +306,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const [opened, setOpened] = useState<Opened | null>(null);
   const [editingFrame, setEditingFrame] = useState(false);
   const [busy, setBusy] = useState('');
+  const [own, setOwn] = useState<UserOption[]>([]);
 
   const refresh = useCallback(async () => {
     try {
@@ -234,6 +348,16 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
   const r = opened?.review;
   const frame = r?.steps.frame?.content as ReviewFrame | undefined;
   const diagnosis = r?.steps.diagnose?.content as Diagnosis | undefined;
+  const options = r?.steps.options?.content as OptionsStep | undefined;
+  // Start the option editor from what was saved last time.
+  useEffect(() => {
+    setOwn(options?.userOptions ?? []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r?.id, r?.steps.options?.hash]);
+  const askOptions = (ownOnly: boolean) =>
+    run(ownOnly ? 'own' : 'options', async () =>
+      apply(await api(`/api/reviews/${encodeURIComponent(r!.id)}/options`, { method: 'POST', body: JSON.stringify({ userOptions: own.filter((o) => o.title.trim()), ownOnly, runtimeConfig: runtimeConfig() }) }))
+    );
   const name = (iso3: string) => countries.find((c) => c.iso3 === iso3)?.countryName || iso3;
 
   return (
@@ -407,10 +531,38 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
               )}
             </section>
 
-            {REVIEW_STEPS.slice(2).map((s, i) => (
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="options">
+              <h4 className="ui-section-title">3. {STEP_LABEL.options}</h4>
+              <p className="ui-label">{STEP_HINT.options} It reads only the frame and the diagnosis above, at temperature 0, and every number it writes must come from the diagnosis.</p>
+              {opened!.states.diagnose !== 'done' ? (
+                <p className="text-xs text-slate-500 dark:text-slate-400">Run Diagnose first.</p>
+              ) : (
+                <>
+                  {opened!.states.options === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">Out of date: an earlier step changed after this was run. Run it again.</p>}
+                  <OwnOptions value={own} onChange={setOwn} />
+                  <div className="flex flex-wrap gap-1.5">
+                    <button type="button" className={options?.model && opened!.states.options === 'done' ? 'ui-btn' : 'ui-btn ui-btn-primary'} disabled={Boolean(busy)} onClick={() => void askOptions(false)}>
+                      <Play className="w-3.5 h-3.5" /> {busy === 'options' ? 'The council is working… (a local model can take a few minutes)' : options?.model ? 'Ask the council again' : 'Ask the council'}
+                    </button>
+                    <button type="button" className="ui-btn ui-btn-ghost" disabled={Boolean(busy) || !own.some((o) => o.title.trim())} onClick={() => void askOptions(true)}>
+                      Save my options only
+                    </button>
+                  </div>
+                </>
+              )}
+              {options && <OptionsView s={options} />}
+              {r.steps.options && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Saved {r.steps.options.savedAt.slice(0, 16).replace('T', ' ')} · hash <span className="font-code">{short(r.steps.options.hash)}</span> · run {r.runs.filter((x) => x.step === 'options').length} time
+                  {r.runs.filter((x) => x.step === 'options').length === 1 ? '' : 's'}
+                </p>
+              )}
+            </section>
+
+            {REVIEW_STEPS.slice(3).map((s, i) => (
               <section key={s} className="border border-slate-200 dark:border-slate-700 p-3" data-review-step={s}>
                 <h4 className="ui-section-title text-slate-500 dark:text-slate-400">
-                  {i + 3}. {STEP_LABEL[s]}
+                  {i + 4}. {STEP_LABEL[s]}
                 </h4>
                 <p className="ui-label">{STEP_HINT[s]}</p>
               </section>

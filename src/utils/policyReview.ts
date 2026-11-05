@@ -35,7 +35,7 @@ export const STEP_LABEL: Record<ReviewStep, string> = {
 export const STEP_HINT: Record<ReviewStep, string> = {
   frame: 'Country, the problem, the goal, constraints and the "As of" day every later step uses.',
   diagnose: 'Standard indicators for that day, each with source and period, frozen and hashed.',
-  options: 'The council answers a set question built from the frame; synthesis ranks the options.',
+  options: 'The council proposes and ranks options for the goal, each with trade-offs, who bears the cost and what must be true.',
   evidence: 'Past episodes, statistical tests and validation status for each option.',
   memo: 'Written only from the steps above, citing every figure; signed off Draft > Reviewed > Approved.',
   outcomes: 'On the review date, what happened against the starting point.',

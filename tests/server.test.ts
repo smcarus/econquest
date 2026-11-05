@@ -805,6 +805,16 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     const d = await diag.json();
     assert.equal(d.states.diagnose, 'done');
     assert.equal(d.review.steps.diagnose.content.figures.length, 12);
+    const opt = (body: unknown) => fetch(`${base}/api/reviews/${review.id}/options`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const noModel = await opt({ userOptions: [] });
+    assert.equal(noModel.status, 503);
+    assert.match((await noModel.json()).error, /No AI model answered/);
+    const own = await opt({ userOptions: [{ title: 'Raise the policy rate', how: '' }], ownOnly: true });
+    assert.equal(own.status, 200);
+    const o = await own.json();
+    assert.equal(o.states.options, 'done');
+    assert.equal(o.review.steps.options.content.model, null);
+    assert.equal(o.review.steps.options.content.temperature, 0);
   } else {
     assert.equal(diag.status, 409);
     assert.match((await diag.json()).error, /saved pull/);

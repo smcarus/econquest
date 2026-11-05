@@ -50,7 +50,8 @@ import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/research
 import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
-import { buildDiagnosis } from './src/utils/reviewDiagnosis';
+import { buildDiagnosis, type Diagnosis } from './src/utils/reviewDiagnosis';
+import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep } from './src/utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from './src/utils/policyReview';
 import { deleteReview, loadReviews, newReview, putReview, reviewFilePath, saveStep, verifyReview } from './src/utils/policyReviewStore';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
@@ -3647,6 +3648,8 @@ async function executeResilientLlmStep<T>(options: {
             thinkingConfig: { thinkingLevel: options.thinkingLevel ?? ThinkingLevel.LOW },
             responseMimeType: 'application/json',
             responseSchema: options.responseSchema,
+            // Policy review steps run at temperature 0 so a rerun reads as close as the model allows.
+            ...(options.stepName.startsWith('REVIEW_') ? { temperature: 0 } : {}),
           },
         });
         const { parsed, schemaVerified } = sanitizeAndParseJson<T>(
@@ -4271,6 +4274,80 @@ async function startServer() {
       kind: 'research',
       summary: `Diagnosed policy review "${out.review.title}" from the ${past.date} pull`,
       detail: { id: r.id, step: 'diagnose', hash: out.review.steps.diagnose?.hash, pullDate: past.date, pulledAt, coverage: diagnosis.coverage, figures: diagnosis.figures.map((x) => ({ ref: x.ref, label: x.label, value: x.value, source: x.source, period: x.period, reason: x.reason || undefined })) },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Step 3: the council proposes and ranks options from the frozen diagnosis (temperature 0, prompt hashed).
+  app.post('/api/reviews/:id/options', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).diagnose !== 'done') return res.status(400).json({ error: 'Diagnose must be done first.' });
+    const diagnosis = r.steps.diagnose!.content as Diagnosis;
+    const userOptions = parseUserOptions(req.body?.userOptions);
+    const ownOnly = req.body?.ownOnly === true;
+    const prompt = optionsPrompt(frame, diagnosis, userOptions);
+    const promptHash = crypto.createHash('sha256').update(OPTIONS_INSTRUCTION + '\n' + prompt).digest('hex');
+    const base = { templateVersion: OPTIONS_TEMPLATE_VERSION, temperature: 0, promptHash, userOptions };
+    let content: OptionsStep;
+    if (ownOnly) {
+      if (!userOptions.length) return res.status(400).json({ error: 'Add at least one option of your own, or ask the council.' });
+      content = { ...base, model: null, options: unassessedOptions(userOptions), ranking: '', gaps: [], removed: [], reason: 'saved with your own options only; the council was not asked' };
+    } else {
+      const step = await executeResilientLlmStep<Record<string, unknown>>({
+        stepName: 'REVIEW_OPTIONS',
+        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
+        runtimeConfig: { ...(req.body?.runtimeConfig || {}), temperature: 0 },
+        thinkingLevel: ThinkingLevel.LOW,
+        systemInstruction: OPTIONS_INSTRUCTION,
+        prompt: prompt.slice(0, 24000),
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            options: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  lever: { type: Type.STRING, enum: [...LEVERS] },
+                  how: { type: Type.STRING },
+                  effect: { type: Type.STRING },
+                  timeToEffect: { type: Type.STRING },
+                  tradeoffs: { type: Type.STRING },
+                  whoBears: { type: Type.STRING },
+                  mustBeTrue: { type: Type.STRING },
+                  risks: { type: Type.STRING },
+                  refs: { type: Type.ARRAY, items: { type: Type.NUMBER } },
+                  fromUser: { type: Type.BOOLEAN },
+                  views: { type: Type.OBJECT, properties: { cb: { type: Type.STRING }, fiscal: { type: Type.STRING }, politics: { type: Type.STRING }, external: { type: Type.STRING } } },
+                },
+                required: ['title', 'lever', 'how', 'effect', 'tradeoffs', 'whoBears', 'mustBeTrue', 'risks', 'refs', 'views'],
+              },
+            },
+            ranking: { type: Type.STRING },
+            gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+          },
+          required: ['options', 'ranking', 'gaps'],
+        },
+        fallbackValue: { options: [], ranking: '', gaps: [] },
+        maxRetries: 1,
+      });
+      if (step.usedFallback) {
+        return res.status(503).json({ error: `No AI model answered (${step.failure || 'no model is set up'}). Set one up in Menu > Settings > AI model, or save your own options without the council.` });
+      }
+      const checked = checkOptions(step.data, frame, diagnosis, userOptions);
+      if (!checked.options.length) return res.status(502).json({ error: 'The model answered but gave no usable options (each needs a title and how it works). Try again or use another model.' });
+      content = { ...base, model: step.providerUsed, ...checked };
+    }
+    const out = saveStep(r, 'options', content);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'council',
+      summary: `Options for policy review "${out.review.title}"${content.model ? '' : ' (your own, not assessed)'}`,
+      detail: { id: r.id, step: 'options', hash: out.review.steps.options?.hash, model: content.model, temperature: 0, promptHash, templateVersion: OPTIONS_TEMPLATE_VERSION, options: content.options.map((o) => o.title), userOptions: userOptions.length, removedSentences: content.removed.length },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
