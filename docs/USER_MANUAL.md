@@ -49,8 +49,10 @@ with your choice of columns; *Edit* adds or removes countries and switches lists
 
 **Council chat.** A chat with the council. Type a question in the box at the bottom, or pick one of
 the suggestions. Your question appears as a message, and the council answers in the chat: the
-summary first, then *N of M agents answered* (open it for each agent's figures and sources), the
-agent debate, and Copy, Markdown, PDF and Send to Reports on each answer. Earlier answers stay in
+summary first, then the documents (the synthesis and one per agent, with how many agents answered
+with figures), the agent debate, and one row of actions on each answer: *Save to Reports* (keeps the
+answer as the council brief and every document under Reports > Council documents; it then reads
+*Saved to Reports* with a link to open Reports), *Copy*, and *Download* (Markdown or PDF). Earlier answers stay in
 the chat above the newest one. *New conversation* clears it (saved conversations stay in Saved
 research).
 

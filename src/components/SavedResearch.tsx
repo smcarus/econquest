@@ -196,7 +196,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
                         onSendToReports();
                       }}
                     >
-                      <FileText className="w-3.5 h-3.5" /> Send to Reports
+                      <FileText className="w-3.5 h-3.5" /> Open in Reports
                     </button>
                     <button
                       type="button"
