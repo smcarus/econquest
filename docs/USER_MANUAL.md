@@ -74,6 +74,10 @@ country and figure, with its period underneath; hover for the source, or for the
 Missing. *Full history* counts every observation; *Download CSV* saves either view, with unit, period,
 source and the reason for every missing cell, ready for Excel, R or Stata.
 
+**Growth and inflation.** Each country placed by the 6-month change in its OECD leading indicator
+(right = picking up) and the 3-month change in its monthly inflation (up = rising), with a line on what
+that quadrant means for policy. A country without both figures is listed with what is missing.
+
 **Next two weeks.** Official rate decisions, CPI releases, elections, budget deadlines and IMF
 reviews, each linked to its source.
 
