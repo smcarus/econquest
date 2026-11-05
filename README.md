@@ -99,6 +99,7 @@ npm run build        # production bundle
 npm run test:smoke   # opens every page of the built app in Chromium with all feeds down
 npm run check:data   # live check of every source from this computer
 npm run check:imf    # prints the IMF series codes the app matches
+npm run preload      # downloads every free feed for every country, for fast offline use
 ```
 
 Every pull request runs lint, tests, build and the UI smoke test on GitHub
