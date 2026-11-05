@@ -258,6 +258,24 @@ test('council synthesis: a model brief keeps traceable sentences and drops inven
   assert.equal(body.brief.headline, 'Turkey looks behind the curve.');
   assert.deepEqual(body.brief.points, ['Inflation is 34.0%, from live IMF data.']);
   assert.deepEqual(body.removed, ['Inflation should fall to 21% next year.']);
+  // Pinned to a snapshot: inputs, model, temperature 0 and a fixed seed, hashed and saved.
+  const snap = body.snapshot;
+  assert.match(snap.id, /^s\d+-[0-9a-f]{12}$/);
+  assert.equal(snap.temperature, 0);
+  assert.equal(snap.seed, 42);
+  assert.ok(snap.model);
+  assert.equal(snap.asOf, null);
+  assert.match(snap.inputsHash, /^[0-9a-f]{64}$/);
+  assert.match(snap.promptHash, /^[0-9a-f]{64}$/);
+  assert.deepEqual(snap.figures.map((f: { value: string }) => f.value), ['34.0%']);
+  assert.deepEqual(snap.documents.map((d: { agent: string; version: number; figures: number }) => [d.agent, d.version, d.figures]), [['Central Bank Watcher', 1, 1]]);
+  assert.match(snap.documents[0].hash, /^[0-9a-f]{64}$/);
+  const saved = JSON.parse(readFileSync(path.join(dataDir, 'local', 'snapshots', `${snap.id}.json`), 'utf8'));
+  assert.equal(saved.inputs.question, 'Is Turkey behind the curve on inflation?');
+  assert.equal(saved.output.brief.headline, 'Turkey looks behind the curve.');
+  assert.equal(saved.outputHash, snap.outputHash);
+  const audit = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  assert.ok(audit.some((e: { detail?: { snapshot?: { id: string } } }) => e.detail?.snapshot?.id === snap.id));
 });
 
 test('council explain: facts apart from interpretation, by lens; invented numbers and lenses without figures dropped', async () => {
