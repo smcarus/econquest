@@ -12,6 +12,7 @@ import {
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
 import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
+import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
@@ -525,6 +526,68 @@ async function fetchTicPull(): Promise<TicPull | null> {
     ticInFlight = null;
   });
   return ticInFlight;
+}
+
+/**
+ * Central bank policy rates from the BIS (src/utils/bisPolicyRates.ts). Two small requests cover
+ * every country: the latest daily figure and about 25 months of month-end figures. Saved to
+ * data/live/bis-policy-rates.json with its pull date and pulled again after 12 hours; a failed
+ * pull keeps the last good one and is retried after an hour.
+ */
+let cbpolMemory: { pull: CbpolPull | null; triedAt: number } | null = null;
+let cbpolInFlight: Promise<CbpolPull | null> | null = null;
+function cbpolFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'bis-policy-rates.json');
+}
+async function fetchCbpolPull(): Promise<CbpolPull | null> {
+  if (!cbpolMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cbpolFile(), 'utf8')) as CbpolPull;
+      if (saved?.pulledAt && saved.daily && saved.monthly) cbpolMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (cbpolMemory?.pull && Date.now() - Date.parse(cbpolMemory.pull.pulledAt) < 12 * 60 * 60 * 1000) return cbpolMemory.pull;
+  if (cbpolMemory && Date.now() - cbpolMemory.triedAt < 60 * 60 * 1000) return cbpolMemory.pull;
+  if (cbpolInFlight) return cbpolInFlight;
+  cbpolInFlight = (async () => {
+    const get = async (url: string, what: string): Promise<string | null> => {
+      try {
+        const res = await fetchWithTimeout(url, 20000);
+        if (res.ok) return await res.text();
+        console.warn(`[BIS] policy rates (${what}) refused (HTTP ${res.status})`);
+      } catch (e) {
+        console.warn(`[BIS] policy rates (${what}): ${describeNetworkError(e, 20000)}`);
+      }
+      return null;
+    };
+    const [dailyCsv, monthlyCsv] = await Promise.all([get(cbpolDailyUrl(), 'daily'), get(cbpolMonthlyUrl(), 'monthly')]);
+    const daily = parseCbpolCsv(dailyCsv, 'D');
+    const monthly = parseCbpolCsv(monthlyCsv, 'M');
+    const prev = cbpolMemory?.pull ?? null;
+    if (!Object.keys(daily).length && !Object.keys(monthly).length) {
+      cbpolMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    // If only one of the two answered, keep the other from the last good pull.
+    const fresh: CbpolPull = {
+      pulledAt: new Date().toISOString(),
+      daily: Object.keys(daily).length ? daily : prev?.daily || {},
+      monthly: Object.keys(monthly).length ? monthly : prev?.monthly || {},
+    };
+    cbpolMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cbpolFile()), { recursive: true });
+      fs.writeFileSync(cbpolFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cbpolInFlight = null;
+  });
+  return cbpolInFlight;
 }
 
 /**
@@ -2409,6 +2472,22 @@ async function startServer() {
       res.json(report);
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Connection check failed' });
+    }
+  });
+
+  // 1b''. Central bank policy rates (BIS), one row per country the app files, with the date of
+  // each figure; countries without one say why.
+  app.get('/api/data/policy-rates', async (_req, res) => {
+    try {
+      const pull = await fetchCbpolPull();
+      const now = new Date();
+      const rows = Object.keys(CBPOL_AREA).map((iso3) => {
+        const rate = policyRateFor(iso3, pull, now);
+        return rate ? { iso3, rate } : { iso3, missing: cbpolMissing(iso3, !!pull) };
+      });
+      res.json({ source: 'BIS WS_CBPOL', pulledAt: pull?.pulledAt ?? null, rows });
+    } catch (error: any) {
+      res.status(500).json({ error: error?.message || 'Failed to load policy rates' });
     }
   });
 
