@@ -3041,6 +3041,7 @@ async function startServer() {
     if (id === 'EIA_API_KEY') commodityMemory = null;
     if (id === 'COMTRADE_API_KEY' && comtradeMemory) comtradeMemory.triedAt = {};
     if (id.startsWith('EVDS_')) officialYieldCache.delete('TUR');
+    if (id.startsWith('CDS_') || id.startsWith('LSEG_')) ownCdsCache = null;
   };
   const refuseRemote = (req: express.Request, res: express.Response): boolean => {
     if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;

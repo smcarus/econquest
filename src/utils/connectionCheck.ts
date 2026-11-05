@@ -804,11 +804,11 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       group: 'own_account',
       feeds: '5Y sovereign CDS (no free source exists)',
       setup:
-        'File: CDS_FEED="csv" and CDS_CSV_PATH="/full/path/cds.csv" with columns iso3,date,cds5y_bps,source. ' +
+        'Menu > Settings > Your own paid data, or in .env. File: CDS_FEED="csv" and CDS_CSV_PATH="/full/path/cds.csv" with columns iso3,date,cds5y_bps,source. ' +
         'LSEG: CDS_FEED="lseg" with LSEG_APP_KEY, LSEG_USERNAME, LSEG_PASSWORD and LSEG_CDS_RICS="BRA=<ric>,TUR=<ric>".',
     };
     const feed = (env.CDS_FEED || '').trim().toLowerCase();
-    if (!feed) return setRow(def, 'off', 'Off. CDS reads Missing until you connect your own licensed data.', 'your file or LSEG');
+    if (!feed || feed === 'off') return setRow(def, 'off', 'Off. CDS reads Missing until you connect your own licensed data.', 'your file or LSEG');
     if (feed !== 'csv' && feed !== 'lseg') return setRow(def, 'needs_setup', `CDS_FEED is "${feed}"; it must be "csv" or "lseg".`, 'your file or LSEG');
     const cfg = ownCdsSettings(env);
     if (feed === 'csv') {

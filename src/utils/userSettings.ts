@@ -36,6 +36,9 @@ export interface ApiKeyStatus {
   /** Where the key in use comes from: saved in the app, .env, or not set. */
   source: KeySource;
   secret: boolean;
+  section: 'free_key' | 'own_account';
+  choices?: Array<{ value: string; label: string }>;
+  placeholder?: string;
   /** Secret keys: last four characters only, e.g. "••••3f9a". Other settings: the value. Empty when not set. */
   masked: string;
   /** True when .env also has a value (shown so removing the app key is not a surprise). */
@@ -130,6 +133,9 @@ export function describeKeys(envFromFile: Record<string, string | undefined>, sa
     checkId: f.checkId,
     source: sources[f.id],
     secret: f.secret !== false,
+    section: f.section || 'free_key',
+    ...(f.choices ? { choices: f.choices } : {}),
+    ...(f.placeholder ? { placeholder: f.placeholder } : {}),
     masked: f.secret === false ? eff[f.id] || '' : maskKey(eff[f.id] || ''),
     envAlsoSet: Boolean((envFromFile[f.id] || '').trim()),
   }));
