@@ -5929,8 +5929,12 @@ ${String(documentText).slice(0, 12000)}
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Sovereign & Macro Council Server listening on http://localhost:${PORT}`);
+  // This computer only by default, so nobody else on the Wi-Fi can read your research or change
+  // your watch rules. Inside Docker the container must listen on every interface; docker-compose
+  // then publishes it on 127.0.0.1 only. HOST=0.0.0.0 in .env opens it to your network on purpose.
+  const HOST = (process.env.HOST || '').trim() || (process.env.SELF_HOSTED_DOCKER === 'true' ? '0.0.0.0' : '127.0.0.1');
+  app.listen(PORT, HOST, () => {
+    console.log(`Sovereign & Macro Council Server listening on http://localhost:${PORT}${HOST === '127.0.0.1' ? ' (this computer only)' : ` (on ${HOST})`}`);
     setTimeout(() => void refreshStaleSnapshots(), 5000);
     // Hourly check: a full pull is redone after a week, a short one (a feed failed) after an hour.
     setInterval(() => void refreshStaleSnapshots(), SNAPSHOT_RETRY_MS).unref();

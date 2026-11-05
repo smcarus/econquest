@@ -604,7 +604,7 @@ export const AskCouncilPanel: React.FC<{
                 className="flex-1 min-w-0 px-2 py-1.5 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               />
               <button type="submit" className="ui-btn ui-btn-primary" disabled={!followUp.trim() || writing || choosing}>
-                Ask
+                Ask follow-up
               </button>
             </div>
             <div className="flex flex-wrap gap-1.5">
