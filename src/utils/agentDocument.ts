@@ -19,6 +19,7 @@
  *
  * Browser-safe.
  */
+import type { ChartResult } from './councilChart';
 import { isCitable, References, type Reference } from './citations';
 import { COUNCIL_AGENTS, isDocFinding, tagLabel, type AgentAnswer, type AgentId, type FigureTag, type SynthesisResult } from './askCouncil';
 import { DIM_LABEL } from './stanceCheck';
@@ -77,6 +78,8 @@ export interface AgentDocument {
   missing: string[];
   coverage: DocCoverage;
   sources: Reference[];
+  /** The Chart Agent's chart, kept with its document so Reports can draw it again. */
+  chart?: ChartResult;
 }
 
 export interface SynthesisDocument {
@@ -190,6 +193,7 @@ export function toAgentDocument(a: AgentAnswer, ctx: DocContext): AgentDocument 
     missing: [...a.missing],
     coverage: coverageOf(a, ctx.countriesAsked),
     sources: refs.list,
+    ...(a.chart ? { chart: a.chart } : {}),
   };
 }
 

@@ -3,6 +3,7 @@ import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { useResearchLibrary } from './SavedResearch';
 import type { LiveWatchlistItem } from '../types/council';
 import type { FigureTag } from '../utils/askCouncil';
+import { lazyNamed } from './LazyDesk';
 import { documentMarkdown, documentSections, type AgentDocument, type CouncilDocument, type CoverageLevel, type SynthesisDocument } from '../utils/agentDocument';
 
 /**
@@ -205,6 +206,8 @@ function AgentFindings({ d, items, onOpenCountry }: { d: AgentDocument; items: L
 }
 
 /** The open document, over the page; Escape or Close shuts it. */
+const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
+
 export const DocumentViewer: React.FC<{
   doc: CouncilDocument;
   items: LiveWatchlistItem[];
@@ -250,6 +253,11 @@ export const DocumentViewer: React.FC<{
           </button>
         </div>
         <div className="overflow-y-auto px-4 py-3 space-y-4 text-sm text-slate-800 dark:text-slate-200">
+          {doc.kind === 'agent' && doc.chart && (
+            <React.Suspense fallback={<p className="text-xs text-slate-500 dark:text-slate-400">Drawing the chart…</p>}>
+              <CouncilChartCard result={doc.chart} />
+            </React.Suspense>
+          )}
           {documentSections(doc).map((s) => (
             <section key={s.heading} data-doc-section={s.heading}>
               <h3 className="ui-label mb-1">{s.heading}</h3>
