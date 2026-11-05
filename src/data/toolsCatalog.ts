@@ -260,7 +260,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
       { id: 'quant_alpha_correlation', label: 'Correlation matrix', needs: 'Daily price history across countries.' },
       { id: 'persona_strategy_backtester_lab', label: 'Strategy backtester', needs: 'Historical price series.' },
       { id: 'decision_premortem_killswitch', label: 'Pre-mortem and stop levels', needs: 'Staged trades priced off live markets.' },
-      { id: 'decision_ledger_brier', label: 'Decision record', needs: 'Covered by Track record under Country Research > History: the rule call on each saved pull and what the bank did 90 days later.', coveredBy: 'track_record' },
+      { id: 'decision_ledger_brier', label: 'Decision record', needs: 'Covered by Track record under Research > One country > History & data: the rule call on each saved pull and what the bank did 90 days later.', coveredBy: 'track_record' },
     ],
   },
   {
@@ -281,7 +281,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
     desks: [
       { id: 'charts_watchlists', label: 'Macro map and horizon charts', needs: 'Live history for each charted series.', coveredBy: 'what_is_live' },
       { id: 'global_liquidity', label: 'Global liquidity', needs: 'Cross-currency basis and funding spreads (licensed).' },
-      { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Its stress grid ran on built-in inputs; the live growth and inflation quadrant is on Compare.', coveredBy: 'regime_quadrant' },
+      { id: 'decision_quadrant_stress', label: 'Regime quadrant', needs: 'Its stress grid ran on built-in inputs; the live growth and inflation quadrant is under Research > Compare countries.', coveredBy: 'regime_quadrant' },
       { id: 'fx_beer_feer_equilibrium', label: 'FX equilibrium models', needs: 'Productivity and terms-of-trade series.', coveredBy: 'country_marketedge' },
       { id: 'quant_matrix_econometrics', label: 'Econometrics', needs: 'Historical series for the regressions.' },
       { id: 'quant_macro_surprise', label: 'Data surprises', needs: 'Consensus forecasts (licensed).' },

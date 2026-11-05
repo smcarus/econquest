@@ -169,7 +169,7 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
           <button type="submit" className="ui-btn" disabled={!ready}>
             <Plus className="w-3.5 h-3.5" /> Add episode
           </button>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Tip: the rate moves listed under Country Research › History › Replicate a rate decision make good episode dates.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Tip: the rate moves listed under Research › One country › History & data › Replicate a rate decision make good episode dates.</p>
         </form>
 
         {lib.episodes.length === 0 && !lib.error && <p className="ui-body">No episodes yet.</p>}

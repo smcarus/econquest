@@ -67,9 +67,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 | Page | What it is for |
 | --- | --- |
 | **Workspace** | The daily start: since your last visit, watchlist, Ask the council, watch alerts, next two weeks |
-| **Country Research** | Brief (economist, issuer and official-sector views), MarketEdge for the country, History charts, Sources (every figure with its source); CSV and Excel downloads |
-| **Compare** | The watchlist side by side: where data and price disagree, MarketEdge, growth and inflation, scenarios, and a Compare countries table to download |
-| **Portfolio** | Your holdings (CSV import) or your watchlist at equal weight: concentration, where the risk sits, dates to watch |
+| **Research** | One page, three scopes: **One country**, **Compare countries** (the watchlist side by side) and **My holdings**. Each scope has the same four sections: **Summary** (country brief / where data and price disagree, growth and inflation / book brief), **Markets & signals** (MarketEdge / MarketEdge table and scenarios / signals on your holdings), **History & data** (charts, As of, Replicate, Track record / Compare countries table / holdings import) and **Sources** (what is live, or why not). CSV and Excel downloads |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
 | **Tools** (Settings > Tools) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |
 

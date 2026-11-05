@@ -23,5 +23,5 @@ export const NAV_LABEL: Record<WorkflowArea, string> = {
 
 /** The council brief: what Ask the council on Workspace produces. */
 export const DEFAULT_REPORT: ReportTemplate = 'council';
-/** Country Research opens on the Brief (economist view; banker and official views one click away). */
+/** Research > One country opens on Summary, the brief (economist view; banker and official views one click away). */
 export const DEFAULT_COUNTRY_TAB_ID = 'brief';

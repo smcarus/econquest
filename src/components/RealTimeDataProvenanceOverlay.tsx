@@ -100,7 +100,7 @@ export function resolveDataProvenanceForContext(
     : isLive
     ? 'Fetched from source on last pull'
     : status.mode === 'unverified'
-    ? 'Not verified: press Refresh now on Country Research'
+    ? 'Not verified: press Refresh now under Research > One country'
     : 'Not live: built-in sample value';
   return { ...spec, httpStatus, handshakeLatencyMs: 0, isLive };
 }

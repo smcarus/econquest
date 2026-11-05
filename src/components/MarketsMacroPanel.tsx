@@ -75,7 +75,7 @@ export const MarketsMacroPanel: React.FC<{
       )}
 
       <div className="ui-panel px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="ui-body">{run.countryName} against the rest of your watchlist and the benchmark markets is on Compare.</p>
+        <p className="ui-body">{run.countryName} against the rest of your watchlist and the benchmark markets is under Research › Compare countries.</p>
         {onOpenCompare && (
           <button type="button" className="ui-btn" onClick={onOpenCompare}>
             Open Compare
