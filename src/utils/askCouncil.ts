@@ -17,6 +17,7 @@ import { missingReason } from './liveFigures';
 import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
+import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
 import { IMF_BOP_LABEL, IMF_RESERVES_LABEL, formatImfPeriod, imfSentence, reserveCover } from './imfReserves';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
@@ -78,8 +79,8 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   spill: {
     name: 'Global Spillover',
-    covers: 'Hormuz, Taiwan Strait and Russia shocks through trade',
-    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit/i,
+    covers: 'Hormuz, Taiwan Strait and Russia shocks through trade; growth cycle from the OECD leading indicator',
+    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit|leading indicator|\bcli\b|\boecd\b|growth|cycle|slowdown|recession|downturn|recovery|momentum/i,
   },
   calendar: {
     name: 'Calendar',
@@ -503,38 +504,58 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
     const rows = scs
       .map((sc) => ({ sc, imp: it.trade ? scenarioImpact(sc.id, it.trade) : null }))
       .filter((r): r is { sc: (typeof SCENARIOS)[number]; imp: NonNullable<ReturnType<typeof scenarioImpact>> } => r.imp !== null);
-    if (!rows.length) {
-      missing.push(`${it.countryName}: World Bank or WITS trade figures not loaded`);
-      continue;
-    }
-    const worst = [...rows].sort((a, b) => a.imp.pctGdp - b.imp.pctGdp)[0];
-    findings.push({
-      iso3: it.iso3,
-      countryName: it.countryName,
-      reading:
+    const cli = it.oecdCli;
+    if (!rows.length) missing.push(`${it.countryName}: World Bank or WITS trade figures not loaded`);
+    if (!cli) missing.push(`${it.countryName}: OECD leading indicator missing (${cliMissing(!!it.oecdCliPulledAt).short})`);
+    if (!rows.length && !cli) continue;
+    const parts: string[] = [];
+    const figures: AgentFigure[] = [];
+    if (rows.length) {
+      const worst = [...rows].sort((a, b) => a.imp.pctGdp - b.imp.pctGdp)[0];
+      parts.push(
         worst.imp.pctGdp < 0
           ? `Most exposed to ${SCENARIO_PHRASE[worst.sc.id]}: about ${Math.abs(worst.imp.pctGdp).toFixed(1)}% of GDP off the current account in the first round.`
-          : `Gains in the first round from ${SCENARIO_PHRASE[worst.sc.id]} (${sgn(worst.imp.pctGdp)}% of GDP).`,
-      figures: [
+          : `Gains in the first round from ${SCENARIO_PHRASE[worst.sc.id]} (${sgn(worst.imp.pctGdp)}% of GDP).`
+      );
+      figures.push(
         ...rows.map((r) => ({
           label: r.sc.name,
           value: `${sgn(r.imp.pctGdp)}% of GDP`,
           source: `${r.sc.shock} Basis: ${r.imp.basis}`,
           tag: 'model' as const,
-        })),
-        // Where the current account starts from, so the shock can be read against it.
-        ...(it.imf?.currentAccount4q?.pctGdp !== undefined
-          ? [
-              {
-                label: 'Current account now, last four quarters',
-                value: `${sgn(it.imf.currentAccount4q.pctGdp)}% of GDP`,
-                source: `${IMF_BOP_LABEL} to ${formatImfPeriod(it.imf.currentAccount4q.through)}, over IMF WEO GDP ${it.imf.currentAccount4q.gdpYear}`,
-                tag: 'model' as const,
-              },
-            ]
-          : []),
-      ],
-      weight: Math.min(1, Math.max(...rows.map((r) => Math.abs(r.imp.pctGdp))) / 5),
+        }))
+      );
+      // Where the current account starts from, so the shock can be read against it.
+      if (it.imf?.currentAccount4q?.pctGdp !== undefined) {
+        figures.push({
+          label: 'Current account now, last four quarters',
+          value: `${sgn(it.imf.currentAccount4q.pctGdp)}% of GDP`,
+          source: `${IMF_BOP_LABEL} to ${formatImfPeriod(it.imf.currentAccount4q.through)}, over IMF WEO GDP ${it.imf.currentAccount4q.gdpYear}`,
+          tag: 'model',
+        });
+      }
+    }
+    let cycle = 0;
+    if (cli) {
+      figures.push({ label: 'OECD leading indicator', value: cli.level.toFixed(2), source: `${CLI_LABEL}, ${formatMonth(cli.month)}`, tag: 'official' });
+      if (cli.change1m !== undefined) figures.push({ label: 'Leading indicator, change on the month', value: sgn(cli.change1m, 2), source: `OECD CLI, ${formatMonth(cli.month)}`, tag: 'official' });
+      if (cli.phase) {
+        figures.push({
+          label: 'Growth cycle phase',
+          value: cli.phase,
+          source: 'OECD rule: above 100 and rising = expansion, above and falling = downturn, below and falling = slowdown, below and rising = recovery',
+          tag: 'model',
+        });
+        if (cli.phase === 'slowdown' || cli.phase === 'downturn') cycle = Math.min(1, Math.abs(cli.level - 100) / 2);
+      }
+      parts.push(cliSentence(cli));
+    }
+    findings.push({
+      iso3: it.iso3,
+      countryName: it.countryName,
+      reading: parts.join(' '),
+      figures,
+      weight: Math.max(rows.length ? Math.min(1, Math.max(...rows.map((r) => Math.abs(r.imp.pctGdp))) / 5) : 0, cycle),
     });
   }
   return { id: 'spill', name: COUNCIL_AGENTS.spill.name, findings, missing };
