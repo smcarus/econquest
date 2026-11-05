@@ -489,8 +489,11 @@ export interface WatchlistItem {
   cpiSource?: 'live' | 'sample' | 'oecd';
   /** YYYY-MM of the OECD monthly CPI figure, when cpiSource is 'oecd'. */
   cpiMonth?: string;
-  /** IMF WEO output gap (% of potential GDP), only when the IMF publishes one for this country. */
-  outputGap?: { pct: number; year: string };
+  /**
+   * Output gap (% of potential GDP): the IMF's where it publishes one ('imf'), else the app's stated
+   * estimate from IMF real GDP growth ('estimate', src/utils/outputGap.ts) with its band across methods.
+   */
+  outputGap?: { pct: number; year: string; source?: 'imf' | 'estimate'; low?: number; high?: number };
   /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
   policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
   /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */

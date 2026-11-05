@@ -215,7 +215,7 @@ export const PRESETS: Preset[] = [
       if (!t) return { missing: "the central bank's inflation target (the app holds targets for a short list of countries)" };
       const wi = TAYLOR_WEIGHTS.inflation;
       const wo = TAYLOR_WEIGHTS.output;
-      const gapNote = 'output gap term left out (IMF WEO has no output gap for this country)';
+      const gapNote = 'output gap term left out (no IMF output gap and no app estimate for this country)';
       const rule = `rule = r* ${TAYLOR_R_STAR}% + inflation + ${wi} x (inflation - target ${t.pct}%) + ${wo} x output gap; r* is Taylor (1993)'s 2%, a stated parameter`;
       return {
         lines: [

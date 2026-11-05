@@ -17,7 +17,7 @@ import { shockSummary, shockWatch } from './shockWatch';
 import { TURN_WINDOW_MONTHS, UNWIND_PTS, UNWIND_WINDOW_WEEKS, recordText } from './signalRecord';
 import { HOLD_AFTER_MONTHS, cliCycleText, cycleClock, nextDecisionText, policyCycleText } from './cycleClock';
 import { cpiMissing, cpiSource } from './oecdInflation';
-import { TAYLOR_BAND_PTS, taylorCheck, taylorMethod } from './taylorRule';
+import { TAYLOR_BAND_PTS, outputGapLabel, taylorCheck, taylorMethod } from './taylorRule';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
@@ -590,8 +590,12 @@ export function taylorRows(self: LiveWatchlistItem | undefined): BriefRow[] {
     { label: 'Taylor rule rate', value: `${r.rulePct.toFixed(2)}%${r.withoutOutputGap ? ' (no output gap)' : ''}`, source: `model: ${taylorMethod(r)}`, verified: false },
     { label: 'Policy rate against the rule', value: `${sg2(r.gapToRulePts)} pts: ${r.stance}`, source: `model: BIS policy rate ${r.policyPct.toFixed(2)}% minus the rule rate; within ${TAYLOR_BAND_PTS} pt = close to the rule`, verified: false },
     ...(r.outputGapPct !== undefined
-      ? [{ label: 'Output gap', value: `${sg2(r.outputGapPct)}% of potential GDP`, source: `official, IMF WEO${r.outputGapYear ? ` ${r.outputGapYear}` : ''}`, verified: true }]
-      : [noSourceRow('Output gap', 'The IMF WEO publishes no output gap for this country, so the rule leaves that term out.')]),
+      ? [
+          r.outputGapSource === 'estimate'
+            ? { label: 'Output gap', value: `${sg2(r.outputGapPct)}% of potential GDP (app estimate)`, source: `model: ${outputGapLabel(r)}; middle of three filters, not an official figure`, verified: false }
+            : { label: 'Output gap', value: `${sg2(r.outputGapPct)}% of potential GDP`, source: `official, IMF WEO${r.outputGapYear ? ` ${r.outputGapYear}` : ''}`, verified: true },
+        ]
+      : [noSourceRow('Output gap', 'No IMF output gap and too little saved IMF growth history for the app estimate, so the rule leaves that term out.')]),
   ];
 }
 
