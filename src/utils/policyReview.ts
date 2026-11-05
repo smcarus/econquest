@@ -12,14 +12,9 @@
  * The frame fixes the "As of" day, so running Diagnose again on the same review gives the same
  * figures from the same archived pull. Only AI wording can differ between runs; each run is kept.
  *
- * Kept in data/local/reviews.json, apart from the research library. Server-only (node:crypto);
- * the browser imports types and the plain helpers that do not hash.
+ * Browser-safe: types, step names and states. Hashing, saving steps and the file store
+ * (data/local/reviews.json) are in policyReviewStore.ts, which only the server imports.
  */
-import fs from 'fs';
-import path from 'path';
-import { createHash } from 'crypto';
-import { canonicalJson } from './auditLog';
-import { writeFileAtomic } from './atomicWrite';
 
 /** Bumped when the steps or their content change shape, so old reviews say which version made them. */
 export const REVIEW_TEMPLATE_VERSION = 'policy-review-v1';
@@ -125,7 +120,7 @@ export interface ReviewFile {
   reviews: PolicyReview[];
 }
 
-const MAX_RUNS = 200;
+export const MAX_RUNS = 200;
 const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().replace(/\s+/g, ' ').slice(0, max) : '');
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const MONTH_OR_DAY = /^\d{4}-\d{2}(-\d{2})?$/;
@@ -173,11 +168,7 @@ export function frameTitle(frame: ReviewFrame): string {
   return `${frame.iso3}: ${verb} ${frame.goal.indicator}${frame.goal.target ? ` to ${frame.goal.target}` : ''} (as of ${frame.asOf})`.slice(0, 160);
 }
 
-export function stepHash(step: ReviewStep, content: unknown, basedOn: string | undefined): string {
-  return createHash('sha256').update(canonicalJson({ step, content, basedOn: basedOn ?? null })).digest('hex');
-}
-
-const prevStep = (step: ReviewStep): ReviewStep | null => {
+export const prevStep = (step: ReviewStep): ReviewStep | null => {
   const i = REVIEW_STEPS.indexOf(step);
   return i > 0 ? REVIEW_STEPS[i - 1] : null;
 };
@@ -210,30 +201,6 @@ export function canSaveStep(review: PolicyReview, step: ReviewStep): string | nu
   return `${STEP_LABEL[prev]} must be done first${states[prev] === 'out_of_date' ? ' (it is out of date: run it again)' : ''}.`;
 }
 
-/** Saves one step's content, chained to the step before. Later steps keep their content but read "Out of date". */
-export function saveStep(review: PolicyReview, step: ReviewStep, content: unknown, now: Date = new Date(), note?: string): { review: PolicyReview } | { error: string } {
-  const blocked = canSaveStep(review, step);
-  if (blocked) return { error: blocked };
-  const prev = prevStep(step);
-  const basedOn = prev ? review.steps[prev]!.hash : undefined;
-  const at = now.toISOString();
-  const hash = stepHash(step, content, basedOn);
-  const rec: ReviewStepRecord = { content, savedAt: at, hash, ...(basedOn ? { basedOn } : {}) };
-  const run: ReviewRun = { step, at, hash, ...(note ? { note: note.slice(0, 200) } : {}) };
-  const title = step === 'frame' ? frameTitle(content as ReviewFrame) : review.title;
-  return { review: { ...review, title, updatedAt: at, steps: { ...review.steps, [step]: rec }, runs: [...review.runs, run].slice(-MAX_RUNS) } };
-}
-
-/** A new review from a checked frame. */
-export function newReview(frame: ReviewFrame, existingIds: string[], now: Date = new Date(), previousId?: string): PolicyReview {
-  const at = now.toISOString();
-  let id = `r-${at.replace(/[^0-9]/g, '')}`;
-  while (existingIds.includes(id)) id += 'x';
-  const empty: PolicyReview = { id, title: frameTitle(frame), templateVersion: REVIEW_TEMPLATE_VERSION, createdAt: at, updatedAt: at, ...(previousId ? { previousId } : {}), steps: {}, runs: [] };
-  const out = saveStep(empty, 'frame', frame, now);
-  return 'review' in out ? out.review : empty;
-}
-
 export function frameOf(review: PolicyReview): ReviewFrame | null {
   return (review.steps.frame?.content as ReviewFrame) ?? null;
 }
@@ -253,42 +220,3 @@ export function summarise(review: PolicyReview): ReviewSummary {
   };
 }
 
-/** Checks every stored hash against the content. Returns the steps whose content no longer matches. */
-export function verifyReview(review: PolicyReview): ReviewStep[] {
-  return REVIEW_STEPS.filter((s) => {
-    const rec = review.steps[s];
-    return rec ? stepHash(s, rec.content, rec.basedOn) !== rec.hash : false;
-  });
-}
-
-function isReview(v: unknown): v is PolicyReview {
-  const r = v as PolicyReview;
-  return Boolean(r && typeof r.id === 'string' && r.id && typeof r.title === 'string' && r.steps && typeof r.steps === 'object' && Array.isArray(r.runs));
-}
-
-export function reviewFilePath(dataDir: string): string {
-  return path.join(dataDir, 'local', 'reviews.json');
-}
-
-export function loadReviews(file: string): ReviewFile {
-  try {
-    const j = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return { reviews: Array.isArray(j?.reviews) ? j.reviews.filter(isReview) : [] };
-  } catch {
-    return { reviews: [] };
-  }
-}
-
-/** Saves one review (same id replaces), newest first. */
-export function putReview(file: string, review: PolicyReview): void {
-  const all = loadReviews(file);
-  const reviews = [review, ...all.reviews.filter((r) => r.id !== review.id)].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, MAX_REVIEWS);
-  writeFileAtomic(file, JSON.stringify({ reviews }, null, 1), 0o600);
-}
-
-export function deleteReview(file: string, id: string): boolean {
-  const all = loadReviews(file);
-  if (!all.reviews.some((r) => r.id === id)) return false;
-  writeFileAtomic(file, JSON.stringify({ reviews: all.reviews.filter((r) => r.id !== id) }, null, 1), 0o600);
-  return true;
-}

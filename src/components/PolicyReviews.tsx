@@ -1,0 +1,423 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { ClipboardList, Pencil, Play, Plus, Trash2 } from 'lucide-react';
+import { REVIEW_STEPS, STEP_HINT, STEP_LABEL, STEP_STATE_LABEL, type PolicyReview, type ReviewFrame, type ReviewStep, type ReviewSummary, type StepState } from '../utils/policyReview';
+import { GOAL_INDICATORS, type Diagnosis, type DiagnosisFigure } from '../utils/reviewDiagnosis';
+
+/**
+ * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
+ * Frame > Diagnose > Options > Evidence > Memo > Outcomes; every step saved, hashed and audited.
+ * See docs/POLICY_REVIEW.md. Kept on this computer in data/local/reviews.json.
+ */
+
+type Country = { iso3: string; countryName: string };
+type Opened = { review: PolicyReview; states: Record<ReviewStep, StepState>; changed: ReviewStep[] };
+
+const INPUT = 'w-full px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
+const today = () => new Date().toISOString().slice(0, 10);
+const short = (h?: string) => (h ? h.slice(0, 12) : '');
+
+const STATE_BADGE: Record<StepState, string> = {
+  done: 'ui-badge ui-badge-positive',
+  out_of_date: 'ui-badge ui-badge-warning',
+  not_started: 'ui-badge',
+};
+
+async function api<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init ? { ...init, headers: { 'Content-Type': 'application/json', ...(init.headers || {}) } } : undefined);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body?.error || `The app answered ${res.status}.`);
+  return body as T;
+}
+
+const emptyFrame = (iso3: string): ReviewFrame => ({ iso3, problem: '', goal: { indicator: '', direction: 'lower' }, constraints: [], asOf: today() });
+
+const FrameForm: React.FC<{ countries: Country[]; initial: ReviewFrame; submitLabel: string; onSubmit: (f: ReviewFrame) => Promise<void>; onCancel: () => void }> = ({ countries, initial, submitLabel, onSubmit, onCancel }) => {
+  const [f, setF] = useState<ReviewFrame>(initial);
+  const [constraints, setConstraints] = useState(initial.constraints.join('\n'));
+  const [busy, setBusy] = useState(false);
+  const goal = (patch: Partial<ReviewFrame['goal']>) => setF((x) => ({ ...x, goal: { ...x.goal, ...patch } }));
+  const known = countries.some((c) => c.iso3 === f.iso3);
+  return (
+    <form
+      className="grid gap-3 sm:grid-cols-2"
+      data-review-frame-form="true"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        setBusy(true);
+        try {
+          await onSubmit({ ...f, constraints: constraints.split('\n').map((c) => c.trim()).filter(Boolean) });
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      <label className="block">
+        <span className="ui-label block mb-1">Country</span>
+        <select className={INPUT} value={f.iso3} onChange={(e) => setF({ ...f, iso3: e.target.value })} required>
+          <option value="">Pick a country</option>
+          {!known && f.iso3 && <option value={f.iso3}>{f.iso3}</option>}
+          {countries.map((c) => (
+            <option key={c.iso3} value={c.iso3}>
+              {c.countryName}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <span className="ui-label block mb-1">As of (every later step reads the data saved on or before this day)</span>
+        <input type="date" className={INPUT} value={f.asOf} max={today()} onChange={(e) => setF({ ...f, asOf: e.target.value })} required />
+      </label>
+      <label className="block sm:col-span-2">
+        <span className="ui-label block mb-1">The problem, in a sentence or two</span>
+        <textarea className={INPUT} rows={2} maxLength={600} value={f.problem} onChange={(e) => setF({ ...f, problem: e.target.value })} placeholder="e.g. Inflation is well above target while growth is slowing and debt is rising." required />
+      </label>
+      <label className="block">
+        <span className="ui-label block mb-1">Goal: which indicator should improve</span>
+        <input className={INPUT} list="review-goal-indicators" maxLength={120} value={f.goal.indicator} onChange={(e) => goal({ indicator: e.target.value })} placeholder="e.g. Inflation" required />
+        <datalist id="review-goal-indicators">
+          {GOAL_INDICATORS.map((g) => (
+            <option key={g} value={g} />
+          ))}
+        </datalist>
+      </label>
+      <div className="grid grid-cols-3 gap-2">
+        <label className="block">
+          <span className="ui-label block mb-1">Direction</span>
+          <select className={INPUT} value={f.goal.direction} onChange={(e) => goal({ direction: e.target.value as ReviewFrame['goal']['direction'] })}>
+            <option value="lower">Lower</option>
+            <option value="higher">Higher</option>
+            <option value="stable">Stable</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="ui-label block mb-1">Target (optional)</span>
+          <input className={INPUT} maxLength={60} value={f.goal.target || ''} onChange={(e) => goal({ target: e.target.value })} placeholder="3%" />
+        </label>
+        <label className="block">
+          <span className="ui-label block mb-1">By (optional)</span>
+          <input type="month" className={INPUT} value={f.goal.by || ''} onChange={(e) => goal({ by: e.target.value })} />
+        </label>
+      </div>
+      <label className="block">
+        <span className="ui-label block mb-1">Constraints, one per line (optional)</span>
+        <textarea className={INPUT} rows={3} value={constraints} onChange={(e) => setConstraints(e.target.value)} placeholder={'Currency peg to the USD\nLittle fiscal room\nElection in October'} />
+      </label>
+      <label className="block">
+        <span className="ui-label block mb-1">Who it is for (optional)</span>
+        <input className={INPUT} maxLength={120} value={f.audience || ''} onChange={(e) => setF({ ...f, audience: e.target.value })} placeholder="e.g. Finance minister, monetary policy committee" />
+      </label>
+      <div className="sm:col-span-2 flex gap-1.5">
+        <button type="submit" className="ui-btn ui-btn-primary" disabled={busy}>
+          {busy ? 'Saving…' : submitLabel}
+        </button>
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={onCancel}>
+          Cancel
+        </button>
+      </div>
+    </form>
+  );
+};
+
+const FigureCell: React.FC<{ x: DiagnosisFigure }> = ({ x }) =>
+  x.value === null ? (
+    <span className="text-amber-700 dark:text-amber-400">Missing: {x.reason}</span>
+  ) : (
+    <span className="tabular-nums text-slate-900 dark:text-white">
+      {x.value}
+      {x.unit === '%' ? '%' : ` ${x.unit}`}
+    </span>
+  );
+
+const DiagnosisView: React.FC<{ d: Diagnosis }> = ({ d }) => {
+  const groups = [...new Set(d.figures.map((x) => x.group))];
+  return (
+    <div className="space-y-3" data-review-diagnosis="true">
+      <p className="ui-label">
+        From the pull saved on {d.pullDate} (asked for {d.asOf}){d.incomplete ? ', which was incomplete: some feeds did not answer that day' : ''}. {d.coverage}
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-left ui-label">
+              <th className="py-1 pr-2 font-normal">#</th>
+              <th className="py-1 pr-2 font-normal">Indicator</th>
+              <th className="py-1 pr-2 font-normal">Value</th>
+              <th className="py-1 pr-2 font-normal">Source and period</th>
+            </tr>
+          </thead>
+          <tbody>
+            {groups.map((g) => (
+              <React.Fragment key={g}>
+                <tr>
+                  <td colSpan={4} className="pt-2 pb-0.5 ui-label">
+                    {g}
+                  </td>
+                </tr>
+                {d.figures
+                  .filter((x) => x.group === g)
+                  .map((x) => (
+                    <tr key={x.field} className="border-t border-slate-100 dark:border-slate-800" data-review-figure={x.field}>
+                      <td className="py-1 pr-2 tabular-nums text-slate-500">[{x.ref}]</td>
+                      <td className="py-1 pr-2 text-slate-800 dark:text-slate-200">{x.label}</td>
+                      <td className="py-1 pr-2">
+                        <FigureCell x={x} />
+                      </td>
+                      <td className="py-1 pr-2 text-xs text-slate-500 dark:text-slate-400">{x.value === null ? '' : `${x.source}${x.period ? `, ${x.period}` : ''}`}</td>
+                    </tr>
+                  ))}
+              </React.Fragment>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ul className="space-y-1">
+        {d.readings.map((r) => (
+          <li key={r.id} className="text-sm text-slate-800 dark:text-slate-200" data-review-reading={r.id}>
+            <span className="font-semibold">{r.label}:</span>{' '}
+            {r.value === null ? <span className="text-amber-700 dark:text-amber-400">{r.reason}</span> : <span className="tabular-nums">{r.value} pts</span>}
+            <span className="block text-xs text-slate-500 dark:text-slate-400">
+              {r.method}
+              {r.caveat ? ` ${r.caveat}` : ''}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: string }> = ({ countries = [], defaultIso3 = '' }) => {
+  const [list, setList] = useState<ReviewSummary[]>([]);
+  const [error, setError] = useState('');
+  const [creating, setCreating] = useState(false);
+  const [opened, setOpened] = useState<Opened | null>(null);
+  const [editingFrame, setEditingFrame] = useState(false);
+  const [busy, setBusy] = useState('');
+
+  const refresh = useCallback(async () => {
+    try {
+      setList((await api<{ reviews: ReviewSummary[] }>('/api/reviews')).reviews);
+      setError('');
+    } catch (e) {
+      setError(`Could not read the policy reviews: ${(e as Error).message}`);
+    }
+  }, []);
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  const open = async (id: string | null) => {
+    setEditingFrame(false);
+    if (!id) return setOpened(null);
+    try {
+      setOpened(await api<Opened>(`/api/reviews/${encodeURIComponent(id)}`));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  };
+  const apply = async (out: { review: PolicyReview; states: Record<ReviewStep, StepState> }) => {
+    setOpened({ review: out.review, states: out.states, changed: [] });
+    await refresh();
+  };
+  const run = async (label: string, fn: () => Promise<void>) => {
+    setBusy(label);
+    setError('');
+    try {
+      await fn();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const r = opened?.review;
+  const frame = r?.steps.frame?.content as ReviewFrame | undefined;
+  const diagnosis = r?.steps.diagnose?.content as Diagnosis | undefined;
+  const name = (iso3: string) => countries.find((c) => c.iso3 === iso3)?.countryName || iso3;
+
+  return (
+    <section className="ui-panel" data-policy-reviews="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+      <header className="ui-panel-header">
+        <h2 className="ui-section-title flex items-center gap-2">
+          <ClipboardList className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          Policy reviews
+        </h2>
+        <p className="ui-label">
+          A step-by-step case file for finding ways to improve policy in one country: Frame, Diagnose, Options, Evidence, Recommendation memo, Track outcomes. Every step is saved and
+          hashed, so the same inputs give the same figures. Research, not validated advice.
+        </p>
+      </header>
+      <div className="p-4 space-y-3">
+        {error && (
+          <p className="text-xs text-amber-700 dark:text-amber-400" role="alert">
+            {error}
+          </p>
+        )}
+
+        {!creating && !r && (
+          <button type="button" className="ui-btn ui-btn-primary" onClick={() => setCreating(true)}>
+            <Plus className="w-3.5 h-3.5" /> New policy review
+          </button>
+        )}
+        {creating && (
+          <FrameForm
+            countries={countries}
+            initial={emptyFrame(defaultIso3)}
+            submitLabel="Start review"
+            onCancel={() => setCreating(false)}
+            onSubmit={(f) =>
+              run('create', async () => {
+                const out = await api<{ review: PolicyReview; states: Record<ReviewStep, StepState> }>('/api/reviews', { method: 'POST', body: JSON.stringify({ frame: f }) });
+                setCreating(false);
+                await apply(out);
+              })
+            }
+          />
+        )}
+
+        {!r && !creating && list.length === 0 && !error && <p className="ui-body">No policy reviews yet. Start one to frame a problem for a country and work through it with the council.</p>}
+
+        {!r && list.length > 0 && (
+          <ul className="space-y-1.5">
+            {list.map((s) => (
+              <li key={s.id} className="border border-slate-200 dark:border-slate-700" data-review={s.id}>
+                <button type="button" onClick={() => void open(s.id)} className="w-full text-left px-2 py-1.5 flex flex-wrap items-baseline justify-between gap-2 hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                  <span className="text-sm text-slate-900 dark:text-white">{s.title}</span>
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                    {s.next ? `Next: ${STEP_LABEL[s.next]}` : 'All steps done'} · {REVIEW_STEPS.filter((x) => s.states[x] === 'done').length} of 6 done · changed {s.updatedAt.slice(0, 10)}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {r && frame && (
+          <div className="space-y-3" data-review-open={r.id}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void open(null)}>
+                ← All policy reviews
+              </button>
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost"
+                onClick={() =>
+                  run('delete', async () => {
+                    await api(`/api/reviews/${encodeURIComponent(r.id)}`, { method: 'DELETE' });
+                    setOpened(null);
+                    await refresh();
+                  })
+                }
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete review
+              </button>
+            </div>
+            <h3 className="ui-section-title">{r.title}</h3>
+            {opened!.changed.length > 0 && (
+              <p className="text-xs text-rose-700 dark:text-rose-400" role="alert">
+                The saved {opened!.changed.map((s) => STEP_LABEL[s]).join(', ')} no longer match{opened!.changed.length === 1 ? 'es' : ''} its hash: the file was changed outside the app. Run
+                {opened!.changed.length === 1 ? ' that step' : ' those steps'} again.
+              </p>
+            )}
+
+            <ol className="flex flex-wrap gap-1.5" aria-label="Steps">
+              {REVIEW_STEPS.map((s, i) => (
+                <li key={s} className={STATE_BADGE[opened!.states[s]]} data-review-step-state={`${s}:${opened!.states[s]}`}>
+                  {i + 1}. {STEP_LABEL[s]} · {STEP_STATE_LABEL[opened!.states[s]]}
+                </li>
+              ))}
+            </ol>
+
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="frame">
+              <div className="flex items-baseline justify-between gap-2">
+                <h4 className="ui-section-title">1. {STEP_LABEL.frame}</h4>
+                {!editingFrame && (
+                  <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setEditingFrame(true)}>
+                    <Pencil className="w-3.5 h-3.5" /> Change
+                  </button>
+                )}
+              </div>
+              {editingFrame ? (
+                <>
+                  <p className="ui-label">Changing the frame marks every later step Out of date until you run it again. The earlier runs stay in the review's history.</p>
+                  <FrameForm
+                    countries={countries}
+                    initial={frame}
+                    submitLabel="Save frame"
+                    onCancel={() => setEditingFrame(false)}
+                    onSubmit={(f) =>
+                      run('frame', async () => {
+                        await apply(await api(`/api/reviews/${encodeURIComponent(r.id)}/frame`, { method: 'PUT', body: JSON.stringify({ frame: f }) }));
+                        setEditingFrame(false);
+                      })
+                    }
+                  />
+                </>
+              ) : (
+                <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-[10rem_1fr] text-sm">
+                  <dt className="ui-label">Country</dt>
+                  <dd className="text-slate-900 dark:text-white">{name(frame.iso3)}</dd>
+                  <dt className="ui-label">Problem</dt>
+                  <dd className="text-slate-900 dark:text-white">{frame.problem}</dd>
+                  <dt className="ui-label">Goal</dt>
+                  <dd className="text-slate-900 dark:text-white">
+                    {frame.goal.indicator}: {frame.goal.direction}
+                    {frame.goal.target ? `, to ${frame.goal.target}` : ''}
+                    {frame.goal.by ? `, by ${frame.goal.by}` : ''}
+                  </dd>
+                  <dt className="ui-label">Constraints</dt>
+                  <dd className="text-slate-900 dark:text-white">{frame.constraints.length ? frame.constraints.join('; ') : 'None stated'}</dd>
+                  {frame.audience && (
+                    <>
+                      <dt className="ui-label">For</dt>
+                      <dd className="text-slate-900 dark:text-white">{frame.audience}</dd>
+                    </>
+                  )}
+                  <dt className="ui-label">As of</dt>
+                  <dd className="text-slate-900 dark:text-white tabular-nums">{frame.asOf}</dd>
+                  <dt className="ui-label">Saved</dt>
+                  <dd className="text-xs text-slate-500 dark:text-slate-400">
+                    {r.steps.frame?.savedAt.slice(0, 16).replace('T', ' ')} · hash <span className="font-code">{short(r.steps.frame?.hash)}</span>
+                  </dd>
+                </dl>
+              )}
+            </section>
+
+            <section className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-review-step="diagnose">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h4 className="ui-section-title">2. {STEP_LABEL.diagnose}</h4>
+                <button
+                  type="button"
+                  className={diagnosis && opened!.states.diagnose === 'done' ? 'ui-btn' : 'ui-btn ui-btn-primary'}
+                  disabled={Boolean(busy) || editingFrame}
+                  onClick={() => run('diagnose', async () => apply(await api(`/api/reviews/${encodeURIComponent(r.id)}/diagnose`, { method: 'POST', body: '{}' })))}
+                >
+                  <Play className="w-3.5 h-3.5" /> {busy === 'diagnose' ? 'Reading the saved pull…' : diagnosis ? 'Run again' : 'Run diagnose'}
+                </button>
+              </div>
+              <p className="ui-label">{STEP_HINT.diagnose}</p>
+              {opened!.states.diagnose === 'out_of_date' && <p className="text-xs text-amber-700 dark:text-amber-400">Out of date: the frame changed after this was run. Run it again.</p>}
+              {diagnosis && <DiagnosisView d={diagnosis} />}
+              {r.steps.diagnose && (
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Saved {r.steps.diagnose.savedAt.slice(0, 16).replace('T', ' ')} · hash <span className="font-code">{short(r.steps.diagnose.hash)}</span> · run {r.runs.filter((x) => x.step === 'diagnose').length} time
+                  {r.runs.filter((x) => x.step === 'diagnose').length === 1 ? '' : 's'}
+                </p>
+              )}
+            </section>
+
+            {REVIEW_STEPS.slice(2).map((s, i) => (
+              <section key={s} className="border border-slate-200 dark:border-slate-700 p-3" data-review-step={s}>
+                <h4 className="ui-section-title text-slate-500 dark:text-slate-400">
+                  {i + 3}. {STEP_LABEL[s]}
+                </h4>
+                <p className="ui-label">{STEP_HINT[s]}</p>
+              </section>
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+};

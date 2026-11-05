@@ -50,7 +50,9 @@ import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/research
 import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
-import { deleteReview, loadReviews, newReview, parseFrame, putReview, reviewFilePath, saveStep, summarise as summariseReview, verifyReview, stepStates, REVIEW_TEMPLATE_VERSION } from './src/utils/policyReview';
+import { buildDiagnosis } from './src/utils/reviewDiagnosis';
+import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from './src/utils/policyReview';
+import { deleteReview, loadReviews, newReview, putReview, reviewFilePath, saveStep, verifyReview } from './src/utils/policyReviewStore';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
@@ -4242,6 +4244,34 @@ async function startServer() {
     if ('error' in out) return res.status(400).json({ error: out.error });
     if (!writeReview(res, out.review)) return;
     appendAudit(AUDIT_FILES, { kind: 'research', summary: `Changed the frame of policy review "${out.review.title}"`, detail: { id: r.id, step: 'frame', hash: out.review.steps.frame?.hash } });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Step 2: the standard indicators from the archived pull on or before the frame's As of day.
+  app.post('/api/reviews/:id/diagnose', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    const days = listArchivedDays(ARCHIVE_DIR, frame.iso3);
+    const past = archivedSnapshot(frame.iso3, frame.asOf);
+    if (!past) {
+      return res.status(409).json({
+        error: days.length
+          ? `No saved pull for ${frame.iso3} on or before ${frame.asOf}; the archive starts ${days[0]}. Change the As of day in the frame.`
+          : `No saved pulls for ${frame.iso3} yet. Open the country once (or run Menu > Offline data) so the app saves a pull, then run Diagnose again.`,
+        days,
+      });
+    }
+    const pulledAt = new Date(past.pulledAt).toISOString();
+    const diagnosis = buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: frame.asOf, pullDate: past.date, pulledAt, incomplete: past.incomplete });
+    const out = saveStep(r, 'diagnose', diagnosis);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Diagnosed policy review "${out.review.title}" from the ${past.date} pull`,
+      detail: { id: r.id, step: 'diagnose', hash: out.review.steps.diagnose?.hash, pullDate: past.date, pulledAt, coverage: diagnosis.coverage, figures: diagnosis.figures.map((x) => ({ ref: x.ref, label: x.label, value: x.value, source: x.source, period: x.period, reason: x.reason || undefined })) },
+    });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
   app.delete('/api/reviews/:id', (req, res) => {

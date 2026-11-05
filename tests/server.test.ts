@@ -800,6 +800,15 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.deepEqual(one.changed, []);
   const audit = await (await fetch(`${base}/api/audit`)).json();
   assert.ok(JSON.stringify(audit).includes('Started policy review'));
+  const diag = await fetch(`${base}/api/reviews/${review.id}/diagnose`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+  if (diag.status === 200) {
+    const d = await diag.json();
+    assert.equal(d.states.diagnose, 'done');
+    assert.equal(d.review.steps.diagnose.content.figures.length, 12);
+  } else {
+    assert.equal(diag.status, 409);
+    assert.match((await diag.json()).error, /saved pull/);
+  }
   assert.equal((await fetch(`${base}/api/reviews/${review.id}`, { method: 'DELETE' })).status, 200);
   assert.equal((await fetch(`${base}/api/reviews/${review.id}`)).status, 404);
 });
