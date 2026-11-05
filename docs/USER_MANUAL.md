@@ -26,8 +26,11 @@ shown when an input is missing.
 
 The page the app opens on. From the top:
 
-**Getting started.** Shown on a new install until its four steps are done (see the README) or you
-press Hide.
+**Your inputs.** One chip for each thing you set that changes what Workspace shows: watchlist, open
+country, data feeds, free keys, AI model, holdings and saved research. Each chip shows its state
+(green set, amber needs setup with the reason, grey optional and not used yet), names the panels it
+feeds, and opens the place where you change it. On a new install, the amber chips are the setup
+steps.
 
 **Since your last visit.** What moved on the watchlist since you last opened the app: policy rate
 moves (BIS), new monthly inflation prints, turns in the OECD leading indicator, 10Y yield moves of 25

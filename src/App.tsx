@@ -2934,11 +2934,17 @@ export default function App() {
               }}
               coreOnly={!showAllTools}
               aiProvider={runtimeConfig.providerMode}
-              onFirstRunAction={(step) => {
-                if (step === 'fred') setIsSettingsOpen(true);
-                else if (step === 'ai') setIsRuntimeModalOpen(true);
-                else if (step === 'watchlist') setIsWatchlistCollapsed(false);
-                else if (showAllTools) setIsRuntimeModalOpen(true);
+              holdingsCount={holdings.length}
+              onInputAction={(id) => {
+                if (id === 'keys') setIsSettingsOpen(true);
+                else if (id === 'ai') setIsRuntimeModalOpen(true);
+                else if (id === 'watchlist') setIsWatchlistCollapsed(false);
+                else if (id === 'country') openCountryPage();
+                else if (id === 'holdings') {
+                  setAppArea('portfolio');
+                  setIsHoldingsPanelOpen(true);
+                  window.scrollTo({ top: 0 });
+                } else if (showAllTools) setIsRuntimeModalOpen(true);
                 else {
                   setAppArea('desks');
                   window.setTimeout(() => document.querySelector('[data-connections-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
