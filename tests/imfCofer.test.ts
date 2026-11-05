@@ -46,3 +46,63 @@ test('the whole pull with a fake IMF, and Missing with a reason when it does not
   const key = await pullCofer({ fetchFn: imfFetch([]), env: { IMF_COFER_KEY: 'G001.*.*.Q' } });
   assert.match(key.note, /series key from IMF_COFER_KEY/);
 });
+
+test('live layout: currency in its own dimension, percent code on the transformation, no country list in the structure', async () => {
+  const structure = {
+    data: {
+      dataStructures: [
+        {
+          id: 'DSD_COFER',
+          dataStructureComponents: {
+            dimensionList: {
+              dimensions: [
+                { id: 'COUNTRY', position: 0 },
+                { id: 'INDICATOR', position: 1, localRepresentation: { enumeration: 'urn:sdmx:org.sdmx.infomodel.codelist.Codelist=IMF.STA:CL_COFER_INDICATOR(1.0.0)' } },
+                { id: 'FXR_CURRENCY', position: 2 },
+                { id: 'TYPE_OF_TRANSFORMATION', position: 3 },
+                { id: 'FREQUENCY', position: 4 },
+              ],
+            },
+          },
+        },
+      ],
+      codelists: [{ id: 'CL_COFER_INDICATOR', codes: [{ id: 'AFXRA', name: 'Allocated reserves' }] }],
+    },
+  };
+  const ser = (ccy: string, vals: number[]) => ({ ccy, vals });
+  const rows = [ser('USD', [58.0, 57.5, 57.0, 56.8, 56.5, 56.3]), ser('EUR', [20, 20, 20, 20, 20, 20.1]), ser('CNY', [2.1, 2.1, 2.1, 2.1, 2.1, 2.1])];
+  const periods = ['2024-Q1', '2024-Q2', '2024-Q3', '2024-Q4', '2025-Q1', '2025-Q2'];
+  const data = {
+    data: {
+      structures: [
+        {
+          dimensions: {
+            series: [
+              { id: 'COUNTRY', values: [{ id: 'G001' }] },
+              { id: 'INDICATOR', values: [{ id: 'AFXRA' }] },
+              { id: 'FXR_CURRENCY', values: rows.map((r) => ({ id: r.ccy })) },
+              { id: 'TYPE_OF_TRANSFORMATION', values: [{ id: 'SHRO_PT' }] },
+              { id: 'FREQUENCY', values: [{ id: 'Q' }] },
+            ],
+            observation: [{ id: 'TIME_PERIOD', values: periods.map((p) => ({ value: p })) }],
+          },
+        },
+      ],
+      dataSets: [{ series: Object.fromEntries(rows.map((r, i) => [`0:0:${i}:0:0`, { observations: Object.fromEntries(r.vals.map((v, j) => [String(j), [String(v)]])) }])) }],
+    },
+  };
+  const urls: string[] = [];
+  const r = await pullCofer({
+    fetchFn: async (u: string) => {
+      urls.push(u);
+      if (u.includes('/structure/')) return new Response(JSON.stringify(structure));
+      if (u.includes('/+/G001.')) return new Response(JSON.stringify(data));
+      return new Response('{}', { status: 404 });
+    },
+    env: {},
+  });
+  assert.equal(r.cofer!.shares[0].ccy, 'USD');
+  assert.equal(r.cofer!.shares[0].pct, 56.3);
+  assert.equal(r.cofer!.shares[0].change4qPts, -1.2);
+  assert.match(r.note, /world code tried in turn/);
+});

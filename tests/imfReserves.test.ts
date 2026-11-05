@@ -140,3 +140,21 @@ test('no IMF answer leaves every figure Missing with the reason', async () => {
   assert.equal(imfMissing(undefined, 'reserves').short, 'IMF did not answer');
   assert.equal(formatImfPeriod('2025-Q2'), 'Q2 2025');
 });
+
+test('codes without names (as on the live API): CD = credit is never read as imports; DB = debit is', async () => {
+  const { labelOf } = await import('../src/utils/imfReserves.ts');
+  const strip = (series: ReturnType<typeof parseImfData>) =>
+    series.map((s) => ({ ...s, dims: Object.fromEntries(Object.entries(s.dims).map(([k, v]) => [k, { id: v.id, name: '' }])) }));
+  const im = strip(parseImfData(imfDataJson('BOP', 'BRA', 'GS')));
+  const pick = pickSeries(im, IMF_MEASURES.imports)!;
+  assert.equal(pick.dims.BOP_ACCOUNTING_ENTRY.id, 'DB');
+  assert.match(labelOf(pick), /debit/);
+  const ca = strip(parseImfData(imfDataJson('BOP', 'BRA', 'CAB')));
+  assert.equal(pickSeries(ca, IMF_MEASURES.currentAccount)!.dims.BOP_ACCOUNTING_ENTRY.id, 'NETCD');
+});
+
+test('looser names still match: "Balance of payments, current account, total" and "Official reserves"', () => {
+  const s = { flow: 'X', dims: ['COUNTRY', 'INDICATOR'], indicatorDim: 'INDICATOR', indicators: [{ id: 'BCA', name: 'Balance of payments, current account, total' }, { id: 'ORA', name: 'Official reserves' }, { id: 'ORXG', name: 'Official reserves excluding gold' }] };
+  assert.deepEqual(matchIndicators(s, IMF_MEASURES.currentAccount).map((c) => c.id), ['BCA']);
+  assert.deepEqual(matchIndicators(s, IMF_MEASURES.reserves).map((c) => c.id), ['ORA']);
+});

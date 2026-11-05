@@ -109,6 +109,8 @@ Notes from the first check on Sam's Mac (2026-11-05):
   series is in US dollars and states its unit (millions, billions). Every figure shows the IMF
   series key and period. If a name does not match (the check says which), set the series key in
   `.env`: `IMF_RESERVES_KEY`, `IMF_CA_KEY`, `IMF_IMPORTS_KEY`, with `{ISO3}` for the country.
+  `npm run check:imf` prints the live IMF dimension order, the indicator codes whose names look
+  relevant and the Brazil series each measure picks, to check the matching.
   Kept on disk in `data/live/imf_external.json` and asked again after a day. Readings: reserves
   and their 12-month change; months of imports (reserves over the last four quarters of imports,
   divided by 12; stated rule: under 3 = thin, 3 to 6 = adequate, over 6 = ample, tagged as the

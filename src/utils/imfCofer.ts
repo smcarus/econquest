@@ -68,6 +68,13 @@ export interface CoferReading {
   method: 'imf share' | 'claims over allocated';
 }
 
+export const WORLD_IDS = ['G001', 'W00', 'G999', 'WLD'];
+
+/** A few series keys with their names, so the check shows what came back. */
+export function describeSeries(series: ImfSeries[], n = 6): string {
+  return `First series: ${series.slice(0, n).map((x) => `${x.key} (${Object.values(x.dims).map((d) => d.name || d.id).join(' / ')})`).join('; ')}`;
+}
+
 const WORLD = /^world$|^all countries|world\b.*total|^total,? world/i;
 
 /** The world code from the structure's country codelist, by name (or a known world code). */
@@ -80,9 +87,18 @@ export function coferKey(s: ImfStructure, area: string): string {
   return s.dims.map((d) => (d === s.countryDim ? area : d === s.freqDim ? 'Q' : '*')).join('.');
 }
 
-const indName = (x: ImfSeries, s?: ImfStructure) => x.dims[s?.indicatorDim ?? 'INDICATOR']?.name || Object.values(x.dims).map((d) => d.name).join(' | ');
+/** Where the currency is named: a currency dimension (FXR_CURRENCY on the live API), else the indicator. */
+const CCY_DIMS = /CURRENCY/;
+const indName = (x: ImfSeries, s?: ImfStructure) => {
+  const ccyDim = Object.keys(x.dims).find((d) => CCY_DIMS.test(d));
+  const parts = [ccyDim ? `${x.dims[ccyDim].name} ${x.dims[ccyDim].id}` : '', x.dims[s?.indicatorDim ?? 'INDICATOR']?.name || x.dims[s?.indicatorDim ?? 'INDICATOR']?.id || ''];
+  return parts.filter(Boolean).join(' | ') || Object.values(x.dims).map((d) => d.name || d.id).join(' | ');
+};
 const ccyOf = (name: string) => COFER_CURRENCIES.find((c) => c.re.test(name.replace(/\bin U\.?S\.? dollars? terms\b/i, '')))?.ccy;
-const isShare = (x: ImfSeries) => /share|percent|% of/i.test(Object.values(x.dims).map((d) => d.name).join(' | '));
+/** A share series: "share" or "percent" in a name, or a percent code (…_PT, SHR…) on the transformation or unit. */
+const isShare = (x: ImfSeries) =>
+  /share|percent|% of/i.test(Object.values(x.dims).map((d) => d.name).join(' | ')) ||
+  Object.entries(x.dims).some(([dim, d]) => /TRANSFORMATION|UNIT/.test(dim) && /(^|_)PT$|^PT|SHR|^SH_/i.test(d.id));
 const quarterly = (x: ImfSeries) => x.obs.filter((o) => /^\d{4}-Q[1-4]$/.test(o.period));
 
 function yearBefore(q: string): string {
@@ -159,17 +175,31 @@ export async function pullCofer(opts: CoferPullOptions): Promise<{ cofer: CoferR
     structures = loaded.structures;
     s = structures[COFER_FLOW];
     if (!s) return { cofer: null, note: loaded.errors[COFER_FLOW] ?? 'IMF COFER structure not read.', structures };
-    const w = findWorldCode(s);
-    if (!w) return { cofer: null, note: `No world code found in the COFER country list. Set IMF_COFER_KEY in .env (dimension order: ${s.dims.join('.')}).`, structures };
-    area = w;
-    key = coferKey(s, w.id);
-    how = `IMF COFER for ${w.id} ("${w.name}")`;
+    const named = findWorldCode(s);
+    if (named) {
+      area = named;
+      key = coferKey(s, named.id);
+      how = `IMF COFER for ${named.id} ("${named.name}")`;
+    } else {
+      // The structure did not carry the country list: try the IMF's world codes in turn.
+      for (const id of WORLD_IDS) {
+        const tryKey = coferKey(s, id);
+        const t = await getJson(opts.fetchFn, imfDataUrl(COFER_FLOW, tryKey), opts.timeoutMs ?? 30000);
+        const series = t.json ? parseImfData(t.json) : [];
+        if (series.length) {
+          const cofer = readCofer(series, { id, name: 'World' }, s);
+          if (cofer) return { cofer, note: `IMF COFER for ${id} (world code tried in turn; the structure had no country list)`, structures, httpStatus: t.status };
+          return { cofer: null, note: `IMF COFER for ${id}: ${series.length} series came back, but no currency share could be read. ${describeSeries(series)}`, structures, httpStatus: t.status };
+        }
+      }
+      return { cofer: null, note: `No world code found: the COFER country list was not in the structure and ${WORLD_IDS.join(', ')} returned no series. Set IMF_COFER_KEY in .env (dimension order: ${s.dims.join('.')}).`, structures };
+    }
   }
   const r = await getJson(opts.fetchFn, imfDataUrl(COFER_FLOW, key), opts.timeoutMs ?? 30000);
   if (!r.json) return { cofer: null, note: `${how}: ${r.error}`, structures, ...(r.status ? { httpStatus: r.status } : {}) };
   const all = parseImfData(r.json);
   const cofer = readCofer(all, area, s);
-  if (!cofer) return { cofer: null, note: `${how}: ${all.length} series came back, but no currency share could be read from their names.`, structures, httpStatus: r.status };
+  if (!cofer) return { cofer: null, note: `${how}: ${all.length} series came back, but no currency share could be read from their names. ${describeSeries(all)}`, structures, httpStatus: r.status };
   return { cofer, note: `${how}; ${cofer.method === 'imf share' ? "the IMF's share series" : 'claims in each currency over total allocated reserves'}`, structures, httpStatus: r.status };
 }
 
