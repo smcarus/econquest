@@ -18,6 +18,7 @@ import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, p
 import { carryToVol, reerLabel } from './fxValuation';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
+import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 
 export type AgentId = 'cb' | 'rv' | 'fx' | 'spill' | 'calendar';
 export type FigureTag = Quality | 'official' | 'model';
@@ -37,6 +38,8 @@ export interface AgentFinding {
   figures: AgentFigure[];
   /** How notable the reading is, 0 to 1, used to keep the strongest when many countries answer. */
   weight: number;
+  /** The agent's call in fixed words (tight / neutral / loose, cheap / rich, strong / weak); the summary may not contradict it. */
+  stance?: Stance[];
 }
 
 export interface AgentAnswer {
@@ -173,12 +176,14 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         ? [{ label: 'Real 10Y yield', value: p1(real10), source: `10Y yield ${p2(it.yield10YPct)} (${y.src}) minus inflation`, tag: 'model' as const }]
         : []),
     ];
+    const stanceText = policyStance(real, gap);
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading: `Policy looks ${policyStance(real, gap)}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
+      reading: `Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
       figures,
       weight: sig?.score ?? 0,
+      stance: [{ dim: 'policy', call: policyCall(stanceText) }],
     });
   }
   return { id: 'cb', name: COUNCIL_AGENTS.cb.name, findings, missing };
@@ -198,8 +203,10 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
     if (it.cds5YBps !== undefined) figures.push({ label: '5Y CDS', value: `${Math.round(it.cds5YBps)} bps`, source: c.src, tag: c.q });
     else missing.push(`${it.countryName}: 5Y CDS missing (${missingReason('cds', it.iso3).short})`);
     const parts: string[] = [];
+    const stance: Stance[] = [];
     if (fit && it.cds5YBps !== undefined && it.compositeRisk !== undefined) {
       const rv = cdsVsPeers(it.cds5YBps, it.compositeRisk, fit);
+      stance.push({ dim: 'cds', call: rv.label });
       figures.push(
         { label: 'Risk score', value: it.compositeRisk.toFixed(2), source: "the app's risk model", tag: 'model' },
         { label: 'CDS peers with this risk score pay', value: `${Math.round(rv.fittedBps)} bps`, source: `log CDS fitted on risk score, ${fit.n} countries`, tag: 'model' },
@@ -232,6 +239,7 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
       reading: parts.join(' '),
       figures,
       weight: Math.max(cdsSig.get(it.iso3)?.score ?? 0, carrySignal(it)?.score ?? 0),
+      ...(stance.length ? { stance } : {}),
     });
   }
   return { id: 'rv', name: COUNCIL_AGENTS.rv.name, findings, missing };
@@ -243,8 +251,10 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
   for (const it of countries) {
     const figures: AgentFigure[] = [];
     const parts: string[] = [];
+    const stance: Stance[] = [];
     if (it.reerGapPct !== undefined) {
       const l = reerLabel(it.reerGapPct);
+      stance.push({ dim: 'fx', call: l });
       figures.push({
         label: 'Real exchange rate vs 10-year average',
         value: `${sgn(it.reerGapPct)}% (${l})`,
@@ -265,7 +275,7 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       missing.push(`${it.countryName}: no BIS real exchange rate or ECB rate`);
       continue;
     }
-    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' '), figures, weight: fxValueSignal(it)?.score ?? 0 });
+    findings.push({ iso3: it.iso3, countryName: it.countryName, reading: parts.join(' '), figures, weight: fxValueSignal(it)?.score ?? 0, ...(stance.length ? { stance } : {}) });
   }
   return { id: 'fx', name: COUNCIL_AGENTS.fx.name, findings, missing };
 }
@@ -387,6 +397,8 @@ export interface SynthesisResult {
   provider?: string;
   /** Sentences removed because a number in them did not trace back to an agent's figures. */
   removed: string[];
+  /** Sentences removed because they described an agent's call in an opposing word. */
+  contradicted?: Contradiction[];
   reason?: string;
 }
 
@@ -395,6 +407,7 @@ export const SYNTHESIS_INSTRUCTION = [
   'Answer the question in a short brief using ONLY the agent findings given.',
   'Every number you write must appear in the findings. Do not compute new numbers, forecast, or add outside facts.',
   'When a figure is tagged Sample data or AI estimate, say so next to it.',
+  'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Where agents point different ways (for example tight policy but a weak currency), say so under disagreements; do not smooth it over.',
   'List under gaps what the agents could not answer.',
   'Plain English, full sentences, no advice to buy or sell.',
@@ -407,6 +420,7 @@ export function answersAsText(question: string, answers: AgentAnswer[]): string 
     lines.push(`## ${a.name} Agent (asked because ${a.why})`);
     for (const f of a.findings) {
       lines.push(`- ${f.countryName}: ${f.reading}`);
+      for (const s of f.stance || []) lines.push(`  - Stance on ${DIM_LABEL[s.dim]}: ${s.call}`);
       for (const g of f.figures) lines.push(`  - ${g.label}: ${g.value} [${tagLabel(g.tag, a.name)}; ${g.source}]`);
     }
     for (const m of a.missing) lines.push(`- Not available: ${m}`);
@@ -436,21 +450,30 @@ export function traces(written: string, allowed: number[]): boolean {
 }
 
 /**
- * Drop any sentence with an untraceable number.
- *
- * Known gap, for polishing (docs/UX_WORKFLOW_PLAN.md, "Polish backlog: Ask the council"): this
- * catches invented figures, not wrong words about real ones. A summary that calls policy loose
- * while the Central Bank Watcher Agent reads it as tight passes. Planned fix: each agent states a
- * stance (tight / neutral / loose, cheap / rich, strong / weak) and sentences that contradict it
- * are flagged.
+ * Drop any sentence with an untraceable number, and any sentence that describes an agent's call in
+ * an opposing word (policy called loose when the Central Bank Watcher Agent reads it as tight; see
+ * stanceCheck.ts). Both kinds are returned so the screen can show what was removed and why.
  */
-export function checkBrief(brief: CouncilBrief, question: string, answers: AgentAnswer[]): { brief: CouncilBrief; removed: string[] } {
+export function checkBrief(
+  brief: CouncilBrief,
+  question: string,
+  answers: AgentAnswer[]
+): { brief: CouncilBrief; removed: string[]; contradicted: Contradiction[] } {
   const allowed = allowedNumbers(question, answers);
   const removed: string[] = [];
+  const contradicted: Contradiction[] = [];
+  const stanced = answers.flatMap((a) =>
+    a.findings.filter((f) => f.stance?.length).map((f) => ({ iso3: f.iso3, countryName: f.countryName, agent: a.name, stance: f.stance! }))
+  );
   const ok = (s: string) => {
     const bad = (s.match(NUM) || []).some((n) => !traces(n, allowed));
-    if (bad) removed.push(s);
-    return !bad;
+    if (bad) {
+      removed.push(s);
+      return false;
+    }
+    const c = contradiction(s, stanced);
+    if (c) contradicted.push(c);
+    return !c;
   };
   const clean = (xs: unknown): string[] =>
     (Array.isArray(xs) ? xs : [])
@@ -462,6 +485,7 @@ export function checkBrief(brief: CouncilBrief, question: string, answers: Agent
   return {
     brief: { headline: headline && ok(headline) ? headline : '', points: clean(brief.points), disagreements: clean(brief.disagreements), gaps: clean(brief.gaps) },
     removed,
+    contradicted,
   };
 }
 

@@ -257,7 +257,21 @@ export const AskCouncilPanel: React.FC<{
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   AI summary by {synthesis?.provider || 'the configured model'}, from the agents’ figures only.
                   {synthesis && synthesis.removed.length > 0 && ` ${synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
+                  {synthesis && (synthesis.contradicted?.length ?? 0) > 0 &&
+                    ` ${synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
                 </p>
+                {synthesis && (synthesis.contradicted?.length ?? 0) > 0 && (
+                  <details className="text-xs text-amber-800 dark:text-amber-300" data-council-contradicted="true">
+                    <summary className="cursor-pointer">Show sentences that contradicted an agent</summary>
+                    <ul className="list-disc pl-5 mt-1 space-y-1">
+                      {synthesis.contradicted!.map((c) => (
+                        <li key={c.sentence}>
+                          “{c.sentence}” <span className="text-slate-600 dark:text-slate-400">{c.reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 {synthesis && synthesis.removed.length > 0 && (
                   <details className="text-xs text-slate-500 dark:text-slate-400">
                     <summary className="cursor-pointer">Show removed sentences</summary>

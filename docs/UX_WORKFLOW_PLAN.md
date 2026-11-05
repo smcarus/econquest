@@ -272,7 +272,7 @@ Out of scope for UI work but worth noting: wider country coverage, a licensed ma
 
 ### Polish backlog: Ask the council
 
-- **Summary can contradict an agent in words.** The number check (`checkBrief` in `src/utils/askCouncil.ts`) removes invented figures but cannot tell when the synthesis agent describes a figure the wrong way, for example calling policy loose when the Central Bank Watcher Agent reads it as tight. Today the agents' own readings sit under the summary, so a reader can see the clash. To polish: give each agent a stated stance (for example tight / neutral / loose for the Central Bank Watcher, cheap / in line / rich for Relative Value, strong / near average / weak for FX), check the summary's wording against those stances, and flag or remove a sentence that contradicts one. Logged by Sam, 2026-11-04.
+- **Summary can contradict an agent in words. Fixed 2026-11-05.** Each agent now states its call in fixed words (policy tight / neutral / loose, CDS cheap / in line / rich, real exchange rate strong / near average / weak), the synthesis prompt carries them, and `checkBrief` removes any summary sentence about a country that describes the call in an opposing word (`src/utils/stanceCheck.ts`). Removed sentences show under the summary with the agent's call. Sentences naming two or more countries are left alone, as the word-to-country link is unclear. Logged by Sam, 2026-11-04.
 
 ## 7. Questions for Sam
 
