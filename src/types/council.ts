@@ -355,6 +355,8 @@ export interface OpenDataSnapshot {
     realGdpGrowthPct: number;
     cpiInflationPct: number;
     sourceUrl: string;
+    /** WEO year each live figure is for, by liveFields key (e.g. 'imf.debtToGdpPct' -> '2025'). */
+    years?: Record<string, string>;
   };
   worldBankIndicators: {
     fxReservesMonthsImport: number;
@@ -524,6 +526,8 @@ export interface WatchlistItem {
   cofer?: import('../utils/imfCofer').CoferReading & { pulledAt: string };
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
+  /** Public debt and fiscal figures from live feeds only, each with its year (utils/fiscalDebt.ts). */
+  fiscal?: import('../utils/fiscalDebt').FiscalFigures;
 }
 
 /** Built-in figures on a watchlist row; LiveWatchlistItem leaves each out unless a live source filled it. */
