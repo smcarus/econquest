@@ -1053,12 +1053,13 @@ export interface SynthesisResult {
 
 export const SYNTHESIS_INSTRUCTION = [
   'You are the synthesis agent of a sovereign research council.',
-  'Answer the question in a short brief using ONLY the agent findings given.',
+  'You receive one standard document per agent, each in the same template: why it was asked, what it covers, findings (each with the agent\'s call and every figure with its tag and source), missing data, and coverage.',
+  'Answer the question in a short brief using ONLY the findings in those documents.',
   'Every number you write must appear in the findings. Do not compute new numbers, forecast, or add outside facts.',
   'Passages from the Policy Document Agent are quotes from documents the user added: name the document when you use one, and do not treat its forecasts as data.',
   'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Where agents point different ways (for example tight policy but a weak currency), say so under disagreements; do not smooth it over.',
-  'List under gaps what the agents could not answer.',
+  'List under gaps what the agents could not answer (their Missing data sections), and give less weight to a document whose coverage is partial or none.',
   'Plain English, full sentences, no advice to buy or sell.',
 ].join(' ');
 

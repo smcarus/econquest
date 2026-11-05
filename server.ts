@@ -36,7 +36,8 @@ import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, type ModelAttempt } from './src/utils/modelFailure';
-import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
+import { documentsAsText, toAgentDocuments } from './src/utils/agentDocument';
+import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
@@ -5592,7 +5593,7 @@ ${MISSING_FIGURES_RULE}
 
   app.post('/api/council/synthesise', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
-    const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 6) : [];
+    const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 9) : [];
     if (!question || !answers.length || !answers.every((a) => a && typeof a.name === 'string' && Array.isArray(a.findings) && Array.isArray(a.missing))) {
       return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
     }
@@ -5604,7 +5605,21 @@ ${MISSING_FIGURES_RULE}
         runtimeConfig: req.body?.runtimeConfig || {},
         thinkingLevel: ThinkingLevel.LOW,
         systemInstruction: SYNTHESIS_INSTRUCTION,
-        prompt: (earlierAsText(Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : []) + answersAsText(question, answers)).slice(0, 20000),
+        // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
+        prompt: (
+          earlierAsText(Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : []) +
+          documentsAsText(
+            toAgentDocuments(answers, {
+              question,
+              askedAt: new Date().toISOString(),
+              scope: typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : 'the countries asked',
+              countriesAsked:
+                Number.isInteger(req.body?.countries) && req.body.countries > 0 && req.body.countries < 300
+                  ? req.body.countries
+                  : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
+            })
+          )
+        ).slice(0, 24000),
         responseSchema: {
           type: Type.OBJECT,
           properties: {
