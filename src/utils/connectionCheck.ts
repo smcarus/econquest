@@ -304,7 +304,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       { id: 'gdelt', name: 'GDELT news', group: 'free', feeds: 'Headlines and news tone (risk score input)' },
       fetchFn,
       `https://api.gdeltproject.org/api/v2/doc/doc?query=${encodeURIComponent(`"${SAMPLE_NAME}" economy`)}&mode=artlist&format=json&maxrecords=1`,
-      Math.max(T, 12000),
+      // A refusal arrives after about 11 s (Sam's Mac, 2026-11-05).
+      Math.max(T, 25000),
       (r) => {
         const arts = (parseJson(r.text) as { articles?: Array<{ title?: string }> })?.articles;
         if (Array.isArray(arts)) return arts[0]?.title ? `Latest headline: "${String(arts[0].title).slice(0, 80)}"` : 'Answered (no articles in the window)';
@@ -314,7 +315,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       'It answered with text instead of data. GDELT does this when asked too often (one request every 5 seconds); check again in a minute.'
     ).then((r) =>
       r.state === 'refused' && r.httpStatus === 429
-        ? { ...r, detail: 'GDELT allows one request every 5 seconds and this one came too soon. If the app is running it may have just used the slot; check again in a minute. (HTTP 429)' }
+        ? { ...r, detail: 'GDELT refused: too many requests from this connection (HTTP 429). It allows one request every 5 seconds and keeps refusing for a while after it is exceeded. The app pauses GDELT for 15 minutes after a refusal; check again after that.' }
         : r
     )
   );

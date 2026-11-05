@@ -31,7 +31,7 @@ estimated, invented or taken from built-in sample values.
 | World Bank indicators | Reserves, current account, external debt, political stability, trade shares | api.worldbank.org | 1 week (country snapshot) |
 | World Bank debt statistics (IDS, QEDS) | External debt falling due by year and quarter (banker brief) | api.worldbank.org | 12 h |
 | IMF World Economic Outlook | Debt/GDP, inflation, GDP growth, primary balance | www.imf.org | 1 week (country snapshot) |
-| GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 1 week (country snapshot) |
+| GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | Polymarket, Kalshi | Prediction-market odds | gamma-api.polymarket.com, api.elections.kalshi.com | per request |
 | New York Fed | Fed funds, SOFR, reverse repo | markets.newyorkfed.org | 3 min to 6 h |
 | Spot FX | Exchange rates against the dollar | open.er-api.com (backup: Frankfurter) | 3 min |
@@ -44,8 +44,10 @@ estimated, invented or taken from built-in sample values.
 Notes from the first check on Sam's Mac (2026-11-05):
 
 - **GDELT** allows one request every 5 seconds and answers HTTP 429 otherwise. The app now
-  queues its GDELT requests 5.5 seconds apart, and skips one that would wait more than 30 seconds.
-  If the check shows 429 while the app is running, the app has just used the slot; check again.
+  queues its GDELT requests 5.5 seconds apart and skips one that would wait more than 30 seconds.
+  After a refusal GDELT holds each answer about 11 seconds and keeps refusing, so the app sends
+  nothing to GDELT for 15 minutes after any refusal. Each country is pulled once every
+  `GDELT_REFRESH_DAYS` days (default 7) and kept on disk (`data/live/gdelt/`).
 - **Brazil Treasury** serves the whole price history, about 15 MB, slowly (60 seconds on the Mac).
   The app allows 90 seconds, downloads it once at a time, and keeps the answer on disk
   (`data/live/tesouro.json`) so a restart does not download it again.
