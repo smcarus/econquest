@@ -88,10 +88,10 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
             <div>
               <h3 className="text-xs font-medium text-slate-500 dark:text-slate-400">Not placed</h3>
               <ul>
-                {missing.map((m) => (
-                  <li key={m.iso3} className="text-xs" data-missing="true">
-                    <span className="text-slate-700 dark:text-slate-300">{m.countryName}</span>
-                    <span className="text-amber-700 dark:text-amber-400">: Missing {m.missing.join(' and ')}.</span>
+                {groupMissing(missing.map((m) => ({ name: m.countryName, reason: `Missing ${m.missing.join(' and ')}` }))).map((g) => (
+                  <li key={g.reason} className="text-xs" data-missing="true">
+                    <span className="text-slate-700 dark:text-slate-300">{g.names.join(', ')}</span>
+                    <span className="text-amber-700 dark:text-amber-400">: {g.reason}.</span>
                   </li>
                 ))}
               </ul>
@@ -102,3 +102,10 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
     </section>
   );
 };
+
+/** One line per reason, naming every country it applies to. */
+function groupMissing(rows: { name: string; reason: string }[]): { reason: string; names: string[] }[] {
+  const by = new Map<string, string[]>();
+  for (const r of rows) by.set(r.reason, [...(by.get(r.reason) || []), r.name]);
+  return [...by].map(([reason, names]) => ({ reason, names }));
+}

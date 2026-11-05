@@ -219,10 +219,10 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
             <>
               <h3 className="mt-3 px-2 text-xs font-medium text-slate-500 dark:text-slate-400">No history yet</h3>
               <ul className="mt-1">
-                {missing.map((m) => (
-                  <li key={m.id} className="px-2 py-1 text-xs" data-missing="true">
-                    <span className="text-slate-700 dark:text-slate-300">{m.label}</span>
-                    <span className="text-amber-700 dark:text-amber-400">: Missing. {m.reason}.</span>
+                {groupMissing(missing).map((g) => (
+                  <li key={g.reason} className="px-2 py-1 text-xs" data-missing="true">
+                    <span className="text-slate-700 dark:text-slate-300">{g.labels.join(', ')}</span>
+                    <span className="text-amber-700 dark:text-amber-400">: Missing. {g.reason}.</span>
                   </li>
                 ))}
               </ul>
@@ -233,3 +233,10 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
     </div>
   );
 };
+
+/** One line per reason, naming every figure it applies to. */
+function groupMissing(rows: { label: string; reason: string }[]): { reason: string; labels: string[] }[] {
+  const by = new Map<string, string[]>();
+  for (const r of rows) by.set(r.reason, [...(by.get(r.reason) || []), r.label]);
+  return [...by].map(([reason, labels]) => ({ reason, labels }));
+}
