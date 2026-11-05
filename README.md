@@ -100,6 +100,7 @@ npm run build        # production bundle
 npm run test:smoke   # opens every page of the built app in Chromium with all feeds down
 npm run check:data   # live check of every source from this computer
 npm run check:imf    # prints the IMF series codes the app matches
+npm run record:feeds # records every free feed's real reply for the tests (run where the feeds answer)
 npm run preload      # downloads every free feed for every country, for fast offline use
 ```
 
@@ -107,6 +108,13 @@ Every pull request runs lint, tests, build and the UI smoke test on GitHub
 (`.github/workflows/ci.yml`). The smoke test needs Playwright's Chromium once:
 `npx playwright install chromium`. `tests/server.test.ts` and the smoke test start the real server
 with `tests/helpers/offline-fetch.mjs` in place of the network.
+
+**Tests on real replies.** The offline fixtures are hand-written. `npm run record:feeds`, run on a
+computer that reaches the feeds, saves what every free feed really sends (gzipped, keys taken out of
+every URL, own paid data and AI switched off) in `tests/fixtures/recorded/`, with what the app made of
+it. `tests/recorded.test.ts` replays those replies through the real server with the clock set back to
+the recording, and fails, naming the source, if a source connected then no longer is or a figure
+filled then is now Missing. It is skipped until a recording exists. Record again after adding a feed.
 
 Layout: `server.ts` (Express API, data pulls and caches), `src/utils/` (one module per source or
 calculation, each with a test in `tests/`), `src/components/` (React pages and panels),

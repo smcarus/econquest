@@ -2509,8 +2509,8 @@ const RISK_INPUTS = ['imf.debtToGdpPct', 'imf.cpiInflationPct', 'imf.realGdpGrow
  * Live rows for every catalog country, or (with `extra`) also for countries outside the catalog,
  * asked for one question at a time. Extra rows start with every figure Missing, like the catalog.
  */
-async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = []): Promise<WatchlistItem[]> {
-  if (!extra.length && cachedWatchlistLive && Date.now() - cachedWatchlistLive.timestamp < 4 * 60 * 1000) {
+async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = false): Promise<WatchlistItem[]> {
+  if (!extra.length && !force && cachedWatchlistLive && Date.now() - cachedWatchlistLive.timestamp < 4 * 60 * 1000) {
     return cachedWatchlistLive.items;
   }
 
@@ -3827,7 +3827,8 @@ async function startServer() {
         const codes = String(req.query.iso3).toUpperCase().split(',').map((c) => c.trim().replace(/[^A-Z]/g, '')).filter((c) => c.length === 3);
         return res.json({ items: await liveRowsFor([...new Set(codes)]), fetchedAt: new Date().toISOString() });
       }
-      const items = await fetchLiveWatchlistCatalog();
+      // ?refresh=1 rebuilds the rows from what is saved now instead of the 4-minute copy.
+      const items = await fetchLiveWatchlistCatalog([], req.query.refresh === '1');
       res.json({ items, fetchedAt: new Date().toISOString() });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to refresh live watchlist' });
