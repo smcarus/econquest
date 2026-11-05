@@ -303,6 +303,18 @@ hold no figures of their own; the handout reads them from the app's series when 
   must be running; a brief missed while it was closed runs when it next starts that day. Without an AI
   model the agents' answers are saved with no summary. Settings are kept in
   `data/local/morning-brief.json`.
+- **Models & validation**: every rule in the app that turns figures into a call (policy rule check,
+  leading-indicator turns, CFTC crowding, CDS cheap/rich, real exchange rate gap, shock early
+  warning, the disagreement ranking, and the descriptive ones), with what it says, its rule, inputs,
+  limits and status. The same status shows as a badge beside each panel; click it to open its row.
+  *Not validated* stays until a backtest passes. *Run backtests* (or `npm run backtest`) runs the
+  pre-registered tests in `docs/validation/preregistered/`: each file fixes the rule, the sample, the
+  outcome window and the pass mark (enough cases, a lift over the base rate, a p-value) before any
+  run, and its SHA-256 is listed in `manifest.json`; a file that no longer matches its hash is refused.
+  The tests pull the long free histories (BIS policy rates since 1990, the OECD leading indicator,
+  CFTC since 2006), so they need a connection. A verdict (passed, failed, too few cases) replaces the
+  badge and is saved in `data/local/validation/results.json` and in the audit log. First tests:
+  leading-indicator turn to policy move, and CFTC crowding to unwind.
 - **Audit log**: every council answer (the question, the AI model that wrote the summary or "none",
   and each figure the agents used with its source and period, plus what was missing) and every save,
   delete, download, settings, key and AI model change, newest first. Search it or pick a kind, and

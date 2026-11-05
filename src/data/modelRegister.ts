@@ -212,8 +212,12 @@ export function registerForPanel(title: string): RegisterEntry | undefined {
   return MODEL_REGISTER.find((e) => e.panels.includes(title));
 }
 
-export const REGISTER_HEADER = ['Name', 'Status', 'Use', 'What it says', 'Rule', 'Inputs', 'Where it shows', 'How it is tested', 'Limits', 'Code'];
+export const REGISTER_HEADER = ['Name', 'Status', 'Backtest verdict', 'Use', 'What it says', 'Rule', 'Inputs', 'Where it shows', 'How it is tested', 'Limits', 'Code'];
 
-export function registerRows(entries: RegisterEntry[] = MODEL_REGISTER): string[][] {
-  return entries.map((e) => [e.name, STATUS_LABEL[e.status], e.use, e.says, e.method, e.inputs, e.where, e.testPlan, e.limits, e.code]);
+/** Rows for the CSV; `verdict` gives a backtest's status and words for an id, when one has run. */
+export function registerRows(entries: RegisterEntry[] = MODEL_REGISTER, verdict: (id: string) => { status: ValidationStatus; text: string } | undefined = () => undefined): string[][] {
+  return entries.map((e) => {
+    const v = verdict(e.id);
+    return [e.name, STATUS_LABEL[v?.status ?? e.status], v?.text ?? '', e.use, e.says, e.method, e.inputs, e.where, e.testPlan, e.limits, e.code];
+  });
 }

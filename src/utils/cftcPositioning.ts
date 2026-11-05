@@ -40,8 +40,8 @@ export const CFTC_HISTORY_WEEKS = 156;
 export const CFTC_MIN_WEEKS = 52;
 
 /** One request for every covered currency, about three years of weekly rows, only the columns read. */
-export function cftcUrl(now = new Date(), codes = Object.values(CFTC_CURRENCY_CODES).map((c) => c.code)): string {
-  const since = new Date(now.getTime() - (CFTC_HISTORY_WEEKS + 2) * 7 * 86400000).toISOString().slice(0, 10);
+export function cftcUrl(now = new Date(), codes = Object.values(CFTC_CURRENCY_CODES).map((c) => c.code), opts: { since?: string; limit?: number } = {}): string {
+  const since = opts.since || new Date(now.getTime() - (CFTC_HISTORY_WEEKS + 2) * 7 * 86400000).toISOString().slice(0, 10);
   const params: Record<string, string> = {
     $select: [
       'report_date_as_yyyy_mm_dd',
@@ -54,7 +54,7 @@ export function cftcUrl(now = new Date(), codes = Object.values(CFTC_CURRENCY_CO
     ].join(','),
     $where: `cftc_contract_market_code in(${codes.map((c) => `'${c}'`).join(',')}) AND report_date_as_yyyy_mm_dd >= '${since}'`,
     $order: 'report_date_as_yyyy_mm_dd ASC',
-    $limit: '5000',
+    $limit: String(opts.limit || 5000),
   };
   // Spaces as %20 (not +), as in the CFTC's own examples.
   const query = Object.entries(params).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');

@@ -48,6 +48,7 @@ import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
+import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
@@ -169,6 +170,10 @@ let savedSettings = loadSettings(SETTINGS_FILE);
 const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 // Audit log (Menu > Audit log): append-only, hash-chained. See src/utils/auditLog.ts.
 const AUDIT_FILES = auditFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
+// Pre-registered backtests (Menu > Models & validation). See src/utils/backtest.ts.
+const VALIDATION_FILE = validationFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const SPEC_DIR = path.join(__dirname, 'docs', 'validation', 'preregistered');
+let validationRunning = false;
 const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
@@ -4162,6 +4167,34 @@ async function startServer() {
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
     } catch (error: any) {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
+    }
+  });
+  // Pre-registered backtests: the tests as registered (with their hashes) and the latest verdicts.
+  app.get('/api/validation', (_req, res) => {
+    const v = loadValidation(VALIDATION_FILE);
+    const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits } : {}) }));
+    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json' });
+  });
+  app.post('/api/validation/run', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
+    validationRunning = true;
+    try {
+      const out = await runBacktests({
+        specDir: SPEC_DIR,
+        resultFile: VALIDATION_FILE,
+        onResult: (r) =>
+          appendAudit(AUDIT_FILES, {
+            kind: 'validation',
+            summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`,
+            detail: { verdict: r.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
+          }),
+      });
+      res.json(out);
+    } catch (error: any) {
+      res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
+    } finally {
+      validationRunning = false;
     }
   });
   // Morning brief settings and runs (src/utils/morningBrief.ts).

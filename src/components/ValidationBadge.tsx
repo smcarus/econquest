@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { registerEntry, registerForPanel, STATUS_LABEL, type RegisterEntry, type ValidationStatus } from '../data/modelRegister';
+import { effectiveStatus, useValidation } from './useValidation';
 
 export const OPEN_REGISTER_EVENT = 'econquest:open-model-register';
 
@@ -21,6 +22,9 @@ const TONE: Record<ValidationStatus, string> = {
 };
 
 function Badge({ entry }: { entry: RegisterEntry }) {
+  const v = useValidation();
+  const status = effectiveStatus(entry.id, entry.status, v);
+  const verdict = v?.results?.[entry.id]?.verdict;
   return (
     <button
       type="button"
@@ -28,11 +32,11 @@ function Badge({ entry }: { entry: RegisterEntry }) {
         e.stopPropagation();
         openModelRegister(entry.id);
       }}
-      data-validation-status={entry.status}
-      title={`${entry.name}: ${STATUS_LABEL[entry.status]}. ${entry.testPlan} Click for the register.`}
-      className={`ui-badge ${TONE[entry.status]} whitespace-nowrap font-normal cursor-pointer`}
+      data-validation-status={status}
+      title={`${entry.name}: ${STATUS_LABEL[status]}. ${verdict || entry.testPlan} Click for the register.`}
+      className={`ui-badge ${TONE[status]} whitespace-nowrap font-normal cursor-pointer`}
     >
-      {STATUS_LABEL[entry.status]}
+      {STATUS_LABEL[status]}
     </button>
   );
 }
