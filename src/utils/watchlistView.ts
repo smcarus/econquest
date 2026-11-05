@@ -8,6 +8,7 @@ import { missingReason, type FigureKey, type MissingReason } from './liveFigures
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { cftcMissing, positioningLabel } from './cftcPositioning';
 import { formatMonth, ticMissing } from './ticHoldings';
+import { formatImfPeriod, imfMissing, reserveCover } from './imfReserves';
 
 export const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 export const WATCHLIST_VIEW_KEY = 'econquest.watchlistView.v1';
@@ -32,6 +33,9 @@ export type ColumnId =
   | 'fxvol'
   | 'positioning'
   | 'ustHoldings'
+  | 'imfReserves'
+  | 'importCover'
+  | 'imfCurrentAccount'
   | 'data';
 
 export interface ColumnDef {
@@ -149,6 +153,44 @@ export const COLUMNS: ColumnDef[] = [
       it.tic
         ? `TIC, ${formatMonth(it.tic.month)}${it.tic.change12mPct !== undefined ? `, ${signed(it.tic.change12mPct, 1, '%')} y/y` : ''}`
         : ticMissing(it.iso3).short,
+  },
+  {
+    id: 'imfReserves',
+    label: 'Reserves',
+    help: 'Official reserve assets, USD bn, IMF International Liquidity (monthly)',
+    align: 'right',
+    value: (it) => it.imf?.reserves?.usdBn,
+    text: (it) => num(it.imf?.reserves?.usdBn, 1),
+    note: (it) =>
+      it.imf?.reserves
+        ? `IMF, ${formatImfPeriod(it.imf.reserves.period)}${it.imf.reserves.change12mPct !== undefined ? `, ${signed(it.imf.reserves.change12mPct, 1, '%')} y/y` : ''}`
+        : imfMissing(it.imf, 'reserves').help,
+  },
+  {
+    id: 'importCover',
+    label: 'Import cover',
+    help: 'Months of imports the reserves cover: IMF reserves over the last four quarters of IMF BOP imports of goods and services, divided by 12',
+    align: 'right',
+    value: (it) => it.imf?.monthsOfImports,
+    text: (it) => num(it.imf?.monthsOfImports, 1, 'm'),
+    note: (it) =>
+      it.imf?.monthsOfImports !== undefined && it.imf.imports4q
+        ? `IMF reserves and BOP imports to ${formatImfPeriod(it.imf.imports4q.through)}, ${reserveCover(it.imf.monthsOfImports)}`
+        : imfMissing(it.imf, it.imf?.reserves ? 'imports' : 'reserves').help,
+  },
+  {
+    id: 'imfCurrentAccount',
+    label: 'Current acct',
+    help: 'Current account, % of GDP, last four quarters, IMF Balance of Payments over IMF WEO GDP',
+    align: 'right',
+    value: (it) => it.imf?.currentAccount4q?.pctGdp,
+    text: (it) => signed(it.imf?.currentAccount4q?.pctGdp, 1, '%'),
+    note: (it) =>
+      it.imf?.currentAccount4q?.pctGdp !== undefined
+        ? `IMF BOP, 4 quarters to ${formatImfPeriod(it.imf.currentAccount4q.through)}, GDP WEO ${it.imf.currentAccount4q.gdpYear}`
+        : it.imf?.currentAccount
+          ? 'IMF BOP has the quarter but not four in a row, or the WEO has no GDP for that year'
+          : imfMissing(it.imf, 'currentAccount').help,
   },
   { id: 'data', label: 'Data', help: 'Whether the row came from live feeds', align: 'left', value: (it) => DATA_LABEL[it.dataMode || 'sample'], text: (it) => DATA_LABEL[it.dataMode || 'sample'] },
 ];

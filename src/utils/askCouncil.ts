@@ -17,6 +17,7 @@ import { missingReason } from './liveFigures';
 import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
+import { IMF_BOP_LABEL, IMF_RESERVES_LABEL, formatImfPeriod, imfSentence, reserveCover } from './imfReserves';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
@@ -62,8 +63,8 @@ export interface AgentAnswer {
 export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string; topic: RegExp }> = {
   cb: {
     name: 'Central Bank Watcher',
-    covers: 'inflation against target, policy rate, real rates',
-    topic: /central bank|monetary|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
+    covers: 'inflation against target, policy rate, real rates, official reserves and import cover, current account (IMF)',
+    topic: /central bank|monetary|reserves?\b|import cover|balance of payments|\bbop\b|current account|external (?:position|balance|financing)|policy rate|interest rate|(?<!exchange )\brates?\b|inflation|\bcpi\b|hike|\bcuts?\b|easing|tightening|behind the curve|real rate|real yield|target/i,
   },
   rv: {
     name: 'Relative Value',
@@ -259,6 +260,41 @@ const p2 = (v: number) => `${v.toFixed(2)}%`;
 const sgn = (v: number, d = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(d)}`;
 const MAX_FINDINGS = 6;
 
+/** IMF reserves and balance-of-payments figures for the council, each with its series and period. */
+export function imfFigures(it: LiveWatchlistItem): { figures: AgentFigure[]; reading: string; weight: number } {
+  const e = it.imf;
+  if (!e || (!e.reserves && !e.currentAccount)) return { figures: [], reading: '', weight: 0 };
+  const figures: AgentFigure[] = [];
+  let weight = 0;
+  if (e.reserves) {
+    figures.push({ label: 'Official reserves', value: `$${e.reserves.usdBn.toFixed(1)}bn`, source: `${IMF_RESERVES_LABEL}, ${formatImfPeriod(e.reserves.period)}`, tag: 'official' });
+    if (e.reserves.change12mPct !== undefined) {
+      figures.push({ label: 'Reserves, change over 12 months', value: `${sgn(e.reserves.change12mPct)}%`, source: `IMF IL, to ${formatImfPeriod(e.reserves.period)}`, tag: 'official' });
+    }
+  }
+  if (e.monthsOfImports !== undefined && e.imports4q) {
+    figures.push({
+      label: 'Reserves in months of imports',
+      value: `${e.monthsOfImports.toFixed(1)} months (${reserveCover(e.monthsOfImports)})`,
+      source: `IMF reserves over IMF BOP imports, four quarters to ${formatImfPeriod(e.imports4q.through)}; under 3 = thin, 3 to 6 = adequate, over 6 = ample`,
+      tag: 'model',
+    });
+    if (e.monthsOfImports < 3) weight = Math.max(weight, Math.min(1, (3 - e.monthsOfImports) / 3 + 0.4));
+  }
+  if (e.currentAccount4q?.pctGdp !== undefined) {
+    figures.push({
+      label: 'Current account, last four quarters',
+      value: `${sgn(e.currentAccount4q.pctGdp)}% of GDP`,
+      source: `${IMF_BOP_LABEL} to ${formatImfPeriod(e.currentAccount4q.through)}, over IMF WEO GDP ${e.currentAccount4q.gdpYear}`,
+      tag: 'model',
+    });
+    if (e.currentAccount4q.pctGdp < -3) weight = Math.max(weight, Math.min(1, Math.abs(e.currentAccount4q.pctGdp) / 8));
+  } else if (e.currentAccount) {
+    figures.push({ label: 'Current account, latest quarter', value: `${sgn(e.currentAccount.usdBn)}bn USD`, source: `${IMF_BOP_LABEL}, ${formatImfPeriod(e.currentAccount.period)}`, tag: 'official' });
+  }
+  return { figures, reading: imfSentence(e), weight };
+}
+
 function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
@@ -269,6 +305,11 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         it.policyRatePct === undefined ? `policy rate (${missingReason('policy', it.iso3).short})` : '',
       ].filter(Boolean);
       missing.push(`${it.countryName}: missing ${why.join(' and ')}`);
+      // Reserves and the balance of payments still answer without inflation or a policy rate.
+      const ext = imfFigures(it);
+      if (ext.figures.length) {
+        findings.push({ iso3: it.iso3, countryName: it.countryName, reading: ext.reading, figures: ext.figures, weight: ext.weight });
+      }
       continue;
     }
     const c = cpiTag(it);
@@ -304,12 +345,13 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         : []),
     ];
     const stanceText = policyStance(real, gap);
+    const ext = imfFigures(it);
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading: `Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}`,
-      figures,
-      weight: sig?.score ?? 0,
+      reading: `Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}${ext.reading ? ` ${ext.reading}` : ''}`,
+      figures: [...figures, ...ext.figures],
+      weight: Math.max(sig?.score ?? 0, ext.weight),
       stance: [{ dim: 'policy', call: policyCall(stanceText) }],
     });
   }
@@ -473,12 +515,25 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
         worst.imp.pctGdp < 0
           ? `Most exposed to ${SCENARIO_PHRASE[worst.sc.id]}: about ${Math.abs(worst.imp.pctGdp).toFixed(1)}% of GDP off the current account in the first round.`
           : `Gains in the first round from ${SCENARIO_PHRASE[worst.sc.id]} (${sgn(worst.imp.pctGdp)}% of GDP).`,
-      figures: rows.map((r) => ({
-        label: r.sc.name,
-        value: `${sgn(r.imp.pctGdp)}% of GDP`,
-        source: `${r.sc.shock} Basis: ${r.imp.basis}`,
-        tag: 'model' as const,
-      })),
+      figures: [
+        ...rows.map((r) => ({
+          label: r.sc.name,
+          value: `${sgn(r.imp.pctGdp)}% of GDP`,
+          source: `${r.sc.shock} Basis: ${r.imp.basis}`,
+          tag: 'model' as const,
+        })),
+        // Where the current account starts from, so the shock can be read against it.
+        ...(it.imf?.currentAccount4q?.pctGdp !== undefined
+          ? [
+              {
+                label: 'Current account now, last four quarters',
+                value: `${sgn(it.imf.currentAccount4q.pctGdp)}% of GDP`,
+                source: `${IMF_BOP_LABEL} to ${formatImfPeriod(it.imf.currentAccount4q.through)}, over IMF WEO GDP ${it.imf.currentAccount4q.gdpYear}`,
+                tag: 'model' as const,
+              },
+            ]
+          : []),
+      ],
       weight: Math.min(1, Math.max(...rows.map((r) => Math.abs(r.imp.pctGdp))) / 5),
     });
   }
