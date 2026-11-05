@@ -242,9 +242,9 @@ export interface Correlation {
   p: number;
 }
 
-export function pearson(x: number[], y: number[]): Correlation | Failed {
+export function pearson(x: number[], y: number[], min = MIN_PAIRS): Correlation | Failed {
   const n = Math.min(x.length, y.length);
-  if (n < MIN_PAIRS) return { error: `Only ${n} overlapping points; a correlation needs at least ${MIN_PAIRS}.` };
+  if (n < min) return { error: `Only ${n} overlapping points; a correlation needs at least ${min}.` };
   const mx = mean(x.slice(0, n));
   const my = mean(y.slice(0, n));
   let sxy = 0;
@@ -306,10 +306,10 @@ export interface Regression {
 }
 
 /** Ordinary least squares of y on the columns of X, with an intercept added. */
-export function ols(y: number[], X: number[][]): Regression | Failed {
+export function ols(y: number[], X: number[][], min = MIN_PAIRS): Regression | Failed {
   const n = y.length;
   const k = (X[0]?.length ?? 0) + 1;
-  if (n < Math.max(MIN_PAIRS, k + 3)) return { error: `Only ${n} usable points for ${k - 1} explanatory series; too few for a regression.` };
+  if (n < Math.max(min, k + 3)) return { error: `Only ${n} usable points for ${k - 1} explanatory series; too few for a regression.` };
   const Z = X.map((row) => [1, ...row]);
   const ZtZ = Array.from({ length: k }, (_, i) => Array.from({ length: k }, (_, j) => Z.reduce((s, r) => s + r[i] * r[j], 0)));
   const Zty = Array.from({ length: k }, (_, i) => Z.reduce((s, r, t) => s + r[i] * y[t], 0));

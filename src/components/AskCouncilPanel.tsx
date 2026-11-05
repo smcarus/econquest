@@ -680,7 +680,7 @@ export const AskCouncilPanel: React.FC<{
               <summary className="cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">Charts and statistical tests</summary>
               <div className="mt-2 text-left space-y-1.5">
                 <p className="text-slate-500 dark:text-slate-400">
-                  Ask for a chart in words, such as “chart Brazil’s policy rate against inflation and test which moves first”. The Chart Agent draws the series the app holds and can run correlation, regression, lead/lag, Granger, stationarity (ADF) and trend (HP filter) tests. Or start from one of these:
+                  Ask for a chart in words, such as “chart Brazil’s policy rate against inflation and test which moves first”. The Chart Agent draws the series the app holds and can run correlation, regression, lead/lag, Granger, stationarity (ADF) and trend (HP filter) tests. To compare countries, ask for a scatter, such as “scatter government debt against bond yields across countries”. Or start from one of these:
                 </p>
                 <ul className="space-y-1">
                   {PRESETS.map((p) => (

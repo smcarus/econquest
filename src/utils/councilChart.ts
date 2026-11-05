@@ -71,6 +71,8 @@ export interface ChartRequest {
   derived?: DerivedLine[];
   /** Which of the series to draw beside the worked-out lines (all when left out); the rest are only inputs. */
   show?: number[];
+  /** Across countries: series hold x then y for each country in turn; one point per country, at its latest figure. */
+  cross?: { x: string; y: string };
 }
 
 /** A line worked out from the request's series: constant + sum of k x series[i], on dates all of them have. */
@@ -335,6 +337,8 @@ export function chartRequest(question: string, countries: LiveWatchlistItem[], n
   const asked = testsInQuestion(question);
   const wantsChart = CHART_WORDS.test(question);
   let words = seriesInQuestion(question);
+  const cross = crossRequest(question, words, countries);
+  if (cross) return cross;
   if (!wantsChart && !asked.length) return null;
   if (!words.length) {
     // "Chart Brazil" with no series named: the monetary picture, the most asked-for pair.
@@ -370,6 +374,114 @@ export function chartRequest(question: string, countries: LiveWatchlistItem[], n
   return { series: kept, tests, transform: tf, why, notes };
 }
 
+const CROSS_WORDS = /across (?:the )?(?:countries|watchlist|markets|emerging markets)|cross[- ]country|cross[- ]section|each country|every country|all (?:the |my )?countries|country by country/i;
+/** Most countries on one cross-country scatter. */
+export const MAX_CROSS = 30;
+/** Fewest countries for the cross-country tests (each carries a small-sample caution below 15). */
+export const MIN_CROSS = 5;
+
+/**
+ * "Scatter debt to GDP against bond yields across countries": one point per country at its latest
+ * figure, with the regression line and which countries sit furthest from it.
+ */
+function crossRequest(question: string, words: Array<(typeof SERIES_WORDS)[number]>, countries: LiveWatchlistItem[]): ChartRequest | null {
+  const own = words.filter((w) => !w.world);
+  if (own.length < 2 || countries.length < 3) return null;
+  if (!CROSS_WORDS.test(question) && !/\bscatter\b/i.test(question)) return null;
+  // A scatter of two series for one country is a time scatter; across countries needs the words, or 3+ countries and "scatter".
+  const [xw, yw] = own;
+  const pool = countries.slice(0, MAX_CROSS);
+  const series: ChartSeriesRef[] = pool.flatMap((c) => [
+    { iso3: c.iso3, countryName: c.countryName, id: xw.id, fallback: xw.fallback, label: `${c.countryName}: ${xw.label}` },
+    { iso3: c.iso3, countryName: c.countryName, id: yw.id, fallback: yw.fallback, label: `${c.countryName}: ${yw.label}` },
+  ]);
+  const notes: string[] = [];
+  if (own.length > 2) notes.push(`A scatter takes two series, so ${own.slice(2).map((w) => w.label).join(', ')} ${own.length > 3 ? 'were' : 'was'} left out`);
+  if (countries.length > MAX_CROSS) notes.push(`Only the first ${MAX_CROSS} countries fit`);
+  return { series, tests: ['regression', 'correlation'], transform: 'level', why: 'the question asks to compare countries on a scatter', notes, cross: { x: xw.label, y: yw.label }, title: `${yw.label} against ${xw.label}, across countries` };
+}
+
+/** One point per country at its latest figure; the regression across countries and who sits furthest from the line. */
+function computeCross(req: ChartRequest, fetched: Array<FetchedSeries | { reason: string }>): ChartResult {
+  const { x, y } = req.cross!;
+  const missing: string[] = [];
+  const pairs: Pair[] = [];
+  const dates: string[] = [];
+  const sources = new Set<string>();
+  let xUnit = '';
+  let yUnit = '';
+  for (let k = 0; k + 1 < req.series.length; k += 2) {
+    const name = (req.series[k].countryName ?? req.series[k].iso3 ?? '').replace(/\s*\(.*\)\s*$/, '');
+    const fx = fetched[k];
+    const fy = fetched[k + 1];
+    const okX = fx && 'points' in fx && fx.points.length ? fx : null;
+    const okY = fy && 'points' in fy && fy.points.length ? fy : null;
+    if (!okX || !okY) {
+      const why = (f: (typeof fetched)[number] | undefined) => (f && 'reason' in f && f.reason) || 'no data';
+      missing.push(`${name}: Missing ${[!okX ? `${x} (${why(fx)})` : '', !okY ? `${y} (${why(fy)})` : ''].filter(Boolean).join(' and ')}`);
+      continue;
+    }
+    const lx = okX.points[okX.points.length - 1];
+    const ly = okY.points[okY.points.length - 1];
+    xUnit ||= okX.unit;
+    yUnit ||= okY.unit;
+    sources.add(okX.source);
+    sources.add(okY.source);
+    dates.push(lx.date, ly.date);
+    pairs.push({ date: name, x: lx.value, y: ly.value });
+  }
+  dates.sort();
+  const notes = [...req.notes];
+  if (pairs.length) notes.push(`Latest figure for each country; the dates run from ${dates[0]} to ${dates[dates.length - 1]}. Sources: ${[...sources].join('; ')}`);
+  const xl = `${x}${xUnit ? ` (${xUnit})` : ''}`;
+  const yl = `${y}${yUnit ? ` (${yUnit})` : ''}`;
+  const out: ChartResult = { title: req.title ?? `${y} against ${x}, across countries`, freq: 'annual', transform: 'level', lines: [], scatter: { xLabel: xl, yLabel: yl, pairs }, tests: [], missing, notes, first: dates[0], last: dates[dates.length - 1], request: req };
+  const n = pairs.length;
+  const caution = n < 15 ? `Only ${n} countries: treat the result as a rough guide.` : undefined;
+  for (const test of req.tests) {
+    if (test === 'regression') {
+      const reg = ols(pairs.map((p) => p.y), pairs.map((p) => [p.x]), MIN_CROSS);
+      if ('error' in reg) {
+        out.tests.push({ test, title: 'Regression across countries', reading: `Not run: ${reg.error.replace('usable points', 'countries with both figures')}`, figures: [] });
+        continue;
+      }
+      out.scatter!.fit = { a: reg.coef[0], b: reg.coef[1] };
+      const resid = pairs.map((p, i) => ({ name: p.date, e: reg.residuals[i] })).sort((a, b) => b.e - a.e);
+      const hi = resid[0];
+      const lo = resid[resid.length - 1];
+      out.tests.push({
+        test,
+        title: 'Regression across countries',
+        reading: `Across ${reg.n} countries, each 1 ${xUnit} more in ${x} goes with ${fmt(reg.coef[1])} ${yUnit} in ${y} (t = ${r2(reg.t[1])}, ${fmtP(reg.p[1])}; R² = ${r2(reg.r2)}). ${hi.name} sits furthest above the line (${fmt(hi.e)} ${yUnit} above the fit), ${lo.name} furthest below (${fmt(Math.abs(lo.e))} ${yUnit} below it). A cross-section at one date: it says how countries compare, not how one country moves over time.`,
+        figures: [
+          { label: 'Slope across countries', value: fmt(reg.coef[1]) },
+          { label: 'R² across countries', value: r2(reg.r2) },
+          { label: 'Countries', value: String(reg.n) },
+          { label: `Furthest above the line: ${hi.name}`, value: fmt(hi.e) },
+          { label: `Furthest below the line: ${lo.name}`, value: fmt(lo.e) },
+        ],
+        caution,
+      });
+    }
+    if (test === 'correlation') {
+      const c = pearson(pairs.map((p) => p.x), pairs.map((p) => p.y), MIN_CROSS);
+      if ('error' in c) out.tests.push({ test, title: 'Correlation across countries', reading: `Not run: ${c.error.replace('overlapping points', 'countries with both figures')}`, figures: [] });
+      else
+        out.tests.push({
+          test,
+          title: 'Correlation across countries',
+          reading: `${strengthWord(c.r)[0].toUpperCase()}${strengthWord(c.r).slice(1)} ${c.r >= 0 ? 'positive' : 'negative'} correlation across ${c.n} countries: r = ${r2(c.r)} (${fmtP(c.p)}).`,
+          figures: [
+            { label: 'Correlation across countries (r)', value: r2(c.r) },
+            { label: 'Countries', value: String(c.n) },
+          ],
+          caution,
+        });
+    }
+  }
+  return out;
+}
+
 /** With two series, correlation and lead/lag come by default; tests that need two series drop with one. */
 function defaultTests(asked: ChartTest[], lines: number): ChartTest[] {
   const pairTests: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling'];
@@ -387,6 +499,14 @@ function defaultTests(asked: ChartTest[], lines: number): ChartTest[] {
 export function carryChart(question: string, prev: ChartRequest, countries?: LiveWatchlistItem[]): ChartRequest {
   const more = testsInQuestion(question);
   const tf = TRANSFORM_WORDS.find(([re]) => re.test(question))?.[1] ?? prev.transform;
+  if (prev.cross) {
+    // Across countries: a follow-up naming three or more countries redraws it for them; otherwise it stays as it was.
+    const w = (label: string) => SERIES_WORDS.find((x) => x.label === label);
+    const xw = w(prev.cross.x);
+    const yw = w(prev.cross.y);
+    const again = countries && countries.length >= 3 && xw && yw ? crossRequest(`${xw.label} ${yw.label} across countries`, [xw, yw], countries) : null;
+    return { ...(again ?? prev), notes: again ? again.notes : [], why: 'the same cross-country scatter as your last question' };
+  }
   const preset = prev.preset && PRESETS.find((p) => p.id === prev.preset);
   if (preset) {
     const base = countries?.length ? presetRequest(preset, countries[0]) : { ...prev, notes: [] };
@@ -430,6 +550,7 @@ function unitWord(freq: Freq, n: number): string {
  * like with like.
  */
 export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | { reason: string }>): ChartResult {
+  if (req.cross) return computeCross(req, fetched);
   const missing: string[] = [];
   const have: Array<{ ref: ChartSeriesRef; s: FetchedSeries; i: number }> = [];
   req.series.forEach((ref, i) => {
@@ -712,9 +833,17 @@ export function chartFinding(req: ChartRequest, result: ChartResult): {
   weight: number;
 } | null {
   const ran = result.tests.filter((t) => t.figures.length);
-  if (!result.lines.length) return null;
-  const source = `Chart Agent on ${result.lines.map((l) => `${l.label} (${l.source})`).join('; ')}, ${result.first ?? ''} to ${result.last ?? ''}, ${result.freq}`;
+  if (!result.lines.length && !result.scatter?.pairs.length) return null;
+  const source = req.cross
+    ? `Chart Agent on ${result.scatter?.yLabel} against ${result.scatter?.xLabel}, latest figure per country, ${result.first ?? ''} to ${result.last ?? ''}`
+    : `Chart Agent on ${result.lines.map((l) => `${l.label} (${l.source})`).join('; ')}, ${result.first ?? ''} to ${result.last ?? ''}, ${result.freq}`;
   const figures = ran.flatMap((t) => t.figures.map((f) => ({ label: `${t.title}: ${f.label}`, value: f.value, source, tag: 'model' as const })));
+  if (req.cross && result.scatter) {
+    for (const p of result.scatter.pairs) {
+      figures.push({ label: `${p.date}: ${result.scatter.xLabel}`, value: fmt(p.x), source, tag: 'model' });
+      figures.push({ label: `${p.date}: ${result.scatter.yLabel}`, value: fmt(p.y), source, tag: 'model' });
+    }
+  }
   for (const l of result.lines.filter((x) => !x.dashed)) {
     const last = l.points[l.points.length - 1];
     if (last) figures.push({ label: `${l.label}, latest (${last.date})`, value: `${fmt(last.value)} ${l.unit}`, source: l.source, tag: 'model' });
@@ -727,6 +856,7 @@ export function chartFinding(req: ChartRequest, result: ChartResult): {
 /** Suggested follow-ups after a chart: the tests not yet run. */
 export function chartFollowUps(req: ChartRequest): string[] {
   const out: string[] = [];
+  if (req.cross) return ['Which countries sit furthest from the line, and why?'];
   if (req.derived?.length) {
     if (!req.tests.includes('hp')) out.push('Where is it against its trend?');
     if (!req.tests.includes('adf')) out.push('Is it stationary?');
