@@ -4,6 +4,7 @@ import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '
 import { CouncilApprovalCard } from './CouncilApprovalCard';
 import { PolicyDocsPicker } from './PolicyDocsPicker';
 import type { PolicyDoc } from '../utils/policyDocs';
+import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
 import {
@@ -104,6 +105,28 @@ export const AskCouncilPanel: React.FC<{
   const [followUp, setFollowUp] = useState('');
   const [choosing, setChoosing] = useState(false);
   const [docs, setDocs] = useState<PolicyDoc[]>([]);
+  const [debate, setDebate] = useState<DebateResult | null>(null);
+  const [debating, setDebating] = useState(false);
+
+  const runDebate = async () => {
+    if (!asked) return;
+    // Show the rule-based challenges at once; the AI replies replace them when they come.
+    setDebate({ challenges: findChallenges(asked.answers), replies: null });
+    setDebating(true);
+    try {
+      const r = await fetch('/api/council/debate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: asked.question, answers: asked.answers, runtimeConfig: runtimeConfig() }),
+      });
+      if (r.ok) setDebate((await r.json()) as DebateResult);
+      else setDebate((d) => d && { ...d, reason: `the debate step did not answer (HTTP ${r.status})` });
+    } catch {
+      setDebate((d) => d && { ...d, reason: 'the app server did not answer' });
+    } finally {
+      setDebating(false);
+    }
+  };
 
   /** Ask the AI model which agents should answer; null when it cannot be reached in time. */
   const chooseAgents = async (question: string, history: EarlierTurn[]): Promise<AgentChoiceResult | null> => {
@@ -138,6 +161,7 @@ export const AskCouncilPanel: React.FC<{
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt });
     setSynthesis(null);
+    setDebate(null);
     setCopied(false);
     if (!answers.some((a) => a.findings.length)) {
       setSynthesis({ brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' });
@@ -166,6 +190,8 @@ export const AskCouncilPanel: React.FC<{
         answers: asked.answers,
         synthesis,
         ...(earlier.length ? { earlier: earlier.map((t) => ({ question: t.question, headline: t.headline })) } : {}),
+        ...(asked.plan.chooserNote ? { chooserNote: asked.plan.chooserNote } : {}),
+        ...(debate && !debating ? { debate } : {}),
       }
     : null;
   const copy = async () => {
@@ -415,6 +441,84 @@ export const AskCouncilPanel: React.FC<{
               {a.missing.length > 0 && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Not available: {a.missing.join('; ')}.</p>}
             </div>
           ))}
+
+          {asked.answers.filter((a) => a.id !== 'doc' && a.findings.length).length >= 2 && (
+            <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-council-debate="true">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="ui-label">Agent debate</div>
+                {!debate && (
+                  <button type="button" className="ui-btn" onClick={() => void runDebate()} disabled={writing || choosing}>
+                    Let the agents debate
+                  </button>
+                )}
+              </div>
+              {!debate ? (
+                <p className="text-sm text-slate-600 dark:text-slate-300">The agents challenge each other where their readings on a country pull different ways.</p>
+              ) : debate.challenges.length === 0 ? (
+                <p className="text-sm text-slate-600 dark:text-slate-300">The agents do not pull different ways on these countries, so there is nothing to debate.</p>
+              ) : (
+                <>
+                  <ol className="space-y-3">
+                    {debate.challenges.map((c, i) => {
+                      const r = debate.replies?.find((x) => x.index === i);
+                      return (
+                        <li key={`${c.iso3}-${c.from}-${c.to}`} className="text-sm space-y-1" data-debate-challenge={`${c.from}>${c.to}`}>
+                          <div className="font-medium text-slate-900 dark:text-white">
+                            {c.countryName}: the {c.fromName} Agent challenges the {c.toName} Agent
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{c.toName} Agent said: {c.claim}.</p>
+                          <p className="text-slate-800 dark:text-slate-200">{c.challenge}</p>
+                          <p className="text-xs text-slate-600 dark:text-slate-400">What would settle it: {c.settle}</p>
+                          {r && (
+                            <p className="border-l-2 border-blue-300 dark:border-blue-700 pl-2 text-slate-800 dark:text-slate-200" data-debate-reply="true">
+                              <span className="text-slate-500 dark:text-slate-400">{c.toName} Agent replies: </span>
+                              {r.reply}
+                            </p>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ol>
+                  {debating ? (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Asking the AI model for each agent’s reply…</p>
+                  ) : debate.replies ? (
+                    <>
+                      {debate.verdict && (
+                        <p className="text-sm text-slate-900 dark:text-white">
+                          <span className="text-slate-500 dark:text-slate-400">Where it lands: </span>
+                          {debate.verdict}
+                        </p>
+                      )}
+                      {!!debate.open?.length && (
+                        <ul className="list-disc pl-5 text-sm text-slate-700 dark:text-slate-300">
+                          {debate.open.map((o) => (
+                            <li key={o}>{o}</li>
+                          ))}
+                        </ul>
+                      )}
+                      {!!debate.removed?.length && (
+                        <details className="text-xs text-amber-700 dark:text-amber-400">
+                          <summary className="cursor-pointer">{debate.removed.length} AI sentence(s) removed by the number or stance check</summary>
+                          <ul className="list-disc pl-5 mt-1">
+                            {debate.removed.map((x) => (
+                              <li key={x}>{x}</li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Challenges from stated rules on the agents’ figures; replies written by the AI model{debate.provider ? ` (${debate.provider})` : ''} from those figures only.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      No AI replies ({debate.reason || 'no AI model answered'}). The challenges come from stated rules on the agents’ figures.
+                    </p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
 
           <div className="flex flex-wrap gap-1.5 pt-1">
             <button type="button" className="ui-btn" onClick={copy} disabled={writing}>

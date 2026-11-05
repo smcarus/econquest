@@ -20,6 +20,7 @@ import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
+import type { DebateResult } from './agentDebate';
 
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'rv' | 'fx' | 'spill' | 'calendar';
@@ -592,11 +593,8 @@ export function traces(written: string, allowed: number[]): boolean {
  * an opposing word (policy called loose when the Central Bank Watcher Agent reads it as tight; see
  * stanceCheck.ts). Both kinds are returned so the screen can show what was removed and why.
  */
-export function checkBrief(
-  brief: CouncilBrief,
-  question: string,
-  answers: AgentAnswer[]
-): { brief: CouncilBrief; removed: string[]; contradicted: Contradiction[] } {
+/** A checker for AI-written sentences: false (and the sentence recorded) when a number does not trace or a call is contradicted. */
+export function sentenceCheck(question: string, answers: AgentAnswer[]) {
   const allowed = allowedNumbers(question, answers);
   const removed: string[] = [];
   const contradicted: Contradiction[] = [];
@@ -613,6 +611,15 @@ export function checkBrief(
     if (c) contradicted.push(c);
     return !c;
   };
+  return { ok, removed, contradicted };
+}
+
+export function checkBrief(
+  brief: CouncilBrief,
+  question: string,
+  answers: AgentAnswer[]
+): { brief: CouncilBrief; removed: string[]; contradicted: Contradiction[] } {
+  const { ok, removed, contradicted } = sentenceCheck(question, answers);
   const clean = (xs: unknown): string[] =>
     (Array.isArray(xs) ? xs : [])
       .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
@@ -639,6 +646,9 @@ export interface SavedCouncilBrief {
   synthesis: SynthesisResult | null;
   /** Earlier questions in the same conversation, oldest first. */
   earlier?: EarlierTurn[];
+  /** How the agents were picked (AI model or word matching). */
+  chooserNote?: string;
+  debate?: DebateResult;
 }
 
 const STORE_KEY = 'econquest.councilBrief.v1';
@@ -665,6 +675,7 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
   question: 'Question',
   summary: 'Summary',
   disagreements: 'Where the agents disagree',
+  debate: 'Agent debate',
   agents: 'What each agent found',
   gaps: 'Gaps',
   method: 'Method',
@@ -700,6 +711,19 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
     });
   }
   if (on('disagreements') && s?.disagreements.length) out.push({ heading: COUNCIL_SECTIONS.disagreements, lines: s.disagreements.map((d) => `- ${d}`) });
+  if (on('debate') && b.debate?.challenges.length) {
+    const d = b.debate;
+    const lines: string[] = [];
+    d.challenges.forEach((c, i) => {
+      lines.push(`- **${c.countryName}: ${c.fromName} Agent challenges ${c.toName} Agent.** ${c.challenge} What would settle it: ${c.settle}`);
+      const r = d.replies?.find((x) => x.index === i);
+      if (r) lines.push(`  - ${c.toName} Agent replies: ${r.reply}`);
+    });
+    if (d.verdict) lines.push('', `Where it lands: ${d.verdict}`);
+    if (d.open?.length) lines.push('', 'Still open:', ...d.open.map((o) => `- ${o}`));
+    if (!d.replies) lines.push('', `No AI replies (${d.reason || 'no AI model answered'}); the challenges come from stated rules on the agents' figures.`);
+    out.push({ heading: COUNCIL_SECTIONS.debate, lines });
+  }
   if (on('agents')) {
     const lines: string[] = [];
     for (const a of b.answers) {
@@ -720,7 +744,7 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
     out.push({
       heading: COUNCIL_SECTIONS.method,
       lines: [
-        'A rule-based planner picked the agents from words in the question. Each agent answered only from figures the app holds, each tagged Live data, Official, AI estimate, Sample data, or as that agent’s model reading (a stated rule on the figures, not a forecast).',
+        `${b.chooserNote || 'A rule-based planner picked the agents from words in the question.'} Each agent answered only from figures the app holds, each tagged Live data, Official, AI estimate, Sample data, or as that agent’s model reading (a stated rule on the figures, not a forecast).`,
         'For discussion. Not investment advice.',
       ],
     });
