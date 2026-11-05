@@ -37,7 +37,7 @@ import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type F
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type CouncilDocument } from './src/utils/agentDocument';
-import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
+import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
@@ -3154,7 +3154,9 @@ async function executeResilientLlmStep<T>(options: {
           {
             temperature:
               options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2,
-            numCtx: options.runtimeConfig.numCtx ?? serverGuiRuntimeConfig.numCtx ?? 8192,
+            // Long chat steps read every agent's document: with a short window Ollama drops the
+            // start of the prompt (the instructions) without saying so.
+            numCtx: Math.max(options.runtimeConfig.numCtx ?? serverGuiRuntimeConfig.numCtx ?? 8192, LONG_CHAT_STEPS.has(options.stepName) ? 16384 : 0),
           },
           wait
         );
@@ -5715,7 +5717,7 @@ ${MISSING_FIGURES_RULE}
                   : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
             })
           )
-        ).slice(0, 24000),
+        ).slice(0, 22000) + synthesisTask(question),
         responseSchema: {
           type: Type.OBJECT,
           properties: {

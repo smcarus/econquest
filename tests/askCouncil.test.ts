@@ -296,3 +296,13 @@ test('Relative Value Agent: with CDS off it compares the real 10Y yield against 
   assert.ok(eee.figures.some((f) => f.label === 'Real yield against risk peers' && /cheap/.test(f.value)));
   assert.ok(rv.missing.some((m) => /uses the real 10Y yield/.test(m)));
 });
+
+test('synthesis task: asks for an interpreted answer and ends with the question', async () => {
+  const { synthesisTask, SYNTHESIS_INSTRUCTION } = await import('../src/utils/askCouncil.ts');
+  const t = synthesisTask('Is Brazil policy tight?');
+  assert.match(t, /headline: one sentence that directly answers/);
+  assert.match(t, /interprets the evidence/);
+  assert.ok(t.trim().endsWith('Question to answer: Is Brazil policy tight?'));
+  assert.match(SYNTHESIS_INSTRUCTION, /interpret, not to list/);
+  assert.match(SYNTHESIS_INSTRUCTION, /do not calculate new numbers/);
+});

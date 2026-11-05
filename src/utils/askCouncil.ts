@@ -1052,16 +1052,35 @@ export interface SynthesisResult {
 }
 
 export const SYNTHESIS_INSTRUCTION = [
-  'You are the synthesis agent of a sovereign research council.',
+  'You are the synthesis agent of a sovereign research council: a senior economist who turns the agents\' documents into an answer for a policy reader.',
   'You receive one standard document per agent, each in the same template: why it was asked, what it covers, findings (each with the agent\'s call and every figure with its tag and source), missing data, and coverage.',
-  'Answer the question in a short brief using ONLY the findings in those documents.',
-  'Every number you write must appear in the findings. Do not compute new numbers, forecast, or add outside facts.',
+  'Your job is to interpret, not to list. The headline answers the question directly: yes or no, which countries, or what is most likely, with the main reason in a few words.',
+  'The points explain what the evidence means for the question: connect findings across agents (for example a policy rate well above inflation alongside a weak currency), compare and rank countries when several are covered, say which way the risks lean and what would change the answer.',
+  'Never repeat a finding without saying what it means for the question.',
+  'Use ONLY the findings in the documents. Every number you write must appear in them, written as it appears there. Describe sizes and comparisons in words (higher, well above, the largest of the three); do not calculate new numbers, forecast, or add outside facts.',
   'Passages from the Policy Document Agent are quotes from documents the user added: name the document when you use one, and do not treat its forecasts as data.',
   'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
-  'Where agents point different ways (for example tight policy but a weak currency), say so under disagreements; do not smooth it over.',
-  'List under gaps what the agents could not answer (their Missing data sections), and give less weight to a document whose coverage is partial or none.',
+  'Where agents point different ways, say so under disagreements; do not smooth it over.',
+  'List under gaps what the agents could not answer (their Missing data sections), and say less confidently what rests on a document whose coverage is partial or none.',
   'Plain English, full sentences, no advice to buy or sell.',
 ].join(' ');
+
+/**
+ * Goes after the agents' documents, so the question is the last thing the model reads and the
+ * shape of the answer is in the prompt itself (a local model does not see the schema's notes).
+ */
+export function synthesisTask(question: string): string {
+  return [
+    '',
+    'Write a JSON object with:',
+    '- headline: one sentence that directly answers the question below.',
+    '- points: 3 to 6 sentences. Each one interprets the evidence for the question (what it shows, why it matters, how it fits with the other agents) and names the figures it rests on.',
+    '- disagreements: sentences on where agents point different ways (empty list if none).',
+    '- gaps: what the agents could not answer and how that limits the answer.',
+    '',
+    `Question to answer: ${question}`,
+  ].join('\n');
+}
 
 /** The agents' answers as plain text for the synthesis prompt. */
 export function answersAsText(question: string, answers: AgentAnswer[]): string {
