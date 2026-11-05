@@ -3,7 +3,8 @@
 How to use the terminal, page by page. For setup see the [README](../README.md); for every data
 source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md).
 
-The header has six pages: **Workspace · Country Research · Compare · Portfolio · Reports · Tools**.
+The header has five pages: **Workspace · Country Research · Compare · Portfolio · Reports**. **Tools**
+is in **Menu**, next to Settings.
 Workspace is the daily start; Compare holds the panels that set the watchlist side by side.
 
 **Reading any figure.** A figure is shown only when a real source supplied it. Hover it for the
@@ -217,9 +218,11 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ---
 
-## 6. Tools
+## 6. Tools (Menu > Tools)
 
-- **Ready tools**: every working tool, what it shows and its sources, with a link to it.
+- **Groups**: every working tool, grouped by use (Ask the council, Keep up, Screen and compare
+  countries, Study one country, Look back, Your portfolio, Write and share). Click a group to open
+  it; *Open all* opens every group and *Show sources* lists each tool's sources.
 - **Data connections**: the same check as `npm run check:data`, one line per source. *Check again*
   re-runs it.
 - **Hidden desks**: each older desk, what live input it would need to come back, and which ready
@@ -229,6 +232,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ## 7. Menu
 
+- **Tools**: the Tools page (section 6).
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
@@ -239,7 +243,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 
 ## 8. When something looks wrong
 
-- **Everything reads Missing.** Open Tools > Data connections. If every source fails, the computer
+- **Everything reads Missing.** Open Menu > Tools > Data connections. If every source fails, the computer
   is offline or a VPN or firewall blocks it; figures fill in within the hour once it is back.
 - **One panel shows "could not be drawn".** The rest of the app still works. Press Try again; if it
   keeps failing, the error text under it helps find the cause.

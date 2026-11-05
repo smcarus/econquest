@@ -35,7 +35,7 @@ http://localhost:3737 (Windows: `scripts/start-windows.bat`). Both ways read and
 A new install shows dashes everywhere until a source answers. Workspace opens with a **Getting
 started** card that ticks itself off:
 
-1. **See which sources answer.** Tools > Data connections (or `npm run check:data`) lists every
+1. **See which sources answer.** Menu > Tools > Data connections (or `npm run check:data`) lists every
    source as connected (with a figure it returned), needs setup, off, or why it failed.
 2. **Add a free FRED key** in Menu > Settings (⌘, or Ctrl+,). It fills official 10Y yields for the
    US, Mexico, South Africa, Japan, the UK, Poland and Chile.
@@ -71,7 +71,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 | **Compare** | The watchlist side by side: where data and price disagree, MarketEdge, growth and inflation, scenarios, and a Compare countries table to download |
 | **Portfolio** | Your holdings (CSV import) or your watchlist at equal weight: concentration, where the risk sits, dates to watch |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
-| **Tools** | Every ready tool in one list, data connections, and what each hidden desk would need to come back |
+| **Tools** (in Menu) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |
 
 About 40 older desks are hidden while their inputs are not live. Menu > Show all tools brings them
 back; their code is kept.
