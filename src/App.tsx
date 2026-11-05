@@ -2478,10 +2478,12 @@ export default function App() {
           </>
           )}
 
+          {/* On Workspace the chat is the page itself, so the button only shows elsewhere. */}
+          {appArea !== 'today' && (
           <button
             type="button"
             onClick={openChat}
-            title={appArea === 'today' ? 'Go to Council chat on this page' : chatDocked ? 'Close the Council chat panel' : 'Open Council chat beside this page: the same conversation as on Workspace'}
+            title={chatDocked ? 'Close the Council chat panel' : 'Open Council chat beside this page: the same conversation as on Workspace'}
             aria-pressed={chatDocked}
             data-chat-toggle="true"
             className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
@@ -2489,6 +2491,7 @@ export default function App() {
             <MessageSquare className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Council chat</span>
           </button>
+          )}
 
           <button
             type="button"
