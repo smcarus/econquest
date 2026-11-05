@@ -43,7 +43,7 @@ export interface WorkspaceInputsState {
   liveCount: number;
   /** Where each key comes from, from /api/settings/keys. Undefined while loading or unreadable. */
   keys?: { id: string; label?: string; source: 'app' | 'env' | 'none'; section?: string }[];
-  /** Menu > AI model choice. */
+  /** Menu > Settings > AI model choice. */
   aiProvider?: string;
   /** Saved council briefs and policy documents (data/local/research.json). Undefined while loading. */
   research?: { briefs: number; docs: number };

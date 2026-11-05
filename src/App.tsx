@@ -184,6 +184,7 @@ import { marketEdgePeers } from './utils/marketEdgeAnchors';
 import { OPEN_SETTINGS_EVENT, SettingsDialog, type SettingsTab } from './components/SettingsDialog';
 import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
+import { loadCouncilBrief } from './utils/askCouncil';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -2270,6 +2271,10 @@ export default function App() {
     onChangeDraft: setCroDraft,
     onOpenFullReview: showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined,
   };
+  // Reports opens on the council brief once one is saved; before that, on the country note, so the
+  // first view is a real document and not "No council brief yet".
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const openingReport: ReportTemplate = useMemo(() => (loadCouncilBrief() ? DEFAULT_REPORT : 'economist'), [appArea, reportNonce]);
   const sendCouncilToReports = () => {
     setRequestedReport('council');
     setReportNonce((n) => n + 1);
@@ -2560,8 +2565,18 @@ export default function App() {
                       {
                         key: 'settings',
                         icon: <KeyRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        // The AI model and Backup are tabs in Settings, so they are not listed again here;
+                        // the model in use shows beside Settings.
                         label: 'Settings',
-                        hint: navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,',
+                        hint:
+                          runtimeConfig.providerMode === 'ollama'
+                            ? `AI: Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
+                            : runtimeConfig.providerMode === 'hybrid'
+                            ? 'AI: Ollama, then Gemini'
+                            : runtimeConfig.providerMode === 'openai_compatible'
+                            ? 'AI: local server'
+                            : 'AI: Gemini',
+                        title: `AI model, free data keys, your own paid data, backup and tools (${navigator.platform.toLowerCase().includes('mac') ? '⌘,' : 'Ctrl+,'})`,
                         onClick: () => setIsSettingsOpen(true),
                         className: '',
                       },
@@ -2572,24 +2587,6 @@ export default function App() {
                         hint: '',
                         onClick: () => {
                           setSettingsTab('tools');
-                          setIsSettingsOpen(true);
-                        },
-                        className: '',
-                      },
-                      {
-                        key: 'runtime',
-                        icon: <Cpu className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
-                        label: 'AI model',
-                        hint:
-                          runtimeConfig.providerMode === 'ollama'
-                            ? `Ollama (${runtimeConfig.ollamaQuickModel.split(':')[0]})`
-                            : runtimeConfig.providerMode === 'hybrid'
-                            ? 'Ollama, then Gemini'
-                            : runtimeConfig.providerMode === 'openai_compatible'
-                            ? 'Local server'
-                            : 'Gemini',
-                        onClick: () => {
-                          setSettingsTab('ai');
                           setIsSettingsOpen(true);
                         },
                         className: '',
@@ -2608,19 +2605,6 @@ export default function App() {
                         label: 'Offline data',
                         hint: onlineStatus?.preloadRunning ? 'Downloading' : onlineStatus && !onlineStatus.online ? 'Offline' : '',
                         onClick: () => setIsOfflineDataOpen(true),
-                        className: '',
-                      },
-                      {
-                        key: 'session',
-                        icon: <Database className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-                        label: 'Backup',
-                        hint: '',
-                        // One backup for research, alerts, holdings and watchlists, saved by the server
-                        // (Settings > Backup); replaces the older browser-only session file.
-                        onClick: () => {
-                          setSettingsTab('backup');
-                          setIsSettingsOpen(true);
-                        },
                         className: '',
                       },
                       {
@@ -2663,6 +2647,7 @@ export default function App() {
                       key={item.key}
                       type="button"
                       role="menuitem"
+                      title={'title' in item ? (item as { title?: string }).title : undefined}
                       onClick={() => {
                         setIsHeaderMenuOpen(false);
                         item.onClick();
@@ -3274,13 +3259,13 @@ export default function App() {
                     </PanelBoundary>
                   </div>
                   <IcMemoBuilder
-                    key={`${d}-${requestedReport || DEFAULT_REPORT}-${reportNonce}`}
+                    key={`${d}-${requestedReport || openingReport}-${reportNonce}`}
                     run={run}
                     stagedTickets={showAllTools ? stagedTradeTickets : []}
                     holdings={holdings}
                     riskLookup={liveRiskLookup}
                     peers={liveWatchlistItems}
-                    defaultAudience={visibleReport(requestedReport || DEFAULT_REPORT, showAllTools)}
+                    defaultAudience={visibleReport(requestedReport || openingReport, showAllTools)}
                     audiences={showAllTools ? undefined : CORE_REPORTS}
                   />
                   <div id="tool-notebooks" className="mt-3 scroll-mt-4">

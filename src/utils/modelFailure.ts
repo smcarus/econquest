@@ -10,7 +10,7 @@ export const LONG_CHAT_STEPS = new Set(['COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', '
 export const LONG_CHAT_STEP_MIN_MS = 120_000;
 
 /**
- * How long one local-model call may take. The user's timeout from Menu > AI model wins when it is
+ * How long one local-model call may take. The user's timeout from Menu > Settings > AI model wins when it is
  * longer; the summary and debate steps never wait less than LONG_CHAT_STEP_MIN_MS.
  */
 export function localStepTimeoutMs(stepName: string, userTimeoutSec: unknown, isDeepStep: boolean): number {

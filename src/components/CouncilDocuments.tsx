@@ -304,7 +304,7 @@ export const SavedCouncilDocuments: React.FC<{ items: LiveWatchlistItem[]; onOpe
       </div>
       {lib.error && <p className="text-xs text-amber-700 dark:text-amber-400">{lib.error}</p>}
       {!groups.length ? (
-        <p className="text-sm text-slate-600 dark:text-slate-300">None saved yet. Open a document card under a council answer and choose Save to Reports.</p>
+        <p className="text-sm text-slate-600 dark:text-slate-300">None saved yet. Choose Save to Reports under a council answer in Council chat, or inside any document it opens.</p>
       ) : (
         <ul className="space-y-3">
           {groups.map((g) => (

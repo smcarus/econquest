@@ -1,5 +1,5 @@
 /**
- * Finds "Menu > Settings > Your own paid data", "Menu > AI model" and the like in help text, so
+ * Finds "Menu > Settings > Your own paid data", "Menu > Settings > AI model" and the like in help text, so
  * the app can show them as links that open that page of Settings (components/SettingsText.tsx).
  * Browser-safe, no React.
  */
@@ -14,7 +14,7 @@ const PAGE_NAMES: Array<[RegExp, SettingsPage]> = [
   [/^Tools/, 'tools'],
 ];
 
-// "Menu > Settings > X", "Menu > Settings", "Settings > X", "Menu > AI model ...".
+// "Menu > Settings > X", "Menu > Settings", "Settings > X", "Menu > Settings > AI model ...".
 const LINK = /(?:Menu\s*>\s*)?Settings(?:\s*>\s*(AI model(?: key| and data connections)?|Your own paid data|Data API keys|API keys|Free data keys|Tools))?|Menu\s*>\s*(AI model(?: and data connections)?)/g;
 
 export function splitSettingsLinks(text: string): SettingsTextPart[] {
