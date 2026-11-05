@@ -119,5 +119,12 @@ export function cliCycleText(c: NonNullable<CycleClock['cli']>): string {
 
 export function nextDecisionText(n: NonNullable<CycleClock['nextDecision']>): string {
   const when = n.daysUntil === 0 ? 'today' : n.daysUntil === 1 ? 'tomorrow' : `in ${n.daysUntil} days`;
-  return `${n.date} (${when})`;
+  return `${dayText(n.date)}, ${when}`;
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+/** "2026-12-09" -> "9 Dec 2026", the date style the country brief uses. */
+function dayText(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  return m ? `${Number(m[3])} ${MONTHS[Number(m[2]) - 1]} ${m[1]}` : iso;
 }

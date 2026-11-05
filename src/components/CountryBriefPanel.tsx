@@ -103,7 +103,17 @@ export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
         <table className="w-full text-sm">
           <caption className="sr-only">{g.title}</caption>
           <tbody>
-            {g.rows.map((r) => (
+            {g.rows.map((r) =>
+              r.value.length > 60 ? (
+                // A sentence, not a figure: label, then the text under it, left-aligned.
+                <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
+                  <td colSpan={2} className="px-4 py-1.5 text-left">
+                    <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
+                    <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
+                  </td>
+                </tr>
+              ) : (
               <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help} data-missing={r.missing ? 'true' : undefined}>
                 <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
                   {r.label}
@@ -119,7 +129,8 @@ export const BriefGroups: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
                   {r.value}
                 </td>
               </tr>
-            ))}
+              ),
+            )}
           </tbody>
         </table>
       </section>
