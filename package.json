@@ -16,7 +16,8 @@
     "check:imf": "tsx scripts/imf-codes.ts",
     "preload": "tsx server.ts --preload",
     "gdelt:pull": "tsx scripts/gdelt-pull.ts",
-    "record:feeds": "tsx scripts/record-feeds.ts"
+    "record:feeds": "tsx scripts/record-feeds.ts",
+    "backtest": "tsx scripts/backtest.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

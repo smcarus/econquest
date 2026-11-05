@@ -60,12 +60,12 @@ export function parseDbnomics(json: unknown, keepMonths = 40): SdmxObs[] | null 
 }
 
 /** Reads either reply the app may get: DBnomics JSON or the OECD's own SDMX-CSV. */
-export function parseOecdReply(text: unknown): SdmxObs[] | null {
+export function parseOecdReply(text: unknown, keepMonths?: number): SdmxObs[] | null {
   if (typeof text !== 'string') return null;
   const t = text.replace(/^\uFEFF/, '').trimStart();
   if (t.startsWith('{')) {
     try {
-      return parseDbnomics(JSON.parse(t));
+      return parseDbnomics(JSON.parse(t), keepMonths);
     } catch {
       return null;
     }

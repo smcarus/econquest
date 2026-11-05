@@ -37,8 +37,8 @@ export function cliUrl(opts: { areas?: string[]; wide?: boolean } = {}): string 
 export type CliSeries = Record<string, { period: string; value: number }[]>;
 
 /** Reads the OECD reply into one amplitude-adjusted CLI series per area. Null when nothing usable. */
-export function parseCli(text: unknown): CliSeries | null {
-  const obs = parseOecdReply(text);
+export function parseCli(text: unknown, keepMonths?: number): CliSeries | null {
+  const obs = parseOecdReply(text, keepMonths);
   if (!obs?.length) return null;
   const s = seriesByArea(
     obs,

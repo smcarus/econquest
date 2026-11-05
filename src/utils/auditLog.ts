@@ -18,7 +18,7 @@
 import { createHash } from 'crypto';
 import { apiKeyField } from '../data/apiKeyFields';
 
-export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit';
+export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation';
 
 export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   council: 'Council answer',
@@ -29,6 +29,7 @@ export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   model: 'AI model',
   workspace: 'Holdings and lists',
   audit: 'Audit log',
+  validation: 'Validation',
 };
 
 export interface AuditFigure {
@@ -193,6 +194,7 @@ export function describeRequest(method: string, path: string): AuditInput | null
   }
   const fixed: Record<string, AuditInput> = {
     'POST /api/backup/restore': { kind: 'settings', summary: 'Restored a backup (the previous files were kept)' },
+    'POST /api/validation/run': { kind: 'validation', summary: 'Ran the pre-registered backtests' },
     'POST /api/data/refresh': { kind: 'data', summary: 'Refreshed the data feeds' },
     'POST /api/preload/start': { kind: 'data', summary: 'Started downloading all country data' },
     'POST /api/preload/stop': { kind: 'data', summary: 'Stopped downloading country data' },
