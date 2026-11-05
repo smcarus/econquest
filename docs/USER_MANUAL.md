@@ -250,6 +250,37 @@ count. A signal against a position is a reason to look, not a call to trade.
 
 ## 3. Reports
 
+**Policy reviews.** At the top of Reports. A step-by-step case file for a principal, economist or
+politician looking for ways to improve policy in one country, with the council's help. Start one with
+*New policy review*, or with *Start a policy review* under any Council chat answer (the question
+becomes the problem). Six steps, in order:
+
+1. **Frame.** Country, the problem in a sentence or two, the goal (which indicator, lower / higher /
+   stable, optional target and month), constraints, who it is for, and the **As of** day. Every later
+   step reads the data the app had saved on or before that day.
+2. **Diagnose.** Twelve standard indicators from that saved pull, each numbered [1] to [12] with its
+   source and period, or Missing with the reason, plus the real policy rate and r minus g when their
+   inputs are live.
+3. **Options.** Add up to four options of your own if you like, then *Ask the council*. It ranks
+   options for the goal from the frame and diagnosis only, at temperature 0, each with how it works,
+   time to effect, trade-offs, who bears the cost, what must be true and risks, and one sentence from
+   each council lens. Sentences with numbers that are not in the diagnosis are removed and listed. No
+   AI model? *Save my options only* keeps yours, marked not assessed.
+4. **Evidence.** Charts and tests (Taylor gap, real rate, does the policy rate lead inflation, r minus
+   g, leading indicator), past policy-rate moves with inflation a year later, and the validation status
+   of each signal the options lean on. Every series is cut at the As of day.
+5. **Recommendation memo.** Pick the option, add your reasoning, what to watch and a review date. The
+   memo is assembled from the steps above with no AI, cites every figure by number, and opens with
+   "Research, not validated advice" until the signals behind it pass their backtests. Mark it Reviewed
+   and Approved (with your name and the memo's hash); download Markdown or PDF.
+6. **Track outcomes.** On the review date, *Check outcomes* sets the latest saved figures beside the
+   ones the review started from and says whether the goal indicator moved the right way. *Review
+   again* starts a new review with the same frame on today's data, linked to this one.
+
+Changing an earlier step marks later ones **Out of date** until they are run again. Every step is
+saved with a hash and written to the audit log. Kept in `data/local/reviews.json`; see
+[POLICY_REVIEW.md](./POLICY_REVIEW.md) for the method.
+
 Templates built on the briefs: country note, issuer note, sustainability assessment, portfolio
 review, client portfolio review and the council brief. Each shows its sources, and missing inputs
 are named rather than filled. Sourced figures carry a reference number, and a **References** list at

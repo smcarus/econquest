@@ -51,7 +51,8 @@ import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditS
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { buildDiagnosis, type Diagnosis } from './src/utils/reviewDiagnosis';
-import { buildMemo, parseMemoInputs } from './src/utils/reviewMemo';
+import { buildMemo, parseMemoInputs, type MemoStep } from './src/utils/reviewMemo';
+import { buildOutcomes } from './src/utils/reviewOutcomes';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from './src/utils/reviewEvidence';
 import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep } from './src/utils/reviewOptions';
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -4428,6 +4429,29 @@ async function startServer() {
       kind: 'research',
       summary: `Wrote the memo for policy review "${out.review.title}"`,
       detail: { id: r.id, step: 'memo', hash: out.review.steps.memo?.hash, recommended: parsed.inputs.recommended, reviewDate: parsed.inputs.reviewDate, watch: parsed.inputs.watch, researchOnly: memo.researchOnly },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Step 6: the same indicators from the latest saved pull, beside the figures the review started from.
+  app.post('/api/reviews/:id/outcomes', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    const frame = r && frameOf(r);
+    if (!r || !frame) return res.status(404).json({ error: 'No policy review with that id.' });
+    if (stepStates(r).memo !== 'done') return res.status(400).json({ error: 'Write the memo first.' });
+    const today = new Date().toISOString().slice(0, 10);
+    const past = archivedSnapshot(frame.iso3, today);
+    if (!past) return res.status(409).json({ error: `No saved pull for ${frame.iso3} yet. Open the country so the app saves one, then check again.` });
+    const pulledAt = new Date(past.pulledAt).toISOString();
+    const now = buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: today, pullDate: past.date, pulledAt, incomplete: past.incomplete });
+    const content = buildOutcomes(frame, r.steps.diagnose!.content as Diagnosis, now, r.steps.memo!.content as MemoStep, today);
+    const out = saveStep(r, 'outcomes', content);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Checked outcomes of policy review "${out.review.title}" (${content.goal.move.replace(/_/g, ' ')})`,
+      detail: { id: r.id, step: 'outcomes', hash: out.review.steps.outcomes?.hash, pullDate: past.date, early: content.early, goal: content.goal },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
