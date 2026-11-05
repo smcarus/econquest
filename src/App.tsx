@@ -45,14 +45,6 @@ import {
   runPreFlightModelIntegrityAudit,
   saveWorkspaceSessionToStorage,
 } from './utils/turnkeyReadinessAndCommandEngine';
-import {
-  CustomSovereignOnboardingModal,
-  GlobalCommandPaletteModal,
-  ModelIntegrityAuditModal,
-  SelfHostAndOllamaRuntimeModal,
-  SovereignManualAndGithubModal,
-  WorkspaceSessionModal,
-} from './components/TurnkeyCommandAndIntegrityModals';
 import { DEFAULT_WARGAME_PARAMS } from './utils/geopoliticalRiskEngine';
 import { DEFAULT_LIQUIDITY_STRESS_PARAMS } from './utils/globalLiquidityEngine';
 import {
@@ -181,6 +173,13 @@ import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
+// The menu dialogs load when first opened, keeping them out of the first download.
+const CustomSovereignOnboardingModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'CustomSovereignOnboardingModal');
+const GlobalCommandPaletteModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'GlobalCommandPaletteModal');
+const ModelIntegrityAuditModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'ModelIntegrityAuditModal');
+const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SelfHostAndOllamaRuntimeModal');
+const SovereignManualAndGithubModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SovereignManualAndGithubModal');
+const WorkspaceSessionModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'WorkspaceSessionModal');
 const AnnotatedChartsDeck = lazyNamed(() => import('./components/AnnotatedChartsDeck'), 'AnnotatedChartsDeck');
 const StatisticalForecastingLab = lazyNamed(() => import('./components/StatisticalForecastingLab'), 'StatisticalForecastingLab');
 const GeopoliticalRiskDesk = lazyNamed(() => import('./components/GeopoliticalRiskDesk'), 'GeopoliticalRiskDesk');
@@ -3435,25 +3434,39 @@ export default function App() {
       />
 
       {/* GLOBAL COMMAND PALETTE (CMD+K), PRE-FLIGHT MODEL INTEGRITY AUDITOR, CUSTOM SOVEREIGN WIZARD & SESSION SNAPSHOT MODALS */}
+      {isCommandPaletteOpen && (
+        <Suspense fallback={null}>
       <GlobalCommandPaletteModal
         isOpen={isCommandPaletteOpen}
         onClose={() => setIsCommandPaletteOpen(false)}
         items={commandPaletteItems}
         onSelectCommand={handleSelectCommandPaletteItem}
       />
+        </Suspense>
+      )}
 
+      {isIntegrityAuditOpen && (
+        <Suspense fallback={null}>
       <ModelIntegrityAuditModal
         isOpen={isIntegrityAuditOpen}
         onClose={() => setIsIntegrityAuditOpen(false)}
         auditReport={liveIntegrityAuditReport}
       />
+        </Suspense>
+      )}
 
+      {isCustomSovereignModalOpen && (
+        <Suspense fallback={null}>
       <CustomSovereignOnboardingModal
         isOpen={isCustomSovereignModalOpen}
         onClose={() => setIsCustomSovereignModalOpen(false)}
         onOnboardSovereign={handleOnboardCustomSovereign}
       />
+        </Suspense>
+      )}
 
+      {isSessionModalOpen && (
+        <Suspense fallback={null}>
       <WorkspaceSessionModal
         isOpen={isSessionModalOpen}
         onClose={() => setIsSessionModalOpen(false)}
@@ -3461,14 +3474,22 @@ export default function App() {
         onRestoreSession={handleRestoreWorkspaceSession}
         onResetFactoryDefaults={handleResetFactoryDefaults}
       />
+        </Suspense>
+      )}
 
+      {isManualModalOpen && (
+        <Suspense fallback={null}>
       <SovereignManualAndGithubModal
         isOpen={isManualModalOpen}
         onClose={() => setIsManualModalOpen(false)}
       />
+        </Suspense>
+      )}
 
       <SettingsDialog isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} onOpenAiModel={() => setIsRuntimeModalOpen(true)} />
 
+      {isRuntimeModalOpen && (
+        <Suspense fallback={null}>
       <SelfHostAndOllamaRuntimeModal
         isOpen={isRuntimeModalOpen}
         onClose={() => setIsRuntimeModalOpen(false)}
@@ -3478,6 +3499,8 @@ export default function App() {
         activeIso3={run.iso3}
         onApplyConnectorTelemetryToActiveSovereign={handleApplyConnectorTelemetryToActiveSovereign}
       />
+        </Suspense>
+      )}
 
       {/* MULTI-SOVEREIGN HEAD-TO-HEAD COMPARATOR DRAWER (2-3 COUNTRIES SIDE-BY-SIDE) */}
       <MultiSovereignComparatorDrawer
