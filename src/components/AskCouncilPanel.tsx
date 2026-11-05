@@ -34,7 +34,7 @@ import {
   type SynthesisResult,
 } from '../utils/askCouncil';
 
-import { computeChart, fetchChartSeries } from '../utils/councilChart';
+import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
 import { lazyNamed } from './LazyDesk';
 // The chart card (recharts) loads only when an answer has a chart.
 const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
@@ -676,6 +676,24 @@ export const AskCouncilPanel: React.FC<{
                 </button>
               ))}
             </div>
+            <details className={`text-xs ${page ? 'mx-auto max-w-xl' : ''}`} data-council-chart-menu="true">
+              <summary className="cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">Charts and statistical tests</summary>
+              <div className="mt-2 text-left space-y-1.5">
+                <p className="text-slate-500 dark:text-slate-400">
+                  Ask for a chart in words, such as “chart Brazil’s policy rate against inflation and test which moves first”. The Chart Agent draws the series the app holds and can run correlation, regression, lead/lag, Granger, stationarity (ADF) and trend (HP filter) tests. Or start from one of these:
+                </p>
+                <ul className="space-y-1">
+                  {PRESETS.map((p) => (
+                    <li key={p.id}>
+                      <button type="button" className="text-left hover:underline disabled:opacity-50" disabled={busy} onClick={() => void ask(`Chart the ${p.name}`, 'new')} data-council-preset={p.id}>
+                        <span className="font-medium text-slate-800 dark:text-slate-200">{p.name}</span>
+                        <span className="text-slate-500 dark:text-slate-400">: {p.about}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </details>
           </div>
         )}
 

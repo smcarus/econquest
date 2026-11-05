@@ -8,7 +8,7 @@ import type { ChartResult } from '../utils/councilChart';
  * plain-English reading. Loaded on demand (recharts stays out of the first download).
  */
 
-const COLORS = ['#2563eb', '#d97706', '#059669', '#db2777'];
+const COLORS = ['#2563eb', '#d97706', '#059669', '#db2777', '#7c3aed', '#0891b2'];
 
 function fmt(v: number): string {
   const a = Math.abs(v);
