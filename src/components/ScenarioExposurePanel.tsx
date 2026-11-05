@@ -19,15 +19,15 @@ export const ScenarioExposurePanel: React.FC<{
       <header className="ui-panel-header">
         <h3 className="ui-section-title">Global Spillover Agent: scenario exposure</h3>
         <p className="ui-label">
-          First-round hit to the current account, % of GDP, from World Bank and WITS trade shares. A stated shock on official figures, not a forecast.
+          First-round effect on the current account, % of GDP, from World Bank, WITS and UN Comtrade trade shares and World Bank commodity prices. Stated shocks and actual price moves on official figures, not a forecast.
         </p>
       </header>
       {!any ? (
         <p className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
-          Trade figures have not loaded yet. They come from the World Bank and WITS, which answer when the app runs on your own machine.
+          Trade figures have not loaded yet. They come from the World Bank, WITS and UN Comtrade, which answer when the app runs on your own machine.
         </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 divide-y xl:divide-y-0 xl:divide-x divide-slate-100 dark:divide-slate-800">
           {ranked.map(({ sc, rows }) => {
             const hit = rows.filter((r) => r.pctGdp < 0).slice(0, 3);
             const gain = rows.filter((r) => r.pctGdp > 0).slice(-1);

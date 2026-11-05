@@ -510,10 +510,16 @@ export function scenariosInQuestion(question: string): ScenarioId[] {
   if (/hormuz|\boil\b|gulf|iran|energy/i.test(question)) out.push('hormuz');
   if (/taiwan|china/i.test(question)) out.push('taiwan');
   if (/russia|ukrain|sanction/i.test(question)) out.push('russia');
+  if (/commodit|terms of trade|export price|copper|soy|gold|iron ore|palm oil|coffee|cocoa/i.test(question)) out.push('prices');
   return out.length ? out : SCENARIOS.map((s) => s.id);
 }
 
-const SCENARIO_PHRASE: Record<ScenarioId, string> = { hormuz: 'a Strait of Hormuz closure', taiwan: 'a Taiwan Strait crisis', russia: 'a Russia escalation' };
+const SCENARIO_PHRASE: Record<ScenarioId, string> = {
+  hormuz: 'a Strait of Hormuz closure',
+  taiwan: 'a Taiwan Strait crisis',
+  russia: 'a Russia escalation',
+  prices: 'the commodity price moves of the last 12 months',
+};
 
 function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<AgentAnswer, 'why'> {
   const ids = scenariosInQuestion(question);
@@ -525,7 +531,7 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
       .map((sc) => ({ sc, imp: it.trade ? scenarioImpact(sc.id, it.trade) : null }))
       .filter((r): r is { sc: (typeof SCENARIOS)[number]; imp: NonNullable<ReturnType<typeof scenarioImpact>> } => r.imp !== null);
     const cli = it.oecdCli;
-    if (!rows.length) missing.push(`${it.countryName}: World Bank or WITS trade figures not loaded`);
+    if (!rows.length) missing.push(`${it.countryName}: World Bank, WITS or UN Comtrade trade figures not loaded`);
     if (!cli) missing.push(`${it.countryName}: OECD leading indicator missing (${cliMissing(!!it.oecdCliPulledAt).short})`);
     if (!rows.length && !cli) continue;
     const parts: string[] = [];

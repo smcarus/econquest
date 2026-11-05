@@ -169,6 +169,12 @@ Notes from the first check on Sam's Mac (2026-11-05):
   Switzerland), and given to the FX Valuation Agent for those currencies. Kept on disk in
   `data/live/imf_cofer.json`, asked again after a day. `IMF_COFER_KEY` in `.env` sets the series
   key if the names do not match.
+- **Spillover scenarios** (Global Spillover Agent) use these: the Taiwan scenario counts exports
+  to Taiwan as well as China (Comtrade; WITS has no Taiwan figure), Comtrade shares replace WITS
+  when Comtrade has China and Russia, Hormuz states the Brent level it starts from and the share
+  of imports from the Gulf producers, and a fourth line, "Commodity prices, last 12 months",
+  applies each commodity's actual 12-month Pink Sheet move to the country's export mix and its
+  fuel imports. Each line reads Missing when a figure it needs did not load.
 
 ## Free, with your own key
 

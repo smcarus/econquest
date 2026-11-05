@@ -320,7 +320,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
         const imp = self?.trade ? scenarioImpact(sc.id, self.trade) : null;
         return imp
           ? model(sc.name, `${imp.pctGdp > 0 ? '+' : ''}${imp.pctGdp.toFixed(1)}% of GDP`, `model: ${sc.shock} Basis: ${imp.basis}`)
-          : missingRow(sc.name, { kind: 'unreachable', short: 'Trade figures did not answer', help: 'The free World Bank or WITS trade feed did not answer. Press Sync.' });
+          : missingRow(sc.name, { kind: 'unreachable', short: 'Trade figures did not answer', help: 'A needed figure did not load: World Bank or WITS trade shares, or for commodity prices the UN Comtrade export mix and the World Bank Pink Sheet. Press Sync.' });
         }),
       ],
     },
