@@ -118,7 +118,9 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                     <dt className="text-slate-500 dark:text-slate-400">Code</dt>
                     <dd className="break-all">{e.code}</dd>
                     {(() => {
-                      const spec = v?.specs.find((x) => x.id === e.id || x.file === `${e.id}.json`);
+                      const mine = (v?.specs || []).filter((x) => x.id === e.id || x.file === `${e.id}.json`).sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
+                      const spec = mine[0];
+                      const earlier = Object.values(v?.versions || {}).filter((x) => x.id === e.id && x.specVersion !== v?.results?.[e.id]?.specVersion).sort((a, b) => b.specVersion - a.specVersion);
                       const r = v?.results?.[e.id];
                       return (
                         <>
@@ -148,6 +150,19 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                 {spec?.hash && spec.hash !== r.specHash ? ' (the test file has changed since: run again)' : ''}.
                                 <span className="block text-slate-400 dark:text-slate-500">{r.data}</span>
                               </dd>
+                              {earlier.length > 0 && (
+                                <>
+                                  <dt className="text-slate-500 dark:text-slate-400">Earlier versions</dt>
+                                  <dd data-backtest-earlier={e.id}>
+                                    {earlier.map((x) => (
+                                      <span key={x.specVersion} className="block">
+                                        Version {x.specVersion}: {x.verdict}
+                                        {x.robustness && (x.framework ?? 1) === 1 ? ` Stricter check: ${x.robustness.status.replace(/_/g, ' ')}.` : ''}
+                                      </span>
+                                    ))}
+                                  </dd>
+                                </>
+                              )}
                               {r.robustness && (
                                 <>
                                   <dt className="text-slate-500 dark:text-slate-400">{(r.framework ?? 1) === 2 ? 'By series' : 'Stricter check'}</dt>

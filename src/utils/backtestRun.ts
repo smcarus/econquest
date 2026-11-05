@@ -1,5 +1,8 @@
 /**
- * Runs the pre-registered backtests (server only): Menu > Models & validation > Run backtests, or
+ * Runs the pre-registered backtests (server only). Files are <id>.json (version 1) or
+ * <id>.v<N>.json (later versions); every version runs, the latest shows on the badge.
+ *
+ * Runs the pre-registered backtests: Menu > Models & validation > Run backtests, or
  * `npm run backtest`. Reads each test file in docs/validation/preregistered/, refuses any whose
  * SHA-256 is not the one in manifest.json, pulls the long history it needs from the free feeds,
  * and saves the verdicts in data/local/validation/results.json. Each verdict also goes in the audit
@@ -19,7 +22,10 @@ import { cftcCrowdingCases, cliTurnPolicyCases, taylorGapCases, judgeWithRobustn
 import { writeFileAtomic } from './atomicWrite';
 
 export interface ValidationFile {
+  /** Latest version's result per test id (what the badges show). */
   results: Record<string, BacktestResult>;
+  /** Every version's latest result, keyed "id v1", "id v2": a re-test never hides the earlier verdict. */
+  versions?: Record<string, BacktestResult>;
   lastRun?: { at: string; problems: string[] };
 }
 
@@ -65,9 +71,13 @@ export function validationFilePath(dataDir: string): string {
 export function loadValidation(file: string): ValidationFile {
   try {
     const v = JSON.parse(fs.readFileSync(file, 'utf8'));
-    return { results: v?.results && typeof v.results === 'object' ? v.results : {}, ...(v?.lastRun ? { lastRun: v.lastRun } : {}) };
+    const results: Record<string, BacktestResult> = v?.results && typeof v.results === 'object' ? v.results : {};
+    const versions: Record<string, BacktestResult> = v?.versions && typeof v.versions === 'object' ? v.versions : {};
+    // Files saved before versions were kept: the result under results is its own version.
+    for (const r of Object.values(results)) if (r?.id && !versions[`${r.id} v${r.specVersion}`]) versions[`${r.id} v${r.specVersion}`] = r;
+    return { results, versions, ...(v?.lastRun ? { lastRun: v.lastRun } : {}) };
   } catch {
-    return { results: {} };
+    return { results: {}, versions: {} };
   }
 }
 
@@ -95,7 +105,8 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
-  const runnable = specs.filter((s) => s.spec);
+  // Oldest version first, so the latest version of each test ends up under results[id].
+  const runnable = specs.filter((s) => s.spec).sort((a, b) => a.spec!.id.localeCompare(b.spec!.id) || a.spec!.version - b.spec!.version);
   const file = loadValidation(opts.resultFile);
   if (runnable.length) {
     const h = await pullHistory(opts.fetcher || defaultFetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
@@ -143,11 +154,12 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
         continue;
       }
       const result: BacktestResult = { id: s.id, specVersion: s.version, specHash: hash, ranAt: at, ...judgeWithRobustness(s, cases), span: spanOf(cases), series, data, sample: sampleCases(cases) };
+      file.versions = { ...(file.versions || {}), [`${s.id} v${s.version}`]: result };
       file.results[s.id] = result;
       opts.onResult?.(result);
     }
   }
-  const out: ValidationFile = { results: file.results, lastRun: { at: (opts.now || new Date()).toISOString(), problems } };
+  const out: ValidationFile = { results: file.results, versions: file.versions || {}, lastRun: { at: (opts.now || new Date()).toISOString(), problems } };
   writeFileAtomic(opts.resultFile, JSON.stringify(out, null, 1), 0o600);
   return { ...out, problems };
 }
