@@ -37,6 +37,7 @@ import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/research
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
+import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
@@ -2063,8 +2064,12 @@ let cachedWatchlistLive: { timestamp: number; items: WatchlistItem[] } | null = 
 /** Inputs the risk scores lean on most; without all of them live, the score is not shown. */
 const RISK_INPUTS = ['imf.debtToGdpPct', 'imf.cpiInflationPct', 'imf.realGdpGrowthPct', 'wb.fxReservesMonthsImport', 'wb.politicalStabilityPercentile', 'gdelt.averageTone'];
 
-async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
-  if (cachedWatchlistLive && Date.now() - cachedWatchlistLive.timestamp < 4 * 60 * 1000) {
+/**
+ * Live rows for every catalog country, or (with `extra`) also for countries outside the catalog,
+ * asked for one question at a time. Extra rows start with every figure Missing, like the catalog.
+ */
+async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = []): Promise<WatchlistItem[]> {
+  if (!extra.length && cachedWatchlistLive && Date.now() - cachedWatchlistLive.timestamp < 4 * 60 * 1000) {
     return cachedWatchlistLive.items;
   }
 
@@ -2088,7 +2093,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
-    SOVEREIGN_CATALOG.map(async (catItem) => {
+    [...(extra.length ? [] : SOVEREIGN_CATALOG), ...extra].map(async (catItem) => {
       try {
         const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, {
           cacheOnly: true,
@@ -2210,11 +2215,42 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     })
   );
 
+  if (extra.length) return items;
   cachedWatchlistLive = {
     timestamp: Date.now(),
     items,
   };
   return items;
+}
+
+/** Up to this many countries outside the catalog per request (each is a full snapshot pull). */
+const MAX_EXTRA_COUNTRIES = 5;
+
+/** Live rows for the countries asked for: catalog rows from the cache, others pulled for this request. */
+async function liveRowsFor(codes: string[]): Promise<WatchlistItem[]> {
+  const catalog = await fetchLiveWatchlistCatalog();
+  const out = catalog.filter((c) => codes.includes(c.iso3));
+  const names = new Map(Object.values(ISO_NUMERIC_TO_ISO3).map((c) => [c.iso3, c.name]));
+  const extra: WatchlistItem[] = codes
+    .filter((c) => !out.some((o) => o.iso3 === c) && names.has(c))
+    .slice(0, MAX_EXTRA_COUNTRIES)
+    .map((iso3) => ({
+      iso3,
+      countryName: names.get(iso3)!,
+      region: '',
+      currencyCode: '',
+      focusTheme: '',
+      geopoliticalRisk: Number.NaN,
+      sovereignRisk: Number.NaN,
+      macroRisk: Number.NaN,
+      compositeRisk: Number.NaN,
+      yield10YPct: Number.NaN,
+      cds5YBps: Number.NaN,
+      debtToGdpPct: Number.NaN,
+      fxReservesMonths: Number.NaN,
+      alertStatus: 'STABLE',
+    }));
+  return [...out, ...(extra.length ? await fetchLiveWatchlistCatalog(extra) : [])];
 }
 
 export const DEFAULT_SERVER_API_CONNECTORS: ExternalInternalConnectorConfig[] = [
@@ -3188,8 +3224,13 @@ async function startServer() {
   });
 
   // 1b. Live Watchlist Multi-Sovereign Telemetry Endpoint
-  app.get('/api/data/watchlist-live', async (_req, res) => {
+  app.get('/api/data/watchlist-live', async (req, res) => {
     try {
+      // ?iso3=ARG,COL: rows for just those countries, pulled for one council question if not in the catalog.
+      if (req.query.iso3) {
+        const codes = String(req.query.iso3).toUpperCase().split(',').map((c) => c.trim().replace(/[^A-Z]/g, '')).filter((c) => c.length === 3);
+        return res.json({ items: await liveRowsFor([...new Set(codes)]), fetchedAt: new Date().toISOString() });
+      }
       const items = await fetchLiveWatchlistCatalog();
       res.json({ items, fetchedAt: new Date().toISOString() });
     } catch (error: any) {

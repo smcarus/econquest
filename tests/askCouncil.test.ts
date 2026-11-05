@@ -254,6 +254,8 @@ test('a country off the watchlist is named as such, never answered for the whole
   const p = planCouncil('Is Egypt behind the curve?', four);
   assert.equal(p.countries.length, 0);
   assert.deepEqual(p.offWatchlist, ['Egypt']);
+  assert.deepEqual(p.offWatchlistIso3, ['EGY']);
+  assert.match(p.scopeNote, /Add for this question/);
   assert.match(p.scopeNote, /Egypt is not on the watchlist, so the agents hold no figures for it/);
   const answers = runCouncil('Is Egypt behind the curve?', p, four);
   assert.ok(answers.every((a) => a.findings.length === 0));

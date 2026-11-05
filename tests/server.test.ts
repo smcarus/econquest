@@ -574,3 +574,15 @@ test('panel builder: countries x figures as JSON and CSV; missing cells say why'
   assert.ok((await csv.text()).includes('iso3,country,figure_id,figure,value,unit,status,period,source,reason_if_missing'));
   assert.equal((await fetch(`${base}/api/panel?countries=`)).status, 400);
 });
+
+test('council: a country off the catalog can be pulled for one question; its figures start Missing', async () => {
+  const r = await fetch(`${base}/api/data/watchlist-live?iso3=ARG,MEX,XXQ`);
+  assert.equal(r.status, 200);
+  const items = ((await r.json()) as { items: Array<{ iso3: string; countryName: string; debtToGdpPct: number | null }> }).items;
+  const codes = items.map((i) => i.iso3).sort();
+  assert.deepEqual(codes, ['ARG', 'MEX']);
+  const arg = items.find((i) => i.iso3 === 'ARG')!;
+  assert.equal(arg.countryName, 'Argentina');
+  // Feeds are down in tests: no figure, never a stand-in.
+  assert.ok(arg.debtToGdpPct === null || arg.debtToGdpPct === undefined);
+});
