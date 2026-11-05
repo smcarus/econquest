@@ -591,7 +591,7 @@ export const AskCouncilPanel: React.FC<{
         {!asked && !choosing && !fullCouncilInChat && (
           <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-2" data-council-welcome="true">
             <p className="text-sm text-slate-800 dark:text-slate-200">
-              Ask a question about {items.length ? `your ${items.length} watchlist countries` : 'your watchlist'}, or pick one to start. Follow-ups keep the same countries and agents unless you name others.
+              Ask a question about your watchlist, or pick one to start. Follow-ups keep the same countries and agents unless you name others.
             </p>
             <div className="flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
