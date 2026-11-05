@@ -518,6 +518,8 @@ export interface WatchlistItem {
   oecdCpi?: import('../utils/oecdInflation').CpiReading & { pulledAt: string };
   /** Set when the OECD answered but publishes no CPI for this country. */
   oecdCpiPulledAt?: string;
+  /** IMF COFER world currency shares of FX reserves (utils/imfCofer.ts); the same world reading on every row. */
+  cofer?: import('../utils/imfCofer').CoferReading & { pulledAt: string };
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }

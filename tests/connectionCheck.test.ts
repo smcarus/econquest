@@ -87,6 +87,7 @@ test('free sources connect and show a figure read by the app parser', async () =
   assert.equal(row('cftc').state, 'connected');
   assert.equal(row('bis_cbpol').state, 'connected');
   assert.equal(row('bis_cbpol').sample, 'Brazil policy rate 15.00% (Central Bank of Brazil, 2026-10-27)');
+  assert.equal(row('imf_cofer').sample, 'World FX reserves Q2 2025: US dollar 56.3%, euro 20.1%, yen 5.9%');
   assert.equal(row('imf_reserves').state, 'connected');
   assert.match(row('imf_reserves').sample!, /Brazil reserves \$345\.0bn \(Sep 2025\), 10\.3 months of imports, current account -2\.5% of GDP \(4 quarters to Q2 2025\)/);
   assert.match(row('oecd_cpi').sample!, /Brazil inflation 4\.2% y\/y \(Sep 2026\)/);

@@ -60,6 +60,8 @@ export interface ImfStructure {
   indicators: ImfCode[];
   indicatorDim: string;
   countryDim?: string;
+  /** Codes with names for the country dimension, when the structure carries its codelist (COFER: world and groups). */
+  countryCodes?: ImfCode[];
   freqDim?: string;
 }
 
@@ -99,12 +101,18 @@ export function parseImfStructure(flow: string, json: unknown): ImfStructure | n
   if (!list?.codes?.length) return null;
   const indicators = list.codes.map((c) => ({ id: String((c as { id?: unknown }).id ?? ''), name: nameOf(c) })).filter((c) => c.id && c.name);
   if (!indicators.length) return null;
+  const countryDim = dims.find((d) => COUNTRY_DIMS.includes(d));
+  const cDef = dimDefs.find((d) => d.id === countryDim) as { localRepresentation?: { enumeration?: string } } | undefined;
+  const cClId = /Codelist=[^:]+:([^(]+)\(/.exec(cDef?.localRepresentation?.enumeration ?? '')?.[1];
+  const cList = cClId ? lists.find((l) => l.id === cClId) : undefined;
+  const countryCodes = (cList?.codes ?? []).map((c) => ({ id: String((c as { id?: unknown }).id ?? ''), name: nameOf(c) })).filter((c) => c.id && c.name);
   return {
     flow,
     dims,
     indicators,
     indicatorDim,
-    ...(dims.find((d) => COUNTRY_DIMS.includes(d)) ? { countryDim: dims.find((d) => COUNTRY_DIMS.includes(d)) } : {}),
+    ...(countryCodes.length ? { countryCodes } : {}),
+    ...(countryDim ? { countryDim } : {}),
     ...(dims.find((d) => FREQ_DIMS.includes(d)) ? { freqDim: dims.find((d) => FREQ_DIMS.includes(d)) } : {}),
   };
 }
@@ -442,7 +450,7 @@ export interface ImfStep {
   httpStatus?: number;
 }
 
-async function getJson(fetchFn: ImfFetch, url: string, timeoutMs: number): Promise<{ json?: unknown; status?: number; error?: string }> {
+export async function getJson(fetchFn: ImfFetch, url: string, timeoutMs: number): Promise<{ json?: unknown; status?: number; error?: string }> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {

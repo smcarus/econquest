@@ -77,8 +77,8 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
   // Readings are grouped under the desk role that owns them.
-  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Reserves and balance of payments (IMF)', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'OECD inflation (monthly)', 'OECD leading indicator (monthly)', 'Futures positioning (CFTC, weekly)', 'US Treasury holdings (TIC, monthly)', 'FX Valuation Agent', 'Global Spillover Agent']);
-  assert.deepEqual(b.groups[4].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
+  assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Reserves and balance of payments (IMF)', 'World reserve currencies (IMF COFER, quarterly)', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'OECD inflation (monthly)', 'OECD leading indicator (monthly)', 'Futures positioning (CFTC, weekly)', 'US Treasury holdings (TIC, monthly)', 'FX Valuation Agent', 'Global Spillover Agent']);
+  assert.deepEqual(b.groups[5].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
 });
 
 test('brief: no US yield, no target, too few peers: says so instead of guessing', () => {
@@ -125,4 +125,30 @@ test('brief: IMF reserves and balance of payments rows carry the IMF series and 
   const none = imfRows(undefined);
   assert.ok(none.every((r) => r.value === 'Missing'));
   assert.match(none[0].source, /IMF did not answer/);
+});
+
+test('brief: COFER rows put the country\'s own currency first and say they are a world reading', async () => {
+  const { coferRows } = await import('../src/utils/marketsMacro.ts');
+  const cofer = {
+    period: '2025-Q2',
+    area: { id: 'G001', name: 'World' },
+    method: 'imf share',
+    pulledAt: '2026-11-05T03:00:00Z',
+    shares: [
+      { ccy: 'USD', pct: 56.3, change4qPts: -1.9 },
+      { ccy: 'EUR', pct: 20.1 },
+      { ccy: 'JPY', pct: 5.9, change4qPts: 0.3 },
+      { ccy: 'GBP', pct: 4.7 },
+      { ccy: 'CNY', pct: 2.1 },
+      { ccy: 'CAD', pct: 2.6 },
+    ],
+  };
+  const jp = coferRows({ iso3: 'JPN', cofer } as never, 'JPN');
+  assert.equal(jp[0].label, 'Own currency: yen share of world FX reserves');
+  assert.equal(jp[0].value, '5.9% (+0.3 pts on the year)');
+  assert.match(jp[0].source, /IMF COFER, world \(G001\), Q2 2025 \(pulled 2026-11-05\)/);
+  const br = coferRows({ iso3: 'BRA', cofer } as never, 'BRA');
+  assert.equal(br.length, 5);
+  assert.equal(br[0].label, 'US dollar share of world FX reserves');
+  assert.equal(coferRows(undefined, 'BRA')[0].value, 'Missing');
 });

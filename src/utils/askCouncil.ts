@@ -20,6 +20,7 @@ import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
 import { IMF_BOP_LABEL, IMF_RESERVES_LABEL, formatImfPeriod, imfSentence, reserveCover } from './imfReserves';
 import { cpiSentence } from './oecdInflation';
+import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
@@ -75,8 +76,8 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   fx: {
     name: 'FX Valuation',
-    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC)',
-    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
+    covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC), the currency\'s share of world reserves (IMF COFER)',
+    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|\bcofer\b|reserve currenc|de-?dollari|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
   },
   spill: {
     name: 'Global Spillover',
@@ -481,6 +482,18 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         if (ticTrend(t.change12mPct) !== 'steady') tic = Math.min(1, Math.abs(t.change12mPct) / 30);
       }
       parts.push(ticSentence(t));
+    }
+    // COFER: the currency's share of world FX reserves, when COFER names it.
+    const ownCcy = COFER_CCY_BY_ISO3[it.iso3];
+    const share = ownCcy ? it.cofer?.shares.find((x) => x.ccy === ownCcy) : undefined;
+    if (share && it.cofer) {
+      figures.push({
+        label: `${ccyName(ownCcy)} share of world FX reserves`,
+        value: `${share.pct.toFixed(1)}%${share.change4qPts !== undefined ? ` (${sgn(share.change4qPts)} pts on the year)` : ''}`,
+        source: `IMF COFER, world, ${formatImfPeriod(it.cofer.period)}`,
+        tag: 'official',
+      });
+      parts.push(`Central banks hold ${share.pct.toFixed(1)}% of world allocated FX reserves in the ${ccyName(ownCcy)} (IMF COFER, ${formatImfPeriod(it.cofer.period)}).`);
     }
     if (!parts.length) {
       missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate, CFTC positioning or TIC holdings`);
