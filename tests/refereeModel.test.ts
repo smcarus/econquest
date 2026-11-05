@@ -25,3 +25,11 @@ test('the note under an answer names a small referee and where to change it', ()
   assert.equal(smallRefereeNote('Local Ollama (gemma4:31b · Referee)'), null);
   assert.equal(smallRefereeNote('Gemini'), null);
 });
+
+test('default referee is qwen2.5:32b; the old 8B default moves to it, a chosen model stays', async () => {
+  const { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } = await import('../src/utils/refereeModel.ts');
+  assert.equal(DEFAULT_REFEREE_MODEL, 'qwen2.5:32b');
+  assert.equal(refereeModelOrDefault('deepseek-r1:8b'), 'qwen2.5:32b');
+  assert.equal(refereeModelOrDefault('gemma4:31b'), 'gemma4:31b');
+  assert.equal(refereeModelOrDefault(''), undefined);
+});

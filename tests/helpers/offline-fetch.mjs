@@ -25,7 +25,7 @@ globalThis.fetch = async (input, init = {}) => {
 
   // A stand-in Ollama for the council synthesis test: one traceable sentence, one invented number.
   // The fast model and the default referee model (src/utils/refereeModel.ts) are both downloaded.
-  if (url === 'http://fake-ollama.test:11434/api/tags') return json({ models: [{ name: 'qwen2.5:7b' }, { name: 'deepseek-r1:8b' }] });
+  if (url === 'http://fake-ollama.test:11434/api/tags') return json({ models: [{ name: 'qwen2.5:7b' }, { name: 'qwen2.5:32b' }] });
   if (url.startsWith('http://fake-ollama.test:11434/api/chat')) {
     await new Promise((r) => setTimeout(r, 900)); // long enough to see a step running
     const brief = {

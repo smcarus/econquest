@@ -220,7 +220,7 @@ test('AI: the chosen provider is required, the others are optional; missing Olla
   assert.equal(g.row('ollama').state, 'optional');
   const o = await byId({ env: { DEFAULT_AI_PROVIDER: 'ollama', GEMINI_API_KEY: 'gk' }, fetchFn: healthy });
   assert.equal(o.row('ollama').state, 'connected');
-  assert.match(o.row('ollama').warning!, /ollama pull deepseek-r1:8b/);
+  assert.match(o.row('ollama').warning!, /ollama pull qwen2.5:32b/);
   assert.equal(o.row('gemini').state, 'connected');
   const down = await byId({ env: { DEFAULT_AI_PROVIDER: 'ollama' }, fetchFn: async () => dnsFail() });
   assert.equal(down.row('ollama').state, 'no_answer');

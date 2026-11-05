@@ -42,7 +42,7 @@ services:
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-ollama}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       - OLLAMA_QUICK_MODEL=${OLLAMA_QUICK_MODEL:-qwen2.5:7b}
-      - OLLAMA_DEEP_MODEL=${OLLAMA_DEEP_MODEL:-deepseek-r1:8b}
+      - OLLAMA_DEEP_MODEL=${OLLAMA_DEEP_MODEL:-qwen2.5:32b}
       - OPENAI_COMPATIBLE_BASE_URL=${OPENAI_COMPATIBLE_BASE_URL:-http://host.docker.internal:8000/v1}
       - OPENAI_COMPATIBLE_MODEL=${OPENAI_COMPATIBLE_MODEL:-gpt-4o}
     volumes:
@@ -79,8 +79,8 @@ services:
         sleep 4
         echo "[EconQuest Ollama] Ensuring Phase 1-2 Sub-Agent model (${OLLAMA_QUICK_MODEL:-qwen2.5:7b}) is available..."
         /bin/ollama pull ${OLLAMA_QUICK_MODEL:-qwen2.5:7b} || true
-        echo "[EconQuest Ollama] Ensuring Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-deepseek-r1:8b}) is available..."
-        /bin/ollama pull ${OLLAMA_DEEP_MODEL:-deepseek-r1:8b} || true
+        echo "[EconQuest Ollama] Ensuring Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b}) is available..."
+        /bin/ollama pull ${OLLAMA_DEEP_MODEL:-qwen2.5:32b} || true
         wait $$SERVER_PID
     networks:
       - econquest-net
@@ -114,8 +114,8 @@ services:
         sleep 4
         echo "[EconQuest Ollama GPU] Pulling Phase 1-2 Sub-Agent model (${OLLAMA_QUICK_MODEL:-qwen2.5:7b})..."
         /bin/ollama pull ${OLLAMA_QUICK_MODEL:-qwen2.5:7b} || true
-        echo "[EconQuest Ollama GPU] Pulling Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-deepseek-r1:8b})..."
-        /bin/ollama pull ${OLLAMA_DEEP_MODEL:-deepseek-r1:8b} || true
+        echo "[EconQuest Ollama GPU] Pulling Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b})..."
+        /bin/ollama pull ${OLLAMA_DEEP_MODEL:-qwen2.5:32b} || true
         wait $$SERVER_PID
     networks:
       - econquest-net

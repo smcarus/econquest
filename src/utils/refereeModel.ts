@@ -40,3 +40,14 @@ export function smallRefereeNote(provider: string | undefined): string | null {
   if (!tag || !isSmallModel(tag)) return null;
   return `The referee ran on ${tag}, a small model. Set your largest model as the Referee model under Menu > Settings > AI model.`;
 }
+
+/** Sam's referee (2026-11-05): Qwen 2.5, 32B. Pull it once with "ollama pull qwen2.5:32b". */
+export const DEFAULT_REFEREE_MODEL = 'qwen2.5:32b';
+/** The old default, an 8B model; a setting still holding it was never chosen, so it moves to the new default. */
+export const OLD_DEFAULT_REFEREE_MODEL = 'deepseek-r1:8b';
+
+export function refereeModelOrDefault(tag: string | undefined | null): string | undefined {
+  const t = String(tag || '').trim();
+  if (!t) return undefined;
+  return t === OLD_DEFAULT_REFEREE_MODEL ? DEFAULT_REFEREE_MODEL : t;
+}

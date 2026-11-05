@@ -11,7 +11,7 @@ PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${PROJECT_ROOT}"
 
 QUICK_MODEL="${OLLAMA_QUICK_MODEL:-qwen2.5:7b}"
-DEEP_MODEL="${OLLAMA_DEEP_MODEL:-deepseek-r1:8b}"
+DEEP_MODEL="${OLLAMA_DEEP_MODEL:-qwen2.5:32b}"
 PORT="${PORT:-3737}"
 
 echo "=============================================================================="
