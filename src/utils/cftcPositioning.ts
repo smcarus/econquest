@@ -86,6 +86,8 @@ export interface CftcPositioning {
   assetMgrNetPctOi: number;
   /** Where levNetPctOi sits in its own history, 0 to 100. Absent with under a year of weeks. */
   percentile?: number;
+  /** Change in levNetPctOi over the latest 4 reports, percentage points of open interest. */
+  levNetPctOiChange4w?: number;
   weeks: number;
 }
 
@@ -147,6 +149,7 @@ export function positioningFor(iso3: string, weeksByCode: Map<string, CftcWeek[]
     ...(prev ? { levNetWeekChange: last.levNet - prev.levNet } : {}),
     assetMgrNetPctOi: Number(((last.assetMgrNet / last.openInterest) * 100).toFixed(1)),
     ...(weeks.length >= CFTC_MIN_WEEKS ? { percentile: percentileOf(share, levNetPctOi) } : {}),
+    ...(share.length > 4 ? { levNetPctOiChange4w: Number((levNetPctOi - share[share.length - 5]).toFixed(1)) } : {}),
     weeks: weeks.length,
   };
 }

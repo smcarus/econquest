@@ -102,6 +102,7 @@ import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFu
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
+import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
 import {
   FRED_10Y_SERIES,
   US_10Y_SERIES,
@@ -1355,7 +1356,7 @@ async function fetchGdelt(url: string, timeoutMs: number): Promise<Response> {
  */
 const GDELT_REFRESH_DAYS = Math.max(1, Number(process.env.GDELT_REFRESH_DAYS) || 7);
 const GDELT_REFRESH_MS = GDELT_REFRESH_DAYS * 24 * 60 * 60 * 1000;
-type GdeltPull = { pulledAt: string; tone: number; headlines: OpenDataSnapshot['gdeltMetrics']['topHeadlines'] };
+type GdeltPull = { pulledAt: string; tone: number; headlines: OpenDataSnapshot['gdeltMetrics']['topHeadlines']; toneShift?: GdeltToneShift };
 const gdeltMemory = new Map<string, { pull: GdeltPull | null; triedAt: number }>();
 const gdeltInFlight = new Map<string, Promise<GdeltPull | null>>();
 function gdeltFile(iso3: string): string {
@@ -1383,6 +1384,7 @@ async function fetchGdeltQuarterly(iso3: string, countryName: string): Promise<G
     const q = encodeURIComponent(`"${countryName}" (economy OR central bank OR debt OR inflation OR sanctions)`);
     let tone: number | null = null;
     let headlines: GdeltPull['headlines'] = [];
+    let toneShift: GdeltToneShift | null = null;
     try {
       const res = await fetchGdelt(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=timelinetone&format=json`, 20000);
       if (res.ok) {
@@ -1391,6 +1393,7 @@ async function fetchGdeltQuarterly(iso3: string, countryName: string): Promise<G
           const recent = series.slice(-7);
           const avg = recent.reduce((a: number, pt: any) => a + Number(pt?.value || 0), 0) / recent.length;
           if (Number.isFinite(avg) && avg !== 0) tone = Number(avg.toFixed(2));
+          toneShift = gdeltToneShift(series);
         }
       }
     } catch {
@@ -1424,7 +1427,7 @@ async function fetchGdeltQuarterly(iso3: string, countryName: string): Promise<G
       gdeltMemory.set(iso3, { pull: prev, triedAt: Date.now() });
       return prev;
     }
-    const pull: GdeltPull = { pulledAt: new Date().toISOString(), tone, headlines };
+    const pull: GdeltPull = { pulledAt: new Date().toISOString(), tone, headlines, ...(toneShift ? { toneShift } : {}) };
     gdeltMemory.set(iso3, { pull, triedAt: Date.now() });
     try {
       fs.mkdirSync(path.dirname(gdeltFile(iso3)), { recursive: true });
@@ -1689,6 +1692,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
       // The pull's own headlines replace any built-in ones, even when it found none.
       baseline.gdeltMetrics.topHeadlines = pull.headlines;
       if (pull.headlines.length) markLive('gdelt.topHeadlines', `GDELT, pulled ${day}`);
+      baseline.gdeltPull = { pulledAt: pull.pulledAt, tone: pull.tone, ...(pull.toneShift ? { toneShift: pull.toneShift } : {}) };
       activeSources.push(`GDELT news tone and headlines (pulled ${day}, refreshed every ${GDELT_REFRESH_DAYS} days)`);
     })(),
 
@@ -1982,6 +1986,7 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
+          ...(snap.gdeltPull && (snap.liveFields || {})['gdelt.averageTone'] ? { gdelt: snap.gdeltPull } : {}),
           ...(comtrade?.countries[catItem.iso3] ? { comtrade: { ...comtrade.countries[catItem.iso3].profile, pulledAt: comtrade.countries[catItem.iso3].pulledAt } } : {}),
           ...(imf?.countries[catItem.iso3] ? { imf: { ...imf.countries[catItem.iso3], pulledAt: imf.pulledAt } } : {}),
           ...(cofer ? { cofer: { ...cofer.cofer, pulledAt: cofer.pulledAt } } : {}),

@@ -375,6 +375,8 @@ export interface OpenDataSnapshot {
     chokepointExposureIndex: number;
   };
   polymarketContracts: PolymarketContract[];
+  /** GDELT pull for this country (tone, its shift over the timeline, the date pulled). Set only when GDELT answered. */
+  gdeltPull?: { pulledAt: string; tone: number; toneShift?: import('../utils/gdeltTone').GdeltToneShift };
   gdeltMetrics: {
     conflictIntensityIndex: number;
     averageTone: number;
@@ -514,6 +516,8 @@ export interface WatchlistItem {
   oecdCli?: import('../utils/oecdCli').CliReading & { pulledAt: string };
   /** Set when the OECD answered but publishes no CLI for this country (so the reason can say so). */
   oecdCliPulledAt?: string;
+  /** GDELT news tone and its shift (utils/gdeltTone.ts), with the date the app pulled it. */
+  gdelt?: { pulledAt: string; tone: number; toneShift?: import('../utils/gdeltTone').GdeltToneShift };
   /** OECD monthly CPI inflation (utils/oecdInflation.ts), with the date the app pulled it. */
   oecdCpi?: import('../utils/oecdInflation').CpiReading & { pulledAt: string };
   /** Set when the OECD answered but publishes no CPI for this country. */

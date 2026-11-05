@@ -70,7 +70,7 @@ test('planner: agents by stated keyword rules, with the reason; all seven when n
   // "exchange rate" is the FX agent's, not the central bank's.
   assert.deepEqual(planCouncil('Is the exchange rate weak?', ALL).agents.map((a) => a.id), ['fx']);
   const all = planCouncil('Tell me about Poland', ALL);
-  assert.deepEqual(all.agents.map((a) => a.id), ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar']);
+  assert.deepEqual(all.agents.map((a) => a.id), ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar', 'timing']);
   assert.match(all.agents[0].why, /every agent answers/);
 });
 
