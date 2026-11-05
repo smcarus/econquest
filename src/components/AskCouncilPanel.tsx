@@ -13,6 +13,8 @@ import { changeLines, pickPrevious, whatChanged, type ChangeReport } from '../ut
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
+import { DocumentCards, DocumentViewer } from './CouncilDocuments';
+import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
 import {
   planCouncil,
@@ -23,10 +25,8 @@ import {
   type EarlierTurn,
   runCouncil,
   saveCouncilBrief,
-  tagLabel,
   type AgentAnswer,
   type CouncilPlan,
-  type FigureTag,
   type SavedCouncilBrief,
   type SynthesisResult,
 } from '../utils/askCouncil';
@@ -40,14 +40,6 @@ function runtimeConfig(): Record<string, unknown> {
   }
 }
 
-const TAG_CLASS: Record<FigureTag, string> = {
-  live: 'text-emerald-700 dark:text-emerald-400',
-  official: 'text-emerald-700 dark:text-emerald-400',
-  estimate: 'text-amber-700 dark:text-amber-400',
-  sample: 'text-amber-700 dark:text-amber-400',
-  model: 'text-blue-700 dark:text-blue-300',
-  document: 'text-slate-700 dark:text-slate-300',
-};
 
 /** The full nine-agent council on the country open now, run from the conversation. */
 export interface FullCouncilStep {
@@ -342,6 +334,9 @@ export const AskCouncilPanel: React.FC<{
   const steps = useCouncilProgress(page ? null : fc?.progressId ?? null, Boolean(!page && fc && (fc.isRunning || fc.isApproving)));
   const fullCouncilInChat = Boolean(fc && (phase !== 'idle' || fc.result));
   const busy = writing || choosing;
+  // The council document open over the page, if any (a card in the chat opens it).
+  const [openDoc, setOpenDoc] = useState<CouncilDocument | null>(null);
+  const closeDoc = React.useCallback(() => setOpenDoc(null), []);
 
   // Keep the newest message in view as the conversation grows.
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -368,6 +363,9 @@ export const AskCouncilPanel: React.FC<{
     const debatingNow = live && debating;
     const savedT = toSaved(t, !debatingNow);
     const withFindings = t.asked.answers.filter((a) => a.findings.length).length;
+    const docCtx = { question: t.asked.question, askedAt: t.asked.askedAt, scope: t.asked.plan.scopeNote, countriesAsked: t.asked.plan.countries.length };
+    const agentDocs = toAgentDocuments(t.asked.answers, docCtx);
+    const synthDoc = toSynthesisDocument(agentDocs, t.synthesis, docCtx);
     return (
       <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-3" data-council-result={live ? 'true' : 'earlier'}>
         <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -442,60 +440,29 @@ export const AskCouncilPanel: React.FC<{
             </>
           ) : (
             <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
-              No AI summary. {t.synthesis?.reason || ''} The agents’ answers below stand on their own.
+              No AI summary. {t.synthesis?.reason || ''} Each agent’s document below stands on its own.
             </p>
           )}
         </div>
 
-        <details key={`${t.asked.askedAt}-${live && !b}`} open={live && (writingNow || !b)} className="group" data-council-agents="true">
-          <summary className="cursor-pointer text-sm text-blue-700 dark:text-blue-300">
-            {withFindings} of {t.asked.answers.length} agents answered with figures: {t.asked.answers.map((a) => a.name).join(', ')}
-          </summary>
-          <div className="mt-2 space-y-3">
-            {!page && <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />}
-            {!page && t.asked.plan.chooserNote && (
-              <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
-                {t.asked.plan.chooserNote}
-              </p>
-            )}
-            {t.asked.answers.map((a) => (
-              <div key={a.id} data-council-agent={a.id}>
-                <div className="text-sm font-medium text-slate-900 dark:text-white">{a.name} Agent</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400">Asked because {a.why}.</div>
-                {a.findings.length === 0 ? (
-                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">No reading from the figures on hand.</p>
-                ) : (
-                  <ul className="mt-1 space-y-2">
-                    {a.findings.map((f) => {
-                      const item = items.find((i) => i.iso3 === f.iso3);
-                      return (
-                        <li key={f.iso3} className="text-sm">
-                          {item ? (
-                            <button type="button" onClick={() => onOpenCountry(item)} className="font-medium text-slate-900 dark:text-white hover:text-blue-700 dark:hover:text-blue-300">
-                              {f.countryName}
-                            </button>
-                          ) : (
-                            <span className="font-medium text-slate-900 dark:text-white">{f.countryName}</span>
-                          )}
-                          <span className="text-slate-800 dark:text-slate-200">: {f.reading}</span>
-                          <ul className="mt-0.5 text-xs text-slate-600 dark:text-slate-400 flex flex-wrap gap-x-3 gap-y-0.5">
-                            {f.figures.map((g) => (
-                              <li key={g.label} title={g.source}>
-                                {g.label} <span className="tabular-nums text-slate-900 dark:text-slate-100">{g.value}</span>{' '}
-                                <span className={TAG_CLASS[g.tag]}>{tagLabel(g.tag, a.name)}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-                {a.missing.length > 0 && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Not available: {a.missing.join('; ')}.</p>}
-              </div>
-            ))}
-          </div>
-        </details>
+        {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
+        <DocumentCards agents={agentDocs} synthesis={writingNow ? null : synthDoc} writing={writingNow} onOpen={setOpenDoc} />
+        <p className="text-xs text-slate-500 dark:text-slate-400" data-council-agents="true">
+          {withFindings} of {t.asked.answers.length} agents answered with figures.
+        </p>
+        {!page && (
+          <details className="group">
+            <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">Show the agent layout</summary>
+            <div className="mt-2 space-y-2">
+              <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
+              {t.asked.plan.chooserNote && (
+                <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
+                  {t.asked.plan.chooserNote}
+                </p>
+              )}
+            </div>
+          </details>
+        )}
 
         {live && t.asked.plan.offWatchlistIso3 && t.asked.plan.offWatchlistIso3.length > 0 && (
           <div className="flex flex-wrap items-center gap-2" data-council-off-watchlist="true">
@@ -598,7 +565,7 @@ export const AskCouncilPanel: React.FC<{
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => send(savedT)} disabled={writingNow}>
             <FileText className="w-3.5 h-3.5" /> Send to Reports
           </button>
-          <span className="text-xs text-slate-500 dark:text-slate-400">Hover a figure for its source. For discussion, not investment advice.</span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. For discussion, not investment advice.</span>
         </div>
       </div>
     );
@@ -799,6 +766,7 @@ export const AskCouncilPanel: React.FC<{
           </div>
         </details>
       </form>
+      {openDoc && <DocumentViewer doc={openDoc} items={items} onOpenCountry={(it) => { setOpenDoc(null); onOpenCountry(it); }} onClose={closeDoc} />}
     </section>
   );
 };
