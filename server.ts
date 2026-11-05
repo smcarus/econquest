@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
-import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem } from './src/utils/workspaceStore';
+import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
@@ -47,6 +47,8 @@ import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBr
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
+import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
+import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
 import { cleanSettings, isDue, localClock, morningQuestion, nextRunText, parseMorningFile, settingsProblem, type MorningBriefFile, type MorningBriefRun } from './src/utils/morningBrief';
@@ -165,6 +167,8 @@ const ENV_FILE_KEYS = envKeySnapshot(process.env);
 const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 let savedSettings = loadSettings(SETTINGS_FILE);
 const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+// Audit log (Menu > Audit log): append-only, hash-chained. See src/utils/auditLog.ts.
+const AUDIT_FILES = auditFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
@@ -3723,6 +3727,25 @@ function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeo
 }
 
 /** The synthesis agent: a short brief from the agents' answers only, checked for untraceable numbers (Council chat and the morning brief). */
+/** Audit log entry for one council answer: question, model, every figure with source and period. */
+function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string): void {
+  appendAudit(AUDIT_FILES, {
+    kind: 'council',
+    summary: `Council answer: "${question.slice(0, 200)}"`,
+    detail: {
+      via,
+      question,
+      ...(scope ? { scope } : {}),
+      model: out.provider || null,
+      ...(out.brief ? { headline: out.brief.headline } : { noModel: out.reason || 'no AI model answered' }),
+      agents: answers.map((a) => a.name),
+      figures: figuresFromAnswers(answers),
+      missing: answers.flatMap((a) => (a.missing || []).map((m) => `${a.name}: ${String(m).slice(0, 200)}`)).slice(0, 60),
+      removedSentences: (out.removed?.length ?? 0) + (out.contradicted?.length ?? 0),
+    },
+  });
+}
+
 async function synthesiseAnswers(
   question: string,
   answers: AgentAnswer[],
@@ -3870,6 +3893,7 @@ async function runMorningBrief(trigger: MorningBriefRun['trigger']): Promise<Mor
         const synthesis = answers.some((a) => a.findings.length)
           ? await synthesiseAnswers(q, answers, { scope: plan.scopeNote, countries: plan.countries.length, runtimeConfig })
           : { brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' };
+        auditCouncilAnswer(morningQuestion(q), answers, synthesis, plan.scopeNote, `Morning brief (${trigger})`);
         const brief: SavedCouncilBrief = {
           question: morningQuestion(q),
           askedAt,
@@ -3917,6 +3941,37 @@ async function startServer() {
       return res.status(403).json({ error: 'Changes can only be made from the app itself, not from another website.' });
     }
     next();
+  });
+  // Audit log: every change, download and AI step that succeeds is written once it has answered,
+  // by what it did (route), never by its body, so keys and document text stay out of the log.
+  app.use((req, res, next) => {
+    res.on('finish', () => {
+      if (res.statusCode >= 400) return;
+      const what = describeRequest(req.method, req.originalUrl || req.url);
+      if (what) appendAudit(AUDIT_FILES, what);
+    });
+    next();
+  });
+  app.get('/api/audit', (req, res) => {
+    const { check, entries } = readAudit(AUDIT_FILES);
+    const kind = typeof req.query.kind === 'string' && req.query.kind in AUDIT_KIND_LABEL ? (req.query.kind as AuditKind) : null;
+    const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase().slice(0, 100) : '';
+    const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
+    const hits = entries.filter((e) => (!kind || e.kind === kind) && (!q || JSON.stringify(e).toLowerCase().includes(q)));
+    res.json({ check, total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
+  });
+  app.get('/api/audit/export.:fmt(csv|jsonl)', (req, res) => {
+    const stamp = new Date().toISOString().slice(0, 10);
+    if (req.params.fmt === 'jsonl') {
+      res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
+      res.attachment(`econquest-audit-log-${stamp}.jsonl`);
+      return res.send(rawAudit(AUDIT_FILES));
+    }
+    const { check, entries } = readAudit(AUDIT_FILES);
+    const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.attachment(`econquest-audit-log-${stamp}.csv`);
+    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', note, '', '', '', '']]));
   });
   // Backup and restore (Menu > Settings > Backup): saved research, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
@@ -4100,7 +4155,10 @@ async function startServer() {
     const problem = workspaceProblem(req.params.key, value);
     if (problem) return res.status(400).json({ error: problem });
     try {
+      const before = loadWorkspace(WORKSPACE_FILE).values[req.params.key] ?? null;
       const w = setWorkspaceValue(WORKSPACE_FILE, req.params.key, value);
+      // The page re-sends these on every load; only a real change goes in the audit log.
+      if (before !== value) appendAudit(AUDIT_FILES, { kind: req.params.key === 'econquest_ai_runtime_config_v1' ? 'model' : 'workspace', summary: `Changed ${WORKSPACE_KEYS[req.params.key] || req.params.key}` });
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
     } catch (error: any) {
       res.status(500).json({ error: `Could not save the workspace file (${error?.code || error?.message || 'unknown error'}).` });
@@ -6380,6 +6438,11 @@ ${MISSING_FIGURES_RULE}
         removed: [...removed, ...contradicted.map((c) => `${c.sentence} (${c.reason})`)],
         provider: step.providerUsed,
       };
+      appendAudit(AUDIT_FILES, {
+        kind: 'council',
+        summary: `Council debate: "${question.slice(0, 200)}"`,
+        detail: { question, model: step.providerUsed, challenges: challenges.length, ...(out.verdict ? { verdict: out.verdict } : {}), removedSentences: out.removed?.length ?? 0 },
+      });
       res.json(out);
     } catch (error: any) {
       const out: DebateResult = { challenges, replies: null, reason: `the debate step failed (${error?.message || 'unknown error'})` };
@@ -6414,14 +6477,15 @@ ${MISSING_FIGURES_RULE}
     if (!question || !answers.length || !answers.every((a) => a && typeof a.name === 'string' && Array.isArray(a.findings) && Array.isArray(a.missing))) {
       return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
     }
-    res.json(
-      await synthesiseAnswers(question, answers, {
-        scope: typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : undefined,
-        countries: Number.isInteger(req.body?.countries) ? req.body.countries : undefined,
-        earlier: Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [],
-        runtimeConfig: req.body?.runtimeConfig || {},
-      })
-    );
+    const scope = typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : undefined;
+    const out = await synthesiseAnswers(question, answers, {
+      scope,
+      countries: Number.isInteger(req.body?.countries) ? req.body.countries : undefined,
+      earlier: Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [],
+      runtimeConfig: req.body?.runtimeConfig || {},
+    });
+    auditCouncilAnswer(question, answers, out, scope, 'Council chat');
+    res.json(out);
   });
 
   app.post('/api/council/analyze-policy-document', async (req, res) => {

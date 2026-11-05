@@ -166,6 +166,7 @@ import {
   ShieldCheck,
   Plus,
   Database,
+  ScrollText,
   ChevronDown,
   Briefcase,
   BookOpen,
@@ -178,6 +179,7 @@ import {
   HardDriveDownload,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
+import { AuditLogDialog } from './components/AuditLogDialog';
 import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
 import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
 import { marketEdgePeers } from './utils/marketEdgeAnchors';
@@ -616,6 +618,7 @@ export default function App() {
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   const [isOfflineDataOpen, setIsOfflineDataOpen] = useState<boolean>(false);
+  const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
   const onlineStatus = useOnlineStatus();
   // Top-level area. The app always opens on Workspace; there are no roles (Sam, 2026-11-04).
   const [appArea, setAppArea] = useState<AppArea>('today');
@@ -2608,6 +2611,14 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'audit',
+                        icon: <ScrollText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Audit log',
+                        hint: '',
+                        onClick: () => setIsAuditLogOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'manual',
                         icon: <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'User manual',
@@ -3666,6 +3677,7 @@ export default function App() {
       )}
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
+      {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>
       <SovereignManualAndGithubModal

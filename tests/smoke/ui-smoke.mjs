@@ -111,6 +111,12 @@ try {
         await page.waitForSelector('[data-morning-next]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Morning brief did not draw`));
         await settle('Settings > Morning brief');
         await page.keyboard.press('Escape');
+        // Menu > Audit log opens and says what checking the log found.
+        await page.getByRole('button', { name: 'Menu', exact: true }).click();
+        await page.getByRole('menuitem', { name: /^Audit log/ }).first().click();
+        await page.waitForSelector('[data-testid="audit-check"]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Audit log did not show the log check`));
+        await settle('Audit log');
+        await page.keyboard.press('Escape');
         continue;
       }
       const nav = page.getByRole('button', { name: navName, exact: true }).first();
