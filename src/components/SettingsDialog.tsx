@@ -21,6 +21,15 @@ interface KeysReply {
   inDocker?: boolean;
 }
 
+const SECTIONS: Array<{ id: 'free_key' | 'own_account'; title: string; note: string }> = [
+  { id: 'free_key', title: 'Free sources that take your own key', note: 'Free to register. Each one is optional unless it says otherwise.' },
+  {
+    id: 'own_account',
+    title: 'Your own paid data (off unless you switch it on)',
+    note: 'Licensed to you, not built into the app. Figures from here are labelled with whose data they are, so check your licence before sending them on.',
+  },
+];
+
 const SOURCE_LABEL: Record<ApiKeyStatus['source'], string> = {
   app: 'Saved in Settings',
   env: 'From .env',
@@ -48,6 +57,8 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   const [error, setError] = useState('');
   const [check, setCheck] = useState<ConnectionResult | null>(null);
   const inputId = `settings-key-${k.id}`;
+  // A pick-one setting shows its current choice (Off when nothing is set).
+  const current = k.choices ? k.masked || 'off' : '';
 
   const call = async (kind: 'test' | 'save' | 'remove') => {
     setBusy(kind);
@@ -84,11 +95,12 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
         </label>
         <span className={k.source === 'none' ? 'ui-badge' : 'ui-badge ui-badge-positive'}>
           {SOURCE_LABEL[k.source]}
-          {k.masked ? ` ${k.masked}` : ''}
+          {k.masked ? ` ${k.choices?.find((c) => c.value === k.masked)?.label || k.masked}` : ''}
         </span>
       </div>
       <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-        {k.provider}. {k.feeds} {k.withoutIt}
+        {k.section === 'own_account' ? '' : `${k.provider}. `}
+        {k.feeds} {k.withoutIt}
       </p>
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {k.getKeySteps}{' '}
@@ -107,30 +119,46 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
           if (value.trim() && canEdit && !busy) call('save');
         }}
       >
-        <div className="relative flex-1 min-w-[14rem]">
-          <input
+        {k.choices ? (
+          <select
             id={inputId}
-            type={show || !k.secret ? 'text' : 'password'}
-            value={value}
-            onChange={(e) => setValue(e.target.value)}
-            placeholder={!canEdit ? 'Locked (see the note above)' : !k.secret ? (k.source === 'none' ? 'Type the code' : 'Type a new code to replace it') : k.source === 'none' ? 'Paste your key' : 'Paste a new key to replace it'}
-            autoComplete="off"
-            spellCheck={false}
+            value={value || current}
+            onChange={(e) => setValue(e.target.value === current ? '' : e.target.value)}
             disabled={!canEdit}
-            className="w-full px-2 py-1.5 pr-8 text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white disabled:opacity-60"
-          />
-          {k.secret && (<button
-            type="button"
-            onClick={() => setShow((v) => !v)}
-            aria-label={show ? 'Hide key' : 'Show key'}
-            title={show ? 'Hide key' : 'Show key'}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            className="flex-1 min-w-[14rem] px-2 py-1.5 text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white disabled:opacity-60"
           >
-            {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          </button>)}
-        </div>
-        <button type="button" className="ui-btn" disabled={!canEdit || !!busy || (!value.trim() && k.source === 'none')} onClick={() => call('test')}>
-          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.secret ? 'Test current key' : 'Test current code'}
+            {k.choices.map((c) => (
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="relative flex-1 min-w-[14rem]">
+            <input
+              id={inputId}
+              type={show || !k.secret ? 'text' : 'password'}
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              placeholder={!canEdit ? 'Locked (see the note above)' : k.placeholder && k.source === 'none' ? k.placeholder : !k.secret ? (k.source === 'none' ? 'Type it here' : 'Type a new value to replace it') : k.source === 'none' ? 'Paste your key' : 'Paste a new key to replace it'}
+              autoComplete="off"
+              spellCheck={false}
+              disabled={!canEdit}
+              className="w-full px-2 py-1.5 pr-8 text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white disabled:opacity-60"
+            />
+            {k.secret && (<button
+              type="button"
+              onClick={() => setShow((v) => !v)}
+              aria-label={show ? 'Hide key' : 'Show key'}
+              title={show ? 'Hide key' : 'Show key'}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            >
+              {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            </button>)}
+          </div>
+        )}
+        <button type="button" className="ui-btn" disabled={!canEdit || !!busy || (!value.trim() && k.source === 'none' && !k.choices)} onClick={() => call('test')}>
+          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.choices ? 'Test current setting' : k.secret ? 'Test current key' : 'Test current setting'}
         </button>
         <button type="submit" className="ui-btn ui-btn-primary" disabled={!canEdit || !!busy || !value.trim()}>
           {busy === 'save' ? 'Saving…' : 'Save'}
@@ -202,6 +230,13 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
             <button type="button" aria-current="page" className="ui-tab inline-flex items-center gap-2 text-left" aria-pressed="true">
               <KeyRound className="w-3.5 h-3.5" aria-hidden /> Data API keys
             </button>
+            <button
+              type="button"
+              className="ui-tab inline-flex items-center gap-2 text-left sm:pl-7"
+              onClick={() => document.getElementById('settings-section-own_account')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              Your own paid data
+            </button>
             {onOpenAiModel && (
               <button
                 type="button"
@@ -219,7 +254,7 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
           <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-keys-title">
             <h3 id="settings-keys-title" className="ui-section-title">Data API keys</h3>
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-              Your own keys for data sources. They are saved on this computer only{reply ? ` (${reply.savedIn})` : ''}, sent only to the source they belong to, and shown here masked. A key
+              Your own keys and settings for data sources. They are saved on this computer only{reply ? ` (${reply.savedIn})` : ''}, sent only to the source they belong to, and shown here masked. A key
               saved here is used instead of the same key in .env.
             </p>
             {reply && !reply.canEdit && (
@@ -236,13 +271,22 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
               </p>
             )}
             {!reply && !error && <p className="mt-3 text-sm text-slate-500">Loading…</p>}
-            {reply && (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                {reply.keys.map((k) => (
-                  <KeyRow key={k.id} k={k} canEdit={reply.canEdit} onChanged={setReply} />
-                ))}
-              </ul>
-            )}
+            {reply &&
+              SECTIONS.map((sec) => {
+                const keys = reply.keys.filter((k) => (k.section || 'free_key') === sec.id);
+                if (!keys.length) return null;
+                return (
+                  <div key={sec.id} id={`settings-section-${sec.id}`} className="mt-4">
+                    <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{sec.title}</h4>
+                    <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">{sec.note}</p>
+                    <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {keys.map((k) => (
+                        <KeyRow key={k.id} k={k} canEdit={reply.canEdit} onChanged={setReply} />
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
           </section>
         </div>
       </div>

@@ -425,3 +425,15 @@ test('Settings > Data API keys: a key saved in the app is masked, wins over .env
   assert.equal(removed.keys.find((k: { id: string }) => k.id === 'FRED_API_KEY').source, 'env');
   assert.equal(JSON.parse(readFileSync(file, 'utf8')).apiKeys.FRED_API_KEY, undefined);
 });
+
+test('Settings > own paid data: switching CDS off in the app wins over CDS_FEED in .env', async () => {
+  const put = await fetch(`${base}/api/settings/keys/CDS_FEED`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{"value":"off"}' });
+  const body = await put.json();
+  assert.equal(put.status, 200);
+  assert.equal(body.check.id, 'own_cds');
+  assert.equal(body.check.state, 'off');
+  const removed = await (await fetch(`${base}/api/settings/keys/CDS_FEED`, { method: 'DELETE' })).json();
+  assert.equal(removed.keys.find((k: { id: string }) => k.id === 'CDS_FEED').source, 'env');
+  const report = await (await fetch(`${base}/api/data/connections?refresh=1`)).json();
+  assert.equal(report.results.find((r: { id: string }) => r.id === 'own_cds').state, 'connected');
+});

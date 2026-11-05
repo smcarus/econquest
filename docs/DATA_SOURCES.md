@@ -198,6 +198,11 @@ folder, so a key saved while the app runs in Docker also works with `npm run dev
 
 ## Your own paid data (off unless you switch it on)
 
+All of these can be set in **Menu > Settings > Your own paid data** (pick Off, My CSV file or
+My LSEG account, then fill in that option's settings), or in `.env`. Picking Off in Settings
+switches CDS off even when `.env` has a feed set. The LSEG password and app key are stored and
+shown like the other keys (masked); the file path, user name and RICs are shown in full.
+
 | Source | Fills | Settings |
 | --- | --- | --- |
 | Your CDS file | 5Y sovereign CDS | `CDS_FEED="csv"`, `CDS_CSV_PATH` (full path; columns `iso3,date,cds5y_bps,source`) |

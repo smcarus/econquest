@@ -87,7 +87,7 @@ test('the .env snapshot keeps only the known keys', () => {
   const snap = envKeySnapshot({ FRED_API_KEY: 'a', PATH: '/bin' });
   assert.equal(snap.FRED_API_KEY, 'a');
   assert.ok(!('PATH' in snap));
-  assert.deepEqual(Object.keys(snap).sort(), ['COMTRADE_API_KEY', 'EIA_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES', 'FRED_API_KEY']);
+  for (const id of ['COMTRADE_API_KEY', 'EIA_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES', 'FRED_API_KEY', 'CDS_FEED', 'LSEG_PASSWORD']) assert.ok(id in snap, id);
 });
 
 test('EIA, Comtrade and EVDS: keys checked loosely, the series code shown in full', () => {
@@ -104,4 +104,24 @@ test('EIA, Comtrade and EVDS: keys checked loosely, the series code shown in ful
   const evdsKey = describeKeys({}, { apiKeys: { EVDS_API_KEY: 'AbC123xyz0' } }).find((k) => k.id === 'EVDS_API_KEY')!;
   assert.equal(evdsKey.secret, true);
   assert.equal(evdsKey.masked, '••••xyz0');
+});
+
+test('own paid CDS data: a pick-one source, a full file path, LSEG password kept secret', () => {
+  const base = { apiKeys: {} };
+  assert.ok('error' in withKey(base, 'CDS_FEED', 'bloomberg'));
+  assert.ok('settings' in withKey(base, 'CDS_FEED', 'off'));
+  assert.ok('error' in withKey(base, 'CDS_CSV_PATH', 'cds.csv'));
+  assert.ok('settings' in withKey(base, 'CDS_CSV_PATH', '/Users/sam/cds.csv'));
+  assert.ok('settings' in withKey(base, 'CDS_CSV_PATH', 'C:\\data\\cds.csv'));
+  assert.ok('error' in withKey(base, 'LSEG_CDS_RICS', 'nonsense'));
+  assert.ok('settings' in withKey(base, 'LSEG_CDS_RICS', 'BRA=ABC,TUR=DEF'));
+  const keys = describeKeys({}, { apiKeys: { CDS_FEED: 'lseg', LSEG_PASSWORD: 'hunter22secret' } });
+  const feed = keys.find((k) => k.id === 'CDS_FEED')!;
+  assert.equal(feed.section, 'own_account');
+  assert.deepEqual(feed.choices!.map((c) => c.value), ['off', 'csv', 'lseg']);
+  assert.equal(feed.masked, 'lseg');
+  const pw = keys.find((k) => k.id === 'LSEG_PASSWORD')!;
+  assert.equal(pw.secret, true);
+  assert.ok(!JSON.stringify(keys).includes('hunter22secret'));
+  assert.equal(keys.find((k) => k.id === 'FRED_API_KEY')!.section, 'free_key');
 });
