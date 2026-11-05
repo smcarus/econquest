@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
+import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
@@ -3194,6 +3195,17 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
 
+  // Keep the server for this computer's own pages: refuse other host names (DNS rebinding) and
+  // changes sent from pages on other sites. See src/utils/requestGuard.ts.
+  app.use((req, res, next) => {
+    if (!hostAllowed(req.headers.host, process.env)) {
+      return res.status(403).json({ error: `This app only answers on localhost (the request named "${String(req.headers.host || '').slice(0, 80)}"). To open it on your network on purpose, list the name in ALLOWED_HOSTS in .env.` });
+    }
+    if (!writeAllowed(req.method, req.headers as Record<string, string>)) {
+      return res.status(403).json({ error: 'Changes can only be made from the app itself, not from another website.' });
+    }
+    next();
+  });
   app.use(express.json({ limit: '5mb' }));
 
   // 1. Live Open Data & Grounded Market Telemetry Snapshot Endpoint
@@ -3292,6 +3304,12 @@ async function startServer() {
     return true;
   };
   app.get('/api/settings/keys', (req, res) => res.json(keysReply(req)));
+  // Settings, connector tests and webhooks can only be used from the computer running the app.
+  const refuseRemoteChange = (req: express.Request, res: express.Response): boolean => {
+    if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
+    res.status(403).json({ error: `This can only be used from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
+    return true;
+  };
 
   // Research library: council conversations and policy documents kept in data/local/research.json.
   const refuseRemoteResearch = (req: express.Request, res: express.Response): boolean => {
@@ -3838,6 +3856,7 @@ async function startServer() {
 
   // 2a-save. Save GUI-Entered Runtime, Per-Agent Models & Docker Configuration to Live Server
   app.post('/api/ai/runtime-config-save', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
     try {
       const incoming = (req.body?.runtimeConfig || req.body || {}) as Partial<AIRuntimeConfig>;
       serverGuiRuntimeConfig = {
@@ -3891,7 +3910,7 @@ async function startServer() {
         status: 'OK',
         savedAt: new Date().toISOString(),
         message: `Saved GUI Configuration to server: Provider=${incoming.providerMode || 'ollama'}, Phase 1–2=${incoming.ollamaQuickModel || 'qwen2.5:7b'}, Phase 3=${incoming.ollamaDeepModel || 'deepseek-r1:8b'}, Active API/Host Connectors=${activeConnectorCount}.`,
-        runtimeConfig: serverGuiRuntimeConfig,
+        runtimeConfig: withoutSecrets(serverGuiRuntimeConfig),
         generatedEnvContent,
       });
     } catch (err: any) {
@@ -3904,6 +3923,7 @@ async function startServer() {
 
   // 2a-connectors. Server-Side Proxy Ping Tester, Live JSON Inspector & Telemetry Mapper
   app.post('/api/connectors/ping-and-inspect', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
     const t0 = Date.now();
     try {
       const {
@@ -3925,6 +3945,10 @@ async function startServer() {
           latencyMs: 0,
           message: 'Connector URL is required.',
         });
+      }
+      {
+        const problem = outboundUrlProblem(interpolateIsoTemplate(connector.url, 'BRA'), PORT);
+        if (problem) return res.status(400).json({ ok: false, status: 400, latencyMs: 0, message: problem });
       }
 
       const iso3 = String(sampleIso3 || fallbackIso3 || 'BRA').toUpperCase().trim();
@@ -5322,10 +5346,15 @@ ${MISSING_FIGURES_RULE}
 
   // 5. External AI Platform Webhook Dispatcher
   app.post('/api/council/webhook-dispatch', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
     const t0 = Date.now();
     const { webhookUrl, payload } = req.body || {};
     if (!webhookUrl) {
       return res.status(400).json({ error: 'Webhook URL is required.' });
+    }
+    {
+      const problem = outboundUrlProblem(String(webhookUrl), PORT);
+      if (problem) return res.status(400).json({ error: problem });
     }
     const payloadStr = JSON.stringify(payload || {});
     const cfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
