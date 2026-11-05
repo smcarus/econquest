@@ -124,6 +124,11 @@ a figure in the country header to open its history. *Show the numbers* lists eve
 observation, with unit, frequency, source, the source that day and the pull date).
 Figures with no history yet are listed with the reason.
 
+Every download (series, figures, *As of* figures, Compare countries) also comes as an Excel workbook:
+the *Excel* button next to each CSV button. The workbook holds the same rows and columns as the CSV on a
+*Data* sheet (bold, frozen header with filters; numbers stored as numbers, text as text so nothing runs as
+a formula) and an *About* sheet naming the file and when it was made. Missing values stay Missing.
+
 *As of a past day* (below the chart): pick a date and see every figure the app held on that day,
 from its saved pulls, beside today's, with the change where both sides are live. A day without a pull
 uses the pull before it. Each value keeps its own source and period; hover for them, or for the

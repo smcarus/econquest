@@ -107,6 +107,9 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
           <a className={`ui-btn inline-flex ${!picked.length || !figures.length ? 'pointer-events-none opacity-50' : ''}`} href={`/api/export/panel.csv?${query}`} download>
             Download CSV
           </a>
+          <a className={`ui-btn inline-flex ${!picked.length || !figures.length ? 'pointer-events-none opacity-50' : ''}`} href={`/api/export/panel.xlsx?${query}`} download>
+            Download Excel
+          </a>
         </div>
 
         {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}

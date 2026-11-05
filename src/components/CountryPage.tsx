@@ -317,9 +317,14 @@ export const CountryPage: React.FC<{
               <header className="ui-panel-header">
                 <h2 className="ui-section-title">What is live for {run.countryName}</h2>
                 <p className="ui-label">Every figure the country pages use, with its source, or why it is missing and what would fill it. No built-in values are shown.</p>
-                <a className="ui-btn inline-flex mt-2" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.csv`} download>
-                  Download these figures (CSV)
-                </a>
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.csv`} download>
+                    Download these figures (CSV)
+                  </a>
+                  <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.xlsx`} download>
+                    Excel
+                  </a>
+                </div>
               </header>
             </section>
             <BriefGroups brief={{ headline: '', judgements: [], groups: countryDataSources(run) }} />

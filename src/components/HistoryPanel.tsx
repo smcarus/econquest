@@ -152,8 +152,14 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                 <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.csv`} download>
                   Download this series (CSV)
                 </a>
+                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.xlsx`} download>
+                  Excel
+                </a>
                 <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.csv`} download>
                   Download every series for {countryName} (CSV)
+                </a>
+                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.xlsx`} download>
+                  Excel
                 </a>
               </div>
               <details>
