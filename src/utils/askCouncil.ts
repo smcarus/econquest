@@ -6,7 +6,9 @@
  * - The AI model picks the agents when one is set up (applyAgentChoice); otherwise stated keyword
  *   rules do. Either way the reason each agent was asked is shown.
  * - Agents are deterministic: every figure keeps its source and its tag (Live data, Official,
- *   AI estimate, Sample data, or the agent's own model reading).
+ *   Your document, or the agent's own model reading). A figure that is not from a live feed, an
+ *   official series or your own file never reaches the council: its finding is left out and the
+ *   gap says why (keepSourcedFindings).
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
@@ -26,6 +28,7 @@ import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
 import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
+import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 
 /** Desk agents the planner (or the AI model) can pick. */
@@ -101,13 +104,34 @@ export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
 };
 export const tagLabel = (tag: FigureTag, agent: string) => (tag === 'model' ? `${agent} Agent` : TAG_LABEL[tag]);
 
-/** Other names people use for countries on the watchlists. */
+/** Other names people use for countries, matched in any letter case. */
 const ALIASES: Record<string, string[]> = {
-  TUR: ['turkiye', 'türkiye'],
-  GBR: ['uk', 'britain', 'united kingdom'],
-  ZAF: ['south africa', 'sa'],
-  USA: ['us', 'united states', 'america'],
+  TUR: ['turkiye', 'türkiye', 'turkey'],
+  GBR: ['britain', 'united kingdom', 'great britain'],
+  ZAF: ['south africa'],
+  USA: ['united states', 'america'],
+  KOR: ['korea'],
+  CIV: ["cote d'ivoire", 'côte d’ivoire', 'ivory coast'],
+  CZE: ['czech republic'],
+  ARE: ['uae'],
+  COD: ['democratic republic of the congo', 'drc'],
 };
+/** Short forms matched only in capitals, so "tell us" or "sa" in a sentence do not name a country. */
+const CAPS_ALIASES: Record<string, string[]> = {
+  GBR: ['UK'],
+  USA: ['US', 'USA'],
+  ZAF: ['SA'],
+};
+
+const namePattern = (n: string) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}($|[^\\p{L}])`, 'iu');
+const capsPattern = (n: string) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}($|[^\\p{L}])`, 'u');
+
+function namesCountry(question: string, iso3: string, name: string, byCode = true): boolean {
+  const names = [baseName(name), ...(ALIASES[iso3] || [])];
+  if (names.some((n) => namePattern(n).test(question))) return true;
+  if ((CAPS_ALIASES[iso3] || []).some((n) => capsPattern(n).test(question))) return true;
+  return byCode && new RegExp(`\\b${iso3}\\b`).test(question);
+}
 
 const baseName = (n: string) => n.replace(/\s*\(.*\)\s*$/, '').trim();
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -121,27 +145,56 @@ export interface CouncilPlan {
   chosenBy?: 'ai' | 'words';
   /** Why word matching was used when the AI was asked, or which model picked. */
   chooserNote?: string;
+  /** Countries the question named that are not on the watchlist (no figures, so not asked about). */
+  offWatchlist?: string[];
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
 export function countriesInQuestion(question: string, items: LiveWatchlistItem[]): LiveWatchlistItem[] {
-  return items.filter((it) => {
-    const names = [baseName(it.countryName), ...(ALIASES[it.iso3] || [])];
-    if (names.some((n) => new RegExp(`(^|[^\\p{L}])${escapeRe(n)}($|[^\\p{L}])`, 'iu').test(question))) return true;
-    return new RegExp(`\\b${it.iso3}\\b`).test(question);
-  });
+  return items.filter((it) => namesCountry(question, it.iso3, it.countryName));
+}
+
+/** Countries named in the question that are not on the watchlist, so the agents hold no figures for them. */
+export function offWatchlistCountries(question: string, items: LiveWatchlistItem[]): string[] {
+  const on = new Set(items.map((i) => i.iso3));
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const { iso3, name } of Object.values(ISO_NUMERIC_TO_ISO3)) {
+    if (on.has(iso3) || seen.has(iso3)) continue;
+    // Codes are not matched here: "ARE" or "CAN" in a capitalised question is not a country.
+    if (namesCountry(question, iso3, name, false)) {
+      seen.add(iso3);
+      out.push(name);
+    }
+  }
+  // "Papua New Guinea" also contains "Guinea": keep the longer name only.
+  const all = [...out, ...items.filter((i) => namesCountry(question, i.iso3, i.countryName)).map((i) => baseName(i.countryName))];
+  return out.filter((n) => !all.some((m) => m !== n && m.toLowerCase().includes(n.toLowerCase())));
+}
+
+const listNames = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
+
+/** The words shown for countries left out because they are not on the watchlist. */
+export function offWatchlistNote(names: string[]): string {
+  const verb = names.length === 1 ? 'is' : 'are';
+  return `${listNames(names)} ${verb} not on the watchlist, so the agents hold no figures for ${names.length === 1 ? 'it' : 'them'}. Add ${names.length === 1 ? 'it' : 'them'} to the watchlist and ask again`;
 }
 
 /** Which agents answer and for which countries. `scopeIso3` = a country picked in the box, overriding the question. */
 export function planCouncil(question: string, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const picked = scopeIso3 ? items.filter((i) => i.iso3 === scopeIso3) : [];
   const named = picked.length ? [] : countriesInQuestion(question, items);
-  const countries = picked.length ? picked : named.length ? named : items;
-  const scopeNote = picked.length
+  const off = picked.length ? [] : offWatchlistCountries(question, items);
+  // A question about countries off the watchlist only gets no countries, never the whole watchlist.
+  const countries = picked.length ? picked : named.length ? named : off.length ? [] : items;
+  const baseNote = picked.length
     ? `${picked[0].countryName}, picked in the box`
     : named.length
       ? `${named.map((n) => baseName(n.countryName)).join(', ')}, named in the question`
-      : `the whole watchlist (${items.length} countries), as no country was named`;
+      : off.length
+        ? 'no country on the watchlist'
+        : `the whole watchlist (${items.length} countries), as no country was named`;
+  const scopeNote = off.length ? `${baseNote}. ${offWatchlistNote(off)}` : baseNote;
 
   const agents: CouncilPlan['agents'] = [];
   for (const id of AGENT_ORDER) {
@@ -151,7 +204,7 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
   if (!agents.length) {
     for (const id of AGENT_ORDER) agents.push({ id, why: 'no specific topic in the question, so every agent answers' });
   }
-  return { countries, scopeNote, agents };
+  return { countries, scopeNote, agents, ...(off.length ? { offWatchlist: off } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -164,12 +217,13 @@ export const CARRIED = 'carried over from your last question';
 
 export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const plan = planCouncil(question, items, scopeIso3);
-  const namesCountry = Boolean(scopeIso3) || countriesInQuestion(question, items).length > 0;
+  const named = Boolean(scopeIso3) || countriesInQuestion(question, items).length > 0 || Boolean(plan.offWatchlist?.length);
   const namesTopic = AGENT_ORDER.some((id) => COUNCIL_AGENTS[id].topic.test(question));
   return {
-    countries: namesCountry ? plan.countries : prev.countries,
-    scopeNote: namesCountry ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
+    countries: named ? plan.countries : prev.countries,
+    scopeNote: named ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
     agents: namesTopic ? plan.agents : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
+    ...(named && plan.offWatchlist ? { offWatchlist: plan.offWatchlist } : {}),
   };
 }
 
@@ -318,6 +372,7 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     const c = cpiTag(it);
     const pr = policyTag(it);
     const t = INFLATION_TARGETS[it.iso3];
+    if (!t) missing.push(`${it.countryName}: inflation target not on file (central bank page not reachable), so the gap to target is left out`);
     const gap = t ? it.cpiInflationPct - t.pct : undefined;
     const real = it.policyRatePct - it.cpiInflationPct;
     const real10 = it.yield10YPct !== undefined ? it.yield10YPct - it.cpiInflationPct : undefined;
@@ -325,9 +380,7 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
     const y = yieldTag(it);
     const figures: AgentFigure[] = [
       { label: 'CPI inflation', value: p1(it.cpiInflationPct), source: c.src, tag: c.q },
-      t
-        ? { label: 'Inflation target', value: `${p1(t.pct)}${t.bandPts ? ` ± ${t.bandPts}` : ''}`, source: targetSource(t), tag: 'official' }
-        : { label: 'Inflation target', value: 'not on file', source: 'central bank page not reachable', tag: 'sample' },
+      ...(t ? [{ label: 'Inflation target', value: `${p1(t.pct)}${t.bandPts ? ` ± ${t.bandPts}` : ''}`, source: targetSource(t), tag: 'official' as const }] : []),
       { label: 'Policy rate', value: p2(it.policyRatePct), source: pr.src, tag: it.policyRateSource === 'bis' ? 'official' : pr.q },
       ...(it.policyRateSource === 'bis' && it.policyRateChange12mPts !== undefined
         ? [{ label: 'Policy rate change over 12 months', value: `${sgn(it.policyRateChange12mPts, 2)} pts`, source: 'BIS, month-end figures', tag: 'official' as const }]
@@ -660,13 +713,34 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
             : id === 'spill'
               ? spillAgent(plan.countries, question)
               : calendarAgent(plan.countries, now);
-    const sorted = [...a.findings].sort((x, y) => y.weight - x.weight);
+    const sourced = keepSourcedFindings(a.findings);
+    const sorted = [...sourced.findings].sort((x, y) => y.weight - x.weight);
     const kept = sorted.slice(0, MAX_FINDINGS);
-    const missing = [...a.missing];
+    const missing = [...a.missing, ...sourced.missing];
     if (sorted.length > kept.length) missing.push(`${sorted.length - kept.length} more countries with smaller readings left out`);
     return { ...a, why, findings: kept, missing };
   });
+  if (plan.offWatchlist?.length && desk.length) desk[0].missing.unshift(offWatchlistNote(plan.offWatchlist));
   return docs.length ? [...desk, docAgent(question, docs)] : desk;
+}
+
+/** Tags that are not a live feed, an official series, your own file or a stated rule on those. */
+const UNSOURCED: ReadonlySet<FigureTag> = new Set<FigureTag>(['estimate', 'sample']);
+
+/**
+ * Sam's rule: no built-in or sample figures, and no AI estimates. The watchlist already leaves
+ * those out; this is the council's own guard. A finding that leans on such a figure is dropped
+ * whole (its reading was built from it) and the gap names the figure.
+ */
+export function keepSourcedFindings(findings: AgentFinding[]): { findings: AgentFinding[]; missing: string[] } {
+  const kept: AgentFinding[] = [];
+  const missing: string[] = [];
+  for (const f of findings) {
+    const bad = f.figures.filter((g) => UNSOURCED.has(g.tag));
+    if (!bad.length) kept.push(f);
+    else missing.push(`${f.countryName}: left out, as ${listNames(bad.map((g) => g.label.toLowerCase()))} ${bad.length === 1 ? 'is' : 'are'} not from a live feed, an official series or your own file`);
+  }
+  return { findings: kept, missing };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -695,7 +769,6 @@ export const SYNTHESIS_INSTRUCTION = [
   'You are the synthesis agent of a sovereign research council.',
   'Answer the question in a short brief using ONLY the agent findings given.',
   'Every number you write must appear in the findings. Do not compute new numbers, forecast, or add outside facts.',
-  'When a figure is tagged Sample data or AI estimate, say so next to it.',
   'Passages from the Policy Document Agent are quotes from documents the user added: name the document when you use one, and do not treat its forecasts as data.',
   'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Where agents point different ways (for example tight policy but a weak currency), say so under disagreements; do not smooth it over.',
@@ -895,7 +968,7 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
     out.push({
       heading: COUNCIL_SECTIONS.method,
       lines: [
-        `${b.chooserNote || 'A rule-based planner picked the agents from words in the question.'} Each agent answered only from figures the app holds, each tagged Live data, Official, AI estimate, Sample data, or as that agent’s model reading (a stated rule on the figures, not a forecast).`,
+        `${b.chooserNote || 'A rule-based planner picked the agents from words in the question.'} Each agent answered only from figures the app holds, each tagged Live data, Official, Your document, or as that agent’s model reading (a stated rule on the figures, not a forecast). Built-in figures and AI estimates are never used; where a figure was missing, the gap says why.`,
         'For discussion. Not investment advice.',
       ],
     });
