@@ -125,3 +125,32 @@ test('policy reviews go in the backup and come back; an older backup without the
   if (parsed.ok) restoreBackup(withReviews, { ...parsed.backup, contents: { ...parsed.backup.contents, reviews: [] } });
   assert.equal(loadReviews(withReviews.reviews).reviews.length, 0);
 });
+
+test('answer snapshots go in the backup; restore adds the missing ones and never changes one already here', async () => {
+  const { buildSnapshot, saveSnapshot, listSnapshotIds, loadSnapshot, snapshotDir } = await import('../src/utils/answerSnapshotStore.ts');
+  const { dir, files } = setup();
+  const withSnaps = { ...files, snapshots: snapshotDir(dir) };
+  const snap = buildSnapshot({
+    inputs: { question: 'Is Brazil tight?', earlier: [], askedAt: '2026-11-05T10:00:00.000Z', asOf: null, answers: [] },
+    settings: { step: 'COUNCIL_SYNTHESIS', mode: 'summary', providerMode: 'ollama', model: 'qwen2.5:32b', temperature: 0, seed: 42, templateHash: 't', promptHash: 'p' },
+    output: { provider: null, brief: null, removed: 0, contradicted: 0 },
+    via: 'Council chat',
+    now: new Date('2026-11-05T10:00:01Z'),
+  });
+  saveSnapshot(withSnaps.snapshots, snap);
+  const backup = currentBackup(withSnaps);
+  assert.equal(backup.contents.snapshots?.length, 1);
+  const parsed = parseBackup(JSON.stringify(backup));
+  assert.ok(parsed.ok);
+  if (!parsed.ok) return;
+  assert.match(describeBackup(parsed.summary), /1 answer snapshot/);
+  // On another computer: restored. Here: the one on disk stays as it is.
+  const other = setup();
+  const otherSnaps = { ...other.files, snapshots: snapshotDir(other.dir) };
+  restoreBackup(otherSnaps, parsed.backup);
+  assert.deepEqual(listSnapshotIds(otherSnaps.snapshots), [snap.id]);
+  const tampered = structuredClone(parsed.backup);
+  tampered.contents.snapshots![0].inputs.question = 'Changed';
+  restoreBackup(otherSnaps, tampered);
+  assert.equal(loadSnapshot(otherSnaps.snapshots, snap.id)!.inputs.question, 'Is Brazil tight?');
+});

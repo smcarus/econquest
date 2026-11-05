@@ -1298,6 +1298,12 @@ export const COUNCIL_SECTIONS: Record<string, string> = {
   references: 'References',
 };
 
+/** One line naming the snapshot an answer is pinned to (src/utils/answerSnapshot.ts), for saved and downloaded briefs. */
+export function snapshotLine(x: import('./answerSnapshot').SnapshotSummary): string {
+  const data = x.asOf ? `figures as of ${x.asOf}` : x.dataPinnedAt ? `figures pinned at ${x.dataPinnedAt.slice(0, 16).replace('T', ' ')} UTC` : 'the latest figures held when asked';
+  return `Snapshot ${x.id}: ${data}; AI model ${x.model || 'none answered'} at temperature ${x.temperature}, seed ${x.seed}; inputs hash ${x.inputsHash.slice(0, 12)}, answer hash ${x.outputHash.slice(0, 12)}, prompt hash ${x.promptHash.slice(0, 12)}. It can be re-run from the answer in Council chat.`;
+}
+
 export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: string) => boolean): Array<{ heading: string; lines: string[] }> {
   if (!b) return [{ heading: 'No council brief yet', lines: ['Ask a question in Council chat on Workspace, then choose "Save to Reports" under the answer.'] }];
   const out: Array<{ heading: string; lines: string[] }> = [];
@@ -1372,6 +1378,7 @@ export function councilBriefSections(b: SavedCouncilBrief | null, on: (id: strin
       heading: COUNCIL_SECTIONS.method,
       lines: [
         `${b.chooserNote || 'A rule-based planner picked the agents from words in the question.'} Each agent answered only from figures the app holds, each tagged Live data, Official, Your document, or as that agent’s model reading (a stated rule on the figures, not a forecast). Built-in figures and AI estimates are never used; where a figure was missing, the gap says why.`,
+        ...(b.synthesis?.snapshot ? [snapshotLine(b.synthesis.snapshot)] : []),
         'For discussion. Not investment advice.',
       ],
     });

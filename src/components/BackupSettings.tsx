@@ -74,7 +74,7 @@ export const BackupSettings: React.FC = () => {
   return (
     <div className="space-y-5" data-backup-settings="true">
       <p className="text-xs text-slate-600 dark:text-slate-400">
-        One file with your saved research (briefs, documents, notebooks, teaching episodes), policy reviews, watch alerts, holdings, watchlists, countries you added and AI model settings. Your API keys are
+        One file with your saved research (briefs, documents, notebooks, teaching episodes), policy reviews, council answer snapshots, watch alerts, holdings, watchlists, countries you added and AI model settings. Your API keys are
         never in it. Use it to move to another computer or to keep a copy.
       </p>
 
