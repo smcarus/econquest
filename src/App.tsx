@@ -173,7 +173,11 @@ import {
   Presentation,
   KeyRound,
   Wrench,
+  MessageSquare,
 } from 'lucide-react';
+import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
+import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
+import { marketEdgePeers } from './utils/marketEdgeAnchors';
 import { OPEN_SETTINGS_EVENT, SettingsDialog, type SettingsTab } from './components/SettingsDialog';
 import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
@@ -1776,6 +1780,24 @@ export default function App() {
     watchlists.find((w) => w.id === activeWatchlistId)?.items || SOVEREIGN_CATALOG;
   // The core view never shows a built-in figure: only what a real source filled (utils/liveFigures.ts).
   const liveWatchlistItems = useMemo(() => activeWatchlistItems.map(toLive), [activeWatchlistItems]);
+  // Council chat: one conversation for the whole app, on Workspace and in the side panel elsewhere.
+  const councilAnchors = useMarketEdgeAnchors();
+  const councilItems = useMemo(() => marketEdgePeers(liveWatchlistItems, councilAnchors?.peers || []), [liveWatchlistItems, councilAnchors]);
+  const [isChatDockOpen, setIsChatDockOpen] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('econquest.chatDock.v1') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const setChatDock = (open: boolean) => {
+    setIsChatDockOpen(open);
+    try {
+      localStorage.setItem('econquest.chatDock.v1', open ? '1' : '0');
+    } catch {
+      // storage blocked: remembered for this visit only
+    }
+  };
   // Imported holdings, shaped for the stress lab (weights) and the contagion desk (positions).
   const holdingsStressWeights = useMemo(
     () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
@@ -2221,8 +2243,38 @@ export default function App() {
     </PanelBoundary>
   );
 
+  const fullCouncilStep: FullCouncilStep = {
+    countryName: run.countryName,
+    stage: run.stage,
+    isRunning: isRunningPhase1And2,
+    isApproving: isRunningPhase3,
+    deskState: run.croState,
+    draft: croDraft,
+    result:
+      run.supremeCouncil && run.runId === councilReportRunId
+        ? { reportId: run.supremeCouncil.reportId, verdict: run.supremeCouncil.decisionVerdict, summary: run.supremeCouncil.executiveSummary, figureCheck: run.figureCheck }
+        : undefined,
+    progressId: councilProgressId,
+    onRun: handleRunCouncilPhase1And2,
+    onApprove: handleApproveAndConveneSupremeCouncil,
+    onChangeDraft: setCroDraft,
+    onOpenFullReview: showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined,
+  };
+  const sendCouncilToReports = () => {
+    setRequestedReport('council');
+    setReportNonce((n) => n + 1);
+    openWorkspace('reports', 'ic_memo_builder');
+  };
+  // The chat sits on Workspace; elsewhere the header button opens it in a side panel.
+  const chatDocked = isChatDockOpen && appArea !== 'today';
+  const openChat = () => {
+    if (appArea === 'today') document.getElementById('tool-council')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else setChatDock(!isChatDockOpen);
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col">
+    <CouncilChatProvider items={councilItems}>
+    <div className={`min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col ${chatDocked ? 'lg:pr-[30rem]' : ''}`}>
       {isPresentMode && (
         <PresentMode
           run={run}
@@ -2415,6 +2467,18 @@ export default function App() {
           </button>
           </>
           )}
+
+          <button
+            type="button"
+            onClick={openChat}
+            title={appArea === 'today' ? 'Go to Council chat on this page' : chatDocked ? 'Close the Council chat panel' : 'Open Council chat beside this page: the same conversation as on Workspace'}
+            aria-pressed={chatDocked}
+            data-chat-toggle="true"
+            className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
+          >
+            <MessageSquare className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Council chat</span>
+          </button>
 
           <button
             type="button"
@@ -2890,7 +2954,7 @@ export default function App() {
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
         <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
           {/* On Today the pause sits inside Council chat; elsewhere it shows here so it is never missed. */}
-          {run.stage === 'AWAITING_CRO_APPROVAL' && appArea !== 'today' && (
+          {run.stage === 'AWAITING_CRO_APPROVAL' && appArea !== 'today' && !chatDocked && (
             <CouncilApprovalCard
               countryName={run.countryName}
               deskState={run.croState}
@@ -2899,10 +2963,7 @@ export default function App() {
               onApprove={handleApproveAndConveneSupremeCouncil}
               onChangeDraft={setCroDraft}
               onOpenFullReview={showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined}
-              onOpenConversation={() => {
-                setAppArea('today');
-                window.scrollTo({ top: 0 });
-              }}
+              onOpenConversation={() => setChatDock(true)}
             />
           )}
 
@@ -2951,28 +3012,8 @@ export default function App() {
               onStageTicket={handleStageTradeTicket}
               onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
-              fullCouncil={{
-                countryName: run.countryName,
-                stage: run.stage,
-                isRunning: isRunningPhase1And2,
-                isApproving: isRunningPhase3,
-                deskState: run.croState,
-                draft: croDraft,
-                result:
-                  run.supremeCouncil && run.runId === councilReportRunId
-                    ? { reportId: run.supremeCouncil.reportId, verdict: run.supremeCouncil.decisionVerdict, summary: run.supremeCouncil.executiveSummary, figureCheck: run.figureCheck }
-                    : undefined,
-                progressId: councilProgressId,
-                onRun: handleRunCouncilPhase1And2,
-                onApprove: handleApproveAndConveneSupremeCouncil,
-                onChangeDraft: setCroDraft,
-                onOpenFullReview: showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined,
-              }}
-              onSendCouncilToReports={() => {
-                setRequestedReport('council');
-                setReportNonce((n) => n + 1);
-                openWorkspace('reports', 'ic_memo_builder');
-              }}
+              fullCouncil={fullCouncilStep}
+              onSendCouncilToReports={sendCouncilToReports}
               coreOnly={!showAllTools}
               aiProvider={runtimeConfig.providerMode}
               holdingsCount={holdings.length}
@@ -3665,6 +3706,29 @@ export default function App() {
           setActiveNavSection(sec as NavSectionId);
         }}
       />
+
+      {/* Council chat side panel on Research and Reports: the same conversation as on Workspace. */}
+      {chatDocked && (
+        <aside
+          className="fixed z-40 inset-y-0 right-0 w-full lg:w-[30rem] bg-slate-50 dark:bg-[#0B0F17] border-l border-slate-200 dark:border-slate-800 p-2"
+          aria-label="Council chat"
+          data-chat-dock="true"
+        >
+          <PanelBoundary name="Council chat">
+            <AskCouncilPanel
+              onOpenCountry={(item) => {
+                const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
+                if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
+                openCountryPage('macro');
+              }}
+              onSendToReports={sendCouncilToReports}
+              fullCouncil={fullCouncilStep}
+              onClose={() => setChatDock(false)}
+            />
+          </PanelBoundary>
+        </aside>
+      )}
     </div>
+    </CouncilChatProvider>
   );
 }

@@ -82,6 +82,8 @@ source: Central Bank, Fiscal & Debt, Politics & Events, Relative Value, FX, Glob
 Calendar and Timing, plus a Document agent for policy files you upload. A summary agent then writes a
 short brief that may quote only their figures; a number check flags any figure that is not traceable.
 Briefs and documents are saved on this computer in `data/local/research.json`.
+The chat is the same conversation on every page: on Research and Reports, *Council chat* in the header
+opens it in a side panel.
 
 For a deeper view, **Run the full council** debates the open country across nine desk agents and
 stops for your approval before the final report.

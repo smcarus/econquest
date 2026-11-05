@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Copy, Download, FileText } from 'lucide-react';
+import { Copy, Download, FileText, X } from 'lucide-react';
 import { councilBriefMarkdown, downloadCouncilBrief } from '../utils/briefExport';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
@@ -107,14 +107,8 @@ const time = (iso: string) => new Date(iso).toLocaleTimeString(undefined, { hour
  * Today > Council chat. A question goes to the desk agents that cover it (stated keyword
  * rules), each answers from the app's own figures, then the synthesis agent may summarise.
  */
-export const AskCouncilPanel: React.FC<{
-  items: LiveWatchlistItem[];
-  onOpenCountry: (item: LiveWatchlistItem) => void;
-  onSendToReports: () => void;
-  fullCouncil?: FullCouncilStep;
-  /** "Uses:" line linking back to Workspace > Your inputs. */
-  uses?: React.ReactNode;
-}> = ({ items, onOpenCountry, onSendToReports, fullCouncil, uses }) => {
+/** The conversation itself, shared by every place the chat is shown (see CouncilChatProvider). */
+function useCouncilChatState(items: LiveWatchlistItem[]) {
   const [question, setQuestion] = useState('');
   const [scope, setScope] = useState('');
   const [asked, setAsked] = useState<Asked | null>(null);
@@ -287,6 +281,43 @@ export const AskCouncilPanel: React.FC<{
       /* clipboard blocked */
     }
   };
+  return {
+    items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, earlier, choosing, docs, setDocs,
+    debate, debating, extra, adding, runDebate, ask, addForQuestion, current, saved, newConversation, changeDocs, copy,
+  };
+}
+
+type CouncilChat = ReturnType<typeof useCouncilChatState>;
+const CouncilChatContext = React.createContext<CouncilChat | null>(null);
+
+/**
+ * Holds the council conversation above the pages, so the same chat carries on whether it is open
+ * on Workspace or in the side panel on Research and Reports, and a question keeps running while you move.
+ */
+export const CouncilChatProvider: React.FC<{ items: LiveWatchlistItem[]; children: React.ReactNode }> = ({ items, children }) => {
+  const chat = useCouncilChatState(items);
+  return <CouncilChatContext.Provider value={chat}>{children}</CouncilChatContext.Provider>;
+};
+
+function useCouncilChat(): CouncilChat {
+  const chat = React.useContext(CouncilChatContext);
+  if (!chat) throw new Error('Council chat needs a CouncilChatProvider above it.');
+  return chat;
+}
+
+export const AskCouncilPanel: React.FC<{
+  onOpenCountry: (item: LiveWatchlistItem) => void;
+  onSendToReports: () => void;
+  fullCouncil?: FullCouncilStep;
+  /** "Uses:" line linking back to Workspace > Your inputs. */
+  uses?: React.ReactNode;
+  /** Shown in the side panel on other pages: no height cap, a Close button in the header. */
+  onClose?: () => void;
+}> = ({ onOpenCountry, onSendToReports, fullCouncil, uses, onClose }) => {
+  const {
+    items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, choosing, docs, setDocs,
+    debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy,
+  } = useCouncilChat();
   const send = (b: SavedCouncilBrief | null) => {
     if (!b) return;
     saveCouncilBrief(b);
@@ -571,23 +602,30 @@ export const AskCouncilPanel: React.FC<{
   };
 
   return (
-    <section className="ui-panel flex flex-col" data-ask-council="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className={`ui-panel flex flex-col ${onClose ? 'h-full' : ''}`} data-ask-council="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
       <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
         <div>
           <h3 className="ui-section-title">Council chat</h3>
           <p className="ui-label">
-            Ask about your watchlist. Agents answer in this chat from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.
+            Ask about your watchlist. Agents answer in this chat from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only. The same conversation carries on across pages (Council chat in the header).
           </p>
           {uses}
         </div>
-        {(asked || fullCouncilInChat) && (
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true">
-            New conversation
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {(asked || fullCouncilInChat) && (
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true">
+              New conversation
+            </button>
+          )}
+          {onClose && (
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={onClose} aria-label="Close Council chat" data-council-close="true">
+              <X className="w-3.5 h-3.5" /> Close
+            </button>
+          )}
+        </div>
       </header>
 
-      <div ref={scrollRef} className="px-4 py-3 space-y-4 max-h-[70vh] min-h-[16rem] overflow-y-auto" data-council-chat="true" aria-live="polite">
+      <div ref={scrollRef} className={`px-4 py-3 space-y-4 overflow-y-auto ${onClose ? 'flex-1 min-h-0' : 'max-h-[70vh] min-h-[16rem]'}`} data-council-chat="true" aria-live="polite">
         {!asked && !choosing && !fullCouncilInChat && (
           <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-2" data-council-welcome="true">
             <p className="text-sm text-slate-800 dark:text-slate-200">
