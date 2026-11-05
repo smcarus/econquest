@@ -4,6 +4,7 @@ import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import { HIDDEN_GROUPS, READY_BY_ID, READY_TOOLS, type ReadyTool, type ToolTarget } from '../data/toolsCatalog';
 import { getSnapshotDataStatus } from '../utils/dataStatus';
 import { DSA_INPUTS } from '../utils/officialNote';
+import { DataConnectionsPanel } from './DataConnectionsPanel';
 
 /**
  * Tools: the analysis tools that run on live and official data, with how much of your watchlist
@@ -77,6 +78,8 @@ export const ToolsPage: React.FC<{
           Status is for {watchlistName} and the open country, {run.countryName}.
         </p>
       </div>
+
+      <DataConnectionsPanel />
 
       <section aria-labelledby="ready-tools">
         <h2 id="ready-tools" className="ui-section-title mb-2">
