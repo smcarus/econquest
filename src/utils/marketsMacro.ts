@@ -91,6 +91,12 @@ export function cdsVsPeers(cds: number, risk: number, fit: PeerFit): { gapPct: n
   return { gapPct, fittedBps, label: gapPct > 15 ? 'cheap' : gapPct < -15 ? 'rich' : 'in line' };
 }
 
+const REAL_RV_TEXT: Record<RvLabel, string> = {
+  cheap: 'pays more than peers with similar risk',
+  rich: 'pays less than peers with similar risk',
+  'in line': 'is in line with peers of similar risk',
+};
+
 const RV_TEXT: Record<RvLabel, string> = {
   cheap: 'pays more than peers with similar risk',
   rich: 'pays less than peers with similar risk',
@@ -108,25 +114,95 @@ export interface PeerScreenRow {
   cdsNote: string;
   risk?: number;
   rv?: { gapPct: number; label: RvLabel };
+  /** Real 10Y yield (10Y yield less inflation), when both figures exist. */
+  realYieldPct?: number;
+  /** Real 10Y yield against peers with the same risk score, in points. Only on the real-yield basis. */
+  realRv?: { gapPts: number; label: RvLabel; fittedPct: number };
 }
 
-export function peerScreen(peers: LiveWatchlistItem[], us10YPct?: number): { rows: PeerScreenRow[]; fit: PeerFit | null } {
+/* ------------------------------------------------------------------------------------------
+ * Relative value without CDS: real 10Y yield against the app's risk score.
+ * Used when fewer than four countries have a CDS figure (CDS is your own paid data, off by default).
+ * ------------------------------------------------------------------------------------------ */
+
+export interface RealYieldFit {
+  /** real 10Y yield = a + b * risk score, fitted on the peers (straight line: real yields can be negative). */
+  a: number;
+  b: number;
+  n: number;
+}
+
+/** Points above the fit that count as cheap, below as rich. */
+export const REAL_YIELD_BAND_PTS = 1;
+
+type RealYieldInput = Partial<Pick<LiveWatchlistItem, 'yield10YPct' | 'cpiInflationPct' | 'compositeRisk'>>;
+
+/** 10Y yield less inflation; undefined unless both are real figures. */
+export function realYield(i: RealYieldInput): number | undefined {
+  return Number.isFinite(i.yield10YPct) && Number.isFinite(i.cpiInflationPct) ? (i.yield10YPct as number) - (i.cpiInflationPct as number) : undefined;
+}
+
+/** Least squares of the real 10Y yield on the risk score. Needs four peers and some spread in risk. */
+export function fitRealYieldOnRisk(items: RealYieldInput[]): RealYieldFit | null {
+  const pts = items
+    .map((i) => ({ x: i.compositeRisk, y: realYield(i) }))
+    .filter((p): p is { x: number; y: number } => Number.isFinite(p.x) && p.y !== undefined);
+  if (pts.length < 4) return null;
+  const mx = pts.reduce((a, p) => a + p.x, 0) / pts.length;
+  const my = pts.reduce((a, p) => a + p.y, 0) / pts.length;
+  const sxx = pts.reduce((a, p) => a + (p.x - mx) ** 2, 0);
+  if (sxx < 1e-6) return null;
+  const b = pts.reduce((a, p) => a + (p.x - mx) * (p.y - my), 0) / sxx;
+  return { a: my - b * mx, b, n: pts.length };
+}
+
+/** Real 10Y yield against what peers with the same risk score pay. More than 1 pt above = cheap, below = rich. */
+export function realYieldVsPeers(real: number, risk: number, fit: RealYieldFit): { gapPts: number; label: RvLabel; fittedPct: number } {
+  const fittedPct = fit.a + fit.b * risk;
+  const gapPts = real - fittedPct;
+  return { gapPts, fittedPct, label: gapPts > REAL_YIELD_BAND_PTS ? 'cheap' : gapPts < -REAL_YIELD_BAND_PTS ? 'rich' : 'in line' };
+}
+
+/** Which figure the cheap / rich reading compares: CDS when four or more countries have one, else the real 10Y yield. */
+export type PeerBasis = 'cds' | 'real_yield';
+
+export function peerScreen(
+  peers: LiveWatchlistItem[],
+  us10YPct?: number
+): { rows: PeerScreenRow[]; fit: PeerFit | null; realFit: RealYieldFit | null; basis: PeerBasis | null } {
   const fit = fitCdsOnRisk(peers);
-  const rows = peers.map((p) => ({
-    iso3: p.iso3,
-    countryName: p.countryName,
-    yield10YPct: p.yield10YPct,
-    yieldNote: p.yield10YPct === undefined ? `Missing: ${missingReason('yield', p.iso3).short}` : yieldSourceNote(p),
-    spreadBps: us10YPct !== undefined && p.yield10YPct !== undefined ? Math.round((p.yield10YPct - us10YPct) * 100) : undefined,
-    cdsBps: p.cds5YBps,
-    cdsNote: p.cds5YBps === undefined ? `Missing: ${missingReason('cds', p.iso3).short}` : cdsSourceNote(p),
-    risk: p.compositeRisk,
-    rv:
-      fit && p.cds5YBps !== undefined && p.compositeRisk !== undefined
-        ? (({ gapPct, label }) => ({ gapPct, label }))(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit))
-        : undefined,
-  }));
-  return { rows: rows.sort((a, b) => (b.rv?.gapPct ?? -1e9) - (a.rv?.gapPct ?? -1e9)), fit };
+  const realFit = fit ? null : fitRealYieldOnRisk(peers);
+  const basis: PeerBasis | null = fit ? 'cds' : realFit ? 'real_yield' : null;
+  const rows: PeerScreenRow[] = peers.map((p) => {
+    const real = realYield(p);
+    return {
+      iso3: p.iso3,
+      countryName: p.countryName,
+      yield10YPct: p.yield10YPct,
+      yieldNote: p.yield10YPct === undefined ? `Missing: ${missingReason('yield', p.iso3).short}` : yieldSourceNote(p),
+      spreadBps: us10YPct !== undefined && p.yield10YPct !== undefined ? Math.round((p.yield10YPct - us10YPct) * 100) : undefined,
+      cdsBps: p.cds5YBps,
+      cdsNote: p.cds5YBps === undefined ? `Missing: ${missingReason('cds', p.iso3).short}` : cdsSourceNote(p),
+      risk: p.compositeRisk,
+      rv:
+        fit && p.cds5YBps !== undefined && p.compositeRisk !== undefined
+          ? (({ gapPct, label }) => ({ gapPct, label }))(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit))
+          : undefined,
+      realYieldPct: real,
+      realRv: realFit && real !== undefined && p.compositeRisk !== undefined ? realYieldVsPeers(real, p.compositeRisk, realFit) : undefined,
+    };
+  });
+  const key = (r: PeerScreenRow) => (basis === 'cds' ? r.rv?.gapPct : r.realRv?.gapPts) ?? -1e9;
+  return { rows: rows.sort((a, b) => key(b) - key(a)), fit, realFit, basis };
+}
+
+/** One line saying how the cheap / rich column was worked out, or why it is empty. */
+export function peerBasisNote(basis: PeerBasis | null, fit: PeerFit | null, realFit: RealYieldFit | null): string {
+  if (basis === 'cds' && fit)
+    return `Sorted from cheapest to richest 5Y CDS for its risk score. Model: log CDS fitted on the app's risk score across ${fit.n} countries; more than 15% above the fit counts as cheap, more than 15% below as rich.`;
+  if (basis === 'real_yield' && realFit)
+    return `CDS is off or covers fewer than 4 countries, so the reading uses the real 10Y yield (10Y yield less inflation). Sorted from cheapest to richest for its risk score. Model: real yield fitted on the app's risk score across ${realFit.n} countries; more than ${REAL_YIELD_BAND_PTS} pt above the fit counts as cheap, more than ${REAL_YIELD_BAND_PTS} pt below as rich.`;
+  return 'The cheap or rich reading needs 4 or more countries with a CDS figure, or with both a 10Y yield and inflation.';
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -177,6 +253,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
   const spreadBps = us && y10 !== undefined ? Math.round((y10 - us.valuePct) * 100) : undefined;
   const screen = peerScreen(peers, us?.valuePct);
   const rv = screen.fit && self?.compositeRisk !== undefined && cds !== undefined ? cdsVsPeers(cds, self.compositeRisk, screen.fit) : undefined;
+  const realRv = screen.realFit && self?.compositeRisk !== undefined && real10Y !== undefined ? realYieldVsPeers(real10Y, self.compositeRisk, screen.realFit) : undefined;
   const cv = policy !== undefined && self?.fxVol3mPct !== undefined && self.usFedFundsPct !== undefined ? carryToVol(policy, self.usFedFundsPct, self.fxVol3mPct) : null;
   const model = (label: string, value: string, how = 'model, from figures above'): BriefRow => ({ label, value, source: how, verified: false });
   const needs = (label: string, what: string) => missingRow(label, { kind: 'setup', short: `Needs ${what}`, help: `Worked out from ${what}, which is missing.` });
@@ -196,10 +273,12 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
     );
   if (rv && screen.fit && cds !== undefined)
     j.push(`At ${Math.round(cds)} bps, 5-year CDS ${RV_TEXT[rv.label]} (${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% against about ${Math.round(rv.fittedBps)} bps for its risk score, ${screen.fit.n} countries in the MarketEdge screen).`);
+  if (realRv && screen.realFit && real10Y !== undefined)
+    j.push(`With no CDS reading, the real 10-year yield of ${pct(real10Y)} ${REAL_RV_TEXT[realRv.label]} (${realRv.gapPts >= 0 ? '+' : ''}${realRv.gapPts.toFixed(1)} pts against about ${pct(realRv.fittedPct)} for its risk score, ${screen.realFit.n} countries in the MarketEdge screen).`);
   const macro = [growth !== undefined ? `growth is ${pct(growth)}` : '', ca !== undefined ? `the current account is ${pct(ca)} of GDP` : '', res !== undefined ? `reserves cover ${res.toFixed(1)} months of imports` : ''].filter(Boolean);
   if (macro.length) j.push(`${macro.join('; ').replace(/^./, (c) => c.toUpperCase())}.`);
 
-  const head = [cpi !== undefined ? `inflation ${pct(cpi)}${target ? ` against a ${pct(target.pct)} target` : ''}` : '', realPolicy !== undefined ? `real policy rate ${pct(realPolicy)}` : '', y10 !== undefined ? `10Y ${pct(y10, 2)}` : '', rv ? `CDS ${rv.label} against peers` : ''].filter(Boolean);
+  const head = [cpi !== undefined ? `inflation ${pct(cpi)}${target ? ` against a ${pct(target.pct)} target` : ''}` : '', realPolicy !== undefined ? `real policy rate ${pct(realPolicy)}` : '', y10 !== undefined ? `10Y ${pct(y10, 2)}` : '', rv ? `CDS ${rv.label} against peers` : realRv ? `real yield ${realRv.label} against peers` : ''].filter(Boolean);
   const fx = L('market.exchangeRatePerUsd');
   const groups = [
     {
@@ -273,6 +352,13 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
         rv && screen.fit
           ? model('5Y CDS against risk peers', `${rv.gapPct >= 0 ? '+' : ''}${rv.gapPct.toFixed(0)}% (${rv.label})`, `model: CDS on risk score across ${screen.fit.n} countries`)
           : needs('5Y CDS against risk peers', '4 or more countries with your CDS and a live risk score'),
+        ...(screen.basis === 'real_yield'
+          ? [
+              realRv && screen.realFit
+                ? model('Real 10Y yield against risk peers', `${realRv.gapPts >= 0 ? '+' : ''}${realRv.gapPts.toFixed(1)} pts (${realRv.label})`, `model: real 10Y yield on risk score across ${screen.realFit.n} countries`)
+                : needs('Real 10Y yield against risk peers', 'a 10Y yield, inflation and a live risk score'),
+            ]
+          : []),
       ],
     },
     {

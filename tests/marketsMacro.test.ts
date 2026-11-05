@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cdsVsPeers, fitCdsOnRisk, INFLATION_TARGETS, marketsMacroBrief, peerScreen, policyStance } from '../src/utils/marketsMacro.ts';
+import { cdsVsPeers, fitCdsOnRisk, fitRealYieldOnRisk, INFLATION_TARGETS, marketsMacroBrief, peerBasisNote, peerScreen, policyStance, realYield, realYieldVsPeers } from '../src/utils/marketsMacro.ts';
 import { buildBaselineOpenData } from '../src/data/presetsAndBaselines.ts';
 import type { CouncilAssessmentRun, WatchlistItem } from '../src/types/council.ts';
 import { FEED_PATHS, markLive } from './helpers/live.ts';
@@ -151,4 +151,39 @@ test('brief: COFER rows put the country\'s own currency first and say they are a
   assert.equal(br.length, 5);
   assert.equal(br[0].label, 'US dollar share of world FX reserves');
   assert.equal(coferRows(undefined, 'BRA')[0].value, 'Missing');
+});
+
+const realPeer = (iso3: string, risk: number, y: number, cpi: number): WatchlistItem =>
+  ({ iso3, countryName: iso3, compositeRisk: risk, yield10YPct: y, cpiInflationPct: cpi }) as unknown as WatchlistItem;
+
+test('without CDS the screen reads the real 10Y yield against risk peers', () => {
+  // Real yields 2, 3, 4, 5 on risk 0.3..0.6 sit on a line; E pays 3 pts more than that line.
+  const ps = [realPeer('A', 0.3, 6, 4), realPeer('B', 0.4, 8, 5), realPeer('C', 0.5, 7, 3), realPeer('D', 0.6, 9, 4), realPeer('E', 0.45, 10, 3)];
+  const fit = fitRealYieldOnRisk(ps)!;
+  assert.equal(fit.n, 5);
+  const { rows, basis, fit: cdsFit, realFit } = peerScreen(ps as never, 4.1);
+  assert.equal(cdsFit, null);
+  assert.equal(basis, 'real_yield');
+  assert.ok(realFit);
+  assert.equal(rows[0].iso3, 'E');
+  assert.equal(rows[0].realRv!.label, 'cheap');
+  assert.equal(rows[0].realYieldPct, 7);
+  assert.match(peerBasisNote(basis, cdsFit, realFit), /real 10Y yield .* across 5 countries/);
+  assert.equal(realYieldVsPeers(1.5, 0.3, { a: 0, b: 10, n: 4 }).label, 'rich');
+  assert.equal(realYieldVsPeers(3.5, 0.3, { a: 0, b: 10, n: 4 }).label, 'in line');
+});
+
+test('real-yield fit never fills a missing figure and needs four countries', () => {
+  assert.equal(realYield({ yield10YPct: 8 }), undefined);
+  assert.equal(fitRealYieldOnRisk([realPeer('A', 0.3, 6, 4), realPeer('B', 0.4, 8, 5), realPeer('C', 0.5, 7, 3), { iso3: 'D', compositeRisk: 0.6, yield10YPct: 9 } as never]), null);
+  const { basis } = peerScreen([] as never, 4.1);
+  assert.equal(basis, null);
+  assert.match(peerBasisNote(null, null, null), /needs 4 or more countries/);
+});
+
+test('with CDS on four countries the screen keeps the CDS basis', () => {
+  const ps = [peer('A', 0.3, 100), peer('B', 0.5, 300), peer('C', 0.7, 400), peer('D', 0.9, 500)];
+  const r = peerScreen(ps, 4.1);
+  assert.equal(r.basis, 'cds');
+  assert.equal(r.realFit, null);
 });

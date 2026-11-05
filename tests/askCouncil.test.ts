@@ -278,3 +278,15 @@ test('"us" and "sa" in a sentence do not name the United States or South Africa;
   assert.deepEqual(countriesInQuestion('UK and SA policy', [it('GBR', 'United Kingdom'), ZAF]).map((c) => c.iso3), ['GBR', 'ZAF']);
   assert.deepEqual(countriesInQuestion('turkey and the lira', list).map((c) => c.iso3), ['TUR']);
 });
+
+test('Relative Value Agent: with CDS off it compares the real 10Y yield against risk peers', () => {
+  const noCds = (iso3: string, risk: number, y: number, cpi: number) =>
+    ({ iso3, countryName: iso3, compositeRisk: risk, yield10YPct: y, yield10YSource: 'official', yield10YPeriod: '2026-09', cpiInflationPct: cpi, cpiSource: 'live' }) as unknown as WatchlistItem;
+  const all = [noCds('AAA', 0.3, 6, 4), noCds('BBB', 0.4, 8, 5), noCds('CCC', 0.5, 7, 3), noCds('DDD', 0.6, 9, 4), noCds('EEE', 0.45, 10, 3)];
+  const plan = planCouncil('Which bonds look cheap for their risk?', all);
+  const rv = runCouncil('Which bonds look cheap for their risk?', plan, all).find((a) => a.id === 'rv')!;
+  const eee = rv.findings.find((f) => f.iso3 === 'EEE')!;
+  assert.match(eee.reading, /real 10Y yield pays more than peers/);
+  assert.ok(eee.figures.some((f) => f.label === 'Real yield against risk peers' && /cheap/.test(f.value)));
+  assert.ok(rv.missing.some((m) => /uses the real 10Y yield/.test(m)));
+});
