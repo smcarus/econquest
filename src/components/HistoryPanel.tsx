@@ -170,7 +170,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                       <tr className="text-left text-slate-500 dark:text-slate-400">
                         <th className="py-1 pr-3 font-normal">Date</th>
                         <th className="py-1 pr-3 font-normal text-right">{series.unit}</th>
-                        {series.points.some((p) => p.note) && <th className="py-1 font-normal">Source that day</th>}
+                        {series.points.some((p) => p.note) && <th className="py-1 font-normal">{series.freq === 'per pull' ? 'Source that day' : 'Note'}</th>}
                       </tr>
                     </thead>
                     <tbody>

@@ -142,6 +142,16 @@ globalThis.fetch = async (input, init = {}) => {
     for (let i = 0; i < 60; i++) rates[`2026-${String(8 + Math.floor(i / 21)).padStart(2, '0')}-${String((i % 21) + 1).padStart(2, '0')}`] = { ZAR: i % 2 ? 18.18 : 18.0 };
     return json({ amount: 1, base: 'USD', start_date: '2026-08-01', end_date: '2026-10-21', rates });
   }
+  // Full history for Mexico (src/utils/officialHistory.ts): World Bank reserves in months of imports
+  // with a blank year, and the IMF WEO debt run with a projection year.
+  if (url.includes('api.worldbank.org/v2/country/MEX/indicator/FI.RES.TOTL.MO') && url.includes('date=1960:')) {
+    return json([{ page: 1, pages: 1, per_page: 200, total: 3 }, [
+      { date: '2024', value: 3.9 }, { date: '2023', value: null }, { date: '2022', value: 4.1 },
+    ]]);
+  }
+  if (url.includes('imf.org/external/datamapper/api/v1/GGXWDG_NGDP/MEX')) {
+    return json({ values: { GGXWDG_NGDP: { MEX: { 2020: 58.5, 2021: 56.9, 2030: 61.2 } } } });
+  }
   // NY Fed effective federal funds rate.
   if (url.includes('markets.newyorkfed.org') && url.includes('/effr/')) {
     return json({ refRates: [{ effectiveDate: '2026-11-03', type: 'EFFR', percentRate: 3.83 }] });

@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
+import { OFFICIAL_FIGURES, officialPoints, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
@@ -1968,6 +1969,75 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
 const ARCHIVE_DIR = archiveRoot(DATA_DIR);
 
 /**
+ * Full World Bank and IMF WEO history per country (src/utils/officialHistory.ts), saved in
+ * data/history/<ISO3>.json. Re-downloaded after a week (the figures are annual); a figure that does
+ * not answer keeps its last saved run. Screens still show only the newest value from the snapshot;
+ * this is what the History tab, charts and downloads read, also offline.
+ */
+const HISTORY_DIR = path.join(DATA_DIR, 'history');
+const HISTORY_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
+const historyInFlight = new Map<string, Promise<OfficialHistoryFile | null>>();
+function historyFile(iso3: string): string {
+  return path.join(HISTORY_DIR, `${iso3.replace(/[^A-Z0-9]/g, '')}.json`);
+}
+function loadOfficialHistory(iso3: string): OfficialHistoryFile | null {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(historyFile(iso3), 'utf8'));
+    return parsed && typeof parsed.pulledAt === 'string' && parsed.series ? (parsed as OfficialHistoryFile) : null;
+  } catch {
+    return null;
+  }
+}
+async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFile | null> {
+  const prev = loadOfficialHistory(iso3);
+  const series: OfficialHistoryFile['series'] = {};
+  const failed: Record<string, string> = {};
+  const lastYear = new Date().getUTCFullYear() + 1;
+  let answered = 0;
+  for (const fig of OFFICIAL_FIGURES) {
+    const url =
+      fig.source === 'wb'
+        ? `https://api.worldbank.org/v2/country/${iso3}/indicator/${fig.code}?format=json&per_page=200&date=1960:${lastYear}`
+        : `https://www.imf.org/external/datamapper/api/v1/${fig.code}/${iso3}`;
+    try {
+      const res = await fetchWithTimeout(url, 15000);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const body = await res.json();
+      const years = fig.source === 'wb' ? parseWorldBankYears(body) : parseImfYears(body, fig.code, iso3);
+      if (!years) throw new Error('unexpected answer');
+      answered++;
+      if (years.length) series[fig.id] = { points: officialPoints(fig, years) };
+    } catch (err: any) {
+      const name = fig.source === 'wb' ? 'World Bank' : 'IMF';
+      if (prev?.series?.[fig.id]?.points?.length) series[fig.id] = prev.series[fig.id];
+      else failed[fig.id] = `${name} did not answer (${err?.name === 'AbortError' ? 'timed out' : err?.message || 'error'})`;
+    }
+    await new Promise((r) => setTimeout(r, 200)); // polite gap between requests
+  }
+  if (!answered) return prev; // nothing answered (offline?): keep what is saved
+  const file: OfficialHistoryFile = { iso3, pulledAt: new Date().toISOString(), series, ...(Object.keys(failed).length ? { failed } : {}) };
+  writeFileAtomic(historyFile(iso3), JSON.stringify(file));
+  return file;
+}
+/** The saved history, downloading it first when there is none or (with force / a week old) it is due. */
+function fetchOfficialHistory(iso3: string, opts: { force?: boolean } = {}): Promise<OfficialHistoryFile | null> {
+  const key = String(iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  const saved = loadOfficialHistory(key);
+  const due = !saved || opts.force || Date.now() - Date.parse(saved.pulledAt) > HISTORY_REFRESH_MS;
+  if (!due) return Promise.resolve(saved);
+  const existing = historyInFlight.get(key);
+  if (existing) return existing;
+  const job = downloadOfficialHistory(key)
+    .catch((err) => {
+      console.warn(`[history] ${key}: ${err?.message || err}`);
+      return saved;
+    })
+    .finally(() => historyInFlight.delete(key));
+  historyInFlight.set(key, job);
+  return job;
+}
+
+/**
  * Keeps this pull in the dated archive (src/utils/pullArchive.ts), with the BIS policy rate laid
  * over it as the app served it that day. A failure here never touches the live snapshot.
  */
@@ -3526,8 +3596,10 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
+      // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
+      quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -3542,6 +3614,7 @@ async function startServer() {
       cftc,
       tic,
       archive,
+      official,
     });
   }
   async function worldSeries(): Promise<Series[]> {
