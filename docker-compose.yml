@@ -22,6 +22,10 @@ services:
     restart: unless-stopped
     ports:
       - "${PORT:-3737}:3000"
+    # Data keys and switches (FRED, EVDS, CDS, LSEG, Gemini) from .env; see docs/DATA_SOURCES.md.
+    env_file:
+      - path: .env
+        required: false
     environment:
       - NODE_ENV=production
       - SELF_HOSTED_DOCKER=true
