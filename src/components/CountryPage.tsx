@@ -7,6 +7,7 @@ import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCal
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { getSnapshotDataStatus } from '../utils/dataStatus';
 import { countryDataSources, pathMissing } from '../utils/countryNotes';
+import { describeAge, freshnessChecks } from '../utils/freshness';
 import { toLive } from '../utils/liveFigures';
 import { isCoreCountryTab } from '../utils/simpleMode';
 import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
@@ -327,6 +328,7 @@ export const CountryPage: React.FC<{
                 </div>
               </header>
             </section>
+            <FreshnessPanel item={watchlistItems.find((w) => w.iso3 === run.iso3)} />
             <BriefGroups brief={{ headline: '', judgements: [], groups: countryDataSources(run) }} />
           </div>
           <section className="ui-panel">
@@ -431,5 +433,43 @@ export const CountryPage: React.FC<{
 
       {desk && renderDesk(desk)}
     </div>
+  );
+};
+
+/**
+ * Sources tab: dated figures older than their source usually runs, with why and what would give a
+ * fresher one (src/utils/freshness.ts). Says so in one line when everything is within its usual age.
+ */
+const FreshnessPanel: React.FC<{ item?: WatchlistItem }> = ({ item }) => {
+  const checks = item ? freshnessChecks(item) : [];
+  if (!checks.length) return null;
+  const stale = checks.filter((c) => c.stale);
+  return (
+    <section className="ui-panel" data-freshness="true">
+      <header className="ui-panel-header">
+        <h2 className="ui-section-title">{stale.length ? `Older than usual (${stale.length} of ${checks.length} dated figures)` : 'Freshness'}</h2>
+        <p className="ui-label">
+          {stale.length
+            ? 'These figures are older than their source normally runs (how often it comes out plus its usual delay). Read them with their date.'
+            : `All ${checks.length} dated figures are within their usual age.`}
+        </p>
+      </header>
+      {stale.length > 0 && (
+        <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+          {stale.map((c) => (
+            <li key={c.id} className="px-4 py-2 text-sm" data-stale-figure={c.id}>
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <span className="font-medium text-slate-800 dark:text-slate-100">{c.label}</span>
+                <span className="text-xs tabular-nums text-amber-700 dark:text-amber-400">
+                  {c.period}: {describeAge(c)}
+                </span>
+              </div>
+              {c.why && <p className="text-xs text-slate-600 dark:text-slate-400">{c.why}</p>}
+              {c.fresher && <p className="text-xs text-slate-600 dark:text-slate-400">Fresher source: {c.fresher}.</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 };

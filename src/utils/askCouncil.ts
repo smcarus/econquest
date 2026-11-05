@@ -26,6 +26,7 @@ import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
 import { IMF_BOP_LABEL, IMF_RESERVES_LABEL, formatImfPeriod, imfSentence, reserveCover } from './imfReserves';
 import { cpiSentence } from './oecdInflation';
+import { describeAge, staleFigures } from './freshness';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { CFTC_LABEL, cftcMissing, ordinal, positioningLabel, positioningSentence } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact, type ScenarioId } from './scenarioExposure';
@@ -1008,12 +1009,34 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
     const sourced = keepSourcedFindings(a.findings);
     const sorted = [...sourced.findings].sort((x, y) => y.weight - x.weight);
     const kept = sorted.slice(0, MAX_FINDINGS);
-    const missing = [...a.missing, ...sourced.missing];
+    const missing = [...a.missing, ...sourced.missing, ...datedNotes(id, kept, plan.countries, now)];
     if (sorted.length > kept.length) missing.push(`${sorted.length - kept.length} more countries with smaller readings left out`);
     return { ...a, why, findings: kept, missing };
   });
   if (plan.offWatchlist?.length && desk.length) desk[0].missing.unshift(offWatchlistNote(plan.offWatchlist));
   return docs.length ? [...desk, docAgent(question, docs, all, plan.countries)] : desk;
+}
+
+/** Which dated figures each agent leans on (src/utils/freshness.ts ids). */
+const AGENT_DATED: Partial<Record<AgentId, string[]>> = {
+  cb: ['cpi', 'policy', 'reserves', 'current_account'],
+  fiscal: ['yield', 'reserves'],
+  rv: ['yield'],
+  fx: ['reer', 'cpi'],
+  timing: ['policy', 'cli', 'cftc', 'tic', 'yield'],
+};
+
+/** For each country an agent answered on, the figures it used that are older than their source usually runs. */
+export function datedNotes(id: AgentId, findings: AgentFinding[], countries: LiveWatchlistItem[], now: Date): string[] {
+  const ids = AGENT_DATED[id];
+  if (!ids) return [];
+  const notes: string[] = [];
+  for (const iso3 of new Set(findings.map((f) => f.iso3))) {
+    const it = countries.find((c) => c.iso3 === iso3);
+    const stale = staleFigures(it, now).filter((c) => ids.includes(c.id));
+    if (it && stale.length) notes.push(`${it.countryName}: older than usual, so read with its date: ${stale.map((c) => `${c.label.toLowerCase()} for ${c.period}, ${describeAge(c)}`).join('; ')}`);
+  }
+  return notes;
 }
 
 /** Tags that are not a live feed, an official series, your own file or a stated rule on those. */

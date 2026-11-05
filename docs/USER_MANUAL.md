@@ -187,6 +187,13 @@ Figures with no history yet are listed with the reason.
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live
 figure; "Missing" and the reason for the rest, never a number.
 
+*Older than usual* lists any dated figure that is older than its source normally runs (how often it
+comes out plus its usual delay: a daily yield more than 7 days old, a monthly CPI more than 2 months
+back, a weekly CFTC report more than 14 days old), with why it runs behind and the fresher source that
+would replace it, if there is one. Annual IMF and World Bank figures are not judged; their year is
+shown beside them. When the Central Bank, Fiscal & Debt, Relative Value, FX or Timing agent answers
+with such a figure, it says so under what it could not answer.
+
 Every download (series, figures, *As of* figures, Compare countries) also comes as an Excel workbook:
 the *Excel* button next to each CSV button. The workbook holds the same rows and columns as the CSV on a
 *Data* sheet (bold, frozen header with filters; numbers stored as numbers, text as text so nothing runs as
