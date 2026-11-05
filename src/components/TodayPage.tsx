@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { PanelBuilder } from './PanelBuilder';
 import { DigestPanel } from './DigestPanel';
-import { RegimeQuadrant } from './RegimeQuadrant';
+import { lazyNamed, DeskLoading } from './LazyDesk';
+// Charts (recharts) load only when Compare opens, keeping them out of the first download.
+const RegimeQuadrant = lazyNamed(() => import('./RegimeQuadrant'), 'RegimeQuadrant');
 import { CalendarClock, ExternalLink, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
@@ -472,7 +474,9 @@ export const TodayPage: React.FC<{
 
       <div id="tool-regime" className="scroll-mt-4">
         <PanelBoundary name="Growth and inflation">
-          <RegimeQuadrant items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+          <React.Suspense fallback={<DeskLoading />}>
+            <RegimeQuadrant items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} />
+          </React.Suspense>
         </PanelBoundary>
       </div>
 

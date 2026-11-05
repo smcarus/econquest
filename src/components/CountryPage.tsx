@@ -15,7 +15,9 @@ import { AsOfPanel } from './AsOfPanel';
 import { DecisionReplayPanel } from './DecisionReplayPanel';
 import { TrackRecordPanel } from './TrackRecordPanel';
 import { PanelBoundary } from './PanelBoundary';
-import { HistoryPanel } from './HistoryPanel';
+import { lazyNamed, DeskLoading } from './LazyDesk';
+// Charts (recharts) load only when History opens, keeping them out of the first download.
+const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
@@ -390,7 +392,9 @@ export const CountryPage: React.FC<{
       {tab.id === 'history' && (
         <div className="space-y-3">
           <div id="tool-history" className="scroll-mt-4" />
-          <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
+          <React.Suspense fallback={<DeskLoading />}>
+            <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
+          </React.Suspense>
           <div id="tool-as-of" className="scroll-mt-4" />
           <PanelBoundary name="As of a past day">
             <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
