@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Copy, FileText, Trash2, X } from 'lucide-react';
+import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
+import { downloadCouncilBrief } from '../utils/briefExport';
 import { councilBriefSections, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
 import type { PolicyDoc } from '../utils/policyDocs';
 import type { BriefSummary, DocSummary, SavedBriefEntry } from '../utils/researchLibrary';
@@ -134,6 +135,12 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
                       }}
                     >
                       <Copy className="w-3.5 h-3.5" /> {copied ? 'Copied' : 'Copy as text'}
+                    </button>
+                    <button type="button" className="ui-btn" onClick={() => void downloadCouncilBrief(open, 'md')}>
+                      <Download className="w-3.5 h-3.5" /> Markdown
+                    </button>
+                    <button type="button" className="ui-btn" onClick={() => void downloadCouncilBrief(open, 'pdf')}>
+                      <Download className="w-3.5 h-3.5" /> PDF
                     </button>
                     <button
                       type="button"
