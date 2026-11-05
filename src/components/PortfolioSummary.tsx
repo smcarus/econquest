@@ -93,14 +93,10 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
 
   const s = useMemo(() => {
     const v = bookView(holdings, riskLookup, watchlistItems);
-    const covered = v.lines.filter((r) => r.item);
     return {
       rows: v.lines,
       book: hasHoldings ? summariseBook(holdings, riskLookup) : null,
       avgCds: coveredAvg(v.lines, (i) => i.cds5YBps),
-      avgRisk: coveredAvg(v.lines, (i) => i.compositeRisk),
-      highRisk: covered.filter((r) => r.item!.alertStatus === 'CRITICAL').length,
-      noRisk: covered.filter((r) => r.item!.compositeRisk === undefined).length,
       countries: v.lines.length,
     };
   }, [hasHoldings, holdings, riskLookup, watchlistItems]);
@@ -122,10 +118,9 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
         <p className="ui-label">
           {hasHoldings
             ? `Your holdings: ${holdings.length} position${holdings.length === 1 ? '' : 's'}, weighted by gross notional.`
-            : 'No holdings loaded, so this shows your watchlist at equal weight.'}
-          {s.noRisk > 0 && ` Risk scores are missing for ${s.noRisk} ${s.noRisk === 1 ? 'country' : 'countries'} until their live inputs come in; built-in scores are not used.`}
+            : 'No holdings loaded, so this table is your watchlist at equal weight. Import holdings to weight it by your positions.'}
         </p>
-        <button type="button" className={hasHoldings ? 'ui-btn' : 'ui-btn ui-btn-primary'} onClick={onManageHoldings}>
+        <button type="button" className="ui-btn" onClick={onManageHoldings}>
           <Upload className="w-3.5 h-3.5" /> {hasHoldings ? 'Edit holdings' : 'Import holdings'}
         </button>
       </div>
@@ -149,26 +144,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             <Stat label="Weighted 5Y CDS" value="Missing" note={missingReason('cds', '').short} help={missingReason('cds', '').help} missing />
           )}
         </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-3">
-          <Stat label="Countries" value={String(s.countries)} note={`${(100 / (s.countries || 1)).toFixed(0)}% each`} />
-          {s.avgCds ? (
-            <Stat label="Average 5Y CDS" value={`${s.avgCds.value.toFixed(0)} bps`} note={coverNote(s.avgCds)} />
-          ) : (
-            <Stat label="Average 5Y CDS" value="Missing" note={missingReason('cds', '').short} help={missingReason('cds', '').help} missing />
-          )}
-          {s.avgRisk ? (
-            <Stat label="Average risk score" value={s.avgRisk.value.toFixed(2)} note={coverNote(s.avgRisk)} />
-          ) : (
-            <Stat label="Average risk score" value="Missing" note={missingReason('risk', '').short} help={missingReason('risk', '').help} missing />
-          )}
-          {s.noRisk < s.countries ? (
-            <Stat label="High-risk countries" value={String(s.highRisk)} note={s.noRisk ? `${s.noRisk} without a live score` : undefined} />
-          ) : (
-            <Stat label="High-risk countries" value="Missing" note={missingReason('risk', '').short} help={missingReason('risk', '').help} missing />
-          )}
-        </div>
-      )}
+      ) : null}
 
       {s.book && s.book.uncovered.length > 0 && (
         <p className="ui-label">

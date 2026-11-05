@@ -3019,9 +3019,6 @@ export default function App() {
                       openWorkspace('reports', 'ic_memo_builder');
                     }}
                   />
-                  <PanelBoundary name="Signals on your holdings">
-                    <div id="tool-holdings-signals" className="scroll-mt-4" /><PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={() => setIsHoldingsPanelOpen(true)} />
-                  </PanelBoundary>
                   <PortfolioSummary
                     watchlistItems={liveWatchlistItems}
                     riskLookup={liveRiskLookup}
@@ -3034,6 +3031,9 @@ export default function App() {
                       openCountryPage();
                     }}
                   />
+                  <PanelBoundary name="Signals on your holdings">
+                    <div id="tool-holdings-signals" className="scroll-mt-4" /><PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={() => setIsHoldingsPanelOpen(true)} />
+                  </PanelBoundary>
                   </div>
                 ) : undefined
               }
