@@ -35,6 +35,7 @@ import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { addBrief, addDoc, briefId, isBrief, isDoc, removeBrief, removeDoc, summarise } from './src/utils/researchLibrary';
 import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
+import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
@@ -1927,6 +1928,7 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
       const tmp = `${snapshotFile(iso3)}.tmp`;
       fs.writeFileSync(tmp, JSON.stringify(entry));
       fs.renameSync(tmp, snapshotFile(iso3));
+      void archivePull(iso3, entry);
       return snapshot;
     } catch (err: any) {
       console.warn(`[snapshot-store] refresh failed for ${iso3}: ${err?.message || err}`);
@@ -1937,6 +1939,22 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
   })();
   snapshotRefreshInFlight.set(iso3, job);
   return job;
+}
+
+const ARCHIVE_DIR = archiveRoot(DATA_DIR);
+
+/**
+ * Keeps this pull in the dated archive (src/utils/pullArchive.ts), with the BIS policy rate laid
+ * over it as the app served it that day. A failure here never touches the live snapshot.
+ */
+async function archivePull(iso3: string, entry: StoredSnapshot): Promise<void> {
+  try {
+    const served = await withBisPolicyRate(entry.snapshot).catch(() => entry.snapshot);
+    writeArchivedPull(ARCHIVE_DIR, iso3, { ...entry, snapshot: served });
+    pruneArchive(ARCHIVE_DIR, iso3, keepDaysFromEnv(process.env.ARCHIVE_KEEP_DAYS));
+  } catch (err: any) {
+    console.warn(`[archive] could not save ${iso3}: ${err?.message || err}`);
+  }
 }
 
 /**
@@ -3255,6 +3273,39 @@ async function startServer() {
     writeResearch(res, (lib) => removeDoc(lib, req.params.id));
   });
   // Watch alerts: thresholds you set, kept in data/local/watch-rules.json. Evaluated in the page.
+  // The pull archive: every saved pull by day (data/archive/). Read-only.
+  app.get('/api/archive', (_req, res) => {
+    res.json({ countries: listArchivedCountries(ARCHIVE_DIR).map((iso3) => ({ iso3, days: listArchivedDays(ARCHIVE_DIR, iso3) })) });
+  });
+  app.get('/api/archive/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase();
+    res.json({ iso3, days: listArchivedDays(ARCHIVE_DIR, iso3) });
+  });
+  app.get('/api/archive/:iso3/:date', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase();
+    const requested = String(req.params.date || '');
+    const days = listArchivedDays(ARCHIVE_DIR, iso3);
+    const day = archivedDayOnOrBefore(days, requested);
+    const pull = day ? readArchivedPull<OpenDataSnapshot>(ARCHIVE_DIR, iso3, day) : null;
+    if (!pull) {
+      return res.status(404).json({
+        error: 'NOT_IN_ARCHIVE',
+        message: days.length
+          ? `No pull for ${iso3} on or before ${requested}; the archive starts ${days[0]}.`
+          : `No archived pulls for ${iso3} yet.`,
+        firstDay: days[0] ?? null,
+      });
+    }
+    res.json({
+      iso3,
+      requested,
+      date: pull.date,
+      pulledAt: new Date(pull.pulledAt).toISOString(),
+      incomplete: Boolean(pull.incomplete),
+      snapshot: reviveMissing(pull.snapshot, buildBaselineOpenData(iso3)),
+    });
+  });
+
   app.get('/api/watch-rules', (_req, res) => res.json({ rules: loadWatchRules(WATCH_RULES_FILE), file: 'data/local/watch-rules.json' }));
   app.put('/api/watch-rules', (req, res) => {
     if (isLocalRequest(req.socket.remoteAddress, process.env) === false) {

@@ -244,6 +244,16 @@ address (an internal data lake, for example) and map its fields. Figures from a 
 labelled with the connector's name. When a connector cannot be reached, its test says so and
 maps nothing.
 
+## Pull archive
+
+Every country pull the app saves is also kept by day in `data/archive/<ISO3>/<YYYY-MM-DD>.json.gz`
+(not in git). `data/live/` holds only the newest pull; the archive keeps each one, so later tools
+can show what the data said on a past date. A retry later the same day replaces that day's file.
+Files are gzipped, a few tens of KB each. Nothing is deleted unless you set `ARCHIVE_KEEP_DAYS` in
+`.env` to a number of days. Read it back with `GET /api/archive` (countries and days),
+`/api/archive/<ISO3>` (days) and `/api/archive/<ISO3>/<date>` (the pull on or before that date).
+Docker and `npm run dev` share the same `data/archive/` folder.
+
 ## Docker
 
 `docker compose` passes `.env` into the container. A CDS file must sit inside a folder the

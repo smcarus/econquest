@@ -502,3 +502,29 @@ test("monthly inflation: Brazil's central bank figure is used and says so", asyn
   assert.equal(bra.oecdCpi.short, 'BCB IPCA');
   assert.equal(bra.oecdCpi.basis, 'national');
 });
+
+test('pull archive: each saved country pull is kept by day and read back on or before a date', async () => {
+  // Earlier tests pulled Mexico, so it has a stored and archived pull for today.
+  await fetch(`${base}/api/open-data/MEX`);
+  const today = new Date().toISOString().slice(0, 10);
+  let days: string[] = [];
+  for (let i = 0; i < 40 && !days.includes(today); i++) {
+    days = ((await (await fetch(`${base}/api/archive/MEX`)).json()) as { days: string[] }).days;
+    if (!days.includes(today)) await new Promise((r) => setTimeout(r, 250));
+  }
+  assert.ok(days.includes(today), `archive days for MEX: ${JSON.stringify(days)}`);
+  assert.ok(existsSync(path.join(dataDir, 'archive', 'MEX', `${today}.json.gz`)));
+
+  const later = await fetch(`${base}/api/archive/MEX/2999-01-01`);
+  assert.equal(later.status, 200);
+  const body = (await later.json()) as { date: string; snapshot: OpenDataSnapshot };
+  assert.equal(body.date, today);
+  assert.equal(body.snapshot.iso3, 'MEX');
+
+  const before = await fetch(`${base}/api/archive/MEX/2000-01-01`);
+  assert.equal(before.status, 404);
+  assert.equal(((await before.json()) as { error: string }).error, 'NOT_IN_ARCHIVE');
+
+  const list = (await (await fetch(`${base}/api/archive`)).json()) as { countries: Array<{ iso3: string }> };
+  assert.ok(list.countries.some((c) => c.iso3 === 'MEX'));
+});

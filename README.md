@@ -54,6 +54,8 @@ pull, the last good figure from that source is kept with "kept from the <date> p
 and the pull is retried within the hour. **Refresh now** on the country page pulls everything for
 that country again at once. Slower sources (IMF reserves, CFTC, TIC, OECD, Comtrade, Pink Sheet,
 GDELT) keep their own caches; [DATA_SOURCES.md](./docs/DATA_SOURCES.md) lists each one's interval.
+Every pull is also kept by day in `data/archive/`, so the data as it stood on a past date is never
+lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 
 ---
 

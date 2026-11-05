@@ -37,6 +37,7 @@ services:
       # Requests reach the container from Docker's network, not 127.0.0.1; the port above is
       # published on this computer only, so Settings may accept key changes.
       - SETTINGS_ALLOW_REMOTE=${SETTINGS_ALLOW_REMOTE:-true}
+      - ARCHIVE_KEEP_DAYS=${ARCHIVE_KEEP_DAYS:-0}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-ollama}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
@@ -49,6 +50,8 @@ services:
       # Menu > Settings keys live in the project folder (data/local/, not in git), shared with
       # `npm run dev` and `npm run check:data`, so a key saved in either way of starting works in both.
       - ./data/local:/app/data/local
+      # The dated pull archive (every weekly pull by day), shared with `npm run dev` the same way.
+      - ./data/archive:/app/data/archive
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:
