@@ -615,6 +615,10 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       clearTimeout(timer);
     }
   });
+  // Shows how current DBnomics' copy is overall, so an old month for one country can be told
+  // apart from the whole mirror running behind.
+  const usMonthNote = (c: { iso3: string; month: string }, us: { month: string } | null) =>
+    us && c.iso3 !== 'USA' ? `; newest for the United States: ${formatMonth(us.month)}` : '';
   // OECD data via DBnomics: one call at a time, the CPI check after the CLI one.
   let oecdGate: Promise<unknown> = Promise.resolve();
   add('oecd_cli', () => {
@@ -626,7 +630,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       (r) => {
         const s = parseCli(r.text);
         const c = cliFor(SAMPLE_ISO3, s) || cliFor('USA', s);
-        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} leading indicator ${fmt(c.level, 2)} (${formatMonth(c.month)}${c.phase ? `, ${c.phase}` : ''})` : null;
+        const us = cliFor('USA', s);
+        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} leading indicator ${fmt(c.level, 2)} (${formatMonth(c.month)}${c.phase ? `, ${c.phase}` : ''})${usMonthNote(c, us)}` : null;
       },
       { headers: OECD_HEADERS },
       'DBnomics answered, but with no amplitude-adjusted OECD leading indicator series the app reads (dataset DSD_STES@DF_CLI). The dataset code or dimension names may differ.'
@@ -646,7 +651,8 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       (r) => {
         const s = parseCpi(r.text);
         const c = cpiFor(SAMPLE_ISO3, s) || cpiFor('USA', s);
-        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})` : null;
+        const us = cpiFor('USA', s);
+        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})${usMonthNote(c, us)}` : null;
       },
       { headers: OECD_HEADERS },
       'DBnomics answered, but with no monthly OECD headline CPI growth series the app reads (dataset DSD_PRICES@DF_PRICES_ALL). The dataset code or dimension names may differ.'

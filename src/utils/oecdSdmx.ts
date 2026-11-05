@@ -189,10 +189,19 @@ export function seriesByArea(
       const i = wanted.indexOf(dims[dim]);
       return s + (i < 0 ? 0 : wanted.length - i);
     }, 0);
+  // A preferred series that stopped months ago must not hide a current one: series more than
+  // STALE_MONTHS behind the newest series for the same area are only used if nothing fresher exists.
+  const lastOf = (g: { points: Map<string, number> }) => [...g.points.keys()].sort().pop() || '';
+  const newest = new Map<string, string>();
+  for (const g of groups.values()) {
+    const l = lastOf(g);
+    if (l > (newest.get(g.area) || '')) newest.set(g.area, l);
+  }
   const best = new Map<string, { s: number; last: string; points: Map<string, number> }>();
   for (const g of groups.values()) {
+    const last = lastOf(g);
+    if (monthsBetween(last, newest.get(g.area) || last) > STALE_MONTHS) continue;
     const s = score(g.dims);
-    const last = [...g.points.keys()].sort().pop() || '';
     const cur = best.get(g.area);
     if (!cur || s > cur.s || (s === cur.s && last > cur.last)) best.set(g.area, { s, last, points: g.points });
   }
@@ -201,6 +210,16 @@ export function seriesByArea(
     out[area] = [...b.points.entries()].sort(([a], [z]) => a.localeCompare(z)).map(([period, value]) => ({ period, value }));
   }
   return out;
+}
+
+/** A series this many months behind the newest one for its area is not picked. */
+export const STALE_MONTHS = 2;
+
+/** Whole months from `a` to `b` (both YYYY-MM). */
+export function monthsBetween(a: string, b: string): number {
+  const [ya, ma] = a.split('-').map(Number);
+  const [yb, mb] = b.split('-').map(Number);
+  return (yb - ya) * 12 + (mb - ma);
 }
 
 /** The OECD's series for an app country: its ISO3 code, or the euro area for the EU row. */
