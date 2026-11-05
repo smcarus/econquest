@@ -10,6 +10,7 @@ import {
   type OwnCdsQuote,
 } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
+import { cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
@@ -409,6 +410,68 @@ async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
   }
   effrCache = { at: Date.now(), value };
   return value;
+}
+
+/**
+ * CFTC currency futures positioning (src/utils/cftcPositioning.ts). Weekly: positions as of
+ * Tuesday, published Friday. One request covers every currency (about three years of weeks). The
+ * pull is saved to data/live/cftc.json with its pull date. It is pulled again only when a newer
+ * report can exist (the latest is 7 or more days old) and the last pull is over 12 hours old;
+ * a failed pull keeps the last good one and is retried after an hour.
+ */
+type CftcPull = { pulledAt: string; weeks: Record<string, CftcWeek[]> };
+let cftcMemory: { pull: CftcPull | null; triedAt: number } | null = null;
+let cftcInFlight: Promise<CftcPull | null> | null = null;
+function cftcFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'cftc.json');
+}
+function cftcLatestDate(pull: CftcPull): string {
+  return Object.values(pull.weeks).map((w) => w[w.length - 1]?.date || '').sort().pop() || '';
+}
+async function fetchCftcPull(): Promise<CftcPull | null> {
+  if (!cftcMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(cftcFile(), 'utf8')) as CftcPull;
+      if (saved?.pulledAt && saved.weeks && typeof saved.weeks === 'object') cftcMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  const pull = cftcMemory?.pull;
+  if (pull) {
+    const sincePull = Date.now() - Date.parse(pull.pulledAt);
+    const reportAge = Date.now() - Date.parse(cftcLatestDate(pull));
+    if (sincePull < 12 * 60 * 60 * 1000 || reportAge < 7 * 24 * 60 * 60 * 1000) return pull;
+  }
+  if (cftcMemory && Date.now() - cftcMemory.triedAt < 60 * 60 * 1000) return cftcMemory.pull;
+  if (cftcInFlight) return cftcInFlight;
+  cftcInFlight = (async () => {
+    let weeks: Map<string, CftcWeek[]> | null = null;
+    try {
+      const res = await fetchWithTimeout(cftcUrl(), 20000);
+      if (res.ok) weeks = parseCftcRows(await res.json());
+      else console.warn(`[CFTC] positioning refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[CFTC] positioning: ${describeNetworkError(e, 20000)}`);
+    }
+    const prev = cftcMemory?.pull ?? null;
+    if (!weeks || weeks.size === 0) {
+      cftcMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: CftcPull = { pulledAt: new Date().toISOString(), weeks: Object.fromEntries(weeks) };
+    cftcMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(cftcFile()), { recursive: true });
+      fs.writeFileSync(cftcFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    cftcInFlight = null;
+  });
+  return cftcInFlight;
 }
 
 /**
@@ -1185,10 +1248,13 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
     return cachedWatchlistLive.items;
   }
 
-  const [effr, tradeAll] = await Promise.all([
+  const [effr, tradeAll, cftc] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
+    // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
+    Promise.race([fetchCftcPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
+  const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
     SOVEREIGN_CATALOG.map(async (catItem) => {
       try {
@@ -1216,11 +1282,13 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           fetchFxValuation(catItem.iso3, catItem.currencyCode),
           new Promise<FxValuation>((resolve) => setTimeout(() => resolve({ reer: null, vol: null }), 8000)),
         ]);
+        const pos = positioningFor(catItem.iso3, cftcWeeks);
         return {
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
           ...(fx.vol ? { fxVol3mPct: fx.vol.volPct, fxVolTo: fx.vol.to } : {}),
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
+          ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(tradeAll.get(catItem.iso3) && Object.keys(tradeAll.get(catItem.iso3)!).length ? { trade: tradeAll.get(catItem.iso3) } : {}),
           geopoliticalRisk: geo,
           sovereignRisk: sov,

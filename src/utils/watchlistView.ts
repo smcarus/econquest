@@ -6,6 +6,7 @@
 import type { LiveWatchlistItem, WatchlistGroup, WatchlistItem } from '../types/council';
 import { missingReason, type FigureKey, type MissingReason } from './liveFigures';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
+import { cftcMissing, positioningLabel } from './cftcPositioning';
 
 export const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 export const WATCHLIST_VIEW_KEY = 'econquest.watchlistView.v1';
@@ -28,6 +29,7 @@ export type ColumnId =
   | 'policy'
   | 'reer'
   | 'fxvol'
+  | 'positioning'
   | 'data';
 
 export interface ColumnDef {
@@ -118,6 +120,18 @@ export const COLUMNS: ColumnDef[] = [
     value: (it) => it.fxVol3mPct,
     text: (it) => num(it.fxVol3mPct, 1, '%'),
     note: (it) => (it.fxVol3mPct === undefined ? undefined : 'ECB rates'),
+  },
+  {
+    id: 'positioning',
+    label: 'Lev. funds net',
+    help: 'Leveraged funds net position in the currency future, share of open interest, CFTC weekly (only currencies with a CME future)',
+    align: 'right',
+    value: (it) => it.cftc?.levNetPctOi,
+    text: (it) => signed(it.cftc?.levNetPctOi, 1, '%'),
+    note: (it) =>
+      it.cftc
+        ? `CFTC, ${it.cftc.reportDate}${it.cftc.percentile !== undefined ? `, ${positioningLabel(it.cftc.percentile)}` : ''}`
+        : cftcMissing(it.iso3).short,
   },
   { id: 'data', label: 'Data', help: 'Whether the row came from live feeds', align: 'left', value: (it) => DATA_LABEL[it.dataMode || 'sample'], text: (it) => DATA_LABEL[it.dataMode || 'sample'] },
 ];
