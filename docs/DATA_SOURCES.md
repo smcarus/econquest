@@ -184,7 +184,10 @@ Keys marked "Settings or .env" can be pasted in the app under **Menu > Settings 
 own source. A key saved in Settings is used instead of the same key in `.env`; removing it there
 goes back to `.env`. Each key has a Test button that runs the same check as Data connections.
 `npm run check:data` reads the saved keys too. Keys can only be changed from the computer running
-the app (set `SETTINGS_ALLOW_REMOTE="true"` under Docker).
+the app. Under Docker, `docker-compose.yml` publishes the app on this computer only
+(`127.0.0.1`) and turns on `SETTINGS_ALLOW_REMOTE`, because requests reach the container from
+Docker's network. Keys saved in Settings under Docker live in the container's data volume, so
+`npm run check:data` run on the Mac itself does not see them; use Tools > Data connections instead.
 
 | Source | Fills | Settings |
 | --- | --- | --- |

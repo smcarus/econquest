@@ -20,8 +20,11 @@ services:
       dockerfile: Dockerfile
     container_name: econquest-orchestrator
     restart: unless-stopped
+    # Published on this Mac/PC only (127.0.0.1), so other machines on the network cannot reach the
+    # app or change the keys saved in Menu > Settings. To open it to your network on purpose, remove
+    # "127.0.0.1:" and set SETTINGS_ALLOW_REMOTE="false" in .env.
     ports:
-      - "${PORT:-3737}:3000"
+      - "127.0.0.1:${PORT:-3737}:3000"
     # Data keys and switches (FRED, EVDS, CDS, LSEG, Gemini) from .env; see docs/DATA_SOURCES.md.
     env_file:
       - path: .env
@@ -31,6 +34,9 @@ services:
       - SELF_HOSTED_DOCKER=true
       - PORT=3000
       - DATA_DIR=/app/data
+      # Requests reach the container from Docker's network, not 127.0.0.1; the port above is
+      # published on this computer only, so Settings may accept key changes.
+      - SETTINGS_ALLOW_REMOTE=${SETTINGS_ALLOW_REMOTE:-true}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEFAULT_AI_PROVIDER=${DEFAULT_AI_PROVIDER:-ollama}
       - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}

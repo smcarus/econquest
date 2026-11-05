@@ -17,6 +17,8 @@ interface KeysReply {
   keys: ApiKeyStatus[];
   canEdit: boolean;
   savedIn: string;
+  requestFrom?: string;
+  inDocker?: boolean;
 }
 
 const SOURCE_LABEL: Record<ApiKeyStatus['source'], string> = {
@@ -111,7 +113,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
             type={show ? 'text' : 'password'}
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            placeholder={k.source === 'none' ? 'Paste your key' : 'Paste a new key to replace it'}
+            placeholder={!canEdit ? 'Locked (see the note above)' : k.source === 'none' ? 'Paste your key' : 'Paste a new key to replace it'}
             autoComplete="off"
             spellCheck={false}
             disabled={!canEdit}
@@ -221,8 +223,11 @@ export const SettingsDialog: React.FC<{ isOpen: boolean; onClose: () => void; on
               saved here is used instead of the same key in .env.
             </p>
             {reply && !reply.canEdit && (
-              <p className="mt-2 text-xs text-amber-700 dark:text-amber-400" role="note">
-                Keys can only be changed from the computer running the app. For Docker, set SETTINGS_ALLOW_REMOTE="true" in .env.
+              <p className="mt-2 px-2 py-1.5 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900" role="note">
+                The key boxes are locked because this page reached the app from {reply.requestFrom || 'another address'}, not from this computer (127.0.0.1).{' '}
+                {reply.inDocker
+                  ? 'The app is running in Docker: pull the latest version and rebuild (docker compose up -d --build), which publishes the app on this computer only and unlocks Settings.'
+                  : 'Open the app at http://localhost on the computer running it, or set SETTINGS_ALLOW_REMOTE="true" in .env if you trust every device on your network.'}
               </p>
             )}
             {error && (
