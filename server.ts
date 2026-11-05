@@ -3978,7 +3978,7 @@ CRO Human-in-the-Loop Approved / Overridden Risk Vector:
 
   app.post('/api/council/synthesise', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
-    const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 5) : [];
+    const answers: AgentAnswer[] = Array.isArray(req.body?.answers) ? req.body.answers.slice(0, 6) : [];
     if (!question || !answers.length || !answers.every((a) => a && typeof a.name === 'string' && Array.isArray(a.findings) && Array.isArray(a.missing))) {
       return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
     }

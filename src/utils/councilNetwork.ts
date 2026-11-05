@@ -71,9 +71,11 @@ export function askCouncilColumns(answers: AgentAnswer[], writing: boolean, synt
       nodes: answers.map((a) => ({
         id: a.id,
         label: `${a.name} Agent`,
-        task: a.why.replace(/^the question mentions/, 'Asked: you mentioned').replace(/^the AI model judged:/, 'AI pick:'),
+        task: a.why.replace(/^the question mentions/, 'Asked: you mentioned').replace(/^the AI model judged:/, 'AI pick:').replace(/^you added/, 'Asked: you added'),
         status: 'done' as const,
-        note: a.findings.length ? `${a.findings.length} ${a.findings.length === 1 ? 'country' : 'countries'}` : 'nothing to report',
+        note: a.findings.length
+          ? `${a.findings.length} ${a.id === 'doc' ? (a.findings.length === 1 ? 'passage' : 'passages') : a.findings.length === 1 ? 'country' : 'countries'}`
+          : 'nothing to report',
       })),
     },
     { title: '3. Synthesis', nodes: [{ id: 'synthesis', label: 'Synthesis agent', task: 'Writes the brief from the agents’ figures only', ...synth }] },
