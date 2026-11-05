@@ -601,7 +601,7 @@ export function formatImfPeriod(p: string): string {
 export function imfMissing(e: ImfExternal | undefined, measure: ImfMeasureId): { short: string; help: string } {
   const why = e?.missing?.[measure];
   if (why) return { short: 'IMF series not read', help: why };
-  return { short: 'IMF did not answer', help: 'The free IMF data API (api.imf.org) did not answer, or the pull has not run yet. Press Sync, or run npm run check:data.' };
+  return { short: 'IMF did not answer', help: 'The free IMF data API (api.imf.org) did not answer, or the pull has not run yet. Press Refresh now on Country Research, or run npm run check:data.' };
 }
 
 const sg = (v: number, dp = 1) => `${v >= 0 ? '+' : ''}${v.toFixed(dp)}`;

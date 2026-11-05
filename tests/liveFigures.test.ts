@@ -39,7 +39,7 @@ test('figures from real sources stay: IMF, World Bank, official yield, your CDS;
 
 test('missing reasons say whether to set something up or that a free feed did not answer', () => {
   assert.equal(missingReason('cds', 'MEX').kind, 'setup');
-  assert.match(missingReason('cds', 'MEX').help, /CDS_FEED=csv/);
+  assert.match(missingReason('cds', 'MEX').help, /Your own paid data/);
   assert.equal(missingReason('policy', 'MEX').short, 'BIS did not answer');
   assert.equal(missingReason('policy', 'MEX').kind, 'unreachable');
   assert.equal(missingReason('policy', 'EGY').short, 'Not in BIS policy rates');

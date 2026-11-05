@@ -181,7 +181,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
       { id: 'quant_alpha_correlation', label: 'Correlation matrix', needs: 'Daily price history across countries.' },
       { id: 'persona_strategy_backtester_lab', label: 'Strategy backtester', needs: 'Historical price series.' },
       { id: 'decision_premortem_killswitch', label: 'Pre-mortem and stop levels', needs: 'Staged trades priced off live markets.' },
-      { id: 'decision_ledger_brier', label: 'Decision record', needs: 'A record of past calls and their outcomes, which builds up over time.' },
+      { id: 'decision_ledger_brier', label: 'Decision record', needs: 'Covered by Track record under Country Research > History: the rule call on each saved pull and what the bank did 90 days later.' },
     ],
   },
   {
@@ -220,9 +220,9 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
   {
     title: 'Documents and council',
     desks: [
-      { id: 'mpc_imf_document_ai', label: 'Policy document reader', needs: 'An uploaded document (planned in the council work).' },
-      { id: 'policy_doc_lab', label: 'Document and CSV lab', needs: 'An uploaded document or file (planned).' },
-      { id: 'council_debates', label: 'Council debate', needs: 'Debate between the agents, which is planned for Ask the council.', coveredBy: 'ask_council' },
+      { id: 'mpc_imf_document_ai', label: 'Policy document reader', needs: 'Covered by Policy documents in Ask the council: add a PDF or text file there.', coveredBy: 'ask_council' },
+      { id: 'policy_doc_lab', label: 'Document and CSV lab', needs: 'A CSV upload, not built yet. Documents are covered by Policy documents in Ask the council.' },
+      { id: 'council_debates', label: 'Council debate', needs: 'Covered by Run the full council in Ask the council: the agents debate, then it waits for your approval.', coveredBy: 'ask_council' },
       { id: 'cro_reports', label: 'Risk sign-off dossier', needs: 'Covered by the approval step in Ask the council.', coveredBy: 'ask_council' },
       { id: 'persona_guided_playbook_cockpit', label: 'Guided playbooks', needs: 'Covered by the report templates.', coveredBy: 'reports' },
       { id: 'ic_pitchbook_dossier_exporter', label: 'Pitchbook export', needs: 'Covered by Reports.', coveredBy: 'reports' },

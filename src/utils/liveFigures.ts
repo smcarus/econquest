@@ -39,30 +39,30 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
       return {
         kind: 'unreachable',
         short: 'Needs live inputs',
-        help: 'The risk score is shown only when its IMF, World Bank and GDELT inputs are live. Press Sync, or check the connection.',
+        help: 'The risk score is shown only when its IMF, World Bank and GDELT inputs are live. Press Refresh now on Country Research, or check the connection.',
       };
     case 'cds':
       return {
         kind: 'setup',
         short: 'Needs setup',
-        help: 'No free CDS source exists. Connect your own licensed CDS in .env: CDS_FEED=csv with CDS_CSV_PATH, or CDS_FEED=lseg.',
+        help: 'No free CDS source exists. Connect your own licensed CDS under Menu > Settings > Your own paid data (a CSV file or your LSEG account).',
       };
     case 'yield':
       if (iso3 === 'TUR')
         return { kind: 'setup', short: 'Needs EVDS key', help: 'Add the free EVDS key and 10Y series code (central bank of Turkey) under Menu > Settings > Data API keys, or in .env.' };
       if (hasFreeOfficialYield(iso3))
-        return { kind: 'unreachable', short: 'Feed did not answer', help: 'The official yield feed did not answer. Press Sync, or set FRED_API_KEY in .env for a steadier connection.' };
+        return { kind: 'unreachable', short: 'Feed did not answer', help: 'The official yield feed did not answer. Press Refresh now on Country Research, or add a free FRED key under Menu > Settings for a steadier connection.' };
       return { kind: 'setup', short: 'No source yet', help: 'No free official 10Y series is wired in for this country. Upload a yields file with its official figures.' };
     case 'debt':
-      return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Sync, or check the connection.' };
+      return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Refresh now on Country Research, or check the connection.' };
     case 'cpi':
-      return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Sync, or check the connection.' };
+      return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Refresh now on Country Research, or check the connection.' };
     case 'reserves':
-      return { kind: 'unreachable', short: 'World Bank did not answer', help: 'The World Bank feed (free, no key) did not answer. Press Sync, or check the connection.' };
+      return { kind: 'unreachable', short: 'World Bank did not answer', help: 'The World Bank feed (free, no key) did not answer. Press Refresh now on Country Research, or check the connection.' };
     case 'policy':
       if (!CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3))
         return { kind: 'setup', short: 'Not in BIS policy rates', help: 'The BIS central bank policy rates dataset has no series for this country. Add your own figure through a data connector to fill it.' };
-      return { kind: 'unreachable', short: 'BIS did not answer', help: 'The BIS policy rates feed (free, no key) did not answer. Press Sync, or check the connection under Tools > Data connections.' };
+      return { kind: 'unreachable', short: 'BIS did not answer', help: 'The BIS policy rates feed (free, no key) did not answer. Press Refresh now on Country Research, or check the connection under Tools > Data connections.' };
   }
 }
 

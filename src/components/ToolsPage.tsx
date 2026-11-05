@@ -30,7 +30,7 @@ function toolStatus(tool: ReadyTool, items: LiveWatchlistItem[], run: CouncilAss
     case 'divergences':
     case 'ask_council': {
       const live = items.filter((i) => i.yield10YPct !== undefined || i.cpiInflationPct !== undefined || i.reerGapPct !== undefined).length;
-      return { ok: live > 0, text: live ? `Live figures for ${live} of ${n} countries` : 'No live figures yet: press Sync' };
+      return { ok: live > 0, text: live ? `Live figures for ${live} of ${n} countries` : 'No live figures yet: press Refresh now on Country Research' };
     }
     case 'scenarios':
       return { ok: true, text: 'Runs on the World Bank and WITS trade data on file' };

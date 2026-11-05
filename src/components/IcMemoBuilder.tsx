@@ -211,7 +211,7 @@ export function buildSections(
           `**${VERDICT_LABEL[sc.decisionVerdict] || sc.decisionVerdict}.** Stance: ${toDisplayCase(sc.marketTranslationLayer.regimeStance)}.`,
           inputs.deskEnginesLive
             ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${(sc.globalCoherenceScore * 100).toFixed(0)}%. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`
-            : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Sync and re-run before taking this to committee.`,
+            : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Press Refresh now on Country Research and re-run before taking this to committee.`,
         ]
       : ['No council run yet for this country. Run the council before taking this memo to committee.'];
     out.push({ id: 'recommendation', heading: SECTION_LABEL.recommendation, lines });

@@ -206,7 +206,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
           ...bisRows,
           ...(qeds
             ? []
-            : [missingRow('Government external debt due, next 12 months', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free World Bank QEDS feed did not answer, or does not cover this country. Press Sync.' })]),
+            : [missingRow('Government external debt due, next 12 months', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free World Bank QEDS feed did not answer, or does not cover this country. Press Refresh now on Country Research.' })]),
           noSourceRow('Full maturity profile, incl. domestic debt', 'Needs a debt management office feed or your own file; not connected yet.'),
           liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
         ],
