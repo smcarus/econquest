@@ -44,6 +44,7 @@ estimated, invented or taken from built-in sample values.
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
 | OECD leading indicators | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | sdmx.oecd.org | 1 day, on disk |
 | OECD consumer prices | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | sdmx.oecd.org | 1 day, on disk |
+| UN Comtrade | Annual goods trade by partner (shares with China, Taiwan, Russia and the Gulf producers; top partners) and the export mix by HS chapter (fuels, ores, metals, farm goods) | comtradeapi.un.org | 30 days per country, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
@@ -116,6 +117,19 @@ Notes from the first check on Sam's Mac (2026-11-05):
   elsewhere the IMF figure stays and says IMF. Readings: the y/y rate, the change over three
   months, and a stated rule on it (up 0.5 pts or more = rising, down 0.5 pts or more = easing).
   A country the OECD answered without reads "OECD publishes no CPI" on the OECD rows.
+
+- **UN Comtrade** works without a key through its public preview, which returns up to 500 rows
+  a request and allows few requests, so the app asks two small questions per country (every
+  partner's total, then exports and imports by HS chapter), one at a time 1.5 seconds apart, and
+  only once every 30 days (data/live/comtrade.json). It asks for the year two back, then three
+  back if that year is not reported yet; every figure carries its year. A free key in
+  `COMTRADE_API_KEY` (comtradeplus.un.org > My Comtrade > My API portal) switches to the keyed
+  route with higher limits; the key is sent in a header, never in the address. Comtrade files
+  Taiwan as "Other Asia, nes" (code 490) and the app labels it Taiwan. Readings: goods exports
+  and imports, the share with China, Taiwan, Russia and the Gulf producers (Iran, Iraq, Kuwait,
+  Qatar, Saudi Arabia, UAE, Bahrain, Oman), the top three markets and suppliers, the commodity
+  share of exports, and fuels as a share of imports. On the Country tab and at
+  `GET /api/data/trade-partners`.
 
 ## Free, with your own key
 

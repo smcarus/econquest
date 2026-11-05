@@ -317,7 +317,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 27);
+  assert.equal(rep.results.length, 28);
   // The offline fixtures answer FRED's download, Brazil's Treasury and EVDS; everything else is down.
   assert.equal(row('fred_csv').state, 'connected');
   assert.equal(row('tesouro').state, 'connected');
@@ -336,6 +336,16 @@ test('commodity prices: with the World Bank down every commodity reads Missing w
   assert.equal(r.pinkStatus, 'no_answer');
   assert.ok(r.missing.length >= 20);
   assert.ok(r.missing.every((m: { reason: string }) => m.reason.length > 0));
+});
+
+test('trade partners: with Comtrade down every country says Missing and why, never a share', async () => {
+  const r = await (await fetch(`${base}/api/data/trade-partners`)).json();
+  assert.match(r.source, /UN Comtrade/);
+  assert.ok(r.countries.length >= 5);
+  for (const c of r.countries) {
+    assert.equal(c.exportSharePct, undefined);
+    assert.match(c.missing.short, /Comtrade did not answer|Not in the app/);
+  }
 });
 
 test('no stand-in data when sources are down: prediction markets, connector test, Ollama models, health check', async () => {

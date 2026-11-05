@@ -516,6 +516,8 @@ export interface WatchlistItem {
   oecdCpi?: import('../utils/oecdInflation').CpiReading & { pulledAt: string };
   /** Set when the OECD answered but publishes no CPI for this country. */
   oecdCpiPulledAt?: string;
+  /** UN Comtrade partners and export mix (utils/comtradeTrade.ts), with the date the app pulled them. */
+  comtrade?: import('../utils/comtradeTrade').ComtradeProfile & { pulledAt: string };
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }
