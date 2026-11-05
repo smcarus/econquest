@@ -111,7 +111,7 @@ export const TodayPage: React.FC<{
   onOpenWatchlistManager: () => void;
   /** Opens Reports on the council brief just saved. */
   onSendCouncilToReports?: () => void;
-  /** The full council on the open country, run and approved inside Ask the council. */
+  /** The full council on the open country, run and approved inside Council chat. */
   fullCouncil?: FullCouncilStep;
   /** Core view: watchlist and calendar only (see utils/simpleMode.ts). */
   coreOnly?: boolean;
@@ -120,7 +120,7 @@ export const TodayPage: React.FC<{
   /** Imported holdings: the count for Your inputs, the countries for the Held mark in the watchlist. */
   holdingsCount?: number;
   heldIso3?: string[];
-  /** A Your inputs chip was pressed (saved research is handled here: it scrolls to Ask the council). */
+  /** A Your inputs chip was pressed (saved research is handled here: it scrolls to Council chat). */
   onInputAction?: (id: Exclude<InputId, 'research'>) => void;
 }> = ({
   run,
@@ -397,7 +397,7 @@ export const TodayPage: React.FC<{
           </div>
 
         <div className={`min-w-0 scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('council')}`} id="tool-council">
-        <PanelBoundary name="Ask the council">
+        <PanelBoundary name="Council chat">
         <AskCouncilPanel
           items={edgeItems}
           onOpenCountry={(item) => onOpenCountry(item, 'macro')}

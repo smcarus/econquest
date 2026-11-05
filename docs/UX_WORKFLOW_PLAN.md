@@ -270,7 +270,7 @@ A header indicator should also say "3 of 5 feeds live" honestly. This is Phase 0
 
 Out of scope for UI work but worth noting: wider country coverage, a licensed market-data feed in place of AI-sourced prices, and server-side saved workspaces for sharing. The first two are data decisions for Sam.
 
-### Polish backlog: Ask the council
+### Polish backlog: Council chat
 
 - **Summary can contradict an agent in words. Fixed 2026-11-05.** Each agent now states its call in fixed words (policy tight / neutral / loose, CDS cheap / in line / rich, real exchange rate strong / near average / weak), the synthesis prompt carries them, and `checkBrief` removes any summary sentence about a country that describes the call in an opposing word (`src/utils/stanceCheck.ts`). Removed sentences show under the summary with the agent's call. Sentences naming two or more countries are left alone, as the word-to-country link is unclear. Logged by Sam, 2026-11-04.
 

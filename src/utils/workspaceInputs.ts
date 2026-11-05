@@ -12,7 +12,7 @@ export const PANEL_LABEL: Record<PanelId, string> = {
   digest: 'What moved',
   watchlist: 'Watchlist',
   calendar: 'Next two weeks',
-  council: 'Ask the council',
+  council: 'Council chat',
   alerts: 'Watch alerts',
 };
 
@@ -148,10 +148,10 @@ export function workspaceInputs(s: WorkspaceInputsState): InputChip[] {
         ? 'Missing: the app server did not answer.'
         : researchCount
           ? 'Kept on this computer (data/local/research.json).'
-          : 'Briefs you save and policy documents you add appear under Ask the council.',
+          : 'Briefs you save and policy documents you add appear under Council chat.',
       drives: ['council'],
       alsoFeeds: 'Reports',
-      action: 'Show in Ask the council',
+      action: 'Show in Council chat',
     },
   ];
 }

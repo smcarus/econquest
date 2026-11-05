@@ -25,7 +25,7 @@ export interface ToolCategory {
 
 /** Groups on the Tools page, by what you are trying to do, in page order. */
 export const TOOL_CATEGORIES: ToolCategory[] = [
-  { id: 'council', title: 'Ask the council', purpose: 'Put a question to the agents and get an answer built only from live figures.' },
+  { id: 'council', title: 'Council chat', purpose: 'Put a question to the agents and get an answer built only from live figures.' },
   { id: 'monitor', title: 'Keep up', purpose: 'What changed since you last looked, and what is coming up.' },
   { id: 'screen', title: 'Screen and compare countries', purpose: 'Line countries up side by side to find the outliers.' },
   { id: 'country', title: 'Study one country', purpose: 'Briefs and checks for the country you have open.' },
@@ -47,7 +47,7 @@ export const READY_TOOLS: ReadyTool[] = [
   {
     id: 'ask_council',
     category: 'council',
-    title: 'Ask the council',
+    title: 'Council chat',
     what: 'Ask a question about your watchlist. Desk agents answer from live figures with their sources, and a synthesis agent may quote only those figures.',
     sources: 'Live figures below; Gemini or Ollama for the summary, if set up',
     target: { area: 'today', anchor: 'tool-council' },
@@ -299,10 +299,10 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
   {
     title: 'Documents and council',
     desks: [
-      { id: 'mpc_imf_document_ai', label: 'Policy document reader', needs: 'Covered by Policy documents in Ask the council: add a PDF or text file there.', coveredBy: 'ask_council' },
-      { id: 'policy_doc_lab', label: 'Document and CSV lab', needs: 'A CSV upload, not built yet. Documents are covered by Policy documents in Ask the council.' },
-      { id: 'council_debates', label: 'Council debate', needs: 'Covered by Run the full council in Ask the council: the agents debate, then it waits for your approval.', coveredBy: 'ask_council' },
-      { id: 'cro_reports', label: 'Risk sign-off dossier', needs: 'Covered by the approval step in Ask the council.', coveredBy: 'ask_council' },
+      { id: 'mpc_imf_document_ai', label: 'Policy document reader', needs: 'Covered by Policy documents in Council chat: add a PDF or text file there.', coveredBy: 'ask_council' },
+      { id: 'policy_doc_lab', label: 'Document and CSV lab', needs: 'A CSV upload, not built yet. Documents are covered by Policy documents in Council chat.' },
+      { id: 'council_debates', label: 'Council debate', needs: 'Covered by Run the full council in Council chat: the agents debate, then it waits for your approval.', coveredBy: 'ask_council' },
+      { id: 'cro_reports', label: 'Risk sign-off dossier', needs: 'Covered by the approval step in Council chat.', coveredBy: 'ask_council' },
       { id: 'persona_guided_playbook_cockpit', label: 'Guided playbooks', needs: 'Covered by the report templates.', coveredBy: 'reports' },
       { id: 'ic_pitchbook_dossier_exporter', label: 'Pitchbook export', needs: 'Covered by Reports.', coveredBy: 'reports' },
       { id: 'persona_academic_latex_csv_exporter', label: 'LaTeX and CSV export', needs: 'Covered by the Markdown export in Reports.', coveredBy: 'reports' },

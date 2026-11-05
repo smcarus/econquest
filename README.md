@@ -66,7 +66,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 
 | Page | What it is for |
 | --- | --- |
-| **Workspace** | The daily start: since your last visit, watchlist, Ask the council, watch alerts, next two weeks |
+| **Workspace** | The daily start: since your last visit, watchlist, Council chat, watch alerts, next two weeks |
 | **Research** | One page, three scopes: **One country**, **Compare countries** (the watchlist side by side) and **My holdings**. Each scope has the same four sections: **Summary** (country brief / where data and price disagree, growth and inflation / book brief), **Markets & signals** (MarketEdge / MarketEdge table and scenarios / signals on your holdings), **History & data** (charts, As of, Replicate, Track record / Compare countries table / holdings import) and **Sources** (what is live, or why not). CSV and Excel downloads |
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
 | **Tools** (Settings > Tools) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |
@@ -74,7 +74,7 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 About 40 older desks are hidden while their inputs are not live. Menu > Show all tools brings them
 back; their code is kept.
 
-### Ask the council
+### Council chat
 
 Type a question about your watchlist ("Is Brazil's debt sustainable?", "Who is most exposed to a
 Hormuz closure?"). The agents that cover the question answer from the app's figures, each with its

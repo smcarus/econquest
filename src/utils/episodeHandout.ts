@@ -38,7 +38,7 @@ export function episodeMarkdown(
   lines.push('## Questions', '');
   if (ep.questions.length) ep.questions.forEach((q, i) => lines.push(`${i + 1}. ${q}`));
   else lines.push('_No questions set for this episode yet._');
-  lines.push('', 'Answer from the figures above and from Ask the council in the app; name the source of every figure you use.', '');
+  lines.push('', 'Answer from the figures above and from Council chat in the app; name the source of every figure you use.', '');
   if (opts.teacher && ep.notes.trim()) lines.push('## Notes (teacher copy)', '', ep.notes.trim(), '');
   return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
 }

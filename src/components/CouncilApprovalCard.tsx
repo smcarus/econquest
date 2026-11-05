@@ -65,7 +65,7 @@ const STEPS = ['Desk debates', 'Knock-on effects', 'Your review', 'Final report'
 
 /**
  * The council's pause for the reviewer, in plain words, with the assumptions editable in place.
- * Shown inside Ask the council on Today, and at the top of other pages so it is never missed.
+ * Shown inside Council chat on Today, and at the top of other pages so it is never missed.
  */
 export const CouncilApprovalCard: React.FC<{
   countryName: string;
@@ -163,7 +163,7 @@ export const CouncilApprovalCard: React.FC<{
         )}
         {onOpenConversation && (
           <button type="button" className="ui-btn ui-btn-ghost" onClick={onOpenConversation}>
-            Open in Ask the council
+            Open in Council chat
           </button>
         )}
       </div>

@@ -2889,7 +2889,7 @@ export default function App() {
 
         {/* Right Primary Viewport (9 columns when sidebar open, 12 columns when collapsed) */}
         <section className={`${isWatchlistCollapsed ? 'lg:col-span-12' : 'lg:col-span-9'} space-y-3`}>
-          {/* On Today the pause sits inside Ask the council; elsewhere it shows here so it is never missed. */}
+          {/* On Today the pause sits inside Council chat; elsewhere it shows here so it is never missed. */}
           {run.stage === 'AWAITING_CRO_APPROVAL' && appArea !== 'today' && (
             <CouncilApprovalCard
               countryName={run.countryName}
