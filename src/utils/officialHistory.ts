@@ -25,6 +25,8 @@ export interface OfficialFigure {
   /** Turns the published number into the one the app shows. */
   transform?: (v: number) => number;
   about?: string;
+  /** Overrides the source name (e.g. IMF Fiscal Monitor series served through the same DataMapper). */
+  sourceName?: string;
 }
 
 /** WGI political stability estimate (-2.5 to +2.5) to the 0-100 rank the snapshot shows. */
@@ -32,7 +34,9 @@ export const stabilityPercentile = (v: number) => Number(Math.max(2, Math.min(98
 
 export const OFFICIAL_FIGURES: OfficialFigure[] = [
   { id: 'debt_gdp', source: 'imf', code: 'GGXWDG_NGDP', label: 'Government debt', unit: '% of GDP' },
-  { id: 'primary_balance', source: 'imf', code: 'GGXONLB_NGDP', label: 'Primary balance', unit: '% of GDP' },
+  // IMF Fiscal Monitor series on DataMapper: the WEO codes GGXONLB_NGDP / GGXCNL_NGDP answer empty there.
+  { id: 'primary_balance', source: 'imf', code: 'GGXONLB_G01_GDP_PT', label: 'Primary balance', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government primary net lending/borrowing.' },
+  { id: 'overall_balance', source: 'imf', code: 'GGXCNL_G01_GDP_PT', label: 'Overall fiscal balance', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government net lending/borrowing. Primary minus overall balance = net interest paid.' },
   { id: 'gdp_growth', source: 'imf', code: 'NGDP_RPCH', label: 'Real GDP growth', unit: '%' },
   { id: 'cpi_imf', source: 'imf', code: 'PCPIPCH', label: 'Inflation (IMF WEO)', unit: '%' },
   { id: 'output_gap', source: 'imf', code: 'NGAP_NPGDP', label: 'Output gap', unit: '% of potential GDP' },
@@ -116,7 +120,7 @@ export function officialSeries(file: OfficialHistoryFile | null | undefined, fig
   const run = file.series?.[fig.id];
   if (!run?.points?.length) {
     const why = file.failed?.[fig.id];
-    return { id: fig.id, label: fig.label, reason: why || `${SOURCE_NAME[fig.source]} publishes no figures for this country` };
+    return { id: fig.id, label: fig.label, reason: why || `${fig.sourceName || SOURCE_NAME[fig.source]} publishes no figures for this country` };
   }
   const points = fig.source === 'imf' ? markImfProjections(run.points, now) : run.points;
   const projected = points.some((p) => p.note === 'IMF projection');
@@ -125,7 +129,7 @@ export function officialSeries(file: OfficialHistoryFile | null | undefined, fig
     label: fig.label,
     unit: fig.unit,
     freq: 'annual',
-    source: `${SOURCE_NAME[fig.source]} (${fig.code})`,
+    source: `${fig.sourceName || SOURCE_NAME[fig.source]} (${fig.code})`,
     pulledAt: file.pulledAt,
     points,
     about: [fig.about, projected ? 'Years from this one on are IMF projections, marked as such.' : ''].filter(Boolean).join(' ') || undefined,
