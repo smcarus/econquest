@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Copy, Download, FileText } from 'lucide-react';
 import { councilBriefMarkdown, downloadCouncilBrief } from '../utils/briefExport';
-import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem } from '../types/council';
+import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
 import { PolicyDocsPicker } from './PolicyDocsPicker';
 import { FigureCheckNote } from './FigureCheckNote';
 import { SavedDocsRow, SavedResearchList, useResearchLibrary } from './SavedResearch';
 import { MAX_DOCS } from '../utils/policyDocs';
+import { toLive } from '../utils/liveFigures';
 import { briefId } from '../utils/researchLibrary';
 import { changeLines, pickPrevious, whatChanged, type ChangeReport } from '../utils/whatChanged';
 import type { PolicyDoc } from '../utils/policyDocs';
@@ -106,6 +107,10 @@ export const AskCouncilPanel: React.FC<{
   const [docs, setDocs] = useState<PolicyDoc[]>([]);
   const [debate, setDebate] = useState<DebateResult | null>(null);
   const [debating, setDebating] = useState(false);
+  // Countries off the watchlist added for questions in this session (pulled on request, not saved to the list).
+  const [extra, setExtra] = useState<LiveWatchlistItem[]>([]);
+  const [adding, setAdding] = useState<string | null>(null);
+  const pool = useMemo(() => [...items, ...extra.filter((e) => !items.some((i) => i.iso3 === e.iso3))], [items, extra]);
 
   const runDebate = async () => {
     if (!asked) return;
@@ -146,8 +151,9 @@ export const AskCouncilPanel: React.FC<{
     }
   };
 
-  const ask = async (q: string, asFollowUp = false) => {
+  const ask = async (q: string, asFollowUp = false, poolOverride?: LiveWatchlistItem[]) => {
     const text = q.trim();
+    const items = poolOverride ?? pool;
     if (!text || !items.length) return;
     const history = asFollowUp && asked ? [...earlier, { question: asked.question, headline: synthesis?.brief?.headline || undefined, scopeNote: asked.plan.scopeNote, points: synthesis?.brief?.points || [] }] : [];
     setEarlier(history);
@@ -178,6 +184,28 @@ export const AskCouncilPanel: React.FC<{
       setSynthesis({ brief: null, removed: [], reason: 'The app server did not answer.' });
     } finally {
       setWriting(false);
+    }
+  };
+
+  /** Pulls live figures for countries the question named that are off the watchlist, then asks again. */
+  const addForQuestion = async () => {
+    const codes = asked?.plan.offWatchlistIso3;
+    if (!asked || !codes?.length) return;
+    setAdding(null);
+    try {
+      const r = await fetch(`/api/data/watchlist-live?iso3=${encodeURIComponent(codes.join(','))}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const rows = ((await r.json())?.items || []) as WatchlistItem[];
+      const fresh = rows.filter((row) => !pool.some((p: LiveWatchlistItem) => p.iso3 === row.iso3)).map((row) => toLive(row as unknown as WatchlistItem));
+      if (!fresh.length) {
+        setAdding('The app could not pull figures for that country.');
+        return;
+      }
+      const next = [...pool, ...fresh];
+      setExtra((e) => [...e, ...fresh]);
+      await ask(asked.question, false, next);
+    } catch (e) {
+      setAdding(`The app server did not answer (${(e as Error).message}).`);
     }
   };
 
@@ -368,6 +396,18 @@ export const AskCouncilPanel: React.FC<{
             title={`Agents on your question, about ${asked.plan.scopeNote}`}
             columns={askCouncilColumns(asked.answers, writing, synthesis, asked.plan.chosenBy)}
           />
+          {asked.plan.offWatchlistIso3 && asked.plan.offWatchlistIso3.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2" data-council-off-watchlist="true">
+              <button type="button" className="ui-btn ui-btn-primary" onClick={() => void addForQuestion()}>
+                Add {asked.plan.offWatchlist?.join(', ')} for this question
+              </button>
+              <span className="text-xs text-slate-500 dark:text-slate-400">Pulls its live figures and asks again; your watchlist stays as it is.</span>
+              {adding && <span className="text-xs text-amber-700 dark:text-amber-400">{adding}</span>}
+            </div>
+          )}
+          {extra.length > 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400">Added for questions in this session, not on your watchlist: {extra.map((e) => e.countryName).join(', ')}.</p>
+          )}
           {asked.plan.chooserNote && (
             <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={asked.plan.chosenBy}>
               {asked.plan.chooserNote}

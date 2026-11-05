@@ -169,6 +169,8 @@ export interface CouncilPlan {
   chooserNote?: string;
   /** Countries the question named that are not on the watchlist (no figures, so not asked about). */
   offWatchlist?: string[];
+  /** Their ISO3 codes, so the app can offer to add them for this question. */
+  offWatchlistIso3?: string[];
 }
 
 /** Countries named in the question (by name, ISO code or a common alias). */
@@ -176,22 +178,27 @@ export function countriesInQuestion(question: string, items: LiveWatchlistItem[]
   return items.filter((it) => namesCountry(question, it.iso3, it.countryName));
 }
 
-/** Countries named in the question that are not on the watchlist, so the agents hold no figures for them. */
-export function offWatchlistCountries(question: string, items: LiveWatchlistItem[]): string[] {
+/** Countries named in the question that are not on the watchlist, with their codes. */
+export function offWatchlistCodes(question: string, items: LiveWatchlistItem[]): Array<{ iso3: string; name: string }> {
   const on = new Set(items.map((i) => i.iso3));
-  const out: string[] = [];
+  const out: Array<{ iso3: string; name: string }> = [];
   const seen = new Set<string>();
   for (const { iso3, name } of Object.values(ISO_NUMERIC_TO_ISO3)) {
     if (on.has(iso3) || seen.has(iso3)) continue;
     // Codes are not matched here: "ARE" or "CAN" in a capitalised question is not a country.
     if (namesCountry(question, iso3, name, false)) {
       seen.add(iso3);
-      out.push(name);
+      out.push({ iso3, name });
     }
   }
   // "Papua New Guinea" also contains "Guinea": keep the longer name only.
-  const all = [...out, ...items.filter((i) => namesCountry(question, i.iso3, i.countryName)).map((i) => baseName(i.countryName))];
-  return out.filter((n) => !all.some((m) => m !== n && m.toLowerCase().includes(n.toLowerCase())));
+  const all = [...out.map((o) => o.name), ...items.filter((i) => namesCountry(question, i.iso3, i.countryName)).map((i) => baseName(i.countryName))];
+  return out.filter((o) => !all.some((m) => m !== o.name && m.toLowerCase().includes(o.name.toLowerCase())));
+}
+
+/** Countries named in the question that are not on the watchlist, so the agents hold no figures for them. */
+export function offWatchlistCountries(question: string, items: LiveWatchlistItem[]): string[] {
+  return offWatchlistCodes(question, items).map((o) => o.name);
 }
 
 const listNames = (names: string[]) => (names.length < 2 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`);
@@ -199,14 +206,15 @@ const listNames = (names: string[]) => (names.length < 2 ? names.join('') : `${n
 /** The words shown for countries left out because they are not on the watchlist. */
 export function offWatchlistNote(names: string[]): string {
   const verb = names.length === 1 ? 'is' : 'are';
-  return `${listNames(names)} ${verb} not on the watchlist, so the agents hold no figures for ${names.length === 1 ? 'it' : 'them'}. Add ${names.length === 1 ? 'it' : 'them'} to the watchlist and ask again`;
+  return `${listNames(names)} ${verb} not on the watchlist, so the agents hold no figures for ${names.length === 1 ? 'it' : 'them'} yet. Use "Add for this question" to pull ${names.length === 1 ? 'its' : 'their'} figures and ask again`;
 }
 
 /** Which agents answer and for which countries. `scopeIso3` = a country picked in the box, overriding the question. */
 export function planCouncil(question: string, items: LiveWatchlistItem[], scopeIso3?: string): CouncilPlan {
   const picked = scopeIso3 ? items.filter((i) => i.iso3 === scopeIso3) : [];
   const named = picked.length ? [] : countriesInQuestion(question, items);
-  const off = picked.length ? [] : offWatchlistCountries(question, items);
+  const offCodes = picked.length ? [] : offWatchlistCodes(question, items);
+  const off = offCodes.map((o) => o.name);
   // A question about countries off the watchlist only gets no countries, never the whole watchlist.
   const countries = picked.length ? picked : named.length ? named : off.length ? [] : items;
   const baseNote = picked.length
@@ -226,7 +234,7 @@ export function planCouncil(question: string, items: LiveWatchlistItem[], scopeI
   if (!agents.length) {
     for (const id of AGENT_ORDER) agents.push({ id, why: 'no specific topic in the question, so every agent answers' });
   }
-  return { countries, scopeNote, agents, ...(off.length ? { offWatchlist: off } : {}) };
+  return { countries, scopeNote, agents, ...(off.length ? { offWatchlist: off, offWatchlistIso3: offCodes.map((o) => o.iso3) } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -245,7 +253,7 @@ export function planFollowUp(question: string, prev: CouncilPlan, items: LiveWat
     countries: named ? plan.countries : prev.countries,
     scopeNote: named ? plan.scopeNote : `${prev.scopeNote}, ${CARRIED}`,
     agents: namesTopic ? plan.agents : prev.agents.map((a) => ({ id: a.id, why: `${CARRIED} (${a.why})` })),
-    ...(named && plan.offWatchlist ? { offWatchlist: plan.offWatchlist } : {}),
+    ...(named && plan.offWatchlist ? { offWatchlist: plan.offWatchlist, ...(plan.offWatchlistIso3 ? { offWatchlistIso3: plan.offWatchlistIso3 } : {}) } : {}),
   };
 }
 

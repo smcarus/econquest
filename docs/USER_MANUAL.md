@@ -32,7 +32,9 @@ with your choice of columns; *Edit* adds or removes countries and switches lists
 **Ask the council.** Type a question, or pick one of the suggestions.
 
 - *Countries*: as named in the question, otherwise the whole watchlist. A country not on the
-  watchlist is named as not covered rather than silently answered for the list.
+  watchlist is named as not covered rather than silently answered for the list; *Add … for this
+  question* pulls its live figures (any country, up to five at a time) and asks again, without
+  changing your watchlist.
 - *Agents*: chosen from the question's topic (or by the AI model, if set up). Each answers with
   figures and their sources: Central Bank (policy rate, stance, cycle), Fiscal & Debt (debt path,
   stabilising primary balance, reserves against debt due), Politics & Events (GDELT tone, World Bank
