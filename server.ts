@@ -3879,7 +3879,11 @@ async function explainAnswers(
     if (step.usedFallback) {
       return { brief: null, removed: [], reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.` };
     }
-    const checked = checkExplain(step.data || {}, question, answers, opts.explain);
+    const raw = step.data || {};
+    if (!Object.keys(raw).length) {
+      return { brief: null, removed: [], provider: step.providerUsed, reason: `${step.providerUsed} answered, but not in the shape asked for (no explanation fields), so nothing was shown.` };
+    }
+    const checked = checkExplain(raw, question, answers, opts.explain);
     const e = checked.brief.explain;
     if (!checked.brief.headline && !e.facts.length && !e.reasons.length && !e.lenses.some((l) => l.sentences.length)) {
       return {

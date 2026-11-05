@@ -20,6 +20,7 @@
  */
 import { COUNCIL_AGENTS, AGENT_ORDER, isDocFinding, sentenceCheck, type AgentAnswer, type CoreAgentId, type CouncilBrief, type CouncilPlan } from './askCouncil';
 import type { Contradiction } from './stanceCheck';
+import { isCitable, References, type Reference } from './citations';
 
 export type LensId = 'monetary' | 'fiscal' | 'micro' | 'trade' | 'politics' | 'markets';
 
@@ -315,5 +316,55 @@ export function checkExplain(
     brief: { headline: headline && ok(headline) ? headline : '', points, disagreements: [], gaps, explain },
     removed,
     contradicted,
+  };
+}
+
+/* ------------------------------------------------------------------------------------------
+ * Numbered references for an explanation. A sentence cites a source when it quotes one of that
+ * source's figures exactly as written (same digits); a stated-rule reading is not a reference.
+ * Numbers follow reading order: facts, reasons, lenses, what to watch.
+ * ------------------------------------------------------------------------------------------ */
+
+export interface CitedSentence {
+  text: string;
+  refs: number[];
+}
+
+export interface CitedExplain {
+  facts: CitedSentence[];
+  reasons: CitedSentence[];
+  lenses: Array<Omit<ExplainLens, 'sentences'> & { sentences: CitedSentence[] }>;
+  watch: CitedSentence[];
+  references: Reference[];
+}
+
+const TOKEN = /\d+(?:\.\d+)?/g;
+
+export function citedExplain(e: ExplainBrief, answers: AgentAnswer[]): CitedExplain {
+  const refs = new References();
+  const figs = answers.flatMap((a) =>
+    a.findings.flatMap((f) => f.figures.filter((g) => isCitable(g.source, g.tag)).map((g) => ({ tokens: new Set(g.value.match(TOKEN) || []), source: g.source })))
+  );
+  const f = e.focus;
+  if (f?.value && f.source && isCitable(f.source)) figs.push({ tokens: new Set(f.value.match(TOKEN) || []), source: `${f.source}${f.asOf ? `, ${f.asOf}` : ''}` });
+  const cite = (text: string): CitedSentence => {
+    const ns: number[] = [];
+    for (const t of text.match(TOKEN) || []) {
+      // Years and dates are not figures: "2026" in a sentence cites nothing.
+      if (/^(19|20)\d\d$/.test(t)) continue;
+      const hit = figs.find((g) => g.tokens.has(t));
+      if (hit) {
+        const n = refs.cite(hit.source);
+        if (!ns.includes(n)) ns.push(n);
+      }
+    }
+    return { text, refs: ns };
+  };
+  return {
+    facts: e.facts.map(cite),
+    reasons: e.reasons.map(cite),
+    lenses: e.lenses.map((l) => ({ ...l, sentences: l.sentences.map(cite) })),
+    watch: e.watch.map(cite),
+    references: refs.list,
   };
 }

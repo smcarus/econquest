@@ -15,6 +15,7 @@ import { changeLines, pickPrevious, whatChanged, type ChangeReport } from '../ut
 import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
+import { ExplainAnswer } from './ExplainAnswer';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
@@ -377,6 +378,39 @@ export const AskCouncilPanel: React.FC<{
     </div>
   );
 
+  /** Who wrote the AI text, and the sentences the checks removed. */
+  const removedNotes = (t: Turn) => (
+    <>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                AI {t.synthesis?.brief?.explain ? 'explanation' : 'summary'} by {t.synthesis?.provider || 'the configured model'}, from the agents’ figures only.
+                {t.synthesis && t.synthesis.removed.length > 0 && ` ${t.synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
+                {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && ` ${t.synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
+              </p>
+              {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && (
+                <details className="text-xs text-amber-800 dark:text-amber-300" data-council-contradicted="true">
+                  <summary className="cursor-pointer">Show sentences that contradicted an agent</summary>
+                  <ul className="list-disc pl-5 mt-1 space-y-1">
+                    {t.synthesis.contradicted!.map((c) => (
+                      <li key={c.sentence}>
+                        “{c.sentence}” <span className="text-slate-600 dark:text-slate-400">{c.reason}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              {t.synthesis && t.synthesis.removed.length > 0 && (
+                <details className="text-xs text-slate-500 dark:text-slate-400">
+                  <summary className="cursor-pointer">Show removed sentences</summary>
+                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
+                    {t.synthesis.removed.map((r) => (
+                      <li key={r}>{r}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+    </>
+  );
+
   /** The council's answer to one question: summary first, then the agents, debate and downloads. */
   const councilReply = (t: Turn, live: boolean) => {
     const b = t.synthesis?.brief;
@@ -412,6 +446,11 @@ export const AskCouncilPanel: React.FC<{
         <div className="space-y-2" data-council-summary="true">
           {writingNow ? (
             <p className="text-sm text-slate-500 dark:text-slate-400">The synthesis agent is writing the brief from the agents’ answers…</p>
+          ) : b?.explain ? (
+            <>
+              <ExplainAnswer headline={b.headline} explain={b.explain} answers={t.asked.answers} />
+              {removedNotes(t)}
+            </>
           ) : b ? (
             <>
               {b.headline && <p className="text-sm font-medium text-slate-900 dark:text-white">{b.headline}</p>}
@@ -432,33 +471,7 @@ export const AskCouncilPanel: React.FC<{
                   </ul>
                 </div>
               )}
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                AI summary by {t.synthesis?.provider || 'the configured model'}, from the agents’ figures only.
-                {t.synthesis && t.synthesis.removed.length > 0 && ` ${t.synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
-                {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && ` ${t.synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
-              </p>
-              {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && (
-                <details className="text-xs text-amber-800 dark:text-amber-300" data-council-contradicted="true">
-                  <summary className="cursor-pointer">Show sentences that contradicted an agent</summary>
-                  <ul className="list-disc pl-5 mt-1 space-y-1">
-                    {t.synthesis.contradicted!.map((c) => (
-                      <li key={c.sentence}>
-                        “{c.sentence}” <span className="text-slate-600 dark:text-slate-400">{c.reason}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </details>
-              )}
-              {t.synthesis && t.synthesis.removed.length > 0 && (
-                <details className="text-xs text-slate-500 dark:text-slate-400">
-                  <summary className="cursor-pointer">Show removed sentences</summary>
-                  <ul className="list-disc pl-5 mt-1 space-y-0.5">
-                    {t.synthesis.removed.map((r) => (
-                      <li key={r}>{r}</li>
-                    ))}
-                  </ul>
-                </details>
-              )}
+              {removedNotes(t)}
             </>
           ) : (
             <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
