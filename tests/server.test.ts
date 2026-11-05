@@ -488,6 +488,23 @@ test('Research notebooks: group saved research by topic, keep notes, export as M
   assert.equal((await fetch(`${base}/api/export/notebook/${made.id}.md`)).status, 404);
 });
 
+test('Teaching episodes: saved with research, handout downloads with the questions', async () => {
+  const send = (method: string, url: string, body: unknown) => fetch(`${base}${url}`, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  assert.equal((await send('POST', '/api/research/episodes', { title: 'x', iso3: 'MEX', date: 'soon' })).status, 400);
+  const made = await (await send('POST', '/api/research/episodes', { title: 'Banxico, Oct 2026', iso3: 'MEX', date: '2026-10-27', questions: ['What did the rule say?'] })).json();
+  assert.ok(made.id);
+  assert.equal((await send('PUT', `/api/research/episodes/${made.id}`, { notes: 'Teacher only.' })).status, 200);
+  const list = await (await fetch(`${base}/api/research`)).json();
+  assert.equal(list.episodes[0].title, 'Banxico, Oct 2026');
+  const student = await (await fetch(`${base}/api/export/episode/${made.id}.md`)).text();
+  assert.match(student, /1\. What did the rule say\?/);
+  assert.ok(!student.includes('Teacher only.'));
+  const teacher = await (await fetch(`${base}/api/export/episode/${made.id}.md?teacher=1`)).text();
+  assert.match(teacher, /Teacher only\./);
+  await fetch(`${base}/api/research/episodes/${made.id}`, { method: 'DELETE' });
+  assert.equal((await fetch(`${base}/api/export/episode/${made.id}.md`)).status, 404);
+});
+
 test('Watch alerts: rules you set are kept in data/local/watch-rules.json; bad rules are dropped', async () => {
   const put = (body: unknown) => fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   assert.deepEqual((await (await fetch(`${base}/api/watch-rules`)).json()).rules, []);

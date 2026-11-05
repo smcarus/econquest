@@ -29,6 +29,26 @@ export interface Notebook {
   notes: string;
 }
 
+export const MAX_EPISODES = 50;
+export const MAX_EPISODE_QUESTIONS = 12;
+
+/**
+ * A teaching episode: a country and a past decision date, the questions students should answer
+ * from the data, and your notes. It holds no figures: the handout reads them from the app's own
+ * series for that date (decision replay, archived pull).
+ */
+export interface Episode {
+  id: string;
+  title: string;
+  iso3: string;
+  /** YYYY-MM-DD (or YYYY-MM) of the decision or moment the episode is about. */
+  date: string;
+  questions: string[];
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface NotebookSummary {
   id: string;
   title: string;
@@ -47,6 +67,7 @@ export interface ResearchLibrary {
   briefs: SavedBriefEntry[];
   docs: PolicyDoc[];
   notebooks: Notebook[];
+  episodes: Episode[];
 }
 
 /** One line per saved conversation, for the list. */
@@ -72,7 +93,7 @@ export interface DocSummary {
   chars: number;
 }
 
-export const EMPTY_LIBRARY: ResearchLibrary = { briefs: [], docs: [], notebooks: [] };
+export const EMPTY_LIBRARY: ResearchLibrary = { briefs: [], docs: [], notebooks: [], episodes: [] };
 
 /** A conversation's id: the time its latest question was asked, so later answers overwrite it. */
 export const briefId = (askedAt: string) => `b-${askedAt.replace(/[^0-9]/g, '')}`;
@@ -151,6 +172,59 @@ export function removeNotebook(lib: ResearchLibrary, id: string): ResearchLibrar
   return { ...lib, notebooks: lib.notebooks.filter((n) => n.id !== id) };
 }
 
+const DATE_RE = /^\d{4}-\d{2}(-\d{2})?$/;
+const ISO3_RE = /^[A-Z]{3}$/;
+
+function cleanQuestions(v: unknown): string[] {
+  const list = Array.isArray(v) ? v : typeof v === 'string' ? v.split(/\r?\n/) : [];
+  return list
+    .filter((q): q is string => typeof q === 'string')
+    .map((q) => q.trim().slice(0, 300))
+    .filter(Boolean)
+    .slice(0, MAX_EPISODE_QUESTIONS);
+}
+
+export type EpisodeInput = { title?: unknown; iso3?: unknown; date?: unknown; questions?: unknown; notes?: unknown };
+
+/** A new episode; null with the reason when a field is missing or wrong. */
+export function addEpisode(lib: ResearchLibrary, input: EpisodeInput, now: Date = new Date()): { lib: ResearchLibrary; id: string } | { error: string } {
+  const title = str(input.title, 120).trim();
+  const iso3 = str(input.iso3, 10).trim().toUpperCase();
+  const date = str(input.date, 10);
+  if (!title) return { error: 'An episode needs a title.' };
+  if (!ISO3_RE.test(iso3)) return { error: 'An episode needs a country (ISO3 code).' };
+  if (!DATE_RE.test(date)) return { error: 'An episode needs a date, YYYY-MM-DD.' };
+  if (lib.episodes.length >= MAX_EPISODES) return { error: `At most ${MAX_EPISODES} episodes; delete one first.` };
+  const at = now.toISOString();
+  let id = `e-${at.replace(/[^0-9]/g, '')}`;
+  while (lib.episodes.some((e) => e.id === id)) id += 'x';
+  const ep: Episode = { id, title, iso3, date, questions: cleanQuestions(input.questions), notes: str(input.notes, MAX_NOTEBOOK_NOTES), createdAt: at, updatedAt: at };
+  return { lib: { ...lib, episodes: [ep, ...lib.episodes] }, id };
+}
+
+/** Change an episode; fields that are blank or wrong keep their old value. */
+export function updateEpisode(lib: ResearchLibrary, id: string, input: EpisodeInput, now: Date = new Date()): ResearchLibrary | null {
+  const ep = lib.episodes.find((e) => e.id === id);
+  if (!ep) return null;
+  const title = input.title !== undefined ? str(input.title, 120).trim() : '';
+  const iso3 = input.iso3 !== undefined ? str(input.iso3, 10).trim().toUpperCase() : '';
+  const date = input.date !== undefined ? str(input.date, 10) : '';
+  const next: Episode = {
+    ...ep,
+    title: title || ep.title,
+    iso3: ISO3_RE.test(iso3) ? iso3 : ep.iso3,
+    date: DATE_RE.test(date) ? date : ep.date,
+    questions: input.questions !== undefined ? cleanQuestions(input.questions) : ep.questions,
+    notes: input.notes !== undefined ? str(input.notes, MAX_NOTEBOOK_NOTES) : ep.notes,
+    updatedAt: now.toISOString(),
+  };
+  return { ...lib, episodes: [next, ...lib.episodes.filter((e) => e.id !== id)] };
+}
+
+export function removeEpisode(lib: ResearchLibrary, id: string): ResearchLibrary {
+  return { ...lib, episodes: lib.episodes.filter((e) => e.id !== id) };
+}
+
 /** Topics to start a notebook from: countries with two or more saved conversations, most first. */
 export function suggestedTopics(briefs: BriefSummary[], notebooks: Pick<Notebook, 'title'>[], names: Record<string, string> = {}): Array<{ iso3: string; title: string; briefIds: string[] }> {
   const by = new Map<string, string[]>();
@@ -163,7 +237,7 @@ export function suggestedTopics(briefs: BriefSummary[], notebooks: Pick<Notebook
     .sort((a, b) => b.briefIds.length - a.briefIds.length || a.title.localeCompare(b.title));
 }
 
-export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs: DocSummary[]; notebooks: NotebookSummary[] } {
+export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs: DocSummary[]; notebooks: NotebookSummary[]; episodes: Episode[] } {
   return {
     briefs: lib.briefs.map((b) => ({
       id: b.id,
@@ -178,6 +252,7 @@ export function summarise(lib: ResearchLibrary): { briefs: BriefSummary[]; docs:
     })),
     docs: lib.docs.map((d) => ({ id: d.id, title: d.title, addedAt: d.addedAt, ...(d.pages ? { pages: d.pages } : {}), chars: d.text.length })),
     notebooks: lib.notebooks.map((n) => ({ id: n.id, title: n.title, updatedAt: n.updatedAt, briefIds: n.briefIds, docIds: n.docIds, notesChars: n.notes.length })),
+    episodes: lib.episodes,
   };
 }
 
@@ -188,6 +263,7 @@ export function parseLibrary(raw: unknown): ResearchLibrary {
     briefs: Array.isArray(r?.briefs) ? r!.briefs.filter((b): b is SavedBriefEntry => isBrief(b) && typeof (b as SavedBriefEntry).id === 'string') : [],
     docs: Array.isArray(r?.docs) ? r!.docs.filter(isDoc) : [],
     notebooks: Array.isArray(r?.notebooks) ? r!.notebooks.flatMap((n) => parseNotebook(n)) : [],
+    episodes: Array.isArray(r?.episodes) ? r!.episodes.flatMap((e) => parseEpisode(e)) : [],
   };
 }
 
@@ -203,6 +279,24 @@ function parseNotebook(v: unknown): Notebook[] {
       briefIds: ids(n.briefIds, MAX_SAVED_BRIEFS),
       docIds: ids(n.docIds, MAX_SAVED_DOCS),
       notes: str(n.notes, MAX_NOTEBOOK_NOTES),
+    },
+  ];
+}
+
+function parseEpisode(v: unknown): Episode[] {
+  const e = v as Partial<Episode> | null;
+  if (!e || typeof e.id !== 'string' || !e.id || typeof e.title !== 'string' || !e.title.trim()) return [];
+  if (typeof e.iso3 !== 'string' || !ISO3_RE.test(e.iso3) || typeof e.date !== 'string' || !DATE_RE.test(e.date)) return [];
+  return [
+    {
+      id: e.id.slice(0, 80),
+      title: e.title.slice(0, 120),
+      iso3: e.iso3,
+      date: e.date,
+      questions: cleanQuestions(e.questions),
+      notes: str(e.notes, MAX_NOTEBOOK_NOTES),
+      createdAt: str(e.createdAt, 40),
+      updatedAt: str(e.updatedAt, 40),
     },
   ];
 }

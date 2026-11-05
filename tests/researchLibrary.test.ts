@@ -21,8 +21,8 @@ test('documents: same id replaces, capped, and a broken file reads as empty', ()
   assert.equal(lib.docs[0].id, `d${MAX_SAVED_DOCS + 2}`);
   lib = addDoc(lib, { id: 'd5', title: 'New title', text: 'text', addedAt: '2026-11-05' });
   assert.equal(lib.docs.filter((d) => d.id === 'd5').length, 1);
-  assert.deepEqual(parseLibrary(null), { briefs: [], docs: [], notebooks: [] });
-  assert.deepEqual(parseLibrary({ briefs: [{ nope: 1 }], docs: [{ id: 'x', title: 't', text: '' }] }), { briefs: [], docs: [], notebooks: [] });
+  assert.deepEqual(parseLibrary(null), { briefs: [], docs: [], notebooks: [], episodes: [] });
+  assert.deepEqual(parseLibrary({ briefs: [{ nope: 1 }], docs: [{ id: 'x', title: 't', text: '' }] }), { briefs: [], docs: [], notebooks: [], episodes: [] });
 });
 
 test('notebooks: group conversations and documents by topic; deleting an item takes it out', async () => {
@@ -53,4 +53,21 @@ test('notebooks: group conversations and documents by topic; deleting an item ta
   ] as any;
   assert.deepEqual(suggestedTopics(sums, [], { BRA: 'Brazil' }), [{ iso3: 'BRA', title: 'Brazil', briefIds: ['a', 'b'] }]);
   assert.deepEqual(suggestedTopics(sums, [{ title: 'brazil' }], { BRA: 'Brazil' }), []);
+});
+
+test('teaching episodes: a country, a date and questions; bad fields refused or kept', async () => {
+  const { addEpisode, updateEpisode, removeEpisode } = await import('../src/utils/researchLibrary.ts');
+  assert.deepEqual(addEpisode(EMPTY_LIBRARY, { title: '', iso3: 'BRA', date: '2026-09-18' }), { error: 'An episode needs a title.' });
+  assert.ok('error' in addEpisode(EMPTY_LIBRARY, { title: 'x', iso3: 'Brazil', date: '2026-09-18' }));
+  assert.ok('error' in addEpisode(EMPTY_LIBRARY, { title: 'x', iso3: 'BRA', date: 'Sept' }));
+  const made = addEpisode(EMPTY_LIBRARY, { title: 'Copom cut, Sep 2026', iso3: 'bra', date: '2026-09-18', questions: 'Was the cut early?\n\n  Which figure mattered most?  ' }, new Date('2026-11-05T10:00:00Z'));
+  assert.ok(!('error' in made));
+  if ('error' in made) return;
+  const ep = made.lib.episodes[0];
+  assert.deepEqual([ep.iso3, ep.questions], ['BRA', ['Was the cut early?', 'Which figure mattered most?']]);
+  const next = updateEpisode(made.lib, made.id, { date: 'bad', notes: 'Point to the 2026-08 print.', questions: ['One'] })!;
+  assert.deepEqual([next.episodes[0].date, next.episodes[0].notes, next.episodes[0].questions], ['2026-09-18', 'Point to the 2026-08 print.', ['One']]);
+  assert.equal(updateEpisode(made.lib, 'e-nope', {}), null);
+  assert.deepEqual(parseLibrary(JSON.parse(JSON.stringify({ ...next, episodes: [...next.episodes, { id: 'e2', title: 't', iso3: 'xx', date: '2026' }] }))).episodes, next.episodes);
+  assert.equal(removeEpisode(next, made.id).episodes.length, 0);
 });

@@ -134,6 +134,13 @@ export const READY_TOOLS: ReadyTool[] = [
     sources: 'Your saved research (data/local/research.json)',
     target: { area: 'reports' },
   },
+  {
+    id: 'teaching_episodes',
+    title: 'Teaching episodes',
+    what: 'A country, a past rate decision and your questions; a student handout with the data the week before and a teacher copy with what the bank did.',
+    sources: 'BIS policy rates, monthly inflation, OECD leading indicator, central bank targets',
+    target: { area: 'reports' },
+  },
 ];
 
 export interface HiddenDesk {

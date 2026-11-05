@@ -13,10 +13,10 @@ test('research library: a missing or broken file reads as empty, never throws', 
   const dir = fresh();
   const file = researchFilePath(dir);
   assert.equal(file, path.join(dir, 'local', 'research.json'));
-  assert.deepEqual(loadLibrary(file), { briefs: [], docs: [], notebooks: [] });
+  assert.deepEqual(loadLibrary(file), { briefs: [], docs: [], notebooks: [], episodes: [] });
   mkdirSync(path.dirname(file), { recursive: true });
   writeFileSync(file, '{not json');
-  assert.deepEqual(loadLibrary(file), { briefs: [], docs: [], notebooks: [] });
+  assert.deepEqual(loadLibrary(file), { briefs: [], docs: [], notebooks: [], episodes: [] });
 });
 
 test('research library: save then load round-trips, file is private and no temp file is left', () => {

@@ -90,6 +90,7 @@ import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { IcMemoBuilder } from './components/IcMemoBuilder';
 import { ResearchNotebooks } from './components/ResearchNotebooks';
+import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { PresentMode } from './components/PresentMode';
 import { DEFAULT_COUNTRY_TAB_ID, DEFAULT_REPORT, NAV, type ReportTemplate, type WorkflowArea } from './data/navigation';
 import { CORE_REPORTS, visibleReport } from './utils/simpleMode';
@@ -3043,6 +3044,11 @@ export default function App() {
                   <div id="tool-notebooks" className="mt-3 scroll-mt-4">
                     <PanelBoundary name="Research notebooks">
                       <ResearchNotebooks countries={liveWatchlistItems} />
+                    </PanelBoundary>
+                  </div>
+                  <div id="tool-episodes" className="mt-3 scroll-mt-4">
+                    <PanelBoundary name="Teaching episodes">
+                      <TeachingEpisodes countries={liveWatchlistItems} />
                     </PanelBoundary>
                   </div>
                   </>
