@@ -183,6 +183,6 @@ export function estimateRemainingBytes(bytesPerCountry: number[], countriesLeft:
 
 /** One line for the terminal and the server log. */
 export function progressLine(index: number, count: number, step: PreloadStep, result: PreloadStepResult): string {
-  const mark = result.outcome === 'done' ? 'ok  ' : result.outcome === 'skipped' ? 'skip' : 'FAIL';
+  const mark = result.outcome === 'done' ? 'ok  ' : result.outcome === 'skipped' ? 'needs setup' : 'FAIL';
   return `[preload ${index}/${count}] ${mark} ${step.label}${result.note ? ` (${result.note})` : ''}`;
 }

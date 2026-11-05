@@ -2153,7 +2153,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return { outcome: 'done', note: m?.eia ? undefined : 'EIA needs a key in Settings; Pink Sheet saved' };
     }
     case 'world:comtrade': {
-      if (!(process.env.COMTRADE_API_KEY || '').trim()) return { outcome: 'skipped', note: 'Needs setup: UN Comtrade key in Menu > Settings' };
+      if (!(process.env.COMTRADE_API_KEY || '').trim()) return { outcome: 'skipped', note: 'add a UN Comtrade key in Menu > Settings' };
       const file = await fetchComtrade();
       const n = Object.keys(file.countries || {}).length;
       return n ? { outcome: 'done', note: `${n} countries saved` } : { outcome: 'failed', note: 'UN Comtrade did not answer' };
@@ -2195,10 +2195,15 @@ function fileBytes(p: string): number {
 /** What is on disk now, and a size estimate for the countries not yet saved. */
 function preloadDisk() {
   const countries = preloadCountries();
-  const perCountry = countries.map((c) => fileBytes(snapshotFile(c.iso3)) + fileBytes(historyFile(c.iso3)));
-  const left = perCountry.filter((b) => b === 0).length;
+  // A country counts as saved once both its latest figures and its full history are on disk.
+  const full = countries.map((c) => {
+    const snap = fileBytes(snapshotFile(c.iso3));
+    const hist = fileBytes(historyFile(c.iso3));
+    return snap && hist ? snap + hist : 0;
+  });
+  const left = full.filter((b) => b === 0).length;
   const bytes = folderBytes(SNAPSHOT_DIR) + folderBytes(HISTORY_DIR) + folderBytes(ARCHIVE_DIR);
-  return { bytes, remainingEstimateBytes: estimateRemainingBytes(perCountry, left), countriesOnDisk: countries.length - left };
+  return { bytes, remainingEstimateBytes: estimateRemainingBytes(full, left), countriesOnDisk: countries.length - left };
 }
 function preloadReply() {
   const plan = preloadPlan();
@@ -2211,6 +2216,12 @@ function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = 
   const log = opts.log || ((line: string) => console.log(line));
   preloadStopAsked = false;
   preloadJob = (async () => {
+    if (!(await checkFeedsOnline(true))) {
+      preloadState = { ...preloadState, running: false, endedEarly: 'The feeds cannot be reached from this computer (offline, or a VPN or firewall blocks them); nothing was downloaded' };
+      savePreloadState();
+      log(`[preload] ${preloadState.endedEarly}.`);
+      return;
+    }
     const plan = preloadPlan();
     const todo = stepsToRun(plan, preloadState, { fresh: opts.fresh });
     preloadState = { ...preloadState, running: true, startedAt: new Date().toISOString(), finishedAt: undefined, endedEarly: undefined, countries: preloadCountries().map((c) => c.iso3) };
@@ -2247,6 +2258,38 @@ function startPreload(opts: { fresh?: boolean; log?: (line: string) => void } = 
   return preloadJob;
 }
 
+/**
+ * Whether the free feeds can be reached from this computer: a quick request to the World Bank and
+ * BIS (any answer counts, even an error page). Checked at most once a minute. While offline the app
+ * serves what is saved and does not try background refreshes, which would only fail.
+ */
+let feedsOnline: { online: boolean; checkedAt: number } | null = null;
+let feedsOnlineInFlight: Promise<boolean> | null = null;
+function checkFeedsOnline(force = false): Promise<boolean> {
+  if (!force && feedsOnline && Date.now() - feedsOnline.checkedAt < 60_000) return Promise.resolve(feedsOnline.online);
+  if (feedsOnlineInFlight) return feedsOnlineInFlight;
+  const probe = (url: string) =>
+    fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(4000) }).then(
+      () => true,
+      () => false
+    );
+  feedsOnlineInFlight = Promise.all([probe('https://api.worldbank.org/v2/country?format=json&per_page=1'), probe('https://stats.bis.org/')])
+    .then((r) => {
+      const online = r.some(Boolean);
+      if (feedsOnline && feedsOnline.online !== online) console.log(`[online] feeds ${online ? 'reachable again' : 'unreachable: serving saved data'}`);
+      feedsOnline = { online, checkedAt: Date.now() };
+      return online;
+    })
+    .finally(() => {
+      feedsOnlineInFlight = null;
+    });
+  return feedsOnlineInFlight;
+}
+/** False only when the last check found the feeds unreachable (unknown counts as online). */
+function knownOffline(): boolean {
+  return feedsOnline?.online === false;
+}
+
 /** npm run preload: the same run in the terminal, without starting the web server. */
 async function runPreloadCli(): Promise<void> {
   const fresh = process.argv.includes('--fresh');
@@ -2261,7 +2304,7 @@ async function runPreloadCli(): Promise<void> {
   const d = preloadDisk();
   console.log(`[preload] on disk now: ${formatBytes(d.bytes)} in data/live, data/history and data/archive.`);
   const sum = summarisePreload(preloadPlan(), preloadState);
-  for (const p of sum.problems) console.log(`  ${p.outcome === 'skipped' ? 'Not run' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
+  for (const p of sum.problems) console.log(`  ${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
   process.exit(0);
 }
 
@@ -2317,7 +2360,7 @@ async function fetchLiveOpenDataSnapshot(
   }
   const stored = loadStoredSnapshot(key);
   if (stored) {
-    if (snapshotDue(stored)) {
+    if (snapshotDue(stored) && !knownOffline()) {
       void refreshStoredSnapshot(key, countryNameHint);
     }
     // Saved snapshots may predate the official calendar; always rebuild it from today.
@@ -2348,6 +2391,8 @@ function withOfficialCalendar(snapshot: OpenDataSnapshot): OpenDataSnapshot {
 }
 
 async function refreshStaleSnapshots(force = false): Promise<void> {
+  // Offline: keep serving what is saved; the hourly check tries again once the feeds answer.
+  if (!force && !(await checkFeedsOnline())) return;
   for (const item of SOVEREIGN_CATALOG) {
     const stored = loadStoredSnapshot(item.iso3);
     if (force || !stored || snapshotDue(stored)) {
@@ -3627,6 +3672,21 @@ async function startServer() {
 
   // Download all country data (Menu > Offline data; same run as npm run preload).
   app.get('/api/preload', (_req, res) => res.json(preloadReply()));
+  app.get('/api/online', async (req, res) => {
+    const online = await checkFeedsOnline(req.query.recheck === '1');
+    const sum = summarisePreload(preloadPlan(), preloadState);
+    const saved = preloadCountries().map((c) => loadStoredSnapshot(c.iso3)?.pulledAt).filter((t): t is number => typeof t === 'number');
+    res.json({
+      online,
+      checkedAt: new Date(feedsOnline?.checkedAt ?? Date.now()).toISOString(),
+      // Oldest country pull on disk: everything shown is at least this fresh.
+      savedFrom: saved.length ? new Date(Math.min(...saved)).toISOString() : null,
+      savedNewest: saved.length ? new Date(Math.max(...saved)).toISOString() : null,
+      countriesSaved: saved.length,
+      countriesTotal: sum.countriesTotal,
+      preloadRunning: preloadState.running,
+    });
+  });
   app.post('/api/preload/start', (req, res) => {
     void startPreload({ fresh: req.body?.fresh === true });
     res.status(202).json(preloadReply());
