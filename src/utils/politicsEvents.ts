@@ -7,10 +7,13 @@
  *   as a percentile rank among countries (yearly).
  * - Polymarket: prediction-market odds on contracts that name the country (market prices, not a
  *   forecast by the app).
+ * - GDELT 2.0 raw files: weekly event counts (protests, sanctions, violence, Goldstein) and the
+ *   economic themes in the news (GKG), latest complete week against the weeks before.
  *
  * The rules on top (tone bands, stability bands) are stated here and shown with the figures.
  */
 import type { OpenDataSnapshot } from '../types/council';
+import { EVENT_SURGE_RULE, GOLDSTEIN_RULE, isEventSurge, type GdeltRawReading } from './gdeltRaw';
 
 export interface PoliticsFigures {
   tone?: { value: number; pulledAt: string };
@@ -19,11 +22,15 @@ export interface PoliticsFigures {
   stability?: { percentile: number; year: string };
   markets?: Array<{ question: string; probabilityPct: number; volumeUsd: number; url: string; change1dPts?: number; change1wPts?: number; change1mPts?: number }>;
   marketsPulledAt?: string;
+  /** GDELT raw files: events and economic themes for the latest week. */
+  raw?: GdeltRawReading;
 }
 
 export const GDELT_SHORT = 'GDELT news tone';
 export const WGI_SHORT = 'World Bank governance indicators (political stability)';
 export const POLYMARKET_SHORT = 'Polymarket';
+export const GDELT_EVENTS_SHORT = 'GDELT 2.0 events files';
+export const GDELT_GKG_SHORT = 'GDELT Global Knowledge Graph';
 
 /** Date in a liveFields label such as "GDELT, pulled 2026-11-02" or "World Bank WGI, 2024". */
 const dateIn = (label: string | undefined, re: RegExp) => (label?.match(re) || [])[1] || '';
@@ -65,6 +72,7 @@ export function politicsFromSnapshot(snap: OpenDataSnapshot): PoliticsFigures | 
       out.marketsPulledAt = dateIn(lf['polymarket.contracts'], /(\d{4}-\d{2}-\d{2})/);
     }
   }
+  if (snap.gdeltRaw?.weekStart) out.raw = snap.gdeltRaw;
   return Object.keys(out).length ? out : undefined;
 }
 
@@ -85,4 +93,71 @@ export const STABILITY_RULE = 'percentile rank among countries: under 25 = low, 
 
 export function formatUsd(v: number): string {
   return v >= 1e9 ? `$${(v / 1e9).toFixed(1)}bn` : v >= 1e6 ? `$${(v / 1e6).toFixed(1)}m` : v >= 1e3 ? `$${Math.round(v / 1e3)}k` : `$${Math.round(v)}`;
+}
+
+/** "Mon 2 Nov" style week label: "week of 2026-11-02". */
+const weekOf = (r: GdeltRawReading) => `week of ${r.weekStart}${r.complete ? '' : ' (in progress)'}`;
+const signed = (v: number, d = 0) => `${v >= 0 ? '+' : ''}${v.toFixed(d)}`;
+
+/**
+ * Figures and plain sentences from the GDELT raw files for the Politics & Events Agent. Counts are
+ * what the files hold; the surge reading is a stated rule on top (tagged as a model reading).
+ */
+export function rawGdeltFigures(r: GdeltRawReading): {
+  figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }>;
+  sentences: string[];
+  surge: boolean;
+} {
+  const figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }> = [];
+  const sentences: string[] = [];
+  const pulled = r.pulledAt ? `pulled ${r.pulledAt.slice(0, 10)}` : 'pull date unknown';
+  const filesNote = r.eventsFilesRead < r.eventsFilesExpected ? `; ${r.eventsFilesRead} of ${r.eventsFilesExpected} 15-minute files read` : '';
+  let surge = false;
+  if (r.events) {
+    const e = r.events;
+    const base = e.baseline;
+    const vs = base ? ` vs ${base.count} a week on average over the ${r.baselineWeeks} weeks before${e.changePct !== undefined ? ` (${signed(e.changePct)}%)` : ''}` : '';
+    figures.push({
+      label: `Events, ${weekOf(r)}`,
+      value: `${e.count} events: ${e.protests} protests, ${e.sanctions} sanctions or embargoes, ${e.violence} violent${vs}`,
+      source: `${GDELT_EVENTS_SHORT}, ${pulled}; an event counts where it took place or when the country is an actor${filesNote}`,
+      tag: 'live',
+    });
+    figures.push({
+      label: 'Event intensity (Goldstein)',
+      value: `${signed(e.goldsteinMean, 2)}${base ? ` (weeks before ${signed(base.goldsteinMean, 2)})` : ''}`,
+      source: `${GDELT_EVENTS_SHORT}; ${GOLDSTEIN_RULE}`,
+      tag: 'live',
+    });
+    surge = isEventSurge(r);
+    if (base) {
+      if (surge) {
+        figures.push({ label: 'Event reading', value: 'surge', source: `Rule: ${EVENT_SURGE_RULE}`, tag: 'model' });
+        sentences.push(`Reported events jumped to ${e.count} in the ${weekOf(r)}, ${signed(e.changePct || 0)}% on the weeks before.`);
+      } else {
+        sentences.push(`Reported events ran at ${e.count} in the ${weekOf(r)}${e.changePct !== undefined ? `, ${signed(e.changePct)}% on the weeks before` : ''}.`);
+      }
+      if (base.protests > 0 && e.protests >= 2 * base.protests && e.protests >= 5) sentences.push(`Protests doubled (${e.protests} against ${base.protests} a week).`);
+      if (e.sanctions >= 3 && e.sanctions >= 2 * Math.max(1, base.sanctions)) sentences.push(`Sanctions and embargo events rose to ${e.sanctions}.`);
+    }
+  }
+  if (r.gkg && r.gkg.articles > 0) {
+    const g = r.gkg;
+    const sample = g.sampleShare !== null && g.sampleShare < 1 ? `; shares of the articles in the ${Math.round(g.sampleShare * 1000) / 10}% of GKG files read` : '';
+    const top = g.themes.slice(0, 4);
+    if (top.length) {
+      figures.push({
+        label: `Economic themes in the news, ${weekOf(r)}`,
+        value: top.map((t) => `${t.label} ${t.sharePct}%${t.baselineSharePct !== undefined ? ` (before ${t.baselineSharePct}%)` : ''}`).join('; '),
+        source: `${GDELT_GKG_SHORT}, ${pulled}; share of ${g.articles} articles that name a place in the country${sample}`,
+        tag: 'live',
+      });
+      const risers = top.filter((t) => t.baselineSharePct !== undefined && t.sharePct >= 1.5 * (t.baselineSharePct || 0) && t.sharePct - (t.baselineSharePct || 0) >= 2);
+      if (risers.length) sentences.push(`More of the coverage is about ${risers.map((t) => t.label.toLowerCase()).join(' and ')} than in the weeks before.`);
+    }
+    figures.push({ label: 'News tone (GKG articles)', value: signed(g.toneMean, 2), source: `${GDELT_GKG_SHORT}, ${pulled}; ${TONE_RULE}`, tag: 'live' });
+  }
+  const names = [...r.topPersons.slice(0, 3).map((p) => p.name), ...r.topOrgs.slice(0, 3).map((o) => o.name)];
+  if (names.length) figures.push({ label: 'Most named in economic coverage (4 weeks)', value: names.join(', '), source: `${GDELT_GKG_SHORT}, ${pulled}`, tag: 'live' });
+  return { figures, sentences, surge };
 }
