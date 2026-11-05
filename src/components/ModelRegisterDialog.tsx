@@ -130,7 +130,9 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                   <span className="text-rose-600 dark:text-rose-400">{spec.file}: {spec.problem}.</span>
                                 ) : (
                                   <>
-                                    Version {spec.version}, registered {spec.registeredOn}. {spec.hypothesis} Pass mark: at least {spec.passMark?.minCases} cases, a lift of {spec.passMark?.minLiftPts} points or more over the base rate, p at or below {spec.passMark?.maxPValue}. Sample from {spec.sample?.from}.{' '}
+                                    Version {spec.version}, registered {spec.registeredOn}
+                                    {spec.retestOf ? `, a re-test of version ${spec.retestOf.version}, which ${spec.retestOf.verdict}. What changed: ${spec.retestOf.change}` : ''}. {spec.hypothesis} Pass mark: at least {spec.passMark?.minCases} cases, a lift of {spec.passMark?.minLiftPts} points or more over the base rate, p at or below {spec.passMark?.maxPValue}
+                                    {spec.framework === 2 ? `, with p from whole years resampled together, and a positive lift in at least ${Math.round((spec.passMark?.minSeriesShare ?? 0.5) * 100)}% of series (method 2)` : ' (method 1: cases counted as independent)'}. Sample from {spec.sample?.from}.{' '}
                                     <span className="break-all text-slate-400 dark:text-slate-500">docs/validation/preregistered/{spec.file} · SHA-256 {spec.hash}</span>
                                     {spec.knownLimits?.length ? <span className="block mt-1">Known limits, stated before the run: {spec.knownLimits.join(' ')}</span> : null}
                                   </>
@@ -146,6 +148,17 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                 {spec?.hash && spec.hash !== r.specHash ? ' (the test file has changed since: run again)' : ''}.
                                 <span className="block text-slate-400 dark:text-slate-500">{r.data}</span>
                               </dd>
+                              {r.robustness && (
+                                <>
+                                  <dt className="text-slate-500 dark:text-slate-400">{(r.framework ?? 1) === 2 ? 'By series' : 'Stricter check'}</dt>
+                                  <dd data-backtest-robustness={e.id}>
+                                    {(r.framework ?? 1) === 1 && <span className="block">Method 2: {r.robustness.verdict}</span>}
+                                    <span className="block text-slate-500 dark:text-slate-400">
+                                      {r.robustness.bySeries.map((b) => `${b.where} ${b.hits}/${b.cases} (${b.liftPts > 0 ? '+' : ''}${b.liftPts})`).join(' · ')}
+                                    </span>
+                                  </dd>
+                                </>
+                              )}
                             </>
                           )}
                         </>
