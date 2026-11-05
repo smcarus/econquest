@@ -30,6 +30,15 @@ import { POP_OUT_URL, WATCHLIST_VIEW_KEY, loadView, saveView, type WatchlistView
 
 // v2: only figures from real sources are recorded (v1 held built-in values, so it is ignored).
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
+/** Phone jump bar targets, in page order. */
+const JUMPS: [string, string][] = [
+  ['ws-inputs', 'Inputs'],
+  ['ws-watchlist', 'Watchlist'],
+  ['tool-digest', 'Moved'],
+  ['tool-calendar', 'Dates'],
+  ['tool-council', 'Council'],
+  ['tool-watch-alerts', 'Alerts'],
+];
 /** Elections, budgets and IMF dates listed before "Show all". */
 const PF_SHOWN = 3;
 
@@ -114,8 +123,9 @@ export const TodayPage: React.FC<{
   coreOnly?: boolean;
   /** Menu > AI model choice, for Your inputs. */
   aiProvider?: string;
-  /** Imported holdings, for Your inputs. */
+  /** Imported holdings: the count for Your inputs, the countries for the Held mark in the watchlist. */
   holdingsCount?: number;
+  heldIso3?: string[];
   /** A Your inputs chip was pressed (saved research is handled here: it scrolls to Ask the council). */
   onInputAction?: (id: Exclude<InputId, 'research'>) => void;
   /** Workspace (daily start) or Compare (the watchlist side by side). Same data, different panels. */
@@ -136,6 +146,7 @@ export const TodayPage: React.FC<{
   coreOnly = false,
   aiProvider,
   holdingsCount = 0,
+  heldIso3,
   onInputAction,
 }) => {
   // Read the previous visit once, then record this one after the figures settle.
@@ -199,6 +210,7 @@ export const TodayPage: React.FC<{
     ...server,
   });
   const [highlight, setHighlight] = useState<InputId | null>(null);
+  const held = useMemo(() => new Set(heldIso3 || []), [heldIso3]);
   const lit = (panel: PanelId) =>
     highlight && chips.find((c) => c.id === highlight)?.drives.includes(panel) ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-950' : '';
   const inputAction = (id: InputId) => {
@@ -246,62 +258,176 @@ export const TodayPage: React.FC<{
 
       {!isCompare && (
       <>
-      {onInputAction && (
-        <PanelBoundary name="Your inputs">
-          <WorkspaceInputs chips={chips} onAction={inputAction} onHighlight={setHighlight} />
-        </PanelBoundary>
-      )}
+      {/* Inputs on the left (sticky on a desktop), outputs on the right in the order you check them. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(18rem,22rem)_1fr] gap-4 items-start pb-16 lg:pb-0">
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto" aria-label="Your inputs and watchlist">
+          <div id="ws-inputs" className="scroll-mt-36 lg:scroll-mt-20">
+            {onInputAction && (
+              <PanelBoundary name="Your inputs">
+                <WorkspaceInputs chips={chips} onAction={inputAction} onHighlight={setHighlight} />
+              </PanelBoundary>
+            )}
+          </div>
+          <div id="ws-watchlist" className="scroll-mt-36 lg:scroll-mt-20">
+          <Card
+            title="Watchlist"
+            icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
+            note={`${watchlistName}. Press a country to open it; pop out for every column.`}
 
-      <div id="tool-digest" className={`scroll-mt-4 transition-shadow ${lit('digest')}`}>
-        <PanelBoundary name="Since your last visit">
-          <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('digest')} />
-        </PanelBoundary>
-      </div>
+            uses={uses('watchlist')}
+            className={`transition-shadow ${lit('watchlist')}`}
+            action={
+              <div className="flex flex-col items-end gap-1">
+                <button
+                  type="button"
+                  onClick={popOut}
+                  title="Open the full watchlist in its own window, with your choice of columns"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" /> Pop out
+                </button>
+                <button
+                  type="button"
+                  onClick={onOpenWatchlistManager}
+                  className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
+                >
+                  Edit
+                </button>
+              </div>
+            }
+          >
+            <PanelBoundary name="The watchlist">
+            <MissingSources items={watchlistItems} compact />
+            <WatchlistTable
+              compact
+              items={watchlistItems}
+              view={view}
+              onChangeView={changeView}
+              lastLook={lastVisit?.rows}
+              highlightIso3={run.iso3}
+              heldIso3={held}
+              onOpen={(it) => onOpenCountry(it)}
+            />
+            </PanelBoundary>
+          </Card>
+          </div>
+        </aside>
 
-      {/* Watchlist as a small card in the top-left corner; the full table lives in the pop-out. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(16rem,22rem)_1fr] gap-4 items-start">
-        <Card
-          title="Watchlist"
-          icon={<span className="w-2 h-2 rounded-full bg-blue-600" />}
-          note="Press a country to open it. Pop out for every column."
-
-          uses={uses('watchlist')}
-          className={`transition-shadow ${lit('watchlist')}`}
-          action={
-            <div className="flex flex-col items-end gap-1">
-              <button
-                type="button"
-                onClick={popOut}
-                title="Open the full watchlist in its own window, with your choice of columns"
-                className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-              >
-                <ExternalLink className="w-3.5 h-3.5" /> Pop out
-              </button>
-              <button
-                type="button"
-                onClick={onOpenWatchlistManager}
-                className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-              >
-                Edit
-              </button>
-            </div>
-          }
-        >
-          <PanelBoundary name="The watchlist">
-          <MissingSources items={watchlistItems} compact />
-          <WatchlistTable
-            compact
-            items={watchlistItems}
-            view={view}
-            onChangeView={changeView}
-            lastLook={lastVisit?.rows}
-            highlightIso3={run.iso3}
-            onOpen={(it) => onOpenCountry(it)}
-          />
+        <div className="min-w-0 space-y-4">
+        <div id="tool-digest" className={`scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('digest')}`}>
+          <PanelBoundary name="Since your last visit">
+            <DigestPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('digest')} />
           </PanelBoundary>
-        </Card>
+        </div>
 
-        <div className={`min-w-0 scroll-mt-4 transition-shadow ${lit('council')}`} id="tool-council">
+          <div id="tool-calendar" className="scroll-mt-36 lg:scroll-mt-20">
+          <Card
+            title="Next two weeks"
+            icon={<CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
+            note="Official central bank, statistics and election dates. Each row links to its source."
+            uses={uses('calendar')}
+            className={`transition-shadow ${lit('calendar')}`}
+          >
+            {upcoming.length === 0 ? (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                No scheduled decisions or releases in the next 14 days.
+              </p>
+            ) : (
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                {upcoming.slice(0, 8).map((ev) => (
+                  <li key={`${ev.iso3}-${ev.date}-${ev.title}`} className="py-2.5 flex items-start justify-between gap-3">
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => openIso(ev.iso3, 'quant_macro_catalyst_calendar')}
+                        className="text-left text-sm font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                      >
+                        {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
+                      </button>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        <a
+                          href={ev.sourceUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="hover:underline"
+                          title={ev.primarySource ? 'Official source' : 'Secondary source quoting the official schedule'}
+                        >
+                          {ev.sourceName}
+                        </a>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <div className="text-xs font-medium text-slate-900 dark:text-white">
+                        {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
+                      </div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {noSchedule.length > 0 && (
+              <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                No official schedule on file for {noSchedule.map((w) => w.countryName).join(', ')}.
+              </p>
+            )}
+            <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800" data-political-fiscal="true">
+              <h4 className="text-sm font-medium text-slate-900 dark:text-white">Elections, budgets and IMF, next 12 months</h4>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Countries where data and price disagree come first. Budget dates are the latest the constitution allows.
+              </p>
+              {politicalFiscal.length === 0 ? (
+                <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">None on file for this watchlist.</p>
+              ) : (
+                <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
+                  {(showAllPf ? politicalFiscal : politicalFiscal.slice(0, PF_SHOWN)).map((ev) => (
+                    <li key={`pf-${ev.iso3}-${ev.date}-${ev.title}`} data-pf-event={ev.iso3} className="py-2 flex items-start justify-between gap-3">
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => openIso(ev.iso3)}
+                          className="text-left text-sm text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                        >
+                          {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
+                        </button>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">
+                          {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">Data and price disagree · </span>}
+                          <a
+                            href={ev.sourceUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="hover:underline"
+                            title={ev.primarySource ? 'Official source' : 'Secondary source'}
+                          >
+                            {ev.sourceName}
+                          </a>
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0 text-xs">
+                        <div className="font-medium text-slate-900 dark:text-white">
+                          {ev.dateKind === 'legal_deadline' ? 'By ' : ''}
+                          {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                        <div className="text-slate-500 dark:text-slate-400">
+                          {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {politicalFiscal.length > PF_SHOWN && (
+                <button type="button" className="mt-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline" onClick={() => setShowAllPf((v) => !v)} data-pf-toggle="true">
+                  {showAllPf ? 'Show fewer' : `Show all ${politicalFiscal.length}`}
+                </button>
+              )}
+            </div>
+          </Card>
+          </div>
+
+        <div className={`min-w-0 scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('council')}`} id="tool-council">
         <PanelBoundary name="Ask the council">
         <AskCouncilPanel
           items={edgeItems}
@@ -312,122 +438,27 @@ export const TodayPage: React.FC<{
         />
         </PanelBoundary>
         </div>
+
+        <div id="tool-watch-alerts" className={`scroll-mt-36 lg:scroll-mt-20 transition-shadow ${lit('alerts')}`}>
+          <PanelBoundary name="Watch alerts">
+            <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('alerts')} />
+          </PanelBoundary>
+        </div>
+        </div>
       </div>
 
-      <div id="tool-watch-alerts" className={`scroll-mt-4 transition-shadow ${lit('alerts')}`}>
-        <PanelBoundary name="Watch alerts">
-          <WatchAlertsPanel items={edgeItems} onOpenCountry={(item) => onOpenCountry(item, 'macro')} uses={uses('alerts')} />
-        </PanelBoundary>
-      </div>
-
-
-      <div id="tool-calendar" className={`scroll-mt-4 ${coreOnly ? '' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}`}>
-
-        <Card
-          title="Next two weeks"
-          icon={<CalendarClock className="w-4 h-4 text-amber-600 dark:text-amber-400" />}
-          note="Official central bank, statistics and election dates. Each row links to its source."
-          uses={uses('calendar')}
-          className={`transition-shadow ${lit('calendar')}`}
-        >
-          {upcoming.length === 0 ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              No scheduled decisions or releases in the next 14 days.
-            </p>
-          ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              {upcoming.slice(0, 8).map((ev) => (
-                <li key={`${ev.iso3}-${ev.date}-${ev.title}`} className="py-2.5 flex items-start justify-between gap-3">
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => openIso(ev.iso3, 'quant_macro_catalyst_calendar')}
-                      className="text-left text-sm font-medium text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                    >
-                      {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
-                    </button>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      <a
-                        href={ev.sourceUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="hover:underline"
-                        title={ev.primarySource ? 'Official source' : 'Secondary source quoting the official schedule'}
-                      >
-                        {ev.sourceName}
-                      </a>
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className="text-xs font-medium text-slate-900 dark:text-white">
-                      {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
-                    </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}
-                    </div>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-          {noSchedule.length > 0 && (
-            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-              No official schedule on file for {noSchedule.map((w) => w.countryName).join(', ')}.
-            </p>
-          )}
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800" data-political-fiscal="true">
-            <h4 className="text-sm font-medium text-slate-900 dark:text-white">Elections, budgets and IMF, next 12 months</h4>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Countries where data and price disagree come first. Budget dates are the latest the constitution allows.
-            </p>
-            {politicalFiscal.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">None on file for this watchlist.</p>
-            ) : (
-              <ul className="mt-1 divide-y divide-slate-100 dark:divide-slate-800">
-                {(showAllPf ? politicalFiscal : politicalFiscal.slice(0, PF_SHOWN)).map((ev) => (
-                  <li key={`pf-${ev.iso3}-${ev.date}-${ev.title}`} data-pf-event={ev.iso3} className="py-2 flex items-start justify-between gap-3">
-                    <div>
-                      <button
-                        type="button"
-                        onClick={() => openIso(ev.iso3)}
-                        className="text-left text-sm text-slate-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
-                      >
-                        {byIso.get(ev.iso3)?.countryName || ev.iso3}: {ev.title}
-                      </button>
-                      <div className="text-xs text-slate-500 dark:text-slate-400">
-                        {flaggedIsos.has(ev.iso3) && <span className="text-blue-700 dark:text-blue-300">Data and price disagree · </span>}
-                        <a
-                          href={ev.sourceUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:underline"
-                          title={ev.primarySource ? 'Official source' : 'Secondary source'}
-                        >
-                          {ev.sourceName}
-                        </a>
-                      </div>
-                    </div>
-                    <div className="text-right shrink-0 text-xs">
-                      <div className="font-medium text-slate-900 dark:text-white">
-                        {ev.dateKind === 'legal_deadline' ? 'By ' : ''}
-                        {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </div>
-                      <div className="text-slate-500 dark:text-slate-400">
-                        {ev.daysUntil === 0 ? 'Today' : ev.daysUntil === 1 ? 'Tomorrow' : `In ${ev.daysUntil} days`}
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-            {politicalFiscal.length > PF_SHOWN && (
-              <button type="button" className="mt-2 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline" onClick={() => setShowAllPf((v) => !v)} data-pf-toggle="true">
-                {showAllPf ? 'Show fewer' : `Show all ${politicalFiscal.length}`}
-              </button>
-            )}
-          </div>
-        </Card>
-      </div>
+      {/* Phone: a jump bar fixed to the bottom of the screen. */}
+      <nav className="lg:hidden fixed bottom-0 inset-x-0 z-20 bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800" aria-label="Jump to a Workspace panel" data-ws-jump="true">
+        <ul className="grid grid-cols-6 text-xs">
+          {JUMPS.map(([id, label]) => (
+            <li key={id}>
+              <a href={`#${id}`} className="block py-3 text-center text-slate-700 dark:text-slate-200 hover:text-blue-700 dark:hover:text-blue-300">
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       {!coreOnly && (
       <Card

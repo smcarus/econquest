@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChevronRight } from 'lucide-react';
 import { PANEL_LABEL, panelUses, type InputChip, type InputId, type PanelId, type WorkspaceInputsState } from '../utils/workspaceInputs';
 
 /**
@@ -7,6 +8,11 @@ import { PANEL_LABEL, panelUses, type InputChip, type InputId, type PanelId, typ
  */
 
 const ALL_PANELS = Object.keys(PANEL_LABEL).length;
+
+function feedsText(c: InputChip): string {
+  const here = c.drives.length === ALL_PANELS ? 'Feeds every panel' : c.drives.length ? `Feeds ${c.drives.map((p) => PANEL_LABEL[p]).join(', ')}` : 'Feeds no panel here';
+  return c.alsoFeeds ? `${here}; also ${c.alsoFeeds}` : here;
+}
 
 type Keys = NonNullable<WorkspaceInputsState['keys']>;
 
@@ -60,17 +66,17 @@ export const WorkspaceInputs: React.FC<{
 
   return (
     <section className="ui-panel" aria-labelledby="ws-inputs-title" data-workspace-inputs="true">
-      <header className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+      <header className="px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <h2 id="ws-inputs-title" className="text-sm font-semibold text-slate-900 dark:text-white">
           Your inputs
         </h2>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {toFix ? `${toFix} need setup. ` : ''}Point at one to outline the panels it feeds; press it to change it.
+        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
+          {toFix ? `${toFix} need setup. ` : ''}Point at one to outline the panels it feeds; press it to change it. Each panel's Uses line links back here.
         </p>
       </header>
-      <ul className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
+      <ul>
         {chips.map((c) => (
-          <li key={c.id} className="border-b xl:border-b-0 border-r border-slate-100 dark:border-slate-800 min-w-0">
+          <li key={c.id} className="border-b last:border-b-0 border-slate-100 dark:border-slate-800 min-w-0">
             <button
               type="button"
               data-input={c.id}
@@ -80,20 +86,17 @@ export const WorkspaceInputs: React.FC<{
               onMouseLeave={() => onHighlight?.(null)}
               onFocus={() => onHighlight?.(c.id)}
               onBlur={() => onHighlight?.(null)}
-              title={`${c.note} ${c.action}.`}
-              className="w-full h-full flex flex-col items-start justify-start text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              title={`${c.label}: ${c.value}. ${c.note} ${feedsText(c)}. Press to ${c.action.charAt(0).toLowerCase()}${c.action.slice(1)}.`}
+              aria-label={`${c.label}: ${c.value}. ${c.state === 'setup' ? c.note + ' ' : ''}${feedsText(c)}. ${c.action}.`}
+              className="w-full h-full text-left px-4 py-2 hover:bg-slate-50 dark:hover:bg-slate-800/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <span className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <span className={`w-1.5 h-1.5 rounded-full ${DOT[c.state]}`} aria-hidden="true" />
-                {c.label}
-                
+              <span className="flex items-center gap-2 min-w-0">
+                <span className={`shrink-0 w-1.5 h-1.5 rounded-full ${DOT[c.state]}`} aria-hidden="true" />
+                <span className="shrink-0 text-xs text-slate-500 dark:text-slate-400">{c.label}</span>
+                <span className="ml-auto min-w-0 truncate text-sm text-slate-900 dark:text-white text-right">{c.value}</span>
+                <ChevronRight className="shrink-0 w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
               </span>
-              <span className="block mt-0.5 text-sm text-slate-900 dark:text-white line-clamp-2">{c.value}</span>
-              {c.state === 'setup' && <span className="block mt-0.5 text-xs text-amber-800 dark:text-amber-300">{c.note}</span>}
-              <span className="block mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                {c.drives.length === ALL_PANELS ? 'Feeds every panel' : c.drives.length ? `Feeds ${c.drives.map((p) => PANEL_LABEL[p]).join(', ')}` : `Feeds ${c.alsoFeeds}`}
-              </span>
-              <span className="block mt-1 text-xs font-medium text-blue-700 dark:text-blue-300">{c.action}</span>
+              {c.state === 'setup' && <span className="block mt-0.5 pl-3.5 text-xs text-amber-800 dark:text-amber-300">{c.note}</span>}
             </button>
           </li>
         ))}

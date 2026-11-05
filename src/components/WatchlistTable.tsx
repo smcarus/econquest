@@ -155,7 +155,9 @@ export const WatchlistTable: React.FC<{
   onRemove?: (iso3: string) => void;
   /** Small corner card on Workspace: the first COMPACT_COLUMNS chosen columns, tight rows, one layout. */
   compact?: boolean;
-}> = ({ items, view, onChangeView, lastLook, highlightIso3, onOpen, onRemove, compact }) => {
+  /** Countries in your imported holdings, marked "Held" in the corner card. */
+  heldIso3?: ReadonlySet<string>;
+}> = ({ items, view, onChangeView, lastLook, highlightIso3, onOpen, onRemove, compact, heldIso3 }) => {
   const rows = useMemo(() => sortRows(items, view, lastLook), [items, view, lastLook]);
   const allCols = view.columns.map((id) => COLUMN_BY_ID[id]);
   const cols = compact ? allCols.slice(0, COMPACT_COLUMNS) : allCols;
@@ -189,7 +191,11 @@ export const WatchlistTable: React.FC<{
               title={`Open ${it.countryName}`}
               className={`border-b border-slate-100 dark:border-slate-800 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/60 ${it.iso3 === highlightIso3 ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}`}
             >
-              <td className="py-1 pr-2 font-medium text-slate-900 dark:text-white">{it.countryName.replace(/\s*\(.*\)$/, '')}</td>
+              <td className="py-1 pr-2 font-medium text-slate-900 dark:text-white">
+                {it.countryName.replace(/\s*\(.*\)$/, '')}
+                {it.iso3 === highlightIso3 && <span className="ml-1.5 font-normal text-blue-700 dark:text-blue-300" title="The country open in Country Research">Open</span>}
+                {heldIso3?.has(it.iso3) && <span className="ml-1.5 font-normal text-emerald-700 dark:text-emerald-400" title="In your imported holdings" data-held={it.iso3}>Held</span>}
+              </td>
               {cols.map((c) => (
                 <td key={c.id} className={`py-1 pr-2 ${c.align === 'right' ? 'text-right' : ''}`}>
                   {(() => {
