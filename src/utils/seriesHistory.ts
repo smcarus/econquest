@@ -116,16 +116,29 @@ function policyRate(iso3: string, pull: CbpolPull | null | undefined): Series | 
   if (!pull) return { id: 'policy_rate', label, reason: 'BIS has not answered yet' };
   const daily = pull.daily?.[area];
   const monthly = pull.monthly?.[area];
-  const use = daily?.points?.length ? { s: daily, freq: 'daily' as const } : monthly?.points?.length ? { s: monthly, freq: 'monthly' as const } : null;
-  if (!use) return { id: 'policy_rate', label, reason: 'Not in BIS policy rates' };
-  return {
+  const dailyPts = sortByDate((daily?.points || []).filter((p) => finite(p.pct)).map((p) => ({ date: p.period, value: p.pct })));
+  const monthlyPts = sortByDate((monthly?.points || []).filter((p) => finite(p.pct)).map((p) => ({ date: p.period, value: p.pct })));
+  if (!dailyPts.length && !monthlyPts.length) return { id: 'policy_rate', label, reason: 'Not in BIS policy rates' };
+  const bank = daily?.bank || monthly?.bank;
+  const base = {
     id: 'policy_rate',
     label,
     unit: '%',
-    freq: use.freq,
-    source: `BIS central bank policy rates${use.s.bank ? ` (${use.s.bank})` : ''}`,
+    source: `BIS central bank policy rates${bank ? ` (${bank})` : ''}`,
     pulledAt: pull.pulledAt,
-    points: sortByDate(use.s.points.filter((p) => finite(p.pct)).map((p) => ({ date: p.period, value: p.pct }))),
+  };
+  // The daily pull keeps only the latest observation or two, while the monthly one holds years of
+  // month-ends. Use the daily run on its own only when it reaches back as far as the monthly one;
+  // otherwise chart the month-ends and add the daily figures that came after the last month-end.
+  const dailyCoversMonthly = dailyPts.length > 0 && (!monthlyPts.length || dailyPts[0].date.slice(0, 7) <= monthlyPts[0].date);
+  if (dailyCoversMonthly) return { ...base, freq: 'daily', points: dailyPts };
+  const lastMonth = monthlyPts[monthlyPts.length - 1].date;
+  const after = dailyPts.filter((p) => p.date.slice(0, 7) > lastMonth).map((p) => ({ ...p, note: 'latest daily figure' }));
+  return {
+    ...base,
+    freq: 'monthly',
+    points: [...monthlyPts, ...after],
+    ...(after.length ? { about: 'Month-end rates, then the latest daily figure after the last month-end.' } : {}),
   };
 }
 

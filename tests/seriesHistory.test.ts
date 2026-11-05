@@ -44,6 +44,22 @@ test('monthly BIS series is used where there is no daily one', () => {
   assert.equal(rate.points[0].value, 37);
 });
 
+test('policy rate: the one-day daily pull does not hide the saved monthly history', () => {
+  const pull = {
+    pulledAt: '2026-11-05T06:00:00Z',
+    daily: { BR: { bank: 'Central Bank of Brazil', points: [{ period: '2026-11-03', pct: 13.75 }] } },
+    monthly: { BR: { points: [{ period: '2026-09', pct: 14 }, { period: '2026-08', pct: 14.25 }, { period: '2026-10', pct: 13.75 }] } },
+  };
+  const rate = countrySeries('BRA', { cbpol: pull }).series.find((s) => s.id === 'policy_rate')!;
+  assert.equal(rate.freq, 'monthly');
+  assert.deepEqual(rate.points.map((p) => [p.date, p.value]), [['2026-08', 14.25], ['2026-09', 14], ['2026-10', 13.75], ['2026-11-03', 13.75]]);
+  assert.equal(rate.points[3].note, 'latest daily figure');
+  assert.match(rate.source, /Central Bank of Brazil/);
+  // A daily figure inside the last month-end's month adds nothing.
+  const same = { ...pull, daily: { BR: { points: [{ period: '2026-10-27', pct: 13.75 }] } } };
+  assert.equal(countrySeries('BRA', { cbpol: same }).series.find((s) => s.id === 'policy_rate')!.points.length, 3);
+});
+
 test('archive series: one point per pull that had the figure live; unmarked values are skipped', () => {
   const pull = (date: string, debt: number, live: boolean) => ({
     date,
