@@ -52,6 +52,8 @@ own-data switch in Settings).
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
 | OECD leading indicators (via DBnomics) | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | api.db.nomics.world | 1 day, on disk |
 | OECD consumer prices (via DBnomics) | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | api.db.nomics.world | 1 day, on disk |
+| Banco Central do Brasil (SGS 13522) | Brazil's IPCA inflation over 12 months, monthly; used instead of the OECD figure when at least as new (it was September 2026 against May on 2026-11-05) | api.bcb.gov.br | 1 day, on disk |
+| Eurostat HICP (prc_hicp_minr) | Monthly inflation, annual rate, all items, for EU members on your lists (Poland on the defaults); used instead of the OECD figure when at least as new. Turkey is not in this dataset | ec.europa.eu | 1 day, on disk |
 | UN Comtrade | Annual goods trade by partner (shares with China, Taiwan, Russia and the Gulf producers; top partners) and the export mix by HS chapter (fuels, ores, metals, farm goods) | comtradeapi.un.org | 30 days per country, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |

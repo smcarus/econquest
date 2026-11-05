@@ -104,7 +104,7 @@ export const COLUMNS: ColumnDef[] = [
       it.cpiInflationPct === undefined
         ? undefined
         : it.cpiSource === 'oecd' && it.cpiMonth
-          ? `OECD, ${oecdMonth(it.cpiMonth)}${it.oecdCpi?.trend ? `, ${it.oecdCpi.trend}` : ''}`
+          ? `${it.oecdCpi?.short || 'OECD'}, ${oecdMonth(it.cpiMonth)}${it.oecdCpi?.trend ? `, ${it.oecdCpi.trend}` : ''}`
           : 'Live, IMF',
   },
   {

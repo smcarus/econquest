@@ -32,6 +32,10 @@ globalThis.fetch = async (input, init = {}) => {
     };
     return json({ message: { role: 'assistant', content: JSON.stringify(brief) } });
   }
+  // Brazil's central bank: IPCA over 12 months, as it answered on 2026-11-05.
+  if (url.startsWith('https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/')) {
+    return json([{ data: '01/07/2026', valor: '4.44' }, { data: '01/08/2026', valor: '4.22' }, { data: '01/09/2026', valor: '4.58' }]);
+  }
   // GDELT: always refuses for too many requests, as it did on Sam's Mac (2026-11-05).
   if (url.includes('api.gdeltproject.org')) return new Response('Please limit requests to one every 5 seconds', { status: 429 });
   // FRED API: answers for Mexico only, refuses South Africa so the CSV fallback is exercised.

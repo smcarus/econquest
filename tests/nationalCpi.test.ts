@@ -1,0 +1,63 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { bcbSgsUrl, eurostatHicpUrl, mergeNationalCpi, parseBcbSgs, parseEurostatHicp, BCB_LONG, BCB_SHORT } from '../src/utils/nationalCpi.ts';
+import { cpiFor, cpiSource } from '../src/utils/oecdInflation.ts';
+
+// Replies as the sources gave them on 2026-11-05.
+const BCB = [{ data: '01/07/2026', valor: '4.44' }, { data: '01/08/2026', valor: '4.22' }, { data: '01/09/2026', valor: '4.58' }];
+const EUROSTAT = {
+  version: '2.0',
+  class: 'dataset',
+  value: { '0': 3.1, '1': 3.5 },
+  id: ['freq', 'unit', 'coicop18', 'geo', 'time'],
+  size: [1, 1, 1, 1, 3],
+  dimension: {
+    freq: { category: { index: { M: 0 } } },
+    unit: { category: { index: { RCH_A: 0 } } },
+    coicop18: { category: { index: { TOTAL: 0 } } },
+    geo: { category: { index: { PL: 0 } } },
+    time: { category: { index: { '2026-07': 0, '2026-08': 1, '2026-09': 2 } } },
+  },
+};
+
+test('BCB SGS rows read into months, oldest first; blanks and bad rows skipped', () => {
+  assert.deepEqual(parseBcbSgs(BCB), [
+    { period: '2026-07', value: 4.44 },
+    { period: '2026-08', value: 4.22 },
+    { period: '2026-09', value: 4.58 },
+  ]);
+  assert.deepEqual(parseBcbSgs([{ data: '01/10/2026', valor: '' }, { data: 'x', valor: '1' }]), []);
+  assert.deepEqual(parseBcbSgs({}), []);
+  assert.equal(bcbSgsUrl(13522, 3), 'https://api.bcb.gov.br/dados/serie/bcdata.sgs.13522/dados/ultimos/3?formato=json');
+});
+
+test('Eurostat JSON-stat: a month with no value is skipped, not read as zero', () => {
+  assert.deepEqual(parseEurostatHicp(EUROSTAT), { PL: [{ period: '2026-07', value: 3.1 }, { period: '2026-08', value: 3.5 }] });
+  assert.match(eurostatHicpUrl(['PL', 'HU']), /prc_hicp_minr\?.*unit=RCH_A&coicop18=TOTAL&geo=PL&geo=HU/);
+});
+
+test('Eurostat with two countries: positions follow geo then time', () => {
+  const two = { ...EUROSTAT, size: [1, 1, 1, 2, 2], value: { '0': 1, '1': 2, '2': 3, '3': 4 }, dimension: { ...EUROSTAT.dimension, geo: { category: { index: { PL: 0, HU: 1 } } }, time: { category: { index: { '2026-07': 0, '2026-08': 1 } } } } };
+  const r = parseEurostatHicp(two);
+  assert.deepEqual(r.PL.map((p) => p.value), [1, 2]);
+  assert.deepEqual(r.HU.map((p) => p.value), [3, 4]);
+});
+
+test('an ambiguous Eurostat reply (more than one unit) is refused', () => {
+  assert.deepEqual(parseEurostatHicp({ ...EUROSTAT, size: [1, 2, 1, 1, 3] }), {});
+});
+
+test('a national series replaces the OECD one only when at least as new, and says where it came from', () => {
+  const oecd = { BRA: { basis: 'oecd_yoy' as const, points: [{ period: '2026-05', value: 5.0 }] }, MEX: { basis: 'oecd_yoy' as const, points: [{ period: '2026-05', value: 3.9 }] } };
+  const merged = mergeNationalCpi(oecd, { BRA: { points: parseBcbSgs(BCB), short: BCB_SHORT, long: BCB_LONG } });
+  const bra = cpiFor('BRA', merged)!;
+  assert.equal(bra.month, '2026-09');
+  assert.equal(bra.yoyPct, 4.58);
+  assert.equal(bra.basis, 'national');
+  assert.equal(bra.short, 'BCB IPCA');
+  assert.match(cpiSource(bra), /^Banco Central do Brasil, IPCA 12-month inflation \(SGS 13522\), Sep 2026$/);
+  assert.equal(cpiFor('MEX', merged)!.basis, 'oecd_yoy', 'untouched');
+  const older = mergeNationalCpi({ BRA: { basis: 'oecd_yoy', points: [{ period: '2026-10', value: 5 }] } }, { BRA: { points: parseBcbSgs(BCB), short: BCB_SHORT, long: BCB_LONG } });
+  assert.equal(cpiFor('BRA', older)!.basis, 'oecd_yoy', 'OECD newer: keep it');
+  assert.equal(cpiFor('BRA', mergeNationalCpi(null, { BRA: { points: parseBcbSgs(BCB), short: BCB_SHORT, long: BCB_LONG } }))!.month, '2026-09', 'no OECD reply at all');
+});
