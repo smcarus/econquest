@@ -659,6 +659,16 @@ test('downloads: figures and series come as CSV files; a series with no history 
   assert.equal(world.status, 200);
 });
 
+test('GDELT raw files: before a pull the series is empty and the reading null (shown as Missing)', async () => {
+  const r = await fetch(`${base}/api/gdelt-raw/BRA`);
+  assert.equal(r.status, 200);
+  const body = (await r.json()) as { series: unknown; reading: unknown; weeks: number; gkgEveryHours: number };
+  assert.equal(body.series, null);
+  assert.equal(body.reading, null);
+  assert.equal(body.weeks, 8);
+  assert.equal(body.gkgEveryHours, 3);
+});
+
 test('track record: log from the archive, with download', async () => {
   const r = await fetch(`${base}/api/track-record/MEX`);
   assert.equal(r.status, 200);

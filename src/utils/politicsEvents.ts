@@ -137,7 +137,7 @@ export function rawGdeltFigures(r: GdeltRawReading): {
       } else {
         sentences.push(`Reported events ran at ${e.count} in the ${weekOf(r)}${e.changePct !== undefined ? `, ${signed(e.changePct)}% on the weeks before` : ''}.`);
       }
-      if (base.protests > 0 && e.protests >= 2 * base.protests && e.protests >= 5) sentences.push(`Protests doubled (${e.protests} against ${base.protests} a week).`);
+      if (base.protests > 0 && e.protests >= 2 * base.protests && e.protests >= 5) sentences.push(`Protests rose to ${e.protests}, against ${base.protests} a week before.`);
       if (e.sanctions >= 3 && e.sanctions >= 2 * Math.max(1, base.sanctions)) sentences.push(`Sanctions and embargo events rose to ${e.sanctions}.`);
     }
   }

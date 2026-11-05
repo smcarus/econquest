@@ -129,8 +129,8 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
-import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading } from './src/utils/gdeltRaw.ts';
-import { gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState } from './src/utils/gdeltRawStore.ts';
+import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
+import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState } from './src/utils/gdeltRawStore.ts';
 import { polymarketMoves } from './src/utils/oddsMoves.ts';
 import {
   FRED_10Y_SERIES,
@@ -2333,18 +2333,22 @@ function cbpolPullQuick(): Promise<CbpolPull | null> {
  * so a pull shows up without a new snapshot. The day files are read once per pull (pull.json date).
  */
 let gdeltRawDaysCache: { stamp: string; days: GdeltRawDay[] } | null = null;
-function gdeltRawReadingFor(iso3: string): GdeltRawReading | null {
+function gdeltRawSeriesFor(iso3: string): GdeltRawSeries | null {
   try {
     const dir = gdeltRawDir(DATA_DIR);
     const st = loadGdeltRawPullState(dir);
     if (!st.pulledAt) return null;
     const stamp = `${st.pulledAt}|${st.latestSlot || ''}`;
     if (gdeltRawDaysCache?.stamp !== stamp) gdeltRawDaysCache = { stamp, days: loadAllGdeltRawDays(dir) };
-    return gdeltRawReading(buildGdeltRawSeries(String(iso3 || '').toUpperCase(), gdeltRawDaysCache.days, { pulledAt: st.pulledAt }));
+    const s = buildGdeltRawSeries(String(iso3 || '').toUpperCase(), gdeltRawDaysCache.days, { pulledAt: st.pulledAt });
+    return s.weeks.length ? s : null;
   } catch (err: any) {
     console.warn(`[GDELT raw] could not read ${iso3}: ${err?.message || err}`);
     return null;
   }
+}
+function gdeltRawReadingFor(iso3: string): GdeltRawReading | null {
+  return gdeltRawReading(gdeltRawSeriesFor(iso3));
 }
 function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
@@ -4112,6 +4116,13 @@ async function startServer() {
       policyMissing: policy ? null : set.missing.find((m) => m.id === 'policy_rate')?.reason || 'No BIS policy rate history',
     };
   }
+  // GDELT raw files: the weekly series for one country, the last pull and the settings.
+  app.get('/api/gdelt-raw/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const series = gdeltRawSeriesFor(iso3);
+    const cfg = gdeltRawConfig(process.env);
+    res.json({ series, reading: gdeltRawReading(series), pull: loadGdeltRawPullState(gdeltRawDir(DATA_DIR)), weeks: cfg.weeks, gkgEveryHours: cfg.gkgEveryMinutes / 60 });
+  });
   app.get('/api/track-record/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const { record, policyMissing } = await trackRecordFor(iso3);
