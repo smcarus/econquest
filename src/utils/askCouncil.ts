@@ -12,6 +12,7 @@
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
+import { taylorCheck, taylorMethod, taylorSentence } from './taylorRule';
 import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
 import { oddsMoveText } from './oddsMoves';
 import type { LiveWatchlistItem } from '../types/council';
@@ -430,12 +431,20 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         { label: 'Inflation trend', value: it.oecdCpi.trend, source: '3-month change: +0.5 pts or more = rising, -0.5 pts or more down = easing', tag: 'model' }
       );
     }
+    // Policy rule check (src/utils/taylorRule.ts): only with the BIS rate, live inflation and the bank's target.
+    const taylor = taylorCheck(it);
+    if (taylor.ok) {
+      figures.push(
+        { label: 'Taylor rule rate', value: `${p2(taylor.reading.rulePct)}${taylor.reading.withoutOutputGap ? ' (no output gap)' : ''}`, source: taylorMethod(taylor.reading), tag: 'model' },
+        { label: 'Policy rate against the rule', value: `${sgn(taylor.reading.gapToRulePts, 2)} pts (${taylor.reading.stance})`, source: 'BIS policy rate minus the rule rate; within 1 pt = close to the rule', tag: 'model' }
+      );
+    }
     const stanceText = policyStance(real, gap);
     const ext = imfFigures(it);
     findings.push({
       iso3: it.iso3,
       countryName: it.countryName,
-      reading: `${it.oecdCpi ? `${cpiSentence(it.oecdCpi)} ` : ''}Policy looks ${stanceText}.${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}${ext.reading ? ` ${ext.reading}` : ''}`,
+      reading: `${it.oecdCpi ? `${cpiSentence(it.oecdCpi)} ` : ''}Policy looks ${stanceText}.${taylor.ok ? ` ${taylorSentence(taylor.reading)}` : ''}${sig ? ` ${sig.label}: ${sig.soWhat}` : ''}${ext.reading ? ` ${ext.reading}` : ''}`,
       figures: [...figures, ...ext.figures],
       weight: Math.max(sig?.score ?? 0, ext.weight),
       stance: [{ dim: 'policy', call: policyCall(stanceText) }],

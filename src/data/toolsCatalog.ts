@@ -160,7 +160,7 @@ export const HIDDEN_GROUPS: HiddenGroup[] = [
     title: 'Debt and policy',
     desks: [
       { id: 'forecasting_lab', label: 'Debt fan charts', needs: 'Historical shock series for the fan; the central path is in the sustainability brief.', coveredBy: 'sustainability' },
-      { id: 'taylor_rule_fiscal_dominance', label: 'Taylor rule', needs: 'An output gap (the policy rate now comes from the BIS).' },
+      { id: 'taylor_rule_fiscal_dominance', label: 'Taylor rule', needs: 'Its sliders ran on built-in inputs; the live rule check is on the country MarketEdge tab and in the Central Bank agent.', coveredBy: 'country_marketedge' },
       { id: 'dmo_treasury_auction_sim', label: 'Auction simulator', needs: 'The debt office auction calendar and results.' },
       { id: 'ratings_shadow_fallen_angel', label: 'Shadow rating', needs: 'Ratings history (licensed).' },
       { id: 'debt_investor_base_doom_loop', label: 'Investor base and banks', needs: 'Holders of government debt by sector.' },

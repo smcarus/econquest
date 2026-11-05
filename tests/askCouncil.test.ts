@@ -105,7 +105,7 @@ test('number check: a sentence survives only when its numbers trace back to an a
   const { brief, removed } = checkBrief(
     {
       headline: 'Turkey looks behind the curve, with inflation at 34.0% and a real policy rate of -4.0%.',
-      points: ['The policy rate is 30.00%, from the BIS.', 'Inflation will fall to 21% next year.', 'No number here.'],
+      points: ['The policy rate is 30.00%, from the BIS.', 'Inflation will fall to 12% next year.', 'No number here.'],
       disagreements: [],
       gaps: [],
     },
@@ -114,7 +114,7 @@ test('number check: a sentence survives only when its numbers trace back to an a
   );
   assert.match(brief.headline, /behind the curve/);
   assert.deepEqual(brief.points, ['The policy rate is 30.00%, from the BIS.', 'No number here.']);
-  assert.deepEqual(removed, ['Inflation will fall to 21% next year.']);
+  assert.deepEqual(removed, ['Inflation will fall to 12% next year.']);
 });
 
 test('Reports: no saved brief says how to make one; a brief without a model says so, never invents a summary', () => {

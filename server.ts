@@ -1635,7 +1635,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)
     (async () => {
-      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_NGDP'];
+      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_NGDP', 'NGAP_NPGDP'];
       const results = await Promise.allSettled(
         imfMetrics.map(async (metric) => {
           const res = await fetchWithTimeout(
@@ -1675,6 +1675,13 @@ async function fetchLiveOpenDataSnapshotNetwork(
             baseline.imfIndicators.realGdpGrowthPct = Number(gdp.toFixed(2)); markLive('imf.realGdpGrowthPct', 'IMF WEO');
             (baseline.imfIndicators.years ||= {})['imf.realGdpGrowthPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
             imfHit = true;
+          }
+        } else if (metric === 'NGAP_NPGDP') {
+          // Output gap: the IMF publishes it for some countries only; elsewhere it stays unset.
+          const gap = getLatestImfValue(series, ['2025', '2026', '2024']);
+          if (typeof gap === 'number') {
+            baseline.imfIndicators.outputGapPct = Number(gap.toFixed(2)); markLive('imf.outputGapPct', 'IMF WEO');
+            (baseline.imfIndicators.years ||= {})['imf.outputGapPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
           }
         } else if (metric === 'GGXONLB_NGDP') {
           const pb = getLatestImfValue(series, ['2025', '2026', '2024']);
@@ -2152,6 +2159,9 @@ async function fetchLiveWatchlistCatalog(): Promise<WatchlistItem[]> {
           fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
+          ...(lf['imf.outputGapPct'] && Number.isFinite(snap.imfIndicators.outputGapPct)
+            ? { outputGap: { pct: snap.imfIndicators.outputGapPct as number, year: snap.imfIndicators.years?.['imf.outputGapPct'] || '' } }
+            : {}),
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
           ...(prices && (cpi || nationalCpi)
             ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }

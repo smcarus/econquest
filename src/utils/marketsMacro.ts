@@ -17,6 +17,7 @@ import { shockSummary, shockWatch } from './shockWatch';
 import { TURN_WINDOW_MONTHS, UNWIND_PTS, UNWIND_WINDOW_WEEKS, recordText } from './signalRecord';
 import { HOLD_AFTER_MONTHS, cliCycleText, cycleClock, nextDecisionText, policyCycleText } from './cycleClock';
 import { cpiMissing, cpiSource } from './oecdInflation';
+import { TAYLOR_BAND_PTS, taylorCheck, taylorMethod } from './taylorRule';
 import { COFER_CCY_BY_ISO3, ccyName } from './imfCofer';
 import { cftcMissing, CFTC_CURRENCY_CODES, ordinal, positioningLabel } from './cftcPositioning';
 import { SCENARIOS, scenarioImpact } from './scenarioExposure';
@@ -374,7 +375,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
     },
     {
       title: 'Cycle clock',
-      rows: cycleClockRows(self, run.iso3),
+      rows: [...cycleClockRows(self, run.iso3), ...taylorRows(self)],
     },
     {
       title: 'Shock early warning',
@@ -577,6 +578,23 @@ export function cliRows(self: LiveWatchlistItem | undefined): BriefRow[] {
  * Cycle clock rows for the Country tab: policy cycle (BIS moves), business cycle (OECD leading
  * indicator) and the next scheduled rate decision. Where things stand and for how long, not a forecast.
  */
+/** Policy rule check rows (src/utils/taylorRule.ts): the rule rate, the gap to it, and how it was worked out. */
+export function taylorRows(self: LiveWatchlistItem | undefined): BriefRow[] {
+  const t = taylorCheck(self);
+  if (!t.ok) {
+    return [missingRow('Policy rate against a Taylor rule', { kind: 'setup', short: `Needs ${t.missing.join(', ')}`, help: `The rule needs the BIS policy rate, live inflation and the central bank's own target; missing: ${t.missing.join(', ')}.` })];
+  }
+  const r = t.reading;
+  const sg2 = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}`;
+  return [
+    { label: 'Taylor rule rate', value: `${r.rulePct.toFixed(2)}%${r.withoutOutputGap ? ' (no output gap)' : ''}`, source: `model: ${taylorMethod(r)}`, verified: false },
+    { label: 'Policy rate against the rule', value: `${sg2(r.gapToRulePts)} pts: ${r.stance}`, source: `model: BIS policy rate ${r.policyPct.toFixed(2)}% minus the rule rate; within ${TAYLOR_BAND_PTS} pt = close to the rule`, verified: false },
+    ...(r.outputGapPct !== undefined
+      ? [{ label: 'Output gap', value: `${sg2(r.outputGapPct)}% of potential GDP`, source: `official, IMF WEO${r.outputGapYear ? ` ${r.outputGapYear}` : ''}`, verified: true }]
+      : [noSourceRow('Output gap', 'The IMF WEO publishes no output gap for this country, so the rule leaves that term out.')]),
+  ];
+}
+
 export function cycleClockRows(self: LiveWatchlistItem | undefined, iso3: string, now = new Date()): BriefRow[] {
   const clock = cycleClock(self ?? { iso3 }, now);
   const rows: BriefRow[] = [];
