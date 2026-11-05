@@ -41,6 +41,7 @@ estimated, invented or taken from built-in sample values.
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
+| OECD leading indicators | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | sdmx.oecd.org | 1 day, on disk |
 | FRED download | 10Y yields: US, Mexico, South Africa, Japan, UK, Poland, Chile | fred.stlouisfed.org | 6 h |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
@@ -72,6 +73,17 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+- **OECD leading indicators** come from the OECD Data Explorer API (dataflow
+  `OECD.SDD.STES,DSD_STES@DF_CLI`, measure LI, amplitude adjusted). The OECD publishes around
+  mid-month; the newest month is usually one to two months old and always shows with the date the
+  app pulled it. The app asks once a day for every area at once (the OECD asks users to keep calls
+  modest), keeps it on disk (`data/live/oecd-cli.json`), and if the OECD refuses the narrow query
+  asks once for the whole dataflow and reads it the same way. The EU benchmark reads the euro
+  area. Readings: the level, the change on the month and over six months, and the OECD's cycle
+  phase as a stated rule (above 100 and rising = expansion, above and falling = downturn, below
+  and falling = slowdown, below and rising = recovery; tagged as the Global Spillover Agent's
+  reading). A country the OECD answered without (Egypt, for one) reads Missing: "OECD publishes
+  no CLI"; when the OECD did not answer, it says that instead.
 
 - **BIS central bank policy rates** (dataset `WS_CBPOL`) come from each central bank through the
   BIS, daily for most countries. The app asks twice for every country at once: the latest daily

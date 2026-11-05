@@ -131,7 +131,12 @@ export const MarketEdgeScreen: React.FC<{
             )}
             {bench.map((b) => (
               <tr key={b.iso3} data-edge-row={b.iso3} className="border-b border-slate-100 dark:border-slate-800 last:border-0">
-                <td className="px-4 py-2 font-medium text-slate-900 dark:text-white">{b.countryName}</td>
+                <td className="px-4 py-2 font-medium text-slate-900 dark:text-white">
+                  {b.countryName}
+                  <div className="text-xs font-normal text-slate-500 dark:text-slate-400" title="OECD Composite Leading Indicator, amplitude adjusted (long-term average = 100); phase by the OECD rule on level and monthly change">
+                    {b.cliNote}
+                  </div>
+                </td>
                 <td className="px-3 py-2 text-right">
                   <div className="tabular-nums">{b.yieldPct !== undefined ? `${b.yieldPct.toFixed(2)}%` : '–'}</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">{b.yieldNote}</div>

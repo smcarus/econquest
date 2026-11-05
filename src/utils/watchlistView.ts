@@ -8,6 +8,7 @@ import { missingReason, type FigureKey, type MissingReason } from './liveFigures
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { cftcMissing, positioningLabel } from './cftcPositioning';
 import { formatMonth, ticMissing } from './ticHoldings';
+import { cliMissing } from './oecdCli';
 
 export const WATCHLIST_STORAGE_KEY = 'sovereign_council_watchlists_v1';
 export const WATCHLIST_VIEW_KEY = 'econquest.watchlistView.v1';
@@ -32,6 +33,7 @@ export type ColumnId =
   | 'fxvol'
   | 'positioning'
   | 'ustHoldings'
+  | 'oecdCli'
   | 'data';
 
 export interface ColumnDef {
@@ -149,6 +151,18 @@ export const COLUMNS: ColumnDef[] = [
       it.tic
         ? `TIC, ${formatMonth(it.tic.month)}${it.tic.change12mPct !== undefined ? `, ${signed(it.tic.change12mPct, 1, '%')} y/y` : ''}`
         : ticMissing(it.iso3).short,
+  },
+  {
+    id: 'oecdCli',
+    label: 'Leading ind.',
+    help: 'OECD Composite Leading Indicator, amplitude adjusted (100 = long-term average), monthly',
+    align: 'right',
+    value: (it) => it.oecdCli?.level,
+    text: (it) => num(it.oecdCli?.level, 1),
+    note: (it) =>
+      it.oecdCli
+        ? `OECD, ${formatMonth(it.oecdCli.month)}${it.oecdCli.phase ? `, ${it.oecdCli.phase}` : ''}`
+        : cliMissing(!!it.oecdCliPulledAt).short,
   },
   { id: 'data', label: 'Data', help: 'Whether the row came from live feeds', align: 'left', value: (it) => DATA_LABEL[it.dataMode || 'sample'], text: (it) => DATA_LABEL[it.dataMode || 'sample'] },
 ];

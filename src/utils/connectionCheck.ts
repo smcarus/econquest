@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
+import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
@@ -228,6 +229,7 @@ export const SOURCE_IDS = [
   'wits',
   'cftc',
   'tic',
+  'oecd_cli',
   'fred_csv',
   'fred_api',
   'tesouro',
@@ -473,6 +475,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'Treasury answered, but the table was not in the layout the app reads (a Country row with YYYY-MM months). The file may have changed.'
+    )
+  );
+
+  add('oecd_cli', () =>
+    httpCheck(
+      { id: 'oecd_cli', name: 'OECD leading indicators', group: 'free', feeds: 'Monthly composite leading indicator (amplitude adjusted, 100 = long-term average) for the countries the OECD covers' },
+      fetchFn,
+      cliUrl({ areas: ['USA', SAMPLE_ISO3], months: 6 }),
+      Math.max(T, 20000),
+      (r) => {
+        const s = parseCli(r.text);
+        const c = cliFor(SAMPLE_ISO3, s) || cliFor('USA', s);
+        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} leading indicator ${fmt(c.level, 2)} (${formatMonth(c.month)}${c.phase ? `, ${c.phase}` : ''})` : null;
+      },
+      undefined,
+      'The OECD answered, but not with an amplitude-adjusted leading indicator series the app reads. The dataset layout may have changed.'
     )
   );
 

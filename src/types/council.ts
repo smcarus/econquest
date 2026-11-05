@@ -506,6 +506,10 @@ export interface WatchlistItem {
   cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
   /** TIC holdings of US Treasuries (utils/ticHoldings.ts), with the date the app pulled them. */
   tic?: import('../utils/ticHoldings').TicHolding & { pulledAt: string };
+  /** OECD composite leading indicator (utils/oecdCli.ts), with the date the app pulled it. */
+  oecdCli?: import('../utils/oecdCli').CliReading & { pulledAt: string };
+  /** Set when the OECD answered but publishes no CLI for this country (so the reason can say so). */
+  oecdCliPulledAt?: string;
   /** Official trade shares for the scenario ranking (utils/scenarioExposure.ts). */
   trade?: import('../utils/scenarioExposure').TradeExposure;
 }
