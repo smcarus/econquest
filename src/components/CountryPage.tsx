@@ -139,11 +139,11 @@ const Figure: React.FC<{ label: string; value: string; title?: string; missing?:
     onClick={onHistory}
     onKeyDown={onHistory ? (e) => (e.key === 'Enter' || e.key === ' ') && onHistory() : undefined}
   >
-    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{label}</div>
+    <div className="text-xs text-slate-500 dark:text-slate-400 sm:whitespace-nowrap">{label}</div>
     <div className={`text-sm whitespace-nowrap [font-variant-numeric:tabular-nums] ${missing ? 'text-slate-400 dark:text-slate-500' : 'font-semibold text-slate-900 dark:text-white'}`}>
       {value}
     </div>
-    {missing && <div className="text-xs text-amber-700 dark:text-amber-400 whitespace-nowrap">{missing}</div>}
+    {missing && <div className="text-xs text-amber-700 dark:text-amber-400 sm:whitespace-nowrap">{missing}</div>}
   </div>
 );
 
@@ -218,7 +218,7 @@ export const CountryPage: React.FC<{
       {/* Country header: one row with selector, key figures, data status and actions */}
       <div className="ui-panel px-4 py-3">
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <label htmlFor="country-select" className="sr-only">
               Country
             </label>
@@ -248,9 +248,21 @@ export const CountryPage: React.FC<{
                 {ALERT_LABEL[alert]}
               </span>
             )}
+            {/* On a phone, Refresh sits beside the country as an icon. */}
+            <button
+              type="button"
+              onClick={onSync}
+              disabled={isSyncing}
+              className="ui-btn inline-flex sm:hidden ml-auto"
+              aria-label={isSyncing ? 'Refreshing' : 'Refresh now'}
+              title="Pull every data feed for this country again now"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+            </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          {/* Two columns on a phone so the five figures take three short rows, one row on a wide screen. */}
+          <div className="grid grid-cols-2 gap-x-4 gap-y-2 w-full sm:w-auto sm:flex sm:flex-wrap sm:items-center sm:gap-x-5">
             {HEADER_FIGURES.map((f) => {
               const v = status.live(f.path);
               const why = v === undefined ? pathMissing(status, f.path) : undefined;
@@ -274,13 +286,13 @@ export const CountryPage: React.FC<{
             })}
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 ml-auto">
+          <div className="flex flex-wrap items-center gap-1.5 sm:ml-auto">
             <DataStatusBadge snapshot={open} />
             <button
               type="button"
               onClick={onSync}
               disabled={isSyncing}
-              className="ui-btn inline-flex"
+              className="ui-btn hidden sm:inline-flex"
               title="Pull every data feed for this country again now (normally once a week, or within the hour after a failed pull)"
             >
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />

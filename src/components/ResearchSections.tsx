@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { RESEARCH_SECTIONS, sourcesGrid } from '../utils/researchSections';
 
@@ -19,8 +19,28 @@ export const ResearchSectionNav: React.FC<{
       ref.current.scrollLeft = Math.max(0, el.offsetLeft - ref.current.clientWidth / 2 + el.clientWidth / 2);
     }
   }, [active]);
+  // When more sections sit off to the right (a phone), fade the right edge so the menu reads as scrollable.
+  const [moreRight, setMoreRight] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const check = () => setMoreRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 4);
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      el.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, [sections.length, extra.length]);
   return (
-    <nav ref={ref} className="mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800" aria-label={ariaLabel} data-research-sections="true">
+    <nav
+      ref={ref}
+      className={`mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800 ${moreRight ? '[mask-image:linear-gradient(to_right,black_80%,transparent)]' : ''}`}
+      aria-label={ariaLabel}
+      data-research-sections="true"
+      data-more-right={moreRight ? 'true' : undefined}
+    >
       {sections.map((s) => (
         <button key={s.id} type="button" onClick={() => onChange(s.id)} aria-current={active === s.id ? 'page' : undefined} className="ui-tab whitespace-nowrap">
           {s.label}
