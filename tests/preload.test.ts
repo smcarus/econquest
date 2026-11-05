@@ -129,7 +129,7 @@ test('npm run preload: runs offline against fixtures, saves progress, and a seco
   try {
     const first = run();
     assert.equal(first.status, 0, first.stderr.slice(-2000));
-    assert.match(first.stdout, /\[preload\] finished: \d+ of 13 steps saved/);
+    assert.match(first.stdout, /\[preload\] finished: \d+ of 14 steps saved/);
     assert.match(first.stdout, /needs setup UN Comtrade trade partners \(add a UN Comtrade key/);
     assert.ok(existsSync(path.join(dataDir, 'history', 'MEX.json')));
     const state = JSON.parse(readFileSync(path.join(dataDir, 'local', 'preload.json'), 'utf8'));

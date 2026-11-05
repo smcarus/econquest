@@ -242,8 +242,8 @@ export function carrySignal(it: LiveWatchlistItem): Divergence | null {
     headline: `Policy rate ${cv.carryPts.toFixed(1)} pts over the US, ${cv.ratio.toFixed(2)} times the currency's ${it.fxVol3mPct.toFixed(1)}% three-month volatility.`,
     evidence: [
       { text: `Policy rate ${it.policyRatePct.toFixed(2)}%`, source: pr.src },
-      { text: `US fed funds ${it.usFedFundsPct.toFixed(2)}%`, source: 'NY Fed, live' },
-      { text: `Volatility ${it.fxVol3mPct.toFixed(1)}%`, source: 'ECB rates, live' },
+      { text: `US fed funds ${it.usFedFundsPct.toFixed(2)}%`, source: `NY Fed${it.usFedFundsDate ? `, ${it.usFedFundsDate}` : ''}` },
+      { text: `Volatility ${it.fxVol3mPct.toFixed(1)}%`, source: `ECB rates${it.fxVolTo ? `, to ${it.fxVolTo}` : ''}` },
     ],
     soWhat: 'Holding the currency earns more than its recent swings would usually take away. Carry can unwind fast when markets turn.',
     size: clamp((cv.ratio - 0.3) / 1.2),

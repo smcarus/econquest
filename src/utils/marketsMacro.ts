@@ -331,7 +331,7 @@ export function marketsMacroBrief(run: CouncilAssessmentRun, peers: LiveWatchlis
             }
           : missingRow('Real exchange rate vs 10-year average', { kind: 'unreachable', short: 'BIS did not answer', help: 'The free BIS feed did not answer, or does not cover this currency. Press Refresh now under Research > One country.' }),
         self?.fxVol3mPct !== undefined
-          ? { label: 'FX volatility against USD, 3 months', value: pct(self.fxVol3mPct), source: 'ECB reference rates, live', verified: true }
+          ? { label: 'FX volatility against USD, 3 months', value: pct(self.fxVol3mPct), source: `official, ECB reference rates${self.fxVolTo ? `, 3 months to ${formatPeriod(self.fxVolTo)}` : ''}`, verified: true }
           : missingRow('FX volatility against USD, 3 months', { kind: 'unreachable', short: 'No ECB rate', help: 'The ECB publishes no reference rate for this currency, or the feed did not answer.' }),
       ],
     },
