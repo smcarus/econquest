@@ -26,6 +26,12 @@ estimated, invented or taken from built-in sample values.
 
 ## Free, no key
 
+The country snapshot (World Bank, IMF WEO, GDELT, FX, official 10Y yield, Polymarket) is pulled once
+a week. If a feed does not answer on a pull (no internet, a slow server), the last good figure from
+that feed is kept, its source label ends "kept from the <date> pull", and the snapshot is tried
+again within the hour. A built-in value is never kept, and the 5Y CDS is never kept (it follows the
+own-data switch in Settings).
+
 | Source | Fills | Address | Kept for |
 | --- | --- | --- | --- |
 | World Bank indicators | Reserves, current account, external debt, political stability, trade shares | api.worldbank.org | 1 week (country snapshot) |

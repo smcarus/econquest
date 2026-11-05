@@ -54,7 +54,7 @@ function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAsse
   const tag = open?.liveFields?.[path];
   if (path.startsWith('imf.')) return tag || 'IMF WEO';
   if (path.startsWith('wb.')) return tag || 'World Bank';
-  if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx')) return 'live FX';
+  if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx')) return tag?.includes('kept from the') ? tag : 'live FX';
   return tag || 'live feed';
 }
 

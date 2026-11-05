@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { mergeLastGood } from './src/utils/snapshotMerge';
 import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
 import {
   OWN_CDS_LABEL,
@@ -1788,7 +1789,16 @@ async function fetchLiveOpenDataSnapshotNetwork(
 const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
 const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
-const snapshotStore = new Map<string, { snapshot: OpenDataSnapshot; pulledAt: number }>();
+/** A pull that came back short (a feed failed, or nothing answered) is tried again after an hour. */
+const SNAPSHOT_RETRY_MS = 60 * 60 * 1000;
+type StoredSnapshot = { snapshot: OpenDataSnapshot; pulledAt: number; incomplete?: boolean };
+const snapshotStore = new Map<string, StoredSnapshot>();
+
+/** Whether a saved snapshot is due a refresh: a week for a full pull, an hour for one that came back short. */
+function snapshotDue(stored: StoredSnapshot): boolean {
+  const age = Date.now() - stored.pulledAt;
+  return age > (stored.incomplete ? SNAPSHOT_RETRY_MS : SNAPSHOT_REFRESH_MS);
+}
 const snapshotRefreshInFlight = new Map<string, Promise<OpenDataSnapshot | null>>();
 
 function snapshotFile(iso3: string): string {
@@ -1802,7 +1812,7 @@ function loadStoredSnapshot(iso3: string) {
     const parsed = JSON.parse(fs.readFileSync(snapshotFile(iso3), 'utf8'));
     if (parsed?.snapshot && typeof parsed.pulledAt === 'number') {
       snapshotStore.set(iso3, parsed);
-      return parsed as { snapshot: OpenDataSnapshot; pulledAt: number };
+      return parsed as StoredSnapshot;
     }
   } catch {
     // No stored snapshot yet
@@ -1815,8 +1825,15 @@ function refreshStoredSnapshot(iso3: string, countryName?: string): Promise<Open
   if (existing) return existing;
   const job = (async () => {
     try {
-      const snapshot = await fetchLiveOpenDataSnapshotNetwork(iso3, countryName);
-      const entry = { snapshot, pulledAt: Date.now() };
+      const pulled = await fetchLiveOpenDataSnapshotNetwork(iso3, countryName);
+      // Keep the last good figures for any feed that did not answer this time (src/utils/snapshotMerge.ts).
+      const prev = loadStoredSnapshot(iso3);
+      const merged = mergeLastGood(pulled, prev?.snapshot, prev?.pulledAt ?? 0);
+      if (merged.carried.length) {
+        console.warn(`[snapshot-store] ${iso3}: kept ${merged.carried.length} figure(s) from the last good pull; retrying within the hour`);
+      }
+      const snapshot = merged.snapshot;
+      const entry: StoredSnapshot = { snapshot, pulledAt: Date.now(), ...(merged.incomplete ? { incomplete: true } : {}) };
       snapshotStore.set(iso3, entry);
       fs.mkdirSync(SNAPSHOT_DIR, { recursive: true });
       const tmp = `${snapshotFile(iso3)}.tmp`;
@@ -1886,7 +1903,7 @@ async function fetchLiveOpenDataSnapshot(
   }
   const stored = loadStoredSnapshot(key);
   if (stored) {
-    if (Date.now() - stored.pulledAt > SNAPSHOT_REFRESH_MS) {
+    if (snapshotDue(stored)) {
       void refreshStoredSnapshot(key, countryNameHint);
     }
     // Saved snapshots may predate the official calendar; always rebuild it from today.
@@ -1919,7 +1936,7 @@ function withOfficialCalendar(snapshot: OpenDataSnapshot): OpenDataSnapshot {
 async function refreshStaleSnapshots(force = false): Promise<void> {
   for (const item of SOVEREIGN_CATALOG) {
     const stored = loadStoredSnapshot(item.iso3);
-    if (force || !stored || Date.now() - stored.pulledAt > SNAPSHOT_REFRESH_MS) {
+    if (force || !stored || snapshotDue(stored)) {
       await refreshStoredSnapshot(item.iso3, item.countryName);
     }
   }
@@ -5915,7 +5932,8 @@ ${String(documentText).slice(0, 12000)}
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Sovereign & Macro Council Server listening on http://localhost:${PORT}`);
     setTimeout(() => void refreshStaleSnapshots(), 5000);
-    setInterval(() => void refreshStaleSnapshots(), 6 * 60 * 60 * 1000).unref();
+    // Hourly check: a full pull is redone after a week, a short one (a feed failed) after an hour.
+    setInterval(() => void refreshStaleSnapshots(), SNAPSHOT_RETRY_MS).unref();
   });
 }
 
