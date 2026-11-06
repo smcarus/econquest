@@ -200,6 +200,27 @@ test('EVDS: missing pieces each get their own reason; the key goes in a header',
   assert.doesNotMatch(JSON.stringify(ok.rep), /evds-secret/);
 });
 
+test('Banxico: optional without a token; the token goes only in the Bmx-Token header', async () => {
+  assert.equal((await byId({ env: {}, fetchFn: healthy })).row('banxico').state, 'optional');
+  let sawHeader = false;
+  const fetchFn: FetchFn = async (u, init) => {
+    if (u.includes('banxico.org.mx')) {
+      sawHeader = new Headers(init?.headers).get('Bmx-Token') === 'bmx-secret-token-0123456789abcdef' && !u.includes('bmx-secret');
+      if (!sawHeader) return json({ error: { mensaje: 'Token invalido' } }, 401);
+      return json({ bmx: { series: [{ idSerie: 'SP30578', titulo: 'Inflación anual', datos: [{ fecha: '01/08/2026', dato: '3.57' }, { fecha: '01/09/2026', dato: '3.76' }] }] } });
+    }
+    return healthy(u);
+  };
+  const ok = await byId({ env: { BANXICO_TOKEN: 'bmx-secret-token-0123456789abcdef' }, fetchFn });
+  assert.equal(ok.row('banxico').state, 'connected');
+  assert.match(ok.row('banxico').sample!, /Mexico INPC 3\.76% over 12 months/);
+  assert.ok(sawHeader);
+  assert.doesNotMatch(JSON.stringify(ok.rep), /bmx-secret/);
+  const bad = await byId({ env: { BANXICO_TOKEN: 'wrong' }, fetchFn });
+  assert.equal(bad.row('banxico').state, 'needs_setup');
+  assert.doesNotMatch(JSON.stringify(bad.rep), /wrong/);
+});
+
 test('own CDS: off by default, then file checks (missing, unreadable, read, stale)', async () => {
   assert.equal((await byId({ env: {}, fetchFn: healthy })).row('own_cds').state, 'off');
   const env = { CDS_FEED: 'csv', CDS_CSV_PATH: '/x/cds.csv' };

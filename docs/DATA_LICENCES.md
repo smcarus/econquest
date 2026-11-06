@@ -43,6 +43,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Kalshi | Permission needed for client or commercial use | Do not pass on | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
 | Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads | Terms not confirmed | Sharing unclear | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
 | Banco Central do Brasil (SGS 13522, IPCA 12 months) | Terms not confirmed | Sharing unclear | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
+| Banco de México (SIE API, INPC), with your token | Terms not confirmed | Sharing unclear | Not confirmed. The terms are shown on the token page, which could not be read from the build machine. | Not stated here. | Fuente: Banco de México, SIE (serie SP30578). |
 | Brazil Treasury (Tesouro Direto price history) | Open with attribution | Free sharing allowed | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
 | Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | Free sharing allowed | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
@@ -386,6 +387,17 @@ From the terms:
 
 > © Banco Central do Brasil - Todos os direitos reservados
 
+### Banco de México (SIE API, INPC), with your token
+
+- **Used for:** Mexico's INPC inflation over 12 months (only when you add your own Banxico token)
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Terms not read yet; treated as unclear until they are.
+- **Terms read:** [SIE API page (terms shown when you request a token)](https://www.banxico.org.mx/SieAPIRest/service/v1/?locale=en) (checked 2026-11-06)
+- **Show to others:** Not confirmed. The terms are shown on the token page, which could not be read from the build machine.
+- **Commercial use:** Not stated here.
+- **Credit:** Fuente: Banco de México, SIE (serie SP30578).
+- **Open question:** Read the terms on the token page when you request the token and update this row.
+
 ### Brazil Treasury (Tesouro Direto price history)
 
 - **Used for:** Brazil 10Y yield (NTN-F)
@@ -442,5 +454,6 @@ From the terms:
 12. **Kalshi** (Permission needed for client or commercial use): The strictest terms in the app. Showing Kalshi odds to anyone else, or using them in a professional setting, needs Kalshi's written authorization.
 13. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
 14. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
-15. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
-16. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+15. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
+16. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
+17. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.

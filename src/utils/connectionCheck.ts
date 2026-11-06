@@ -20,7 +20,7 @@ import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
-import { BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
+import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBanxicoMonthly, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
@@ -263,6 +263,7 @@ export const SOURCE_IDS = [
   'fred_api',
   'tesouro',
   'evds',
+  'banxico',
   'eia',
   'own_cds',
   'gemini',
@@ -893,6 +894,27 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       return { ...res, state: 'needs_setup', detail: `EVDS did not accept ${keyPhrase('EVDS_API_KEY')} (HTTP ${res.httpStatus}).` };
     }
     return savedNote('EVDS_API_KEY', res);
+  });
+
+  add('banxico', async () => {
+    const def: Def = {
+      id: 'banxico',
+      name: 'Banco de México (SIE)',
+      group: 'free_key',
+      feeds: "Mexico's monthly INPC inflation over 12 months, fresher than the OECD mirror",
+      setup: 'Menu > Settings > Data API keys, or BANXICO_TOKEN="..." in .env (free: banxico.org.mx/SieAPIRest/service/v1/token). Without it Mexico keeps the OECD inflation series.',
+    };
+    const token = (env.BANXICO_TOKEN || '').trim();
+    if (!token) return setRow(def, 'optional', 'No token set. Mexico keeps the OECD inflation series, which lags five to six months.', 'www.banxico.org.mx');
+    const res = await httpCheck(def, fetchFn, banxicoSeriesUrl([BANXICO_CPI_SERIES], now, 3), T, (r) => {
+      const pts = parseBanxicoMonthly(parseJson(r.text), BANXICO_CPI_SERIES);
+      const last = pts[pts.length - 1];
+      return last ? `Mexico INPC ${fmt(last.value, 2)}% over 12 months (${formatMonth(last.period)})` : null;
+    }, { headers: banxicoHeaders(token) }, `Banxico answered, but not with the SIE series ${BANXICO_CPI_SERIES} rows the app reads.`);
+    if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
+      return { ...res, state: 'needs_setup', detail: `Banxico did not accept ${keyPhrase('BANXICO_TOKEN')} (HTTP ${res.httpStatus}). Check it was copied in full.` };
+    }
+    return savedNote('BANXICO_TOKEN', res);
   });
 
   add('eia', async () => {

@@ -61,3 +61,24 @@ test('a national series replaces the OECD one only when at least as new, and say
   assert.equal(cpiFor('BRA', older)!.basis, 'oecd_yoy', 'OECD newer: keep it');
   assert.equal(cpiFor('BRA', mergeNationalCpi(null, { BRA: { points: parseBcbSgs(BCB), short: BCB_SHORT, long: BCB_LONG } }))!.month, '2026-09', 'no OECD reply at all');
 });
+
+test('Banxico SIE: monthly INPC annual change read oldest first, N/E and other series skipped', async () => {
+  const { parseBanxicoMonthly, banxicoSeriesUrl, banxicoHeaders, BANXICO_CPI_SERIES } = await import('../src/utils/nationalCpi.ts');
+  // Reply shape as documented by open-source SIE clients (bmx.series[].idSerie, datos[].fecha dd/mm/yyyy, dato string).
+  const reply = {
+    bmx: {
+      series: [
+        { idSerie: 'SF43718', datos: [{ fecha: '01/09/2026', dato: '18.50' }] },
+        { idSerie: 'SP30578', datos: [{ fecha: '01/09/2026', dato: '3.76' }, { fecha: '01/07/2026', dato: '3.51' }, { fecha: '01/08/2026', dato: 'N/E' }, { fecha: 'bad', dato: '1' }] },
+      ],
+    },
+  };
+  assert.deepEqual(parseBanxicoMonthly(reply, BANXICO_CPI_SERIES), [{ period: '2026-07', value: 3.51 }, { period: '2026-09', value: 3.76 }]);
+  assert.deepEqual(parseBanxicoMonthly({ error: 'x' }, BANXICO_CPI_SERIES), []);
+  const url = banxicoSeriesUrl([BANXICO_CPI_SERIES], new Date('2026-11-06T00:00:00Z'));
+  assert.equal(url, 'https://www.banxico.org.mx/SieAPIRest/service/v1/series/SP30578/datos/2024-11-01/2026-11-06');
+  assert.equal(banxicoHeaders(' tok ')['Bmx-Token'], 'tok');
+  // A Banxico series takes Mexico's place only when it is at least as new as the OECD one.
+  const merged = mergeNationalCpi({ MEX: { basis: 'oecd', points: [{ period: '2026-05', value: 4 }] } } as never, { MEX: { points: parseBanxicoMonthly(reply, BANXICO_CPI_SERIES), short: 'Banxico INPC', long: 'x' } });
+  assert.equal(merged?.MEX.short, 'Banxico INPC');
+});

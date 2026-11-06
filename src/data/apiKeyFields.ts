@@ -90,6 +90,18 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     validate: (v) => (isValidEvdsSeriesCode(v) ? null : 'An EVDS series code starts with "TP." followed by letters, digits and dots, for example TP.ABC.D10.'),
   },
 
+  {
+    id: 'BANXICO_TOKEN',
+    label: 'Banco de México (Banxico) token',
+    provider: 'Banco de México, SIE API',
+    feeds: "Mexico's monthly inflation (INPC over 12 months) straight from the central bank, months fresher than the OECD mirror.",
+    withoutIt: 'Without a token Mexico keeps the OECD inflation series, which lags five to six months.',
+    getKeyUrl: 'https://www.banxico.org.mx/SieAPIRest/service/v1/token',
+    getKeySteps: 'Free. Open the token page, accept the terms, solve the check and copy the token it shows (64 letters and digits).',
+    checkId: 'banxico',
+    validate: (v) => (/^[A-Za-z0-9]{32,128}$/.test(v) ? null : 'A Banxico token is a long run of letters and digits (usually 64). Check it was copied in full.'),
+  },
+
   // ---- Your own paid data: off unless you switch it on (licensed to you, never built in) ----
   {
     id: 'CDS_FEED',

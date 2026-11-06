@@ -100,3 +100,48 @@ export function mergeNationalCpi(oecd: CpiSeries | null | undefined, national: R
   }
   return Object.keys(out).length ? out : null;
 }
+
+/**
+ * Mexico: Banco de México SIE API, series SP30578 (INPC, annual change, monthly). Needs the user's
+ * own free token (BANXICO_TOKEN, Menu > Settings > Data API keys), sent in the Bmx-Token header,
+ * never in the URL. Series code checked 2026-11-06 against open-source SIE clients (banxicolab
+ * catalogue: SP30578 "INPC, variación anual", monthly, %). Reply: {"bmx":{"series":[{"idSerie":
+ * "SP30578","datos":[{"fecha":"01/09/2026","dato":"3.76"}]}]}}; "N/E" marks a missing value.
+ */
+export const BANXICO_CPI_SERIES = 'SP30578';
+export const BANXICO_SHORT = 'Banxico INPC';
+export const BANXICO_LONG = 'Banco de México, INPC annual inflation (SIE SP30578)';
+export const BANXICO_BASE_URL = 'https://www.banxico.org.mx/SieAPIRest/service/v1/';
+
+function isoDay(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+/** Observations of the given series between two dates (two years back by default). */
+export function banxicoSeriesUrl(ids: string[], now = new Date(), months = 24): string {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - months, 1));
+  return `${BANXICO_BASE_URL}series/${ids.join(',')}/datos/${isoDay(start)}/${isoDay(now)}`;
+}
+
+/** Headers for a Banxico request: the token travels only here. */
+export function banxicoHeaders(token: string): Record<string, string> {
+  return { 'Bmx-Token': token.trim(), Accept: 'application/json' };
+}
+
+/** Monthly points of one series in a Banxico SIE reply, oldest first. Missing ("N/E") values are skipped. */
+export function parseBanxicoMonthly(json: unknown, id: string): { period: string; value: number }[] {
+  const series = (json as { bmx?: { series?: Array<{ idSerie?: unknown; datos?: unknown }> } })?.bmx?.series;
+  if (!Array.isArray(series)) return [];
+  const s = series.find((x) => String(x?.idSerie ?? '') === id);
+  if (!s || !Array.isArray(s.datos)) return [];
+  const byPeriod = new Map<string, number>();
+  for (const row of s.datos as Array<{ fecha?: unknown; dato?: unknown }>) {
+    const m = String(row?.fecha ?? '').match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    const raw = String(row?.dato ?? '').trim().replace(/,/g, '');
+    if (!m || raw === '' || raw === 'N/E') continue;
+    const value = Number(raw);
+    if (!Number.isFinite(value)) continue;
+    byPeriod.set(`${m[3]}-${m[2]}`, value);
+  }
+  return [...byPeriod.entries()].map(([period, value]) => ({ period, value })).sort((a, b) => a.period.localeCompare(b.period));
+}
