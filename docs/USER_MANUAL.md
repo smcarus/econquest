@@ -130,6 +130,12 @@ full council and saved research.
   research notice, so it keeps them wherever it is pasted. The CSV lists the same credits as `#`
   lines. With Sharing mode on, both buttons are off for a chart that uses a source whose terms do
   not let its figures be passed on, and the card says which.
+- *Suggested questions*: the empty chat offers up to four questions picked from your own data, no
+  AI: one on your largest holding (asked the way its asset class is judged), up to two on what moved
+  on your watchlist (a BIS policy-rate move in the last three months, a 10Y yield change of half a
+  point or more over three months, a debt path rising five points of GDP or more) and your last
+  saved question (asking it again shows what changed). Point at one to see why it is offered. The
+  fixed examples fill the rest.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your
@@ -249,7 +255,10 @@ readings across the watchlist are under Compare countries.
 
 **History & data.** Every figure that has a run of real observations, as a chart with its source, how often it
 comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
-leading indicator, CFTC positioning and TIC holdings come with their own history. Government debt,
+leading indicator, CFTC positioning and TIC holdings come with their own history. The exchange rate
+per US dollar comes daily from 1999 for the about 30 currencies the ECB publishes (ECB reference rates
+via Frankfurter; first download in the background, also a step in Menu > Offline data); other
+currencies keep the saved-pulls run and say why. Government debt,
 primary balance, growth, IMF inflation, output gap, reserves (months of imports and USD), current
 account, external debt, short-term debt and political stability come with every year the World Bank
 or IMF WEO publish (saved in data/history/, refreshed weekly); IMF years from the current one on are

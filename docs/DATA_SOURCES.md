@@ -61,6 +61,7 @@ own-data switch in Settings).
 | New York Fed | Fed funds, SOFR, reverse repo | markets.newyorkfed.org | 3 min to 6 h |
 | Spot FX | Exchange rates against the dollar | open.er-api.com (backup: Frankfurter) | 3 min |
 | ECB rates (Frankfurter) | FX volatility; last year's closing rate for the year-to-date move | api.frankfurter.dev | 12 h |
+| ECB daily history (Frankfurter) | Exchange rate per US dollar, every ECB business day since 1999, one quarter per request; saved to data/live/fx-history.json, finished quarters kept for good | api.frankfurter.dev | 12 h (current quarter) |
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
 | BIS central bank policy rates | Policy rate per country with its date and central bank, the 12-month change and the last move | stats.bis.org | 12 h, on disk |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
