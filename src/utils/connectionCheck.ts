@@ -44,6 +44,7 @@ import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, p
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
+import { GDELT_V1_SIZES_URL, parseFileSizes } from './gdeltDaily';
 import { UCDP_DATASETS, UCDP_DATASET_IDS, UCDP_DOWNLOADS_PAGE, UCDP_FOLDER, ucdpReading, type UcdpData } from './ucdpConflict';
 import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
 
@@ -242,6 +243,7 @@ export const SOURCE_IDS = [
   'imf_reserves',
   'imf_cofer',
   'gdelt',
+  'gdelt_v1',
   'polymarket',
   'kalshi',
   'nyfed',
@@ -436,6 +438,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       r.state === 'refused' && r.httpStatus === 429
         ? { ...r, detail: 'GDELT refused: too many requests from this connection (HTTP 429). It allows one request every 5 seconds and keeps refusing for a while after it is exceeded. The app pauses GDELT for 15 minutes after a refusal; check again after that.' }
         : r
+    )
+  );
+
+  add('gdelt_v1', () =>
+    httpCheck(
+      { id: 'gdelt_v1', name: 'GDELT 1.0 event files', group: 'free', feeds: 'Monthly event history per country back to 1979 (npm run gdelt:daily)' },
+      fetchFn,
+      GDELT_V1_SIZES_URL,
+      Math.max(T, 20000),
+      (r) => {
+        const files = parseFileSizes(r.text || '');
+        const days = files.filter((f) => f.kind === 'day');
+        return files.length ? `${files.length} files listed, newest ${days.at(-1)?.period || files.at(-1)!.period}` : null;
+      }
     )
   );
 

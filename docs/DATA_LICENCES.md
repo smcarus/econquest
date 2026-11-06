@@ -38,7 +38,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
 | US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
-| GDELT (DOC API and raw GDELT 2.0 files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
+| GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
 | UCDP (Uppsala Conflict Data Program) downloaded files | Open with attribution | Free sharing allowed | Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset. | Allowed (CC BY 4.0 sets no commercial limit). | UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5). |
 | Polymarket | Permission needed for client or commercial use | Sharing unclear | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
 | Kalshi | Permission needed for client or commercial use | Do not pass on | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
@@ -304,9 +304,9 @@ From the terms:
 
 > U.S. government publications are in the public domain and are not subject to copyright protection. You may use and/or distribute any of our data, files, databases, reports, graphs, charts, and other information products
 
-### GDELT (DOC API and raw GDELT 2.0 files)
+### GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files)
 
-- **Used for:** Headlines and news tone; weekly event counts and news themes per country
+- **Used for:** Headlines and news tone; weekly event counts and news themes per country; monthly event history back to 1979
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Any redistribution allowed with a citation and link.
 - **Terms read:** [GDELT terms of use](https://www.gdeltproject.org/about.html#termsofuse) (checked 2026-11-06)
