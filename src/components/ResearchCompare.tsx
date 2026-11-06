@@ -6,6 +6,7 @@ import { PanelBuilder } from './PanelBuilder';
 import { DivergenceList } from './DivergenceList';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
+import { FedBalanceSheetPanel } from './FedBalanceSheetPanel';
 import { LiveCountBadge, ResearchHeader, SourcesGrid } from './ResearchSections';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import type { ResearchSectionId } from '../utils/researchSections';
@@ -86,6 +87,11 @@ export const ResearchCompare: React.FC<{
           <div id="tool-scenarios" className="scroll-mt-4">
             <PanelBoundary name="Scenarios">
               <ScenarioExposurePanel items={edgeItems} onOpenCountry={open('macro')} />
+            </PanelBoundary>
+          </div>
+          <div id="tool-fed-balance-sheet" className="scroll-mt-4">
+            <PanelBoundary name="Fed balance sheet">
+              <FedBalanceSheetPanel />
             </PanelBoundary>
           </div>
         </>

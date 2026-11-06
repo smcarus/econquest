@@ -17,6 +17,7 @@ import { frankfurterSeriesUrl, type FxVol, parseEffr, parseFxVol, parseReer, typ
 import { lsegSnapshotUrl, lsegTokenRequest, type OwnCdsQuote, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from '../../utils/ownCds';
 import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../utils/debtSchedule';
 import { writeFileAtomic } from '../../utils/atomicWrite';
+import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
 /**
  * Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable.
@@ -467,4 +468,51 @@ export function forgetEffr(): void {
 /** Forget your own CDS file held in memory (after its key or file changes). */
 export function forgetOwnCds(): void {
   ownCdsCache = null;
+}
+
+/**
+ * Fed balance sheet (H.4.1) series from FRED, two years each, kept 12 hours (1 hour after a miss).
+ * A series that answers is saved to data/live/fed-balance-sheet.json; one that does not uses its
+ * saved values, with their own dates (src/utils/fedBalanceSheet.ts).
+ */
+let fedCache: { at: number; value: FedBalanceSheet; fallback: boolean } | null = null;
+function fedFile(): string {
+  return path.join(DATA_DIR, 'live', 'fed-balance-sheet.json');
+}
+export async function fetchFedBalanceSheet(): Promise<FedBalanceSheet> {
+  if (fedCache && Date.now() - fedCache.at < (fedCache.fallback ? 1 : 12) * 60 * 60 * 1000) return fedCache.value;
+  let saved: Record<string, Obs[]> = {};
+  try {
+    saved = JSON.parse(fs.readFileSync(fedFile(), 'utf8'))?.series || {};
+  } catch {
+    // never saved
+  }
+  const raw: Record<string, Obs[] | null> = {};
+  let fallback = false;
+  let got = false;
+  await Promise.all(
+    FED_SERIES.map(async (def) => {
+      const csv = await fetchTextWithTimeout(fredCsvUrl(def.id), 8000);
+      const obs = csv ? parseFredCsvSeries(csv) : [];
+      if (obs.length) {
+        raw[def.id] = obs;
+        saved[def.id] = obs;
+        got = true;
+      } else {
+        fallback = true;
+        raw[def.id] = saved[def.id]?.length ? saved[def.id] : null;
+      }
+    })
+  );
+  if (got) {
+    try {
+      fs.mkdirSync(path.dirname(fedFile()), { recursive: true });
+      writeFileAtomic(fedFile(), JSON.stringify({ savedAt: new Date().toISOString(), series: saved }));
+    } catch (err: any) {
+      console.warn(`[fed balance sheet] could not save: ${err?.message || err}`);
+    }
+  }
+  const value = buildFedBalanceSheet(raw);
+  fedCache = { at: Date.now(), value, fallback };
+  return value;
 }
