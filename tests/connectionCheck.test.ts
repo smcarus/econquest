@@ -184,7 +184,17 @@ test('FRED: no key is optional (the download is used); a rejected key needs setu
 
 test('EVDS: missing pieces each get their own reason; the key goes in a header', async () => {
   assert.match((await byId({ env: {}, fetchFn: healthy })).row('evds').detail, /Not set up/);
-  assert.match((await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: healthy })).row('evds').detail, /10Y series code is empty \(Menu > Settings or EVDS_TR10Y_SERIES\)/);
+  const cpiOnly: FetchFn = async (u, init) => {
+    if (u.includes('evds3') && u.includes('TP.FG.J0') && new Headers(init?.headers).get('key') === 'k') {
+      return json({ items: [{ Tarih: '2025-9', TP_FG_J0: '3000' }, { Tarih: '2026-9', TP_FG_J0: '3990' }] });
+    }
+    return healthy(u);
+  };
+  const keyOnly = (await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: cpiOnly })).row('evds');
+  assert.equal(keyOnly.state, 'connected');
+  assert.match(keyOnly.sample!, /Turkey CPI 33\.00% over 12 months \(Sep 2026\)/);
+  assert.match(keyOnly.detail, /10Y series code is empty, so Turkey's 10Y yield reads Missing \(Menu > Settings or EVDS_TR10Y_SERIES\)/);
+  assert.match((await byId({ env: { EVDS_API_KEY: 'k', EVDS_TR_CPI_SERIES: 'cpi' }, fetchFn: cpiOnly })).row('evds').detail, /not a series code.*TP\.FG\.J0/);
   assert.match((await byId({ env: { EVDS_API_KEY: 'k', EVDS_TR10Y_SERIES: 'bond' }, fetchFn: healthy })).row('evds').detail, /not a series code/);
   let sawHeader = false;
   const fetchFn: FetchFn = async (u, init) => {

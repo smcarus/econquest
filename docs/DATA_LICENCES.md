@@ -429,7 +429,7 @@ From the terms:
 
 ### Central Bank of Turkey (EVDS), with your key
 
-- **Used for:** Turkey 10Y yield
+- **Used for:** Turkey monthly CPI inflation and 10Y yield
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. May be published with the source cited; only commercial use needs permission.
 - **Terms read:** [TCMB terms of use (Kullanım Şartları)](https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Bottom+Menu/Diger/Kullanim+Sartlari) (checked 2026-11-06)

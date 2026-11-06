@@ -252,8 +252,8 @@ export function isValidEvdsSeriesCode(code: string): boolean {
 }
 
 /** Request URL for the last 90 days of a series. The key is NOT part of the URL. */
-export function evdsSeriesUrl(seriesCode: string, now = new Date()): string {
-  const start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+export function evdsSeriesUrl(seriesCode: string, now = new Date(), days = 90): string {
+  const start = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
   return `${EVDS_BASE_URL}series=${seriesCode.trim()}&startDate=${ddmmyyyy(start)}&endDate=${ddmmyyyy(now)}&type=json`;
 }
 

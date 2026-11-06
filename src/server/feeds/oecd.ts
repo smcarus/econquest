@@ -5,8 +5,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import { BANXICO_CPI_SERIES, BANXICO_LONG, BANXICO_SHORT, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, BCB_LONG, BCB_SHORT, bcbSgsUrl, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, eurostatHicpUrl, type NationalCpiSeries, parseBanxicoMonthly, parseBcbSgs, parseEurostatHicp } from '../../utils/nationalCpi';
+import { BANXICO_CPI_SERIES, BANXICO_LONG, BANXICO_SHORT, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, BCB_LONG, BCB_SHORT, bcbSgsUrl, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, EVDS_CPI_SHORT, evdsCpiLong, evdsCpiUrl, parseEvdsCpiYoy, type NationalCpiSeries, parseBanxicoMonthly, parseBcbSgs, parseEurostatHicp } from '../../utils/nationalCpi';
 import { DATA_DIR } from '../config';
+import { isValidEvdsSeriesCode } from '../../utils/officialYields';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { fetchWithTimeout } from '../http';
@@ -309,6 +310,27 @@ export async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
           }
         } catch (e) {
           console.warn(`[Banxico] INPC: ${describeNetworkError(e, 15000)}`);
+        }
+      })(),
+      (async () => {
+        // Turkey only with the user's own EVDS key; without it Turkey keeps the OECD series.
+        const key = (process.env.EVDS_API_KEY || '').trim();
+        const code = (process.env.EVDS_TR_CPI_SERIES || '').trim() || EVDS_CPI_DEFAULT_SERIES;
+        if (!key || !isValidEvdsSeriesCode(code) || !isoInCatalog.has('TUR')) {
+          delete series.TUR;
+          return;
+        }
+        try {
+          // The key goes only in the "key" header, never in the URL.
+          const res = await fetch(evdsCpiUrl(code), { headers: { key, Accept: 'application/json' }, signal: AbortSignal.timeout(15000) });
+          if (!res.ok) return console.warn(`[EVDS] Turkey CPI refused (HTTP ${res.status})`);
+          const pts = parseEvdsCpiYoy(await res.json(), code);
+          if (pts.length) {
+            series.TUR = { points: pts, short: EVDS_CPI_SHORT, long: evdsCpiLong(code) };
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[EVDS] Turkey CPI: ${describeNetworkError(e, 15000)}`);
         }
       })(),
       (async () => {

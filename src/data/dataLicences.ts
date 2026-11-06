@@ -496,7 +496,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'evds',
     name: 'Central Bank of Turkey (EVDS), with your key',
-    usedFor: 'Turkey 10Y yield',
+    usedFor: 'Turkey monthly CPI inflation and 10Y yield',
     terms: [{ label: 'TCMB terms of use (Kullanım Şartları)', url: 'https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Bottom+Menu/Diger/Kullanim+Sartlari' }],
     status: 'permission',
     display: 'May be published with the source cited.',

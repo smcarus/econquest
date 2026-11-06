@@ -69,8 +69,8 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     id: 'EVDS_API_KEY',
     label: 'Turkey central bank (EVDS) API key',
     provider: 'Central Bank of the Republic of Türkiye (EVDS)',
-    feeds: "Turkey's 10-year government bond yield. Needs the 10Y series code below as well.",
-    withoutIt: "Without it Turkey's 10Y yield reads Missing.",
+    feeds: "Turkey's monthly inflation from the central bank (months fresher than the OECD mirror), and Turkey's 10-year government bond yield once the 10Y series code below is set too.",
+    withoutIt: "Without it Turkey's 10Y yield reads Missing and Turkey's inflation stays on the OECD series.",
     getKeyUrl: 'https://evds3.tcmb.gov.tr/',
     getKeySteps: 'Free. Register at evds3.tcmb.gov.tr, sign in, then open your profile and copy the API key.',
     checkId: 'evds',
@@ -88,6 +88,20 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     checkId: 'evds',
     secret: false,
     validate: (v) => (isValidEvdsSeriesCode(v) ? null : 'An EVDS series code starts with "TP." followed by letters, digits and dots, for example TP.ABC.D10.'),
+  },
+
+  {
+    id: 'EVDS_TR_CPI_SERIES',
+    placeholder: 'TP.FG.J0 (used when empty)',
+    label: 'Turkey CPI index series code (EVDS, optional)',
+    provider: 'Central Bank of the Republic of Türkiye (EVDS)',
+    feeds: 'Which EVDS series holds the monthly consumer price index (an index, not a % change). Leave empty to use TP.FG.J0. Not secret, shown in full.',
+    withoutIt: 'Empty: the app reads TP.FG.J0. If that series has stopped, Turkey keeps the OECD inflation series.',
+    getKeyUrl: 'https://evds3.tcmb.gov.tr/',
+    getKeySteps: 'Only if TP.FG.J0 has stopped: signed in to EVDS, find the consumer price index (general) series and copy its code (it starts with "TP.").',
+    checkId: 'evds',
+    secret: false,
+    validate: (v) => (isValidEvdsSeriesCode(v) ? null : 'An EVDS series code starts with "TP." followed by letters, digits and dots, for example TP.FG.J0.'),
   },
 
   {

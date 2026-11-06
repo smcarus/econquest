@@ -82,3 +82,22 @@ test('Banxico SIE: monthly INPC annual change read oldest first, N/E and other s
   const merged = mergeNationalCpi({ MEX: { basis: 'oecd', points: [{ period: '2026-05', value: 4 }] } } as never, { MEX: { points: parseBanxicoMonthly(reply, BANXICO_CPI_SERIES), short: 'Banxico INPC', long: 'x' } });
   assert.equal(merged?.MEX.short, 'Banxico INPC');
 });
+
+test('EVDS CPI: 12-month change worked out from the monthly index; months without a year-earlier value skipped', async () => {
+  const { parseEvdsCpiYoy, evdsCpiUrl, EVDS_CPI_DEFAULT_SERIES } = await import('../src/utils/nationalCpi.ts');
+  const reply = {
+    totalCount: 4,
+    items: [
+      { Tarih: '2025-8', TP_FG_J0: '2900' },
+      { Tarih: '2025-9', TP_FG_J0: '3000' },
+      { Tarih: '2026-8', TP_FG_J0: '' },
+      { Tarih: '2026-9', TP_FG_J0: '3990' },
+      { Tarih: '2026-10', TP_FG_J0: '4100' },
+    ],
+  };
+  assert.deepEqual(parseEvdsCpiYoy(reply, EVDS_CPI_DEFAULT_SERIES), [{ period: '2026-09', value: 33 }]);
+  assert.deepEqual(parseEvdsCpiYoy({ nope: 1 }, EVDS_CPI_DEFAULT_SERIES), []);
+  const url = evdsCpiUrl(EVDS_CPI_DEFAULT_SERIES, new Date('2026-11-06T00:00:00Z'));
+  assert.match(url, /^https:\/\/evds3\.tcmb\.gov\.tr\/igmevdsms-dis\/series=TP\.FG\.J0&startDate=\d{2}-\d{2}-2024&endDate=06-11-2026&type=json$/);
+  assert.ok(!/key/i.test(url));
+});

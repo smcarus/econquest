@@ -20,7 +20,7 @@ import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
-import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBanxicoMonthly, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
+import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
@@ -882,22 +882,39 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       id: 'evds',
       name: 'Turkey central bank (EVDS)',
       group: 'free_key',
-      feeds: 'Turkey 10Y yield',
-      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key) and EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
+      feeds: 'Turkey monthly CPI inflation; Turkey 10Y yield once its series code is set',
+      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key). For the 10Y yield also EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
     };
     const key = (env.EVDS_API_KEY || '').trim();
     const series = (env.EVDS_TR10Y_SERIES || '').trim();
-    if (!key && !series) return setRow(def, 'needs_setup', "Not set up. Turkey's 10Y yield reads Missing until it is.", 'evds3.tcmb.gov.tr');
+    const cpiSeries = (env.EVDS_TR_CPI_SERIES || '').trim() || EVDS_CPI_DEFAULT_SERIES;
+    if (!key && !series) return setRow(def, 'needs_setup', "Not set up. Turkey's 10Y yield reads Missing and Turkey's inflation stays on the OECD series until it is.", 'evds3.tcmb.gov.tr');
     if (!key) return setRow(def, 'needs_setup', 'The 10Y series code is set but the EVDS key is empty (Menu > Settings or EVDS_API_KEY).', 'evds3.tcmb.gov.tr');
-    if (!isValidEvdsSeriesCode(series)) return setRow(def, 'needs_setup', series ? `EVDS_TR10Y_SERIES "${series}" is not a series code (it starts with "TP.").` : 'The EVDS key is set but the 10Y series code is empty (Menu > Settings or EVDS_TR10Y_SERIES).', 'evds3.tcmb.gov.tr');
-    const res = await httpCheck(def, fetchFn, evdsSeriesUrl(series, now), T, (r) => {
-      const o = parseEvdsLatest(parseJson(r.text), series);
-      return o ? `Turkey 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
-    }, { headers: { key, Accept: 'application/json' } }, `EVDS answered, but series ${series} had no recent values. Check the series code.`);
+    if (series && !isValidEvdsSeriesCode(series)) return setRow(def, 'needs_setup', `EVDS_TR10Y_SERIES "${series}" is not a series code (it starts with "TP.").`, 'evds3.tcmb.gov.tr');
+    if (!isValidEvdsSeriesCode(cpiSeries)) return setRow(def, 'needs_setup', `EVDS_TR_CPI_SERIES "${cpiSeries}" is not a series code (it starts with "TP."). Leave it empty to use ${EVDS_CPI_DEFAULT_SERIES}.`, 'evds3.tcmb.gov.tr');
+    const headers = { key, Accept: 'application/json' };
+    let cpiNote = '';
+    const res = await httpCheck(def, fetchFn, evdsCpiUrl(cpiSeries, now), T, (r) => {
+      const pts = parseEvdsCpiYoy(parseJson(r.text), cpiSeries);
+      const last = pts[pts.length - 1];
+      if (!last) return null;
+      cpiNote = `Turkey CPI ${fmt(last.value, 2)}% over 12 months (${formatMonth(last.period)})`;
+      return cpiNote;
+    }, { headers }, `EVDS answered, but CPI series ${cpiSeries} had no 12 months of values. Set the CPI index series code in Menu > Settings.`);
     if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
       return { ...res, state: 'needs_setup', detail: `EVDS did not accept ${keyPhrase('EVDS_API_KEY')} (HTTP ${res.httpStatus}).` };
     }
-    return savedNote('EVDS_API_KEY', res);
+    if (res.state !== 'connected' && res.state !== 'bad_reply') return savedNote('EVDS_API_KEY', res);
+    if (!series) {
+      return savedNote('EVDS_API_KEY', { ...res, detail: `${res.detail} The 10Y series code is empty, so Turkey's 10Y yield reads Missing (Menu > Settings or EVDS_TR10Y_SERIES).` });
+    }
+    const y = await httpCheck(def, fetchFn, evdsSeriesUrl(series, now), T, (r) => {
+      const o = parseEvdsLatest(parseJson(r.text), series);
+      return o ? `Turkey 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
+    }, { headers }, `EVDS answered, but series ${series} had no recent values. Check the series code.`);
+    if (y.state !== 'connected') return savedNote('EVDS_API_KEY', { ...y, detail: res.state === 'connected' ? `${y.detail} (${cpiNote} read fine.)` : y.detail });
+    const sample = [cpiNote, y.sample].filter(Boolean).join('; ');
+    return savedNote('EVDS_API_KEY', { ...y, ...(sample ? { sample } : {}), detail: res.state === 'connected' ? y.detail : `${y.detail} ${res.detail}` });
   });
 
   add('banxico', async () => {
