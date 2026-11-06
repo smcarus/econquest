@@ -384,7 +384,7 @@ followed and says when there are too few (under 5) to lean on. No odds are given
 every pull as CSV or Excel. The log starts with the archive, so it fills in week by week.
 
 The older desks (Debt & fiscal, Markets, Politics & geo, Scenarios, Restructuring) ran on built-in
-figures, so they are switched off in this version and no menu item brings them back.
+figures, so they have been removed from the app.
 
 ---
 

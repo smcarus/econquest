@@ -1,10 +1,8 @@
-import { CDS_HIDDEN } from '../utils/cdsHidden';
 import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
 import React, { useMemo, useState } from 'react';
 import { openDataLicences } from './AboutDialog';
-import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
+import { Plus, RefreshCw } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
-import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
 import { DataStatusBadge } from './DataStatusBadge';
 import { useOnlineStatus } from './OfflineData';
 import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
@@ -15,7 +13,6 @@ import { creditsForSources } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
 import { describeAge, freshnessChecks } from '../utils/freshness';
 import { toLive } from '../utils/liveFigures';
-import { isCoreCountryTab } from '../utils/simpleMode';
 import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 import { MarketsMacroPanel } from './MarketsMacroPanel';
 import { AsOfPanel } from './AsOfPanel';
@@ -40,104 +37,31 @@ const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel'
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
 /**
- * Country page: everything about one sovereign, grouped the way a PM works through it.
- * Each tab is a short list of existing desks; one desk shows at a time.
+ * Country page: everything about one sovereign, in the four sections Research shares with
+ * Compare and My holdings. The old specialist desk tabs ran on built-in figures and were removed.
  */
 
-export type CountryTabId = 'brief' | 'macro' | 'overview' | 'history' | 'debt' | 'markets' | 'geo' | 'scenarios' | 'restructuring';
+export type CountryTabId = 'brief' | 'macro' | 'overview' | 'history';
 
 export interface CountryTabConfig {
   id: CountryTabId;
   label: string;
-  desks: string[];
 }
 
 // The first four use Research's shared section names (utils/researchSections.ts); ids stay so old links land.
 export const COUNTRY_TABS: CountryTabConfig[] = [
-  // Role start view (economist, banker): figures with sources and a link to the report template. No desks.
-  { id: 'brief', label: 'Summary', desks: [] },
-  // MarketEdge: the economy, market pricing and model readings of where they disagree. No desks.
-  { id: 'macro', label: 'Markets & signals', desks: [] },
-  // History: each figure's run of real observations as a chart (src/components/HistoryPanel.tsx). No desks.
-  { id: 'history', label: 'History & data', desks: [] },
-  // Sources (id 'overview'): what is live for this country. Its old chart desks ran on built-in figures and were removed (Sam, 2026-11-04).
-  { id: 'overview', label: 'Sources', desks: [] },
-  {
-    id: 'debt',
-    label: 'Debt & fiscal',
-    desks: [
-      'forecasting_lab',
-      'dmo_treasury_auction_sim',
-      'debt_investor_base_doom_loop',
-      'ratings_shadow_fallen_angel',
-      'taylor_rule_fiscal_dominance',
-    ],
-  },
-  {
-    id: 'markets',
-    label: 'Markets',
-    desks: [
-      'quant_nss_yield_curve',
-      // The CDS-bond basis desk is hidden with CDS for now (src/utils/cdsHidden.ts).
-      ...(CDS_HIDDEN ? [] : ['quant_cds_basis']),
-      'fx_beer_feer_equilibrium',
-      'decision_dislocation_screener',
-      'global_liquidity',
-      'market_maker_alpha',
-      'quant_macro_catalyst_calendar',
-    ],
-  },
-  {
-    id: 'geo',
-    label: 'Politics & geo',
-    desks: [
-      'geopolitical_desk',
-      'supply_chain_matrix',
-      'geopolitical_reserves_chokepoints',
-      'decision_prediction_markets',
-      'ngfs_climate_slb_greenium',
-    ],
-  },
-  {
-    id: 'scenarios',
-    label: 'Scenarios',
-    desks: ['decision_quadrant_stress', 'backtest_engine', 'quant_macro_surprise'],
-  },
-  {
-    id: 'restructuring',
-    label: 'Restructuring',
-    desks: ['restructuring_npv_cac_waterfall', 'quant_restructuring_npv'],
-  },
+  // Role start view (economist, banker): figures with sources and a link to the report template.
+  { id: 'brief', label: 'Summary' },
+  // MarketEdge: the economy, market pricing and model readings of where they disagree.
+  { id: 'macro', label: 'Markets & signals' },
+  // History: each figure's run of real observations as a chart (src/components/HistoryPanel.tsx).
+  { id: 'history', label: 'History & data' },
+  // Sources (id 'overview'): what is live for this country.
+  { id: 'overview', label: 'Sources' },
 ];
 
 /** Where the Country page opens when no role or desk says otherwise. */
 export const DEFAULT_COUNTRY_TAB: CountryTabConfig = COUNTRY_TABS.find((t) => t.id === 'overview')!;
-
-/** Restructuring is only relevant for stressed credits. */
-export function isRestructuringRelevant(item: WatchlistItem | undefined, run: CouncilAssessmentRun): boolean {
-  // Only real figures decide this: your own CDS, a distressed USD bond spread (1,000 bps or more,
-  // the usual distress line for EMBI spreads), or a risk score built on live inputs.
-  const status = getSnapshotDataStatus(run.openData);
-  const cds = status.live('market.cds5YSpreadBps');
-  const hc = status.live('market.hcBondSpreadBps');
-  return (cds !== undefined && cds >= 400) || (hc !== undefined && hc >= 1000) || (item ? toLive(item).alertStatus === 'CRITICAL' : false);
-}
-
-/** The tab (and desk) that holds a given desk id, for links from Today and elsewhere. */
-export function findCountryTabForDesk(deskId: string): CountryTabConfig | undefined {
-  return COUNTRY_TABS.find((t) => t.desks.includes(deskId));
-}
-
-function deskLabel(id: string): string {
-  try {
-    const { moduleItem } = findPillarForNavSection(id);
-    return moduleItem.id === id || id === 'institutional_quant_desk'
-      ? moduleItem.shortLabel || moduleItem.label
-      : id;
-  } catch {
-    return id;
-  }
-}
 
 const ALERT_CLASS: Record<WatchlistItem['alertStatus'], string> = {
   CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
@@ -182,52 +106,33 @@ export const CountryPage: React.FC<{
   run: CouncilAssessmentRun;
   watchlistItems: WatchlistItem[];
   activeTab: CountryTabId;
-  activeDesk: string;
   onChangeTab: (tab: CountryTabId) => void;
-  onChangeDesk: (deskId: string) => void;
   onSelectCountry: (item: WatchlistItem) => void;
   onAddCountry: () => void;
   onSync: () => void;
   isSyncing: boolean;
-  onCompare: () => void;
   /** Opens the Compare page (the watchlist side by side). */
   onOpenCompare?: () => void;
-  onOpenTickets: () => void;
-  ticketCount: number;
-  renderDesk: (deskId: string) => React.ReactNode;
   briefView: BriefView;
   onWriteNote: (view: BriefView) => void;
-  /** Core view: Brief and Overview tabs only (see utils/simpleMode.ts). */
-  coreOnly?: boolean;
 }> = ({
   run,
   watchlistItems,
   activeTab,
-  activeDesk,
   onChangeTab,
-  onChangeDesk,
   onSelectCountry,
   onAddCountry,
   onSync,
   isSyncing,
-  onCompare,
   onOpenCompare,
-  onOpenTickets,
-  ticketCount,
-  renderDesk,
   briefView,
   onWriteNote,
-  coreOnly = false,
 }) => {
   const net = useOnlineStatus();
   const offline = !!net && !net.online;
   const item = watchlistItems.find((w) => w.iso3 === run.iso3);
-  const showRestructuring = isRestructuringRelevant(item, run);
-  const tabs = COUNTRY_TABS.filter((t) => t.id !== 'restructuring' || showRestructuring || activeTab === 'restructuring').filter(
-    (t) => !coreOnly || isCoreCountryTab(t.id)
-  );
-  const tab = tabs.find((t) => t.id === activeTab) || tabs.find((t) => t.id === DEFAULT_COUNTRY_TAB.id) || tabs[0];
-  const desk = tab.desks.includes(activeDesk) ? activeDesk : tab.desks[0];
+  const tabs = COUNTRY_TABS;
+  const tab = tabs.find((t) => t.id === activeTab) || DEFAULT_COUNTRY_TAB;
   const open = run.openData;
   const status = useMemo(() => getSnapshotDataStatus(open), [open]);
   const events = useMemo(() => upcomingOfficialEvents([run.iso3], 120), [run.iso3]);
@@ -322,28 +227,15 @@ export const CountryPage: React.FC<{
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Refreshing…' : 'Refresh now'}
             </button>
-            {!coreOnly && (
-              <>
-                <button type="button" onClick={onCompare} className="ui-btn inline-flex">
-                  <GitCompare className="w-3 h-3" />
-                  Compare
-                </button>
-                <button type="button" onClick={onOpenTickets} className="ui-btn inline-flex">
-                  <Ticket className="w-3 h-3" />
-                  IC tickets{ticketCount > 0 ? ` (${ticketCount})` : ''}
-                </button>
-              </>
-            )}
           </div>
         </div>
 
-        {/* Sections: the same four as Compare and My holdings, then the specialist desks */}
+        {/* Sections: the same four as Compare and My holdings */}
         <ResearchSectionNav
           ariaLabel="Country sections"
           active={tab.id}
           onChange={(id) => onChangeTab(id as CountryTabId)}
-          sections={tabs.filter((t) => !t.desks.length)}
-          extra={tabs.filter((t) => t.desks.length).map((t) => ({ id: t.id, label: t.label, className: t.id === 'restructuring' ? 'text-rose-700 dark:text-rose-300' : '' }))}
+          sections={tabs}
         />
       </div>
 
@@ -526,26 +418,6 @@ export const CountryPage: React.FC<{
         />
       )}
       {tab.id === 'brief' && <CountryBriefPanel key={briefView} run={run} peers={watchlistItems} view={briefView} onWriteNote={onWriteNote} />}
-
-      {/* Desk picker for this tab */}
-      {tab.desks.length > 1 && (
-        <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={`${tab.label} tools`}>
-          {tab.desks.map((d) => (
-            <button
-              key={d}
-              type="button"
-              role="tab"
-              aria-selected={d === desk}
-              onClick={() => onChangeDesk(d)}
-              className="ui-pill"
-            >
-              {deskLabel(d)}
-            </button>
-          ))}
-        </div>
-      )}
-
-      {desk && renderDesk(desk)}
     </div>
   );
 };

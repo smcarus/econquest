@@ -6,18 +6,13 @@
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AIRuntimeConfig,
-  AnnotatedChartSpec,
   CROOverrideState,
-  CalibratedPolicyShockVector,
-  CommandPaletteItem,
-  ConditionalBayesianEventSimulation,
   CouncilAssessmentRun,
   CustomSovereignOnboardingDraft,
   ExternalInternalConnectorMetricKey,
   ForecastingShockInputs,
   GeopoliticalWargameParams,
   LiquidityStressParams,
-  NavigationCategoryGroupId,
   OpenDataSnapshot,
   UserPersonaId,
   WatchlistGroup,
@@ -38,27 +33,15 @@ import {
   registerCustomSovereignInCatalog,
 } from './data/presetsAndBaselines';
 import {
-  COMPACT_NAV_CATEGORIES,
-  buildCommandPaletteIndex,
   loadCustomSovereignsFromStorage,
   loadWorkspaceSessionFromStorage,
-  runPreFlightModelIntegrityAudit,
   saveWorkspaceSessionToStorage,
 } from './utils/turnkeyReadinessAndCommandEngine';
 import { DEFAULT_WARGAME_PARAMS } from './utils/geopoliticalRiskEngine';
 import { DEFAULT_LIQUIDITY_STRESS_PARAMS } from './utils/globalLiquidityEngine';
 import {
   DEFAULT_FORECAST_SHOCKS,
-  HistoricalCrisisEpisode,
-  HistoricalCrisisEpisodeId,
-  ScenarioSnapshotState,
-  captureScenarioSnapshot,
-  computeScenarioDeltaComparison,
 } from './utils/portfolioAndBacktestEngine';
-import {
-  LiveMacroSyncResult,
-  syncLiveWorldBankAndTreasuryData,
-} from './utils/macroLiveSyncService';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
@@ -69,11 +52,10 @@ import {
   DEFAULT_COUNTRY_TAB,
   CountryPage,
   CountryTabId,
-  findCountryTabForDesk,
 } from './components/CountryPage';
 import {
   WorkspacePage,
-  deskLabel as workspaceDeskLabel,
+
   PORTFOLIO_TABS,
   REPORTS_TABS,
   findTabForDesk,
@@ -90,7 +72,6 @@ import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { TeachingEpisodes } from './components/TeachingEpisodes';
-import { PresentMode } from './components/PresentMode';
 import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
 import { ResearchCompare } from './components/ResearchCompare';
 import { LiveCountBadge, ResearchHeader, SourcesGrid } from './components/ResearchSections';
@@ -101,85 +82,37 @@ import { ToolsPage } from './components/ToolsPage';
 import type { BriefView } from './components/CountryBriefPanel';
 import type { ToolTarget } from './data/toolsCatalog';
 
-/** Off: the desks behind the old "Show all tools" switch run only on built-in figures. */
-const SHOW_BUILT_IN_DESKS = false;
 import type { WorkspaceTab } from './components/WorkspacePage';
 
-import { loadHoldings, saveHoldings, holdingsWeightsPct, holdingsToContagionBook, type Holding } from './utils/holdings';
+import { loadHoldings, saveHoldings,   type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
-import { ExecutiveBriefScorecard } from './components/ExecutiveBriefScorecard';
-import { HeroGeopoliticalMapCard } from './components/HeroGeopoliticalMapCard';
-import { ScenarioDeltaComparatorDrawer } from './components/ScenarioDeltaComparatorModal';
-import type { QuantSubWorkspaceId } from './components/InstitutionalQuantDesk';
-import type { PortfolioFundingSubTabId } from './components/PortfolioAndFundingDesk';
-import type { DecisionCommandSubTabId } from './components/DecisionCommandCenterDesk';
-import type { RatingsFxIcSubTabId } from './components/SovereignRatingsFxAndIcDesk';
-import type { RestructuringMonetaryGeoSubTabId } from './components/RestructuringMonetaryGeoDesk';
-import type { PersonaPlaybookSubTabId } from './components/PersonaPlaybooksAndSignalDesk';
 import { EconQuestLogo } from './components/EconQuestLogo';
-import { lazyNamed, DeskLoading } from './components/LazyDesk';
+import { lazyNamed } from './components/LazyDesk';
 import { describeSnapshotSync } from './utils/syncMessages';
 import {
-  DeskClaritySynthesisBanner,
-  WorkspaceDensityMode,
-} from './components/DeskClaritySynthesisBanner';
-import { MorningAlphaAndCatalystRadar } from './components/MorningAlphaAndCatalystRadar';
-import {
-  MultiSovereignComparatorDrawer,
   ExecutiveTearSheetAndTradeTicketDrawer,
 } from './components/MultiSovereignComparatorAndTicketDrawers';
 import { GlobalTerminalProvenanceAndStatRefController } from './components/RealTimeDataProvenanceOverlay';
-import {
-  ACTIVITY_PILLARS,
-  ActivityPillarId,
-  findPillarForNavSection,
-  buildThreePillarHubsForCommandPalette,
-  PillarSubNavigationStrip,
-  CompactTopStatusAndDrawersBar,
-  MacroOverviewTabbedWorkspace,
-  ViewportScrollBudgetContainer,
-} from './components/ActivityPillarWorkspaceController';
 import {
   computeSovereignNssYieldCurveSuite,
   DEFAULT_NSS_SHOCK_INPUTS,
   StagedTradeTicketSpec,
 } from './utils/nssYieldCurveAndCatalystEngine';
-import type { CouncilAssessmentRun as RunForPdf } from './types/council';
 import { watchlistYieldFields } from './utils/watchlistYield';
-// The PDF library is large, so it loads only when someone exports a PDF.
-const exportSMCRPdfDossier = (r: RunForPdf) =>
-  import('./utils/smcrReportExporter').then((m) => m.exportSMCRPdfDossier(r));
 import {
-  FileUp,
   Sun,
   Moon,
-  Play,
-  Download,
   AlertCircle,
   CheckCircle2,
-  Layout,
-  Columns,
-  FileText,
-  PanelLeftClose,
-  PanelLeftOpen,
-  GitCompare,
-  RefreshCw,
-  Pin,
-  Search,
   ShieldCheck,
-  Plus,
-  Database,
   ScrollText,
   Activity,
   ShieldQuestion,
   Info,
   ChevronDown,
-  Briefcase,
   BookOpen,
-  Cpu,
   Settings2,
-  Presentation,
   KeyRound,
   Wrench,
   MessageSquare,
@@ -210,29 +143,8 @@ import { loadShareMode, saveShareMode } from './utils/shareMode';
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
 const CustomSovereignOnboardingModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'CustomSovereignOnboardingModal');
-const GlobalCommandPaletteModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'GlobalCommandPaletteModal');
-const ModelIntegrityAuditModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'ModelIntegrityAuditModal');
 const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SelfHostAndOllamaRuntimeModal');
 const SovereignManualAndGithubModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SovereignManualAndGithubModal');
-const WorkspaceSessionModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'WorkspaceSessionModal');
-const AnnotatedChartsDeck = lazyNamed(() => import('./components/AnnotatedChartsDeck'), 'AnnotatedChartsDeck');
-const StatisticalForecastingLab = lazyNamed(() => import('./components/StatisticalForecastingLab'), 'StatisticalForecastingLab');
-const GeopoliticalRiskDesk = lazyNamed(() => import('./components/GeopoliticalRiskDesk'), 'GeopoliticalRiskDesk');
-const PortfolioContagionDesk = lazyNamed(() => import('./components/PortfolioContagionDesk'), 'PortfolioContagionDesk');
-const CrisisBacktestDesk = lazyNamed(() => import('./components/CrisisBacktestDesk'), 'CrisisBacktestDesk');
-const PolicyDocumentAndCsvLab = lazyNamed(() => import('./components/PolicyDocumentAndCsvLab'), 'PolicyDocumentAndCsvLab');
-const InstitutionalRiskModules = lazyNamed(() => import('./components/InstitutionalRiskModules'), 'InstitutionalRiskModules');
-const CouncilHierarchyAndDebates = lazyNamed(() => import('./components/CouncilHierarchyAndDebates'), 'CouncilHierarchyAndDebates');
-const CROCheckpointAndReports = lazyNamed(() => import('./components/CROCheckpointAndReports'), 'CROCheckpointAndReports');
-const SupplyChainMatrixDesk = lazyNamed(() => import('./components/SupplyChainMatrixDesk'), 'SupplyChainMatrixDesk');
-const GlobalLiquidityDesk = lazyNamed(() => import('./components/GlobalLiquidityDesk'), 'GlobalLiquidityDesk');
-const MarketMakerAlphaDesk = lazyNamed(() => import('./components/MarketMakerAlphaDesk'), 'MarketMakerAlphaDesk');
-const InstitutionalQuantDesk = lazyNamed(() => import('./components/InstitutionalQuantDesk'), 'InstitutionalQuantDesk');
-const PortfolioAndFundingDesk = lazyNamed(() => import('./components/PortfolioAndFundingDesk'), 'PortfolioAndFundingDesk');
-const DecisionCommandCenterDesk = lazyNamed(() => import('./components/DecisionCommandCenterDesk'), 'DecisionCommandCenterDesk');
-const SovereignRatingsFxAndIcDesk = lazyNamed(() => import('./components/SovereignRatingsFxAndIcDesk'), 'SovereignRatingsFxAndIcDesk');
-const RestructuringMonetaryGeoDesk = lazyNamed(() => import('./components/RestructuringMonetaryGeoDesk'), 'RestructuringMonetaryGeoDesk');
-const PersonaPlaybooksAndSignalDesk = lazyNamed(() => import('./components/PersonaPlaybooksAndSignalDesk'), 'PersonaPlaybooksAndSignalDesk');
 
 
 const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
@@ -282,302 +194,8 @@ type NavSectionId =
   | 'persona_strategy_backtester_lab'
   | 'persona_academic_latex_csv_exporter';
 
-type DomainHubId =
-  | 'overview_visuals'
-  | 'macro_econometrics'
-  | 'geo_supply_chain'
-  | 'portfolio_governance'
-  | 'institutional_quant_hub'
-  | 'portfolio_dmo_doc_hub'
-  | 'decision_command_hub'
-  | 'ratings_fx_ic_hub'
-  | 'restructuring_monetary_geo_hub'
-  | 'persona_playbooks_signal_hub';
 
-interface DomainHubConfig {
-  id: DomainHubId;
-  label: string;
-  defaultSection: NavSectionId;
-  subTabs: { id: NavSectionId; label: string; description: string }[];
-}
 
-const DOMAIN_HUBS: DomainHubConfig[] = [
-  {
-    id: 'overview_visuals',
-    label: '1. Overview, Maps & Charts',
-    defaultSection: 'charts_watchlists',
-    subTabs: [
-      {
-        id: 'charts_watchlists',
-        label: 'Flagship Geopolitical Map & Horizon Charts',
-        description: 'Interactive global chokepoint & GDELT map + 2×2 sovereign horizon charts with plain-English guides',
-      },
-      {
-        id: 'risk_analytics',
-        label: 'Peer Relative Value & Stress Matrix',
-        description: 'Cross-sovereign Z-score relative value scatter, rating migration & contagion matrix',
-      },
-    ],
-  },
-  {
-    id: 'macro_econometrics',
-    label: '2. Macro & Econometrics',
-    defaultSection: 'forecasting_lab',
-    subTabs: [
-      {
-        id: 'forecasting_lab',
-        label: 'Econometric & Debt Sustainability Lab',
-        description: 'Monte Carlo debt fan charts, Nelson-Siegel yield curves, Taylor Rule & IMF ARA reserve adequacy',
-      },
-      {
-        id: 'global_liquidity',
-        label: 'Global Liquidity & XCCY Basis',
-        description: 'Fed/ECB/BoJ/PBoC balance sheet impulse, SOFR funding stress & cross-currency basis swaps',
-      },
-      {
-        id: 'market_maker_alpha',
-        label: 'Market-Maker & Alpha Microstructure',
-        description: 'Limit order book depth, dealer gamma inventory & systematic sovereign carry/momentum signals',
-      },
-    ],
-  },
-  {
-    id: 'geo_supply_chain',
-    label: '3. Geopolitics & Supply Chains',
-    defaultSection: 'geopolitical_desk',
-    subTabs: [
-      {
-        id: 'geopolitical_desk',
-        label: 'Geopolitical Wargaming Desk',
-        description: 'Interactive 5-factor shock simulator, sanctions custody freeze, game-theory tree & GDELT alerts',
-      },
-      {
-        id: 'supply_chain_matrix',
-        label: 'Chokepoint Supply-Chain Matrix',
-        description: 'Critical commodity dependencies, shipping lane blockades & imported inflation pass-through',
-      },
-    ],
-  },
-  {
-    id: 'portfolio_governance',
-    label: '4. Portfolio & Council Governance',
-    defaultSection: 'portfolio_risk_desk',
-    subTabs: [
-      {
-        id: 'portfolio_risk_desk',
-        label: 'Portfolio & Contagion Book',
-        description: 'Multi-sovereign portfolio book, N×N cross-contagion spillover matrix, Cornish-Fisher CVaR₉₉ & MCTR',
-      },
-      {
-        id: 'backtest_engine',
-        label: 'Crisis Replay & Backtest',
-        description: 'Historical crisis replay (1997 Asia, 1998 Russia GKO, 2001 Argentina, 2011 Eurozone, 2022 UK LDI) & AUROC validation',
-      },
-      {
-        id: 'council_debates',
-        label: '9-Agent Council & Devil’s Advocate Debates',
-        description: 'Live pipeline health telemetry, 3-desk adversarial transcripts & cross-desk cascade audit',
-      },
-      {
-        id: 'cro_reports',
-        label: 'CRO Gate & SMCR-1.0 Dossier',
-        description: 'Human-in-the-loop Chief Risk Officer assumption overrides & standardized institutional report export',
-      },
-      {
-        id: 'policy_doc_lab',
-        label: 'Policy Document Lab',
-        description: 'Ingest IMF Article IV consultations, central bank minutes or sanctions annexes into Council context',
-      },
-    ],
-  },
-  {
-    id: 'institutional_quant_hub',
-    label: '5. Institutional Quant Desk',
-    defaultSection: 'quant_cds_basis',
-    subTabs: [
-      {
-        id: 'quant_cds_basis',
-        label: 'CDS Hazard & Basis Arb',
-        description: 'ISDA piecewise-constant hazard rate bootstrap, survival curve Q(0,T) & Eurobond Z-spread vs. CDS basis arbitrage',
-      },
-      {
-        id: 'quant_restructuring_npv',
-        label: 'Restructuring & Haircut NPV',
-        description: 'Sovereign LGD workbench, creditor seniority waterfall, ICMA CAC voting thresholds & exit-yield NPV haircut calculator',
-      },
-      {
-        id: 'quant_matrix_econometrics',
-        label: 'Matrix OLS (HAC) & ROC',
-        description: 'In-browser matrix OLS (β̂ = (XᵀX)⁻¹Xᵀy) with Newey-West HAC standard errors, Bohn test & out-of-sample ROC/AUC',
-      },
-      {
-        id: 'quant_trade_blotter',
-        label: 'RV Blotter & DV01/CS01',
-        description: 'Multi-leg relative-value trade structuring blotter, DV01/CS01/Convexity Greeks, 90D Carry+Roll & 5-factor P&L waterfall',
-      },
-      {
-        id: 'quant_macro_surprise',
-        label: 'Macro Surprise & Bayes',
-        description: 'High-frequency macro release calendar, standardized consensus surprise Z-scores (ESI/ISI) & Bayesian regime update',
-      },
-      {
-        id: 'quant_alpha_correlation',
-        label: 'Alpha Correlation Matrix',
-        description: 'Pairwise rolling correlations of 5Y CDS & 10Y Eurobond spreads, PCA beta vs. alpha & EMBI weight optimizer',
-      },
-      {
-        id: 'quant_nss_yield_curve',
-        label: 'NSS Yield Curve & Carry+Roll',
-        description: '6-factor Nelson-Siegel-Svensson (1Y–30Y) parametric yield curve, 12M Carry + Roll-Down (bps) & 2s5s10s butterfly lab',
-      },
-      {
-        id: 'quant_macro_catalyst_calendar',
-        label: 'Macro & MPC Catalyst Vol',
-        description: '90-day forward Central Bank MPC, CPI & IMF review catalyst calendar with implied 1-day event volatility (±bps)',
-      },
-      {
-        id: 'quant_portfolio_stress_lab',
-        label: 'Portfolio Stress-Test & Scenario Lab',
-        description: 'Batch EMBI portfolio stress testing (e.g., 20% FX devaluation + 200bps spread widening) & instantaneous multi-sovereign book PnL hit attribution',
-      },
-    ],
-  },
-  {
-    id: 'portfolio_dmo_doc_hub',
-    label: '6. Portfolio, DMO & Doc AI',
-    defaultSection: 'embi_portfolio_pair_book',
-    subTabs: [
-      {
-        id: 'embi_portfolio_pair_book',
-        label: 'EMBI Portfolio & Pair-Trade Book',
-        description: 'Multi-sovereign EMBI Global Diversified index weights, active tilt allocator, tracking error & beta-neutral pair trades',
-      },
-      {
-        id: 'dmo_treasury_auction_sim',
-        label: '24M DMO Treasury Auction Simulator',
-        description: '24-month gross financing rollover calendar (% GDP), 5-channel issuance mix, bid-to-cover & bank Tier-1 saturation',
-      },
-      {
-        id: 'mpc_imf_document_ai',
-        label: 'MPC & IMF Article IV Document AI',
-        description: 'Hybrid Gemini AI + econometric parser for Central Bank MPC statements, IMF Article IV QPCs & Eurobond CACs',
-      },
-    ],
-  },
-  {
-    id: 'decision_command_hub',
-    label: '7. Decision Command Center',
-    defaultSection: 'decision_dislocation_screener',
-    subTabs: [
-      {
-        id: 'decision_dislocation_screener',
-        label: 'Model vs. Market Dislocation Screener',
-        description: 'Cross-sovereign ISDA 5Y CDS market-implied default probability vs. econometric fundamental default probability gap',
-      },
-      {
-        id: 'decision_premortem_killswitch',
-        label: 'Pre-Mortem & Kill-Switch Engine',
-        description: '3-pathway Klein pre-mortem failure tree, automated 5-domain kill-switch tripwires & cognitive bias guardrails',
-      },
-      {
-        id: 'decision_ledger_brier',
-        label: 'Decision Ledger & Brier Audit',
-        description: 'Persistent sovereign thesis ledger, live mark-to-market performance (bps) & ex-post Brier skill score calibration',
-      },
-      {
-        id: 'decision_quadrant_stress',
-        label: '4-Quadrant Macro Stress Matrix',
-        description: 'Simultaneous 4-quadrant global macro regime stress grid & cross-sovereign resilience ranking',
-      },
-      {
-        id: 'decision_prediction_markets',
-        label: 'Polymarket & Kalshi Event Arb',
-        description: 'Live Polymarket Gamma & Kalshi v2 dual-venue spread scanner, event vs. CDS probability arbitrage & conditional Bayes shock simulator',
-      },
-    ],
-  },
-  {
-    id: 'ratings_fx_ic_hub',
-    label: '8. Sovereign Ratings, FX & IC Dossier',
-    defaultSection: 'ratings_shadow_fallen_angel',
-    subTabs: [
-      {
-        id: 'ratings_shadow_fallen_angel',
-        label: 'Shadow Rating & Fallen-Angel Cliff',
-        description: 'S&P/Moody’s/Fitch 5-pillar  rating replica, notch dislocation vs. official rating & BBB-/BB+ fallen-angel cliff simulator',
-      },
-      {
-        id: 'fx_beer_feer_equilibrium',
-        label: 'FX BEER / FEER Valuation Lab',
-        description: 'Behavioral (BEER) & IMF Fundamental (FEER) Real Effective Exchange Rate valuation, current-account norm (% GDP) & misalignment %',
-      },
-      {
-        id: 'debt_investor_base_doom_loop',
-        label: 'Investor Base & Bank Doom-Loop',
-        description: 'IMF SDIB 5-sector sovereign debt ownership (% share), foreign sudden-stop outflow beta (bps) & domestic bank Tier-1 CET1 doom-loop',
-      },
-      {
-        id: 'ic_pitchbook_dossier_exporter',
-        label: 'Boardroom IC Pitchbook & Exports',
-        description: 'Multi-sovereign Investment Committee comparative scorecard & multi-page PDF, Markdown & JSON pitchbook exporter',
-      },
-    ],
-  },
-  {
-    id: 'restructuring_monetary_geo_hub',
-    label: '9. Restructuring, Monetary & Geo-Risk',
-    defaultSection: 'restructuring_npv_cac_waterfall',
-    subTabs: [
-      {
-        id: 'restructuring_npv_cac_waterfall',
-        label: 'IMF / Paris Club Restructuring & NPV',
-        description: '5-tier creditor seniority waterfall, IMF Preferred Creditor Status, Paris Club comparability & CAC Eurobond NPV recovery (0–100¢)',
-      },
-      {
-        id: 'taylor_rule_fiscal_dominance',
-        label: 'Central Bank Taylor Rule & Dominance',
-        description: 'Open-economy Augmented Taylor Rule vs. spot policy rate (bps), fiscal dominance score (0–100) & financial repression tax (% GDP)',
-      },
-      {
-        id: 'geopolitical_reserves_chokepoints',
-        label: 'Reserve Custody Freeze & Chokepoints',
-        description: 'Central bank FX/gold reserve custody freeze resilience (months import cover) & 5-corridor maritime chokepoint blockade simulator',
-      },
-      {
-        id: 'ngfs_climate_slb_greenium',
-        label: 'NGFS Climate Stress & SLB Greenium',
-        description: 'NGFS Net Zero / Delayed / Hot House fiscal revenue erosion (% rev), physical damage (% GDP) & SLB step-up spread analyzer (bps)',
-      },
-    ],
-  },
-  {
-    id: 'persona_playbooks_signal_hub',
-    label: '10. Persona Playbooks & Signal Hub',
-    defaultSection: 'persona_cross_hub_signal_scanner',
-    subTabs: [
-      {
-        id: 'persona_cross_hub_signal_scanner',
-        label: 'Cross-Hub Top Alpha & Research Scanner',
-        description: 'Automated 9-engine watchlist synthesis surfacing Top-3 Trader Arbitrage, Institutional IC & Policy Research signals',
-      },
-      {
-        id: 'persona_guided_playbook_cockpit',
-        label: 'Guided Persona Playbook Cockpit',
-        description: 'Step-by-step operational checklists for Individual Traders, Institutional PMs/ICs & Policy Researchers with 1-click module jump',
-      },
-      {
-        id: 'persona_strategy_backtester_lab',
-        label: 'Systematic Strategy Backtester Lab',
-        description: 'Historical regime replay (2022–2025) for Prediction Arb, Taylor FX Short, Fallen-Angel Hedge & Eurobond NPV Workout (bps & Sharpe)',
-      },
-      {
-        id: 'persona_academic_latex_csv_exporter',
-        label: 'Academic LaTeX & Empirical CSV Exporter',
-        description: 'Publication-ready LaTeX Booktabs tables (\\toprule/\\bottomrule), BibTeX citations, Empirical Panel CSV & Working Paper (.md)',
-      },
-    ],
-  },
-];
 
 
 /** Reports in the core view: the note builder alone. */
@@ -610,8 +228,6 @@ export default function App() {
   });
 
   const [isWatchlistCollapsed, setIsWatchlistCollapsed] = useState<boolean>(true);
-  const [densityMode, setDensityMode] = useState<WorkspaceDensityMode>('SIMPLE_BRIEF');
-  const [showScenarioInput, setShowScenarioInput] = useState<boolean>(false);
 
   // 3-Mode Workspace Layout Switcher (Default: Clean Executive Briefing)
   const [layoutMode, setLayoutMode] = useState<WorkspaceLayoutMode>(
@@ -629,12 +245,6 @@ export default function App() {
     setIsWatchlistCollapsed(true);
   }, [activeNavSection]);
 
-  // Turnkey Modals & 3-Pillar Dropdown State
-  const [openCategoryMenuId, setOpenCategoryMenuId] =
-    useState<NavigationCategoryGroupId | null>(null);
-  const [openPillarMenuId, setOpenPillarMenuId] =
-    useState<ActivityPillarId | null>(null);
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   const [isOfflineDataOpen, setIsOfflineDataOpen] = useState<boolean>(false);
   const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
@@ -697,11 +307,6 @@ export default function App() {
   const [councilReportRunId, setCouncilReportRunId] = useState<string | null>(null);
   // Ties the browser to one council run's step-by-step progress on the server (the agent network).
   const [councilProgressId, setCouncilProgressId] = useState<string | null>(null);
-  const [isToolsMenuOpen, setIsToolsMenuOpen] = useState<boolean>(false);
-  const [isPresentMode, setIsPresentMode] = useState<boolean>(false);
-  // The old desks all compute from built-in figures, so they are hidden until each runs on live
-  // inputs (Sam, 2026-11-04: no built-in figures). Their code stays; flip this to bring them back.
-  const showAllTools = SHOW_BUILT_IN_DESKS;
   // Tools is always shown: without the old desks it is the page of tools that run on live data.
   const navAreas = NAV;
   const [holdings, setHoldingsState] = useState<Holding[]>(() => loadHoldings());
@@ -716,41 +321,15 @@ export default function App() {
     (area === 'portfolio' ? setPortfolioTab : setReportsTab)(tab.id);
     const desk = deskId && tab.desks.includes(deskId) ? deskId : tab.desks.includes(activeNavSection) ? activeNavSection : tab.desks[0];
     setActiveNavSection(desk as NavSectionId);
-    // My holdings shows a specialist desk only when one was asked for (all tools on).
-    if (area === 'portfolio') setPortfolioDeskOpen(Boolean(deskId) && showAllTools);
     setAppArea(area);
     window.scrollTo({ top: 0 });
   };
-  const openCountryPage = (deskId?: string) => {
-    // A Country tab asked for by its id (e.g. 'macro' from the MarketEdge screen on Today).
-    const askedTab = deskId ? COUNTRY_TABS.find((t) => t.id === deskId && !t.desks.length) : undefined;
-    if (askedTab) {
-      setCountryTab(askedTab.id);
-      setAppArea('country');
-      window.scrollTo({ top: 0 });
-      return;
-    }
-    if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(PORTFOLIO_TABS, deskId)) {
-      openWorkspace('portfolio', deskId);
-      return;
-    }
-    if (deskId && !findCountryTabForDesk(deskId) && findTabForDesk(REPORTS_TABS, deskId)) {
-      openWorkspace('reports', deskId);
-      return;
-    }
-    if (deskId && !findCountryTabForDesk(deskId)) {
-      // Not part of any workflow page: open it in the desk library.
-      setLayoutMode('executive_brief');
-      setActiveNavSection(deskId as NavSectionId);
-      setAppArea('desks');
-      window.scrollTo({ top: 0 });
-      return;
-    }
-    // No desk asked for: open on the Brief.
-    const briefTab = COUNTRY_TABS.find((t) => t.id === DEFAULT_COUNTRY_TAB_ID);
-    const tab = (deskId && findCountryTabForDesk(deskId)) || briefTab || DEFAULT_COUNTRY_TAB;
+  const openCountryPage = (tabId?: string) => {
+    // A Country section asked for by its id (e.g. 'macro' from the MarketEdge screen on Today);
+    // anything else opens on the Summary.
+    const tab =
+      COUNTRY_TABS.find((t) => t.id === tabId) || COUNTRY_TABS.find((t) => t.id === DEFAULT_COUNTRY_TAB_ID) || DEFAULT_COUNTRY_TAB;
     setCountryTab(tab.id);
-    if (tab.desks.length) setActiveNavSection((deskId && tab.desks.includes(deskId) ? deskId : tab.desks[0]) as NavSectionId);
     setAppArea('country');
     window.scrollTo({ top: 0 });
   };
@@ -767,8 +346,6 @@ export default function App() {
   useEffect(() => {
     if (appArea !== 'country') setResearchCameFrom(null);
   }, [appArea]);
-  // My holdings with all tools on: a specialist desk tab is open instead of a section.
-  const [portfolioDeskOpen, setPortfolioDeskOpen] = useState(false);
   useEffect(() => {
     const s = sectionForCountryTab(countryTab);
     if (s) setResearchSection(s);
@@ -779,26 +356,18 @@ export default function App() {
       if (sectionForCountryTab(countryTab)) setCountryTab(countryTabForSection(researchSection) as CountryTabId);
       returnToCountryPage();
     } else if (scope === 'portfolio') {
-      setPortfolioDeskOpen(false);
       setAppArea('portfolio');
     } else setAppArea('compare');
     window.scrollTo({ top: 0 });
   };
   /** Research > My holdings > History & data: import and edit holdings. */
   const openHoldingsEditor = () => {
-    setPortfolioDeskOpen(false);
     setResearchSection('history');
     setAppArea('portfolio');
     window.scrollTo({ top: 0 });
   };
   const openResearch = () => openResearchScope(researchScope);
   const returnToCountryPage = () => {
-    const tab = COUNTRY_TABS.find((t) => t.id === countryTab) || DEFAULT_COUNTRY_TAB;
-    if (!tab.desks.length) {
-      setAppArea('country');
-      return;
-    }
-    if (tab.desks.length && !tab.desks.includes(activeNavSection)) setActiveNavSection(tab.desks[0] as NavSectionId);
     setAppArea('country');
   };
   const headerMenuRef = useRef<HTMLDivElement | null>(null);
@@ -819,10 +388,8 @@ export default function App() {
       document.removeEventListener('keydown', onKey);
     };
   }, [isHeaderMenuOpen]);
-  const [isIntegrityAuditOpen, setIsIntegrityAuditOpen] = useState<boolean>(false);
   const [isCustomSovereignModalOpen, setIsCustomSovereignModalOpen] =
     useState<boolean>(false);
-  const [isSessionModalOpen, setIsSessionModalOpen] = useState<boolean>(false);
   const [isManualModalOpen, setIsManualModalOpen] = useState<boolean>(false);
   const [isRuntimeModalOpen, setIsRuntimeModalOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -892,39 +459,19 @@ export default function App() {
   const [scenarioInput, setScenarioInput] = useState<string>(
     () => savedSessionOnBoot?.scenarioDirective || SOVEREIGN_CATALOG[0].focusTheme
   );
-  const [policyDocTitle, setPolicyDocTitle] = useState<string>(
-    'IMF Article IV Consultation Staff Concluding Statement & Central Bank Minutes'
-  );
-  const [policyDocText, setPolicyDocText] = useState<string>(
-    'Staff emphasizes that achieving the primary fiscal balance target requires structural expenditure containment. Unanchored medium-term inflation expectations and external maritime freight volatility warrant continued monetary vigilance and rebuilding of hard-currency liquidity buffers.'
-  );
 
   const [croDraft, setCroDraft] = useState<CROOverrideState>(() => run.croState);
   const [forecastShocks, setForecastShocks] = useState<ForecastingShockInputs>(
     () => savedSessionOnBoot?.forecastShocks || DEFAULT_FORECAST_SHOCKS
   );
-  const [scenarioBLabel, setScenarioBLabel] = useState<string>('Live Active Desk State');
   const [geopoliticalWargameParams, setGeopoliticalWargameParams] =
     useState<GeopoliticalWargameParams>(
       () => savedSessionOnBoot?.geopoliticalWargameParams || DEFAULT_WARGAME_PARAMS
     );
-  const [propagateGeoShocks, setPropagateGeoShocks] = useState<boolean>(true);
   const [liquidityStressParams, setLiquidityStressParams] = useState<LiquidityStressParams>(
     () => savedSessionOnBoot?.liquidityStressParams || DEFAULT_LIQUIDITY_STRESS_PARAMS
   );
 
-  // Side-by-Side Scenario A vs. Scenario B Delta Comparator & Live World Bank / Treasury Sync State
-  const [pinnedScenarioA, setPinnedScenarioA] = useState<ScenarioSnapshotState>(() =>
-    captureScenarioSnapshot(
-      'Baseline Anchor (Scenario A)',
-      run,
-      DEFAULT_FORECAST_SHOCKS,
-      DEFAULT_WARGAME_PARAMS,
-      DEFAULT_LIQUIDITY_STRESS_PARAMS
-    )
-  );
-  const [isScenarioDrawerOpen, setIsScenarioDrawerOpen] = useState<boolean>(false);
-  const [isComparatorDrawerOpen, setIsComparatorDrawerOpen] = useState<boolean>(false);
   const [isTradeTicketDrawerOpen, setIsTradeTicketDrawerOpen] = useState<boolean>(false);
   const [stagedTradeTickets, setStagedTradeTickets] = useState<StagedTradeTicketSpec[]>(
     () =>
@@ -950,16 +497,6 @@ export default function App() {
   const handleRemoveTradeTicket = (ticketId: string) => {
     setStagedTradeTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
   };
-  const [liveMacroSyncResult, setLiveMacroSyncResult] = useState<LiveMacroSyncResult | null>(
-    null
-  );
-  const [isSyncingLiveMacro, setIsSyncingLiveMacro] = useState<boolean>(false);
-  const [customBacktestEpisodes, setCustomBacktestEpisodes] = useState<HistoricalCrisisEpisode[]>(
-    []
-  );
-  const [selectedBacktestEpisodeId, setSelectedBacktestEpisodeId] = useState<
-    HistoricalCrisisEpisodeId | undefined
-  >(undefined);
 
   const [runtimeConfig, setRuntimeConfig] = useState<AIRuntimeConfig>(() => {
     try {
@@ -1139,18 +676,6 @@ export default function App() {
     saveWorkspaceSessionToStorage(currentWorkspaceSessionSnapshot);
   }, [currentWorkspaceSessionSnapshot]);
 
-  // Global keyboard shortcut Cmd+K / Ctrl+K for Command Palette
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      if (showAllTools && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen((prev) => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [showAllTools]);
-
   // Pull live open data on initial mount for default sovereign & hydrate all watchlists
   useEffect(() => {
     handlePullLiveOpenData(run.iso3, run.countryName, true);
@@ -1278,366 +803,20 @@ export default function App() {
     setCroDraft(nextRun.croState);
     setScenarioInput(item.focusTheme);
     setForecastShocks(DEFAULT_FORECAST_SHOCKS);
-    setScenarioBLabel('Live Active Desk State');
-    setPinnedScenarioA(
-      captureScenarioSnapshot(
-        'Baseline Anchor (Scenario A)',
-        nextRun,
-        DEFAULT_FORECAST_SHOCKS,
-        geopoliticalWargameParams,
-        liquidityStressParams
-      )
-    );
     handlePullLiveOpenData(item.iso3, item.countryName, false);
   };
 
-  // Live World Bank WDI v2 & US Treasury Fiscal Data API Sync Handler
-  const handleSyncLiveWorldBankAndTreasury = async () => {
-    setIsSyncingLiveMacro(true);
-    setStatusBanner({
-      type: 'info',
-      message: `Checking World Bank and US Treasury for new ${run.countryName} figures…`,
-    });
-    try {
-      const result = await syncLiveWorldBankAndTreasuryData(run.openData);
-      setLiveMacroSyncResult(result);
-      const updatedCharts = buildAnnotatedChartsForSovereign(result.updatedSnapshot);
-      setRun((prev) => ({
-        ...prev,
-        openData: result.updatedSnapshot,
-        charts: updatedCharts,
-      }));
-      setWatchlists((prev) =>
-        prev.map((group) => ({
-          ...group,
-          items: group.items.map((it) =>
-            it.iso3 === result.iso3
-              ? {
-                  ...it,
-                  debtToGdpPct: result.updatedSnapshot.imfIndicators.debtToGdpPct,
-                  fxReservesMonths:
-                    result.updatedSnapshot.worldBankIndicators.fxReservesMonthsImport,
-                }
-              : it
-          ),
-        }))
-      );
-      setStatusBanner({
-        type: result.syncStatus === 'DETERMINISTIC_FALLBACK' ? 'warning' : 'success',
-        message: result.summaryHeadline,
-      });
-    } catch {
-      setStatusBanner({
-        type: 'warning',
-        message: `Couldn't reach World Bank or US Treasury. ${run.countryName}'s figures are unchanged.`,
-      });
-    } finally {
-      setIsSyncingLiveMacro(false);
-    }
-  };
 
-  // Scenario A vs. Scenario B Delta Comparison Suite
-  const liveScenarioBSnapshot = useMemo(
-    () =>
-      captureScenarioSnapshot(
-        scenarioBLabel,
-        run,
-        forecastShocks,
-        geopoliticalWargameParams,
-        liquidityStressParams
-      ),
-    [scenarioBLabel, run, forecastShocks, geopoliticalWargameParams, liquidityStressParams]
-  );
 
-  const scenarioComparisonSuite = useMemo(
-    () => computeScenarioDeltaComparison(pinnedScenarioA, liveScenarioBSnapshot),
-    [pinnedScenarioA, liveScenarioBSnapshot]
-  );
-  const scenarioChangeCount =
-    scenarioComparisonSuite.deteriorationCount + scenarioComparisonSuite.improvementCount;
 
-  const handlePinCurrentAsScenarioA = () => {
-    const pinned = captureScenarioSnapshot(
-      `Pinned Anchor (${run.iso3})`,
-      run,
-      forecastShocks,
-      geopoliticalWargameParams,
-      liquidityStressParams
-    );
-    setPinnedScenarioA(pinned);
-    setStatusBanner({
-      type: 'success',
-      message: `Pinned current ${run.countryName} (${run.iso3}) state as Scenario A reference anchor (${pinned.capturedAt}).`,
-    });
-  };
 
-  const handleSwapScenarioAAndB = () => {
-    const prevA = pinnedScenarioA;
-    setPinnedScenarioA({
-      ...liveScenarioBSnapshot,
-      label: `Swapped Anchor (${liveScenarioBSnapshot.label})`,
-    });
-    setForecastShocks(prevA.forecastShocks);
-    setGeopoliticalWargameParams(prevA.geoWargameParams);
-    setLiquidityStressParams(prevA.liquidityStressParams);
-    setScenarioBLabel(prevA.label);
-  };
 
-  const handleResetScenarioBToBaseline = () => {
-    setForecastShocks(DEFAULT_FORECAST_SHOCKS);
-    setGeopoliticalWargameParams(DEFAULT_WARGAME_PARAMS);
-    setLiquidityStressParams(DEFAULT_LIQUIDITY_STRESS_PARAMS);
-    setScenarioBLabel('Live Baseline State');
-  };
 
-  const handleApplyHistoricalCrisisShocks = (
-    episode: HistoricalCrisisEpisode,
-    shocks: ForecastingShockInputs
-  ) => {
-    setPinnedScenarioA(
-      captureScenarioSnapshot(
-        `Pre-Crisis Baseline (${run.iso3})`,
-        run,
-        DEFAULT_FORECAST_SHOCKS,
-        DEFAULT_WARGAME_PARAMS,
-        DEFAULT_LIQUIDITY_STRESS_PARAMS
-      )
-    );
-    setForecastShocks(shocks);
-    setScenarioBLabel(`${episode.eraLabel} Crisis Shock`);
-    setIsScenarioDrawerOpen(true);
-    setStatusBanner({
-      type: 'warning',
-      message: `Loaded "${episode.title}" shock parameters into live ${run.countryName} (${run.iso3}) desk and opened Scenario A vs. B Delta Comparator.`,
-    });
-  };
 
-  const handleApplyCsvToLiveState = (
-    updatedOpenData: OpenDataSnapshot,
-    updatedCharts: AnnotatedChartSpec[],
-    datasetSummary: string
-  ) => {
-    setRun((prev) => ({
-      ...prev,
-      openData: updatedOpenData,
-      charts: updatedCharts,
-    }));
-    setWatchlists((prev) =>
-      prev.map((group) => ({
-        ...group,
-        items: group.items.map((it) =>
-          it.iso3 === updatedOpenData.iso3
-            ? {
-                ...it,
-                yield10YPct: updatedOpenData.monetaryAndMarket.sovereign10YBondYieldPct,
-                yield10YSource: 'uploaded',
-                yield10YPeriod: undefined,
-                yield10YFrequency: undefined,
-                cds5YBps: updatedOpenData.monetaryAndMarket.cds5YSpreadBps,
-                debtToGdpPct: updatedOpenData.imfIndicators.debtToGdpPct,
-                fxReservesMonths: updatedOpenData.worldBankIndicators.fxReservesMonthsImport,
-              }
-            : it
-        ),
-      }))
-    );
-    setScenarioBLabel('CSV Batch Calibrated State');
-    setStatusBanner({
-      type: 'success',
-      message: datasetSummary,
-    });
-  };
 
-  const handleRegisterCustomCrisisBacktest = (
-    customEpisode: HistoricalCrisisEpisode,
-    navigateImmediately: boolean
-  ) => {
-    setCustomBacktestEpisodes((prev) => {
-      const filtered = prev.filter((ep) => ep.id !== customEpisode.id);
-      return [customEpisode, ...filtered];
-    });
-    setSelectedBacktestEpisodeId(customEpisode.id);
-    if (navigateImmediately) {
-      setLayoutMode('executive_brief');
-    setAppArea('desks');
-      setActiveNavSection('backtest_engine');
-    }
-    setStatusBanner({
-      type: 'success',
-      message: `Registered custom CSV backtest "${customEpisode.title}" (${customEpisode.timeline.length} steps, Peak 5Y CDS ${customEpisode.peakSpreadBps} bps, EWS Lead Time T-${customEpisode.earlyWarningLeadTimeMonths} steps).`,
-    });
-  };
 
-  const handleApplyCalibratedDocumentShock = (
-    shock: CalibratedPolicyShockVector,
-    docTitleStr: string,
-    docTextStr: string
-  ) => {
-    setPolicyDocTitle(docTitleStr);
-    setPolicyDocText(docTextStr);
 
-    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
-    nextOpenData.monetaryAndMarket.policyRatePct = Number(
-      Math.max(
-        0.5,
-        nextOpenData.monetaryAndMarket.policyRatePct + shock.policyRateDeltaBps / 100
-      ).toFixed(2)
-    );
-    nextOpenData.imfIndicators.primaryFiscalBalancePct = Number(
-      (
-        nextOpenData.imfIndicators.primaryFiscalBalancePct +
-        shock.primaryFiscalBalanceDeltaPctGdp
-      ).toFixed(2)
-    );
-    nextOpenData.monetaryAndMarket.cds5YSpreadBps = Math.max(
-      15,
-      Math.round(nextOpenData.monetaryAndMarket.cds5YSpreadBps + shock.sovereignSpreadShockBps)
-    );
-    nextOpenData.worldBankIndicators.fxReservesMonthsImport = Number(
-      Math.max(
-        0.8,
-        nextOpenData.worldBankIndicators.fxReservesMonthsImport +
-          shock.fxReserveAdequacyDeltaMonths
-      ).toFixed(2)
-    );
-    recomputeDerivedOpenDataAnalytics(nextOpenData);
-    const updatedCharts = buildAnnotatedChartsForSovereign(nextOpenData);
 
-    const nextCro: CROOverrideState = {
-      ...croDraft,
-      energyInflationShockPct: Number(
-        Math.max(0, croDraft.energyInflationShockPct + shock.energyAndCpiShockPct).toFixed(1)
-      ),
-      debtServicingSpreadBps: Math.max(
-        10,
-        Math.round(croDraft.debtServicingSpreadBps + shock.sovereignSpreadShockBps)
-      ),
-      fxReserveAdequacyMonths: nextOpenData.worldBankIndicators.fxReservesMonthsImport,
-      politicalWillIndex: Math.max(
-        10,
-        Math.min(98, Math.round(croDraft.politicalWillIndex + shock.politicalWillDeltaPoints))
-      ),
-      croNotes: `${docTitleStr}: ${shock.rationaleSummary}`,
-    };
-
-    setCroDraft(nextCro);
-    setRun((prev) => ({
-      ...prev,
-      policyDocumentTitle: docTitleStr,
-      policyDocumentSnippet: docTextStr.slice(0, 600),
-      openData: nextOpenData,
-      charts: updatedCharts,
-      croState: nextCro,
-    }));
-    setForecastShocks((prev) => ({
-      ...prev,
-      realRateShockBps: prev.realRateShockBps + shock.policyRateDeltaBps,
-      primaryBalanceShockPctGdp: Number(
-        (prev.primaryBalanceShockPctGdp + shock.primaryFiscalBalanceDeltaPctGdp).toFixed(2)
-      ),
-    }));
-    setScenarioBLabel(`Doc AI Calibrated (${docTitleStr.slice(0, 26)})`);
-    setStatusBanner({
-      type: 'success',
-      message: `Applied calibrated document shock vector from "${docTitleStr}" to live ${run.countryName} (${run.iso3}) terminal state (${shock.rationaleSummary}).`,
-    });
-  };
-
-  const handleApplyConditionalEventShock = (sim: ConditionalBayesianEventSimulation) => {
-    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
-    nextOpenData.monetaryAndMarket.cds5YSpreadBps = Math.max(
-      15,
-      Math.round(nextOpenData.monetaryAndMarket.cds5YSpreadBps + sim.conditional5YCdsDeltaBps)
-    );
-    nextOpenData.monetaryAndMarket.sovereign10YBondYieldPct = Number(
-      Math.max(
-        0.5,
-        nextOpenData.monetaryAndMarket.sovereign10YBondYieldPct +
-          sim.conditional10YYieldDeltaBps / 100
-      ).toFixed(2)
-    );
-    recomputeDerivedOpenDataAnalytics(nextOpenData);
-    const updatedCharts = buildAnnotatedChartsForSovereign(nextOpenData);
-
-    const nextCro: CROOverrideState = {
-      ...croDraft,
-      debtServicingSpreadBps: Math.max(
-        10,
-        Math.round(croDraft.debtServicingSpreadBps + sim.conditional5YCdsDeltaBps)
-      ),
-      croNotes: `[${sim.selectedContract.venue} Event Shock] ${sim.selectedContract.question} repriced from ${sim.currentMarketProbPct}¢ to ${sim.simulatedShockProbPct}¢.`,
-    };
-
-    setCroDraft(nextCro);
-    setRun((prev) => ({
-      ...prev,
-      openData: nextOpenData,
-      charts: updatedCharts,
-      croState: nextCro,
-    }));
-    setForecastShocks((prev) => ({
-      ...prev,
-      realRateShockBps: prev.realRateShockBps + sim.conditional10YYieldDeltaBps,
-      fxDepreciationShockPct: Number(
-        (prev.fxDepreciationShockPct + sim.conditionalSpotFxDeltaPct).toFixed(1)
-      ),
-    }));
-    setScenarioBLabel(`${sim.selectedContract.venue} Event Shock (${sim.simulatedShockProbPct}¢)`);
-    setStatusBanner({
-      type: 'success',
-      message: `Applied conditional ${sim.selectedContract.venue} event shock ("${sim.selectedContract.question}" @ ${sim.simulatedShockProbPct}¢) to live ${run.countryName} (${run.iso3}) terminal state (5Y CDS Δ: ${sim.conditional5YCdsDeltaBps >= 0 ? `+${sim.conditional5YCdsDeltaBps}` : sim.conditional5YCdsDeltaBps} bps, 10Y Yield Δ: ${sim.conditional10YYieldDeltaBps >= 0 ? `+${sim.conditional10YYieldDeltaBps}` : sim.conditional10YYieldDeltaBps} bps).`,
-    });
-  };
-
-  const handleApplyRatingOrDoomLoopShockToTerminal = (params: {
-    label: string;
-    cdsDeltaBps: number;
-    yield10YDeltaBps: number;
-    fxDepreciationPct: number;
-  }) => {
-    const nextOpenData: OpenDataSnapshot = structuredClone(run.openData);
-    nextOpenData.monetaryAndMarket.cds5YSpreadBps = Math.max(
-      15,
-      Math.round(nextOpenData.monetaryAndMarket.cds5YSpreadBps + params.cdsDeltaBps)
-    );
-    nextOpenData.monetaryAndMarket.sovereign10YBondYieldPct = Number(
-      Math.max(
-        0.5,
-        nextOpenData.monetaryAndMarket.sovereign10YBondYieldPct + params.yield10YDeltaBps / 100
-      ).toFixed(2)
-    );
-    recomputeDerivedOpenDataAnalytics(nextOpenData);
-    const updatedCharts = buildAnnotatedChartsForSovereign(nextOpenData);
-
-    const nextCro: CROOverrideState = {
-      ...croDraft,
-      debtServicingSpreadBps: Math.max(
-        10,
-        Math.round(croDraft.debtServicingSpreadBps + params.cdsDeltaBps)
-      ),
-      croNotes: `${params.label} applied to live sovereign state (5Y CDS Δ: ${params.cdsDeltaBps >= 0 ? `+${params.cdsDeltaBps}` : params.cdsDeltaBps} bps).`,
-    };
-
-    setCroDraft(nextCro);
-    setRun((prev) => ({
-      ...prev,
-      openData: nextOpenData,
-      charts: updatedCharts,
-      croState: nextCro,
-    }));
-    setForecastShocks((prev) => ({
-      ...prev,
-      realRateShockBps: prev.realRateShockBps + params.yield10YDeltaBps,
-      fxDepreciationShockPct: Number(
-        (prev.fxDepreciationShockPct + params.fxDepreciationPct).toFixed(1)
-      ),
-    }));
-    setScenarioBLabel(params.label.slice(0, 34));
-    setStatusBanner({
-      type: 'success',
-      message: `Applied "${params.label}" to live ${run.countryName} (${run.iso3}) terminal state (5Y CDS Δ: ${params.cdsDeltaBps >= 0 ? `+${params.cdsDeltaBps}` : params.cdsDeltaBps} bps, 10Y Yield Δ: ${params.yield10YDeltaBps >= 0 ? `+${params.yield10YDeltaBps}` : params.yield10YDeltaBps} bps).`,
-    });
-  };
 
   const handleApplyConnectorTelemetryToActiveSovereign = (
     connectorName: string,
@@ -1740,21 +919,6 @@ export default function App() {
     );
   };
 
-  const handleDocumentFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setPolicyDocTitle(file.name);
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const content = String(ev.target?.result || '');
-      setPolicyDocText(content.slice(0, 25000));
-      setStatusBanner({
-        type: 'success',
-        message: `Ingested policy document "${file.name}" (${content.length.toLocaleString()} characters) into Council context window.`,
-      });
-    };
-    reader.readAsText(file);
-  };
 
   // Run Phase 1 (Sub-Agents + Devil's Advocate Debates) & Phase 2 (Cross-Desk Cascade), then pause at CRO Checkpoint
   const handleRunCouncilPhase1And2 = async () => {
@@ -1775,8 +939,6 @@ export default function App() {
           countryName: run.countryName,
           progressId,
           scenarioPrompt: scenarioInput,
-          policyDocumentTitle: policyDocTitle,
-          policyDocumentText: policyDocText,
           runtimeConfig,
           geopoliticalWargameParams,
           liquidityStressParams,
@@ -1875,13 +1037,7 @@ export default function App() {
       // storage blocked: remembered for this visit only
     }
   };
-  // Imported holdings, shaped for the stress lab (weights) and the contagion desk (positions).
-  const holdingsStressWeights = useMemo(
-    () => holdingsWeightsPct(holdings, SOVEREIGN_CATALOG.map((c) => c.iso3)),
-    [holdings]
-  );
   const heldIso3 = useMemo(() => [...new Set(holdings.map((h) => h.iso3))], [holdings]);
-  const holdingsContagionBook = useMemo(() => holdingsToContagionBook(holdings, SOVEREIGN_CATALOG), [holdings]);
   // Risk scores for held countries: the active watchlist first (it may carry live figures), then the catalogue.
   const holdingsRiskLookup = [
     ...activeWatchlistItems,
@@ -1895,34 +1051,10 @@ export default function App() {
     return liveRiskLookup.filter((w) => held.has(w.iso3));
   }, [holdings, liveRiskLookup]);
 
-  const activeDomainHub =
-    DOMAIN_HUBS.find((hub) => hub.subTabs.some((t) => t.id === activeNavSection)) ||
-    DOMAIN_HUBS[0];
 
-  const activeSubTabObj =
-    activeDomainHub.subTabs.find((t) => t.id === activeNavSection) ||
-    activeDomainHub.subTabs[0];
 
-  const allRegisteredSovereigns = useMemo(() => {
-    const byIso = new Map<string, WatchlistItem>();
-    SOVEREIGN_CATALOG.forEach((it) => byIso.set(it.iso3, it));
-    watchlists.forEach((wl) => wl.items.forEach((it) => byIso.set(it.iso3, it)));
-    return Array.from(byIso.values());
-  }, [watchlists, customOnboardedSovereigns]);
 
-  const commandPaletteItems = useMemo(
-    () =>
-      buildCommandPaletteIndex(
-        buildThreePillarHubsForCommandPalette(),
-        allRegisteredSovereigns
-      ),
-    [allRegisteredSovereigns]
-  );
 
-  const liveIntegrityAuditReport = useMemo(
-    () => runPreFlightModelIntegrityAudit(run, activeWatchlistItems),
-    [run, activeWatchlistItems]
-  );
 
   const handleOnboardCustomSovereign = (draft: CustomSovereignOnboardingDraft) => {
     const newItem = registerCustomSovereignInCatalog(draft);
@@ -1953,86 +1085,9 @@ export default function App() {
     });
   };
 
-  const handleRestoreWorkspaceSession = (snap: WorkspaceSessionSnapshot) => {
-    if (Array.isArray(snap.customOnboardedSovereigns)) {
-      snap.customOnboardedSovereigns.forEach((d) => registerCustomSovereignInCatalog(d));
-      setCustomOnboardedSovereigns(snap.customOnboardedSovereigns);
-    }
-    setWatchlists(snap.watchlists);
-    setActiveWatchlistId(snap.activeWatchlistId);
-    setActivePersona(snap.activePersona);
-    setActiveNavSection(snap.activeNavSection as NavSectionId);
-    setLayoutMode(snap.layoutMode);
-    setDarkMode(snap.darkMode);
-    setScenarioInput(snap.scenarioDirective);
-    setForecastShocks(snap.forecastShocks);
-    setGeopoliticalWargameParams(snap.geopoliticalWargameParams);
-    setLiquidityStressParams(snap.liquidityStressParams);
-    const nextRun = buildDefaultAssessmentRun(snap.activeIso3);
-    setRun(nextRun);
-    setCroDraft(nextRun.croState);
-    setStatusBanner({
-      type: 'success',
-      message: `Restored workspace session "${snap.sessionLabel}" (${snap.savedAtIso.slice(0, 19)}).`,
-    });
-  };
 
-  const handleResetFactoryDefaults = () => {
-    setCustomOnboardedSovereigns([]);
-    setWatchlists(DEFAULT_WATCHLISTS);
-    setActiveWatchlistId(DEFAULT_WATCHLISTS[0].id);
-    setActivePersona('INDIVIDUAL_TRADER');
-    setActiveNavSection('charts_watchlists');
-    setLayoutMode('executive_brief');
-    setAppArea('today');
-    setForecastShocks(DEFAULT_FORECAST_SHOCKS);
-    setGeopoliticalWargameParams(DEFAULT_WARGAME_PARAMS);
-    setLiquidityStressParams(DEFAULT_LIQUIDITY_STRESS_PARAMS);
-    const nextRun = buildDefaultAssessmentRun('BRA');
-    setRun(nextRun);
-    setCroDraft(nextRun.croState);
-    setScenarioInput(SOVEREIGN_CATALOG[0].focusTheme);
-    setStatusBanner({
-      type: 'info',
-      message: 'Reset workspace state, watchlists, and shock parameters to factory defaults.',
-    });
-  };
 
-  const handleSelectCommandPaletteItem = (item: CommandPaletteItem) => {
-    if (item.targetNavSection) {
-      setLayoutMode('executive_brief');
-    setAppArea('desks');
-      setActiveNavSection(item.targetNavSection as NavSectionId);
-      return;
-    }
-    if (item.targetPersona) {
-      setActivePersona(item.targetPersona);
-      return;
-    }
-    if (item.targetIso3) {
-      const targetSov =
-        allRegisteredSovereigns.find((s) => s.iso3 === item.targetIso3) ||
-        SOVEREIGN_CATALOG[0];
-      handleSelectSovereign(targetSov);
-      return;
-    }
-    if (item.actionType === 'OPEN_INTEGRITY_AUDITOR') {
-      setIsIntegrityAuditOpen(true);
-    } else if (item.actionType === 'OPEN_CUSTOM_SOVEREIGN_WIZARD') {
-      setIsCustomSovereignModalOpen(true);
-    } else if (item.actionType === 'OPEN_SESSION_MANAGER') {
-      setSettingsTab('backup');
-      setIsSettingsOpen(true);
-    } else if (item.actionType === 'EXPORT_SMCR_PDF') {
-      exportSMCRPdfDossier(run);
-    } else if (item.actionType === 'SYNC_LIVE_MACRO') {
-      handleSyncLiveWorldBankAndTreasury();
-    } else if (item.actionType === 'RUN_COUNCIL_PIPELINE') {
-      handleRunCouncilPhase1And2();
-    }
-  };
 
-  // One desk's content, by section id. Used by the desk view and by the Country page tabs.
   /** Opens a ready tool from the Tools page where it lives. */
   const scrollToAnchor = (anchor: string) =>
     window.setTimeout(() => document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
@@ -2052,277 +1107,12 @@ export default function App() {
       if (t.anchor) scrollToAnchor(t.anchor);
     } else if (t.area === 'portfolio') {
       setResearchSection(sectionForAnchor(t.anchor));
-      setPortfolioDeskOpen(false);
       setAppArea('portfolio');
       window.scrollTo({ top: 0 });
       if (t.anchor) scrollToAnchor(t.anchor);
     } else openWorkspace('reports');
   };
 
-  const renderDeskBody = (sec: NavSectionId) => (
-    <PanelBoundary key={sec} name="This section" resetKey={run.iso3}>
-              {sec === 'charts_watchlists' && (
-                <MacroOverviewTabbedWorkspace
-                  countryName={run.countryName}
-                  iso3={run.iso3}
-                  mapCard={
-                    <HeroGeopoliticalMapCard
-                      run={run}
-                      watchlistItems={activeWatchlistItems}
-                      wargameParams={geopoliticalWargameParams}
-                      onChangeWargameParams={setGeopoliticalWargameParams}
-                      onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                      onOpenSupplyChainMatrix={() => setActiveNavSection('supply_chain_matrix')}
-                      onSelectSovereign={handleSelectSovereign}
-                    />
-                  }
-                  chartsDeck={
-                    <AnnotatedChartsDeck
-                      run={run}
-                      onRefreshLiveOpenData={() =>
-                        handlePullLiveOpenData(run.iso3, run.countryName, false)
-                      }
-                      isFetchingData={isFetchingOpenData}
-                      onOpenForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                    />
-                  }
-                />
-              )}
-
-              {sec === 'forecasting_lab' && (
-                <StatisticalForecastingLab
-                  run={run}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  externalShocks={forecastShocks}
-                  onChangeExternalShocks={setForecastShocks}
-                />
-              )}
-
-              {sec === 'geopolitical_desk' && (
-                <GeopoliticalRiskDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  wargameParams={geopoliticalWargameParams}
-                  onChangeWargameParams={setGeopoliticalWargameParams}
-                  propagateGeoShocks={propagateGeoShocks}
-                  onTogglePropagateGeoShocks={setPropagateGeoShocks}
-                  onSelectSovereign={handleSelectSovereign}
-                  onJumpToCouncilDebates={() => setActiveNavSection('council_debates')}
-                  onJumpToPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                  onJumpToForecastingLab={() => setActiveNavSection('forecasting_lab')}
-                  onOpenSupplyChainMatrixDesk={() => setActiveNavSection('supply_chain_matrix')}
-                />
-              )}
-
-              {sec === 'supply_chain_matrix' && (
-                <SupplyChainMatrixDesk
-                  run={run}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {sec === 'global_liquidity' && (
-                <GlobalLiquidityDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                  onOpenMarketMakerDesk={() => setActiveNavSection('market_maker_alpha')}
-                />
-              )}
-
-              {sec === 'market_maker_alpha' && (
-                <MarketMakerAlphaDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                  onOpenGlobalLiquidityDesk={() => setActiveNavSection('global_liquidity')}
-                  onOpenPortfolioDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {sec === 'portfolio_risk_desk' && (
-                <PortfolioContagionDesk
-                  key={`contagion-${holdings.length}`}
-                  holdingsBook={holdingsContagionBook}
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                />
-              )}
-
-              {sec === 'backtest_engine' && (
-                <CrisisBacktestDesk
-                  run={run}
-                  customEpisodes={customBacktestEpisodes}
-                  initialSelectedEpisodeId={selectedBacktestEpisodeId}
-                  onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
-                  onOpenCsvLab={() => setActiveNavSection('policy_doc_lab')}
-                />
-              )}
-
-              {sec === 'risk_analytics' && (
-                <InstitutionalRiskModules
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  onOpenPortfolioRiskDesk={() => setActiveNavSection('portfolio_risk_desk')}
-                />
-              )}
-
-              {sec === 'council_debates' && (
-                <CouncilHierarchyAndDebates
-                  run={run}
-                  onJumpToCROGate={() => setActiveNavSection('cro_reports')}
-                  onOpenGeopoliticalDesk={() => setActiveNavSection('geopolitical_desk')}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                  runtimeConfig={runtimeConfig}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
-                />
-              )}
-
-              {sec === 'cro_reports' && (
-                <CROCheckpointAndReports
-                  run={run}
-                  croDraft={croDraft}
-                  runtimeConfig={runtimeConfig}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  isRunningPhase3={isRunningPhase3}
-                  onUpdateCroDraft={setCroDraft}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                />
-              )}
-
-              {sec === 'policy_doc_lab' && (
-                <PolicyDocumentAndCsvLab
-                  run={run}
-                  policyDocTitle={policyDocTitle}
-                  policyDocText={policyDocText}
-                  onChangePolicyDocTitle={setPolicyDocTitle}
-                  onChangePolicyDocText={setPolicyDocText}
-                  onDocumentFileUpload={handleDocumentFileUpload}
-                  onRunCouncilWithDocument={handleRunCouncilPhase1And2}
-                  onApplyCsvToLiveState={handleApplyCsvToLiveState}
-                  onRegisterCustomCrisisBacktest={handleRegisterCustomCrisisBacktest}
-                />
-              )}
-
-              {(sec === 'institutional_quant_desk' ||
-                sec === 'quant_cds_basis' ||
-                sec === 'quant_restructuring_npv' ||
-                sec === 'quant_matrix_econometrics' ||
-                sec === 'quant_trade_blotter' ||
-                sec === 'quant_macro_surprise' ||
-                sec === 'quant_alpha_correlation' ||
-                sec === 'quant_nss_yield_curve' ||
-                sec === 'quant_macro_catalyst_calendar' ||
-                sec === 'quant_portfolio_stress_lab') && (
-                <InstitutionalQuantDesk
-                  holdingsWeightsPct={holdingsStressWeights}
-                  holdings={holdings}
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={
-                    sec === 'institutional_quant_desk'
-                      ? 'quant_cds_basis'
-                      : (sec as QuantSubWorkspaceId)
-                  }
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onStageTradeTicket={handleStageTradeTicket}
-                />
-              )}
-
-              {(sec === 'embi_portfolio_pair_book' ||
-                sec === 'dmo_treasury_auction_sim' ||
-                sec === 'mpc_imf_document_ai') && (
-                <PortfolioAndFundingDesk
-                  holdingsWeightsPct={holdingsStressWeights}
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  runtimeConfig={runtimeConfig}
-                  isDark={darkMode}
-                  activeSubTab={sec as PortfolioFundingSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
-                />
-              )}
-
-              {(sec === 'decision_dislocation_screener' ||
-                sec === 'decision_premortem_killswitch' ||
-                sec === 'decision_ledger_brier' ||
-                sec === 'decision_quadrant_stress' ||
-                sec === 'decision_prediction_markets') && (
-                <DecisionCommandCenterDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={sec as DecisionCommandSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyConditionalEventShock={handleApplyConditionalEventShock}
-                />
-              )}
-
-              {(sec === 'ratings_shadow_fallen_angel' ||
-                sec === 'fx_beer_feer_equilibrium' ||
-                sec === 'debt_investor_base_doom_loop' ||
-                sec === 'ic_pitchbook_dossier_exporter') && (
-                <SovereignRatingsFxAndIcDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={sec as RatingsFxIcSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-
-              {(sec === 'restructuring_npv_cac_waterfall' ||
-                sec === 'taylor_rule_fiscal_dominance' ||
-                sec === 'geopolitical_reserves_chokepoints' ||
-                sec === 'ngfs_climate_slb_greenium') && (
-                <RestructuringMonetaryGeoDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  activeSubTab={sec as RestructuringMonetaryGeoSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-
-              {(sec === 'persona_cross_hub_signal_scanner' ||
-                sec === 'persona_guided_playbook_cockpit' ||
-                sec === 'persona_strategy_backtester_lab' ||
-                sec === 'persona_academic_latex_csv_exporter') && (
-                <PersonaPlaybooksAndSignalDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  activePersona={activePersona}
-                  onChangePersona={setActivePersona}
-                  isDark={darkMode}
-                  activeSubTab={sec as PersonaPlaybookSubTabId}
-                  onSelectSubTab={(sub) => setActiveNavSection(sub)}
-                  onJumpToNavSection={(sec) => setActiveNavSection(sec as NavSectionId)}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              )}
-    </PanelBoundary>
-  );
 
   const fullCouncilStep: FullCouncilStep = {
     countryName: run.countryName,
@@ -2339,7 +1129,6 @@ export default function App() {
     onRun: handleRunCouncilPhase1And2,
     onApprove: handleApproveAndConveneSupremeCouncil,
     onChangeDraft: setCroDraft,
-    onOpenFullReview: showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined,
   };
   // Reports opens on the council brief once one is saved; before that, on the country note, so the
   // first view is a real document and not "No council brief yet".
@@ -2374,15 +1163,6 @@ export default function App() {
   return (
     <CouncilChatProvider items={councilItems}>
     <div className={`min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col ${chatDocked ? 'lg:pr-[30rem]' : ''}`}>
-      {isPresentMode && (
-        <PresentMode
-          run={run}
-          stagedTickets={stagedTradeTickets}
-          holdings={holdings}
-          riskLookup={holdingsRiskLookup}
-          onClose={() => setIsPresentMode(false)}
-        />
-      )}
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
       <header className="flex items-center justify-between gap-3 min-w-0 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         {/* Zone 1: EconQuest Crest Logo + Sovereign Council Orchestrator Identity */}
@@ -2441,131 +1221,16 @@ export default function App() {
                   Reports
                 </button>
               ),
-              // Tools lives in Menu, next to Settings (Sam, 2026-11-05); the full desk library keeps its header menu.
-              desks: !showAllTools ? null : (
-                <div
-                  className="relative"
-                  onMouseEnter={() => setIsToolsMenuOpen(true)}
-                  onMouseLeave={() => setIsToolsMenuOpen(false)}
-                >
-                  <button
-                    type="button"
-                    onClick={() => setIsToolsMenuOpen((v) => !v)}
-                    aria-expanded={isToolsMenuOpen}
-                    aria-current={appArea === 'desks' ? 'page' : undefined}
-                    title="All 41 analysis desks"
-                    aria-pressed={appArea === 'desks'}
-                    className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
-                  >
-                    <span>Tools</span>
-                    <ChevronDown className="w-3.5 h-3.5 opacity-80" />
-                  </button>
-                  {isToolsMenuOpen && (
-                    <div className="fixed inset-x-4 top-[52px] pt-1 max-w-[1000px] mx-auto z-50" data-tools-menu="true">
-                      <div className="ui-panel shadow-2xl p-3">
-                        <div className="pb-2 mb-2 border-b border-slate-100 dark:border-slate-800 ui-label">
-                          The full desk library. Workspace, Research and Reports group these desks by task.
-                        </div>
-                        <div className="grid grid-cols-3 gap-3">
-                          {ACTIVITY_PILLARS.map((pillar) => (
-                            <div key={pillar.id} className="min-w-0 space-y-2">
-                              <div className="ui-section-title">{pillar.shortTitle.replace(/^\d+\.\s*/, '')}</div>
-                              {pillar.subGroups.map((sg) => (
-                                <div key={sg.groupId}>
-                                  <div className="ui-label mb-1">{sg.groupTitle}</div>
-                                  <div className="flex flex-col">
-                                    {sg.modules.map((mod) => (
-                                      <button
-                                        key={mod.id}
-                                        type="button"
-                                        onClick={() => {
-                                          setLayoutMode('executive_brief');
-                                          setAppArea('desks');
-                                          setActiveNavSection(mod.id as NavSectionId);
-                                          setIsToolsMenuOpen(false);
-                                        }}
-                                        title={mod.description}
-                                        className={`text-left px-2 py-1 text-xs truncate hover:bg-slate-100 dark:hover:bg-slate-800 ${
-                                          appArea === 'desks' && activeNavSection === mod.id
-                                            ? 'text-blue-700 dark:text-blue-300 font-semibold'
-                                            : 'text-slate-700 dark:text-slate-300'
-                                        }`}
-                                      >
-                                        {mod.label}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )
+              // Tools lives in Menu, next to Settings (Sam, 2026-11-05).
+              desks: null
               } as Record<WorkflowArea, React.ReactNode>)[area]}
             </React.Fragment>
           ))}
 
-          {/* Global Command Palette Cmd+K Trigger */}
-          {showAllTools && (
-          <button
-            type="button"
-            onClick={() => setIsCommandPaletteOpen(true)}
-            title="Open Global Command Palette & Module Jump Bar (Cmd+K / Ctrl+K)"
-            className="inline-flex items-center gap-2 px-2.5 py-1.5 text-xs tabular-nums text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
-          >
-            <Search className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Jump</span>
-            <kbd className="px-1.5 py-0.5 text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-              ⌘K
-            </kbd>
-          </button>
-          )}
         </nav>
 
         {/* Zone 3: everyday actions stay visible; settings and tools live in one menu */}
         <div className="flex items-center gap-1.5 shrink-0">
-          {showAllTools && (
-          <>
-          <button
-            type="button"
-            onClick={() => setIsPresentMode(true)}
-            title="Present this country and your book full screen (Esc to leave)"
-            className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
-          >
-            <Presentation className="w-3.5 h-3.5" />
-            <span>Present</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setIsScenarioDrawerOpen((v) => !v)}
-            title="Compare scenario A with scenario B"
-            aria-pressed={isScenarioDrawerOpen}
-            className="ui-pill hidden xl:inline-flex items-center gap-1.5 whitespace-nowrap"
-          >
-            <GitCompare className="w-3.5 h-3.5" />
-            <span>A vs B</span>
-            {scenarioChangeCount > 0 && (
-              <span className="px-1.5 text-xs tabular-nums font-semibold bg-amber-500 text-slate-950">
-                {scenarioChangeCount}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => exportSMCRPdfDossier(run)}
-            title="Download the PDF report for this country"
-            className="hidden xl:inline-flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-colors whitespace-nowrap"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>PDF</span>
-          </button>
-          </>
-          )}
 
           {/* On Workspace the chat is the page itself, so the button only shows elsewhere. */}
           {appArea !== 'today' && (
@@ -2631,31 +1296,7 @@ export default function App() {
                 role="menu"
                 className="absolute right-0 top-full mt-1 w-72 max-w-[calc(100vw-2rem)] z-50 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl p-3 space-y-3 text-xs"
               >
-                <div>
-                  <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-                    Detail level
-                  </div>
-                  <div className="grid grid-cols-2 gap-1">
-                    {(
-                      [
-                        { id: 'SIMPLE_BRIEF', label: 'Plain English' },
-                        { id: 'PRO_QUANT', label: 'Full detail' },
-                      ] as const
-                    ).map((d) => (
-                      <button
-                        key={d.id}
-                        type="button"
-                        onClick={() => setDensityMode(d.id)}
-                        aria-pressed={densityMode === d.id}
-                        className="ui-pill"
-                      >
-                        {d.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="border-t border-slate-100 dark:border-slate-800 pt-2 flex flex-col">
+                <div className="flex flex-col">
                   {(
                     [
                       {
@@ -2685,14 +1326,6 @@ export default function App() {
                           setSettingsTab('tools');
                           setIsSettingsOpen(true);
                         },
-                        className: '',
-                      },
-                      {
-                        key: 'qa',
-                        icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
-                        label: 'Model health check',
-                        hint: `${liveIntegrityAuditReport.readinessScorePct}%`,
-                        onClick: () => setIsIntegrityAuditOpen(true),
                         className: '',
                       },
                       {
@@ -2779,33 +1412,8 @@ export default function App() {
                         onClick: () => setIsManualModalOpen(true),
                         className: '',
                       },
-                      {
-                        key: 'present',
-                        icon: <Presentation className="w-3.5 h-3.5" />,
-                        label: 'Present (full screen)',
-                        hint: '',
-                        onClick: () => setIsPresentMode(true),
-                        className: 'xl:hidden',
-                      },
-                      {
-                        key: 'ab',
-                        icon: <GitCompare className="w-3.5 h-3.5" />,
-                        label: 'Compare scenario A vs B',
-                        hint: scenarioChangeCount > 0 ? String(scenarioChangeCount) : '',
-                        onClick: () => setIsScenarioDrawerOpen((v) => !v),
-                        className: 'xl:hidden',
-                      },
-                      {
-                        key: 'pdf',
-                        icon: <Download className="w-3.5 h-3.5" />,
-                        label: 'Download PDF report',
-                        hint: '',
-                        onClick: () => exportSMCRPdfDossier(run),
-                        className: 'xl:hidden',
-                      },
                     ]
                   )
-                    .filter((item) => showAllTools || !['qa', 'present', 'ab', 'pdf'].includes(item.key))
                     // The audit log is for admins once accounts exist (src/utils/permissions.ts).
                     .filter((item) => item.key !== 'audit' || !me || me.role === 'admin')
                     .map((item) => (
@@ -2834,184 +1442,15 @@ export default function App() {
             )}
           </div>
 
-          {showAllTools && (
-          <button
-            type="button"
-            onClick={handleRunCouncilPhase1And2}
-            disabled={isRunningPhase1And2}
-            title="Run the AI council assessment for the selected country"
-            aria-label="Run Council"
-            className="ui-btn ui-btn-primary inline-flex"
-          >
-            <Play className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">
-              {isRunningPhase1And2 ? 'Running...' : 'Run Council'}
-            </span>
-          </button>
-          )}
         </div>
       </header>
 
       {/* SECONDARY CONTEXTUAL BAR: 3-PILLAR SUB-GROUP & MODULE TABS + 1-CLICK SOVEREIGN SWITCHER */}
-      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 ${appArea !== 'desks' || !showAllTools ? 'lg:hidden' : ''}`}>
+      <section className={`bg-white dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-2 lg:hidden`}>
         <div className="max-w-[1600px] mx-auto flex flex-col gap-2">
-          {appArea === 'desks' && showAllTools && (
-          <>
-          {/* Row 1: Contextual Sub-Groups & Modules for Active Activity Pillar */}
-          <PillarSubNavigationStrip
-            activeNavSection={activeNavSection}
-            onSelectNavSection={(sec) => {
-              setLayoutMode('executive_brief');
-    setAppArea('desks');
-              setActiveNavSection(sec as NavSectionId);
-            }}
-          />
-
-          {/* Row 2: Pinned 1-Click Sovereign Switcher Pill Strip + Custom ISO-3 Onboarding + Live Sync + Compare/IC Drawers */}
-          <div className="flex flex-col gap-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => setIsWatchlistCollapsed((v) => !v)}
-                  title={isWatchlistCollapsed ? 'Show Sovereign Watchlist Sidebar' : 'Hide Sidebar to Expand Maps & Charts'}
-                  className="hidden lg:inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 mr-1 transition-colors"
-                >
-                  {isWatchlistCollapsed ? (
-                    <>
-                      <PanelLeftOpen className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                      <span>Watchlist</span>
-                    </>
-                  ) : (
-                    <>
-                      <PanelLeftClose className="w-3 h-3" />
-                      <span>Hide Sidebar</span>
-                    </>
-                  )}
-                </button>
-                <span className="text-xs tabular-nums text-slate-400 dark:text-slate-500 mr-0.5">
-                  Sovereign:
-                </span>
-                {activeWatchlistItems.map((item) => {
-                  const isActiveSov = item.iso3 === run.iso3;
-                  return (
-                    <button
-                      key={item.iso3}
-                      type="button"
-                      onClick={() => handleSelectSovereign(item)}
-                      title={`Switch active sovereign to ${item.countryName} (${item.iso3} · ${item.currencyCode})`}
-                      aria-pressed={isActiveSov}
-                      className="ui-pill"
-                    >
-                      {item.iso3}
-                    </button>
-                  );
-                })}
-                <button
-                  type="button"
-                  onClick={() => setIsCustomSovereignModalOpen(true)}
-                  title="Onboard any new ISO-3 country (India, Poland, Chile, Colombia, Nigeria, or custom ISO-3) with live IMF/World Bank hydration"
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>+ ISO-3</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSyncLiveWorldBankAndTreasury}
-                  disabled={isSyncingLiveMacro}
-                  className="inline-flex items-center gap-1 px-2 py-0.5 text-xs tabular-nums font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 border border-emerald-200 dark:border-emerald-800 transition-colors"
-                >
-                  <RefreshCw className={`w-3 h-3 ${isSyncingLiveMacro ? 'animate-spin' : ''}`} />
-                  <span>{isSyncingLiveMacro ? 'Syncing...' : 'Sync WB/IMF'}</span>
-                </button>
-              </div>
-
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {/* Compact Layout Mode Switcher (Focused Desk | Split | Full Report) */}
-                <div
-                  className="inline-flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 border border-slate-200 dark:border-slate-700"
-                  title="Switch Workspace Layout Mode: Focused Desk (1-2 Screen Paginated View), Split Workbench, or Full Report"
-                >
-                  {(
-                    [
-                      { id: 'executive_brief', label: 'Focused Desk' },
-                      { id: 'split_workbench', label: 'Split' },
-                      { id: 'full_report', label: 'Report' },
-                    ] as const
-                  ).map((mode) => (
-                    <button
-                      key={mode.id}
-                      type="button"
-                      onClick={() => setLayoutMode(mode.id)}
-                      aria-pressed={layoutMode === mode.id}
-                      className="ui-pill"
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setIsComparatorDrawerOpen(true)}
-                  title="Open Multi-Sovereign Head-to-Head Comparator (Compare any 2-3 countries side-by-side)"
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs tabular-nums font-semibold text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-800 transition-colors"
-                >
-                  <Columns className="w-3 h-3" />
-                  <span>Compare 2–3 Sovereigns</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setIsTradeTicketDrawerOpen(true)}
-                  title="Open 1-Click Executive Tear-Sheet & IC Trade Ticket Quick-Drawer"
-                  className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs tabular-nums font-semibold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 border border-amber-200 dark:border-amber-800 transition-colors"
-                >
-                  <Briefcase className="w-3 h-3" />
-                  <span>IC Ticket / Tear-Sheet ({stagedTradeTickets.length})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowScenarioInput((v) => !v)}
-                  aria-pressed={showScenarioInput}
-                  className="ui-pill inline-flex items-center gap-1"
-                >
-                  <span>Scenario Directive {showScenarioInput ? '▴' : '▾'}</span>
-                </button>
-              </div>
-            </div>
-
-            {showScenarioInput && (
-              <div className="flex items-center gap-2 pt-1">
-                <span className="text-xs tabular-nums text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
-                  Scenario Query:
-                </span>
-                <input
-                  type="text"
-                  value={scenarioInput}
-                  onChange={(e) => setScenarioInput(e.target.value)}
-                  placeholder="Enter sovereign risk query, fiscal target test, or geopolitical shock scenario..."
-                  className="w-full px-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
-                />
-              </div>
-            )}
-          </div>
-
-          </>
-          )}
 
           {/* Mobile 3-Pillar Switcher + Cmd+K Trigger */}
           <div className="order-first flex flex-wrap lg:hidden items-center gap-1.5 pb-2 border-b border-slate-200 dark:border-slate-800">
-            {showAllTools && (
-            <button
-              type="button"
-              onClick={() => setIsCommandPaletteOpen(true)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 pointer-coarse:min-h-10 text-xs tabular-nums font-semibold bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shrink-0"
-            >
-              <Search className="w-3 h-3" />
-              <span>Jump</span>
-            </button>
-            )}
             {navAreas.map((area) => (
               <React.Fragment key={area}>
                 {({
@@ -3045,42 +1484,13 @@ export default function App() {
                   Reports
                 </button>
               ),
-              desks: showAllTools ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setLayoutMode('executive_brief');
-                    setAppArea('desks');
-                  }}
-                  aria-pressed={appArea === 'desks'}
-                  className="ui-pill whitespace-nowrap shrink-0"
-                >
-                  Tools
-                </button>
-              ) : null
+              desks: null
                 } as Record<WorkflowArea, React.ReactNode>)[area]}
               </React.Fragment>
             ))}
           </div>
         </div>
       </section>
-
-      {/* EXPANDABLE TOP-TOOLBAR SCENARIO A VS. SCENARIO B DELTA COMPARATOR & LIVE API DRAWER */}
-      <ScenarioDeltaComparatorDrawer
-        isOpen={isScenarioDrawerOpen}
-        onClose={() => setIsScenarioDrawerOpen(false)}
-        comparisonSuite={scenarioComparisonSuite}
-        onPinCurrentAsScenarioA={handlePinCurrentAsScenarioA}
-        onSwapScenarioAAndB={handleSwapScenarioAAndB}
-        onResetToBaseline={handleResetScenarioBToBaseline}
-        onApplyPresetShockToLiveB={(label, shocks) => {
-          setForecastShocks(shocks);
-          setScenarioBLabel(label);
-        }}
-        liveSyncResult={liveMacroSyncResult}
-        isSyncingLiveMacro={isSyncingLiveMacro}
-        onTriggerLiveMacroSync={handleSyncLiveWorldBankAndTreasury}
-      />
 
       {/* STATUS BANNER */}
       {statusBanner && (
@@ -3143,7 +1553,6 @@ export default function App() {
               isApproving={isRunningPhase3}
               onApprove={handleApproveAndConveneSupremeCouncil}
               onChangeDraft={setCroDraft}
-              onOpenFullReview={showAllTools ? () => openWorkspace('reports', 'cro_reports') : undefined}
               onOpenConversation={() => setChatDock(true)}
             />
           )}
@@ -3195,7 +1604,7 @@ export default function App() {
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
               fullCouncil={fullCouncilStep}
               onSendCouncilToReports={sendCouncilToReports}
-              coreOnly={!showAllTools}
+              coreOnly
               aiProvider={runtimeConfig.providerMode}
               holdingsCount={holdings.length}
               heldIso3={heldIso3}
@@ -3206,7 +1615,7 @@ export default function App() {
                 }
                 else if (id === 'watchlist') setIsWatchlistCollapsed(false);
                 else if (id === 'country') openCountryPage();
-                else if (id === 'holdings') openHoldingsEditor(); else if (showAllTools) setIsRuntimeModalOpen(true);
+                else if (id === 'holdings') openHoldingsEditor();
                 else {
                   setAppArea('desks');
                   window.setTimeout(() => document.querySelector('[data-connections-panel]')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 120);
@@ -3222,43 +1631,26 @@ export default function App() {
               run={run}
               watchlistItems={activeWatchlistItems}
               activeTab={countryTab}
-              activeDesk={activeNavSection}
-              onChangeTab={(tab) => {
-                setCountryTab(tab);
-                const cfg = COUNTRY_TABS.find((t) => t.id === tab) || DEFAULT_COUNTRY_TAB;
-                if (cfg.desks[0]) setActiveNavSection(cfg.desks[0] as NavSectionId);
-              }}
-              onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
+              onChangeTab={setCountryTab}
               onSelectCountry={handleSelectSovereign}
               onAddCountry={() => setIsCustomSovereignModalOpen(true)}
               onSync={() => void handlePullLiveOpenData(run.iso3, run.countryName, false, true)}
               isSyncing={isFetchingOpenData}
-              onCompare={() => setIsComparatorDrawerOpen(true)}
               onOpenCompare={() => {
                 setAppArea('compare');
                 window.scrollTo({ top: 0 });
               }}
-              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
-              ticketCount={stagedTradeTickets.length}
               briefView={countryBriefView}
               onWriteNote={(view) => {
                 setRequestedReport(view);
                 openWorkspace('reports', 'ic_memo_builder');
               }}
-              coreOnly={!showAllTools}
-              renderDesk={(d) => (
-                <Suspense key={d} fallback={<DeskLoading />}>
-                  <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
-                    {renderDeskBody(d as NavSectionId)}
-                  </ViewportScrollBudgetContainer>
-                </Suspense>
-              )}
             />
             </PanelBoundary>
           )}
 
           {appArea === 'portfolio' && (
-            <PanelBoundary name="My holdings" resetKey={`${researchSection}-${portfolioDeskOpen ? portfolioTab : ''}`}>
+            <PanelBoundary name="My holdings" resetKey={researchSection}>
             <div className="space-y-3" data-research-holdings="true">
               <ResearchHeader
                 title="My holdings"
@@ -3268,36 +1660,18 @@ export default function App() {
                     : `No holdings imported yet, so this shows your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}, at equal weight. Import holdings under History & data.`
                 }
                 badge={<LiveCountBadge items={heldLive.length ? heldLive : liveWatchlistItems} />}
-                actions={
-                  showAllTools && (
-                    <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
-                      IC tickets ({stagedTradeTickets.length})
-                    </button>
-                  )
-                }
-                section={portfolioDeskOpen ? portfolioTab : researchSection}
-                onSection={(id) => {
-                  const deskTab = PORTFOLIO_TABS.find((t) => t.id === id);
-                  if (deskTab) {
-                    setPortfolioTab(deskTab.id);
-                    setActiveNavSection(deskTab.desks[0] as NavSectionId);
-                    setPortfolioDeskOpen(true);
-                  } else {
-                    setPortfolioDeskOpen(false);
-                    setResearchSection(id as ResearchSectionId);
-                  }
-                }}
-                extra={showAllTools ? PORTFOLIO_TABS.map((t) => ({ id: t.id, label: t.label })) : undefined}
+                section={researchSection}
+                onSection={(id) => setResearchSection(id as ResearchSectionId)}
               />
 
-              {!portfolioDeskOpen && researchSection === 'summary' && (
+              {researchSection === 'summary' && (
                 <>
                   <PanelBoundary name="Book brief">
                     <BookBriefPanel
                       holdings={holdings}
                       riskLookup={liveRiskLookup}
                       watchlist={liveWatchlistItems}
-                      stagedTickets={showAllTools ? stagedTradeTickets : []}
+                      stagedTickets={[]}
                       view="pm"
                       onWriteReport={(view) => {
                         setRequestedReport(view === 'client' ? 'client_review' : 'book');
@@ -3311,7 +1685,7 @@ export default function App() {
                       riskLookup={liveRiskLookup}
                       holdings={holdings}
                       onManageHoldings={openHoldingsEditor}
-                      stagedTickets={showAllTools ? stagedTradeTickets : []}
+                      stagedTickets={[]}
                       onOpenCountry={(live) => {
                         const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                         if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
@@ -3323,14 +1697,14 @@ export default function App() {
                 </>
               )}
 
-              {!portfolioDeskOpen && researchSection === 'markets' && (
+              {researchSection === 'markets' && (
                 <PanelBoundary name="Signals on your holdings">
                   <div id="tool-holdings-signals" className="scroll-mt-4" />
                   <PortfolioOverlayPanel holdings={holdings} watchlist={liveWatchlistItems} onManageHoldings={openHoldingsEditor} />
                 </PanelBoundary>
               )}
 
-              {!portfolioDeskOpen && researchSection === 'history' && (
+              {researchSection === 'history' && (
                 <PanelBoundary name="Your holdings">
                   <HoldingsPanel
                     holdings={holdings}
@@ -3341,7 +1715,7 @@ export default function App() {
                 </PanelBoundary>
               )}
 
-              {!portfolioDeskOpen && researchSection === 'sources' && (
+              {researchSection === 'sources' && (
                 <PanelBoundary name="Sources across your holdings">
                   <SourcesGrid
                     items={heldLive.length ? heldLive : liveWatchlistItems}
@@ -3357,27 +1731,6 @@ export default function App() {
                 </PanelBoundary>
               )}
 
-              {portfolioDeskOpen && (() => {
-                const tab = PORTFOLIO_TABS.find((t) => t.id === portfolioTab) || PORTFOLIO_TABS[0];
-                const desk = tab.desks.includes(activeNavSection) ? activeNavSection : (tab.desks[0] as NavSectionId);
-                return (
-                  <>
-                    {tab.hint && <p className="ui-label">{tab.hint}</p>}
-                    {tab.desks.length > 1 && (
-                      <div className="flex flex-wrap gap-1.5" role="tablist" aria-label={`${tab.label} tools`}>
-                        {tab.desks.map((d) => (
-                          <button key={d} type="button" role="tab" aria-selected={d === desk} onClick={() => setActiveNavSection(d as NavSectionId)} className="ui-pill">
-                            {workspaceDeskLabel(d)}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <Suspense key={desk} fallback={<DeskLoading />}>
-                      <ViewportScrollBudgetContainer activeNavSection={desk}>{renderDeskBody(desk)}</ViewportScrollBudgetContainer>
-                    </Suspense>
-                  </>
-                );
-              })()}
             </div>
             </PanelBoundary>
           )}
@@ -3388,7 +1741,7 @@ export default function App() {
               ariaLabel="Reports sections"
               title="Reports"
               subtitle={`Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`}
-              tabs={showAllTools ? REPORTS_TABS : CORE_REPORTS_TABS}
+              tabs={CORE_REPORTS_TABS}
               activeTabId={reportsTab}
               activeDesk={activeNavSection}
               onChangeTab={(tabId) => {
@@ -3397,18 +1750,6 @@ export default function App() {
                 setActiveNavSection(cfg.desks[0] as NavSectionId);
               }}
               onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
-              actions={
-                showAllTools && (
-                <>
-                  <button type="button" className="ui-btn" onClick={() => setIsTradeTicketDrawerOpen(true)}>
-                    IC tickets ({stagedTradeTickets.length})
-                  </button>
-                  <button type="button" className="ui-btn" onClick={() => setIsComparatorDrawerOpen(true)}>
-                    Compare countries
-                  </button>
-                </>
-                )
-              }
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
                   <>
@@ -3432,12 +1773,12 @@ export default function App() {
                   <IcMemoBuilder
                     key={`${d}-${requestedReport || openingReport}-${reportNonce}`}
                     run={run}
-                    stagedTickets={showAllTools ? stagedTradeTickets : []}
+                    stagedTickets={[]}
                     holdings={holdings}
                     riskLookup={liveRiskLookup}
                     peers={liveWatchlistItems}
-                    defaultAudience={visibleReport(requestedReport || openingReport, showAllTools)}
-                    audiences={showAllTools ? undefined : CORE_REPORTS}
+                    defaultAudience={visibleReport(requestedReport || openingReport)}
+                    audiences={CORE_REPORTS}
                   />
                   <div id="tool-notebooks" className="mt-3 scroll-mt-4">
                     <PanelBoundary name="Research notebooks">
@@ -3450,19 +1791,13 @@ export default function App() {
                     </PanelBoundary>
                   </div>
                   </>
-                ) : (
-                  <Suspense key={d} fallback={<DeskLoading />}>
-                    <ViewportScrollBudgetContainer activeNavSection={d as NavSectionId}>
-                      {renderDeskBody(d as NavSectionId)}
-                    </ViewportScrollBudgetContainer>
-                  </Suspense>
-                )
+                ) : null
               }
             />
             </PanelBoundary>
           )}
 
-          {appArea === 'desks' && !showAllTools && (
+          {appArea === 'desks' && (
             <ToolsPage
               run={run}
               items={liveWatchlistItems}
@@ -3471,316 +1806,6 @@ export default function App() {
             />
           )}
 
-          {appArea === 'desks' && showAllTools && (
-          <>
-          {/* CONSOLIDATED 1-LINE STATUS BAR WITH SLIDE-OVER DRAWERS (MORNING RADAR, EXECUTIVE BLUF, DESK GUIDE) */}
-          <CompactTopStatusAndDrawersBar
-            run={run}
-            watchlistItems={activeWatchlistItems}
-            activeNavSection={activeNavSection}
-            activePersona={activePersona}
-            densityMode={densityMode}
-            onToggleDensityMode={setDensityMode}
-            onSelectSovereign={handleSelectSovereign}
-            onSelectNavSection={(sec) => {
-              setLayoutMode('executive_brief');
-    setAppArea('desks');
-              setActiveNavSection(sec as NavSectionId);
-            }}
-            onStageTradeTicket={handleStageTradeTicket}
-          />
-
-          {/* MODE 1: CLEAN EXECUTIVE BRIEFING (DEFAULT) WRAPPED IN 1-2 SCREEN SCROLL BUDGET CONTAINER */}
-          {layoutMode === 'executive_brief' && (
-            <Suspense key={activeNavSection} fallback={<DeskLoading />}>
-              <ViewportScrollBudgetContainer activeNavSection={activeNavSection}>
-                {renderDeskBody(activeNavSection)}
-              </ViewportScrollBudgetContainer>
-            </Suspense>
-          )}
-
-          {/* MODE 2: SPLIT DESK WORKBENCH (SIDE-BY-SIDE QUANT/ECONOMETRICS/GEOPOLITICAL/PORTFOLIO RISK + LIVE COUNCIL DEBATES) */}
-          {layoutMode === 'split_workbench' && (
-            <Suspense fallback={<DeskLoading />}>
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 items-start">
-              <div className="xl:col-span-6 space-y-6">
-                <AnnotatedChartsDeck
-                  run={run}
-                  onRefreshLiveOpenData={() =>
-                    handlePullLiveOpenData(run.iso3, run.countryName, false)
-                  }
-                  isFetchingData={isFetchingOpenData}
-                />
-                <GeopoliticalRiskDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  wargameParams={geopoliticalWargameParams}
-                  onChangeWargameParams={setGeopoliticalWargameParams}
-                  propagateGeoShocks={propagateGeoShocks}
-                  onTogglePropagateGeoShocks={setPropagateGeoShocks}
-                  onSelectSovereign={handleSelectSovereign}
-                />
-                <SupplyChainMatrixDesk run={run} />
-                <GlobalLiquidityDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                />
-                <MarketMakerAlphaDesk
-                  run={run}
-                  stressParams={liquidityStressParams}
-                  onChangeStressParams={setLiquidityStressParams}
-                />
-                <StatisticalForecastingLab
-                  run={run}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                  externalShocks={forecastShocks}
-                  onChangeExternalShocks={setForecastShocks}
-                />
-                <PortfolioContagionDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                  propagatedGeoWargameParams={geopoliticalWargameParams}
-                  isGeoPropagationActive={propagateGeoShocks}
-                />
-                <CrisisBacktestDesk
-                  run={run}
-                  customEpisodes={customBacktestEpisodes}
-                  initialSelectedEpisodeId={selectedBacktestEpisodeId}
-                  onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
-                  onOpenCsvLab={() => {
-                    setLayoutMode('executive_brief');
-    setAppArea('desks');
-                    setActiveNavSection('policy_doc_lab');
-                  }}
-                />
-                <InstitutionalRiskModules
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  onSelectSovereign={handleSelectSovereign}
-                />
-                <InstitutionalQuantDesk
-                  holdingsWeightsPct={holdingsStressWeights}
-                  holdings={holdings}
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                />
-                <PortfolioAndFundingDesk
-                  holdingsWeightsPct={holdingsStressWeights}
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  runtimeConfig={runtimeConfig}
-                  isDark={darkMode}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
-                />
-                <DecisionCommandCenterDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyConditionalEventShock={handleApplyConditionalEventShock}
-                />
-                <SovereignRatingsFxAndIcDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-                <RestructuringMonetaryGeoDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  isDark={darkMode}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-                <PersonaPlaybooksAndSignalDesk
-                  run={run}
-                  watchlistItems={activeWatchlistItems}
-                  activePersona={activePersona}
-                  onChangePersona={setActivePersona}
-                  isDark={darkMode}
-                  onJumpToNavSection={(sec) => {
-                    setLayoutMode('executive_brief');
-    setAppArea('desks');
-                    setActiveNavSection(sec as NavSectionId);
-                  }}
-                  onSelectSovereign={handleSelectSovereign}
-                  onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-                />
-              </div>
-              <div className="xl:col-span-6 space-y-6">
-                <CouncilHierarchyAndDebates
-                  run={run}
-                  onJumpToCROGate={() => {
-                    setLayoutMode('executive_brief');
-    setAppArea('desks');
-                    setActiveNavSection('cro_reports');
-                  }}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                  runtimeConfig={runtimeConfig}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
-                />
-                <CROCheckpointAndReports
-                  run={run}
-                  croDraft={croDraft}
-                  runtimeConfig={runtimeConfig}
-                  isRunningPhase1And2={isRunningPhase1And2}
-                  isRunningPhase3={isRunningPhase3}
-                  onUpdateCroDraft={setCroDraft}
-                  onUpdateRuntimeConfig={setRuntimeConfig}
-                  onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
-                  onReverifyPipeline={handleRunCouncilPhase1And2}
-                />
-              </div>
-            </div>
-            </Suspense>
-          )}
-
-          {/* MODE 3: FULL RESEARCH REPORT FLOW (CONTINUOUS VERTICAL INSTITUTIONAL DOSSIER) */}
-          {layoutMode === 'full_report' && (
-            <Suspense fallback={<DeskLoading />}>
-            <div className="space-y-8">
-              <AnnotatedChartsDeck
-                run={run}
-                onRefreshLiveOpenData={() =>
-                  handlePullLiveOpenData(run.iso3, run.countryName, false)
-                }
-                isFetchingData={isFetchingOpenData}
-              />
-              <GeopoliticalRiskDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                wargameParams={geopoliticalWargameParams}
-                onChangeWargameParams={setGeopoliticalWargameParams}
-                propagateGeoShocks={propagateGeoShocks}
-                onTogglePropagateGeoShocks={setPropagateGeoShocks}
-                onSelectSovereign={handleSelectSovereign}
-              />
-              <SupplyChainMatrixDesk run={run} />
-              <GlobalLiquidityDesk
-                run={run}
-                stressParams={liquidityStressParams}
-                onChangeStressParams={setLiquidityStressParams}
-              />
-              <MarketMakerAlphaDesk
-                run={run}
-                stressParams={liquidityStressParams}
-                onChangeStressParams={setLiquidityStressParams}
-              />
-              <StatisticalForecastingLab
-                run={run}
-                propagatedGeoWargameParams={geopoliticalWargameParams}
-                isGeoPropagationActive={propagateGeoShocks}
-                externalShocks={forecastShocks}
-                onChangeExternalShocks={setForecastShocks}
-              />
-              <PortfolioContagionDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                onSelectSovereign={handleSelectSovereign}
-                propagatedGeoWargameParams={geopoliticalWargameParams}
-                isGeoPropagationActive={propagateGeoShocks}
-              />
-              <CrisisBacktestDesk
-                run={run}
-                customEpisodes={customBacktestEpisodes}
-                initialSelectedEpisodeId={selectedBacktestEpisodeId}
-                onApplyHistoricalShocksToLiveDesk={handleApplyHistoricalCrisisShocks}
-                onOpenCsvLab={() => {
-                  setLayoutMode('executive_brief');
-    setAppArea('desks');
-                  setActiveNavSection('policy_doc_lab');
-                }}
-              />
-              <InstitutionalRiskModules
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                onSelectSovereign={handleSelectSovereign}
-              />
-              <InstitutionalQuantDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                isDark={darkMode}
-              />
-              <PortfolioAndFundingDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                runtimeConfig={runtimeConfig}
-                isDark={darkMode}
-                onSelectSovereign={handleSelectSovereign}
-                onApplyCalibratedDocumentShock={handleApplyCalibratedDocumentShock}
-              />
-              <DecisionCommandCenterDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                isDark={darkMode}
-                onSelectSovereign={handleSelectSovereign}
-                onApplyConditionalEventShock={handleApplyConditionalEventShock}
-              />
-              <SovereignRatingsFxAndIcDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                isDark={darkMode}
-                onSelectSovereign={handleSelectSovereign}
-                onApplyRatingOrDoomLoopShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-              />
-              <RestructuringMonetaryGeoDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                isDark={darkMode}
-                onSelectSovereign={handleSelectSovereign}
-                onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-              />
-              <PersonaPlaybooksAndSignalDesk
-                run={run}
-                watchlistItems={activeWatchlistItems}
-                activePersona={activePersona}
-                onChangePersona={setActivePersona}
-                isDark={darkMode}
-                onJumpToNavSection={(sec) => {
-                  setLayoutMode('executive_brief');
-    setAppArea('desks');
-                  setActiveNavSection(sec as NavSectionId);
-                }}
-                onSelectSovereign={handleSelectSovereign}
-                onApplyShockToTerminal={handleApplyRatingOrDoomLoopShockToTerminal}
-              />
-              <CouncilHierarchyAndDebates
-                run={run}
-                onJumpToCROGate={() => {
-                  setLayoutMode('executive_brief');
-    setAppArea('desks');
-                  setActiveNavSection('cro_reports');
-                }}
-                isRunningPhase1And2={isRunningPhase1And2}
-                onReverifyPipeline={handleRunCouncilPhase1And2}
-                runtimeConfig={runtimeConfig}
-                onUpdateRuntimeConfig={setRuntimeConfig}
-                onOpenRuntimeModal={() => setIsRuntimeModalOpen(true)}
-              />
-              <CROCheckpointAndReports
-                run={run}
-                croDraft={croDraft}
-                runtimeConfig={runtimeConfig}
-                isRunningPhase1And2={isRunningPhase1And2}
-                isRunningPhase3={isRunningPhase3}
-                onUpdateCroDraft={setCroDraft}
-                onUpdateRuntimeConfig={setRuntimeConfig}
-                onApproveAndConveneSupremeCouncil={handleApproveAndConveneSupremeCouncil}
-                onReverifyPipeline={handleRunCouncilPhase1And2}
-              />
-            </div>
-            </Suspense>
-          )}
-          </>
-          )}
         </section>
       </main>
 
@@ -3792,46 +1817,12 @@ export default function App() {
         isFetchingData={isFetchingOpenData}
       />
 
-      {/* GLOBAL COMMAND PALETTE (CMD+K), PRE-FLIGHT MODEL INTEGRITY AUDITOR, CUSTOM SOVEREIGN WIZARD & SESSION SNAPSHOT MODALS */}
-      {isCommandPaletteOpen && (
-        <Suspense fallback={null}>
-      <GlobalCommandPaletteModal
-        isOpen={isCommandPaletteOpen}
-        onClose={() => setIsCommandPaletteOpen(false)}
-        items={commandPaletteItems}
-        onSelectCommand={handleSelectCommandPaletteItem}
-      />
-        </Suspense>
-      )}
-
-      {isIntegrityAuditOpen && (
-        <Suspense fallback={null}>
-      <ModelIntegrityAuditModal
-        isOpen={isIntegrityAuditOpen}
-        onClose={() => setIsIntegrityAuditOpen(false)}
-        auditReport={liveIntegrityAuditReport}
-      />
-        </Suspense>
-      )}
-
       {isCustomSovereignModalOpen && (
         <Suspense fallback={null}>
       <CustomSovereignOnboardingModal
         isOpen={isCustomSovereignModalOpen}
         onClose={() => setIsCustomSovereignModalOpen(false)}
         onOnboardSovereign={handleOnboardCustomSovereign}
-      />
-        </Suspense>
-      )}
-
-      {isSessionModalOpen && (
-        <Suspense fallback={null}>
-      <WorkspaceSessionModal
-        isOpen={isSessionModalOpen}
-        onClose={() => setIsSessionModalOpen(false)}
-        currentSnapshot={currentWorkspaceSessionSnapshot}
-        onRestoreSession={handleRestoreWorkspaceSession}
-        onResetFactoryDefaults={handleResetFactoryDefaults}
       />
         </Suspense>
       )}
@@ -3887,19 +1878,6 @@ export default function App() {
       />
         </Suspense>
       )}
-
-      {/* MULTI-SOVEREIGN HEAD-TO-HEAD COMPARATOR DRAWER (2-3 COUNTRIES SIDE-BY-SIDE) */}
-      <MultiSovereignComparatorDrawer
-        isOpen={isComparatorDrawerOpen}
-        onClose={() => setIsComparatorDrawerOpen(false)}
-        activeRun={run}
-        watchlistItems={activeWatchlistItems}
-        onSelectSovereign={handleSelectSovereign}
-        onStageTradeTicket={(ticket) => {
-          setIsComparatorDrawerOpen(false);
-          handleStageTradeTicket(ticket);
-        }}
-      />
 
       {/* 1-CLICK EXECUTIVE TEAR-SHEET & IC TRADE TICKET QUICK-DRAWER */}
       <ExecutiveTearSheetAndTradeTicketDrawer
