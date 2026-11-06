@@ -68,6 +68,7 @@ own-data switch in Settings).
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
 | OECD leading indicators (via DBnomics) | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | api.db.nomics.world | 1 day, on disk |
+| OECD quarterly GDP (via DBnomics) | Real GDP growth, quarter on quarter and year on year, seasonally adjusted, for about 53 OECD and partner areas; feeds the nowcast and forecasts | api.db.nomics.world | 1 day, on disk |
 | OECD consumer prices (via DBnomics) | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | api.db.nomics.world | 1 day, on disk |
 | Banco Central do Brasil (SGS 13522) | Brazil's IPCA inflation over 12 months, monthly; used instead of the OECD figure when at least as new (it was September 2026 against May on 2026-11-05) | api.bcb.gov.br | 1 day, on disk |
 | Eurostat HICP (prc_hicp_minr) | Monthly inflation, annual rate, all items, for EU members on your lists (Poland on the defaults); used instead of the OECD figure when at least as new. Turkey is not in this dataset | ec.europa.eu | 1 day, on disk |
@@ -122,6 +123,11 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+- **OECD quarterly GDP** comes from the OECD's dataflow `DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD`
+  through DBnomics: GDP (`B1GQ`), chain-linked volume, calendar and seasonally adjusted (`Y`),
+  growth on the previous quarter (`G1`) and on the same quarter a year earlier (`GY`). DBnomics'
+  copy runs some months behind the OECD; `npm run check:data` shows the newest quarter. Countries
+  outside the dataset read Missing with that reason. Saved in `data/live/oecd-qna.json`.
 - **OECD leading indicators** come from the OECD's dataflow `DSD_STES@DF_CLI` (measure LI,
   amplitude adjusted), read through DBnomics (see "OECD via DBnomics" below). The OECD publishes around
   mid-month; the newest month is usually one to two months old and always shows with the date the
