@@ -30,6 +30,7 @@ const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
 const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
+const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
 /**
@@ -428,6 +429,12 @@ export const CountryPage: React.FC<{
           <React.Suspense fallback={<DeskLoading />}>
             <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
           </React.Suspense>
+          <div id="tool-forecast" className="scroll-mt-4" />
+          <PanelBoundary name="Nowcast and forecasts">
+            <React.Suspense fallback={<DeskLoading />}>
+              <ForecastPanel key={`fc-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
           <div id="tool-output-gap" className="scroll-mt-4" />
           <PanelBoundary name="Output gap">
             <React.Suspense fallback={<DeskLoading />}>

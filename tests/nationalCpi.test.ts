@@ -61,3 +61,43 @@ test('a national series replaces the OECD one only when at least as new, and say
   assert.equal(cpiFor('BRA', older)!.basis, 'oecd_yoy', 'OECD newer: keep it');
   assert.equal(cpiFor('BRA', mergeNationalCpi(null, { BRA: { points: parseBcbSgs(BCB), short: BCB_SHORT, long: BCB_LONG } }))!.month, '2026-09', 'no OECD reply at all');
 });
+
+test('Banxico SIE: monthly INPC annual change read oldest first, N/E and other series skipped', async () => {
+  const { parseBanxicoMonthly, banxicoSeriesUrl, banxicoHeaders, BANXICO_CPI_SERIES } = await import('../src/utils/nationalCpi.ts');
+  // Reply shape as documented by open-source SIE clients (bmx.series[].idSerie, datos[].fecha dd/mm/yyyy, dato string).
+  const reply = {
+    bmx: {
+      series: [
+        { idSerie: 'SF43718', datos: [{ fecha: '01/09/2026', dato: '18.50' }] },
+        { idSerie: 'SP30578', datos: [{ fecha: '01/09/2026', dato: '3.76' }, { fecha: '01/07/2026', dato: '3.51' }, { fecha: '01/08/2026', dato: 'N/E' }, { fecha: 'bad', dato: '1' }] },
+      ],
+    },
+  };
+  assert.deepEqual(parseBanxicoMonthly(reply, BANXICO_CPI_SERIES), [{ period: '2026-07', value: 3.51 }, { period: '2026-09', value: 3.76 }]);
+  assert.deepEqual(parseBanxicoMonthly({ error: 'x' }, BANXICO_CPI_SERIES), []);
+  const url = banxicoSeriesUrl([BANXICO_CPI_SERIES], new Date('2026-11-06T00:00:00Z'));
+  assert.equal(url, 'https://www.banxico.org.mx/SieAPIRest/service/v1/series/SP30578/datos/2024-11-01/2026-11-06');
+  assert.equal(banxicoHeaders(' tok ')['Bmx-Token'], 'tok');
+  // A Banxico series takes Mexico's place only when it is at least as new as the OECD one.
+  const merged = mergeNationalCpi({ MEX: { basis: 'oecd', points: [{ period: '2026-05', value: 4 }] } } as never, { MEX: { points: parseBanxicoMonthly(reply, BANXICO_CPI_SERIES), short: 'Banxico INPC', long: 'x' } });
+  assert.equal(merged?.MEX.short, 'Banxico INPC');
+});
+
+test('EVDS CPI: 12-month change worked out from the monthly index; months without a year-earlier value skipped', async () => {
+  const { parseEvdsCpiYoy, evdsCpiUrl, EVDS_CPI_DEFAULT_SERIES } = await import('../src/utils/nationalCpi.ts');
+  const reply = {
+    totalCount: 4,
+    items: [
+      { Tarih: '2025-8', TP_FG_J0: '2900' },
+      { Tarih: '2025-9', TP_FG_J0: '3000' },
+      { Tarih: '2026-8', TP_FG_J0: '' },
+      { Tarih: '2026-9', TP_FG_J0: '3990' },
+      { Tarih: '2026-10', TP_FG_J0: '4100' },
+    ],
+  };
+  assert.deepEqual(parseEvdsCpiYoy(reply, EVDS_CPI_DEFAULT_SERIES), [{ period: '2026-09', value: 33 }]);
+  assert.deepEqual(parseEvdsCpiYoy({ nope: 1 }, EVDS_CPI_DEFAULT_SERIES), []);
+  const url = evdsCpiUrl(EVDS_CPI_DEFAULT_SERIES, new Date('2026-11-06T00:00:00Z'));
+  assert.match(url, /^https:\/\/evds3\.tcmb\.gov\.tr\/igmevdsms-dis\/series=TP\.FG\.J0&startDate=\d{2}-\d{2}-2024&endDate=06-11-2026&type=json$/);
+  assert.ok(!/key/i.test(url));
+});

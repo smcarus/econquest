@@ -9,7 +9,7 @@ import { licenceRowsForSource } from '../utils/licenceLookup';
 
 export interface RequiredCredit {
   /** Register row id in src/data/dataLicences.ts. */
-  id: 'erapi' | 'gdelt' | 'fred';
+  id: 'erapi' | 'gdelt' | 'fred' | 'acled';
   /** Linked words, shown as given. */
   text: string;
   url: string;
@@ -29,6 +29,8 @@ export const REQUIRED_CREDITS: RequiredCredit[] = [
     url: 'https://fred.stlouisfed.org/',
     after: ' but is not endorsed or certified by the Federal Reserve Bank of St. Louis.',
   },
+  // https://acleddata.com/attributionpolicy : "ACLED as the source of the data must be clearly and prominently acknowledged".
+  { id: 'acled', text: 'Source: ACLED (Armed Conflict Location & Event Data)', url: 'https://acleddata.com/', after: '; monthly counts worked out by the app.' },
 ];
 
 /** The required credits for the sources named in these source texts, in register order. */

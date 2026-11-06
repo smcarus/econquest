@@ -32,6 +32,25 @@ export function workspaceFilePath(dataDir: string): string {
   return path.join(dataDir, 'local', 'workspace.json');
 }
 
+/**
+ * Once accounts exist (src/utils/auth.ts) each account keeps its own workspace here. The shared
+ * file above stays as the one used while sign-in is off; the first admin account starts from a
+ * copy of it, since it holds what the single user had saved.
+ */
+export function userWorkspacePath(dataDir: string, accountId: string): string {
+  if (!/^[A-Za-z0-9_-]{1,64}$/.test(accountId)) throw new Error('Bad account id.');
+  return path.join(dataDir, 'local', 'users', accountId, 'workspace.json');
+}
+
+/** Copies the shared workspace to a new account's file if that file does not exist yet. */
+export function seedWorkspace(shared: string, target: string): boolean {
+  if (fs.existsSync(target) || !fs.existsSync(shared)) return false;
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.copyFileSync(shared, target);
+  fs.chmodSync(target, 0o600);
+  return true;
+}
+
 function empty(): WorkspaceFile {
   return { version: 1, values: {}, updatedAt: {} };
 }

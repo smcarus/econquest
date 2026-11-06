@@ -184,7 +184,17 @@ test('FRED: no key is optional (the download is used); a rejected key needs setu
 
 test('EVDS: missing pieces each get their own reason; the key goes in a header', async () => {
   assert.match((await byId({ env: {}, fetchFn: healthy })).row('evds').detail, /Not set up/);
-  assert.match((await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: healthy })).row('evds').detail, /10Y series code is empty \(Menu > Settings or EVDS_TR10Y_SERIES\)/);
+  const cpiOnly: FetchFn = async (u, init) => {
+    if (u.includes('evds3') && u.includes('TP.FG.J0') && new Headers(init?.headers).get('key') === 'k') {
+      return json({ items: [{ Tarih: '2025-9', TP_FG_J0: '3000' }, { Tarih: '2026-9', TP_FG_J0: '3990' }] });
+    }
+    return healthy(u);
+  };
+  const keyOnly = (await byId({ env: { EVDS_API_KEY: 'k' }, fetchFn: cpiOnly })).row('evds');
+  assert.equal(keyOnly.state, 'connected');
+  assert.match(keyOnly.sample!, /Turkey CPI 33\.00% over 12 months \(Sep 2026\)/);
+  assert.match(keyOnly.detail, /10Y series code is empty, so Turkey's 10Y yield reads Missing \(Menu > Settings or EVDS_TR10Y_SERIES\)/);
+  assert.match((await byId({ env: { EVDS_API_KEY: 'k', EVDS_TR_CPI_SERIES: 'cpi' }, fetchFn: cpiOnly })).row('evds').detail, /not a series code.*TP\.FG\.J0/);
   assert.match((await byId({ env: { EVDS_API_KEY: 'k', EVDS_TR10Y_SERIES: 'bond' }, fetchFn: healthy })).row('evds').detail, /not a series code/);
   let sawHeader = false;
   const fetchFn: FetchFn = async (u, init) => {
@@ -198,6 +208,27 @@ test('EVDS: missing pieces each get their own reason; the key goes in a header',
   assert.equal(ok.row('evds').state, 'connected');
   assert.ok(sawHeader);
   assert.doesNotMatch(JSON.stringify(ok.rep), /evds-secret/);
+});
+
+test('Banxico: optional without a token; the token goes only in the Bmx-Token header', async () => {
+  assert.equal((await byId({ env: {}, fetchFn: healthy })).row('banxico').state, 'optional');
+  let sawHeader = false;
+  const fetchFn: FetchFn = async (u, init) => {
+    if (u.includes('banxico.org.mx')) {
+      sawHeader = new Headers(init?.headers).get('Bmx-Token') === 'bmx-secret-token-0123456789abcdef' && !u.includes('bmx-secret');
+      if (!sawHeader) return json({ error: { mensaje: 'Token invalido' } }, 401);
+      return json({ bmx: { series: [{ idSerie: 'SP30578', titulo: 'Inflación anual', datos: [{ fecha: '01/08/2026', dato: '3.57' }, { fecha: '01/09/2026', dato: '3.76' }] }] } });
+    }
+    return healthy(u);
+  };
+  const ok = await byId({ env: { BANXICO_TOKEN: 'bmx-secret-token-0123456789abcdef' }, fetchFn });
+  assert.equal(ok.row('banxico').state, 'connected');
+  assert.match(ok.row('banxico').sample!, /Mexico INPC 3\.76% over 12 months/);
+  assert.ok(sawHeader);
+  assert.doesNotMatch(JSON.stringify(ok.rep), /bmx-secret/);
+  const bad = await byId({ env: { BANXICO_TOKEN: 'wrong' }, fetchFn });
+  assert.equal(bad.row('banxico').state, 'needs_setup');
+  assert.doesNotMatch(JSON.stringify(bad.rep), /wrong/);
 });
 
 test('own CDS: off by default, then file checks (missing, unreadable, read, stale)', async () => {

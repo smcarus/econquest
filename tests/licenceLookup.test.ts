@@ -46,8 +46,8 @@ test('every register row except the paid-data catch-all is reachable from some s
   const samples: Record<string, string> = {
     worldbank: 'World Bank, 2024', pinksheet: 'pink_sheet', imf: 'IMF WEO', comtrade: 'UN Comtrade', wits: 'WITS',
     bis: 'BIS', ecb: 'ECB', erapi: 'ExchangeRate-API', nyfed: 'NY Fed', fred: 'FRED', oecd: 'OECD via DBnomics',
-    eurostat: 'Eurostat HICP', cftc: 'CFTC', tic: 'TIC', eia: 'EIA', gdelt: 'GDELT', polymarket: 'Polymarket',
-    kalshi: 'Kalshi', bcrp: 'BCRP', bcb: 'BCB SGS 13522', tesouro: 'Tesouro Direto', evds: 'EVDS', own: 'your own CDS data',
+    eurostat: 'Eurostat HICP', cftc: 'CFTC', tic: 'TIC', eia: 'EIA', gdelt: 'GDELT', ucdp: 'UCDP/PRIO Armed Conflict Dataset 26.1', polymarket: 'Polymarket',
+    kalshi: 'Kalshi', bcrp: 'BCRP', bcb: 'BCB SGS 13522', tesouro: 'Tesouro Direto', evds: 'EVDS', banxico: 'Banxico INPC', acled: 'ACLED conflict events', own: 'your own CDS data',
   };
   for (const row of DATA_LICENCES) {
     assert.ok(samples[row.id], `no sample for register row ${row.id}`);

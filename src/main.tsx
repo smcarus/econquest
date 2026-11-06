@@ -3,7 +3,7 @@ import App from './App.tsx';
 import { WatchlistWindow } from './components/WatchlistWindow';
 import { PanelBoundary } from './components/PanelBoundary';
 import './index.css';
-import { mirrorSavesToDisk, startWorkspaceSync } from './utils/workspaceSync';
+import { forgetOtherAccount, mirrorSavesToDisk, startWorkspaceSync } from './utils/workspaceSync';
 import { fetchAuthStatus, needsSignIn, watchForSignedOut } from './utils/authClient';
 import { SignInPage } from './components/SignInPage';
 
@@ -17,13 +17,14 @@ const draw = () =>
     <PanelBoundary page name={popOut ? 'The watchlist' : 'The app'}>{popOut ? <WatchlistWindow /> : <App />}</PanelBoundary>
   );
 
-function start() {
+function start(accountId: string | null) {
   let storage: Storage | null = null;
   try {
     storage = window.localStorage;
   } catch {
     storage = null; // storage blocked: the app runs for this session only
   }
+  if (storage && accountId) forgetOtherAccount(storage, accountId);
   if (storage) {
     const target = storage;
     void startWorkspaceSync({ storage: target, fetchFn: window.fetch.bind(window) }).finally(() => {
@@ -43,5 +44,5 @@ void fetchAuthStatus().then((status) => {
     return;
   }
   if (status && status.mode !== 'off') watchForSignedOut(window, status.csrfToken);
-  start();
+  start(status?.account?.id ?? null);
 });

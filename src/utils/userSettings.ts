@@ -15,6 +15,7 @@ import fs from 'fs';
 import path from 'path';
 
 import { API_KEY_FIELDS, API_KEY_IDS, apiKeyField } from '../data/apiKeyFields';
+import { isEncrypted, secretBoxFromEnv, type SecretBox } from './secretBox';
 
 export { API_KEY_FIELDS, API_KEY_IDS, apiKeyField, type ApiKeyField } from '../data/apiKeyFields';
 
@@ -56,25 +57,67 @@ export function maskKey(value: string): string {
 }
 
 /** Reads the settings file; a missing or broken file reads as no saved keys. */
-export function loadSettings(file: string): SavedSettings {
+/** The master key from the environment (src/utils/secretBox.ts), looked up once per process. */
+let defaultBox: { box: SecretBox | null; problem: string | null } | null = null;
+export function settingsSecretBox(): { box: SecretBox | null; problem: string | null } {
+  if (!defaultBox) defaultBox = secretBoxFromEnv(process.env);
+  return defaultBox;
+}
+/** Tests only. */
+export function resetSettingsSecretBox(): void {
+  defaultBox = null;
+}
+
+export interface LoadedSettings extends SavedSettings {
+  /** Saved keys that are encrypted but cannot be opened (no master key, or a different one). */
+  unreadable?: string[];
+  /** Whether any saved key is still plain text on disk. */
+  plainOnDisk?: boolean;
+}
+
+export function loadSettings(file: string, box: SecretBox | null = settingsSecretBox().box): LoadedSettings {
   try {
     const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
     const apiKeys: Record<string, string> = {};
+    const unreadable: string[] = [];
+    let plainOnDisk = false;
     for (const id of API_KEY_IDS) {
       const v = raw?.apiKeys?.[id];
-      if (typeof v === 'string' && v.trim()) apiKeys[id] = v.trim();
+      if (typeof v !== 'string' || !v.trim()) continue;
+      if (isEncrypted(v)) {
+        const plain = box?.decrypt(v) ?? null;
+        if (plain && plain.trim()) apiKeys[id] = plain.trim();
+        else unreadable.push(id);
+      } else {
+        apiKeys[id] = v.trim();
+        plainOnDisk = true;
+      }
     }
-    return { apiKeys };
+    return { apiKeys, ...(unreadable.length ? { unreadable } : {}), ...(plainOnDisk ? { plainOnDisk } : {}) };
   } catch {
     return { apiKeys: {} };
   }
 }
 
-/** Writes the settings file readable by this user only, via a temp file so a crash cannot leave half a file. */
-export function saveSettings(file: string, settings: SavedSettings): void {
+/**
+ * Writes the settings, each key encrypted when a master key is set. Keys that are on disk but cannot
+ * be opened are kept as they are, so starting once without the master key does not lose them.
+ */
+export function saveSettings(file: string, settings: SavedSettings, box: SecretBox | null = settingsSecretBox().box): void {
   fs.mkdirSync(path.dirname(file), { recursive: true });
+  let keepSealed: Record<string, string> = {};
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+    for (const [id, v] of Object.entries(raw?.apiKeys ?? {})) {
+      if (typeof v === 'string' && isEncrypted(v) && !settings.apiKeys[id] && !(box && box.decrypt(v) !== null)) keepSealed[id] = v;
+    }
+  } catch {
+    keepSealed = {};
+  }
+  const apiKeys: Record<string, string> = { ...keepSealed };
+  for (const [id, v] of Object.entries(settings.apiKeys)) apiKeys[id] = box ? box.encrypt(v) : v;
   const tmp = `${file}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, JSON.stringify(settings, null, 2), { mode: 0o600 });
+  fs.writeFileSync(tmp, JSON.stringify({ apiKeys, ...(box ? { encrypted: 'aes-256-gcm' } : {}) }, null, 2), { mode: 0o600 });
   fs.renameSync(tmp, file);
   try {
     fs.chmodSync(file, 0o600);
@@ -83,7 +126,6 @@ export function saveSettings(file: string, settings: SavedSettings): void {
   }
 }
 
-/** The key values the app uses: saved in the app first, then .env. */
 export function effectiveKeys(envFromFile: Record<string, string | undefined>, saved: SavedSettings): Record<string, string> {
   const out: Record<string, string> = {};
   for (const id of API_KEY_IDS) {

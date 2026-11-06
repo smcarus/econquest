@@ -102,7 +102,7 @@ export const ISO3_TO_FIPS: Record<string, string> = {
   LKA: 'CE', NPL: 'NP', IDN: 'ID', MYS: 'MY', THA: 'TH', VNM: 'VM', PHL: 'RP', SGP: 'SN', MMR: 'BM', KHM: 'CB',
   AUS: 'AS', NZL: 'NZ', MNG: 'MG', AFG: 'AF',
 };
-const FIPS_TO_ISO3: Record<string, string> = Object.fromEntries(Object.entries(ISO3_TO_FIPS).map(([i, f]) => [f, i]));
+export const FIPS_TO_ISO3: Record<string, string> = Object.fromEntries(Object.entries(ISO3_TO_FIPS).map(([i, f]) => [f, i]));
 
 export const CAMEO_ROOTS: Record<string, string> = {
   '01': 'Public statements', '02': 'Appeals', '03': 'Intent to cooperate', '04': 'Consultations',

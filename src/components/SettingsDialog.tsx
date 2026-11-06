@@ -31,6 +31,7 @@ interface KeysReply {
   savedIn: string;
   requestFrom?: string;
   inDocker?: boolean;
+  encryption?: { atRest: boolean; keyFrom: string | null; problem: string | null; unreadable: string[] };
 }
 
 const SECTIONS: Array<{ id: 'free_key' | 'own_account' | 'ai'; title: string; note: string }> = [
@@ -354,6 +355,17 @@ export const SettingsDialog: React.FC<{
               Your own keys and settings for data sources. They are saved on this computer only{reply ? ` (${reply.savedIn})` : ''}, sent only to the source they belong to, and shown here masked. A key
               saved here is used instead of the same key in .env.
             </p>
+            {reply?.encryption && (
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400" data-key-encryption>
+                {reply.encryption.atRest
+                  ? `Saved keys are encrypted on disk (AES-256-GCM), with a master key from ${reply.encryption.keyFrom} that is kept outside the data folder.`
+                  : 'Saved keys are not encrypted on disk (plain text in a file only this app can read). To encrypt them, set ECONQUEST_SECRET_KEY or a Docker secret; see docs/SECURITY.md.'}
+                {reply.encryption.problem ? ` ${reply.encryption.problem}` : ''}
+                {reply.encryption.unreadable.length
+                  ? ` ${reply.encryption.unreadable.length} saved key(s) cannot be opened with the current master key and are not in use; save them again.`
+                  : ''}
+              </p>
+            )}
             {reply && !reply.canEdit && (
               <p className="mt-2 px-2 py-1.5 text-xs text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900" role="note">
                 The key boxes are locked because this page reached the app from {reply.requestFrom || 'another address'}, not from this computer (127.0.0.1).{' '}

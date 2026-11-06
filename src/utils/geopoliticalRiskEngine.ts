@@ -25,6 +25,10 @@ import {
   UpstreamSupplyFlowLink,
 } from '../types/council';
 
+/** Shown where located conflict events would be: none come from a feed yet. */
+export const OSINT_MISSING_NOTE =
+  'Missing: no feed gives located conflict events yet. Conflict counts from ACLED (your account) and GDELT are in the Politics & Events Agent; events you log yourself appear here.';
+
 export const DEFAULT_WARGAME_PARAMS: GeopoliticalWargameParams = {
   chokepointClosureSeverityPct: 25,
   tariffEscalationPct: 15,
@@ -1204,89 +1208,13 @@ export function computeGeopoliticalRiskDeskSuite(
   // =========================================================================
   // 5. HYBRID OSINT & GDELT / ACLED CONFLICT & SANCTIONS EVENT STREAM (GEOSPATIAL)
   // =========================================================================
-  const baselineOsintEvents: OsintConflictEvent[] = [
-    {
-      eventId: `GDELT-${openData.iso3}-101`,
-      timestampUtc: '2026-11-02 14:20 UTC',
-      sourceFeed: 'GDELT_2.0_CAMEO',
-      cameoCode: 'CAMEO-192 (Maritime Chokepoint Escort & War-Risk Repricing)',
-      eventCategory: 'MARITIME_INTERDICTION',
-      headline: `Lloyd's Joint War Committee elevates hull war-risk surcharge across ${
-        mostVulnerableCorridor.corridorName.split(' (')[0]
-      }; container & tanker diversions add ${mostVulnerableCorridor.reroutingDelayDays}d transit lag for ${openData.countryName} cargo.`,
-      locationLabel: mostVulnerableCorridor.corridorName.split(' (')[0],
-      goldsteinScale: Number((-6.8 - chokepointSeverity * 2.6).toFixed(1)),
-      acledSeverityScore: Math.min(98, Math.round(62 + chokepointSeverity * 32)),
-      empiricalCdsImpactBps: Math.round(18 + chokepointSeverity * 38),
-      empiricalFxImpactPct: Number((-1.4 - chokepointSeverity * 2.8).toFixed(1)),
-      verificationStatus: 'VERIFIED_PRIMARY',
-      lat: mostVulnerableCorridor.lat,
-      lon: mostVulnerableCorridor.lon,
-      linkedChokepointIds: [mostVulnerableCorridor.corridorId, 'bab_el_mandeb'],
-      linkedSupplyChainIds: mostVulnerableCorridor.linkedSupplyChainIds,
-    },
-    {
-      eventId: `OFAC-${openData.iso3}-102`,
-      timestampUtc: '2026-11-02 11:05 UTC',
-      sourceFeed: 'OFAC_TREASURY',
-      cameoCode: 'CAMEO-163 (Secondary Sanctions & Tariff Compliance Notice)',
-      eventCategory: 'SANCTIONS_ENFORCEMENT',
-      headline: `G7 / OFAC cross-border trade compliance audit targets dual-use transshipment and bilateral tariff corridors (${profile.tariffPartners[0].bloc}), exposing ${profile.g7ReserveCustodyPct}% G7-custodied reserve assets to compliance screening.`,
-      locationLabel: `${openData.countryName} / G7 Clearing Corridors`,
-      goldsteinScale: Number((-5.4 - sanctionsShock * 3.4).toFixed(1)),
-      acledSeverityScore: Math.min(96, Math.round(54 + sanctionsShock * 38)),
-      empiricalCdsImpactBps: Math.round(14 + sanctionsShock * 44),
-      empiricalFxImpactPct: Number((-1.1 - sanctionsShock * 3.1).toFixed(1)),
-      verificationStatus: 'VERIFIED_PRIMARY',
-      lat: profile.tariffPartners[0].partnerLat,
-      lon: profile.tariffPartners[0].partnerLon,
-      linkedChokepointIds: ['taiwan_strait', 'panama_canal'],
-      linkedSupplyChainIds: ['semi_logic_7nm', 'rare_earth_magnets', 'critical_minerals_pgms'],
-    },
-    {
-      eventId: `ACLED-${openData.iso3}-103`,
-      timestampUtc: '2026-11-01 19:45 UTC',
-      sourceFeed: 'ACLED_CONFLICT',
-      cameoCode: 'CAMEO-145 (Public Sector Union & Energy Subsidy Mobilization)',
-      eventCategory: 'CIVIL_UNREST_PROTEST',
-      headline: `ACLED monitors urban labor mobilization ahead of ${profile.electoralCatalyst}, raising pre-election primary fiscal slippage risk to ${electoralProfile.preElectionFiscalSlippagePctGdp}% of GDP.`,
-      locationLabel: `${profile.coord.capitalLabel}`,
-      goldsteinScale: Number((-4.9 - unrestShock * 3.5).toFixed(1)),
-      acledSeverityScore: electoralProfile.socialUnrestAndStrikeIntensity,
-      empiricalCdsImpactBps: Math.round(12 + unrestShock * 36),
-      empiricalFxImpactPct: Number((-0.9 - unrestShock * 2.5).toFixed(1)),
-      verificationStatus: 'MULTI_SOURCE_CORROBORATED',
-      lat: profile.coord.lat,
-      lon: profile.coord.lon,
-      linkedChokepointIds: ['suez_canal', 'black_sea'],
-      linkedSupplyChainIds: ['fertilizer_staple_grain', 'crude_lng_hydrocarbons'],
-    },
-    {
-      eventId: `CERT-${openData.iso3}-104`,
-      timestampUtc: '2026-11-01 08:15 UTC',
-      sourceFeed: 'GDELT_2.0_CAMEO',
-      cameoCode: 'CAMEO-176 (Asymmetric Cyber Reconnaissance on Grid/Port SCADA)',
-      eventCategory: 'CYBER_INFRASTRUCTURE',
-      headline: `National CERT flags state-nexus probing across subsea landing stations (${profile.subseaCableRedundancy} active cables) and port customs clearing terminals; power grid reserve margin stands at ${profile.powerGridReserveMarginPct}%.`,
-      locationLabel: `${openData.countryName} Subsea & RTGS Grid`,
-      goldsteinScale: Number((-5.2 - cyberShock * 3.6).toFixed(1)),
-      acledSeverityScore: Math.min(96, Math.round(profile.cyberFragilityBase + cyberShock * 36)),
-      empiricalCdsImpactBps: Math.round(10 + cyberShock * 34),
-      empiricalFxImpactPct: Number((-0.8 - cyberShock * 2.2).toFixed(1)),
-      verificationStatus: 'MULTI_SOURCE_CORROBORATED',
-      lat: profile.coord.lat + 3.2,
-      lon: profile.coord.lon + 4.1,
-      linkedChokepointIds: ['bab_el_mandeb', 'suez_canal'],
-      linkedSupplyChainIds: ['semi_logic_7nm', 'crude_lng_hydrocarbons'],
-    },
-  ];
-
-  const osintEvents = [...customOsintEvents, ...baselineOsintEvents];
-  const avgGoldstein =
-    osintEvents.reduce((acc, ev) => acc + ev.goldsteinScale, 0) / osintEvents.length;
-  const osintEventStreamHeadline = `GDELT 2.0 & ACLED Telemetry tracks ${osintEvents.length} active geospatial conflict/sanctions nodes (Mean Goldstein Conflict Score ${avgGoldstein.toFixed(
-    1
-  )}), led by ${osintEvents[0].cameoCode.split(' ')[0]} in ${osintEvents[0].locationLabel}.`;
+  // No built-in events (Sam's rule: no sample figures). Only events you log yourself appear here,
+  // labelled as yours. No free feed gives located conflict events yet: ACLED and GDELT counts are
+  // in the Politics & Events Agent instead.
+  const osintEvents: OsintConflictEvent[] = [...customOsintEvents];
+  const osintEventStreamHeadline = osintEvents.length
+    ? `${osintEvents.length} event${osintEvents.length === 1 ? '' : 's'} you logged (not from a feed; severity is a keyword rule), latest: ${osintEvents[0].headline}`
+    : OSINT_MISSING_NOTE;
 
   // =========================================================================
   // 6. UNGA DIPLOMATIC ALIGNMENT, BLOC TOPOLOGY & SECONDARY SANCTIONS CONTAGION
@@ -2026,3 +1954,4 @@ export function computeGeopoliticalRiskDeskSuite(
     bilateralTradeCorridors,
   };
 }
+

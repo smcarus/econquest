@@ -21,7 +21,7 @@ test('admin-only: keys, users, backup, audit log, connectors, AI settings, webho
   ]) assert.equal(requiredRole(m, p), 'admin', `${m} ${p}`);
 });
 
-test('analyst: council, saved research, reviews, sign-offs, data refresh, workspace; and reading masked keys', () => {
+test('analyst: council, saved research, reviews, sign-offs, data refresh; and reading masked keys', () => {
   for (const [m, p] of [
     ['POST', '/api/council/synthesise'],
     ['POST', '/api/research/briefs'],
@@ -29,19 +29,19 @@ test('analyst: council, saved research, reviews, sign-offs, data refresh, worksp
     ['POST', '/api/reviews'],
     ['POST', '/api/signoffs/brief/x'],
     ['POST', '/api/data/refresh'],
-    ['PUT', '/api/workspace/econquest.watchlists.v1'],
     ['GET', '/api/settings/keys'],
     ['POST', '/api/some-new-route'],
   ]) assert.equal(requiredRole(m, p), 'analyst', `${m} ${p}`);
 });
 
-test('viewer: reads and own sign-in only', () => {
+test('viewer: reads, own sign-in and own workspace only', () => {
   for (const [m, p] of [
     ['GET', '/api/data/sovereign-snapshot'],
     ['GET', '/api/research'],
     ['GET', '/'],
     ['POST', '/api/auth/password'],
     ['POST', '/api/auth/sign-out'],
+    ['PUT', '/api/workspace/sovereign_council_watchlists_v1'],
   ]) assert.equal(requiredRole(m, p), 'viewer', `${m} ${p}`);
 });
 

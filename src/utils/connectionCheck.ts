@@ -20,7 +20,8 @@ import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
-import { BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
+import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
+import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
@@ -43,6 +44,9 @@ import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, p
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
+import { GDELT_V1_SIZES_URL, parseFileSizes } from './gdeltDaily';
+import { ACLED_AGGREGATED_PAGE, ACLED_FOLDER, acledFileReading, type AcledFileData } from './acledFiles';
+import { UCDP_DATASETS, UCDP_DATASET_IDS, UCDP_DOWNLOADS_PAGE, UCDP_FOLDER, ucdpReading, type UcdpData } from './ucdpConflict';
 import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
 
 export type ConnectionState =
@@ -101,6 +105,10 @@ export interface CheckOptions {
   ai?: { provider?: string; ollamaBaseUrl?: string; ollamaQuickModel?: string; ollamaDeepModel?: string; openAiBaseUrl?: string; geminiModel?: string };
   /** File reader for the own CDS file (injected in tests). */
   readFile?: (path: string) => { text: string; modified: Date } | null;
+  /** The UCDP files read from data/local/ucdp/ (utils/ucdpStore.ts); absent = not checked. */
+  ucdp?: () => UcdpData | null;
+  /** The ACLED aggregated files in data/local/acled/ (server: acledFileData). */
+  acledFiles?: () => AcledFileData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -238,6 +246,7 @@ export const SOURCE_IDS = [
   'imf_reserves',
   'imf_cofer',
   'gdelt',
+  'gdelt_v1',
   'polymarket',
   'kalshi',
   'nyfed',
@@ -263,6 +272,10 @@ export const SOURCE_IDS = [
   'fred_api',
   'tesouro',
   'evds',
+  'banxico',
+  'ucdp',
+  'acled',
+  'acled_files',
   'eia',
   'own_cds',
   'gemini',
@@ -429,6 +442,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       r.state === 'refused' && r.httpStatus === 429
         ? { ...r, detail: 'GDELT refused: too many requests from this connection (HTTP 429). It allows one request every 5 seconds and keeps refusing for a while after it is exceeded. The app pauses GDELT for 15 minutes after a refusal; check again after that.' }
         : r
+    )
+  );
+
+  add('gdelt_v1', () =>
+    httpCheck(
+      { id: 'gdelt_v1', name: 'GDELT 1.0 event files', group: 'free', feeds: 'Monthly event history per country back to 1979 (npm run gdelt:daily)' },
+      fetchFn,
+      GDELT_V1_SIZES_URL,
+      Math.max(T, 20000),
+      (r) => {
+        const files = parseFileSizes(r.text || '');
+        const days = files.filter((f) => f.kind === 'day');
+        return files.length ? `${files.length} files listed, newest ${days.at(-1)?.period || files.at(-1)!.period}` : null;
+      }
     )
   );
 
@@ -877,22 +904,120 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       id: 'evds',
       name: 'Turkey central bank (EVDS)',
       group: 'free_key',
-      feeds: 'Turkey 10Y yield',
-      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key) and EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
+      feeds: 'Turkey monthly CPI inflation; Turkey 10Y yield once its series code is set',
+      setup: 'Menu > Settings > Data API keys, or in .env: EVDS_API_KEY="..." (free: evds3.tcmb.gov.tr > profile > API key). For the 10Y yield also EVDS_TR10Y_SERIES="TP...." (the 10Y bond series code in EVDS).',
     };
     const key = (env.EVDS_API_KEY || '').trim();
     const series = (env.EVDS_TR10Y_SERIES || '').trim();
-    if (!key && !series) return setRow(def, 'needs_setup', "Not set up. Turkey's 10Y yield reads Missing until it is.", 'evds3.tcmb.gov.tr');
+    const cpiSeries = (env.EVDS_TR_CPI_SERIES || '').trim() || EVDS_CPI_DEFAULT_SERIES;
+    if (!key && !series) return setRow(def, 'needs_setup', "Not set up. Turkey's 10Y yield reads Missing and Turkey's inflation stays on the OECD series until it is.", 'evds3.tcmb.gov.tr');
     if (!key) return setRow(def, 'needs_setup', 'The 10Y series code is set but the EVDS key is empty (Menu > Settings or EVDS_API_KEY).', 'evds3.tcmb.gov.tr');
-    if (!isValidEvdsSeriesCode(series)) return setRow(def, 'needs_setup', series ? `EVDS_TR10Y_SERIES "${series}" is not a series code (it starts with "TP.").` : 'The EVDS key is set but the 10Y series code is empty (Menu > Settings or EVDS_TR10Y_SERIES).', 'evds3.tcmb.gov.tr');
-    const res = await httpCheck(def, fetchFn, evdsSeriesUrl(series, now), T, (r) => {
-      const o = parseEvdsLatest(parseJson(r.text), series);
-      return o ? `Turkey 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
-    }, { headers: { key, Accept: 'application/json' } }, `EVDS answered, but series ${series} had no recent values. Check the series code.`);
+    if (series && !isValidEvdsSeriesCode(series)) return setRow(def, 'needs_setup', `EVDS_TR10Y_SERIES "${series}" is not a series code (it starts with "TP.").`, 'evds3.tcmb.gov.tr');
+    if (!isValidEvdsSeriesCode(cpiSeries)) return setRow(def, 'needs_setup', `EVDS_TR_CPI_SERIES "${cpiSeries}" is not a series code (it starts with "TP."). Leave it empty to use ${EVDS_CPI_DEFAULT_SERIES}.`, 'evds3.tcmb.gov.tr');
+    const headers = { key, Accept: 'application/json' };
+    let cpiNote = '';
+    const res = await httpCheck(def, fetchFn, evdsCpiUrl(cpiSeries, now), T, (r) => {
+      const pts = parseEvdsCpiYoy(parseJson(r.text), cpiSeries);
+      const last = pts[pts.length - 1];
+      if (!last) return null;
+      cpiNote = `Turkey CPI ${fmt(last.value, 2)}% over 12 months (${formatMonth(last.period)})`;
+      return cpiNote;
+    }, { headers }, `EVDS answered, but CPI series ${cpiSeries} had no 12 months of values. Set the CPI index series code in Menu > Settings.`);
     if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
       return { ...res, state: 'needs_setup', detail: `EVDS did not accept ${keyPhrase('EVDS_API_KEY')} (HTTP ${res.httpStatus}).` };
     }
-    return savedNote('EVDS_API_KEY', res);
+    if (res.state !== 'connected' && res.state !== 'bad_reply') return savedNote('EVDS_API_KEY', res);
+    if (!series) {
+      return savedNote('EVDS_API_KEY', { ...res, detail: `${res.detail} The 10Y series code is empty, so Turkey's 10Y yield reads Missing (Menu > Settings or EVDS_TR10Y_SERIES).` });
+    }
+    const y = await httpCheck(def, fetchFn, evdsSeriesUrl(series, now), T, (r) => {
+      const o = parseEvdsLatest(parseJson(r.text), series);
+      return o ? `Turkey 10Y ${fmt(o.valuePct, 2)}% (${o.period})` : null;
+    }, { headers }, `EVDS answered, but series ${series} had no recent values. Check the series code.`);
+    if (y.state !== 'connected') return savedNote('EVDS_API_KEY', { ...y, detail: res.state === 'connected' ? `${y.detail} (${cpiNote} read fine.)` : y.detail });
+    const sample = [cpiNote, y.sample].filter(Boolean).join('; ');
+    return savedNote('EVDS_API_KEY', { ...y, ...(sample ? { sample } : {}), detail: res.state === 'connected' ? y.detail : `${y.detail} ${res.detail}` });
+  });
+
+  add('banxico', async () => {
+    const def: Def = {
+      id: 'banxico',
+      name: 'Banco de México (SIE)',
+      group: 'free_key',
+      feeds: "Mexico's monthly INPC inflation over 12 months, fresher than the OECD mirror",
+      setup: 'Menu > Settings > Data API keys, or BANXICO_TOKEN="..." in .env (free: banxico.org.mx/SieAPIRest/service/v1/token). Without it Mexico keeps the OECD inflation series.',
+    };
+    const token = (env.BANXICO_TOKEN || '').trim();
+    if (!token) return setRow(def, 'optional', 'No token set. Mexico keeps the OECD inflation series, which lags five to six months.', 'www.banxico.org.mx');
+    const res = await httpCheck(def, fetchFn, banxicoSeriesUrl([BANXICO_CPI_SERIES], now, 3), T, (r) => {
+      const pts = parseBanxicoMonthly(parseJson(r.text), BANXICO_CPI_SERIES);
+      const last = pts[pts.length - 1];
+      return last ? `Mexico INPC ${fmt(last.value, 2)}% over 12 months (${formatMonth(last.period)})` : null;
+    }, { headers: banxicoHeaders(token) }, `Banxico answered, but not with the SIE series ${BANXICO_CPI_SERIES} rows the app reads.`);
+    if (res.state === 'refused' && (res.httpStatus === 401 || res.httpStatus === 403)) {
+      return { ...res, state: 'needs_setup', detail: `Banxico did not accept ${keyPhrase('BANXICO_TOKEN')} (HTTP ${res.httpStatus}). Check it was copied in full.` };
+    }
+    return savedNote('BANXICO_TOKEN', res);
+  });
+
+  add('acled', async () => {
+    const def: Def = {
+      id: 'acled',
+      name: 'ACLED (conflict events)',
+      group: 'free_key',
+      feeds: 'Conflict events per country over twelve months, for the Politics & Events Agent',
+      setup: 'Menu > Settings > Data API keys, or in .env: ACLED_EMAIL="..." and ACLED_PASSWORD="..." (free for non-commercial use; the API needs a myACLED Research-level account).',
+    };
+    const email = (env.ACLED_EMAIL || '').trim();
+    const password = env.ACLED_PASSWORD || '';
+    if (!email && !password) return setRow(def, 'needs_setup', 'Not set up. The conflict figures read Missing until it is.', 'acleddata.com');
+    if (!email || !password) return setRow(def, 'needs_setup', `The ACLED ${email ? 'password' : 'email'} is empty (Menu > Settings or ${email ? 'ACLED_PASSWORD' : 'ACLED_EMAIL'}).`, 'acleddata.com');
+    let bearer = '';
+    const tok = await httpCheck(def, fetchFn, ACLED_TOKEN_URL, T, (r) => {
+      const t = (parseJson(r.text) as { access_token?: unknown } | null)?.access_token;
+      bearer = typeof t === 'string' ? t : '';
+      return bearer ? 'signed in' : null;
+    }, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' }, body: acledTokenBody(email, password).toString() }, 'ACLED answered the sign-in, but without an access token.');
+    if (tok.state === 'refused' && [400, 401, 403].includes(tok.httpStatus || 0)) {
+      return { ...tok, state: 'needs_setup', detail: `ACLED did not accept the email and password${opts.keySources?.ACLED_PASSWORD === 'app' ? ' saved in Settings' : ' in ACLED_EMAIL / ACLED_PASSWORD'} (HTTP ${tok.httpStatus}).` };
+    }
+    if (tok.state !== 'connected') return tok;
+    // A token alone does not prove API access: Open accounts sign in but cannot read events.
+    const read = await httpCheck(def, fetchFn, acledReadUrl('Mexico', now).replace(/limit=\d+/, 'limit=5'), T, (r) => {
+      const rows = parseAcledPage(parseJson(r.text));
+      if (!rows) return null;
+      const last = rows.reduce((m, x) => (x.event_date > m ? x.event_date : m), '');
+      return rows.length ? `Mexico events read, newest ${last}` : 'API answered (no Mexico events in the window)';
+    }, { headers: { Authorization: `Bearer ${bearer}`, Accept: 'application/json' } }, 'ACLED answered, but not with the event rows the app reads.');
+    if (read.state === 'refused' && (read.httpStatus === 401 || read.httpStatus === 403)) {
+      return { ...read, state: 'needs_setup', detail: 'Signed in, but ACLED did not allow API access for this account. Open accounts (public email such as gmail.com) get aggregated downloads only; the API needs the Research level.' };
+    }
+    return read.state === 'connected' && opts.keySources?.ACLED_PASSWORD === 'app' ? { ...read, detail: `${read.detail} (account saved in Settings)` } : read;
+  });
+
+  add('acled_files', async () => {
+    const def: Def = {
+      id: 'acled_files',
+      name: 'ACLED aggregated files (downloaded)',
+      group: 'free',
+      feeds: 'Conflict events per country over twelve months, for the Politics & Events Agent, when no ACLED API reading is on hand',
+      setup: `Log in at ${ACLED_AGGREGATED_PAGE} (a free registered myACLED account is enough), download your region's aggregated file and put it, as downloaded (.xlsx or .csv, zipped or not), in ${ACLED_FOLDER}. Nothing is fetched. The API reading, when your account has one, wins.`,
+    };
+    const host = 'your files';
+    if (!opts.acledFiles) return setRow(def, 'optional', `The folder ${ACLED_FOLDER} was not checked from here.`, host);
+    let data: AcledFileData | null;
+    try {
+      data = opts.acledFiles();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The ACLED folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '';
+    if (!data || !data.files.length) return setRow(def, 'optional', `No ACLED aggregated file in ${ACLED_FOLDER}.${skipped ? ` ${skipped}` : ''}`, host);
+    const read = data.files.map((f) => `${f.file} (${f.countries} countries, weeks ${f.firstWeek} to ${f.lastWeek}, ${f.rows} rows)`);
+    const first = [...data.countries.values()][0];
+    const r = first ? acledFileReading(data, first.name, now) : null;
+    const sample = r ? `${r.country}: ${r.total.events} events, ${r.total.fatalities} fatalities, ${r.total.from} to ${r.total.to}` : undefined;
+    return { ...setRow(def, 'connected', `Read ${read.join('; ')}.`, host), ...(sample ? { sample } : {}), ...(skipped ? { warning: skipped } : {}) };
   });
 
   add('eia', async () => {
@@ -915,6 +1040,43 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     }
     // Never echo the key: EIA puts it in the URL, so make sure no reply text carries it.
     return savedNote('EIA_API_KEY', { ...res, detail: res.detail.split(key).join('***') });
+  });
+
+  // UCDP: downloaded CSV files in data/local/ucdp/, read from disk (Sam, 2026-11-06: no live pulls).
+  add('ucdp', async () => {
+    const def: Def = {
+      id: 'ucdp',
+      name: 'UCDP conflict data (downloaded files)',
+      group: 'free',
+      feeds: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year (Politics & Events Agent)',
+      setup: `Download the CSV files from ${UCDP_DOWNLOADS_PAGE} (UCDP/PRIO Armed Conflict, Battle-Related Deaths conflict level, Non-State, One-Sided, Dyadic) and put them, zipped or not, in ${UCDP_FOLDER}. Nothing is fetched.`,
+    };
+    const host = 'your files';
+    if (!opts.ucdp) return setRow(def, 'needs_setup', `The folder ${UCDP_FOLDER} was not checked from here.`, host);
+    let data: UcdpData | null;
+    try {
+      data = opts.ucdp();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The UCDP folder could not be read (${err?.message || err}).`, host);
+    }
+    const files = data ? UCDP_DATASET_IDS.filter((d) => data!.files[d]) : [];
+    if (!data || !files.length) {
+      const skipped = data?.skipped.length ? ` Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '';
+      return setRow(def, 'needs_setup', `No UCDP files in ${UCDP_FOLDER}.${skipped}`, host);
+    }
+    const missing = UCDP_DATASET_IDS.filter((d) => !data!.files[d]);
+    const read = files.map((d) => { const f = data!.files[d]!; return `${UCDP_DATASETS[d].name} ${f.version} (${f.minYear}-${f.maxYear}, ${f.rows} rows)`; });
+    const r = ucdpReading(data, SAMPLE_ISO3);
+    const latest = r?.latest;
+    const sample = latest
+      ? `${SAMPLE_NAME} ${latest.year}: ${latest.conflicts ? `${latest.conflicts.n} armed conflicts` : ''}${latest.totalBest !== undefined ? `${latest.conflicts ? ', ' : ''}${latest.totalBest} deaths from organised violence` : ''}`.replace(/: $/, ': read')
+      : undefined;
+    const warnings = [
+      missing.length ? `Not added: ${missing.map((d) => UCDP_DATASETS[d].name).join(', ')}.` : '',
+      data.skipped.length ? `Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '',
+      Object.keys(data.unknownCodes).length ? `Country codes the app has no country for: ${Object.keys(data.unknownCodes).slice(0, 8).join(', ')}.` : '',
+    ].filter(Boolean).join(' ');
+    return { ...setRow(def, 'connected', `Read ${read.join('; ')}.`, host), ...(sample ? { sample } : {}), ...(warnings ? { warning: warnings } : {}) };
   });
 
   // ---- Your own paid account (off unless switched on) -------------------------------------------

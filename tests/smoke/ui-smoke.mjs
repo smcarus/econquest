@@ -128,7 +128,7 @@ try {
         await page.getByRole('menuitem', { name: /^About & data licences/ }).first().click();
         await page.waitForSelector('[data-licence-counts]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > About & data licences did not open`));
         await settle('About & data licences');
-        if ((await page.locator('[data-about-credits] [data-source-credits]').count()) !== 3) failures.push(`${mode}: About does not list the three required source credits`);
+        if ((await page.locator('[data-about-credits] [data-source-credits]').count()) !== 4) failures.push(`${mode}: About does not list the four required source credits (ExchangeRate-API, GDELT, FRED, ACLED)`);
         await page.keyboard.press('Escape');
         continue;
       }
