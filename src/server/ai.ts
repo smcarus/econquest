@@ -7,7 +7,7 @@
 import { AIRuntimeConfig, SubAgentReport } from '../types/council.ts';
 import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from '../utils/refereeModel';
 import { ThinkingLevel, GoogleGenAI } from '@google/genai';
-import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, type ModelAttempt, ModelWaitError, ollamaHasModel, type StreamWait, streamWaitFor } from '../utils/modelFailure';
+import { describeFailures, isLongLocalStep, localStepTimeoutMs, LONG_CHAT_STEPS, type ModelAttempt, ModelWaitError, ollamaHasModel, type StreamWait, streamWaitFor } from '../utils/modelFailure';
 import { ollamaBaseUrlDefault } from '../utils/serverRuntime';
 import { serverGuiRuntimeConfig } from './integrations';
 import { type ModelStats, ollamaStats } from '../utils/councilTiming';
@@ -318,6 +318,45 @@ export function normalizeStance(raw: unknown, fallbackScore: number): SubAgentRe
   return 'NEUTRAL';
 }
 
+/** The configured Ollama address, then the ones Docker uses for the Mac host or a bundled service. */
+export function ollamaCandidateUrls(configuredBaseUrl: string): string[] {
+  if (configuredBaseUrl.includes('localhost') || configuredBaseUrl.includes('127.0.0.1')) return [configuredBaseUrl, 'http://host.docker.internal:11434', 'http://ollama:11434'];
+  if (configuredBaseUrl.includes('host.docker.internal')) return [configuredBaseUrl, 'http://localhost:11434', 'http://ollama:11434'];
+  return [configuredBaseUrl];
+}
+
+/**
+ * Loads the full council's desk model into Ollama before the desks start, so its load time is
+ * measured on its own and not charged to the first desk. Empty prompt: Ollama loads and answers
+ * at once. Returns null when the provider is not Ollama.
+ */
+export async function warmDeskModel(providerMode: string, runtimeConfig: Partial<AIRuntimeConfig>): Promise<{ ms: number; model: string; ok: boolean; loadMs?: number; error?: string } | null> {
+  if (!['ollama', 'hybrid', 'hybrid_failover'].includes(providerMode)) return null;
+  const model = resolveStepModelFromGuiConfig('STAGE_1_GEO_DESK', false, runtimeConfig);
+  const t0 = Date.now();
+  let lastError = 'Ollama did not answer';
+  for (const url of ollamaCandidateUrls(runtimeConfig.ollamaBaseUrl || ollamaBaseUrlDefault(process.env))) {
+    try {
+      const r = await fetch(`${url.replace(/\/+$/, '')}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, prompt: '', keep_alive: '30m', stream: false }),
+        signal: AbortSignal.timeout(180_000),
+      });
+      const j: any = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        lastError = `Ollama at ${url} answered HTTP ${r.status}${j?.error ? `: ${String(j.error).slice(0, 160)}` : ''}`;
+        continue;
+      }
+      const loadMs = typeof j?.load_duration === 'number' ? Math.round(j.load_duration / 1e6) : undefined;
+      return { ms: Date.now() - t0, model, ok: true, ...(loadMs !== undefined ? { loadMs } : {}) };
+    } catch (error: any) {
+      lastError = error?.name === 'TimeoutError' ? `Ollama at ${url} took longer than 180 s to load ${model}` : `Ollama at ${url}: ${error?.cause?.code || error?.message || error}`;
+    }
+  }
+  return { ms: Date.now() - t0, model, ok: false, error: lastError };
+}
+
 export async function executeResilientLlmStep<T>(options: {
   stepName: string;
   providerMode: string;
@@ -386,19 +425,9 @@ export async function executeResilientLlmStep<T>(options: {
     const stepTimeoutMs = localStepTimeoutMs(options.stepName, customTimeoutSec, isDeepCouncilStep);
 
     // Build candidate endpoints so Docker containers automatically resolve host.docker.internal or bundled ollama service
-    const candidateUrls = [configuredBaseUrl];
-    if (isOllama) {
-      if (
-        configuredBaseUrl.includes('localhost') ||
-        configuredBaseUrl.includes('127.0.0.1')
-      ) {
-        candidateUrls.push('http://host.docker.internal:11434', 'http://ollama:11434');
-      } else if (configuredBaseUrl.includes('host.docker.internal')) {
-        candidateUrls.push('http://localhost:11434', 'http://ollama:11434');
-      }
-    }
+    const candidateUrls = isOllama ? ollamaCandidateUrls(configuredBaseUrl) : [configuredBaseUrl];
 
-    const wait = isOllama && LONG_CHAT_STEPS.has(options.stepName) ? streamWaitFor(options.stepName, stepTimeoutMs) : undefined;
+    const wait = isOllama && isLongLocalStep(options.stepName) ? streamWaitFor(options.stepName, stepTimeoutMs) : undefined;
     const localTemperature = options.temperature ?? options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2;
     for (const candidateUrl of candidateUrls) {
       const where = isOllama ? `Ollama ${modelName} at ${candidateUrl}` : `${modelName} at ${candidateUrl}`;

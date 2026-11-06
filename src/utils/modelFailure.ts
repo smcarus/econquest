@@ -6,6 +6,18 @@
 /** Steps that summarise a whole conversation, the Supreme Council's final step (a large model), and Settings > AI model > Test. */
 export const LONG_CHAT_STEPS = new Set(['COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'AI_MODEL_TEST', 'REVIEW_OPTIONS', 'STAGE_3_SUPREME_COUNCIL', 'AI_MODEL_TEST_REFEREE']);
 
+/**
+ * The full council's desk and cascade steps: on a laptop a 7B model needs well over 16 s to write a
+ * desk answer (Sam's Mac, 2026-11-06: all three desks cut off at 16 s). They stream and get the same
+ * long wait as the summary, but keep the normal context window.
+ */
+export const DESK_STEPS = new Set(['STAGE_1_GEO_DESK', 'STAGE_1_SOV_DESK', 'STAGE_1_MACRO_DESK', 'STAGE_2_CONTAGION_CASCADE']);
+
+/** Steps that stream from Ollama and wait on silence rather than on a short total. */
+export function isLongLocalStep(stepName: string): boolean {
+  return LONG_CHAT_STEPS.has(stepName) || DESK_STEPS.has(stepName);
+}
+
 /** A local model (Ollama on a laptop) can take a minute or more to read the agents' answers. */
 export const LONG_CHAT_STEP_MIN_MS = 120_000;
 
@@ -16,7 +28,7 @@ export const LONG_CHAT_STEP_MIN_MS = 120_000;
 export function localStepTimeoutMs(stepName: string, userTimeoutSec: unknown, isDeepStep: boolean): number {
   const user = typeof userTimeoutSec === 'number' && userTimeoutSec >= 5 && userTimeoutSec <= 600 ? Math.round(userTimeoutSec * 1000) : null;
   const base = user ?? (isDeepStep ? 25_000 : 16_000);
-  return LONG_CHAT_STEPS.has(stepName) ? Math.max(base, LONG_CHAT_STEP_MIN_MS) : base;
+  return isLongLocalStep(stepName) ? Math.max(base, LONG_CHAT_STEP_MIN_MS) : base;
 }
 
 export interface ModelAttempt {
@@ -92,7 +104,7 @@ export interface StreamWait {
  * then the model may keep writing for up to five minutes as long as it does not stall for a minute.
  */
 export function streamWaitFor(stepName: string, stepTimeoutMs: number): StreamWait {
-  if (!LONG_CHAT_STEPS.has(stepName)) return { firstTokenMs: stepTimeoutMs, idleMs: stepTimeoutMs, totalMs: stepTimeoutMs };
+  if (!isLongLocalStep(stepName)) return { firstTokenMs: stepTimeoutMs, idleMs: stepTimeoutMs, totalMs: stepTimeoutMs };
   return { firstTokenMs: stepTimeoutMs, idleMs: 60_000, totalMs: Math.max(300_000, stepTimeoutMs) };
 }
 
