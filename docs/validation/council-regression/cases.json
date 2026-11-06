@@ -207,7 +207,7 @@
       "expect": {
         "headline": "(cannot|can't|not enough|missing|unclear|without|no (debt )?figures|not possible|not known|insufficient)",
         "gapsMention": "(debt|missing|not available|could not|did not answer|needs setup)",
-        "forbid": "\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
+        "forbid": "\\b(?<!\\b(whether|if|cannot|can't|unclear|uncertain)\\b[^.]{0,40})(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }
     },
@@ -293,7 +293,7 @@
         "mention": [
           "Egypt"
         ],
-        "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
+        "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(?<!\\b(whether|if|cannot|can't|unclear|uncertain)\\b[^.]{0,40})(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }
     },
@@ -373,7 +373,7 @@
       "expect": {
         "minOptions": 1,
         "gapsMention": "(debt|missing|not (given|available)|not in)",
-        "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
+        "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(?<!\\b(whether|if|cannot|can't|unclear|uncertain)\\b[^.]{0,40})(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }
     }
