@@ -29,6 +29,7 @@ import { lazyNamed, DeskLoading } from './LazyDesk';
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
+const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
 /**
@@ -443,6 +444,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Fiscal multipliers">
             <React.Suspense fallback={<DeskLoading />}>
               <FiscalMultiplierPanel key={`mult-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} item={item} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-weo-vintages" className="scroll-mt-4" />
+          <PanelBoundary name="IMF forecasts by edition">
+            <React.Suspense fallback={<DeskLoading />}>
+              <WeoVintagesPanel key={`weo-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-as-of" className="scroll-mt-4" />

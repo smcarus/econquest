@@ -98,3 +98,20 @@ test('reads the saved files from data/local/weo-vintages', async () => {
   assert.deepEqual(store.editions.map((e) => e.vintage), ['2018-10']);
   fs.rmSync(dataDir, { recursive: true, force: true });
 });
+
+test('panel reply: every edition for one year, with a sentence', async () => {
+  const { weoVintageReply } = await import('../src/utils/weoVintages.ts');
+  const store = buildWeoStore([
+    { name: 'WEOOct2018all.xls', bytes: latin1(OCT2018) },
+    { name: 'WEOApr2019all.xls', bytes: latin1(APR2019) },
+  ]);
+  const r = weoVintageReply(store, 'tur', 'NGDP_RPCH', '2019');
+  assert.equal(r.year, '2019');
+  assert.deepEqual(r.years, ['2016', '2017', '2018', '2019', '2020']);
+  assert.equal(r.releases.length, 2);
+  assert.equal(r.releases[0].label, 'October 2018');
+  assert.match(r.sentence!, /went from 0\.4 \(October 2018, projection\) to -2\.5 \(April 2019, projection\), down 2\.9 across 2 editions/);
+  const none = weoVintageReply({ editions: [], skipped: [] }, 'TUR', 'NGDP_RPCH');
+  assert.equal(none.year, null);
+  assert.equal(none.releases.length, 0);
+});
