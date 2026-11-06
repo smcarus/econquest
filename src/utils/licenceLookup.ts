@@ -9,7 +9,7 @@
  *
  * Browser-safe.
  */
-import { DATA_LICENCES, LICENCE_STATUS_LABEL, type LicenceRow, type LicenceStatus } from '../data/dataLicences';
+import { DATA_LICENCES, LICENCE_STATUS_LABEL, type LicenceRow, type LicenceShare, type LicenceStatus } from '../data/dataLicences';
 
 /** Register id and the words in a source text that name it. */
 const SOURCE_PATTERNS: Array<[string, RegExp]> = [
@@ -65,6 +65,19 @@ export function licenceForSource(source: string | undefined): FigureLicence | nu
   if (!rows.length) return null;
   const status = STRICTNESS.find((st) => rows.some((r) => r.status === st)) as LicenceStatus;
   return { status, label: LICENCE_STATUS_LABEL[status], rows };
+}
+
+const SHARE_STRICTNESS: LicenceShare[] = ['restricted', 'unclear', 'allowed'];
+
+/**
+ * Whether the figure may be passed on for free (the register's `share` field), strictest of the
+ * sources it names; null when it names none (the app's own calculation).
+ */
+export function shareForSource(source: string | undefined): { share: LicenceShare; rows: LicenceRow[] } | null {
+  const rows = licenceRowsForSource(source);
+  if (!rows.length) return null;
+  const share = SHARE_STRICTNESS.find((sh) => rows.some((r) => r.share === sh)) as LicenceShare;
+  return { share, rows };
 }
 
 /** Short text for a table cell or a references line. */
