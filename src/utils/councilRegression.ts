@@ -5,8 +5,11 @@
  * case can be opened and re-run.
  *
  * `npm run council:regress` runs it against the AI model set in the app (Sam's Ollama referee on
- * the Mac). CI runs it against a stand-in model: that checks the harness reports pass and fail
- * honestly, not the quality of a real model's reading.
+ * the Mac) and compares with the recorded baseline. `npm run council:record` runs it on a private
+ * copy of the server and records every model reply (tests/fixtures/council-recorded/), which CI
+ * replays: CI then fails when a prompt, template or input change would alter what the real model
+ * was asked, when the replayed answers differ from the baseline, or when a structural check fails
+ * (docs/validation/council-regression/README.md).
  *
  * Browser-safe: types and the check. The server runs the cases.
  */
@@ -47,6 +50,16 @@ export interface RegressionCaseResult {
   headline: string;
   removed: number;
   snapshotId?: string;
+  /** The model that answered (null when none did). */
+  model?: string | null;
+  temperature?: number;
+  seed?: number;
+  /** SHA-256 of the exact system instruction and prompt sent. */
+  promptHash?: string;
+  /** SHA-256 of the answer as checked (after the number checks). */
+  outputHash?: string;
+  /** The answer as checked, kept so a baseline shows what the model said. */
+  answer?: string[];
 }
 
 export interface RegressionReport {
@@ -91,3 +104,74 @@ export function checkRegressionCase(c: RegressionCase, out: SynthesisResult): Re
   }
   return { id: c.id, question: c.question, pass: failures.length === 0, failures, headline: b?.headline || '', removed, ...(out.snapshot ? { snapshotId: out.snapshot.id } : {}) };
 }
+
+/** A recorded run (`npm run council:record`): the report plus where and on what it ran. */
+export interface RegressionBaseline {
+  recordedAt: string;
+  /** The referee model the replies came from. */
+  model: string;
+  /** Ollama's version on the recording machine, when it said. */
+  ollamaVersion?: string | null;
+  /** The app commit the recording was made on, when git was there. */
+  commit?: string | null;
+  report: RegressionReport;
+}
+
+export interface BaselineComparison {
+  /** Differences from the baseline, in plain words; empty when the run matches it exactly. */
+  drift: string[];
+  /** Cases that passed in the baseline and fail now. */
+  newlyFailing: string[];
+  /** Cases that already failed in the baseline (known, reported, not new). */
+  knownFailing: string[];
+}
+
+const short = (t: string) => (t.length > 140 ? `${t.slice(0, 137)}...` : t);
+
+/** Compares a run with the recorded baseline, case by case. */
+export function compareToBaseline(report: RegressionReport, baseline: RegressionBaseline): BaselineComparison {
+  const drift: string[] = [];
+  const newlyFailing: string[] = [];
+  const knownFailing: string[] = [];
+  const was = new Map(baseline.report.results.map((r) => [r.id, r]));
+  if (report.setHash !== baseline.report.setHash) drift.push('The case file changed since the recording (cases.json hash differs).');
+  for (const r of report.results) {
+    const b = was.get(r.id);
+    if (!b) {
+      drift.push(`${r.id}: new case, not in the recording.`);
+      continue;
+    }
+    if (!b.pass) knownFailing.push(r.id);
+    else if (!r.pass) newlyFailing.push(r.id);
+    if (b.promptHash && r.promptHash && b.promptHash !== r.promptHash) drift.push(`${r.id}: the prompt sent to the model changed.`);
+    if ((r.model ?? null) !== (b.model ?? null)) drift.push(`${r.id}: answered by ${r.model || 'no model'}, recorded on ${b.model || 'no model'}.`);
+    if (b.outputHash && r.outputHash !== b.outputHash) {
+      drift.push(`${r.id}: the answer changed. Recorded: "${short(b.headline || '(none)')}" Now: "${short(r.headline || '(none)')}"`);
+    }
+  }
+  for (const id of was.keys()) if (!report.results.some((r) => r.id === id)) drift.push(`${id}: in the recording, no longer in the case file.`);
+  return { drift, newlyFailing, knownFailing };
+}
+
+/**
+ * Checks every answer must pass whatever the case expects: it names a model, the model is a
+ * referee-sized one (not 8B or less), it ran at temperature 0 with a fixed seed, and every number
+ * left in the answer is one the case gave (the number checks should have removed the rest).
+ */
+export function structuralProblems(r: RegressionCaseResult, inputs: string[], isSmall: (tag: string) => boolean): string[] {
+  const out: string[] = [];
+  if (!r.model) return [`${r.id}: no model answered.`];
+  if (isSmall(r.model)) out.push(`${r.id}: ran on ${r.model}, a small model; referee steps need the large referee model.`);
+  if (r.temperature !== undefined && r.temperature !== 0) out.push(`${r.id}: ran at temperature ${r.temperature}, not 0.`);
+  if (r.seed === undefined || r.seed === null) out.push(`${r.id}: ran without a fixed seed.`);
+  const allowed = new Set(inputs.join('\n').match(NUMBER) ?? []);
+  for (const line of r.answer ?? []) {
+    for (const n of line.match(NUMBER) ?? []) {
+      if (!allowed.has(n)) out.push(`${r.id}: the answer quotes ${n}, which no input gave ("${short(line)}").`);
+    }
+  }
+  return out;
+}
+
+/** Numbers with a decimal point or a % sign: figures, not counts like "two" or list markers. */
+const NUMBER = /\d+\.\d+|\d+(?=\s?%)/g;

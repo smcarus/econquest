@@ -4929,7 +4929,13 @@ async function startServer() {
       for (const c of set.cases) {
         const out = await answerAndRecord(c.question, c.answers, { runtimeConfig, askedAt: '2026-11-05T00:00:00.000Z' }, `Regression check ${c.id}`);
         model = model || out.snapshot?.model || null;
-        results.push(checkRegressionCase(c, out));
+        const b = out.brief;
+        results.push({
+          ...checkRegressionCase(c, out),
+          model: out.snapshot?.model ?? null,
+          ...(out.snapshot ? { temperature: out.snapshot.temperature, seed: out.snapshot.seed, promptHash: out.snapshot.promptHash, outputHash: out.snapshot.outputHash } : {}),
+          answer: b ? [b.headline, ...b.points, ...b.disagreements, ...b.gaps] : [],
+        });
       }
       const report: RegressionReport = { ranAt: new Date().toISOString(), setVersion: set.version, setHash: sha256(text), model, passed: results.filter((r) => r.pass).length, total: results.length, results };
       writeFileAtomic(path.join(path.dirname(VALIDATION_FILE), 'council-regression.json'), JSON.stringify(report, null, 1), 0o600);
