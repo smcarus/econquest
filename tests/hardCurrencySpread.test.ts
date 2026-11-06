@@ -124,3 +124,13 @@ test('the real BCRP reply (fetched 2026-11-06) is read: names with the title pre
   assert.match(describeBcrpReply(''), /empty/);
   assert.match(describeBcrpReply('{"config":{"series":[{"name":"x - Bolivia"}]},"periods":[{"name":"Sep.2026","values":["1"]}]}'), /Bolivia/);
 });
+
+test('a BCRP reply with something after the JSON, or a raw line break in a name, is still read', () => {
+  const pre = 'Indicadores de riesgo para países emergentes: EMBIG - ';
+  const names = ['Perú', 'Argentina', 'Brasil', 'Chile', 'Colombia', 'Ecuador', 'México', 'Venezuela'].map((c) => ({ name: `${pre}EMBIG - ${c}`, dec: '0' }));
+  const body = JSON.stringify({ config: { title: 'x', series: [...names, { name: `${pre}Latin EMBIG` }, { name: `${pre}EMBIG Países Emergentes` }] }, periods: [{ name: 'Sep.2026', values: ['107.3', '534.5', '166.8', '89.1', '206.8', '444.0', '198.5', '4262.0', '189.1', '168.3'] }] });
+  const withScript = `${body}\n<script src="/oly-Almost-That" async></script>`;
+  assert.equal(Math.round(parseBcrpEmbig(withScript, 'u')!.countries.BRA.bps), 167);
+  const withBreak = body.replace('EMBIG - Chile', 'EMBIG -\nChile');
+  assert.equal(parseBcrpEmbig(withBreak, 'u')!.countries.CHL.period, '2026-09');
+});

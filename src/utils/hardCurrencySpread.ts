@@ -81,7 +81,7 @@ export function describeBcrpReply(text: string | undefined): string {
       ? "BCRP's site answered with a web page that only loads a script (its bot check) instead of data, so it is not letting the app read the series from this computer."
       : 'BCRP answered with a web page instead of data.';
   const doc = safeJson(t) as { config?: { series?: Array<{ name?: string }> }; periods?: unknown[] } | null;
-  if (!doc) return `BCRP answered, but not with JSON (it began "${t.slice(0, 60).replace(/\s+/g, ' ')}").`;
+  if (!doc) return `BCRP answered, but not with JSON the app could read (it began "${t.slice(0, 60).replace(/\s+/g, ' ')}"; ${bcrpParseError(t)}).`;
   const names = (doc.config?.series || []).map((s) => String(s?.name ?? '').split(' - ').pop()).join(', ');
   if (!Array.isArray(doc.periods) || !doc.periods.length) return `BCRP answered with no months of data${names ? ` (series: ${names})` : ''}.`;
   return `BCRP answered, but its series were not the eight countries and two aggregates the app reads, in that order (it sent: ${names || 'no series names'}).`;
@@ -174,12 +174,61 @@ export function parseBcrpEmbig(body: unknown, url: string, at = new Date().toISO
   return Object.keys(out.countries).length ? out : null;
 }
 
-function safeJson(s: string): unknown {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return null;
+/**
+ * BCRP's reply as JSON. On Sam's Mac (2026-11-06) it began with the JSON object but did not parse
+ * as a whole, so after a plain parse fails the object is cut out on its own (from the first "{"
+ * to the brace that closes it, outside strings), and raw line breaks or tabs inside its strings,
+ * which JSON does not allow, are turned into spaces.
+ */
+export function bcrpJson(raw: string): unknown {
+  const s = raw.replace(/^\uFEFF/, '').trim();
+  const tryParse = (t: string) => {
+    try {
+      return JSON.parse(t);
+    } catch {
+      return undefined;
+    }
+  };
+  const whole = tryParse(s);
+  if (whole !== undefined) return whole;
+  const start = s.indexOf('{');
+  if (start < 0) return null;
+  let depth = 0;
+  let inStr = false;
+  let end = -1;
+  for (let i = start; i < s.length; i++) {
+    const ch = s[i];
+    if (inStr) {
+      if (ch === '\\') i++;
+      else if (ch === '"') inStr = false;
+    } else if (ch === '"') inStr = true;
+    else if (ch === '{') depth++;
+    else if (ch === '}' && --depth === 0) {
+      end = i;
+      break;
+    }
   }
+  const obj = s.slice(start, end >= 0 ? end + 1 : undefined);
+  const cut = tryParse(obj);
+  if (cut !== undefined) return cut;
+  const cleaned = tryParse(obj.replace(/[\u0000-\u001F]+/g, ' '));
+  return cleaned === undefined ? null : cleaned;
+}
+
+/** Why the reply did not parse, with its end, for the check's message. */
+export function bcrpParseError(raw: string): string {
+  const s = raw.replace(/^\uFEFF/, '').trim();
+  try {
+    JSON.parse(s);
+    return '';
+  } catch (e) {
+    const msg = e instanceof Error ? e.message.slice(0, 120) : 'parse error';
+    return `${msg}; ${s.length} characters, ending "${s.slice(-60).replace(/\s+/g, ' ')}"`;
+  }
+}
+
+function safeJson(s: string): unknown {
+  return bcrpJson(s);
 }
 
 /** Why the spread reads Missing for a country. */
