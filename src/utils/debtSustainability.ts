@@ -91,6 +91,8 @@ export interface DsaResult {
   /** Average projected primary balance in the IMF's numbers, % of GDP. */
   projectedPb?: number;
   scenarios: DsaScenario[];
+  /** The IMF projected inputs the baseline ran on (growth, inflation, interest, primary balance), when it ran. */
+  baselineInputs?: YearAssump[];
   /** Highest debt at the horizon across the stress scenarios, and which. */
   worst?: { id: ScenarioId; label: string; end: number };
   missing: string[];
@@ -130,7 +132,7 @@ export function debtStabilisingPb(debt: number, interestPct: number, nominalGrow
   return (debt * (interestPct - nominalGrowth)) / (100 + nominalGrowth);
 }
 
-interface YearAssump {
+export interface YearAssump {
   year: string;
   g: number;
   pi: number;
@@ -276,6 +278,7 @@ export function debtSustainability(inp: DsaInputs): DsaOutcome {
     ...(stabilisingPb !== undefined ? { stabilisingPb } : {}),
     ...(projectedPb !== undefined ? { projectedPb } : {}),
     scenarios: scenarios.sort((a, b) => order(a.id) - order(b.id)),
+    ...(projOk && proj.length === DSA_HORIZON ? { baselineInputs: proj } : {}),
     ...(worstS ? { worst: { id: worstS.id, label: worstS.label, end: worstS.end } } : {}),
     missing,
     method: dsaMethod(),

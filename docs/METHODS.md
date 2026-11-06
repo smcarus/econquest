@@ -35,6 +35,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
+| Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -339,6 +340,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Reading: reserves under 100% of the floating-weight partial metric are under 100% of the full IMF metric whatever the regime; above that, adequacy cannot be shown without the missing term.
 - **Limits:** Other portfolio liabilities (from the international investment position) have no free cross-country source, so the ratio is an upper bound of the IMF's. The exchange rate regime is not a free feed. Short-term debt is World Bank IDS, low- and middle-income countries only; annual data lag a year or more.
 - **Code:** `src/utils/reserveAdequacy.ts`
+
+### Debt fan chart (stochastic)
+
+- **Shows in:** Research > History & data > Debt sustainability
+- Centred on the debt sustainability baseline (the debt identity on the IMF's projected growth, inflation, interest and primary balance), five years.
+- Each simulated year draws one whole past year (bootstrap with replacement, up to the last 25 outturn years with all four inputs, at least 10) and adds that year's deviations from the sample means to the baseline inputs, so the four shocks keep their joint behaviour. Interest shocks phase in as a fifth of the debt rolls over each year.
+- 2,000 paths with a fixed seed; reports the 10th, 25th, 50th, 75th and 90th percentiles by year and the share of paths ending above today's debt and above the baseline. Shape of the IMF market-access DSA fan (IMF 2013).
+- **Limits:** Only shocks the sample has seen; no stock-flow adjustments (valuation, bank support), which drive many debt jumps. Centred on the IMF's inputs, not an app forecast. CPI inflation stands in for the GDP deflator.
+- **Code:** `src/utils/debtFan.ts`
 
 ### Fiscal reaction (Bohn test)
 

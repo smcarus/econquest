@@ -85,6 +85,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/reserveAdequacy.ts',
   },
   {
+    id: 'debt_fan',
+    name: 'Debt fan chart (stochastic)',
+    where: 'Research > History & data > Debt sustainability',
+    method: [
+      'Centred on the debt sustainability baseline (the debt identity on the IMF\'s projected growth, inflation, interest and primary balance), five years.',
+      'Each simulated year draws one whole past year (bootstrap with replacement, up to the last 25 outturn years with all four inputs, at least 10) and adds that year\'s deviations from the sample means to the baseline inputs, so the four shocks keep their joint behaviour. Interest shocks phase in as a fifth of the debt rolls over each year.',
+      '2,000 paths with a fixed seed; reports the 10th, 25th, 50th, 75th and 90th percentiles by year and the share of paths ending above today\'s debt and above the baseline. Shape of the IMF market-access DSA fan (IMF 2013).',
+    ],
+    limits: 'Only shocks the sample has seen; no stock-flow adjustments (valuation, bank support), which drive many debt jumps. Centred on the IMF\'s inputs, not an app forecast. CPI inflation stands in for the GDP deflator.',
+    code: 'src/utils/debtFan.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',
