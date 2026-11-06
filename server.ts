@@ -159,6 +159,8 @@ import { gdeltDailyDir, gdeltDailySeries, loadAllMonths, loadDailyState } from '
 /** Files on disk the unrest onset backtest reads, loaded only when it runs. */
 const backtestLocal = { gdeltMonths: () => loadAllMonths(gdeltDailyDir(DATA_DIR)), ucdp: () => ucdpData(DATA_DIR) };
 import { ucdpMissing, ucdpReading } from './src/utils/ucdpConflict.ts';
+import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
+import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -3120,6 +3122,25 @@ async function startServer() {
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
+  });
+  // Sanctions lists (src/utils/sanctionsLists.ts): OFAC and UN files in data/local/sanctions/, by country.
+  const sanctionsFiles = () => {
+    const d = sanctionsData(DATA_DIR);
+    return d ? { files: d.files, skipped: d.skipped, unknownCountries: Object.entries(d.unknownCountries).sort((a, b) => b[1] - a[1]).slice(0, 20) } : null;
+  };
+  app.get('/api/sanctions/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const d = sanctionsData(DATA_DIR);
+    if (!d || !d.files.length) return res.json({ iso3, ok: false, reason: `No sanctions list files read from ${sanctionsDir(DATA_DIR)} (run npm run sanctions:pull, or download them by hand)`, ...(d ? { skipped: d.skipped } : {}), method: SANCTIONS_METHOD });
+    const c = countrySanctions(d, iso3);
+    const name = SOVEREIGN_CATALOG.find((x) => x.iso3 === iso3)?.countryName || iso3;
+    res.json({ ok: true, ...c, sentence: sanctionsSentence(name, c, d), ...sanctionsFiles(), method: SANCTIONS_METHOD });
+  });
+  app.get('/api/sanctions-search', (req, res) => {
+    const q = String(req.query.q || '').slice(0, 200);
+    const d = sanctionsData(DATA_DIR);
+    if (!d || !d.files.length) return res.json({ ok: false, reason: 'No sanctions list files read', matches: [] });
+    res.json({ ok: true, query: q, matches: searchSanctions(d, q) });
   });
   app.get('/api/track-record/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

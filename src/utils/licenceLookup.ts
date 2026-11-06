@@ -28,6 +28,8 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['eia', /\bEIA\b/],
   ['gdelt', /GDELT/i],
   ['ucdp', /\bUCDP\b|Uppsala Conflict/i],
+  ['ofac', /\bOFAC\b/],
+  ['unsc', /UN Security Council|\bUNSC\b/],
   ['polymarket', /Polymarket/i],
   ['kalshi', /Kalshi/i],
   ['bcrp', /\bBCRP\b|\bEMBI/i],

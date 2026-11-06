@@ -87,6 +87,19 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/countryRiskScorecard.ts',
   },
   {
+    id: 'sanctions_lists',
+    name: 'Sanctions lists',
+    where: 'Research > History & data',
+    method: [
+      'Files you download into data/local/sanctions/ (npm run sanctions:pull tries the official addresses): OFAC SDN.CSV and ADD.CSV, the non-SDN CONS_PRIM.CSV and CONS_ADD.CSV (legacy CSV layout), and the UN Security Council consolidated.xml.',
+      'An entry counts for a country when one of its addresses is in the country (OFAC, UN) or one of its nationalities is (UN). An entry can count for several countries. Country names are matched to ISO codes by a stated table; names it cannot match are listed, never guessed.',
+      'Counts by list and by type (people, firms and bodies, vessels, aircraft), the programmes with the most entries as the list names them, and UN entries by the year first listed.',
+      'Name search: every word of the query (case and accents ignored) must appear in the listed name.',
+    ],
+    limits: 'Not a compliance screen: the lists\' aliases (OFAC ALT.CSV, UN aliases) are not searched, there is no fuzzy matching, and the OFAC 50% rule (firms owned by listed persons) is not applied. Entries with no address or nationality in the country do not count for it. EU and UK lists are not read yet.',
+    code: 'src/utils/sanctionsLists.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',
