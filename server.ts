@@ -5,6 +5,7 @@ import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
 import { debtFan, debtFanSentence } from './src/utils/debtFan';
 import { localProjections, lpSentence } from './src/utils/localProjections';
+import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInputs } from './src/utils/ruleFamily';
 import { reserveAdequacy, reserveAdequacySentence } from './src/utils/reserveAdequacy';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
@@ -3280,6 +3281,46 @@ async function startServer() {
     const r = localProjections(cpi.points, rate.points);
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: lpSentence(r, name), sources: [cpi.source, rate.source].filter(Boolean) } : {}) });
+  });
+  // Policy rule family (src/utils/ruleFamily.ts): the policy rate against five stated rules.
+  app.get('/api/rule-family/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const last = (id: string) => {
+      const pts = pick(id)?.points || [];
+      return pts[pts.length - 1];
+    };
+    const rate = last('policy_rate');
+    const cpi = last('cpi_monthly');
+    // Output gap: the IMF's where it publishes one, else the app's estimate; this year, else the latest before it.
+    const file = loadOfficialHistory(iso3);
+    const year = String(new Date().getUTCFullYear());
+    let gap: RuleFamilyInputs['gap'];
+    const imfFig = OFFICIAL_FIGURES.find((f) => f.id === 'output_gap');
+    const imf = imfFig && file ? officialSeries(file, imfFig) : null;
+    const imfPts = imf && 'points' in imf ? imf.points.filter((p) => p.date <= year) : [];
+    if (imfPts.length) {
+      const cur = imfPts[imfPts.length - 1];
+      const prev = imfPts.find((p) => p.date === String(Number(cur.date) - 1));
+      gap = { pct: cur.value, year: cur.date, source: 'imf', ...(prev ? { prevPct: prev.value } : {}) };
+    } else {
+      const est = outputGapFrom(file);
+      const yrs = est.ok ? est.years.filter((y) => y.year <= year && typeof y.central === 'number') : [];
+      if (yrs.length) {
+        const cur = yrs[yrs.length - 1];
+        const prev = yrs.find((y) => y.year === String(Number(cur.year) - 1));
+        gap = { pct: cur.central!, year: cur.year, source: 'estimate', ...(prev?.central !== undefined ? { prevPct: prev.central } : {}) };
+      }
+    }
+    const r = ruleFamily({
+      ...(rate ? { policyPct: rate.value } : {}),
+      ...(cpi ? { inflation: { pct: cpi.value, month: cpi.date.slice(0, 7) } } : {}),
+      ...(INFLATION_TARGETS[iso3] ? { targetPct: INFLATION_TARGETS[iso3].pct } : {}),
+      ...(gap ? { gap } : {}),
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, method: RULE_FAMILY_METHOD, ...(r.ok ? { sentence: ruleFamilySentence(r, name), sources: [pick('policy_rate')?.source, pick('cpi_monthly')?.source, gap ? (gap.source === 'imf' ? 'IMF WEO output gap (NGAP_NPGDP)' : "The app's output gap estimate") : undefined, INFLATION_TARGETS[iso3]?.bank].filter(Boolean) } : {}) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {

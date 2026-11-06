@@ -108,6 +108,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/localProjections.ts',
   },
   {
+    id: 'rule_family',
+    name: 'Policy rule family',
+    where: 'Research > History & data',
+    method: [
+      'Five rules on the same inputs (latest monthly inflation pi, the bank\'s stated target pi*, output gap, r* 2%): Taylor (1993) r* + pi + 0.5(pi - pi*) + 0.5 gap; balanced approach, gap weight 1.0; inflation only, no gap term; inertial 0.85 x current rate + 0.15 x Taylor (1993); first difference current rate + 0.5(pi - pi*) + 0.5 x change in the gap over a year.',
+      'Output gap: IMF WEO (NGAP_NPGDP) for this year where published (a projection), else the app\'s own estimate, labelled. Rules needing the gap show Missing without it.',
+      'Reading: the policy rate more than 1 point above every rule = tight on all; more than 1 point below = loose on all; otherwise inside the range.',
+    ],
+    limits: 'r* is a stated parameter, not data: each point lower moves the level rules one point down, the inertial rule 0.15 and the first-difference rule not at all. Rules are cross-checks of stance, not forecasts; banks also weigh the exchange rate, financial stability and expectations. Annual output gaps are revised every WEO.',
+    code: 'src/utils/ruleFamily.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',
