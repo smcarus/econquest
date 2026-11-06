@@ -99,6 +99,8 @@ import {
   withoutKey,
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
+import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
+import { appendCheck, dataHealthFiles, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
@@ -187,6 +189,7 @@ let savedSettings = loadSettings(SETTINGS_FILE);
 const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 // Audit log (Menu > Audit log): append-only, hash-chained. See src/utils/auditLog.ts.
 const AUDIT_FILES = auditFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const DATA_HEALTH_FILES = dataHealthFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
 // Pre-registered backtests (Menu > Models & validation). See src/utils/backtest.ts.
 const VALIDATION_FILE = validationFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const SPEC_DIR = path.join(__dirname, 'docs', 'validation', 'preregistered');
@@ -4276,6 +4279,62 @@ async function runMorningBrief(trigger: MorningBriefRun['trigger']): Promise<Mor
   }
 }
 
+/** Nightly data check: local time it runs (DATA_CHECK_TIME, default 05:30) and the time zone (DATA_CHECK_TZ, default this computer's). */
+const NIGHTLY_CHECK_TIME = checkTime(process.env.DATA_CHECK_TIME);
+const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+
+/** One run of the data connection check, saved to the data health history. */
+async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
+  const report = await checkConnections({
+    env: process.env,
+    keySources: keySources(ENV_FILE_KEYS, savedSettings),
+    // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
+    fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
+    ai: {
+      provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+      ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
+      ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
+      ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
+      openAiBaseUrl: serverGuiRuntimeConfig.openAiBaseUrl,
+    },
+    readFile: (p) => {
+      try {
+        return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
+      } catch {
+        return null;
+      }
+    },
+  });
+  appendCheck(DATA_HEALTH_FILES, recordFromReport(report, trigger));
+  return report;
+}
+
+let nightlyCheckRunning = false;
+/** Checked every minute; runs the connection check once a day after the set time, when online. */
+async function nightlyCheckTick(): Promise<void> {
+  if (nightlyCheckRunning || process.env.DATA_CHECK_NIGHTLY === 'off') return;
+  const state = readState(DATA_HEALTH_FILES);
+  const now = new Date();
+  if (!nightlyDue(state.lastNightlyDay, now, NIGHTLY_CHECK_TIME, NIGHTLY_CHECK_TZ)) return;
+  // Offline, every source would read "no answer": wait for the connection instead of logging noise.
+  if (knownOffline()) {
+    if (!state.lastSkipped || Date.now() - Date.parse(state.lastSkipped.at) > 60 * 60 * 1000) {
+      saveState(DATA_HEALTH_FILES, { ...state, lastSkipped: { at: now.toISOString(), reason: 'Offline: the check waits for the connection.' } });
+    }
+    return;
+  }
+  nightlyCheckRunning = true;
+  // Mark the day first, so a slow run or a crash never repeats the check within the day.
+  saveState(DATA_HEALTH_FILES, { lastNightlyDay: clockIn(now, NIGHTLY_CHECK_TZ).day });
+  try {
+    await runConnectionCheck('nightly');
+  } catch (e) {
+    console.error('[data-check]', e);
+  } finally {
+    nightlyCheckRunning = false;
+  }
+}
+
 async function morningTick(): Promise<void> {
   const file = loadMorning();
   if (!isDue(file, new Date())) return;
@@ -5365,31 +5424,25 @@ async function startServer() {
   // 1b'. Data connection check: asks every outside source for one small real answer, through the
   // same URLs and parsers the app uses, and says in words what connected and why anything did not.
   // Kept 30 seconds so a double click does not hit rate-limited sources (GDELT) twice.
+  // Data health: the saved history of connection check runs (src/utils/dataHealth.ts).
+  app.get('/api/data/health/sources', (_req, res) => {
+    const records = readChecks(DATA_HEALTH_FILES);
+    const state = readState(DATA_HEALTH_FILES);
+    const last = records.at(-1);
+    res.json({
+      sources: sourceHealth(records),
+      runs: records.length,
+      lastRun: last ? { at: last.checkedAt, trigger: last.trigger, label: TRIGGER_LABEL[last.trigger] || last.trigger } : null,
+      nightly: { time: NIGHTLY_CHECK_TIME, timeZone: NIGHTLY_CHECK_TZ, lastDay: state.lastNightlyDay || null, lastSkipped: state.lastSkipped || null },
+      file: 'data/local/data-health/source-checks.jsonl',
+    });
+  });
   app.get('/api/data/connections', async (req, res) => {
     try {
       if (req.query.refresh !== '1' && connectionReportCache && Date.now() - connectionReportCache.at < 30000) {
         return res.json(connectionReportCache.report);
       }
-      const report = await checkConnections({
-        env: process.env,
-        keySources: keySources(ENV_FILE_KEYS, savedSettings),
-        // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
-        fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
-        ai: {
-          provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
-          ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
-          ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
-          ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
-          openAiBaseUrl: serverGuiRuntimeConfig.openAiBaseUrl,
-        },
-        readFile: (p) => {
-          try {
-            return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
-          } catch {
-            return null;
-          }
-        },
-      });
+      const report = await runConnectionCheck('manual');
       connectionReportCache = { at: Date.now(), report };
       res.json(report);
     } catch (error: any) {
@@ -8146,6 +8199,8 @@ ${String(documentText).slice(0, 12000)}
     setInterval(() => void refreshStaleSnapshots(), SNAPSHOT_RETRY_MS).unref();
     // Morning brief: checked every minute; runs once a day at the set time (Settings > Morning brief).
     setInterval(() => void morningTick(), 60_000).unref();
+    // Nightly data check: once a day after DATA_CHECK_TIME, kept in the data health history.
+    setInterval(() => void nightlyCheckTick(), 60_000).unref();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });
