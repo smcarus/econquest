@@ -3,6 +3,7 @@ import { Landmark } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { DsaOutcome, ScenarioId } from '../utils/debtSustainability';
 import type { DebtFanOutcome } from '../utils/debtFan';
+import type { CostedOptionsOutcome } from '../utils/costedOptions';
 import { explainInChat } from '../utils/explainHandoff';
 
 /**
@@ -11,7 +12,7 @@ import { explainInChat } from '../utils/explainHandoff';
  * assumptions, not a forecast or an IMF DSA.
  */
 
-type Reply = DsaOutcome & { iso3: string; sentence?: string; fan?: DebtFanOutcome & { sentence?: string } };
+type Reply = DsaOutcome & { iso3: string; sentence?: string; fan?: DebtFanOutcome & { sentence?: string }; options?: CostedOptionsOutcome };
 
 const COLOURS: Record<ScenarioId, string> = {
   imf: '#0f172a',
@@ -179,6 +180,52 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Method: {reply.fan.method} Shocks drawn from {reply.fan.sample.n} years ({reply.fan.sample.from}-{reply.fan.sample.to}).
                       {reply.fan.probAboveBaseline !== undefined ? ` ${Math.round(reply.fan.probAboveBaseline * 100)}% of paths end above the baseline.` : ''} A spread built from past shocks, centred on the IMF's inputs; not a forecast.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
+            {reply.options && (
+              <div className="space-y-2" data-dsa-options="true">
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white">Costed options: tightening or loosening the primary balance</h3>
+                {!reply.options.ok && (
+                  <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">
+                    Missing: {reply.options.reason}.
+                  </p>
+                )}
+                {reply.options.ok && (
+                  <>
+                    <table className="w-full text-xs tabular-nums">
+                      <thead>
+                        <tr className="text-left text-slate-500 dark:text-slate-400">
+                          <th className="py-1 pr-3 font-medium">Option</th>
+                          <th className="py-1 pr-3 font-medium text-right">Debt {reply.options.horizonYear}, % GDP</th>
+                          <th className="py-1 pr-3 font-medium text-right">vs baseline, pts</th>
+                          <th className="py-1 font-medium text-right">Output lost, % (low-high multiplier)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr className="border-t border-slate-100 dark:border-slate-800">
+                          <td className="py-0.5 pr-3">Baseline (IMF inputs)</td>
+                          <td className="py-0.5 pr-3 text-right">{f1(reply.options.baselineEnd)}</td>
+                          <td className="py-0.5 pr-3 text-right">—</td>
+                          <td className="py-0.5 text-right">—</td>
+                        </tr>
+                        {reply.options.options.map((o) => (
+                          <tr key={o.option.id} className="border-t border-slate-100 dark:border-slate-800" data-option={o.option.id}>
+                            <td className="py-0.5 pr-3">
+                              {o.option.label}
+                              {o.denominatorEffect ? <span className="text-amber-700 dark:text-amber-400" title="With the high multiplier, debt/GDP is higher than the baseline in year 1: lower output shrinks the denominator faster than the saving cuts debt."> (debt up in year 1)</span> : null}
+                            </td>
+                            <td className="py-0.5 pr-3 text-right">{f1(o.endLow)}-{f1(o.endHigh)}</td>
+                            <td className="py-0.5 pr-3 text-right">{sg1(o.vsBaselineLow)} to {sg1(o.vsBaselineHigh)}</td>
+                            <td className="py-0.5 text-right">{f1(o.outputCostLow)}-{f1(o.outputCostHigh)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Multiplier {reply.options.multiplier.low}-{reply.options.multiplier.high} ({reply.options.multiplier.source}). Method: {reply.options.method} Negative output lost means output gained (loosening). Stated options on stated assumptions, not a forecast or a recommendation.
                     </p>
                   </>
                 )}
