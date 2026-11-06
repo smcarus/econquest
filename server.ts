@@ -4,6 +4,8 @@ import { geminiModel } from './src/utils/geminiModel';
 import { registerAnalysisRoutes } from './src/server/routes/analysis';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { forwardSummary } from './src/utils/forwardRecord';
+import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
@@ -2708,7 +2710,8 @@ async function startServer() {
     for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
       forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
     }
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests });
+    const fwd = loadForward(forwardFilePath(DATA_DIR));
+    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } });
   });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;

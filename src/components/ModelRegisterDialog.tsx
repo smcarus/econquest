@@ -9,6 +9,7 @@ import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type Valid
 import { ValidationBadge } from './ValidationBadge';
 import { effectiveStatus, runValidation, useValidation, validationHolm, type ValidationReply } from './useValidation';
 import { holmSentence } from '../utils/multipleTesting';
+import { forwardSentence } from '../utils/forwardRecord';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
 import { forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
 
@@ -177,6 +178,26 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                 <span className="block" data-holm={`${r.id} v${r.specVersion}`}>{holmSentence(holmMap.get(`${r.id} v${r.specVersion}`))}</span>
                                 <span className="block text-slate-400 dark:text-slate-500">{r.data}</span>
                               </dd>
+                              {(r.status === 'passed' || v?.forward?.[`${r.id} v${r.specVersion}`]) && (
+                                <>
+                                  <dt className="text-slate-500 dark:text-slate-400">Forward record</dt>
+                                  <dd data-forward-record={e.id}>
+                                    {v?.forward?.[`${r.id} v${r.specVersion}`] ? (
+                                      <>
+                                        {forwardSentence(v.forward[`${r.id} v${r.specVersion}`])}
+                                        {v.forward[`${r.id} v${r.specVersion}`].recent.map((c) => (
+                                          <span key={`${c.where}-${c.when}`} className="block text-slate-500 dark:text-slate-400">
+                                            {c.where} {c.when}: {c.what} {c.hit === undefined ? `Open until ${c.due}.` : c.hit ? 'Followed.' : 'Not followed.'}
+                                          </span>
+                                        ))}
+                                      </>
+                                    ) : (
+                                      'Passed: from the next run, each new call is written down before its outcome is known and scored when its window ends.'
+                                    )}
+                                    {v?.forwardCheck && !v.forwardCheck.chainOk && <span className="block text-rose-700 dark:text-rose-400">The forward record file ({v.forwardCheck.file}) has been changed: its hash chain does not hold.</span>}
+                                  </dd>
+                                </>
+                              )}
                               {earlier.length > 0 && (
                                 <>
                                   <dt className="text-slate-500 dark:text-slate-400">Earlier versions</dt>

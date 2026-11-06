@@ -83,6 +83,19 @@ export interface BacktestCase {
   base: number;
 }
 
+/**
+ * A call the rule has made whose window has not run out yet (rule 7 of the signal standard: the
+ * forward record). `due` = the last month or day of the window.
+ */
+export interface OpenCall {
+  where: string;
+  when: string;
+  what: string;
+  due: string;
+}
+
+const addDaysIso = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) + n * 86400000).toISOString().slice(0, 10);
+
 export interface BacktestResult {
   id: string;
   specVersion: number;
@@ -283,7 +296,8 @@ export function cliTurnPolicyCases(
   spec: BacktestSpec,
   where: string,
   cli: { period: string; value: number }[],
-  policy: { period: string; pct: number }[]
+  policy: { period: string; pct: number }[],
+  open?: OpenCall[]
 ): BacktestCase[] {
   const { confirmMonths = 2, publicationLagMonths = 1, windowMonths = 6 } = spec.params;
   if (!cli.length || policy.length < 2) return [];
@@ -324,8 +338,12 @@ export function cliTurnPolicyCases(
       if (known < lo || known > hi) continue;
       const dir = t.kind === 'peak' ? -1 : 1;
       const hit = moved(known, dir);
-      if (hit === null) continue;
-      out.push({ where, when: known, what: `${t.kind} in ${t.month}, known ${known}: ${dir < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`, hit, base: base[dir] });
+      const what = `${t.kind} in ${t.month}, known ${known}: ${dir < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`;
+      if (hit === null) {
+        if (known >= first && addMonths(known, windowMonths) > last) open?.push({ where, when: known, what, due: addMonths(known, windowMonths) });
+        continue;
+      }
+      out.push({ where, when: known, what, hit, base: base[dir] });
     }
   }
   return out;
@@ -348,7 +366,8 @@ export function taylorGapCases(
   inflation: { period: string; value: number }[],
   policy: { period: string; pct: number }[],
   /** Real-time output gap by year (% of potential), needed when params.outputWeight > 0. */
-  outputGap?: { year: string; gap: number }[]
+  outputGap?: { year: string; gap: number }[],
+  open?: OpenCall[]
 ): BacktestCase[] {
   const { publicationLagMonths = 2, windowMonths = 6, bandPts = 1, rStar = 2, inflationWeight = 0.5, outputWeight = 0, gapPublishMonth = 4 } = spec.params;
   if (!inflation.length || policy.length < 2) return [];
@@ -409,11 +428,15 @@ export function taylorGapCases(
     if (prev && prev.reading === r.reading && addMonths(prev.month, 1) === r.month) continue;
     const want = r.reading === 1 ? -1 : 1;
     const hit = moved(r.month, want);
-    if (hit === null) continue;
+    const what = `${r.reading === 1 ? 'tight' : 'loose'}: policy ${r.rate.toFixed(2)}% vs rule ${r.rule.toFixed(2)}% (inflation ${r.infl.toFixed(1)}%, target ${r.target}%${r.og ? `, output gap ${r.og.gap.toFixed(1)}% in ${r.og.year}` : ''}): ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`;
+    if (hit === null) {
+      if (addMonths(r.month, windowMonths) > last) open?.push({ where: iso3, when: r.month, what, due: addMonths(r.month, windowMonths) });
+      continue;
+    }
     out.push({
       where: iso3,
       when: r.month,
-      what: `${r.reading === 1 ? 'tight' : 'loose'}: policy ${r.rate.toFixed(2)}% vs rule ${r.rule.toFixed(2)}% (inflation ${r.infl.toFixed(1)}%, target ${r.target}%${r.og ? `, output gap ${r.og.gap.toFixed(1)}% in ${r.og.year}` : ''}): ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`,
+      what,
       hit,
       base: base[want],
     });
@@ -437,7 +460,8 @@ export function ruleFamilyCases(
   iso3: string,
   inflation: { period: string; value: number }[],
   policy: { period: string; pct: number }[],
-  outputGap: { year: string; gap: number }[]
+  outputGap: { year: string; gap: number }[],
+  open?: OpenCall[]
 ): BacktestCase[] {
   const { publicationLagMonths = 2, windowMonths = 6, gapPublishMonth = 4, rStar = 2 } = spec.params;
   if (!inflation.length || policy.length < 2 || !outputGap.length) return [];
@@ -497,8 +521,12 @@ export function ruleFamilyCases(
     if (prev && prev.reading === r.reading && addMonths(prev.month, 1) === r.month) continue;
     const want = r.reading === 1 ? -1 : 1;
     const hit = moved(r.month, want);
-    if (hit === null) continue;
-    out.push({ where: iso3, when: r.month, what: `${r.reading === 1 ? 'above' : 'below'} every rule: ${r.what}: ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`, hit, base: base[want] });
+    const what = `${r.reading === 1 ? 'above' : 'below'} every rule: ${r.what}: ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`;
+    if (hit === null) {
+      if (addMonths(r.month, windowMonths) > last) open?.push({ where: iso3, when: r.month, what, due: addMonths(r.month, windowMonths) });
+      continue;
+    }
+    out.push({ where: iso3, when: r.month, what, hit, base: base[want] });
   }
   return out;
 }
@@ -512,7 +540,7 @@ export function ruleFamilyCases(
  * no entry the same way was counted in the minGapWeeks before. Hit: the share comes back unwindPts
  * within windowWeeks. Base rate: the same move after any week with enough history.
  */
-export function cftcCrowdingCases(spec: BacktestSpec, where: string, weeks: CftcWeek[]): BacktestCase[] {
+export function cftcCrowdingCases(spec: BacktestSpec, where: string, weeks: CftcWeek[], open?: OpenCall[]): BacktestCase[] {
   const { lookbackWeeks = 156, minLookbackWeeks = 52, highPct = 90, lowPct = 10, windowWeeks = 8, unwindPts = 3, minGapWeeks = 8 } = spec.params;
   const share = weeks.map((w) => (w.levNet / w.openInterest) * 100);
   const rank = (i: number): number | null => {
@@ -543,9 +571,18 @@ export function cftcCrowdingCases(spec: BacktestSpec, where: string, weeks: Cftc
     if (r === null) continue;
     const dir: 1 | -1 | 0 = r >= highPct && (prevRank === null || prevRank < highPct) ? 1 : r <= lowPct && (prevRank === null || prevRank > lowPct) ? -1 : 0;
     prevRank = r;
-    if (!dir || !inSample(i) || i - lastEntry[dir] < minGapWeeks) continue;
+    if (!dir || i - lastEntry[dir] < minGapWeeks) continue;
+    const what = `entered crowded ${dir === 1 ? 'long' : 'short'} (${Math.round(r)}th percentile): back ${unwindPts} pts within ${windowWeeks} weeks?`;
+    if (!inSample(i)) {
+      // Window still running: an open call (rule 7), not a case.
+      if (i + windowWeeks >= share.length && weeks[i].date >= lo && weeks[i].date <= hi) {
+        lastEntry[dir] = i;
+        open?.push({ where, when: weeks[i].date, what, due: addDaysIso(weeks[i].date, windowWeeks * 7) });
+      }
+      continue;
+    }
     lastEntry[dir] = i;
-    out.push({ where, when: weeks[i].date, what: `entered crowded ${dir === 1 ? 'long' : 'short'} (${Math.round(r)}th percentile): back ${unwindPts} pts within ${windowWeeks} weeks?`, hit: unwound(i, dir), base: base[dir] });
+    out.push({ where, when: weeks[i].date, what, hit: unwound(i, dir), base: base[dir] });
   }
   return out;
 }
@@ -578,7 +615,9 @@ function callsFromReadings(
   /** Direction of the move each reading points to. */
   want: (reading: -1 | 1) => -1 | 1,
   moved: (from: string, dir: number) => boolean | null,
-  windowMonths: number
+  windowMonths: number,
+  open?: OpenCall[],
+  last?: string
 ): BacktestCase[] {
   const baseFor = (dir: number) => {
     let n = 0;
@@ -600,8 +639,12 @@ function callsFromReadings(
     if (prev && prev.reading === r.reading && addMonths(prev.month, 1) === r.month) continue;
     const dir = want(r.reading);
     const hit = moved(r.month, dir);
-    if (hit === null) continue;
-    out.push({ where, when: r.month, what: `${r.text}: ${dir < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`, hit, base: base[dir] });
+    const what = `${r.text}: ${dir < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`;
+    if (hit === null) {
+      if (last && addMonths(r.month, windowMonths) > last) open?.push({ where, when: r.month, what, due: addMonths(r.month, windowMonths) });
+      continue;
+    }
+    out.push({ where, when: r.month, what, hit, base: base[dir] });
   }
   return out;
 }
@@ -620,7 +663,8 @@ export function regimeQuadrantCases(
   where: string,
   cli: { period: string; value: number }[],
   inflation: { period: string; value: number }[],
-  policy: { period: string; pct: number }[]
+  policy: { period: string; pct: number }[],
+  open?: OpenCall[]
 ): BacktestCase[] {
   const { cliLagMonths = 1, cpiLagMonths = 2, cliChangeMonths = 6, cpiChangeMonths = 3, windowMonths = 6 } = spec.params;
   if (!cli.length || !inflation.length || policy.length < 2) return [];
@@ -644,7 +688,7 @@ export function regimeQuadrantCases(
     const reading = g > 0 && inf > 0 ? 1 : g <= 0 && inf <= 0 ? -1 : 0;
     rows.push({ month: p.period, reading, text: `growth ${g > 0 ? 'up' : 'down'} (${g >= 0 ? '+' : ''}${g.toFixed(2)} to ${cm}), inflation ${inf > 0 ? 'up' : 'down'} (${inf >= 0 ? '+' : ''}${inf.toFixed(1)} pts to ${im})` });
   }
-  return callsFromReadings(where, rows, (r) => r, moved, windowMonths);
+  return callsFromReadings(where, rows, (r) => r, moved, windowMonths, open, policy[policy.length - 1].period);
 }
 
 /* ------------------------------------------------------------------ cycle clock -> next move */
@@ -655,7 +699,7 @@ export function regimeQuadrantCases(
  * clock. A call is the first month of a hiking (cutting) run: the cycle keeps going, so another
  * hike (cut) comes within windowMonths. Base rate: the same move after any month in the span.
  */
-export function cycleClockCases(spec: BacktestSpec, where: string, policy: { period: string; pct: number }[]): BacktestCase[] {
+export function cycleClockCases(spec: BacktestSpec, where: string, policy: { period: string; pct: number }[], open?: OpenCall[]): BacktestCase[] {
   const { holdAfterMonths = 6, windowMonths = 6 } = spec.params;
   if (policy.length < 2) return [];
   const { pct, moveIn, moved } = policyMoves(policy, windowMonths);
@@ -676,7 +720,7 @@ export function cycleClockCases(spec: BacktestSpec, where: string, policy: { per
     }
     rows.push({ month: p.period, reading, text: `${reading > 0 ? 'hiking' : reading < 0 ? 'cutting' : 'on hold'} from ${p.period} (policy ${p.pct.toFixed(2)}%)` });
   }
-  return callsFromReadings(where, rows, (r) => r, moved, windowMonths);
+  return callsFromReadings(where, rows, (r) => r, moved, windowMonths, open, policy[policy.length - 1].period);
 }
 
 /* ------------------------------------------------------------------ Timing Agent unwind setup */
@@ -689,7 +733,7 @@ export function cycleClockCases(spec: BacktestSpec, where: string, policy: { per
  * counts when the week before was not a setup that way and none was counted in the minGapWeeks
  * before. Base rate: the same further move after any week with enough history.
  */
-export function timingUnwindCases(spec: BacktestSpec, where: string, weeks: CftcWeek[]): BacktestCase[] {
+export function timingUnwindCases(spec: BacktestSpec, where: string, weeks: CftcWeek[], open?: OpenCall[]): BacktestCase[] {
   const { lookbackWeeks = 156, minLookbackWeeks = 52, highPct = 90, lowPct = 10, turnWeeks = 4, turnPts = 3, windowWeeks = 8, unwindPts = 3, minGapWeeks = 8 } = spec.params;
   const share = weeks.map((w) => (w.levNet / w.openInterest) * 100);
   const rank = (i: number): number | null => {
@@ -725,10 +769,18 @@ export function timingUnwindCases(spec: BacktestSpec, where: string, weeks: Cftc
   const lastEntry: Record<number, number> = { 1: -Infinity, [-1]: -Infinity };
   for (let i = Math.max(minLookbackWeeks, turnWeeks); i < share.length; i++) {
     const dir = setupAt(i);
-    if (!dir || setupAt(i - 1) === dir || !inSample(i) || i - lastEntry[dir] < minGapWeeks) continue;
-    lastEntry[dir] = i;
+    if (!dir || setupAt(i - 1) === dir || i - lastEntry[dir] < minGapWeeks) continue;
     const chg = share[i] - share[i - turnWeeks];
-    out.push({ where, when: weeks[i].date, what: `crowded ${dir === 1 ? 'long' : 'short'} and turning (${chg >= 0 ? '+' : ''}${chg.toFixed(1)} pts in ${turnWeeks} weeks): a further ${unwindPts} pts within ${windowWeeks} weeks?`, hit: further(i, dir), base: base[dir] });
+    const what = `crowded ${dir === 1 ? 'long' : 'short'} and turning (${chg >= 0 ? '+' : ''}${chg.toFixed(1)} pts in ${turnWeeks} weeks): a further ${unwindPts} pts within ${windowWeeks} weeks?`;
+    if (!inSample(i)) {
+      if (i + windowWeeks >= share.length && weeks[i].date >= lo && weeks[i].date <= hi) {
+        lastEntry[dir] = i;
+        open?.push({ where, when: weeks[i].date, what, due: addDaysIso(weeks[i].date, windowWeeks * 7) });
+      }
+      continue;
+    }
+    lastEntry[dir] = i;
+    out.push({ where, when: weeks[i].date, what, hit: further(i, dir), base: base[dir] });
   }
   return out;
 }
