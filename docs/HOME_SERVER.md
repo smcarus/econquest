@@ -1,0 +1,152 @@
+# Running EconQuest on a home server
+
+This runs the app and Ollama together on one always-on machine: a Linux box or a NAS that runs
+Docker. The Mac way of starting (`start-mac.command`, or `npm run dev`) keeps working as before.
+
+Files: [`deploy/home-server/`](../deploy/home-server/) holds `compose.yml`, `compose.gpu.yml`
+and `env.example`.
+
+## What the machine needs
+
+| Part | Enough for the 7B desks only | For the 32B referee (qwen2.5:32b) |
+|---|---|---|
+| Memory | 16 GB | 32 GB, or a GPU with 24 GB of video memory |
+| Disk | 20 GB free | 60 GB free (the 32B model is about 20 GB; offline data and GDELT files add more) |
+| Processor | any recent 64-bit (x86-64 or ARM64) | same; without a GPU a full council report can take 10 minutes or more |
+
+The referee steps (Supreme Council, summaries, explanations, debate) always use the 32B model,
+never an 8B one. On a machine without the memory for it, keep Ollama on the Mac or another
+computer and point the server at it (see "Ollama on another computer").
+
+The server needs outbound internet for the free data feeds. Nothing has to be opened inbound.
+
+## Install (Linux)
+
+1. Install Docker Engine and the compose plugin. On Debian or Ubuntu:
+
+   ```sh
+   curl -fsSL https://get.docker.com | sudo sh
+   sudo usermod -aG docker "$USER"    # then log out and back in
+   ```
+
+2. Get the code and make the two state folders. The app runs as user id 1000, so it must own
+   `data`:
+
+   ```sh
+   git clone https://github.com/smcarus/econquest.git
+   cd econquest/deploy/home-server
+   cp env.example .env
+   mkdir -p data ollama
+   sudo chown -R 1000:1000 data
+   ```
+
+3. Edit `.env` if you need to (port, time zone, data keys). Every line is optional.
+
+4. Start it, then download the models (once; the 32B one is about 20 GB):
+
+   ```sh
+   docker compose up -d --build
+   docker compose exec ollama ollama pull qwen2.5:7b
+   docker compose exec ollama ollama pull qwen2.5:32b
+   ```
+
+5. Check it:
+
+   ```sh
+   curl -s http://127.0.0.1:3737/healthz    # {"status":"ok"}  the process answers
+   curl -s http://127.0.0.1:3737/readyz     # {"ready":true}   it can serve and save
+   docker compose ps                        # econquest shows (healthy)
+   ```
+
+6. Fill the offline data and run the first data check (both take a while the first time):
+
+   ```sh
+   docker compose exec econquest npm run preload
+   docker compose exec econquest npm run check:data
+   ```
+
+   Then open the app, Menu > Settings > AI model > Test, and Menu > Data health.
+
+## Opening the app
+
+The app listens on the server itself only (`BIND_ADDRESS=127.0.0.1`). There is no sign-in yet,
+so anyone who can reach the page can read your research and change keys. Two ways in:
+
+- **SSH tunnel (recommended).** From your Mac: `ssh -N -L 3737:127.0.0.1:3737 you@homeserver`,
+  then open http://localhost:3737.
+- **Your home network, on purpose.** In `.env` set `BIND_ADDRESS=0.0.0.0` and list the names you
+  type in the browser in `ALLOWED_HOSTS`, for example
+  `ALLOWED_HOSTS=homeserver.local,192.168.1.20`. Then `docker compose up -d`. Do not forward the
+  port on your router.
+
+## NAS (Synology, QNAP, Unraid, TrueNAS)
+
+Use the NAS's Docker or "Container Manager" app and create a project from
+`deploy/home-server/compose.yml` (copy the whole repository folder to the NAS so the build can
+find the Dockerfile). Two things differ from Linux:
+
+- Make the `data` folder owned by user id 1000, or set `DATA_PATH` to a shared folder and give
+  uid 1000 read and write on it in the NAS permissions screen. If the owner is wrong, the app
+  stops at start and its log says exactly which folder it could not write.
+- Most NAS units lack the memory for the 32B model. Run the app on the NAS and Ollama on a
+  stronger computer (next section).
+
+## Ollama on another computer
+
+Delete `COMPOSE_PROFILES=ollama` from `.env` and set the URL, for example
+`OLLAMA_BASE_URL=http://192.168.1.30:11434`. On that computer Ollama must listen on the network:
+on a Mac, `launchctl setenv OLLAMA_HOST 0.0.0.0` and restart Ollama. Then
+`docker compose up -d`.
+
+## NVIDIA GPU
+
+Install the NVIDIA Container Toolkit, then start with both files:
+
+```sh
+docker compose -f compose.yml -f compose.gpu.yml up -d --build
+```
+
+## Day to day
+
+| Task | Command (in `deploy/home-server`) |
+|---|---|
+| Update to the latest version | `git pull && docker compose up -d --build` |
+| Logs (one JSON line per message) | `docker compose logs -f econquest` |
+| Stop / start | `docker compose stop` / `docker compose start` |
+| Data check | `docker compose exec econquest npm run check:data` |
+
+`docker compose stop` lets open requests finish (up to 8 seconds) before the app exits.
+
+## Where things are kept
+
+Everything the app saves is in one folder, `data` (or `DATA_PATH`): settings and keys you saved
+in Menu > Settings, saved feed data, history, the pull archive, reports, the audit log and data
+health history. The image holds no state, so updating or rebuilding never loses anything.
+Models are in `ollama` and can always be downloaded again.
+
+Back up the `data` folder. Menu > Backup makes a file without keys; how to restore it, and a
+restore drill that proves a backup works, are in [Backup and restore](BACKUP_AND_RESTORE.md).
+
+## Configuration
+
+Config comes only from environment variables (`.env` here, or the full list in the repository's
+`.env.example`). The main ones:
+
+| Variable | Default | What it does |
+|---|---|---|
+| `PORT` | 3737 | Port on the server |
+| `BIND_ADDRESS` | 127.0.0.1 | Address the port is published on |
+| `ALLOWED_HOSTS` | empty | Host names accepted when opened to the network |
+| `DATA_PATH` | ./data | The state folder on the server |
+| `OLLAMA_BASE_URL` | http://ollama:11434 | Where Ollama is |
+| `OLLAMA_QUICK_MODEL` | qwen2.5:7b | Desk agents |
+| `OLLAMA_DEEP_MODEL` | qwen2.5:32b | Referee steps |
+| `TZ` | UTC | Time zone for the morning brief and nightly data check |
+| `LOG_FORMAT` | json in the image | `json` or empty for plain text |
+| `SHUTDOWN_TIMEOUT_MS` | 8000 | How long a stop waits for open requests |
+
+## Later: Kubernetes
+
+The image is built so a cluster needs no code change: config by environment, one volume at
+`/app/data`, Ollama by URL, `/healthz` for liveness and `/readyz` for readiness, clean stop on
+SIGTERM, logs on stdout. A Helm chart is a small step once sign-in and multiple users exist.
