@@ -117,3 +117,17 @@ test('inflation splice: OECD history, then the national series for the months af
   assert.equal(s.source, 'OECD CPI via DBnomics to 2026-05, then BCB IPCA');
   assert.equal(spliceInflation(undefined, undefined), null);
 });
+
+test('nowcast evaluation cases: one per quarter, made before GDP for it was out, only where the bridge ran', async () => {
+  const { gdpNowcastCases } = await import('../src/utils/forecastCases');
+  const { months, quarters } = world(5);
+  const spec = { id: 'g', version: 1, registeredOn: '', registeredBy: '', hypothesis: '', target: 'gdp_nowcast_q' as const, params: { asOfDaysAfterQuarter: 30, gdpLagDays: 60 }, benchmark: 'mean' as const, horizons: [1], sample: { from: '2015-Q1' }, passMark: { maxRelRmse: 0.9, maxPValue: 0.1, minSeriesShare: 0.5, minCasesPerHorizon: 10, minYears: 3 }, knownLimits: [] };
+  const { cases, series } = gdpNowcastCases(spec, [{ iso3: 'AAA', gdpQoq: quarters, activity: months }, { iso3: 'NOI', gdpQoq: quarters }]);
+  assert.deepEqual(series, ['AAA']);
+  assert.ok(cases.length > 30);
+  for (const c of cases) assert.ok(c.origin < c.target);
+  // The bridge tracks the simulated activity closely, far better than the mean.
+  const rm = Math.sqrt(cases.reduce((s, c) => s + (c.actual - c.model.mean) ** 2, 0) / cases.length);
+  const rb = Math.sqrt(cases.reduce((s, c) => s + (c.actual - c.bench.mean) ** 2, 0) / cases.length);
+  assert.ok(rm < 0.6 * rb, `${rm} vs ${rb}`);
+});

@@ -1,0 +1,11 @@
+{
+  "note": "SHA-256 of each pre-registered nowcast/forecast evaluation. The runner refuses a file whose hash is not listed here; a changed evaluation needs a new version and a new hash, committed before it is run.",
+  "files": {
+    "gdp_nowcast.json": "0039f3108a07d0d6a30c6014fc58015bfa564b7e84504f5e141359014fc3beac",
+    "gdp_forecast.json": "487b6467fdc75b579eb43f010a9a8c59b4930ece669fa7b68ca850ac1ae110f3",
+    "cpi_nowcast.json": "b26921be3e3350c6fd8383276ce1b63fd2ac335cd80fd47a8fd4878f84f0d2a4",
+    "cpi_forecast.json": "452f8da5c376c3e9d2b65f4cbc47345ddc8636362bad6f46683f598f83dafd05",
+    "policy_rate_forecast.json": "cc6e4fd6faf3cfe80ac72aa3e308508af18be3347cac65e00ee128c4f109359a",
+    "debt_forecast.json": "b0f103786229c9ec676eaa66dc6d3ead1fd473ad21714a66193d304b089f0ff8"
+  }
+}
