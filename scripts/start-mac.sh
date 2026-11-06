@@ -37,6 +37,12 @@ if ! docker info >/dev/null 2>&1; then
   done
 fi
 
+# 1b. The app runs as an ordinary user (uid 1000), not root. Data saved by an older version that
+#     ran as root is handed to that user once, so the app can keep writing it.
+echo "[INFO] Building the app image and checking the data folder owner..."
+docker compose build econquest
+docker compose run --rm --no-deps --user root --entrypoint chown econquest -R 1000:1000 /app/data >/dev/null 2>&1 || true
+
 # 2. Detect Native macOS Ollama (Apple Silicon Metal Acceleration) vs Bundled Container
 if curl -sSf http://localhost:11434/api/tags >/dev/null 2>&1; then
   echo "[OK] Detected native macOS Ollama running on http://localhost:11434 (Apple Metal GPU accelerated)."
