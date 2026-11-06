@@ -22,6 +22,7 @@ import { AsOfPanel } from './AsOfPanel';
 import { DecisionReplayPanel } from './DecisionReplayPanel';
 import { TrackRecordPanel } from './TrackRecordPanel';
 import { GdeltEventsPanel } from './GdeltEventsPanel';
+import { GdeltHistoryPanel } from './GdeltHistoryPanel';
 import { PanelBoundary } from './PanelBoundary';
 import { ResearchSectionNav } from './ResearchSections';
 import { lazyNamed, DeskLoading } from './LazyDesk';
@@ -428,6 +429,9 @@ export const CountryPage: React.FC<{
           <React.Suspense fallback={<DeskLoading />}>
             <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
           </React.Suspense>
+          <PanelBoundary name="Event history">
+            <GdeltHistoryPanel key={`gdelt-daily-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+          </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />
           <PanelBoundary name="Nowcast and forecasts">
             <React.Suspense fallback={<DeskLoading />}>

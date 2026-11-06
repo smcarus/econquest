@@ -37,6 +37,7 @@ import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance }
 import { searchDocs, type PolicyDoc } from './policyDocs';
 import { MEASURE_LABEL, TOLERANCE, compareClaims, extractClaims, fmtMeasure } from './docFigureCheck';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
+import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { TNM_CITATION, multiplierView } from './fiscalMultipliers';
@@ -673,6 +674,12 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
       weight = Math.max(weight, u.weight);
       for (const m of u.missing) missing.push(`${it.countryName}: ${m}`);
     } else missing.push(`${it.countryName}: armed conflict and conflict deaths missing (${ucdpMissing(null, it.iso3).short}: ${ucdpMissing(null, it.iso3).help})`);
+    if (p.history) {
+      const h = v1Figures(p.history);
+      figures.push(...h.figures);
+      parts.push(...h.sentences);
+      weight = Math.max(weight, h.weight);
+    } else missing.push(`${it.countryName}: long-run event history missing (${v1Missing(false).short}: ${v1Missing(false).help})`);
     if (p.acledEvents) {
       const c = acledFigures(p.acledEvents);
       figures.push(...c.figures);

@@ -16,6 +16,7 @@
  */
 import type { OpenDataSnapshot } from '../types/council';
 import type { UcdpReading } from './ucdpConflict';
+import type { V1Reading } from './gdeltDaily';
 import { EVENT_SURGE_RULE, GOLDSTEIN_RULE, isEventSurge, type GdeltRawReading } from './gdeltRaw';
 import { ACLED_RISING_RULE, ACLED_SHORT, acledLagMonths, acledMonthLabel, acledRising, type AcledReading } from './acled';
 
@@ -30,6 +31,8 @@ export interface PoliticsFigures {
   raw?: GdeltRawReading;
   /** UCDP conflict figures from the downloaded files. */
   conflict?: UcdpReading;
+  /** GDELT 1.0 monthly history: latest complete month against all months on disk. */
+  history?: V1Reading;
   /** ACLED conflict events (your own ACLED account): twelve months of counts. */
   acledEvents?: AcledReading;
   /** Why the ACLED figures are missing, in words. */
@@ -84,6 +87,7 @@ export function politicsFromSnapshot(snap: OpenDataSnapshot): PoliticsFigures | 
   }
   if (snap.gdeltRaw?.weekStart) out.raw = snap.gdeltRaw;
   if (snap.ucdp?.latest) out.conflict = snap.ucdp;
+  if (snap.gdeltDaily?.month) out.history = snap.gdeltDaily;
   if (snap.acled?.months?.length) out.acledEvents = snap.acled;
   else if (snap.acledMissing) out.acledMissing = snap.acledMissing;
   // A reason alone is not a figure: it rides along only when something else is on hand.
