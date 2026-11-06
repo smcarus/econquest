@@ -13,7 +13,6 @@
  * that looks like a key in a web address, before it leaves this computer.
  */
 import os from 'os';
-import nodemailer from 'nodemailer';
 import { redact } from './dataHealth';
 
 export interface ServerAlert {
@@ -133,6 +132,13 @@ export interface SendDeps {
 }
 
 async function nodemailerSend(smtpUrl: string, mail: { from: string; to: string; subject: string; text: string }): Promise<void> {
+  // Loaded only when an email is sent, so a copy without `npm install` still starts.
+  let nodemailer: typeof import('nodemailer');
+  try {
+    nodemailer = (await import('nodemailer')).default as any;
+  } catch {
+    throw new Error('the nodemailer package is not installed; run npm install');
+  }
   const transport = nodemailer.createTransport(smtpUrl, { connectionTimeout: 10_000, greetingTimeout: 10_000, socketTimeout: 15_000 } as any);
   try {
     await transport.sendMail(mail);
