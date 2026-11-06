@@ -110,6 +110,7 @@ import {
   withoutKey,
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
+import { testAlertRoute } from './src/server/alerts';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
 import { backtestSummary, closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, writeJobs } from './src/utils/scheduledJobs';
@@ -3697,7 +3698,8 @@ async function startServer() {
     setSavedSettings(next.settings);
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
-    const check = await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
+    // Saving an alert setting sends nothing: the Test button does that.
+    const check = apiKeyField(req.params.id)?.section === 'alerts' ? null : await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
     res.json({ ...keysReply(req, res), check });
   });
   app.delete('/api/settings/keys/:id', async (req, res) => {
@@ -3724,6 +3726,8 @@ async function startServer() {
       const problem = field.validate(value);
       if (problem) return res.status(400).json({ error: problem });
     }
+    // Server alerts: Test sends a real test message on that route (src/server/alerts.ts).
+    if (field.section === 'alerts') return res.json({ check: await testAlertRoute(field, value, process.env) });
     const env = value ? { ...process.env, [field.id]: value } : process.env;
     const sources = value ? { ...keySources(ENV_FILE_KEYS, savedSettings), [field.id]: 'app' as const } : keySources(ENV_FILE_KEYS, savedSettings);
     const check = await runKeyCheck(field.id, env, sources).catch(() => null);

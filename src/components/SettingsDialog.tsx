@@ -1,6 +1,6 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Archive, CheckCircle2, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import { Archive, Bell, CheckCircle2, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
 import { AiModelSettings } from './AiModelSettings';
 import { BackupSettings } from './BackupSettings';
@@ -17,7 +17,7 @@ import type { ApiKeyStatus } from '../utils/userSettings';
 
 /**
  * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
- * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'morning' | 'backup' | 'tools' }).
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'alerts' | 'morning' | 'backup' | 'tools' }).
  */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
 
@@ -34,7 +34,9 @@ interface KeysReply {
   encryption?: { atRest: boolean; keyFrom: string | null; problem: string | null; unreadable: string[] };
 }
 
-const SECTIONS: Array<{ id: 'free_key' | 'own_account' | 'ai'; title: string; note: string }> = [
+type KeySection = ApiKeyStatus['section'];
+
+const SECTIONS: Array<{ id: KeySection; title: string; note: string }> = [
   { id: 'free_key', title: 'Free sources that take your own key', note: 'Free to register. Each one is optional unless it says otherwise.' },
   {
     id: 'own_account',
@@ -45,6 +47,11 @@ const SECTIONS: Array<{ id: 'free_key' | 'own_account' | 'ai'; title: string; no
     id: 'ai',
     title: 'AI model key',
     note: 'Which model the council uses (Gemini, Ollama, a local server) and the Ollama address are chosen under AI model.',
+  },
+  {
+    id: 'alerts',
+    title: 'Where alerts go',
+    note: 'A webhook, email, or both. Messages say what failed and when, never a key or password. Test sends a real test message.',
   },
 ];
 
@@ -62,7 +69,7 @@ function CheckLine({ check }: { check: ConnectionResult }) {
     <div className={`mt-2 flex items-start gap-1.5 text-xs ${tone}`} role="status" data-key-check={check.state}>
       {ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : bad ? <XCircle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : null}
       <span>
-        <span className="font-medium">{STATE_LABEL[check.state]}:</span> {ok && check.sample ? check.sample : check.detail}
+        <span className="font-medium">{check.id.startsWith('alert_') ? (ok ? 'Sent' : 'Not sent') : STATE_LABEL[check.state]}:</span> {ok && check.sample ? check.sample : check.detail}
       </span>
     </div>
   );
@@ -123,7 +130,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {k.getKeySteps}{' '}
         <a href={k.getKeyUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 text-blue-700 dark:text-blue-400 hover:underline">
-          {k.secret ? 'How to get a key' : 'Where to find it'} <ExternalLink className="w-3 h-3" aria-hidden />
+          {k.section === 'alerts' ? 'How to set it up' : k.secret ? 'How to get a key' : 'Where to find it'} <ExternalLink className="w-3 h-3" aria-hidden />
         </a>
       </p>
       {k.source === 'app' && k.envAlsoSet && (
@@ -176,7 +183,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
           </div>
         )}
         <button type="button" className="ui-btn" disabled={!canEdit || !!busy || (!value.trim() && k.source === 'none' && !k.choices)} onClick={() => call('test')}>
-          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.choices ? 'Test current setting' : k.secret ? 'Test current key' : 'Test current setting'}
+          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.choices ? 'Test current setting' : k.secret && k.section !== 'alerts' ? 'Test current key' : 'Test current setting'}
         </button>
         <button type="submit" className="ui-btn ui-btn-primary" disabled={!canEdit || !!busy || !value.trim()}>
           {busy === 'save' ? 'Saving…' : 'Save'}
@@ -197,14 +204,15 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'morning' | 'backup' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'alerts' | 'morning' | 'backup' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
-const PAGES: Array<{ id: SettingsTab; label: string; sections: Array<'free_key' | 'own_account' | 'ai'> }> = [
+const PAGES: Array<{ id: SettingsTab; label: string; sections: KeySection[] }> = [
   { id: 'ai', label: 'AI model', sections: [] },
   { id: 'keys', label: 'Free data keys', sections: ['free_key'] },
   // Holds only the own-data CDS switch, hidden for now (src/utils/cdsHidden.ts).
   ...(CDS_HIDDEN ? [] : [{ id: 'paid' as const, label: 'Your own paid data', sections: ['own_account' as const] }]),
+  { id: 'alerts', label: 'Server alerts', sections: ['alerts'] },
   { id: 'morning', label: 'Morning brief', sections: [] },
   { id: 'backup', label: 'Backup', sections: [] },
   { id: 'tools', label: 'Tools', sections: [] },
@@ -213,6 +221,7 @@ const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   ai: <Cpu className="w-3.5 h-3.5" aria-hidden />,
   keys: <KeyRound className="w-3.5 h-3.5" aria-hidden />,
   paid: <Lock className="w-3.5 h-3.5" aria-hidden />,
+  alerts: <Bell className="w-3.5 h-3.5" aria-hidden />,
   morning: <Sunrise className="w-3.5 h-3.5" aria-hidden />,
   backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
   tools: <Wrench className="w-3.5 h-3.5" aria-hidden />,
@@ -351,8 +360,14 @@ export const SettingsDialog: React.FC<{
           ) : (
           <section className="flex-1 min-w-0 overflow-y-auto px-4 py-3" aria-labelledby="settings-keys-title">
             <h3 id="settings-keys-title" className="ui-section-title">{page.label}</h3>
+            {page.id === 'alerts' && (
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400" data-alerts-intro>
+                For a server left running: a short message when the nightly data check finds a source that broke, a scheduled job fails, or a backtest that passed now fails. Nothing is sent until a
+                webhook or email is set here (or in .env). See docs/HOME_SERVER.md, Server alerts.
+              </p>
+            )}
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-              Your own keys and settings for data sources. They are saved on this computer only{reply ? ` (${reply.savedIn})` : ''}, sent only to the source they belong to, and shown here masked. A key
+              Your own keys and settings{page.id === 'alerts' ? '' : ' for data sources'}. They are saved on this computer only{reply ? ` (${reply.savedIn})` : ''}, sent only to the source they belong to, and shown here masked. A key
               saved here is used instead of the same key in .env.
             </p>
             {reply?.encryption && (
