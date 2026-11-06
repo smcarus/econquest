@@ -130,6 +130,12 @@ full council and saved research.
   research notice, so it keeps them wherever it is pasted. The CSV lists the same credits as `#`
   lines. With Sharing mode on, both buttons are off for a chart that uses a source whose terms do
   not let its figures be passed on, and the card says which.
+- *Suggested questions*: the empty chat offers up to four questions picked from your own data, no
+  AI: one on your largest holding (asked the way its asset class is judged), up to two on what moved
+  on your watchlist (a BIS policy-rate move in the last three months, a 10Y yield change of half a
+  point or more over three months, a debt path rising five points of GDP or more) and your last
+  saved question (asking it again shows what changed). Point at one to see why it is offered. The
+  fixed examples fill the rest.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your
