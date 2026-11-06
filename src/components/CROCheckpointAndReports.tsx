@@ -25,7 +25,7 @@ import {
 import { CouncilPipelineReliabilityPanel } from './CouncilPipelineReliabilityPanel';
 import { RichTextWithStatRefs } from './StatRefTooltip';
 import { FigureCheckNote } from './FigureCheckNote';
-import { approvalText, coherenceText, riskPctText } from '../utils/councilResult';
+import { approvalText, coherenceText, riskPctText, sizingText, ticketCallText, TRIGGERS_MISSING } from '../utils/councilResult';
 
 interface CROCheckpointAndReportsProps {
   run: CouncilAssessmentRun;
@@ -595,6 +595,9 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
               <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Decision-Point &amp; Catalyst Threshold Matrix (Action Triggers)
               </h3>
+              {sc.decisionPointMatrix.length === 0 ? (
+                <p className="text-xs text-slate-500">{TRIGGERS_MISSING}</p>
+              ) : (
               <div className="overflow-x-auto border border-slate-200 dark:border-slate-800">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
@@ -642,6 +645,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   </tbody>
                 </table>
               </div>
+              )}
             </div>
 
             {/* Dual-Audience Translation Layer: Policy Researcher vs Asset Manager */}
@@ -703,10 +707,10 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="tabular-nums font-semibold text-slate-900 dark:text-slate-100">
-                          {trd.ticketId} · [{toDisplayCase(trd.direction)}] {trd.instrument}
+                          {trd.ticketId} · [{ticketCallText(trd.direction)}] {trd.instrument}
                         </span>
                         <span className="tabular-nums font-semibold text-blue-600 dark:text-blue-400 shrink-0">
-                          Weight: {trd.sizingWeightPct}% ({trd.targetHorizon})
+                          Weight: {sizingText(trd.sizingWeightPct)} ({trd.targetHorizon})
                         </span>
                       </div>
                       <p className="text-slate-600 dark:text-slate-300">

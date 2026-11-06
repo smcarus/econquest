@@ -35,3 +35,18 @@ test('risk check: drawdown and haircut are Missing unless measured; the built-in
   assert.equal(rg.tailRiskHedgeInstrument, MODEL_FIELD_MISSING);
   assert.equal(buildDefaultAssessmentRun('BRA').supremeCouncil!.globalCoherenceScore, null);
 });
+
+test('tickets and triggers: no built-in sizing, calls or decision triggers in the starting report', async () => {
+  const { sizingText, ticketCallText, TRIGGERS_MISSING } = await import('../src/utils/councilResult.ts');
+  const sc = buildDefaultAssessmentRun('BRA').supremeCouncil!;
+  assert.deepEqual(sc.decisionPointMatrix, []);
+  for (const t of sc.marketTranslationLayer.tradeExpressions) {
+    assert.equal(t.sizingWeightPct, null);
+    assert.equal(t.direction, null);
+    assert.equal(t.conviction, null);
+  }
+  assert.match(sizingText(null), /^Missing/);
+  assert.equal(sizingText(20), '20%');
+  assert.equal(ticketCallText(null), 'missing');
+  assert.match(TRIGGERS_MISSING, /^Missing/);
+});
