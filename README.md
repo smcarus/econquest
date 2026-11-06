@@ -39,7 +39,8 @@ To update later, run `npm run update` (or double-click `update-mac.command`): it
 not update. It also warns when a Docker Ollama holds port 11434 in front of the Ollama app.
 
 To run it on an always-on Linux box or NAS with Ollama on the same machine, see
-[docs/HOME_SERVER.md](docs/HOME_SERVER.md).
+[docs/HOME_SERVER.md](docs/HOME_SERVER.md). On a Kubernetes cluster, use the Helm chart in
+`deploy/helm/econquest/` ([docs/KUBERNETES.md](docs/KUBERNETES.md)).
 
 ### First run
 

@@ -43,6 +43,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Home-server compose file is valid
         run: docker compose -f deploy/home-server/compose.yml config -q
+      # Helm comes with the GitHub Ubuntu runner image.
+      - name: Helm chart lints and renders (default, and with ingress + chart-made secret)
+        run: |
+          helm lint --strict deploy/helm/econquest
+          helm template eq deploy/helm/econquest > /tmp/default.yaml
+          helm template eq deploy/helm/econquest --set ingress.enabled=true --set ingress.host=eq.example.org \
+            --set secret.values.ECONQUEST_SECRET_KEY=0123456789abcdef0123456789abcdef > /tmp/ingress.yaml
+          grep -q 'kind: Deployment' /tmp/default.yaml
+          grep -q 'value: "eq.example.org"' /tmp/ingress.yaml
+          grep -q 'kind: Ingress' /tmp/ingress.yaml
+          ! grep -q 'kind: Ingress' /tmp/default.yaml
       - name: Build the production image
         run: docker build -t econquest:ci .
       - name: Start it on an empty data volume and check it answers
