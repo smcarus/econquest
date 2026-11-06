@@ -1,7 +1,7 @@
 /**
  * `npm run council:regress`: runs the council regression set (docs/validation/council-regression/)
  * through the running app, on the AI model set under Menu > Settings > AI model, and prints each
- * case. The app must be running (Docker: http://localhost:3737; `npm run dev`: http://localhost:3000;
+ * case. The app must be running (Docker: http://127.0.0.1:3737; `npm run dev`: http://127.0.0.1:3000;
  * or set APP_URL). The report is saved in data/local/validation/council-regression.json and each case
  * is an answer snapshot you can open and re-run. Exits 1 when a case fails.
  *
@@ -13,12 +13,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { compareToBaseline, type RegressionBaseline, type RegressionReport } from '../src/utils/councilRegression';
 
-const candidates = process.env.APP_URL ? [process.env.APP_URL] : ['http://localhost:3737', 'http://localhost:3000'];
+const candidates = process.env.APP_URL ? [process.env.APP_URL] : ['http://127.0.0.1:3737', 'http://127.0.0.1:3000'];
 let report: RegressionReport | null = null;
 let lastError = '';
 for (const base of candidates) {
   try {
-    await fetch(`${base}/api/ai/runtime-defaults`, { signal: AbortSignal.timeout(3000) });
+    await fetch(`${base}/healthz`, { signal: AbortSignal.timeout(3000) });
   } catch {
     lastError = `no app at ${base}`;
     continue;
