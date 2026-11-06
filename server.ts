@@ -36,6 +36,7 @@ import { qnaFor, QNA_LABEL } from './src/utils/oecdQna';
 import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from './src/utils/modelHistory';
 import { cpiNowcast, gdpNowcast, nowcastSentence } from './src/utils/nowcast';
 import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from './src/utils/forecasts';
+import { loadForecastValidation } from './src/utils/forecastEvalRun';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
@@ -3164,9 +3165,12 @@ async function startServer() {
       const i = out.findIndex((r) => r.id === 'policy_rate');
       out[i] = { ok: false, id: 'policy_rate', reason: 'The BIS publishes no policy rate for this country.' };
     }
+    const v = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+    const validation = Object.fromEntries(Object.values(v.results).map((r) => [r.id, { status: r.status, verdict: r.verdict, ranAt: r.ranAt }]));
     res.json({
       iso3,
       forecasts: out,
+      validation,
       sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
