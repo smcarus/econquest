@@ -7,6 +7,7 @@ import {
   WatchlistItem,
 } from '../types/council';
 import {
+  OSINT_MISSING_NOTE,
   DEFAULT_WARGAME_PARAMS,
   computeGeopoliticalRiskDeskSuite,
   parseOsintIntelligenceSignal,
@@ -1082,7 +1083,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
                 <span>
-                  Geospatial Intelligence Theater · Synchronized GDELT/ACLED Conflict Alerts, Maritime Chokepoints, Subsea Cables &amp; Trade Corridors
+                  Geospatial Intelligence Theater · Events you logged, Maritime Chokepoints, Subsea Cables &amp; Trade Corridors
                 </span>
               </div>
               <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
@@ -1105,7 +1106,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-500'
                 }`}
               >
-                GDELT/ACLED Alerts ({osintEvents.length})
+                Events you logged ({osintEvents.length})
               </button>
               <button
                 type="button"
@@ -1162,6 +1163,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                 </button>
               )}
             </div>
+            {showLayerGdeltNodes && osintEvents.length === 0 && (
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1" data-osint-missing>{OSINT_MISSING_NOTE}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-start">
@@ -1535,7 +1539,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   </text>
                 </g>
 
-                {/* LAYER 4: PULSING GDELT 2.0 / ACLED CONFLICT & OSINT ALERT NODES */}
+                {/* LAYER 4: EVENTS THE USER LOGGED (no built-in events) */}
                 {showLayerGdeltNodes &&
                   osintEvents.map((ev, idx) => {
                     const evPt = projectLatLon(ev.lat, ev.lon);
@@ -1603,7 +1607,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     1. What This Map Shows
                   </div>
                   <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {osintEvents.length} active GDELT/ACLED conflict nodes, 6 maritime chokepoints, subsea fiber cables, and bilateral trade corridors linked to {sovereignCoord.capitalLabel}.
+                    {osintEvents.length} event{osintEvents.length === 1 ? '' : 's'} you logged, 6 maritime chokepoints, subsea fiber cables, and bilateral trade corridors linked to {sovereignCoord.capitalLabel}.
                   </p>
                 </div>
                 <div className="p-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
@@ -1654,7 +1658,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                     </div>
                     <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums text-xs">
                       <div className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                        <span className="text-slate-500 block">Goldstein / ACLED</span>
+                        <span className="text-slate-500 block">Goldstein / severity (keyword rule)</span>
                         <span className="font-semibold text-rose-600 dark:text-rose-400">
                           {selectedEventObj.goldsteinScale.toFixed(1)} · {selectedEventObj.acledSeverityScore}/100
                         </span>
@@ -1702,7 +1706,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
                     <p>
                       Click any <strong>Maritime Chokepoint diamond</strong> or{' '}
-                      <strong>pulsing GDELT/ACLED alert circle</strong> on the map to inspect its CAMEO conflict taxonomy and automatically highlight affected cells in the Supply Chain Matrix.
+                      <strong>circle of an event you logged</strong> on the map to inspect its CAMEO conflict taxonomy and automatically highlight affected cells in the Supply Chain Matrix.
                     </p>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {chokepoints.slice(0, 4).map((cp) => (
@@ -2317,7 +2321,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
       )}
 
       {/* =====================================================================
-          MODULE A: HYBRID OSINT & GDELT / ACLED CONFLICT & SANCTIONS EVENT STREAM
+          MODULE A: EVENTS YOU LOGGED (no built-in events)
           ===================================================================== */}
       {showOsintAndEscalation && (
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-5">
@@ -2326,7 +2330,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
               <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400 animate-pulse" />
                 <span>
-                  Hybrid Intelligence Ingestion · GDELT 2.0 CAMEO Taxonomy, ACLED Conflict Intensity &amp; Live AI OSINT Signal Parser
+                  Events you log, sorted by a keyword rule (CAMEO-style codes). Not from a feed.
                 </span>
               </div>
               <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mt-0.5">
@@ -2346,9 +2350,9 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   <th className="py-2.5 px-3">CAMEO Event Code &amp; Intelligence Headline</th>
                   <th className="py-2.5 px-3 text-right">Coords</th>
                   <th className="py-2.5 px-3 text-right">Goldstein Scale</th>
-                  <th className="py-2.5 px-3 text-right">ACLED Severity</th>
-                  <th className="py-2.5 px-3 text-right">5Y CDS Impact</th>
-                  <th className="py-2.5 px-3 text-right">Spot FX Impact</th>
+                  <th className="py-2.5 px-3 text-right">Severity (keyword rule)</th>
+                  <th className="py-2.5 px-3 text-right">CDS move (keyword rule)</th>
+                  <th className="py-2.5 px-3 text-right">FX move (keyword rule)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
@@ -2368,7 +2372,7 @@ export const GeopoliticalRiskDesk: React.FC<GeopoliticalRiskDeskProps> = ({
                   >
                     <td className="py-2.5 px-3 tabular-nums whitespace-nowrap">
                       <div className="font-semibold text-slate-800 dark:text-slate-200">
-                        {ev.sourceFeed}
+                        {ev.verificationStatus === 'ANALYST_INJECTED' ? 'Logged by you' : ev.sourceFeed}
                       </div>
                       <div className="text-xs text-slate-500">{ev.timestampUtc}</div>
                     </td>
