@@ -44,6 +44,7 @@ import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/
 import { parseQna, qnaFor, qnaUrl, QNA_LABEL, type QnaSeries } from './src/utils/oecdQna';
 import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from './src/utils/modelHistory';
 import { cpiNowcast, gdpNowcast, nowcastSentence } from './src/utils/nowcast';
+import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from './src/utils/forecasts';
 import { BCB_IBCBR_SA, EUROSTAT_IP_GEO, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr, type ActivitySeries } from './src/utils/monthlyActivity';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
@@ -6139,6 +6140,44 @@ async function startServer() {
       gdp,
       cpi,
       sentences: [gdp, cpi].filter((r): r is Extract<typeof r, { ok: true }> => r.ok).map(nowcastSentence),
+      history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
+    });
+  });
+  // Forecasts with fan charts (src/utils/forecasts.ts): GDP growth, inflation, policy rate, debt,
+  // beside the IMF's own projection where it makes one.
+  app.get('/api/forecast/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [qna, hist, nationalCpi, official] = await Promise.all([
+      quick(fetchQnaPull()),
+      modelHistory(),
+      quick(fetchNationalCpi()),
+      quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
+    ]);
+    const imfSeries = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(official, fig) : null;
+      return s && 'points' in s ? { points: s.points, source: s.source, pulledAt: s.pulledAt } : null;
+    };
+    const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
+    const cpiRun = spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]);
+    const area = CBPOL_AREA[iso3];
+    const pol = area ? hist?.policyMonthly?.[area]?.points : undefined;
+    const debt = imfSeries('debt_gdp');
+    const out: ForecastOutcome[] = [
+      withImf(forecastSeries('gdp_qoq', gdpPts.length ? { points: gdpPts.map((p) => ({ date: p.period, value: p.value })), source: QNA_LABEL, label: 'Real GDP growth, q/q', pulledAt: qna?.pulledAt } : null), imfSeries('gdp_growth')),
+      withImf(forecastSeries('cpi_yoy', cpiRun ? { ...cpiRun, label: 'Inflation, monthly y/y', pulledAt: hist?.pulledAt } : null), imfSeries('cpi_imf')),
+      forecastSeries('policy_rate', pol?.length ? { points: pol.map((p) => ({ date: p.period, value: p.pct })), source: 'BIS central bank policy rates, monthly (end of month)', label: 'Policy rate', pulledAt: hist?.pulledAt } : null),
+      // The fit uses IMF outturns only: years marked as IMF projections are left out.
+      withImf(forecastSeries('debt_gdp', debt ? { points: debt.points.filter((p) => p.note !== 'IMF projection'), source: debt.source, label: 'Government debt, % of GDP', pulledAt: debt.pulledAt } : null), debt),
+    ];
+    if (!area) {
+      const i = out.findIndex((r) => r.id === 'policy_rate');
+      out[i] = { ok: false, id: 'policy_rate', reason: 'The BIS publishes no policy rate for this country.' };
+    }
+    res.json({
+      iso3,
+      forecasts: out,
+      sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
   });
