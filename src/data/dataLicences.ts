@@ -184,7 +184,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ecb',
     name: 'ECB euro reference rates (through Frankfurter)',
-    usedFor: 'FX volatility; last year\'s closing rate for the year-to-date move',
+    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move',
     terms: [
       { label: 'ECB statistics reuse policy', url: 'https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html' },
       { label: 'Frankfurter licence', url: 'https://frankfurter.dev/license/' },

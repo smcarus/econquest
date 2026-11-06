@@ -249,7 +249,10 @@ readings across the watchlist are under Compare countries.
 
 **History & data.** Every figure that has a run of real observations, as a chart with its source, how often it
 comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
-leading indicator, CFTC positioning and TIC holdings come with their own history. Government debt,
+leading indicator, CFTC positioning and TIC holdings come with their own history. The exchange rate
+per US dollar comes daily from 1999 for the about 30 currencies the ECB publishes (ECB reference rates
+via Frankfurter; first download in the background, also a step in Menu > Offline data); other
+currencies keep the saved-pulls run and say why. Government debt,
 primary balance, growth, IMF inflation, output gap, reserves (months of imports and USD), current
 account, external debt, short-term debt and political stability come with every year the World Bank
 or IMF WEO publish (saved in data/history/, refreshed weekly); IMF years from the current one on are
