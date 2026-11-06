@@ -494,6 +494,8 @@ export interface WatchlistItem {
    * estimate from IMF real GDP growth ('estimate', src/utils/outputGap.ts) with its band across methods.
    */
   outputGap?: { pct: number; year: string; source?: 'imf' | 'estimate'; low?: number; high?: number };
+  /** Debt sustainability summary (src/utils/debtSustainability.ts) from the saved IMF history. */
+  debtSustainability?: DsaSummary;
   /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
   policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
   /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */
@@ -2907,3 +2909,16 @@ export interface WorkspaceSessionSnapshot {
 }
 
 
+
+/** The few debt-sustainability figures the council and the watchlist carry (src/utils/debtSustainability.ts). */
+export interface DsaSummary {
+  year: string;
+  debtNow: number;
+  /** Baseline on IMF inputs where it ran, else the IMF path. */
+  base?: { label: string; end: number; year: string };
+  worst?: { label: string; end: number };
+  stabilisingPb?: number;
+  projectedPb?: number;
+  rMinusG?: number;
+  method: string;
+}

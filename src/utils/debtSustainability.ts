@@ -30,6 +30,7 @@
  * Browser-safe.
  */
 import type { Series } from './seriesHistory';
+import type { DsaSummary } from '../types/council';
 
 export const DSA_HORIZON = 5;
 export const DSA_HISTORY_YEARS = 10;
@@ -310,3 +311,18 @@ export function dsaRows(r: DsaResult): Array<[string, string, number]> {
   return r.scenarios.flatMap((s) => s.path.map((p) => [s.label, p.year, p.debt] as [string, string, number]));
 }
 
+
+/** The summary the watchlist row and the Fiscal & Debt Agent carry. */
+export function dsaSummary(r: DsaResult): DsaSummary {
+  const base = r.scenarios.find((s) => s.id === 'baseline') || r.scenarios.find((s) => s.id === 'imf');
+  return {
+    year: r.lastOutturnYear,
+    debtNow: r.debtNow,
+    ...(base ? { base: { label: base.label, end: base.end, year: base.path[base.path.length - 1].year } } : {}),
+    ...(r.worst ? { worst: { label: r.worst.label, end: r.worst.end } } : {}),
+    ...(r.stabilisingPb !== undefined ? { stabilisingPb: r.stabilisingPb } : {}),
+    ...(r.projectedPb !== undefined ? { projectedPb: r.projectedPb } : {}),
+    ...(r.rMinusG !== undefined ? { rMinusG: r.rMinusG } : {}),
+    method: r.method,
+  };
+}

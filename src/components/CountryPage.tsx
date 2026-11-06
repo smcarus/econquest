@@ -24,6 +24,7 @@ import { lazyNamed, DeskLoading } from './LazyDesk';
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
+const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
@@ -421,6 +422,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Debt sustainability">
             <React.Suspense fallback={<DeskLoading />}>
               <DebtSustainabilityPanel key={`dsa-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-fiscal-multipliers" className="scroll-mt-4" />
+          <PanelBoundary name="Fiscal multipliers">
+            <React.Suspense fallback={<DeskLoading />}>
+              <FiscalMultiplierPanel key={`mult-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} item={item} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-as-of" className="scroll-mt-4" />
