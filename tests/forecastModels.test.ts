@@ -183,3 +183,16 @@ test('unbroken tail keeps only the run of periods that ends at the newest point'
   const s = unbrokenTail({ where: 'A', dates: ['2000', '2001', '2003', '2004', '2005'], values: [1, 2, 3, 4, 5] }, next);
   assert.deepEqual(s.dates, ['2003', '2004', '2005']);
 });
+
+test('without an intercept the AR on changes has no drift', () => {
+  const rand = seededRandom(12);
+  const y = [10];
+  for (let t = 1; t < 200; t++) y.push(y[t - 1] - 0.05 + 0.3 * (y[t - 1] - (y[t - 2] ?? y[t - 1])) + 0.2 * normal(rand));
+  const withDrift = fitAr(y, { maxLag: 2, d: 1 });
+  const noDrift = fitAr(y, { maxLag: 2, d: 1, intercept: false });
+  assert.ok(!('error' in withDrift) && !('error' in noDrift));
+  assert.equal(noDrift.coef[0], 0);
+  const f = forecastAr(noDrift, y, 60);
+  // Without drift the path settles instead of trending down for ever.
+  assert.ok(Math.abs(f[59].mean - f[30].mean) < 0.05);
+});

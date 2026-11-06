@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { DATA_DIR } from '../config';
 import { OpenDataSnapshot } from '../../types/council.ts';
-import { type GdeltToneShift, gdeltToneShift } from '../../utils/gdeltTone.ts';
+import { gdeltToneShift, type GdeltToneShift } from '../../utils/gdeltTone.ts';
 import { writeFileAtomic } from '../../utils/atomicWrite';
 
 /**

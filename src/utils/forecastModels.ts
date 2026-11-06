@@ -61,7 +61,7 @@ export const MIN_AR_OBS = 16;
 const diff = (y: number[]) => y.slice(1).map((v, i) => v - y[i]);
 
 /** Least squares AR(p) on z, using z[start..] as the left-hand side. */
-function fitArOn(z: number[], p: number, start: number): (Omit<ArFit, 'd'>) | Failed {
+function fitArOn(z: number[], p: number, start: number, intercept = true): (Omit<ArFit, 'd'>) | Failed {
   const Y: number[] = [];
   const X: number[][] = [];
   for (let t = start; t < z.length; t++) {
@@ -69,6 +69,18 @@ function fitArOn(z: number[], p: number, start: number): (Omit<ArFit, 'd'>) | Fa
     X.push(Array.from({ length: p }, (_, i) => z[t - 1 - i]));
   }
   if (Y.length < MIN_AR_OBS) return { error: `Only ${Y.length} usable observations; an AR(${p}) needs at least ${MIN_AR_OBS}.` };
+  if (!intercept) {
+    // coef[0] stays 0 so forecastAr reads it the same way.
+    const n = Y.length;
+    if (p === 0) {
+      const rss = Y.reduce((s, v) => s + v * v, 0);
+      return { p: 0, coef: [0], sigma: Math.sqrt(rss / n), n, bic: n * Math.log(Math.max(rss, 1e-12) / n) };
+    }
+    const phi = leastSquares(Y, X);
+    if (!phi) return { error: 'The lags move together exactly, so the model cannot be solved.' };
+    const rss = Y.reduce((s, v, t) => s + (v - X[t].reduce((a, x, i) => a + x * phi[i], 0)) ** 2, 0);
+    return { p, coef: [0, ...phi], sigma: Math.sqrt(rss / Math.max(1, n - p)), n, bic: n * Math.log(Math.max(rss, 1e-12) / n) + p * Math.log(n) };
+  }
   if (p === 0) {
     const m = Y.reduce((a, b) => a + b, 0) / Y.length;
     const rss = Y.reduce((s, v) => s + (v - m) ** 2, 0);
@@ -81,18 +93,37 @@ function fitArOn(z: number[], p: number, start: number): (Omit<ArFit, 'd'>) | Fa
   return { p, coef: r.coef, sigma: Math.sqrt(r.rss / Math.max(1, n - r.k)), n, bic: n * Math.log(Math.max(r.rss, 1e-12) / n) + r.k * Math.log(n) };
 }
 
+/** Least squares without an intercept (normal equations, Gaussian elimination). Null when singular. */
+function leastSquares(Y: number[], X: number[][]): number[] | null {
+  const k = X[0].length;
+  const A = Array.from({ length: k }, (_, i) => [...Array.from({ length: k }, (_, j) => X.reduce((s, r) => s + r[i] * r[j], 0)), X.reduce((s, r, t) => s + r[i] * Y[t], 0)]);
+  for (let c = 0; c < k; c++) {
+    let piv = c;
+    for (let r = c + 1; r < k; r++) if (Math.abs(A[r][c]) > Math.abs(A[piv][c])) piv = r;
+    if (Math.abs(A[piv][c]) < 1e-12) return null;
+    [A[c], A[piv]] = [A[piv], A[c]];
+    for (let r = 0; r < k; r++) {
+      if (r === c) continue;
+      const f = A[r][c] / A[c][c];
+      for (let j = c; j <= k; j++) A[r][j] -= f * A[c][j];
+    }
+  }
+  return A.map((row, i) => row[k] / row[i]);
+}
+
 /**
  * AR with the lag order (0 to maxLag) that has the lowest BIC, every order fitted on the same
- * observations so the BICs compare. d = 1 fits on the changes.
+ * observations so the BICs compare. d = 1 fits on the changes. intercept = false leaves out the
+ * constant (on the changes: no drift, so the forecast does not carry a past trend on for ever).
  */
-export function fitAr(y: number[], opts: { maxLag: number; d?: 0 | 1 }): ArFit | Failed {
+export function fitAr(y: number[], opts: { maxLag: number; d?: 0 | 1; intercept?: boolean }): ArFit | Failed {
   const d = opts.d ?? 0;
   if (y.some((v) => !Number.isFinite(v))) return { error: 'The series has a gap or a non-number; the model needs an unbroken run.' };
   const z = d === 1 ? diff(y) : y;
   let best: (Omit<ArFit, 'd'>) | null = null;
   let firstError: Failed | null = null;
   for (let p = 0; p <= opts.maxLag; p++) {
-    const f = fitArOn(z, p, opts.maxLag);
+    const f = fitArOn(z, p, opts.maxLag, opts.intercept ?? true);
     if ('error' in f) {
       firstError ??= f;
       continue;
