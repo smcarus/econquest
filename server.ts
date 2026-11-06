@@ -1,5 +1,7 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { loadWeoVintages } from './src/utils/weoVintagesStore';
+import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
@@ -3338,6 +3340,23 @@ async function startServer() {
       sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
+  });
+  // Past IMF WEO editions you saved in data/local/weo-vintages/ (src/utils/weoVintages.ts). Read again
+  // when ?fresh=1, so files added while the app runs are picked up.
+  app.get('/api/weo-vintages', (req, res) => {
+    const store = loadWeoVintages(DATA_DIR, { fresh: req.query.fresh === '1' });
+    res.json({
+      folder: 'data/local/weo-vintages',
+      editions: store.editions.map((e) => ({ vintage: e.vintage, label: vintageLabel(e.vintage), file: e.file, countries: Object.keys(e.rows).length })),
+      skipped: store.skipped,
+    });
+  });
+  app.get('/api/weo-vintages/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const code = String(req.query.code || 'NGDP_RPCH');
+    if (!(WEO_VINTAGE_CODES as readonly string[]).includes(code)) return res.status(400).json({ error: 'UNKNOWN_CODE', message: `Indicator ${code} is not kept from WEO editions.` });
+    const year = typeof req.query.year === 'string' ? req.query.year : undefined;
+    res.json(weoVintageReply(loadWeoVintages(DATA_DIR, { fresh: req.query.fresh === '1' }), iso3, code, year));
   });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
