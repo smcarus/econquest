@@ -55,6 +55,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Sanctions lists | Research | Stated method, no call to test | Not applicable |
 | Geopolitical risk VaR | Research | Stated method, no call to test | Not applicable |
 | Historical context line | Research | Stated method, no call to test | Not applicable |
+| Claim check | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -637,6 +638,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Where it sits: the share of all observations at or below it. Change on the observation one year earlier, in points for shares and rates.
 - **Limits:** Only the history the app has saved for that figure; a short series makes "on record" weak, so the first date is always given. No rank among peers yet.
 - **Code:** `src/utils/historicalContext.ts`
+
+### Claim check
+
+- **Shows in:** Today > Council chat (the Claim Check answer, when a question states a figure or a ranking)
+- Figures stated in the question (policy rate, inflation, government debt, primary balance, official reserves, real GDP growth) are found by the rules of the document figure check and compared with the app figure for the one watchlist country the question names, within the same tolerances (0.05 to 1 point; 2% for reserves).
+- A year in the question that differs from the year of the app figure is reported as a different period, neither a match nor a difference.
+- Rankings (highest, lowest, largest and so on in the G20, the G7 or the watchlist): the country's app figure is ranked against the members the app holds a figure for. A higher (or lower) figure elsewhere disproves the claim; ranking first supports it fully only when every member is covered, otherwise the uncovered members are named.
+- **Limits:** A check against the app's figures, which may be older than the claim or measure something else (monthly against annual inflation, mixed sources across countries). Stated figures are checked only when the question names one country. Targets and forecasts are left out. No other groups (EM, the world) are ranked.
+- **Code:** `src/utils/claimCheck.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

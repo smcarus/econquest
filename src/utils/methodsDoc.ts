@@ -125,6 +125,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/historicalContext.ts',
   },
   {
+    id: 'claim_check',
+    name: 'Claim check',
+    where: 'Today > Council chat (the Claim Check answer, when a question states a figure or a ranking)',
+    method: [
+      'Figures stated in the question (policy rate, inflation, government debt, primary balance, official reserves, real GDP growth) are found by the rules of the document figure check and compared with the app figure for the one watchlist country the question names, within the same tolerances (0.05 to 1 point; 2% for reserves).',
+      'A year in the question that differs from the year of the app figure is reported as a different period, neither a match nor a difference.',
+      'Rankings (highest, lowest, largest and so on in the G20, the G7 or the watchlist): the country\'s app figure is ranked against the members the app holds a figure for. A higher (or lower) figure elsewhere disproves the claim; ranking first supports it fully only when every member is covered, otherwise the uncovered members are named.',
+    ],
+    limits: 'A check against the app\'s figures, which may be older than the claim or measure something else (monthly against annual inflation, mixed sources across countries). Stated figures are checked only when the question names one country. Targets and forecasts are left out. No other groups (EM, the world) are ranked.',
+    code: 'src/utils/claimCheck.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',

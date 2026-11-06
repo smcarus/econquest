@@ -343,6 +343,13 @@ history: a record or "highest since" (only when that date is far enough back to 
 sits among all the saved observations, and the change on a year earlier. IMF projections are left
 out.
 
+**Claim check.** Type a sentence with a figure or a ranking into Council chat, such as "Turkey's
+inflation is 33%" or "Is it true Turkey's inflation is the highest in the G20?", and the Claim Check
+answer puts it next to the app's own figure, with the source and date: matches, differs (by how
+much), or a different period when the sentence names another year. A ranking is ranked among the
+G20, G7 or watchlist countries the app holds a figure for; a higher figure elsewhere disproves it,
+and members with no figure are named, since the app cannot rule them out.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

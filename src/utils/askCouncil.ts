@@ -36,6 +36,7 @@ import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
 import { MEASURE_LABEL, TOLERANCE, compareClaims, extractClaims, fmtMeasure } from './docFigureCheck';
+import { claimAnswer } from './claimCheck';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
@@ -49,7 +50,7 @@ import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestio
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing';
 /** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts). */
-export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast';
+export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {
@@ -1067,7 +1068,11 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
     return { ...a, why, findings: kept, missing };
   });
   if (plan.offWatchlist?.length && desk.length) desk[0].missing.unshift(offWatchlistNote(plan.offWatchlist));
-  return docs.length ? [...desk, docAgent(question, docs, all, plan.countries)] : desk;
+  // Claim Check (src/utils/claimCheck.ts): a figure or ranking stated in the question, checked against the app.
+  const named = countriesInQuestion(question, all);
+  const claim = claimAnswer(question, named.length ? named : plan.countries.length === 1 ? plan.countries : [], all);
+  const withClaim = claim ? [claim, ...desk] : desk;
+  return docs.length ? [...withClaim, docAgent(question, docs, all, plan.countries)] : withClaim;
 }
 
 export const CHART_AGENT_NAME = 'Chart';
