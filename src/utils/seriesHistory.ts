@@ -29,6 +29,8 @@ export interface SeriesPoint {
   value: number;
   /** For archive series: what the source said that pull (e.g. "IMF WEO", "World Bank, 2024"). */
   note?: string;
+  /** Official history: the source changed this value since the app first read it ("Revised from 87.1 on 2026-11-06"). */
+  revised?: string;
 }
 
 export interface Series {

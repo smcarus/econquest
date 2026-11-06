@@ -2,7 +2,7 @@ import { CDS_HIDDEN } from './src/utils/cdsHidden.ts';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
-import { OFFICIAL_FIGURES, officialPoints, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
+import { OFFICIAL_FIGURES, officialPoints, mergeRevisions, historyRevisions, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
 import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
@@ -2164,7 +2164,10 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
     await new Promise((r) => setTimeout(r, 200)); // polite gap between requests
   }
   if (!answered) return prev; // nothing answered (offline?): keep what is saved
-  const file: OfficialHistoryFile = { iso3, pulledAt: new Date().toISOString(), series, ...(Object.keys(failed).length ? { failed } : {}) };
+  const pulledAt = new Date().toISOString();
+  // Revision tracking: values the IMF or World Bank changed since the last download are kept with the old value.
+  const revisions = mergeRevisions(prev?.revisions, historyRevisions(prev, { series, pulledAt }));
+  const file: OfficialHistoryFile = { iso3, pulledAt, series, ...(Object.keys(failed).length ? { failed } : {}), ...(revisions ? { revisions } : {}) };
   writeFileAtomic(historyFile(iso3), JSON.stringify(file));
   return file;
 }
@@ -5903,6 +5906,35 @@ async function startServer() {
       watchedSince: Object.keys(ledger.figures).length ? ledger.updatedAt || null : null,
       files: ['data/local/data-health/figures.json', 'data/local/data-health/figure-events.jsonl'],
     });
+  });
+  // Data health: values the IMF or World Bank revised in the saved yearly history (data/history/).
+  app.get('/api/data/health/revisions', (req, res) => {
+    const only = typeof req.query.iso3 === 'string' ? req.query.iso3.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) : '';
+    const projections = req.query.projections === '1';
+    const limit = Math.min(2000, Math.max(1, Number(req.query.limit) || 300));
+    let codes: string[] = [];
+    try {
+      codes = fs.readdirSync(HISTORY_DIR).map((n) => /^([A-Z0-9]+)\.json$/.exec(n)?.[1]).filter((c): c is string => Boolean(c));
+    } catch {
+      // no history downloaded yet
+    }
+    const labels = new Map(OFFICIAL_FIGURES.map((f) => [f.id, f]));
+    const rows: Array<Record<string, unknown> & { seenAt: string }> = [];
+    let projectionCount = 0;
+    for (const iso3 of codes) {
+      if (only && iso3 !== only) continue;
+      const file = loadOfficialHistory(iso3);
+      for (const [id, revs] of Object.entries(file?.revisions || {})) {
+        const fig = labels.get(id);
+        for (const r of revs) {
+          if (r.projection) projectionCount++;
+          if (r.projection && !projections) continue;
+          rows.push({ iso3, figure: id, label: fig?.label || id, unit: fig?.unit || '', source: fig ? fig.sourceName || (fig.source === 'imf' ? 'IMF World Economic Outlook' : 'World Bank Open Data') : '', ...r });
+        }
+      }
+    }
+    rows.sort((a, b) => (a.seenAt < b.seenAt ? 1 : a.seenAt > b.seenAt ? -1 : 0));
+    res.json({ revisions: rows.slice(0, limit), total: rows.length, projectionsHidden: projections ? 0 : projectionCount, countries: codes.length, folder: 'data/history/' });
   });
   app.get('/api/data/connections', async (req, res) => {
     try {

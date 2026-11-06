@@ -69,6 +69,73 @@ export interface OfficialHistoryFile {
   series: Record<string, OfficialRun>;
   /** Series id -> why it did not come back this time (a later download tries again). */
   failed?: Record<string, string>;
+  /** Series id -> values the source changed between downloads, oldest first (see historyRevisions). */
+  revisions?: Record<string, HistoryRevision[]>;
+}
+
+/**
+ * A value the source changed between two downloads: the year, what it was and what it is now.
+ * IMF years from the current one on are projections, revised at every WEO; they are marked so a
+ * screen can tell a revised outturn from a revised forecast. A year the source dropped has no `to`.
+ */
+export interface HistoryRevision {
+  date: string;
+  from: number;
+  to?: number;
+  /** When the new value was first downloaded, and when the old one was. */
+  seenAt: string;
+  prevPulledAt: string;
+  projection?: boolean;
+}
+
+/** Revisions kept per series (each WEO revises several years; this is decades of them). */
+export const KEEP_REVISIONS = 300;
+
+/** Changes this small are rounding, not revisions. */
+const REVISION_TOL = 0.0005;
+
+/**
+ * What changed between the saved download and the new one, per series: years in both whose value
+ * moved, and years the source no longer publishes. New years are not revisions.
+ */
+export function historyRevisions(prev: OfficialHistoryFile | null | undefined, next: Pick<OfficialHistoryFile, 'series' | 'pulledAt'>): Record<string, HistoryRevision[]> {
+  const out: Record<string, HistoryRevision[]> = {};
+  if (!prev?.series) return out;
+  const thisYear = new Date(next.pulledAt).getUTCFullYear();
+  for (const fig of OFFICIAL_FIGURES) {
+    const before = prev.series[fig.id]?.points;
+    const after = next.series[fig.id]?.points;
+    if (!before?.length || !after?.length || before === after) continue;
+    const now = new Map(after.map((p) => [p.date, p.value]));
+    const list: HistoryRevision[] = [];
+    for (const p of before) {
+      const projection = fig.source === 'imf' && Number(p.date) >= thisYear ? { projection: true } : {};
+      const v = now.get(p.date);
+      if (v === undefined) list.push({ date: p.date, from: p.value, seenAt: next.pulledAt, prevPulledAt: prev.pulledAt, ...projection });
+      else if (Math.abs(v - p.value) > REVISION_TOL * Math.max(1, Math.abs(p.value))) list.push({ date: p.date, from: p.value, to: v, seenAt: next.pulledAt, prevPulledAt: prev.pulledAt, ...projection });
+    }
+    if (list.length) out[fig.id] = list;
+  }
+  return out;
+}
+
+/** The saved revisions with the new ones added, newest KEEP_REVISIONS per series. */
+export function mergeRevisions(prev: OfficialHistoryFile['revisions'], added: Record<string, HistoryRevision[]>): Record<string, HistoryRevision[]> | undefined {
+  const out: Record<string, HistoryRevision[]> = {};
+  for (const id of new Set([...Object.keys(prev || {}), ...Object.keys(added)])) {
+    const list = [...(prev?.[id] || []), ...(added[id] || [])].slice(-KEEP_REVISIONS);
+    if (list.length) out[id] = list;
+  }
+  return Object.keys(out).length ? out : undefined;
+}
+
+const fmtRev = (v: number) => String(Number(v.toFixed(3)));
+
+/** "Revised from 87.1 on 2026-11-06" for each year whose current value the source changed (latest change). */
+export function revisionNotes(revs: HistoryRevision[] | undefined): Map<string, string> {
+  const m = new Map<string, string>();
+  for (const r of revs || []) if (r.to !== undefined) m.set(r.date, `Revised from ${fmtRev(r.from)} on ${r.seenAt.slice(0, 10)}`);
+  return m;
 }
 
 const finite = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -122,7 +189,9 @@ export function officialSeries(file: OfficialHistoryFile | null | undefined, fig
     const why = file.failed?.[fig.id];
     return { id: fig.id, label: fig.label, reason: why || `${fig.sourceName || SOURCE_NAME[fig.source]} publishes no figures for this country` };
   }
-  const points = fig.source === 'imf' ? markImfProjections(run.points, now) : run.points;
+  const notes = revisionNotes(file.revisions?.[fig.id]);
+  const marked = fig.source === 'imf' ? markImfProjections(run.points, now) : run.points;
+  const points = notes.size ? marked.map((p) => (notes.has(p.date) ? { ...p, revised: notes.get(p.date) } : p)) : marked;
   const projected = points.some((p) => p.note === 'IMF projection');
   return {
     id: fig.id,
@@ -132,7 +201,7 @@ export function officialSeries(file: OfficialHistoryFile | null | undefined, fig
     source: `${fig.sourceName || SOURCE_NAME[fig.source]} (${fig.code})`,
     pulledAt: file.pulledAt,
     points,
-    about: [fig.about, projected ? 'Years from this one on are IMF projections, marked as such.' : ''].filter(Boolean).join(' ') || undefined,
+    about: [fig.about, projected ? 'Years from this one on are IMF projections, marked as such.' : '', notes.size ? `${notes.size} year${notes.size === 1 ? '' : 's'} revised by the source since the app first downloaded ${notes.size === 1 ? 'it' : 'them'}.` : ''].filter(Boolean).join(' ') || undefined,
   };
 }
 
