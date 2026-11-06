@@ -7,7 +7,7 @@ import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, forma
 import { OFFICIAL_FIGURES, officialPoints, mergeRevisions, historyRevisions, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
 import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
-import { loadWorkspace, setWorkspaceValue, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
+import { loadWorkspace, seedWorkspace, setWorkspaceValue, userWorkspacePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { dataDirProblem, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
@@ -1449,10 +1449,17 @@ function saveMorning(file: MorningBriefFile): void {
   writeFileAtomic(MORNING_FILE, JSON.stringify(file, null, 1), 0o600);
 }
 
+/** Set by startServer once accounts are loaded: which workspace file an account uses. */
+let workspaceFileForAccount: (account: Account | null) => string = () => WORKSPACE_FILE;
+/** The account whose lists server jobs (morning brief) use: the first active admin, or none. */
+let serverJobAccount: () => Account | null = () => null;
+/** Workspace used by jobs that run without a request. */
+const jobWorkspaceFile = () => workspaceFileForAccount(serverJobAccount());
+
 /** The watchlists saved in the app (workspace file), or the starting ones. */
 function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> {
   try {
-    const raw = loadWorkspace(WORKSPACE_FILE).values['sovereign_council_watchlists_v1'];
+    const raw = loadWorkspace(jobWorkspaceFile()).values['sovereign_council_watchlists_v1'];
     const groups = raw ? JSON.parse(raw) : null;
     if (Array.isArray(groups) && groups.length) {
       return groups
@@ -1467,7 +1474,7 @@ function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> 
 
 function savedAiConfig(): any {
   try {
-    const raw = loadWorkspace(WORKSPACE_FILE).values['econquest_ai_runtime_config_v1'];
+    const raw = loadWorkspace(jobWorkspaceFile()).values['econquest_ai_runtime_config_v1'];
     return raw ? JSON.parse(raw) : serverGuiRuntimeConfig;
   } catch {
     return serverGuiRuntimeConfig;
@@ -2155,6 +2162,23 @@ async function startServer() {
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
+  // Each account's own workspace (holdings, watchlists, added countries); the shared file while
+  // sign-in is off. The first admin starts from the shared file, which held the single user's lists.
+  workspaceFileForAccount = (account: Account | null): string => {
+    if (!account) return WORKSPACE_FILE;
+    const file = userWorkspacePath(DATA_DIR, account.id);
+    const firstAdmin = auth.list().filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+    if (firstAdmin?.id === account.id) {
+      try {
+        seedWorkspace(WORKSPACE_FILE, file);
+      } catch (error) {
+        console.error('[workspace] could not copy the shared workspace for the first admin:', (error as Error)?.message);
+      }
+    }
+    return file;
+  };
+  serverJobAccount = () => auth.list().filter((a) => a.role === 'admin' && !a.disabled).sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0] ?? null;
+  const workspaceFor = (res: express.Response) => workspaceFileForAccount(signedIn(res));
   const authStatus = (req: express.Request, res: express.Response) => {
     const mode = currentMode();
     const me = signedIn(res);
@@ -2326,13 +2350,14 @@ async function startServer() {
   // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
   // a larger body than the other routes (a library with documents), so it parses its own.
-  const backupFiles = { research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: WORKSPACE_FILE, reviews: REVIEW_FILE, snapshots: ANSWER_SNAPSHOT_DIR };
+  // A backup holds the team library and the workspace of the account making it (admins only).
+  const backupFilesFor = (res: express.Response) => ({ research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: workspaceFor(res), reviews: REVIEW_FILE, snapshots: ANSWER_SNAPSHOT_DIR });
   app.get('/api/backup', (_req, res) => {
-    res.json({ summary: summariseBackup(currentBackup(backupFiles)), fileName: backupFileName() });
+    res.json({ summary: summariseBackup(currentBackup(backupFilesFor(res))), fileName: backupFileName() });
   });
   app.get('/api/backup/download', (_req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${backupFileName()}"`);
-    res.type('application/json').send(JSON.stringify(currentBackup(backupFiles), null, 1));
+    res.type('application/json').send(JSON.stringify(currentBackup(backupFilesFor(res)), null, 1));
   });
   app.post('/api/backup/restore', express.json({ limit: '60mb' }), (req, res) => {
     if (!trusted(req, res)) {
@@ -2341,7 +2366,7 @@ async function startServer() {
     const parsed = parseBackup(req.body?.backup);
     if (!parsed.ok) return res.status(400).json({ error: parsed.error });
     try {
-      const { savedCopy } = restoreBackup(backupFiles, parsed.backup);
+      const { savedCopy } = restoreBackup(backupFilesFor(res), parsed.backup);
       res.json({ ok: true, summary: parsed.summary, savedCopy });
     } catch (error: any) {
       res.status(500).json({ error: `Could not restore the backup (${error?.code || error?.message || 'unknown error'}). Nothing was lost: see data/local/backups/.` });
@@ -2497,8 +2522,9 @@ async function startServer() {
   // Holdings, watchlists, added countries and AI settings (data/local/workspace.json), shared by
   // every address the app is opened at. See src/utils/workspaceStore.ts.
   app.get('/api/workspace', (_req, res) => {
-    const w = loadWorkspace(WORKSPACE_FILE);
-    res.json({ values: w.values, updatedAt: w.updatedAt, file: 'data/local/workspace.json' });
+    const file = workspaceFor(res);
+    const w = loadWorkspace(file);
+    res.json({ values: w.values, updatedAt: w.updatedAt, file: path.relative(DATA_DIR, file).startsWith('..') ? file : `data/${path.relative(DATA_DIR, file)}`, perAccount: Boolean(signedIn(res)) });
   });
   app.put('/api/workspace/:key', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
@@ -2506,8 +2532,9 @@ async function startServer() {
     const problem = workspaceProblem(req.params.key, value);
     if (problem) return res.status(400).json({ error: problem });
     try {
-      const before = loadWorkspace(WORKSPACE_FILE).values[req.params.key] ?? null;
-      const w = setWorkspaceValue(WORKSPACE_FILE, req.params.key, value);
+      const file = workspaceFor(res);
+      const before = loadWorkspace(file).values[req.params.key] ?? null;
+      const w = setWorkspaceValue(file, req.params.key, value);
       // The page re-sends these on every load; only a real change goes in the audit log.
       if (before !== value) appendAudit(AUDIT_FILES, { kind: req.params.key === 'econquest_ai_runtime_config_v1' ? 'model' : 'workspace', summary: `Changed ${WORKSPACE_KEYS[req.params.key] || req.params.key}` });
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
@@ -3211,7 +3238,7 @@ async function startServer() {
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
   const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
-    const rows = shareModeFromValue(loadWorkspace(WORKSPACE_FILE).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
+    const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
     if (req.params.fmt === 'xlsx') {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.attachment(name.replace(/\.csv$/, '.xlsx'));
