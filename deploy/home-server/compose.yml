@@ -17,8 +17,9 @@ services:
       dockerfile: Dockerfile
     image: econquest:local
     restart: unless-stopped
-    # This machine only by default. To reach it from other computers on your network, set
-    # BIND_ADDRESS=0.0.0.0 and ALLOWED_HOSTS in .env (see the guide: there is no sign-in yet).
+    # This machine only by default. To reach it from other computers, prefer the "https" profile
+    # below; or set BIND_ADDRESS=0.0.0.0 and ALLOWED_HOSTS in .env. Either way the app then asks
+    # for the first admin account (setup code in `docker compose logs econquest`).
     ports:
       - "${BIND_ADDRESS:-127.0.0.1}:${PORT:-3737}:3000"
     env_file:
@@ -33,6 +34,9 @@ services:
       OLLAMA_QUICK_MODEL: ${OLLAMA_QUICK_MODEL:-qwen2.5:7b}
       OLLAMA_DEEP_MODEL: ${OLLAMA_DEEP_MODEL:-qwen2.5:32b}
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
+      # Behind the Caddy profile: trust its X-Forwarded-* headers and mark the cookie Secure.
+      TRUST_PROXY: ${TRUST_PROXY:-}
+      COOKIE_SECURE: ${COOKIE_SECURE:-}
       SETTINGS_ALLOW_REMOTE: ${SETTINGS_ALLOW_REMOTE:-true}
       TZ: ${TZ:-UTC}
       # Jobs the server runs by itself (Menu > Data health > Scheduled). "off" turns one off.
@@ -63,7 +67,27 @@ services:
       - ${OLLAMA_MODELS_PATH:-./ollama}:/root/.ollama
     networks: [econquest]
 
-  # HTTPS (Caddy) and sign-in are being added; a "caddy" profile will go here.
+  # HTTPS in front of the app (Caddy). Started when COMPOSE_PROFILES includes "https".
+  # Set SITE_ADDRESS to the name people type (homeserver.local, or a real domain), add the same
+  # name to ALLOWED_HOSTS, and set COOKIE_SECURE=true and TRUST_PROXY=1 in .env.
+  # TLS_MODE=internal (default) uses Caddy's own certificate authority, for a home network;
+  # for a public domain set TLS_MODE to your email address and Caddy gets a Let's Encrypt
+  # certificate. Guide: docs/HOME_SERVER.md "HTTPS and sign-in".
+  caddy:
+    image: ${CADDY_IMAGE:-caddy:2.8-alpine}
+    profiles: [https]
+    restart: unless-stopped
+    ports:
+      - "${HTTPS_BIND_ADDRESS:-0.0.0.0}:80:80"
+      - "${HTTPS_BIND_ADDRESS:-0.0.0.0}:443:443"
+    environment:
+      SITE_ADDRESS: ${SITE_ADDRESS:-localhost}
+      TLS_MODE: ${TLS_MODE:-internal}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${CADDY_DATA_PATH:-./caddy}:/data
+    depends_on: [econquest]
+    networks: [econquest]
 
 networks:
   econquest: {}
