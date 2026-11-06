@@ -16,6 +16,7 @@ import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
+import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
@@ -250,6 +251,7 @@ export const SOURCE_IDS = [
   'pink_sheet',
   'oecd_cli',
   'oecd_cpi',
+  'oecd_qna',
   'bcb_ipca',
   'bcrp_embig',
   'eurostat_hicp',
@@ -652,22 +654,48 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     return job;
   });
 
-  add('oecd_cpi', async () => {
+  add('oecd_cpi', () => {
+    const job = (async () => {
+      await oecdGate.catch(() => undefined);
+      await new Promise((r) => setTimeout(r, opts.oecdGapMs ?? 3000));
+      return httpCheck(
+        { id: 'oecd_cpi', name: 'OECD consumer prices (via DBnomics)', group: 'free', feeds: 'Monthly OECD headline CPI inflation, y/y, for the countries the OECD covers' },
+        fetchFn,
+        cpiUrl({ areas: ['USA', SAMPLE_ISO3] }),
+        Math.max(T, 20000),
+        (r) => {
+          const s = parseCpi(r.text);
+          const c = cpiFor(SAMPLE_ISO3, s) || cpiFor('USA', s);
+          const us = cpiFor('USA', s);
+          return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})${usMonthNote(c, us)}` : null;
+        },
+        { headers: OECD_HEADERS },
+        'DBnomics answered, but with no monthly OECD headline CPI growth series the app reads (dataset DSD_PRICES@DF_PRICES_ALL). The dataset code or dimension names may differ.'
+      );
+    })();
+    oecdGate = job;
+    return job;
+  });
+
+  add('oecd_qna', async () => {
+    // Same DBnomics queue as the leading indicator and CPI checks: one call at a time.
     await oecdGate.catch(() => undefined);
     await new Promise((r) => setTimeout(r, opts.oecdGapMs ?? 3000));
     return httpCheck(
-      { id: 'oecd_cpi', name: 'OECD consumer prices (via DBnomics)', group: 'free', feeds: 'Monthly OECD headline CPI inflation, y/y, for the countries the OECD covers' },
+      { id: 'oecd_qna', name: 'OECD quarterly GDP (via DBnomics)', group: 'free', feeds: 'Quarterly real GDP growth (q/q and y/y, seasonally adjusted) for the OECD and partner countries, used by the nowcast and forecasts' },
       fetchFn,
-      cpiUrl({ areas: ['USA', SAMPLE_ISO3] }),
+      qnaUrl({ areas: ['USA', SAMPLE_ISO3] }),
       Math.max(T, 20000),
       (r) => {
-        const s = parseCpi(r.text);
-        const c = cpiFor(SAMPLE_ISO3, s) || cpiFor('USA', s);
-        const us = cpiFor('USA', s);
-        return c ? `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} inflation ${fmt(c.yoyPct, 1)}% y/y (${formatMonth(c.month)})${usMonthNote(c, us)}` : null;
+        const s = parseQna(r.text);
+        const c = qnaReading(SAMPLE_ISO3, s) || qnaReading('USA', s);
+        const us = qnaReading('USA', s);
+        if (!c) return null;
+        const g = c.qoqPct ?? c.yoyPct!;
+        return `${c.iso3 === SAMPLE_ISO3 ? SAMPLE_NAME : 'United States'} real GDP ${fmt(g, 1)}% ${c.qoqPct !== undefined ? 'q/q' : 'y/y'} (${formatQuarter(c.quarter)})${us && c.iso3 !== 'USA' ? `; newest for the United States: ${formatQuarter(us.quarter)}` : ''}`;
       },
       { headers: OECD_HEADERS },
-      'DBnomics answered, but with no monthly OECD headline CPI growth series the app reads (dataset DSD_PRICES@DF_PRICES_ALL). The dataset code or dimension names may differ.'
+      'DBnomics answered, but with no quarterly real GDP growth series the app reads (dataset DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD). The dataset code or dimension names may differ.'
     );
   });
 

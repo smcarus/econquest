@@ -36,6 +36,7 @@ import { readXlsxSheet } from './src/utils/xlsxRead';
 import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { parseQna, qnaUrl, type QnaSeries } from './src/utils/oecdQna';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
@@ -993,6 +994,64 @@ async function fetchCliPull(): Promise<CliPull | null> {
     cliInFlight = null;
   });
   return cliInFlight;
+}
+
+/**
+ * OECD quarterly real GDP growth (src/utils/oecdQna.ts). One call for every area, after the other
+ * OECD calls (same queue). Saved to data/live/oecd-qna.json and pulled again after a day; a failed
+ * pull keeps the last good one and is retried after an hour.
+ */
+type QnaPull = { pulledAt: string; series: QnaSeries };
+let qnaMemory: { pull: QnaPull | null; triedAt: number } | null = null;
+let qnaInFlight: Promise<QnaPull | null> | null = null;
+function qnaFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-qna.json');
+}
+async function fetchQnaPull(): Promise<QnaPull | null> {
+  if (!qnaMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(qnaFile(), 'utf8')) as QnaPull;
+      if (saved?.pulledAt && saved.series) qnaMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (qnaMemory?.pull && Date.now() - Date.parse(qnaMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return qnaMemory.pull;
+  if (qnaMemory && Date.now() - qnaMemory.triedAt < 60 * 60 * 1000) return qnaMemory.pull;
+  if (qnaInFlight) return qnaInFlight;
+  qnaInFlight = (async () => {
+    let series: QnaSeries | null = null;
+    for (const wide of [false, true]) {
+      let res: { status: number; text: string } | null = null;
+      try {
+        res = await oecdFetch(qnaUrl({ wide }), 30000);
+      } catch (e) {
+        console.warn(`[OECD via DBnomics] quarterly GDP: ${describeNetworkError(e, 30000)}`);
+        break;
+      }
+      if (!res) break;
+      if (res.status >= 200 && res.status < 300) series = parseQna(res.text);
+      else console.warn(`[OECD via DBnomics] quarterly GDP refused (HTTP ${res.status})`);
+      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
+    }
+    const prev = qnaMemory?.pull ?? null;
+    if (!series) {
+      qnaMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: QnaPull = { pulledAt: new Date().toISOString(), series };
+    qnaMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(qnaFile()), { recursive: true });
+      writeFileAtomic(qnaFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    qnaInFlight = null;
+  });
+  return qnaInFlight;
 }
 
 /**
@@ -2329,6 +2388,8 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCbpolPull(), 'BIS');
     case 'world:oecd_cli':
       return had(await fetchCliPull(), 'OECD (DBnomics)');
+    case 'world:oecd_qna':
+      return had(await fetchQnaPull(), 'OECD (DBnomics)');
     case 'world:oecd_cpi':
       return had(await fetchCpiPull(), 'OECD (DBnomics)');
     case 'world:national_cpi':
@@ -5613,11 +5674,12 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
+      quick(fetchQnaPull()),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -5627,6 +5689,7 @@ async function startServer() {
     return countrySeries(iso3, {
       cbpol,
       cli,
+      qna,
       cpiOecdAnswered: Boolean(cpi),
       cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
