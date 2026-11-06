@@ -94,3 +94,23 @@ test('the three registered specs match their hashes; an offline run passes nothi
   fs.rmSync(dir, { recursive: true, force: true });
   assert.deepEqual(panelMonths({ fx: { A: new Map([['2000-01', 1], ['2000-02', 1]]) }, policy: {}, cpiYoy: {}, usCpi: 'USA' }), ['2000-01']);
 });
+
+test('forward record: the latest book is recorded open, then scored as recorded', async () => {
+  const { fxFactorBook } = await import('../src/utils/fxFactors.ts');
+  const { recordedOutcomes } = await import('../src/utils/fxFactorsRun.ts');
+  const { forwardStep } = await import('../src/utils/forwardRecord.ts');
+  const p = carryPanel();
+  const last = months[months.length - 1];
+  assert.deepEqual(fxFactorBook(spec('carry'), p, last), { long: ['C8', 'C7', 'C6'], short: ['C2', 'C1', 'C0'] });
+  const done = months.slice(0, -1);
+  const rows = fxFactorReturns(spec('carry'), p, done);
+  const key = 'fx_carry v1';
+  // Recorded at the second-to-last month while it was still open.
+  const t = done[done.length - 1];
+  const call = forwardStep([], { key, specHash: 'h', passing: true }, [], [{ where: 'book', when: t, what: 'w', due: last, book: { long: ['C8', 'C7', 'C6'], short: ['C2', 'C1', 'C0'] } }], 'at');
+  const cases = recordedOutcomes(spec('carry'), p, done, rows, call, key, 0.5);
+  assert.equal(cases.length, 1);
+  assert.ok(Math.abs(cases[0].value - 0.5) < 1e-9, 'gross 0.5% a month, no turnover from the month before');
+  const outcome = forwardStep(call, { key, specHash: 'h', passing: true }, cases, [], 'later');
+  assert.deepEqual(outcome.map((l) => [l.kind, (l as any).hit, (l as any).value]), [['outcome', true, 0.5]]);
+});

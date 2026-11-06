@@ -173,6 +173,21 @@ export function fxFactorReturns(spec: FxFactorSpec, p: FxPanel, months: string[]
   return out;
 }
 
+/**
+ * The book the factor holds from month-end `t` (thirds by signal, as in fxFactorReturns), from the
+ * signal and the month-end rate alone: the call made at `t`, before the next month's return exists.
+ * Null when fewer than minCurrencies can be ranked.
+ */
+export function fxFactorBook(spec: FxFactorSpec, p: FxPanel, t: string): { long: string[]; short: string[] } | null {
+  const ranked = spec.universe
+    .map((u) => ({ u, s: signalAt(spec, p, u, t) }))
+    .filter((x): x is { u: FxUniverseEntry; s: number } => x.s !== undefined && Number.isFinite(x.s) && Boolean(p.fx[x.u.ccy]?.get(t)) && p.policy[x.u.bis]?.get(t) !== undefined && p.policy.US?.get(t) !== undefined)
+    .sort((a, b) => b.s - a.s || a.u.ccy.localeCompare(b.u.ccy));
+  if (ranked.length < spec.params.minCurrencies) return null;
+  const k = Math.floor(ranked.length / 3);
+  return { long: ranked.slice(0, k).map((x) => x.u.ccy), short: ranked.slice(-k).map((x) => x.u.ccy) };
+}
+
 export interface FxFactorResult {
   status: 'passed' | 'failed' | 'too_few_cases';
   verdict: string;

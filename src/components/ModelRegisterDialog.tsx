@@ -145,6 +145,16 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                 {fv.map((x) => (
                                   <span key={x.id} className="block" data-forecast-verdict={x.id} data-status={x.status}>
                                     <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict} <span data-holm={`forecast ${x.id} v${x.specVersion}`}>{holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}</span>
+                                    {v?.forward?.[`${x.id} v${x.specVersion}`] && (
+                                      <span className="block" data-forward-record={x.id}>
+                                        {forwardSentence(v.forward[`${x.id} v${x.specVersion}`])}
+                                        {v.forward[`${x.id} v${x.specVersion}`].recent.slice(0, 3).map((c) => (
+                                          <span key={c.when} className="block text-slate-500 dark:text-slate-400">
+                                            {c.when}: {c.what} {c.hit === undefined ? `Open until ${c.due}.` : c.hit ? 'Positive.' : 'Not positive.'}
+                                          </span>
+                                        ))}
+                                      </span>
+                                    )}
                                   </span>
                                 ))}
                                 <span className="block text-slate-400 dark:text-slate-500">{e.id.startsWith('fx_') ? 'docs/validation/signals/ · npm run signals:evaluate · data/local/validation/signals.json' : 'docs/validation/forecasts/ · npm run forecast:evaluate · data/local/validation/forecasts.json'}</span>
