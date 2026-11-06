@@ -235,8 +235,11 @@ Notes from the first check on Sam's Mac (2026-11-05):
 
 The Uppsala Conflict Data Program publishes its datasets as CSV files at
 <https://ucdp.uu.se/downloads/> (free, CC BY 4.0, cite the publications listed with each dataset).
-The app does not call UCDP: download the files and put them, as the .zip or the .csv inside, in
-`data/local/ucdp/`. The app reads them when it starts and again whenever a file there changes.
+The app does not call UCDP. The 26.1 release of the five files below is shipped in the repository
+(`datasets/ucdp/`, unchanged, with its licence and citations in the README there), so the figures work
+with no setup. For a newer release, download the same files and put them, as the .zip or the .csv
+inside, in `data/local/ucdp/` (or replace the shipped ones). The app reads both folders when it starts
+and again whenever a file changes; a newer release of a dataset wins over an older one.
 
 | File (26.1 release) | Fills | Years |
 | --- | --- | --- |

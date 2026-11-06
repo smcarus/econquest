@@ -2,8 +2,8 @@
  * UCDP conflict data (Uppsala Conflict Data Program), from the CSV files downloaded from
  * https://ucdp.uu.se/downloads/ (Sam, 2026-11-06: "use downloaded csvs", no live API pulls).
  *
- * Put the downloads (the .zip as downloaded, or the .csv inside) in data/local/ucdp/. Each file is
- * recognised by its columns, not its name, so a new yearly release (26.1, 27.1, ...) reads the same:
+ * The 26.1 release is shipped in datasets/ucdp/; newer downloads (the .zip as downloaded, or the .csv
+ * inside) go in data/local/ucdp/. Each file is recognised by its columns, not its name, so a new yearly release (26.1, 27.1, ...) reads the same:
  *
  * - UCDP/PRIO Armed Conflict Dataset (UcdpPrioConflict_v26_1.csv): every state-based armed
  *   conflict per year since 1946, with its intensity (1 = 25 to 999 battle deaths, 2 = 1,000+) and
@@ -391,7 +391,7 @@ export function ucdpMissing(data: UcdpData | null | undefined, iso3: string): { 
   if (!data || latestUcdpYear(data) === null)
     return {
       short: 'UCDP files not added',
-      help: `Download the UCDP CSV files from ${UCDP_DOWNLOADS_PAGE} and put them (zipped or not) in ${UCDP_FOLDER}.`,
+      help: `The UCDP files shipped in datasets/ucdp/ were not found. Download the UCDP CSV files from ${UCDP_DOWNLOADS_PAGE} and put them (zipped or not) in ${UCDP_FOLDER}.`,
     };
   return { short: 'UCDP figures not read', help: 'The UCDP files were read but did not fill this country.' };
 }
