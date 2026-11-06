@@ -20,6 +20,7 @@ import { parseLibrary, type ResearchLibrary } from './researchLibrary';
 import { parseRules, type WatchRule } from './watchRules';
 import type { PolicyReview } from './policyReview';
 import { isSnapshotId, type AnswerSnapshot } from './answerSnapshot';
+import { EXPORT_NOTICE } from './disclaimer';
 
 export const BACKUP_FORMAT = 'econquest-backup';
 export const BACKUP_VERSION = 1;
@@ -46,6 +47,8 @@ export interface BackupFile {
   format: typeof BACKUP_FORMAT;
   version: number;
   createdAt: string;
+  /** The standing research notice, for anyone who opens the file outside the app. Not read back. */
+  notice?: string;
   contents: BackupContents;
 }
 
@@ -151,6 +154,7 @@ export function buildBackup(parts: { research: ResearchLibrary; watchRules: Watc
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     createdAt: now.toISOString(),
+    notice: EXPORT_NOTICE,
     contents: {
       research: parseLibrary(parts.research),
       watchRules: parseRules({ rules: parts.watchRules }),
@@ -199,6 +203,7 @@ export function parseBackup(raw: unknown): { ok: true; backup: BackupFile; summa
     format: BACKUP_FORMAT,
     version: o.version,
     createdAt: typeof o.createdAt === 'string' ? o.createdAt.slice(0, 40) : '',
+    ...(typeof o.notice === 'string' ? { notice: EXPORT_NOTICE } : {}),
     contents: {
       research: parseLibrary(c.research),
       watchRules: parseRules({ rules: c.watchRules }),

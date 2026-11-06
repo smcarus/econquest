@@ -682,7 +682,7 @@ export const AskCouncilPanel: React.FC<{
             </div>
           </details>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. For discussion, not investment advice.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. Research, not validated advice.</p>
       </div>
     );
   };

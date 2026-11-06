@@ -1,6 +1,7 @@
 /** PDF of a policy review memo (browser only: jspdf is loaded when asked for). */
 import { pdfSafe } from './briefExport';
 import { RESEARCH_BANNER, VALIDATED_BANNER, type MemoStep } from './reviewMemo';
+import { EXPORT_NOTICE } from './disclaimer';
 
 export async function memoPdf(memo: MemoStep, savedAt: string, hash: string): Promise<ArrayBuffer> {
   const { jsPDF } = await import('jspdf');
@@ -38,6 +39,7 @@ export async function memoPdf(memo: MemoStep, savedAt: string, hash: string): Pr
     }
     y += 2;
   }
+  write(EXPORT_NOTICE, 8, 'italic', 0);
   const pages = doc.getNumberOfPages();
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);

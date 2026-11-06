@@ -7,6 +7,7 @@
  * Built with fflate (zip). Browser-safe, but the server builds the files.
  */
 import { zipSync, strToU8 } from 'fflate';
+import { EXPORT_NOTICE } from './disclaimer';
 
 type Cell = string | number | null | undefined;
 
@@ -136,6 +137,7 @@ export function tableWorkbook(title: string, header: string[], rows: Cell[][], n
         ['rows', rows.length],
         ['missing values', 'A missing value says Missing with its reason; nothing is filled in.'],
         ['sources', 'Each row names its own source and dates.'],
+        ['notice', EXPORT_NOTICE],
       ],
     },
   ]);

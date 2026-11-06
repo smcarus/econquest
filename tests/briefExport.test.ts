@@ -33,7 +33,7 @@ test('Markdown keeps every figure with a numbered source, lists the references a
   assert.match(md, /Debt\/GDP 86\.4% \(Live data\) \[1\]/);
   assert.match(md, /## References\n\n\[1\] IMF WEO, 2025\. https:\/\/www\.imf\.org\/external\/datamapper\/ Read by the app on 2026-11-05\./);
   assert.match(md, /Is Brazil’s debt sustainable\?/);
-  assert.match(md, /_For discussion, not investment advice\./);
+  assert.match(md, /_Research, not validated advice\./);
 });
 
 test('file names carry the date and the question', () => {

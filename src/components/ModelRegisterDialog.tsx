@@ -8,6 +8,7 @@ import { Download, Play, ShieldQuestion, X } from 'lucide-react';
 import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type ValidationStatus } from '../data/modelRegister';
 import { ValidationBadge } from './ValidationBadge';
 import { effectiveStatus, runValidation, useValidation, type ValidationReply } from './useValidation';
+import { EXPORT_NOTICE } from '../utils/disclaimer';
 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
@@ -16,7 +17,7 @@ function downloadCsv(v: ValidationReply | null) {
     const r = v?.results?.[id];
     return r ? { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}.` } : undefined;
   });
-  const text = '\uFEFF' + [REGISTER_HEADER, ...rows].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
+  const text = '\uFEFF' + [REGISTER_HEADER, ...rows, [EXPORT_NOTICE]].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
   const a = document.createElement('a');
   a.href = url;

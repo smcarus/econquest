@@ -1,12 +1,13 @@
 import type { SavedCouncilBrief } from './askCouncil';
 import { councilBriefSections } from './askCouncil';
+import { EXPORT_NOTICE } from './disclaimer';
 
 /**
  * Download a council brief as Markdown or PDF. Every agent figure carries its source and date in
  * the text (askCouncil.councilBriefSections), so the file stands on its own when shared.
  */
 
-const DISCLAIMER = 'For discussion, not investment advice. Figures come only from live feeds, official series or your own files; each carries its source.';
+const DISCLAIMER = EXPORT_NOTICE;
 
 export function councilBriefMarkdown(b: SavedCouncilBrief): string {
   return [
