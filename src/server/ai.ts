@@ -5,6 +5,7 @@
  */
 
 import { AIRuntimeConfig, SubAgentReport } from '../types/council.ts';
+import { geminiModel } from '../utils/geminiModel';
 import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from '../utils/refereeModel';
 import { ThinkingLevel, GoogleGenAI } from '@google/genai';
 import { describeFailures, isLongLocalStep, localStepTimeoutMs, LONG_CHAT_STEPS, type ModelAttempt, ModelWaitError, ollamaHasModel, type StreamWait, streamWaitFor } from '../utils/modelFailure';
@@ -508,6 +509,7 @@ export async function executeResilientLlmStep<T>(options: {
 
   // 2. Execute on Google AI Studio Gemini with exponential backoff + jitter
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
+    const geminiName = geminiModel(options.runtimeConfig, process.env, isDeepCouncilStep);
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         if (attempt > 0) {
@@ -516,7 +518,7 @@ export async function executeResilientLlmStep<T>(options: {
           await new Promise((r) => setTimeout(r, backoffMs));
         }
         const resp = await geminiClient().models.generateContent({
-          model: 'gemini-3.8-flash',
+          model: geminiName,
           contents: `${options.systemInstruction}\n\n${options.prompt}`,
           config: {
             thinkingConfig: { thinkingLevel: options.thinkingLevel ?? ThinkingLevel.LOW },
@@ -542,9 +544,9 @@ export async function executeResilientLlmStep<T>(options: {
             usedFallback: false,
             providerUsed:
               options.providerMode === 'gemini'
-                ? 'Google AI Studio (gemini-3.8-flash)'
-                : 'Hybrid Failover -> Google AI Studio (gemini-3.8-flash)',
-            model: 'gemini-3.8-flash',
+                ? `Google AI Studio (${geminiName})`
+                : `Hybrid Failover -> Google AI Studio (${geminiName})`,
+            model: geminiName,
             ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             ...(options.seed !== undefined ? { seed: options.seed } : {}),
           };

@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig } from './hardCurrencySpread';
+import { geminiModel } from './geminiModel';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
@@ -131,7 +132,6 @@ export const isFailure = (s: ConnectionState) => s === 'no_answer' || s === 'ref
 
 const SAMPLE_ISO3 = 'BRA';
 const SAMPLE_NAME = 'Brazil';
-const DEFAULT_GEMINI_MODEL = 'gemini-3.8-flash';
 
 interface ProbeReply {
   ok: boolean;
@@ -1134,7 +1134,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
 
   // ---- AI models ---------------------------------------------------------------------------------
   add('gemini', async () => {
-    const model = opts.ai?.geminiModel || DEFAULT_GEMINI_MODEL;
+    const model = opts.env.GEMINI_MODEL?.trim() || opts.ai?.geminiModel || geminiModel(undefined, opts.env);
     const def: Def = {
       id: 'gemini',
       name: `Gemini (${model})`,
