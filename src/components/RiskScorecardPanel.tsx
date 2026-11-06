@@ -61,7 +61,7 @@ export const RiskScorecardPanel: React.FC<{ iso3: string; countryName: string }>
             </button>
           )}
         </h2>
-        <p className="ui-label">Governance, armed conflict, unrest and the economy side by side, each figure with its source and year. No overall score.</p>
+        <p className="ui-label">Governance, armed conflict, unrest, geopolitical risk and the economy side by side, each figure with its source and year. No overall score.</p>
       </header>
       <div className="p-4 space-y-4">
         {!reply && !error && <p className="ui-body">Loading…</p>}

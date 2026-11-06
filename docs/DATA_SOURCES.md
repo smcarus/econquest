@@ -247,6 +247,14 @@ Notes from the first check on Sam's Mac (2026-11-05):
 
 ## Free, downloaded files (nothing fetched)
 
+### Geopolitical Risk index (Caldara and Iacoviello)
+
+The country risk scorecard reads the monthly Geopolitical Risk file from
+<https://www.matteoiacoviello.com/gpr.htm> (Caldara and Iacoviello, American Economic Review 2022):
+the world index and the country index for 44 countries. Download the monthly file, open it and save
+it as .xlsx or .csv in `data/local/gpr/` (the site's .xls is the old binary Excel format, which the
+app does not read). The newest file in the folder is used. Nothing is fetched.
+
 ### Sanctions lists (OFAC, UN)
 
 Country Research > History & data > Sanctions lists reads files you download into
