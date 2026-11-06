@@ -23,6 +23,7 @@ import { lazyNamed, DeskLoading } from './LazyDesk';
 // Charts (recharts) load only when History opens, keeping them out of the first download.
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
+const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
 
 /**
  * Country page: everything about one sovereign, grouped the way a PM works through it.
@@ -414,6 +415,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Output gap">
             <React.Suspense fallback={<DeskLoading />}>
               <OutputGapPanel key={`gap-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-debt-sustainability" className="scroll-mt-4" />
+          <PanelBoundary name="Debt sustainability">
+            <React.Suspense fallback={<DeskLoading />}>
+              <DebtSustainabilityPanel key={`dsa-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-as-of" className="scroll-mt-4" />

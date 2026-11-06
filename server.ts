@@ -3,6 +3,7 @@ import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
+import { debtSustainability, dsaRows, dsaSentence, type DsaOutcome } from './src/utils/debtSustainability';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
@@ -2131,6 +2132,17 @@ function outputGapFrom(file: OfficialHistoryFile | null | undefined): OutputGapR
   const s = officialSeries(file, fig);
   if (!('points' in s)) return { ok: false, reason: s.reason };
   return outputGapFromGrowth(s.points, { pulledAt: s.pulledAt });
+}
+
+/** Debt sustainability view (src/utils/debtSustainability.ts) from a saved history, or why there is none. */
+function dsaFrom(file: OfficialHistoryFile | null | undefined): DsaOutcome {
+  const pick = (id: string) => {
+    const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+    const s = fig ? officialSeries(file, fig) : null;
+    return s && 'points' in s ? s : undefined;
+  };
+  if (!file) return { ok: false, reason: 'Full IMF history not downloaded yet (Menu > Offline data, or open History & data while online)', missing: [] };
+  return debtSustainability({ debt: pick('debt_gdp'), primaryBalance: pick('primary_balance'), overallBalance: pick('overall_balance'), realGrowth: pick('gdp_growth'), inflation: pick('cpi_imf') });
 }
 
 /**
@@ -4999,6 +5011,13 @@ async function startServer() {
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
     res.json({ iso3, ...outputGapFrom(file) });
   });
+  // Debt sustainability (src/utils/debtSustainability.ts): debt dynamics and stress scenarios on IMF figures.
+  app.get('/api/debt-sustainability/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const r = dsaFrom(file);
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}) });
+  });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -5141,6 +5160,12 @@ async function startServer() {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const { record, policyMissing } = await trackRecordFor(iso3);
     res.json({ ...record, sentence: trackRecordSentence(record), policyMissing, target: INFLATION_TARGETS[iso3] ?? null });
+  });
+  app.get('/api/export/:iso3/debt-scenarios.:fmt(csv|xlsx)', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const r = dsaFrom(loadOfficialHistory(iso3));
+    if (!r.ok) return res.status(404).json({ error: 'NO_DSA', message: `Debt sustainability: Missing. ${r.reason}.` });
+    sendTable(req, res, exportFileName(iso3, 'debt-scenarios'), ['Scenario', 'Year', 'Government debt (% of GDP)', 'Method'], dsaRows(r).map((row) => [...row, r.method]));
   });
   app.get('/api/export/:iso3/track-record.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
