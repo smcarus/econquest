@@ -22,10 +22,11 @@
  */
 import { cliTurns } from './oecdCli';
 import { targetIn } from '../data/inflationTargetHistory';
+import { ruleFamily } from './ruleFamily';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family';
 
 export interface BacktestSpec {
   id: string;
@@ -416,6 +417,88 @@ export function taylorGapCases(
       hit,
       base: base[want],
     });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ policy rule family -> next move */
+
+/**
+ * The Policy rules panel (src/utils/ruleFamily.ts) as it would have read each month: the policy rate
+ * against the five rules, with inflation lagged publicationLagMonths, the target in force then, and
+ * the real-time output gap (year t from gapPublishMonth of t+1; the year before for the first-
+ * difference rule). A month reads above (below) the range when the panel would say so. A case is
+ * the first month of such a run; hit: a cut (hike) within windowMonths. Base rate: the same move
+ * after any month that could be read. Months without a gap are left out, so every case has all five
+ * rules (or four, when the year before has no gap).
+ */
+export function ruleFamilyCases(
+  spec: BacktestSpec,
+  iso3: string,
+  inflation: { period: string; value: number }[],
+  policy: { period: string; pct: number }[],
+  outputGap: { year: string; gap: number }[]
+): BacktestCase[] {
+  const { publicationLagMonths = 2, windowMonths = 6, gapPublishMonth = 4, rStar = 2 } = spec.params;
+  if (!inflation.length || policy.length < 2 || !outputGap.length) return [];
+  const gaps = [...outputGap].sort((a, b) => a.year.localeCompare(b.year));
+  const gapByYear = new Map(gaps.map((g) => [g.year, g.gap]));
+  const gapKnownIn = (m: string): { year: string; gap: number } | undefined => {
+    let found: { year: string; gap: number } | undefined;
+    for (const g of gaps) if (`${Number(g.year) + 1}-${String(gapPublishMonth).padStart(2, '0')}` <= m) found = g;
+    return found;
+  };
+  const pct = new Map(policy.map((p) => [p.period, p.pct]));
+  const cpi = new Map(inflation.map((p) => [p.period, p.value]));
+  const last = policy[policy.length - 1].period;
+  const moveIn = (m: string): number => {
+    const a = pct.get(addMonths(m, -1));
+    const b = pct.get(m);
+    return a === undefined || b === undefined ? 0 : Math.sign(Number((b - a).toFixed(4)));
+  };
+  const moved = (from: string, dir: number): boolean | null => {
+    if (addMonths(from, windowMonths) > last) return null;
+    for (let k = 1; k <= windowMonths; k++) if (moveIn(addMonths(from, k)) === dir) return true;
+    return false;
+  };
+  const lo = spec.sample.from;
+  const hi = spec.sample.to || '9999-12';
+  type Row = { month: string; reading: -1 | 0 | 1; what: string };
+  const rows: Row[] = [];
+  for (const p of policy) {
+    if (p.period < lo || p.period > hi) continue;
+    const t = targetIn(iso3, p.period);
+    const infl = cpi.get(addMonths(p.period, -publicationLagMonths));
+    const og = gapKnownIn(p.period);
+    if (!t || infl === undefined || !og) continue;
+    const prev = gapByYear.get(String(Number(og.year) - 1));
+    const r = ruleFamily({ policyPct: p.pct, inflation: { pct: infl, month: addMonths(p.period, -publicationLagMonths) }, targetPct: t.pct, gap: { pct: og.gap, year: og.year, prevPct: prev, source: 'estimate' }, rStar });
+    if (!r.ok) continue;
+    const reading = r.position === 'above the range' ? 1 : r.position === 'below the range' ? -1 : 0;
+    rows.push({ month: p.period, reading, what: `policy ${p.pct.toFixed(2)}% vs rules ${r.range.lo.toFixed(2)}-${r.range.hi.toFixed(2)}% (inflation ${infl.toFixed(1)}%, target ${t.pct}%, gap ${og.gap.toFixed(1)}% in ${og.year})` });
+  }
+  const baseFor = (dir: number) => {
+    let n = 0;
+    let yes = 0;
+    for (const r of rows) {
+      const m = moved(r.month, dir);
+      if (m === null) continue;
+      n++;
+      if (m) yes++;
+    }
+    return n ? yes / n : 0;
+  };
+  const base = { [-1]: baseFor(-1), [1]: baseFor(1) } as Record<number, number>;
+  const out: BacktestCase[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r.reading) continue;
+    const prev = rows[i - 1];
+    if (prev && prev.reading === r.reading && addMonths(prev.month, 1) === r.month) continue;
+    const want = r.reading === 1 ? -1 : 1;
+    const hit = moved(r.month, want);
+    if (hit === null) continue;
+    out.push({ where: iso3, when: r.month, what: `${r.reading === 1 ? 'above' : 'below'} every rule: ${r.what}: ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`, hit, base: base[want] });
   }
   return out;
 }

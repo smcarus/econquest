@@ -20,7 +20,7 @@ import { markImfProjections, parseImfYears } from './officialHistory';
 import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, timingUnwindCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
+import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
 import { writeFileAtomic } from './atomicWrite';
 
 export interface ValidationFile {
@@ -121,7 +121,7 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
     fetcher(`${BIS_API}/${CBPOL_DATASET}/M.${areas}/all?startPeriod=1990-01&format=csv`).then((t) => parseCbpolCsv(t, 'M')).catch((e) => (problems.push(`BIS policy rates did not answer (${e.message})`), null)),
     fetcher(cliUrl()).then((t) => parseCli(t, 100_000)).catch((e) => (problems.push(`OECD leading indicator did not answer (${e.message})`), null)),
     fetcher(cftcUrl(new Date(), undefined, { since: '2006-06-01', limit: 50_000 })).then((t) => parseCftcRows(JSON.parse(t))).catch((e) => (problems.push(`CFTC did not answer (${e.message})`), null)),
-    methods.has('taylor_gap') || methods.has('regime_quadrant') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
+    methods.has('taylor_gap') || methods.has('regime_quadrant') || methods.has('rule_family') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
   ]);
   return { bis, cli, cftc, cpi };
 }
@@ -135,7 +135,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
   const file = loadValidation(opts.resultFile);
   if (runnable.length) {
     const h = await pullHistory(opts.fetcher || defaultFetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
-    const needGap = runnable.some((s) => s.spec!.method === 'taylor_gap' && Number(s.spec!.params?.outputWeight) > 0);
+    const needGap = runnable.some((s) => (s.spec!.method === 'taylor_gap' && Number(s.spec!.params?.outputWeight) > 0) || s.spec!.method === 'rule_family');
     const gaps = needGap ? await pullOutputGaps(opts.fetcher || defaultFetcher, problems, opts.now || new Date()) : {};
     const at = (opts.now || new Date()).toISOString();
     for (const { spec, hash } of runnable) {
@@ -177,6 +177,17 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (withGap && !gaps[iso3]?.length) continue;
           series.push(iso3);
           cases.push(...taylorGapCases(s, iso3, infl, pol, withGap ? gaps[iso3] : undefined));
+        }
+      } else if (s.method === 'rule_family') {
+        if (!h.bis || !h.cpi) continue;
+        data = `${CPI_LABEL}; BIS central bank policy rates (monthly, from 1990); inflation targets as they stood (src/data/inflationTargetHistory.ts); real-time output gap from IMF WEO real GDP growth (one-sided HP, lambda 100; year t used from April t+1)`;
+        for (const iso3 of Object.keys(TARGET_HISTORY)) {
+          const area = CBPOL_AREA[iso3];
+          const infl = areaSeries(iso3, h.cpi)?.points;
+          const pol = area ? h.bis[area]?.points : undefined;
+          if (!infl?.length || !pol?.length || !gaps[iso3]?.length) continue;
+          series.push(iso3);
+          cases.push(...ruleFamilyCases(s, iso3, infl, pol, gaps[iso3]));
         }
       } else if (s.method === 'regime_quadrant') {
         if (!h.bis || !h.cli || !h.cpi) continue;

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, timingUnwindCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
+import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, timingUnwindCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, ruleFamilyCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
 import { targetIn } from '../src/data/inflationTargetHistory';
 import { loadSpecs, loadValidation, runBacktests, sha256 } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
@@ -180,6 +180,37 @@ test('taylorGapCases: no move within the window is a miss, and no target means n
   assert.equal(cases[0].when, '2014-05');
   assert.equal(cases[0].hit, false, 'the cut comes 12 months later');
   assert.deepEqual(taylorGapCases(s, 'TUR', inflation, policy), []);
+});
+
+test('ruleFamilyCases: a rate above every rule is one case per run, and a cut within the window is a hit', () => {
+  const months = Array.from({ length: 24 }, (_, i) => addMonths('2014-01', i));
+  // Inflation -2% on a 2% target, gap 0: level rules -2%, first difference = rate - 2, inertial 0.85 x rate - 0.3.
+  const inflation = Array.from({ length: 30 }, (_, i) => ({ period: addMonths('2013-11', i), value: -2 }));
+  // 8% (above every rule) for 4 months, cut to 7.5% (still above), held.
+  const policy = months.map((period, i) => ({ period, pct: i < 4 ? 8 : 7.5 }));
+  const gaps = [{ year: '2011', gap: 0 }, { year: '2012', gap: 0 }, { year: '2013', gap: 0 }, { year: '2014', gap: 0 }];
+  const s = spec({ method: 'rule_family', sample: { from: '2014-01' }, params: { publicationLagMonths: 2, windowMonths: 6, gapPublishMonth: 4, rStar: 2 } });
+  const cases = ruleFamilyCases(s, 'USA', inflation, policy, gaps);
+  assert.equal(cases.length, 1, 'one case per run');
+  assert.equal(cases[0].when, '2014-01');
+  assert.equal(cases[0].hit, true, 'cut 4 months later');
+  assert.match(cases[0].what, /above every rule/);
+  assert.deepEqual(ruleFamilyCases(s, 'TUR', inflation, policy, gaps), [], 'no target, no case');
+  assert.deepEqual(ruleFamilyCases(s, 'USA', inflation, policy, []), [], 'no gap, no case');
+});
+
+test('ruleFamilyCases: below every rule with no hike in the window is a miss; inside the range is no case', () => {
+  const months = Array.from({ length: 24 }, (_, i) => addMonths('2014-01', i));
+  // Inflation 6% on 2%: level rules 10%, first difference rate + 2, inertial 0.85 x rate + 1.5.
+  const inflation = Array.from({ length: 30 }, (_, i) => ({ period: addMonths('2013-11', i), value: 6 }));
+  const gaps = [{ year: '2012', gap: 0 }, { year: '2013', gap: 0 }, { year: '2014', gap: 0 }];
+  const s = spec({ method: 'rule_family', sample: { from: '2014-01' }, params: { publicationLagMonths: 2, windowMonths: 6, gapPublishMonth: 4, rStar: 2 } });
+  const low = ruleFamilyCases(s, 'USA', inflation, months.map((period) => ({ period, pct: 1 })), gaps);
+  assert.equal(low.length, 1);
+  assert.equal(low[0].hit, false);
+  assert.match(low[0].what, /below every rule.*hike within 6 months/);
+  // 9%: inertial 9.15, first difference 11, level rules 10: inside the range.
+  assert.deepEqual(ruleFamilyCases(s, 'USA', inflation, months.map((period) => ({ period, pct: 9 })), gaps), []);
 });
 
 /* ------------------------------------------------------------------ method 2 */
