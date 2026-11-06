@@ -5,7 +5,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { BIS_ISO2, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from '../../utils/bisDebtSecurities';
+import { BIS_API, BIS_ISO2, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from '../../utils/bisDebtSecurities';
 import { CDS_HIDDEN } from '../../utils/cdsHidden.ts';
 import { DATA_DIR } from '../config';
 import { EMPTY_FX_HISTORY, type FxHistoryFile, fxQuarterUrl, parseFxQuarter, quartersToPull, readFxHistoryFile } from '../../utils/fxHistory';
@@ -13,10 +13,11 @@ import { bcrpEmbigUrl, describeBcrpReply, type HcSpreadPull, parseBcrpEmbig } fr
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { evdsSeriesUrl, FRED_10Y_SERIES, fredApiUrl, fredCsvUrl, isValidEvdsSeriesCode, type OfficialYieldObservation, parseEvdsLatest, parseFredApiLatest, parseFredCsvLatest, parseTesouroDiretoLatest, TESOURO_DIRETO_CSV_URL, US_10Y_SERIES } from '../../utils/officialYields.ts';
 import { fetchJsonWithTimeout, fetchTextWithTimeout, fetchWithTimeout } from '../http';
-import { frankfurterSeriesUrl, type FxVol, parseEffr, parseFxVol, parseReer, type ReerGap, reerUrl } from '../../utils/fxValuation';
+import { frankfurterSeriesUrl, type FxVol, parseEffr, parseFxVol, parseReer, parseReerMonthly, type ReerGap, reerLongUrl, reerUrl } from '../../utils/fxValuation';
 import { lsegSnapshotUrl, lsegTokenRequest, type OwnCdsQuote, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from '../../utils/ownCds';
 import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../utils/debtSchedule';
 import { writeFileAtomic } from '../../utils/atomicWrite';
+import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
 /**
@@ -514,5 +515,33 @@ export async function fetchFedBalanceSheet(): Promise<FedBalanceSheet> {
   }
   const value = buildFedBalanceSheet(raw);
   fedCache = { at: Date.now(), value, fallback };
+  return value;
+}
+
+/**
+ * BIS daily policy rate history for one area from 1999 (event study, src/utils/eventStudy.ts).
+ * Kept 24 hours in memory (1 hour after a miss).
+ */
+const policyDailyCache = new Map<string, { at: number; value: Array<{ period: string; pct: number }> | null }>();
+export async function fetchPolicyDaily(area: string): Promise<Array<{ period: string; pct: number }> | null> {
+  const hit = policyDailyCache.get(area);
+  if (hit && Date.now() - hit.at < (hit.value ? 24 : 1) * 60 * 60 * 1000) return hit.value;
+  const csv = await fetchTextWithTimeout(`${BIS_API}/${CBPOL_DATASET}/D.${area}/all?startPeriod=1999-01-01&format=csv`, 20000).catch(() => null);
+  const value = csv ? parseCbpolCsv(csv, 'D')[area]?.points ?? null : null;
+  policyDailyCache.set(area, { at: Date.now(), value });
+  return value;
+}
+
+/** BIS real broad effective exchange rate from 1994 for one country (BEER). Kept 24 hours (1 hour after a miss). */
+const reerLongCache = new Map<string, { at: number; value: Array<{ period: string; value: number }> | null }>();
+export async function fetchReerLong(iso3: string): Promise<Array<{ period: string; value: number }> | null> {
+  const iso2 = BIS_ISO2[iso3];
+  if (!iso2) return null;
+  const hit = reerLongCache.get(iso2);
+  if (hit && Date.now() - hit.at < (hit.value ? 24 : 1) * 60 * 60 * 1000) return hit.value;
+  const csv = await fetchTextWithTimeout(reerLongUrl(iso2), 15000).catch(() => null);
+  const pts = csv ? parseReerMonthly(csv) : [];
+  const value = pts.length ? pts : null;
+  reerLongCache.set(iso2, { at: Date.now(), value });
   return value;
 }
