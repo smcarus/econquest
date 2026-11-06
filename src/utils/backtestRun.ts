@@ -20,7 +20,7 @@ import { markImfProjections, parseImfYears } from './officialHistory';
 import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, taylorGapCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
+import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, timingUnwindCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
 import { writeFileAtomic } from './atomicWrite';
 
 export interface ValidationFile {
@@ -121,7 +121,7 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
     fetcher(`${BIS_API}/${CBPOL_DATASET}/M.${areas}/all?startPeriod=1990-01&format=csv`).then((t) => parseCbpolCsv(t, 'M')).catch((e) => (problems.push(`BIS policy rates did not answer (${e.message})`), null)),
     fetcher(cliUrl()).then((t) => parseCli(t, 100_000)).catch((e) => (problems.push(`OECD leading indicator did not answer (${e.message})`), null)),
     fetcher(cftcUrl(new Date(), undefined, { since: '2006-06-01', limit: 50_000 })).then((t) => parseCftcRows(JSON.parse(t))).catch((e) => (problems.push(`CFTC did not answer (${e.message})`), null)),
-    methods.has('taylor_gap') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
+    methods.has('taylor_gap') || methods.has('regime_quadrant') ? fetcher(cpiUrl()).then((t) => parseCpi(t, 100_000)).catch((e) => (problems.push(`OECD consumer prices did not answer (${e.message})`), null)) : Promise.resolve(null),
   ]);
   return { bis, cli, cftc, cpi };
 }
@@ -177,6 +177,41 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (withGap && !gaps[iso3]?.length) continue;
           series.push(iso3);
           cases.push(...taylorGapCases(s, iso3, infl, pol, withGap ? gaps[iso3] : undefined));
+        }
+      } else if (s.method === 'regime_quadrant') {
+        if (!h.bis || !h.cli || !h.cpi) continue;
+        data = `${CLI_LABEL}; ${CPI_LABEL}; BIS central bank policy rates (monthly, from 1990)`;
+        const seen = new Set<string>();
+        for (const [iso3, area] of Object.entries(CBPOL_AREA)) {
+          if (seen.has(area)) continue;
+          const cli = areaSeries(iso3, h.cli);
+          const infl = areaSeries(iso3, h.cpi)?.points;
+          const pol = h.bis[area]?.points;
+          if (!cli?.length || !infl?.length || !pol?.length) continue;
+          seen.add(area);
+          series.push(iso3);
+          cases.push(...regimeQuadrantCases(s, iso3, cli, infl, pol));
+        }
+      } else if (s.method === 'cycle_clock') {
+        if (!h.bis) continue;
+        data = 'BIS central bank policy rates (monthly, from 1990)';
+        const seen = new Set<string>();
+        for (const [iso3, area] of Object.entries(CBPOL_AREA)) {
+          if (seen.has(area)) continue;
+          const pol = h.bis[area]?.points;
+          if (!pol?.length) continue;
+          seen.add(area);
+          series.push(iso3);
+          cases.push(...cycleClockCases(s, iso3, pol));
+        }
+      } else if (s.method === 'timing_unwind') {
+        if (!h.cftc) continue;
+        data = `${CFTC_LABEL} (weekly, from 2006)`;
+        for (const [, def] of Object.entries(CFTC_CURRENCY_CODES)) {
+          const weeks = h.cftc.get(def.code);
+          if (!weeks?.length) continue;
+          series.push(`${def.ccy} (${def.market})`);
+          cases.push(...timingUnwindCases(s, def.ccy, weeks));
         }
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);

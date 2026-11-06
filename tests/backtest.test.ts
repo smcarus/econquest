@@ -3,10 +3,11 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
+import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, timingUnwindCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
 import { targetIn } from '../src/data/inflationTargetHistory';
 import { loadSpecs, loadValidation, runBacktests, sha256 } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
+import type { CftcWeek } from '../src/utils/cftcPositioning';
 
 const SPEC_DIR = path.join(process.cwd(), 'docs', 'validation', 'preregistered');
 const spec = (over: Partial<BacktestSpec> = {}): BacktestSpec => ({
@@ -136,7 +137,10 @@ test('runBacktests pulls the histories once, judges each registered test and sav
   assert.ok(out.problems.some((p) => /CFTC did not answer/.test(p)));
   assert.ok(out.problems.some((p) => /OECD consumer prices did not answer/.test(p)));
   assert.equal(out.results.taylor_gap, undefined, 'no verdict without inflation history');
-  assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(resultFile, 'utf8')).results), ['cli_turn_policy']);
+  assert.ok(out.results.cycle_clock, 'the cycle clock needs only BIS policy rates');
+  assert.equal(out.results.regime_quadrant, undefined, 'no verdict without inflation history');
+  assert.equal(out.results.timing_agent, undefined, 'no verdict without CFTC');
+  assert.deepEqual(Object.keys(JSON.parse(fs.readFileSync(resultFile, 'utf8')).results).sort(), ['cli_turn_policy', 'cycle_clock']);
 });
 
 test('targetIn gives the target as it stood in that month, and nothing before the first row', () => {
@@ -280,4 +284,52 @@ test('taylorGapCases with an output gap: uses the gap of the latest year publish
   assert.match(cases[0].what, /tight.*output gap -4\.0% in 2013/);
   assert.deepEqual(taylorGapCases(s, 'USA', inflation, policy), [], 'no gap series, no cases');
   assert.deepEqual(taylorGapCases({ ...s, params: { ...s.params, outputWeight: 0 } }, 'USA', inflation, policy), [], 'version 1 rule: neutral');
+});
+
+/* ------------------------------------------------------------------ quadrant, cycle clock, timing */
+
+test('regimeQuadrantCases: both up calls a hike, both down a cut, with data lagged to publication; mixed makes no call', () => {
+  const months = Array.from({ length: 48 }, (_, i) => addMonths('2010-01', i));
+  // CLI rising for the first 24 months then falling; inflation rising then falling the same way.
+  const cli = months.map((period, i) => ({ period, value: i < 24 ? 100 + i * 0.1 : 102.4 - (i - 24) * 0.1 }));
+  const infl = months.map((period, i) => ({ period, value: i < 24 ? 2 + i * 0.1 : 4.4 - (i - 24) * 0.1 }));
+  // Hike in 2010-12, cut in 2012-09.
+  const policy = months.map((period) => ({ period, pct: period < '2010-12' ? 5 : period < '2012-09' ? 5.5 : 5 }));
+  const s = spec({ method: 'regime_quadrant', sample: { from: '2010-01' }, params: {} });
+  const cases = regimeQuadrantCases(s, 'BRA', cli, infl, policy);
+  const up = cases.find((c) => /growth up.*inflation up/.test(c.what));
+  const down = cases.find((c) => /growth down.*inflation down/.test(c.what));
+  assert.ok(up && down, 'one call each way');
+  assert.equal(up!.when, '2010-08', 'first month with a 6-month CLI change read a month back');
+  assert.equal(up!.hit, true, 'hike 4 months later');
+  assert.equal(down!.when, '2012-06', 'first month both changes read at or below zero');
+  assert.equal(down!.hit, true, 'cut 4 months later');
+  assert.equal(cases.length, 2, 'one call per run');
+});
+
+test('cycleClockCases: the first hiking month is a call, hit when another hike follows within the window', () => {
+  const months = Array.from({ length: 40 }, (_, i) => addMonths('2015-01', i));
+  // Hikes 2015-06 and 2015-09 (a run), then hold, then one lone cut 2017-01.
+  const policy = months.map((period) => ({ period, pct: period < '2015-06' ? 4 : period < '2015-09' ? 4.25 : period < '2017-01' ? 4.5 : 4.25 }));
+  const cases = cycleClockCases(spec({ method: 'cycle_clock', sample: { from: '2015-01' }, params: {} }), 'USA', policy);
+  const hike = cases.find((c) => c.when === '2015-06');
+  assert.ok(hike);
+  assert.equal(hike!.hit, true, 'another hike three months later');
+  assert.equal(cases.filter((c) => /hiking/.test(c.what)).length, 1, 'the second hike continues the run, no new call');
+  const cut = cases.find((c) => c.when === '2017-01');
+  assert.ok(cut);
+  assert.equal(cut!.hit, false, 'no second cut');
+  assert.ok(cut!.base > 0 && cut!.base < 1);
+});
+
+test('timingUnwindCases: crowded and already turning is a setup; hit when it unwinds further', () => {
+  const weeks: CftcWeek[] = [];
+  const d0 = Date.UTC(2010, 0, 5);
+  // 60 calm weeks near 0%, then a jump to 20% (crowded long), 2 weeks there, then down 4 pts, then down 4 more.
+  const path = [...Array.from({ length: 60 }, (_, i) => (i % 2 ? 1 : -1)), 20, 20, 19, 18, 16, 16, 12, 11, 10, 10, 10, 10, 10, 10, 10];
+  path.forEach((v, i) => weeks.push({ date: new Date(d0 + i * 7 * 864e5).toISOString().slice(0, 10), levNet: v * 1000, openInterest: 100_000 } as CftcWeek));
+  const cases = timingUnwindCases(spec({ method: 'timing_unwind', sample: { from: '2010-01-01' }, params: { minLookbackWeeks: 52, turnWeeks: 4, turnPts: 3 } }), 'EUR', weeks);
+  assert.equal(cases.length, 1);
+  assert.match(cases[0].what, /crowded long and turning/);
+  assert.equal(cases[0].hit, true);
 });
