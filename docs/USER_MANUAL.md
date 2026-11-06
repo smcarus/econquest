@@ -124,6 +124,12 @@ full council and saved research.
   date (or the chart's latest points and test results), to Council chat and asks the council to
   explain it; on Research the chat opens in its side panel. Follow up with "and for households?" to
   narrow it.
+- *Chat charts: Image and CSV*: each chart the Chart Agent draws in the chat has *Image* (an SVG
+  file) and *CSV*. The image carries the title on top and, under the chart, its sources, the credit
+  each source's terms ask for (from the licence register), the dates, the day it was made and the
+  research notice, so it keeps them wherever it is pasted. The CSV lists the same credits as `#`
+  lines. With Sharing mode on, both buttons are off for a chart that uses a source whose terms do
+  not let its figures be passed on, and the card says which.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your
@@ -396,6 +402,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 - **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
+- **Sharing mode**: for downloads that will be passed on (a public note, a chart in a write-up). The app is free, open-source research, so the only question is whether a source's terms let its figures be passed on for free (the *Free sharing* column of the licence register). On, every table download (figures, series, Compare countries, As of; CSV and Excel) holds back each value whose source is marked *Do not pass on* or *Sharing unclear*: the row stays with its source, and the value reads *Withheld* with the reason. Figures the app works out itself without naming an outside source pass. A *Sharing mode* pill in the header shows it is on; click it to turn it off. References in briefs and notes always end with which ones cannot be passed on. Saved in `data/local/workspace.json`.
 - **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
 - **Morning brief** (Settings > Morning brief): at a time you set, the council answers your standing
   questions (up to four; three starting ones on policy stance, cheap or rich, and coming dates) about

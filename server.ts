@@ -41,6 +41,7 @@ import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtrad
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
 import { parseQna, qnaUrl, type QnaSeries } from './src/utils/oecdQna';
+import { BCB_IBCBR_SA, EUROSTAT_IP_GEO, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr, type ActivitySeries } from './src/utils/monthlyActivity';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
@@ -87,6 +88,7 @@ import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
+import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
@@ -1195,6 +1197,85 @@ async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
     nationalCpiInFlight = null;
   });
   return nationalCpiInFlight;
+}
+
+/**
+ * Monthly activity indexes for the GDP nowcast (src/utils/monthlyActivity.ts): BCB IBC-Br for
+ * Brazil, Eurostat industrial production for EU members (and Turkey where Eurostat has it). Full
+ * history, asked once a day, kept on disk (data/live/monthly-activity.json); a failed pull keeps
+ * the last good series per country.
+ */
+type ActivityPull = { pulledAt: string; series: Record<string, ActivitySeries> };
+let activityMemory: { pull: ActivityPull | null; triedAt: number } | null = null;
+let activityInFlight: Promise<ActivityPull | null> | null = null;
+function activityFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'monthly-activity.json');
+}
+async function fetchMonthlyActivity(): Promise<ActivityPull | null> {
+  if (!activityMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(activityFile(), 'utf8')) as ActivityPull;
+      if (saved?.pulledAt && saved.series) activityMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (activityMemory?.pull && Date.now() - Date.parse(activityMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return activityMemory.pull;
+  if (activityMemory && Date.now() - activityMemory.triedAt < 60 * 60 * 1000) return activityMemory.pull;
+  if (activityInFlight) return activityInFlight;
+  activityInFlight = (async () => {
+    const prev = activityMemory?.pull ?? null;
+    const series: Record<string, ActivitySeries> = { ...(prev?.series || {}) };
+    let answered = 0;
+    const isoInCatalog = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+    await Promise.allSettled([
+      (async () => {
+        if (!isoInCatalog.has('BRA')) return;
+        try {
+          const res = await fetchWithTimeout(bcbSgsSinceUrl(BCB_IBCBR_SA), 20000);
+          if (!res.ok) return console.warn(`[BCB SGS] IBC-Br refused (HTTP ${res.status})`);
+          const s = parseIbcBr(await res.json());
+          if (s) {
+            series.BRA = s;
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[BCB SGS] IBC-Br: ${describeNetworkError(e, 20000)}`);
+        }
+      })(),
+      (async () => {
+        const eu = SOVEREIGN_CATALOG.filter((c) => EUROSTAT_IP_GEO[c.iso3]).map((c) => c.iso3);
+        if (!eu.length) return;
+        try {
+          const res = await fetchWithTimeout(eurostatIpUrl(eu.map((i) => EUROSTAT_IP_GEO[i])), 30000);
+          if (!res.ok) return console.warn(`[Eurostat] industrial production refused (HTTP ${res.status})`);
+          const got = parseEurostatIp(await res.json(), eu);
+          for (const [iso3, s] of Object.entries(got)) {
+            series[iso3] = s;
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[Eurostat] industrial production: ${describeNetworkError(e, 30000)}`);
+        }
+      })(),
+    ]);
+    if (!answered) {
+      activityMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: ActivityPull = { pulledAt: new Date().toISOString(), series };
+    activityMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(activityFile()), { recursive: true });
+      writeFileAtomic(activityFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    activityInFlight = null;
+  });
+  return activityInFlight;
 }
 
 /**
@@ -2398,6 +2479,8 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCpiPull(), 'OECD (DBnomics)');
     case 'world:national_cpi':
       return had(await fetchNationalCpi(), 'BCB / Eurostat');
+    case 'world:activity':
+      return had(await fetchMonthlyActivity(), 'BCB / Eurostat');
     case 'world:cftc':
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
@@ -5875,12 +5958,13 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
       quick(fetchQnaPull()),
+      quick(fetchMonthlyActivity()),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -5891,6 +5975,7 @@ async function startServer() {
       cbpol,
       cli,
       qna,
+      activity,
       cpiOecdAnswered: Boolean(cpi),
       cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
@@ -6002,7 +6087,10 @@ async function startServer() {
   // Downloads (src/utils/csvExport.ts): CSV with unit, source and dates per value; Missing with its reason.
   // Each table downloads as .csv or .xlsx (src/utils/xlsxExport.ts): same rows, same columns.
   type TableCell = string | number | null | undefined;
-  const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], rows: TableCell[][]) => {
+  // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
+  // them be passed on for free are held back from every table download.
+  const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
+    const rows = shareModeFromValue(loadWorkspace(WORKSPACE_FILE).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
     if (req.params.fmt === 'xlsx') {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.attachment(name.replace(/\.csv$/, '.xlsx'));

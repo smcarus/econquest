@@ -129,7 +129,7 @@ test('npm run preload: runs offline against fixtures, saves progress, and a seco
   try {
     const first = run();
     assert.equal(first.status, 0, first.stderr.slice(-2000));
-    assert.match(first.stdout, /\[preload\] finished: \d+ of 16 steps saved/);
+    assert.match(first.stdout, /\[preload\] finished: \d+ of 17 steps saved/);
     // No key: the free preview route is tried, not skipped (the stand-in feeds refuse it).
     assert.match(first.stdout, /FAIL UN Comtrade trade partners \(UN Comtrade did not answer \(free preview route/);
     assert.ok(existsSync(path.join(dataDir, 'history', 'MEX.json')));
