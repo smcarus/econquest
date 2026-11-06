@@ -10,6 +10,7 @@ import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
 import { COUNCIL_SEED, COUNCIL_TEMPERATURE, compareRuns, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
+import { checkRegressionCase, parseRegressionSet, type RegressionCaseResult, type RegressionReport } from './src/utils/councilRegression';
 import { buildSnapshot, loadSnapshot, saveSnapshot, sha256, snapshotDir, verifySnapshot } from './src/utils/answerSnapshotStore';
 import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
 import { TRACK_RECORD_HEADER, trackRecord, trackRecordRows, trackRecordSentence, type ArchivedDay } from './src/utils/trackRecord';
@@ -4827,6 +4828,40 @@ async function startServer() {
       validationRunning = false;
     }
   });
+  // Council regression set (src/utils/councilRegression.ts): fixed agent answers through the real
+  // summary step on the model set in the app; each case saved as an answer snapshot.
+  let regressionRunning = false;
+  app.post('/api/council/regression', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    if (regressionRunning) return res.status(409).json({ error: 'The regression set is already running.' });
+    regressionRunning = true;
+    try {
+      const file = path.join(__dirname, 'docs', 'validation', 'council-regression', 'cases.json');
+      const text = fs.readFileSync(file, 'utf8');
+      const set = parseRegressionSet(JSON.parse(text));
+      const runtimeConfig = req.body?.runtimeConfig && typeof req.body.runtimeConfig === 'object' ? req.body.runtimeConfig : savedAiConfig();
+      const results: RegressionCaseResult[] = [];
+      let model: string | null = null;
+      for (const c of set.cases) {
+        const out = await answerAndRecord(c.question, c.answers, { runtimeConfig, askedAt: '2026-11-05T00:00:00.000Z' }, `Regression check ${c.id}`);
+        model = model || out.snapshot?.model || null;
+        results.push(checkRegressionCase(c, out));
+      }
+      const report: RegressionReport = { ranAt: new Date().toISOString(), setVersion: set.version, setHash: sha256(text), model, passed: results.filter((r) => r.pass).length, total: results.length, results };
+      writeFileAtomic(path.join(path.dirname(VALIDATION_FILE), 'council-regression.json'), JSON.stringify(report, null, 1), 0o600);
+      appendAudit(AUDIT_FILES, {
+        kind: 'validation',
+        summary: `Council regression set v${set.version}: ${report.passed} of ${report.total} passed on ${model || 'no model'}`,
+        detail: { setHash: report.setHash, model, results: results.map((r) => ({ id: r.id, pass: r.pass, snapshot: r.snapshotId, failures: r.failures })) },
+      });
+      res.json(report);
+    } catch (error: any) {
+      res.status(500).json({ error: `The regression set could not run (${error?.message || 'unknown error'}).` });
+    } finally {
+      regressionRunning = false;
+    }
+  });
+
   // Morning brief settings and runs (src/utils/morningBrief.ts).
   app.get('/api/morning-brief', (_req, res) => {
     const file = loadMorning();

@@ -175,7 +175,7 @@ export function describeRequest(method: string, path: string): AuditInput | null
   }
   if (!['POST', 'PUT', 'DELETE'].includes(m)) return null;
   // Logged with full detail by the route itself, or read-only checks.
-  if (/^\/api\/council\/(synthesise|debate|choose-agents|rerun)$/.test(p)) return null;
+  if (/^\/api\/council\/(synthesise|debate|choose-agents|rerun|regression)$/.test(p)) return null;
   if (/^\/api\/ai\/(ollama-status|runtime-config-load)$/.test(p)) return null;
   if (p === '/api/audit/check') return null;
   // Sign-offs are logged by their route, with the name and content hash.

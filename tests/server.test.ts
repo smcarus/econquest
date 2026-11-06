@@ -319,6 +319,28 @@ test('council re-run: the same snapshot sent again gives the same answer, and sa
   assert.equal(missing.status, 404);
 });
 
+test('council regression set: each case is checked and reported honestly (stand-in model: only the Turkey case reads right)', async () => {
+  const res = await fetch(`${base}/api/council/regression`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ runtimeConfig: { providerMode: 'ollama', ollamaBaseUrl: 'http://fake-ollama.test:11434' } }),
+  });
+  assert.equal(res.status, 200);
+  const report = await res.json();
+  assert.equal(report.total, 4);
+  assert.match(report.setHash, /^[0-9a-f]{64}$/);
+  const by = Object.fromEntries(report.results.map((r: { id: string }) => [r.id, r]));
+  // The stand-in always writes about Turkey: right for the Turkey case, wrong for the others.
+  assert.equal(by['turkey-behind'].pass, true, JSON.stringify(by['turkey-behind'].failures));
+  assert.equal(by['brazil-tight'].pass, false);
+  assert.ok(by['brazil-tight'].failures.some((f: string) => /headline does not give the expected reading/.test(f)));
+  assert.ok(by['brazil-tight'].failures.some((f: string) => /does not mention Brazil/.test(f)));
+  assert.equal(report.passed, 1);
+  assert.match(by['turkey-behind'].snapshotId, /^s\d+-/);
+  const saved = JSON.parse(readFileSync(path.join(dataDir, 'local', 'validation', 'council-regression.json'), 'utf8'));
+  assert.equal(saved.passed, 1);
+});
+
 test('council explain: facts apart from interpretation, by lens; invented numbers and lenses without figures dropped', async () => {
   const answers = [
     {
