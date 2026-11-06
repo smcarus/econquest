@@ -156,7 +156,7 @@ import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { oecdFetch, fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
+import { oecdFetch, fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
 import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
@@ -2564,6 +2564,7 @@ async function startServer() {
     if (id === 'EIA_API_KEY') forgetCommodityPulls();
     if (id === 'COMTRADE_API_KEY' && comtradeMemory) comtradeMemory.triedAt = {};
     if (id.startsWith('EVDS_')) officialYieldCache.delete('TUR');
+    if (id === 'BANXICO_TOKEN') forgetNationalCpi(['MEX']);
     if (id.startsWith('CDS_') || id.startsWith('LSEG_')) forgetOwnCds();
     if (id === 'GEMINI_API_KEY') resetGeminiClient();
   };

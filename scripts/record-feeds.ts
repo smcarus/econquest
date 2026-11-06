@@ -9,7 +9,7 @@
  * the app made of each. Then `npm test` replays them (tests/recorded.test.ts): if a source changes
  * its format, a test fails before you see Missing in the app.
  *
- * - Free keys you saved (FRED, EIA, UN Comtrade, EVDS) are used, but never written: keys are taken
+ * - Free keys you saved (FRED, EIA, UN Comtrade, EVDS, Banxico) are used, but never written: keys are taken
  *   out of every URL, and the file lists only which keys were present.
  * - Your own paid data (CDS file, LSEG) and the AI model are switched off for the run, so nothing
  *   licensed to you is recorded.
@@ -28,7 +28,7 @@ dotenv.config();
 const root = process.cwd();
 const COUNTRIES = ['BRA', 'MEX', 'TUR', 'ZAF', 'POL'];
 /** Free keys only; paid data and AI stay off. */
-const FREE_KEYS = ['FRED_API_KEY', 'EIA_API_KEY', 'COMTRADE_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES'];
+const FREE_KEYS = ['FRED_API_KEY', 'EIA_API_KEY', 'COMTRADE_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES', 'BANXICO_TOKEN'];
 
 const env: Record<string, string | undefined> = { ...process.env };
 applyKeysToEnv(env, envKeySnapshot(process.env), loadSettings(settingsFilePath(process.env.DATA_DIR || path.join(root, 'data'))));

@@ -83,7 +83,7 @@ export function daysOld(date: string, now: Date): number | null {
 export function fresherCpi(iso3: string): string | undefined {
   if (iso3 === 'BRA') return 'Brazil central bank IPCA (connected; it fills in when the feed answers)';
   if (EUROSTAT_GEO[iso3]) return 'Eurostat HICP (connected; it fills in when the feed answers)';
-  if (iso3 === 'MEX') return 'Banxico (free token, not yet added in Settings)';
+  if (iso3 === 'MEX') return 'Banxico (free token: add it under Menu > Settings > Data API keys; once added it fills in when the feed answers)';
   if (iso3 === 'CHL') return 'Central Bank of Chile (free registration, not yet added)';
   if (iso3 === 'TUR') return 'Central Bank of Turkey EVDS (free key, not yet added in Settings)';
   return undefined;
