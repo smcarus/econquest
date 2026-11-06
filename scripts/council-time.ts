@@ -1,9 +1,12 @@
 /**
  * Times a full council report on your own app, step by step, and prints a table to paste.
  *
- *   npm run council:time                       (Brazil, the app at http://localhost:3000)
+ *   npm run council:time                       (Brazil, the app at http://127.0.0.1:3000)
  *   npm run council:time -- --country MEX
- *   npm run council:time -- --url http://localhost:3000 --country TUR
+ *   npm run council:time -- --url http://127.0.0.1:3737 --country TUR   (the Docker app)
+ *
+ * With sign-in on (an account exists), set ECONQUEST_USER and ECONQUEST_PASSWORD and it signs in first.
+ * The default is 127.0.0.1, not localhost: the app listens on IPv4 and Node may try localhost as IPv6 (::1).
  *
  * Start the app first (Docker or `npm run dev`) with Ollama open. It runs exactly what the
  * "Run the full council" button runs, with the AI settings saved in the app: country data, the
@@ -23,12 +26,16 @@ const arg = (name: string) => {
   const i = process.argv.indexOf(`--${name}`);
   return i > 0 ? process.argv[i + 1] : undefined;
 };
-const base = (arg('url') || process.env.APP_URL || 'http://localhost:3000').replace(/\/+$/, '');
+const base = (arg('url') || process.env.APP_URL || 'http://127.0.0.1:3000').replace(/\/+$/, '');
+let cookie = '';
+
+/** "connect ECONNREFUSED ::1:3000" rather than "fetch failed". */
+const why = (e: any) => [e?.message, e?.cause?.code, e?.cause?.message].filter(Boolean).join(': ') || String(e);
 const iso3 = (arg('country') || 'BRA').toUpperCase();
 
 async function post(route: string, body: unknown): Promise<{ status: number; json: any; ms: number }> {
   const t0 = Date.now();
-  const r = await fetch(`${base}${route}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const r = await fetch(`${base}${route}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(body) });
   const json = await r.json().catch(() => ({}));
   return { status: r.status, json, ms: Date.now() - t0 };
 }
@@ -48,13 +55,34 @@ function printTiming(t: CouncilTiming) {
 }
 
 async function main() {
-  let ws: any;
   try {
-    ws = await (await fetch(`${base}/api/workspace`)).json();
-  } catch {
-    console.error(`The app did not answer at ${base}. Start it first (Docker or npm run dev), or pass --url.`);
+    const h = await fetch(`${base}/healthz`, { signal: AbortSignal.timeout(5000) });
+    if (!h.ok) throw new Error(`HTTP ${h.status}`);
+  } catch (e) {
+    console.error(`The app did not answer at ${base} (${why(e)}). Start it first (Docker or npm run dev), or pass --url (Docker: --url http://127.0.0.1:3737).`);
     process.exit(1);
   }
+  let wsRes = await fetch(`${base}/api/workspace`);
+  if (wsRes.status === 401) {
+    const username = process.env.ECONQUEST_USER;
+    const password = process.env.ECONQUEST_PASSWORD;
+    if (!username || !password) {
+      console.error('Sign-in is on for this app. Run with your account: ECONQUEST_USER=you ECONQUEST_PASSWORD=… npm run council:time');
+      process.exit(1);
+    }
+    const s = await fetch(`${base}/api/auth/sign-in`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ username, password }) });
+    if (!s.ok) {
+      console.error(`Sign-in refused: ${(await s.json().catch(() => ({})))?.error || `HTTP ${s.status}`}`);
+      process.exit(1);
+    }
+    cookie = String(s.headers.get('set-cookie') || '').split(';')[0];
+    wsRes = await fetch(`${base}/api/workspace`, { headers: { Cookie: cookie } });
+  }
+  if (!wsRes.ok) {
+    console.error(`The app answered HTTP ${wsRes.status} for its saved settings: ${(await wsRes.json().catch(() => ({})))?.error || ''}`);
+    process.exit(1);
+  }
+  const ws: any = await wsRes.json();
   let runtimeConfig: any = {};
   try {
     runtimeConfig = JSON.parse(ws?.values?.econquest_ai_runtime_config_v1 || '{}');
@@ -96,6 +124,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error(`council:time failed: ${e?.message || e}${e?.cause ? ` (${e.cause.message || e.cause})` : ""}`);
+  console.error(`council:time failed: ${why(e)}`);
   process.exit(1);
 });
