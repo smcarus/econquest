@@ -76,3 +76,5 @@ export const WATCH_RULES_FILE = watchRulesFilePath(DATA_DIR);
 export const WORKSPACE_FILE = workspaceFilePath(DATA_DIR);
 // Every full council run's step timings, one JSON line each (src/utils/councilTiming.ts).
 export const COUNCIL_TIMING_FILE = path.join(DATA_DIR, 'local', 'council-timing.jsonl');
+/** Scheduled jobs on the server (src/utils/scheduledJobs.ts): last runs of Download all and the backtests. */
+export const SCHEDULED_JOBS_FILE = path.join(DATA_DIR, 'local', 'scheduled-jobs.json');
