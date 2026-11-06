@@ -36,6 +36,7 @@ import { searchDocs, type PolicyDoc } from './policyDocs';
 import { MEASURE_LABEL, TOLERANCE, compareClaims, extractClaims, fmtMeasure } from './docFigureCheck';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
+import { TNM_CITATION, multiplierView } from './fiscalMultipliers';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
@@ -477,6 +478,14 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         { label: 'Policy rate against the rule', value: `${sgn(taylor.reading.gapToRulePts, 2)} pts (${taylor.reading.stance})`, source: 'BIS policy rate minus the rule rate; within 1 pt = close to the rule', tag: 'model' }
       );
     }
+    if (it.outputGap) {
+      const og = it.outputGap;
+      figures.push(
+        og.source === 'estimate'
+          ? { label: `Output gap ${og.year}`, value: `${sgn(og.pct)}% of potential GDP${og.low !== undefined && og.high !== undefined ? ` (band ${sgn(og.low)} to ${sgn(og.high)})` : ''}`, source: 'app estimate: middle of HP (lambda 100 and 6.25) and Hamilton filters on IMF WEO real GDP growth; not an official figure', tag: 'model' }
+          : { label: `Output gap ${og.year}`, value: `${sgn(og.pct)}% of potential GDP`, source: 'IMF WEO', tag: 'official' },
+      );
+    }
     const stanceText = policyStance(real, gap);
     const ext = imfFigures(it);
     findings.push({
@@ -521,7 +530,7 @@ function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       parts.push(`Government debt is ${p1(f.debtPctGdp.value)} of GDP.`);
     }
     if (f.primaryBalancePctGdp) {
-      figures.push({ label: 'Primary balance', value: `${sgn(f.primaryBalancePctGdp.value)}% of GDP`, source: `${WEO_LABEL}, ${f.primaryBalancePctGdp.year}`, tag: 'official' });
+      figures.push({ label: 'Primary balance', value: `${sgn(f.primaryBalancePctGdp.value)}% of GDP`, source: `IMF Fiscal Monitor, ${f.primaryBalancePctGdp.year}`, tag: 'official' });
       const realRate = it.yield10YPct !== undefined && it.cpiInflationPct !== undefined ? it.yield10YPct - it.cpiInflationPct : undefined;
       if (f.debtPctGdp && f.realGrowthPct && realRate !== undefined) {
         const star = stabilisingPrimaryBalance(f.debtPctGdp.value, realRate, f.realGrowthPct.value);
@@ -568,6 +577,32 @@ function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       if (f.intlBonds.due1yUsdBn !== undefined) {
         figures.push({ label: 'Of which due within a year', value: bn(f.intlBonds.due1yUsdBn), source: `${BIS_SECURITIES_SHORT}, ${formatQuarter(f.intlBonds.asOf)}`, tag: 'official' });
       }
+    }
+    // Debt sustainability (src/utils/debtSustainability.ts): the identity on IMF inputs and stated shocks.
+    const dsa = it.debtSustainability;
+    if (dsa) {
+      if (dsa.base) figures.push({ label: `Debt in ${dsa.base.year}, ${dsa.base.label.toLowerCase()}`, value: `${p1(dsa.base.end)} of GDP`, source: `debt dynamics on IMF WEO and Fiscal Monitor figures: ${dsa.method}`, tag: 'model' });
+      if (dsa.worst) figures.push({ label: `Debt in ${dsa.base?.year ?? 'five years'}, worst stress case (${dsa.worst.label.toLowerCase()})`, value: `${p1(dsa.worst.end)} of GDP`, source: 'stress scenarios shaped on the IMF market-access DSA tests; sizes stated by the app', tag: 'model' });
+      if (dsa.rMinusG !== undefined) figures.push({ label: 'Interest rate less growth (r - g), 10-year average', value: `${sgn(dsa.rMinusG)} pts`, source: 'effective real interest rate (IMF net interest over debt, less CPI inflation) minus IMF real growth', tag: 'model' });
+      if (dsa.stabilisingPb !== undefined) {
+        figures.push({ label: 'Debt-stabilising primary balance (IMF inputs)', value: `${sgn(dsa.stabilisingPb)}% of GDP`, source: 'debt x (i - n) / (1 + n) on the IMF projection averages', tag: 'model' });
+        if (dsa.projectedPb !== undefined) {
+          parts.push(`On the IMF's own projections the primary balance averages ${sgn(dsa.projectedPb)}% of GDP against ${sgn(dsa.stabilisingPb)}% needed to hold debt steady${dsa.worst ? `; the worst stress case takes debt to ${p1(dsa.worst.end)} of GDP` : ''}.`);
+          if (dsa.projectedPb < dsa.stabilisingPb - 0.5) weight = Math.max(weight, Math.min(1, (dsa.stabilisingPb - dsa.projectedPb) / 4 + 0.3));
+        }
+      }
+    } else if (f.debtPctGdp) {
+      missing.push(`${it.countryName}: no debt sustainability view (needs the saved IMF history with Fiscal Monitor balances; see Research > History & data)`);
+    }
+    // Fiscal multiplier: a cited reference range (src/utils/fiscalMultipliers.ts), never an estimate.
+    if (f.debtPctGdp) {
+      const mv = multiplierView({ iso3: it.iso3, debtPctGdp: f.debtPctGdp, outputGap: it.outputGap, ...(it.policyRateSource === 'bis' && it.policyRatePct !== undefined ? { policyRatePct: it.policyRatePct } : {}) });
+      figures.push({
+        label: 'Fiscal multiplier, first year (reference range)',
+        value: `${mv.guide.low}-${mv.guide.high} (${mv.guide.bucket} bucket, normal times)`,
+        source: `${TNM_CITATION} ${mv.guide.why} Trough of the cycle ${mv.cycle.trough.low}-${mv.cycle.trough.high}, peak ${mv.cycle.peak.low}-${mv.cycle.peak.high}. Not an estimate for this country`,
+        tag: 'model',
+      });
     }
     if (!f.extDue12m && !f.intlBonds && !f.idsNext) missing.push(`${it.countryName}: no external debt falling due (World Bank QEDS, IDS and BIS did not answer or have no series)`);
     if (!figures.length) continue;

@@ -3,7 +3,7 @@ import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
-import { debtSustainability, dsaRows, dsaSentence, type DsaOutcome } from './src/utils/debtSustainability';
+import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
@@ -2737,6 +2737,10 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
                 const est = outputGapFrom(loadOfficialHistory(catItem.iso3));
                 return est.ok ? { outputGap: { pct: est.latest.central, year: est.latest.year, source: 'estimate' as const, low: est.latest.low, high: est.latest.high } } : {};
               })()),
+          ...((() => {
+            const d = dsaFrom(loadOfficialHistory(catItem.iso3));
+            return d.ok ? { debtSustainability: dsaSummary(d) } : {};
+          })()),
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
           ...(prices && (cpi || nationalCpi)
             ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
