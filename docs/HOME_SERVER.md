@@ -160,6 +160,30 @@ docker compose -f compose.yml -f compose.gpu.yml up -d --build
 
 `docker compose stop` lets open requests finish (up to 8 seconds) before the app exits.
 
+## Server alerts
+
+A server left running should tell you when something breaks. Set a webhook, email, or both in
+Menu > Settings > Server alerts (or in `.env`), and press Test: it sends a real test message.
+Nothing is sent until one is set.
+
+| Setting | Example | What it is |
+|---|---|---|
+| `ALERT_WEBHOOK_URL` | `https://hooks.slack.com/services/…` | Where to post the message |
+| `ALERT_SMTP_URL` | `smtps://you%40gmail.com:APP-PASSWORD@smtp.gmail.com:465` | The mail server that sends alert emails (write `@` in the user name as `%40`) |
+| `ALERT_EMAIL_TO` | `you@example.com` | Who gets them (several separated by commas) |
+| `ALERT_EMAIL_FROM` | `econquest@example.com` | Optional sender; default the user name in `ALERT_SMTP_URL` |
+
+The webhook message is shaped for the address: `text` for Slack and Google Chat, `content` for
+Discord, plain text for ntfy.sh. Any other address gets one JSON object (`text`, `title`, `lines`,
+`kind`, `at`), which Mattermost and Rocket.Chat read as well, or your own receiver can sort by
+`kind`. Gmail needs an app password (2-step verification on, then Google Account > Security >
+App passwords).
+
+Messages say what failed and when. They never carry a key or password: every line is checked
+against every saved key and setting, and anything that looks like a key in a web address is
+blanked, before it leaves the server. The webhook address and the mail server are kept like
+keys (masked, encrypted on disk when `ECONQUEST_SECRET_KEY` is set, never in backups).
+
 ## Where things are kept
 
 Everything the app saves is in one folder, `data` (or `DATA_PATH`): settings and keys you saved
