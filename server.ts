@@ -11,7 +11,7 @@ import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
 import { COUNCIL_SEED, COUNCIL_TEMPERATURE, compareRuns, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
-import { checkRegressionCase, parseRegressionSet, type RegressionCaseResult, type RegressionReport } from './src/utils/councilRegression';
+import { checkRegressionCase, parseRegressionSet, type RegressionCase, type RegressionCaseResult, type RegressionReport, type SupremeCaseInput } from './src/utils/councilRegression';
 import { buildSnapshot, loadSnapshot, saveSnapshot, sha256, snapshotDir, verifySnapshot } from './src/utils/answerSnapshotStore';
 import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
 import { TRACK_RECORD_HEADER, trackRecord, trackRecordRows, trackRecordSentence, type ArchivedDay } from './src/utils/trackRecord';
@@ -4405,6 +4405,287 @@ async function morningTick(): Promise<void> {
   await runMorningBrief('schedule').catch((e) => console.error('[morning-brief]', e));
 }
 
+const SUPREME_INSTRUCTION =
+  'You are the Supreme Council Orchestrator for an Institutional Asset Management & Sovereign Policy Research Department. Return strict JSON adhering to the SMCR-1.0 schema. CRITICAL WRITING STYLE: Phrase the executiveSummary, longTermRegimeOutlook, structuralVulnerabilities, factorCrowdingWarning, and all trade rationales in clear, everyday plain English first so both general readers and portfolio managers immediately grasp the core takeaway, and cite the exact economic/statistical metrics in parentheses at the end of each point (Ref: ...).';
+
+/**
+ * The Supreme Council's final step (STAGE_3_SUPREME_COUNCIL) on the referee model: the CRO's
+ * scores and shocks, the country figures, then the number check on the report. Used by the full
+ * council and by the regression set (src/utils/councilRegression.ts).
+ */
+async function supremeCouncilStep(
+  run: CouncilAssessmentRun | undefined,
+  croOverrideState: CROOverrideState | undefined,
+  runtimeConfig: Partial<AIRuntimeConfig>,
+  progress: ReturnType<typeof progressTracker> = progressTracker(undefined)
+) {
+  const targetRun: CouncilAssessmentRun = run || buildDefaultAssessmentRun('BRA');
+  const cro: CROOverrideState = croOverrideState || targetRun.croState;
+
+  // Apply counterfactual war-gaming shocks to effective risk scores
+  const shockGeoBoost =
+    (cro.counterfactualShocks?.chokepointTransitDropPct || 0) * 0.002 +
+    (cro.counterfactualShocks?.brentCrudeShockUsd || 0) * 0.002;
+  const shockMacroBoost =
+    (cro.counterfactualShocks?.brentCrudeShockUsd || 0) * 0.003 +
+    (cro.counterfactualShocks?.fedTerminalRateShockBps || 0) * 0.001;
+  const shockSovBoost =
+    (cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0) * 0.04 +
+    (cro.counterfactualShocks?.fedTerminalRateShockBps || 0) * 0.0012;
+
+  const finalGeo = Math.min(0.99, Math.max(0.05, Number((cro.geopoliticalRiskScore + shockGeoBoost).toFixed(2))));
+  const finalSov = Math.min(0.99, Math.max(0.05, Number((cro.sovereignRiskScore + shockSovBoost).toFixed(2))));
+  const finalMac = Math.min(0.99, Math.max(0.05, Number((cro.macroRiskScore + shockMacroBoost).toFixed(2))));
+  const compositeScore = Number(((finalGeo + finalSov + finalMac) / 3).toFixed(2));
+
+  const shown = (v: number) => (Number.isFinite(v) ? String(v) : 'MISSING');
+  const councilPrompt = `Synthesize the final SMCR-1.0 (Sovereign-Macro Council Report v1.0) output for ${targetRun.countryName} (${targetRun.iso3}).
+
+CRO Human-in-the-Loop Approved / Overridden Risk Vector:
+- Geopolitical Desk Risk Score: ${shown(finalGeo)} (${targetRun.deskDebates?.geopolitical?.consensusSummary || ''})
+- Sovereign Risk Desk Score: ${shown(finalSov)} (${targetRun.deskDebates?.sovereign?.consensusSummary || ''})
+- Macroeconomic Desk Risk Score: ${shown(finalMac)} (${targetRun.deskDebates?.macro?.consensusSummary || ''})
+- Composite Risk Score: ${shown(compositeScore)}
+- Energy/Freight Inflation Shock Input: ${Number.isFinite(cro.energyInflationShockPct) ? `+${cro.energyInflationShockPct}%` : 'MISSING (no model set it)'}
+- Debt Servicing Spread Impact: ${Number.isFinite(cro.debtServicingSpreadBps) ? `+${cro.debtServicingSpreadBps} bps` : 'MISSING (no model set it)'}
+- Scenario inputs above (energy shock, spread impact) come from the cascade step and your review, not from data.
+Country figures (only those a live feed, an official series or your own data filled; MISSING ones are unknown):
+${councilInputs(targetRun.openData).lines.join('\n')}
+${MISSING_FIGURES_RULE}
+- Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
+- Chief Risk Officer Directives: "${cro.croNotes}"`;
+
+  let baseOutput: SupremeCouncilOutput =
+    targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
+
+  const supremeStep = await tracked(progress, 'supreme', executeResilientLlmStep<any>({
+    stepName: 'STAGE_3_SUPREME_COUNCIL',
+    providerMode: runtimeConfig.providerMode || 'gemini',
+    runtimeConfig,
+    thinkingLevel: ThinkingLevel.HIGH,
+    // Reproducible like the chat summary: temperature 0, fixed seed (src/utils/answerSnapshot.ts).
+    temperature: COUNCIL_TEMPERATURE,
+    seed: COUNCIL_SEED,
+    systemInstruction: SUPREME_INSTRUCTION,
+    prompt: councilPrompt,
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        decisionVerdict: {
+          type: Type.STRING,
+          description: 'EXECUTE_TRADES, DEFENSIVE_HEDGE, or HOLD_AND_MONITOR',
+        },
+        executiveSummary: { type: Type.STRING },
+        longTermRegimeOutlook: { type: Type.STRING },
+        structuralVulnerabilities: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING },
+        },
+        regimeStance: { type: Type.STRING },
+        factorCrowdingWarning: { type: Type.STRING },
+        ratesTradeInstrument: { type: Type.STRING },
+        ratesTradeRationale: { type: Type.STRING },
+        ratesTradeInvalidation: { type: Type.STRING },
+        fxTradeInstrument: { type: Type.STRING },
+        fxTradeRationale: { type: Type.STRING },
+        fxTradeInvalidation: { type: Type.STRING },
+        creditTradeInstrument: { type: Type.STRING },
+        creditTradeRationale: { type: Type.STRING },
+        fiscalPolicyRecommendation: { type: Type.STRING },
+        monetaryPolicyRecommendation: { type: Type.STRING },
+      },
+      required: [
+        'decisionVerdict',
+        'executiveSummary',
+        'longTermRegimeOutlook',
+        'structuralVulnerabilities',
+        'regimeStance',
+      ],
+    },
+    fallbackValue: {
+      decisionVerdict: compositeScore >= 0.65 ? 'EXECUTE_TRADES' : 'DEFENSIVE_HEDGE',
+      executiveSummary: baseOutput.executiveSummary,
+      longTermRegimeOutlook: baseOutput.policyResearcherReport.longTermRegimeOutlook,
+      structuralVulnerabilities: baseOutput.policyResearcherReport.structuralVulnerabilities,
+      regimeStance: baseOutput.marketTranslationLayer.regimeStance,
+      factorCrowdingWarning:
+        baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
+    },
+  }));
+
+  if (supremeStep.usedFallback) return { error: NO_MODEL_COUNCIL, failure: supremeStep.failure };
+  const parsed = supremeStep.data || {};
+  const supremeContext = [
+    councilPrompt,
+    ...Object.values(targetRun.deskDebates || {}).map((d) => d.consensusSummary),
+    ...(targetRun.cascadeSteps || []).map((c) => `${c.shockDelta} ${c.transmissionMechanism}`),
+  ];
+  const validVerdicts = ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'];
+  const verdict = validVerdicts.includes(parsed.decisionVerdict)
+    ? parsed.decisionVerdict
+    : compositeScore >= 0.65
+    ? 'EXECUTE_TRADES'
+    : 'DEFENSIVE_HEDGE';
+
+  baseOutput = {
+    ...baseOutput,
+    fromModel: true,
+    reportId: `SMCR-1.0-${targetRun.iso3}-${Date.now().toString().slice(-5)}`,
+    generatedAt: new Date().toISOString(),
+    decisionVerdict: verdict as SupremeCouncilOutput['decisionVerdict'],
+    compositeRiskScore: compositeScore,
+    executiveSummary: parsed.executiveSummary || baseOutput.executiveSummary,
+    policyResearcherReport: {
+      ...baseOutput.policyResearcherReport,
+      structuralVulnerabilities:
+        Array.isArray(parsed.structuralVulnerabilities) && parsed.structuralVulnerabilities.length > 0
+          ? parsed.structuralVulnerabilities
+          : baseOutput.policyResearcherReport.structuralVulnerabilities,
+      longTermRegimeOutlook:
+        parsed.longTermRegimeOutlook || baseOutput.policyResearcherReport.longTermRegimeOutlook,
+      policyRecommendations: baseOutput.policyResearcherReport.policyRecommendations.map(
+        (rec, idx) => {
+          if (idx === 0 && parsed.fiscalPolicyRecommendation) {
+            return { ...rec, action: String(parsed.fiscalPolicyRecommendation) };
+          }
+          if (idx === 1 && parsed.monetaryPolicyRecommendation) {
+            return { ...rec, action: String(parsed.monetaryPolicyRecommendation) };
+          }
+          return rec;
+        }
+      ),
+    },
+    marketTranslationLayer: {
+      ...baseOutput.marketTranslationLayer,
+      regimeStance: parsed.regimeStance || baseOutput.marketTranslationLayer.regimeStance,
+      tradeExpressions: baseOutput.marketTranslationLayer.tradeExpressions.map((t, idx) => {
+        if (idx === 0 && parsed.ratesTradeInstrument) {
+          return {
+            ...t,
+            instrument: String(parsed.ratesTradeInstrument),
+            entryRationale: String(parsed.ratesTradeRationale || t.entryRationale),
+            invalidationStopTrigger: String(
+              parsed.ratesTradeInvalidation || t.invalidationStopTrigger
+            ),
+          };
+        }
+        if (idx === 1 && parsed.fxTradeInstrument) {
+          return {
+            ...t,
+            instrument: String(parsed.fxTradeInstrument),
+            entryRationale: String(parsed.fxTradeRationale || t.entryRationale),
+            invalidationStopTrigger: String(
+              parsed.fxTradeInvalidation || t.invalidationStopTrigger
+            ),
+          };
+        }
+        if (idx === 3 && parsed.creditTradeInstrument) {
+          return {
+            ...t,
+            instrument: String(parsed.creditTradeInstrument),
+            entryRationale: String(parsed.creditTradeRationale || t.entryRationale),
+          };
+        }
+        return t;
+      }),
+      riskGuardianCheck: {
+        ...baseOutput.marketTranslationLayer.riskGuardianCheck,
+        factorCrowdingWarning:
+          parsed.factorCrowdingWarning ||
+          baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
+      },
+    },
+  };
+
+  // Number check: the final report may quote only figures the council was given.
+  const reportCheck = checkSupremeText(baseOutput, supremeContext, [...runScores(targetRun), finalGeo, finalSov, finalMac, compositeScore]);
+  baseOutput = reportCheck.output;
+  const promptHash = sha256(`${SUPREME_INSTRUCTION}\n\n${councilPrompt}`);
+  return { targetRun, cro, finalGeo, finalSov, finalMac, compositeScore, supremeStep, councilPrompt, promptHash, output: baseOutput, reportCheck };
+}
+
+/** A regression case on the Supreme Council step: a run built only from the case's frozen inputs. */
+async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<AIRuntimeConfig>): Promise<RegressionCaseResult> {
+  const input = c.supreme!;
+  const base = buildBaselineOpenData(input.iso3);
+  const pick = (group: string) => Object.fromEntries(input.figures.filter((f) => f.path.startsWith(`${group}.`)).map((f) => [f.path.split('.')[1], f.value]));
+  // Only the case's figures count as data: every other figure is MISSING in the prompt.
+  const openData: OpenDataSnapshot = {
+    ...base,
+    iso3: input.iso3,
+    countryName: input.countryName,
+    currencyCode: input.currencyCode || base.currencyCode,
+    imfIndicators: { ...base.imfIndicators, ...pick('imf') },
+    worldBankIndicators: { ...base.worldBankIndicators, ...pick('wb') },
+    monetaryAndMarket: { ...base.monetaryAndMarket, ...pick('market') },
+    liveFields: Object.fromEntries(input.figures.map((f) => [f.path, f.source])),
+    dataStatus: { verifiedLiveSources: input.feeds, checkedAt: '2026-11-05T00:00:00.000Z' } as OpenDataSnapshot['dataStatus'],
+    official10YYield: undefined,
+    ownCds5Y: undefined,
+    polymarketContracts: [],
+    gdeltRaw: undefined,
+  };
+  const run = buildDefaultAssessmentRun(input.iso3, openData);
+  const desk = (d: keyof SupremeCaseInput['desks']) => ({ ...run.deskDebates[d], consensusSummary: input.desks[d] });
+  const frozenRun: CouncilAssessmentRun = {
+    ...run,
+    countryName: input.countryName,
+    deskDebates: { ...run.deskDebates, geopolitical: desk('geopolitical'), sovereign: desk('sovereign'), macro: desk('macro') },
+    cascadeSteps: [],
+  };
+  const cro: CROOverrideState = {
+    ...run.croState,
+    ...input.cro,
+    energyInflationShockPct: NaN,
+    debtServicingSpreadBps: NaN,
+    counterfactualShocks: { brentCrudeShockUsd: 0, fedTerminalRateShockBps: 0, chokepointTransitDropPct: 0, domesticFiscalSlippagePctGdp: 0 } as CROOverrideState['counterfactualShocks'],
+  };
+  const step = await supremeCouncilStep(frozenRun, cro, runtimeConfig);
+  if ('error' in step) {
+    return { ...checkRegressionCase(c, { brief: null, removed: [], reason: step.failure || step.error } as SynthesisResult), model: null, answer: [] };
+  }
+  const o = step.output;
+  const p = o.policyResearcherReport;
+  // Only what the model wrote (after the number check); fields it left out are filled from the
+  // built-in report in the app, which says nothing about the model.
+  const said = (k: string) => Boolean(step.supremeStep.data && (step.supremeStep.data as Record<string, unknown>)[k]);
+  const brief = {
+    headline: `${said('decisionVerdict') && (step.supremeStep.data as Record<string, unknown>).decisionVerdict === o.decisionVerdict ? o.decisionVerdict : '(no verdict chosen)'}: ${said('executiveSummary') ? o.executiveSummary : '(no summary written)'}`,
+    points: [
+      said('longTermRegimeOutlook') ? p.longTermRegimeOutlook : '',
+      said('regimeStance') ? o.marketTranslationLayer.regimeStance : '',
+      ...(said('structuralVulnerabilities') ? p.structuralVulnerabilities || [] : []),
+      said('fiscalPolicyRecommendation') ? p.policyRecommendations[0]?.action : '',
+      said('monetaryPolicyRecommendation') ? p.policyRecommendations[1]?.action : '',
+    ].filter((x): x is string => Boolean(x)),
+    disagreements: [],
+    gaps: [],
+  };
+  // Sentences the number check removed from what the model wrote (not from the built-in filler).
+  const fieldOf = (where: string): string => {
+    if (/^Executive summary/.test(where)) return 'executiveSummary';
+    if (/^Vulnerability/.test(where)) return 'structuralVulnerabilities';
+    if (/^Long-term outlook/.test(where)) return 'longTermRegimeOutlook';
+    if (/^Regime stance/.test(where)) return 'regimeStance';
+    if (/^Policy recommendation 1\b/.test(where)) return 'fiscalPolicyRecommendation';
+    if (/^Policy recommendation 2\b/.test(where)) return 'monetaryPolicyRecommendation';
+    if (/^Crowding warning/.test(where)) return 'factorCrowdingWarning';
+    const t = /^Trade idea (\d)/.exec(where)?.[1];
+    return t === '1' ? 'ratesTradeRationale' : t === '2' ? 'fxTradeRationale' : t === '4' ? 'creditTradeRationale' : '';
+  };
+  const removed = step.reportCheck.check.removed.filter((r) => said(fieldOf(r.where))).map((r) => r.sentence);
+  const answer = [brief.headline, ...brief.points];
+  return {
+    ...checkRegressionCase(c, { brief, removed } as SynthesisResult),
+    model: step.supremeStep.model ?? null,
+    temperature: step.supremeStep.temperature,
+    seed: step.supremeStep.seed,
+    promptHash: step.promptHash,
+    outputHash: sha256(JSON.stringify({ verdict: o.decisionVerdict, answer })),
+    answer,
+  };
+}
+
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
@@ -4994,6 +5275,12 @@ async function startServer() {
       const results: RegressionCaseResult[] = [];
       let model: string | null = null;
       for (const c of set.cases) {
+        if (c.kind === 'supreme' && c.supreme) {
+          const r = await supremeRegressionCase(c, runtimeConfig);
+          model = model || r.model || null;
+          results.push(r);
+          continue;
+        }
         const out = await answerAndRecord(c.question, c.answers, { runtimeConfig, askedAt: '2026-11-05T00:00:00.000Z' }, `Regression check ${c.id}`);
         model = model || out.snapshot?.model || null;
         const b = out.brief;
@@ -6878,188 +7165,10 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         runtimeConfig?: Partial<AIRuntimeConfig>;
       };
 
-      const targetRun: CouncilAssessmentRun = run || buildDefaultAssessmentRun('BRA');
-      const cro: CROOverrideState = croOverrideState || targetRun.croState;
-
-      // Apply counterfactual war-gaming shocks to effective risk scores
-      const shockGeoBoost =
-        (cro.counterfactualShocks?.chokepointTransitDropPct || 0) * 0.002 +
-        (cro.counterfactualShocks?.brentCrudeShockUsd || 0) * 0.002;
-      const shockMacroBoost =
-        (cro.counterfactualShocks?.brentCrudeShockUsd || 0) * 0.003 +
-        (cro.counterfactualShocks?.fedTerminalRateShockBps || 0) * 0.001;
-      const shockSovBoost =
-        (cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0) * 0.04 +
-        (cro.counterfactualShocks?.fedTerminalRateShockBps || 0) * 0.0012;
-
-      const finalGeo = Math.min(0.99, Math.max(0.05, Number((cro.geopoliticalRiskScore + shockGeoBoost).toFixed(2))));
-      const finalSov = Math.min(0.99, Math.max(0.05, Number((cro.sovereignRiskScore + shockSovBoost).toFixed(2))));
-      const finalMac = Math.min(0.99, Math.max(0.05, Number((cro.macroRiskScore + shockMacroBoost).toFixed(2))));
-      const compositeScore = Number(((finalGeo + finalSov + finalMac) / 3).toFixed(2));
-
-      const shown = (v: number) => (Number.isFinite(v) ? String(v) : 'MISSING');
-      const councilPrompt = `Synthesize the final SMCR-1.0 (Sovereign-Macro Council Report v1.0) output for ${targetRun.countryName} (${targetRun.iso3}).
-
-CRO Human-in-the-Loop Approved / Overridden Risk Vector:
-- Geopolitical Desk Risk Score: ${shown(finalGeo)} (${targetRun.deskDebates?.geopolitical?.consensusSummary || ''})
-- Sovereign Risk Desk Score: ${shown(finalSov)} (${targetRun.deskDebates?.sovereign?.consensusSummary || ''})
-- Macroeconomic Desk Risk Score: ${shown(finalMac)} (${targetRun.deskDebates?.macro?.consensusSummary || ''})
-- Composite Risk Score: ${shown(compositeScore)}
-- Energy/Freight Inflation Shock Input: ${Number.isFinite(cro.energyInflationShockPct) ? `+${cro.energyInflationShockPct}%` : 'MISSING (no model set it)'}
-- Debt Servicing Spread Impact: ${Number.isFinite(cro.debtServicingSpreadBps) ? `+${cro.debtServicingSpreadBps} bps` : 'MISSING (no model set it)'}
-- Scenario inputs above (energy shock, spread impact) come from the cascade step and your review, not from data.
-Country figures (only those a live feed, an official series or your own data filled; MISSING ones are unknown):
-${councilInputs(targetRun.openData).lines.join('\n')}
-${MISSING_FIGURES_RULE}
-- Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
-- Chief Risk Officer Directives: "${cro.croNotes}"`;
-
-      let baseOutput: SupremeCouncilOutput =
-        targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
-
-      const progress = progressTracker(req.body?.progressId);
-      const supremeStep = await tracked(progress, 'supreme', executeResilientLlmStep<any>({
-        stepName: 'STAGE_3_SUPREME_COUNCIL',
-        providerMode: runtimeConfig.providerMode || 'gemini',
-        runtimeConfig,
-        thinkingLevel: ThinkingLevel.HIGH,
-        systemInstruction:
-          'You are the Supreme Council Orchestrator for an Institutional Asset Management & Sovereign Policy Research Department. Return strict JSON adhering to the SMCR-1.0 schema. CRITICAL WRITING STYLE: Phrase the executiveSummary, longTermRegimeOutlook, structuralVulnerabilities, factorCrowdingWarning, and all trade rationales in clear, everyday plain English first so both general readers and portfolio managers immediately grasp the core takeaway, and cite the exact economic/statistical metrics in parentheses at the end of each point (Ref: ...).',
-        prompt: councilPrompt,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            decisionVerdict: {
-              type: Type.STRING,
-              description: 'EXECUTE_TRADES, DEFENSIVE_HEDGE, or HOLD_AND_MONITOR',
-            },
-            executiveSummary: { type: Type.STRING },
-            longTermRegimeOutlook: { type: Type.STRING },
-            structuralVulnerabilities: {
-              type: Type.ARRAY,
-              items: { type: Type.STRING },
-            },
-            regimeStance: { type: Type.STRING },
-            factorCrowdingWarning: { type: Type.STRING },
-            ratesTradeInstrument: { type: Type.STRING },
-            ratesTradeRationale: { type: Type.STRING },
-            ratesTradeInvalidation: { type: Type.STRING },
-            fxTradeInstrument: { type: Type.STRING },
-            fxTradeRationale: { type: Type.STRING },
-            fxTradeInvalidation: { type: Type.STRING },
-            creditTradeInstrument: { type: Type.STRING },
-            creditTradeRationale: { type: Type.STRING },
-            fiscalPolicyRecommendation: { type: Type.STRING },
-            monetaryPolicyRecommendation: { type: Type.STRING },
-          },
-          required: [
-            'decisionVerdict',
-            'executiveSummary',
-            'longTermRegimeOutlook',
-            'structuralVulnerabilities',
-            'regimeStance',
-          ],
-        },
-        fallbackValue: {
-          decisionVerdict: compositeScore >= 0.65 ? 'EXECUTE_TRADES' : 'DEFENSIVE_HEDGE',
-          executiveSummary: baseOutput.executiveSummary,
-          longTermRegimeOutlook: baseOutput.policyResearcherReport.longTermRegimeOutlook,
-          structuralVulnerabilities: baseOutput.policyResearcherReport.structuralVulnerabilities,
-          regimeStance: baseOutput.marketTranslationLayer.regimeStance,
-          factorCrowdingWarning:
-            baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
-        },
-      }));
-
-      if (supremeStep.usedFallback) {
-        return res.status(503).json({ error: NO_MODEL_COUNCIL });
-      }
-      const parsed = supremeStep.data || {};
-      const supremeContext = [
-        councilPrompt,
-        ...Object.values(targetRun.deskDebates || {}).map((d) => d.consensusSummary),
-        ...(targetRun.cascadeSteps || []).map((c) => `${c.shockDelta} ${c.transmissionMechanism}`),
-      ];
-      const validVerdicts = ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'];
-      const verdict = validVerdicts.includes(parsed.decisionVerdict)
-        ? parsed.decisionVerdict
-        : compositeScore >= 0.65
-        ? 'EXECUTE_TRADES'
-        : 'DEFENSIVE_HEDGE';
-
-      baseOutput = {
-        ...baseOutput,
-        fromModel: true,
-        reportId: `SMCR-1.0-${targetRun.iso3}-${Date.now().toString().slice(-5)}`,
-        generatedAt: new Date().toISOString(),
-        decisionVerdict: verdict as SupremeCouncilOutput['decisionVerdict'],
-        compositeRiskScore: compositeScore,
-        executiveSummary: parsed.executiveSummary || baseOutput.executiveSummary,
-        policyResearcherReport: {
-          ...baseOutput.policyResearcherReport,
-          structuralVulnerabilities:
-            Array.isArray(parsed.structuralVulnerabilities) && parsed.structuralVulnerabilities.length > 0
-              ? parsed.structuralVulnerabilities
-              : baseOutput.policyResearcherReport.structuralVulnerabilities,
-          longTermRegimeOutlook:
-            parsed.longTermRegimeOutlook || baseOutput.policyResearcherReport.longTermRegimeOutlook,
-          policyRecommendations: baseOutput.policyResearcherReport.policyRecommendations.map(
-            (rec, idx) => {
-              if (idx === 0 && parsed.fiscalPolicyRecommendation) {
-                return { ...rec, action: String(parsed.fiscalPolicyRecommendation) };
-              }
-              if (idx === 1 && parsed.monetaryPolicyRecommendation) {
-                return { ...rec, action: String(parsed.monetaryPolicyRecommendation) };
-              }
-              return rec;
-            }
-          ),
-        },
-        marketTranslationLayer: {
-          ...baseOutput.marketTranslationLayer,
-          regimeStance: parsed.regimeStance || baseOutput.marketTranslationLayer.regimeStance,
-          tradeExpressions: baseOutput.marketTranslationLayer.tradeExpressions.map((t, idx) => {
-            if (idx === 0 && parsed.ratesTradeInstrument) {
-              return {
-                ...t,
-                instrument: String(parsed.ratesTradeInstrument),
-                entryRationale: String(parsed.ratesTradeRationale || t.entryRationale),
-                invalidationStopTrigger: String(
-                  parsed.ratesTradeInvalidation || t.invalidationStopTrigger
-                ),
-              };
-            }
-            if (idx === 1 && parsed.fxTradeInstrument) {
-              return {
-                ...t,
-                instrument: String(parsed.fxTradeInstrument),
-                entryRationale: String(parsed.fxTradeRationale || t.entryRationale),
-                invalidationStopTrigger: String(
-                  parsed.fxTradeInvalidation || t.invalidationStopTrigger
-                ),
-              };
-            }
-            if (idx === 3 && parsed.creditTradeInstrument) {
-              return {
-                ...t,
-                instrument: String(parsed.creditTradeInstrument),
-                entryRationale: String(parsed.creditTradeRationale || t.entryRationale),
-              };
-            }
-            return t;
-          }),
-          riskGuardianCheck: {
-            ...baseOutput.marketTranslationLayer.riskGuardianCheck,
-            factorCrowdingWarning:
-              parsed.factorCrowdingWarning ||
-              baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
-          },
-        },
-      };
-
-      // Number check: the final report may quote only figures the council was given.
-      const reportCheck = checkSupremeText(baseOutput, supremeContext, [...runScores(targetRun), finalGeo, finalSov, finalMac, compositeScore]);
-      baseOutput = reportCheck.output;
+      const step = await supremeCouncilStep(run, croOverrideState, runtimeConfig, progressTracker(req.body?.progressId));
+      if ('error' in step) return res.status(503).json({ error: step.error });
+      const { targetRun, cro, finalGeo, finalSov, finalMac, compositeScore, supremeStep, reportCheck } = step;
+      const baseOutput = step.output;
 
       const prevTelemetry =
         targetRun.pipelineExecutionTelemetry ||
