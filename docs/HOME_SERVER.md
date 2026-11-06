@@ -173,6 +173,18 @@ Nothing is sent until one is set.
 | `ALERT_EMAIL_TO` | `you@example.com` | Who gets them (several separated by commas) |
 | `ALERT_EMAIL_FROM` | `econquest@example.com` | Optional sender; default the user name in `ALERT_SMTP_URL` |
 
+What sends an alert:
+
+| Event | When |
+|---|---|
+| Data source broke | The nightly data check (05:30, `DATA_CHECK_TIME`) finds a source that connected at the run before and fails now. One alert when it breaks, not every night it stays broken. |
+| Scheduled job failed | A scheduled Download all or backtest run ends not ok: a failed step, stopped early, a feed that did not answer, or a crash. |
+| Backtest regression | A pre-registered backtest, same id and version, that passed at its last run does not pass now. A new version is a new test, so it does not count. |
+
+Checks and backtests you run yourself in the app send nothing: you see the result. Settings >
+Server alerts shows the last alert and whether each route took it; `docker compose logs
+econquest | grep alert` shows every one.
+
 The webhook message is shaped for the address: `text` for Slack and Google Chat, `content` for
 Discord, plain text for ntfy.sh. Any other address gets one JSON object (`text`, `title`, `lines`,
 `kind`, `at`), which Mattermost and Rocket.Chat read as well, or your own receiver can sort by

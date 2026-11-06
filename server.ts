@@ -1,5 +1,5 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
-import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
@@ -110,7 +110,8 @@ import {
   withoutKey,
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
-import { testAlertRoute } from './src/server/alerts';
+import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
+import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
 import { backtestSummary, closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, writeJobs } from './src/utils/scheduledJobs';
@@ -1625,7 +1626,14 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
       }
     },
   });
-  appendCheck(DATA_HEALTH_FILES, recordFromReport(report, trigger));
+  const prev = readChecks(DATA_HEALTH_FILES).at(-1);
+  const record = recordFromReport(report, trigger);
+  appendCheck(DATA_HEALTH_FILES, record);
+  // Server alert when the nightly check finds a source that broke since the run before (src/utils/alertEvents.ts).
+  if (trigger === 'nightly') {
+    const alert = dataCheckAlert(prev, record);
+    if (alert) void notify(alert, LAST_ALERT_FILE);
+  }
   return report;
 }
 
@@ -1687,7 +1695,11 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   }
   validationRunning = true;
   try {
+    const before = loadValidation(VALIDATION_FILE).versions;
     const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
+    // Server alert when a test that passed (same id and version) does not pass now.
+    const regressed = backtestRegressionAlert(backtestRegressions(before, out.versions, startedAt));
+    if (regressed) void notify(regressed, LAST_ALERT_FILE);
     return backtestSummary(out, startedAt);
   } finally {
     validationRunning = false;
@@ -1722,6 +1734,7 @@ function scheduledJobsTick(): void {
       .then((r) => {
         writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), id, new Date().toISOString(), r.ok, r.summary));
         console.log(`[schedule] ${JOBS[id].label}: ${r.summary}`);
+        if (!r.ok) void notify(jobFailedAlert(JOBS[id].label, r.summary), LAST_ALERT_FILE);
       })
       .finally(() => {
         jobRunning[id] = false;
@@ -2591,6 +2604,8 @@ async function startServer() {
       problem: settingsSecretBox().problem,
       unreadable: savedSettings.unreadable ?? [],
     },
+    // Server alerts: the last one sent and how each route went (no keys in it).
+    lastAlert: readLastAlert(LAST_ALERT_FILE),
   });
   const runKeyCheck = async (id: string, env: Record<string, string | undefined>, sources: Record<string, 'app' | 'env' | 'none'>) => {
     const field = apiKeyField(id);

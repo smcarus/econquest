@@ -32,6 +32,8 @@ interface KeysReply {
   requestFrom?: string;
   inDocker?: boolean;
   encryption?: { atRest: boolean; keyFrom: string | null; problem: string | null; unreadable: string[] };
+  /** Server alerts: the last alert the server tried to send. */
+  lastAlert?: { at: string; title: string; results: Array<{ route: 'webhook' | 'email'; ok: boolean; detail: string }> } | null;
 }
 
 type KeySection = ApiKeyStatus['section'];
@@ -364,6 +366,13 @@ export const SettingsDialog: React.FC<{
               <p className="mt-1 text-xs text-slate-600 dark:text-slate-400" data-alerts-intro>
                 For a server left running: a short message when the nightly data check finds a source that broke, a scheduled job fails, or a backtest that passed now fails. Nothing is sent until a
                 webhook or email is set here (or in .env). See docs/HOME_SERVER.md, Server alerts.
+              </p>
+            )}
+            {page.id === 'alerts' && reply && (
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400" data-last-alert>
+                {reply.lastAlert
+                  ? `Last alert ${reply.lastAlert.at.slice(0, 16).replace('T', ' ')} UTC, "${reply.lastAlert.title}": ${reply.lastAlert.results.map((r) => `${r.route} ${r.ok ? 'sent' : `not sent (${r.detail})`}`).join('; ')}.`
+                  : 'No alert sent yet.'}
               </p>
             )}
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-400">
