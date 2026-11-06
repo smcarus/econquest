@@ -20,6 +20,19 @@ small real answer, through the same address and reader the app uses, and comes b
 | Refused | It answered with an HTTP error (key rejected, not found, rate limited). |
 | Unreadable answer | It answered, but not in the format the app reads. The source may have changed. |
 
+### Check history
+
+Every run of the check is kept in `data/local/data-health/source-checks.jsonl`, one line per run,
+newest last (about a year of runs; states, reasons and the figure returned, never keys or setup
+lines). Runs come from three places: the **nightly check** the app runs once a day after 05:30
+local time (`DATA_CHECK_TIME`, `DATA_CHECK_TZ`; a Mac asleep then runs it when it wakes, and an
+offline computer waits for the connection), **Check again** under Data connections, and
+`npm run check:data` (add `-- --no-save` to leave a run out). From the history each source gets:
+failing since (the first run of its current failing streak), runs failed in a row, the last time it
+connected, and how many of its last 30 runs connected. "Needs setup", "Off" and "Not set" are not
+failures: nothing was asked. `npm run check:data` ends with the sources that broke or came back
+since the last saved run.
+
 The rule throughout: a figure is shown only when one of these sources filled it. Where a source
 did not answer or is not set up, the figure reads **Missing** with the reason. Nothing is
 estimated, invented or taken from built-in sample values.
