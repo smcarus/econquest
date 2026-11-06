@@ -9,10 +9,13 @@
  *   forecast by the app).
  * - GDELT 2.0 raw files: weekly event counts (protests, sanctions, violence, Goldstein) and the
  *   economic themes in the news (GKG), latest complete week against the weeks before.
+ * - UCDP downloaded CSV files: armed conflicts in the country, battle deaths, non-state and
+ *   one-sided violence for the latest year UCDP has coded (utils/ucdpConflict.ts).
  *
  * The rules on top (tone bands, stability bands) are stated here and shown with the figures.
  */
 import type { OpenDataSnapshot } from '../types/council';
+import type { UcdpReading } from './ucdpConflict';
 import { EVENT_SURGE_RULE, GOLDSTEIN_RULE, isEventSurge, type GdeltRawReading } from './gdeltRaw';
 
 export interface PoliticsFigures {
@@ -24,6 +27,8 @@ export interface PoliticsFigures {
   marketsPulledAt?: string;
   /** GDELT raw files: events and economic themes for the latest week. */
   raw?: GdeltRawReading;
+  /** UCDP conflict figures from the downloaded files. */
+  conflict?: UcdpReading;
 }
 
 export const GDELT_SHORT = 'GDELT news tone';
@@ -73,6 +78,7 @@ export function politicsFromSnapshot(snap: OpenDataSnapshot): PoliticsFigures | 
     }
   }
   if (snap.gdeltRaw?.weekStart) out.raw = snap.gdeltRaw;
+  if (snap.ucdp?.latest) out.conflict = snap.ucdp;
   return Object.keys(out).length ? out : undefined;
 }
 
