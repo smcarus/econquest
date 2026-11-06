@@ -2148,9 +2148,15 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
   app.disable('x-powered-by');
+  // Behind a reverse proxy (the Caddy "https" profile): trust its X-Forwarded-* headers, so the
+  // app knows the request came over HTTPS (Secure cookie) and from which address (sign-in lockout).
+  // TRUST_PROXY=1 trusts one proxy hop; it can also list addresses, as Express accepts.
+  const trustProxy = String(process.env.TRUST_PROXY || '').trim();
+  if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? true : trustProxy);
   // Security headers on every reply (src/utils/requestLimits.ts): no framing, no sniffing.
   app.use((_req, res, next) => {
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+    if (_req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     next();
   });
 
@@ -2286,7 +2292,7 @@ async function startServer() {
     if (mode === 'off' && !trusted(req, res)) {
       return res.status(403).json({ error: 'The first account can only be created from the computer running the app.' });
     }
-    const address = req.socket.remoteAddress || '';
+    const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds('(setup)', address);
     if (wait) return res.status(429).json({ error: `Too many tries. Wait ${Math.ceil(wait / 60)} minutes.` });
     if (mode === 'setup' && !setupCodeMatches(req.body?.code, setupCode)) {
@@ -2308,7 +2314,7 @@ async function startServer() {
   app.post('/api/auth/sign-in', express.json({ limit: '10kb' }), (req, res) => {
     const username = normaliseUsername(req.body?.username);
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
-    const address = req.socket.remoteAddress || '';
+    const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
     const account = auth.byUsername(username);
@@ -2334,7 +2340,7 @@ async function startServer() {
   app.post('/api/auth/password', express.json({ limit: '10kb' }), (req, res) => {
     const me = signedIn(res);
     if (!me) return res.status(401).json({ error: 'Sign in first.', signIn: true });
-    const address = req.socket.remoteAddress || '';
+    const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(me.username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
     if (!verifyPassword(String(req.body?.current || ''), me.passwordHash)) {
