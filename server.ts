@@ -86,7 +86,7 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
-import { MODEL_FIELD_MISSING } from './src/utils/councilResult';
+import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { loadWatchRules, saveWatchRules } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
@@ -1803,11 +1803,11 @@ async function reviewOptionsStep(
   return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
 }
 
-const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() ? v : MODEL_FIELD_MISSING);
+const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() && !isModelPlaceholder(v) ? v : MODEL_FIELD_MISSING);
 const listOrMissing = (v: unknown): string[] => {
   // A model may write a list field as one paragraph: keep it as a one-item list, not Missing.
   const raw = Array.isArray(v) ? v : typeof v === 'string' ? [v] : [];
-  const items = raw.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()));
+  const items = raw.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()) && !isModelPlaceholder(x));
   return items.length ? items : [MODEL_FIELD_MISSING];
 };
 
