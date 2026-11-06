@@ -33,7 +33,8 @@
     "users": "tsx scripts/users.ts",
     "backup:drill": "tsx scripts/backup-drill.ts",
     "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",
-    "forecast:worst": "tsx scripts/forecast-worst.ts"
+    "forecast:worst": "tsx scripts/forecast-worst.ts",
+    "mac:validate": "tsx scripts/mac-validate.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
