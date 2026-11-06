@@ -44,6 +44,13 @@ jobs:
           curl -sf http://127.0.0.1:3000/healthz
           test "$(docker exec eq id -u)" = "1000"
           curl -sf -o /dev/null http://127.0.0.1:3000/
+          curl -sf http://127.0.0.1:3000/readyz | grep -q '"ready":true'
+      - name: Stops cleanly on docker stop
+        run: |
+          start=$(date +%s)
+          docker stop eq
+          test $(( $(date +%s) - start )) -lt 9
+          docker logs eq 2>&1 | grep -q 'stopped cleanly'
       - name: Server log
         if: always()
         run: docker logs eq || true
