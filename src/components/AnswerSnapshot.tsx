@@ -22,7 +22,7 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
   return (
     <details className="text-xs text-slate-500 dark:text-slate-400" data-council-snapshot={s.id}>
       <summary className="cursor-pointer">
-        Snapshot {shortHash(s.inputsHash)} · {s.asOf ? `data as of ${s.asOf}` : 'latest data'} · {s.model || 'no model answered'}
+        Snapshot {shortHash(s.inputsHash)} · {s.asOf ? `data as of ${s.asOf}` : s.dataPinnedAt ? 'pinned data' : 'latest data'} · {s.model || 'no model answered'}
       </summary>
       <div className="mt-1 space-y-2 border-l-2 border-slate-200 dark:border-slate-700 pl-3">
         <p>
@@ -31,7 +31,7 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
         </p>
         <dl className="space-y-0.5">
           {row('Asked', when(s.askedAt))}
-          {row('Data', s.asOf ? `As of ${s.asOf} (saved pull on or before that day)` : 'Latest pull the app held when asked')}
+          {row('Data', s.asOf ? `As of ${s.asOf} (saved pull on or before that day)` : s.dataPinnedAt ? `Pinned: the figures the app held at ${when(s.dataPinnedAt)}` : 'Latest figures the app held when asked')}
           {row('AI model', s.model || 'None answered')}
           {row('Sampling', `Temperature ${s.temperature}, seed ${s.seed}`)}
           {row('Instructions', <span title={s.templateHash}>{shortHash(s.templateHash)}</span>)}

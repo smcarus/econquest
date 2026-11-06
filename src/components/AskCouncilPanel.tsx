@@ -134,7 +134,13 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
   // Countries off the watchlist added for questions in this session (pulled on request, not saved to the list).
   const [extra, setExtra] = useState<LiveWatchlistItem[]>([]);
   const [adding, setAdding] = useState<string | null>(null);
-  const pool = useMemo(() => [...items, ...extra.filter((e) => !items.some((i) => i.iso3 === e.iso3))], [items, extra]);
+  // Pinned: the conversation keeps the figures it had when pinned, even when the feeds refresh.
+  const [pinned, setPinned] = useState<{ at: string; items: LiveWatchlistItem[] } | null>(null);
+  const pool = useMemo(() => {
+    const base = pinned ? pinned.items : items;
+    return [...base, ...extra.filter((e) => !base.some((i) => i.iso3 === e.iso3))];
+  }, [items, extra, pinned]);
+  const pinData = (on: boolean) => setPinned(on ? { at: new Date().toISOString(), items: pool } : null);
 
   const runDebate = async () => {
     if (!asked) return;
@@ -211,7 +217,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, askedAt, answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: plan.explain } : {}), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: plan.explain } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {
@@ -267,6 +273,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     setDebate(null);
     setChanges(null);
     setQuestion('');
+    setPinned(null);
   };
   // Compare with the latest saved conversation on the same countries, once per question.
   useEffect(() => {
@@ -306,7 +313,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
   };
   return {
     items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, earlier, choosing, docs, setDocs,
-    debate, debating, extra, adding, runDebate, ask, addForQuestion, current, saved, newConversation, changeDocs, copy,
+    debate, debating, extra, adding, runDebate, ask, addForQuestion, current, saved, newConversation, changeDocs, copy, pinned, pinData,
   };
 }
 
@@ -357,7 +364,7 @@ export const AskCouncilPanel: React.FC<{
 }> = ({ onOpenCountry, onSendToReports, fullCouncil, uses, onClose, page, toolbar }) => {
   const {
     items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, choosing, docs, setDocs,
-    debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy,
+    debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy, pinned, pinData,
   } = useCouncilChat();
   /** Save to Reports: the answer becomes the council brief there, and each document is kept. Stays in the chat. */
   const saveAnswer = (b: SavedCouncilBrief | null, docs: CouncilDocument[]) => {
@@ -857,6 +864,14 @@ export const AskCouncilPanel: React.FC<{
             Send
           </button>
         </div>
+        {pinned && (
+          <p className="text-xs text-slate-500 dark:text-slate-400" data-council-pinned="true">
+            Figures pinned at {new Date(pinned.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}: answers in this conversation use them even if the feeds refresh.{' '}
+            <button type="button" className="underline hover:text-slate-800 dark:hover:text-slate-200" onClick={() => pinData(false)}>
+              Use the latest figures
+            </button>
+          </p>
+        )}
         <details className="group" data-council-options="true">
           <summary className="cursor-pointer select-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
             Options: countries, policy documents, full council{lib.briefs.length ? ', saved research' : ''}
@@ -887,6 +902,10 @@ export const AskCouncilPanel: React.FC<{
             </button>
           )}
         </div>
+        <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
+          <input type="checkbox" checked={Boolean(pinned)} onChange={(e) => pinData(e.target.checked)} disabled={busy} data-council-pin="true" />
+          Pin this conversation to the figures held now (each answer records it in its snapshot)
+        </label>
         <PolicyDocsPicker docs={docs} onChange={changeDocs} disabled={busy} />
         <SavedDocsRow lib={lib} activeIds={docs.map((d) => d.id)} canAdd={docs.length < MAX_DOCS && !busy} onUse={(d) => setDocs((cur) => (cur.some((x) => x.id === d.id) || cur.length >= MAX_DOCS ? cur : [...cur, d]))} />
             <SavedResearchList lib={lib} toMarkdown={toMarkdown} onSendToReports={onSendToReports} />

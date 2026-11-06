@@ -293,7 +293,7 @@ test('council re-run: the same snapshot sent again gives the same answer, and sa
     await fetch(`${base}/api/council/synthesise`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: 'Is Turkey behind the curve on inflation?', askedAt: '2026-11-05T09:00:00.000Z', answers, runtimeConfig }),
+      body: JSON.stringify({ question: 'Is Turkey behind the curve on inflation?', askedAt: '2026-11-05T09:00:00.000Z', dataPinnedAt: '2026-11-05T08:55:00.000Z', answers, runtimeConfig }),
     })
   ).json();
   const res = await fetch(`${base}/api/council/rerun`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: first.snapshot.id, runtimeConfig }) });
@@ -304,6 +304,8 @@ test('council re-run: the same snapshot sent again gives the same answer, and sa
   assert.equal(body.comparison.samePrompt, true);
   assert.equal(body.comparison.notes[0], 'Same answer, word for word.');
   assert.equal(body.rerun.snapshot.rerunOf, first.snapshot.id);
+  assert.equal(first.snapshot.dataPinnedAt, '2026-11-05T08:55:00.000Z');
+  assert.equal(body.rerun.snapshot.dataPinnedAt, '2026-11-05T08:55:00.000Z');
   assert.notEqual(body.rerun.snapshot.id, first.snapshot.id);
 
   const file = path.join(dataDir, 'local', 'snapshots', `${first.snapshot.id}.json`);

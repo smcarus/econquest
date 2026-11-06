@@ -3912,6 +3912,8 @@ interface SynthesisOpts {
   explain?: ExplainPlan;
   /** When the question was asked; kept in the documents so a re-run sends the same prompt. */
   askedAt?: string;
+  /** When the conversation's figures were pinned, if they were. */
+  dataPinnedAt?: string;
   trace?: SynthesisTrace;
 }
 
@@ -3939,6 +3941,7 @@ async function answerAndRecord(question: string, answers: AgentAnswer[], opts: S
           ...(opts.explain ? { explain: opts.explain } : {}),
           askedAt,
           asOf: opts.asOf ?? null,
+          ...(opts.dataPinnedAt ? { dataPinnedAt: opts.dataPinnedAt } : {}),
           answers,
         },
         settings: {
@@ -7148,6 +7151,7 @@ ${MISSING_FIGURES_RULE}
         explain: explainFromBody(req.body),
         askedAt,
         asOf: parseAsOfDate(req.body?.asOf),
+        dataPinnedAt: typeof req.body?.dataPinnedAt === 'string' && !Number.isNaN(Date.parse(req.body.dataPinnedAt)) ? new Date(req.body.dataPinnedAt).toISOString() : undefined,
       },
       'Council chat'
     );
@@ -7165,7 +7169,7 @@ ${MISSING_FIGURES_RULE}
     const out = await answerAndRecord(
       inp.question,
       inp.answers,
-      { scope: inp.scope, countries: inp.countries, earlier: inp.earlier, explain: inp.explain, askedAt: inp.askedAt, asOf: inp.asOf, runtimeConfig: req.body?.runtimeConfig || {} },
+      { scope: inp.scope, countries: inp.countries, earlier: inp.earlier, explain: inp.explain, askedAt: inp.askedAt, asOf: inp.asOf, dataPinnedAt: inp.dataPinnedAt, runtimeConfig: req.body?.runtimeConfig || {} },
       `Re-run of ${first.id}`,
       first.id
     );
