@@ -5,7 +5,7 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawn, type ChildProcess } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -19,6 +19,9 @@ let log = '';
 
 before(async () => {
   dataDir = mkdtempSync(path.join(tmpdir(), 'econquest-auth-test-'));
+  // What the single user had saved before accounts: the first admin starts from it.
+  mkdirSync(path.join(dataDir, 'local'), { recursive: true });
+  writeFileSync(path.join(dataDir, 'local', 'workspace.json'), JSON.stringify({ version: 1, values: { 'econquest.holdings.v1': '[{"iso3":"BRA"}]' }, updatedAt: {} }));
   server = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts')], {
     cwd: root,
     env: {
@@ -151,7 +154,7 @@ test('roles: the admin adds accounts; viewers only read, analysts cannot touch k
   const vic = cookieOf(await post('/api/auth/sign-in', { username: 'vic', password: addV.password }));
 
   assert.equal((await fetch(`${base}/api/workspace`, { headers: { Cookie: vic } })).status, 200, 'viewer reads');
-  const vw = await put('/api/workspace/econquest.watchlists.v1', { value: '[]' }, vic);
+  const vw = await post('/api/research/docs', { title: 'x' }, vic);
   assert.equal(vw.status, 403);
   assert.match((await vw.json()).error, /Viewer/);
   assert.equal((await post('/api/users', { username: 'x1', displayName: 'X', role: 'admin' }, vic)).status, 403);
@@ -203,4 +206,18 @@ test('audit entries name the account that acted, including generic route entries
   assert.deepEqual(last.by && { username: last.by.username, name: last.by.name }, { username: 'sam', name: 'Sam' });
   const audit = await (await fetch(`${base}/api/audit`, { headers: { Cookie: c } })).json();
   assert.equal(audit.check.ok, true, 'chain still checks with names in it');
+});
+
+test('each account has its own workspace; the first admin kept the single user\'s', async () => {
+  const sam = cookieOf(await post('/api/auth/sign-in', { username: 'sam', password: 'an even longer and more boring sentence' }));
+  const ws = await (await fetch(`${base}/api/workspace`, { headers: { Cookie: sam } })).json();
+  assert.equal(ws.values['econquest.holdings.v1'], '[{"iso3":"BRA"}]');
+  assert.equal(ws.perAccount, true);
+  const added = await (await post('/api/users', { username: 'wes', displayName: 'Wes', role: 'viewer' }, sam)).json();
+  const wes = cookieOf(await post('/api/auth/sign-in', { username: 'wes', password: added.password }));
+  assert.deepEqual((await (await fetch(`${base}/api/workspace`, { headers: { Cookie: wes } })).json()).values, {}, 'new account starts empty');
+  assert.equal((await put('/api/workspace/sovereign_council_watchlists_v1', { value: '[{"id":"w","name":"Mine","items":[]}]' }, wes)).status, 200, 'viewer keeps own lists');
+  assert.equal((await (await fetch(`${base}/api/workspace`, { headers: { Cookie: sam } })).json()).values.sovereign_council_watchlists_v1, undefined, "not in Sam's");
+  const shared = JSON.parse(readFileSync(path.join(dataDir, 'local', 'workspace.json'), 'utf8'));
+  assert.equal(shared.values.sovereign_council_watchlists_v1, undefined, 'shared file untouched');
 });

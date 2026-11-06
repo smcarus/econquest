@@ -144,6 +144,8 @@ const SERIES_WORDS: Array<{ re: RegExp; id: string; label: string; world?: boole
   { re: /\binflation\b|\bcpi\b|consumer prices/i, id: 'cpi_monthly', fallback: 'cpi_imf', label: 'Inflation' },
   { re: /leading indicator|\bcli\b/i, id: 'cli', label: 'OECD leading indicator' },
   { re: /10[- ]?y(?:ea)?r?(?: bond)? yields?|bond yields?|\byields?\b/i, id: 'yield_10y', label: '10Y government bond yield' },
+  { re: /quarterly (?:real )?gdp|gdp,? (?:q\/q|quarterly|by quarter)/i, id: 'gdp_qoq', fallback: 'gdp_growth', label: 'Real GDP growth, quarterly (q/q)' },
+  { re: /activity index|ibc-?br|industrial production/i, id: 'activity_monthly', label: 'Activity index, monthly' },
   { re: /(?:real )?gdp growth|\bgrowth\b|\bgdp\b/i, id: 'gdp_growth', label: 'Real GDP growth' },
   { re: /\breserves\b/i, id: 'reserves_months', label: 'Reserves' },
   { re: /exchange rate|\bcurrency\b|\bfx\b/i, id: 'fx_per_usd', label: 'Exchange rate' },

@@ -396,6 +396,8 @@ export interface OpenDataSnapshot {
   gdeltPull?: { pulledAt: string; tone: number; toneShift?: import('../utils/gdeltTone').GdeltToneShift };
   /** GDELT 2.0 raw files (events and GKG), latest complete week against the weeks before; laid over when served (utils/gdeltRaw.ts). */
   gdeltRaw?: import('../utils/gdeltRaw').GdeltRawReading;
+  /** UCDP conflict figures from the downloaded CSV files in data/local/ucdp/; laid over when served (utils/ucdpConflict.ts). */
+  ucdp?: import('../utils/ucdpConflict').UcdpReading;
   gdeltMetrics: {
     conflictIntensityIndex: number;
     averageTone: number;

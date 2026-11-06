@@ -20,6 +20,7 @@
  * Browser-safe.
  */
 import type { ChartResult } from './councilChart';
+import { FORECAST_AGENT_COVERS } from './forecastAgent';
 import { isCitable, References, type Reference } from './citations';
 import { COUNCIL_AGENTS, isDocFinding, tagLabel, type AgentAnswer, type AgentId, type FigureTag, type SynthesisResult } from './askCouncil';
 import { DIM_LABEL } from './stanceCheck';
@@ -125,6 +126,7 @@ const CHART_AGENT_COVERS = 'charts the series the question names from the app’
 
 export function agentCovers(id: AgentId): string {
   if (id === 'chart') return CHART_AGENT_COVERS;
+  if (id === 'forecast') return FORECAST_AGENT_COVERS;
   return id === 'doc' ? DOC_AGENT_COVERS : COUNCIL_AGENTS[id]?.covers || '';
 }
 

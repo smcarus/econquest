@@ -1,6 +1,7 @@
 /**
  * Roles (Sam, 2026-11-06), as set out in docs/RISK_AND_COMPLIANCE.md:
- *   - Viewer: reads Research, Reports and the council's saved answers; changes nothing shared.
+ *   - Viewer: reads Research, Reports and the council's saved answers; keeps own watchlists and
+ *     holdings; changes nothing shared.
  *   - Analyst: asks the council, saves research, runs reviews and backtests, refreshes data.
  *   - Admin: also data and AI keys, AI model settings, backup and restore, the audit log,
  *     connectors and webhooks, and other people's accounts (Menu > Users).
@@ -35,8 +36,8 @@ const ADMIN_WRITE: RegExp[] = [
   /^\/api\/watch-rules$/,
 ];
 
-/** Changes a viewer may still make: only their own sign-in and password. */
-const VIEWER_WRITE: RegExp[] = [/^\/api\/auth\//];
+/** Changes a viewer may still make: their own sign-in, password and workspace (own lists and holdings). */
+const VIEWER_WRITE: RegExp[] = [/^\/api\/auth\//, /^\/api\/workspace\//];
 
 const WRITE = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 

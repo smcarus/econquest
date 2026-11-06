@@ -27,6 +27,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['tic', /\bTIC\b|Treasury International Capital/],
   ['eia', /\bEIA\b/],
   ['gdelt', /GDELT/i],
+  ['ucdp', /\bUCDP\b|Uppsala Conflict/i],
   ['polymarket', /Polymarket/i],
   ['kalshi', /Kalshi/i],
   ['bcrp', /\bBCRP\b|\bEMBI/i],

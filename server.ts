@@ -1,5 +1,5 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
-import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
@@ -7,7 +7,7 @@ import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, forma
 import { OFFICIAL_FIGURES, officialPoints, mergeRevisions, historyRevisions, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
 import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
-import { loadWorkspace, setWorkspaceValue, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
+import { loadWorkspace, seedWorkspace, setWorkspaceValue, userWorkspacePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { dataDirProblem, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
@@ -36,6 +36,7 @@ import { qnaFor, QNA_LABEL } from './src/utils/oecdQna';
 import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from './src/utils/modelHistory';
 import { cpiNowcast, gdpNowcast, nowcastSentence } from './src/utils/nowcast';
 import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from './src/utils/forecasts';
+import { loadForecastValidation } from './src/utils/forecastEvalRun';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
@@ -97,6 +98,8 @@ import {
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
+import type { BacktestResult } from './src/utils/backtest';
+import { backtestSummary, closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, writeJobs } from './src/utils/scheduledJobs';
 import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
@@ -144,6 +147,8 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
+import { ucdpData } from './src/utils/ucdpStore.ts';
+import { ucdpReading } from './src/utils/ucdpConflict.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
@@ -779,9 +784,24 @@ function topUpGdeltRaw(): void {
 }
 
 function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  return withUcdp(withGdeltRawOnly(snapshot));
+}
+function withGdeltRawOnly(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
   if (reading) return { ...snapshot, gdeltRaw: reading };
   const { gdeltRaw: _drop, ...rest } = snapshot;
+  return rest as OpenDataSnapshot;
+}
+/** UCDP conflict figures from the downloaded files in data/local/ucdp/, laid over like the GDELT files. */
+function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  let reading = null;
+  try {
+    reading = ucdpReading(ucdpData(DATA_DIR), snapshot.iso3);
+  } catch (err: any) {
+    console.warn(`[UCDP] could not read data/local/ucdp: ${err?.message || err}`);
+  }
+  if (reading) return { ...snapshot, ucdp: reading };
+  const { ucdp: _drop, ...rest } = snapshot;
   return rest as OpenDataSnapshot;
 }
 
@@ -1432,10 +1452,17 @@ function saveMorning(file: MorningBriefFile): void {
   writeFileAtomic(MORNING_FILE, JSON.stringify(file, null, 1), 0o600);
 }
 
+/** Set by startServer once accounts are loaded: which workspace file an account uses. */
+let workspaceFileForAccount: (account: Account | null) => string = () => WORKSPACE_FILE;
+/** The account whose lists server jobs (morning brief) use: the first active admin, or none. */
+let serverJobAccount: () => Account | null = () => null;
+/** Workspace used by jobs that run without a request. */
+const jobWorkspaceFile = () => workspaceFileForAccount(serverJobAccount());
+
 /** The watchlists saved in the app (workspace file), or the starting ones. */
 function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> {
   try {
-    const raw = loadWorkspace(WORKSPACE_FILE).values['sovereign_council_watchlists_v1'];
+    const raw = loadWorkspace(jobWorkspaceFile()).values['sovereign_council_watchlists_v1'];
     const groups = raw ? JSON.parse(raw) : null;
     if (Array.isArray(groups) && groups.length) {
       return groups
@@ -1450,7 +1477,7 @@ function savedWatchlists(): Array<{ id: string; name: string; iso3: string[] }> 
 
 function savedAiConfig(): any {
   try {
-    const raw = loadWorkspace(WORKSPACE_FILE).values['econquest_ai_runtime_config_v1'];
+    const raw = loadWorkspace(jobWorkspaceFile()).values['econquest_ai_runtime_config_v1'];
     return raw ? JSON.parse(raw) : serverGuiRuntimeConfig;
   } catch {
     return serverGuiRuntimeConfig;
@@ -1527,6 +1554,7 @@ const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTi
 /** One run of the data connection check, saved to the data health history. */
 async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
   const report = await checkConnections({
+    ucdp: () => ucdpData(DATA_DIR),
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
@@ -1584,6 +1612,70 @@ async function morningTick(): Promise<void> {
   // Mark the day first, so a slow run or a crash never repeats the brief within the day.
   saveMorning({ ...file, lastScheduledDay: localClock(new Date(), file.settings.timeZone).day });
   await runMorningBrief('schedule').catch((e) => console.error('[morning-brief]', e));
+}
+
+/** Every backtest result goes to the audit log, whether run from Models & validation or on a schedule. */
+function auditBacktestResult(r: BacktestResult): void {
+  appendAudit(AUDIT_FILES, {
+    kind: 'validation',
+    summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`,
+    detail: { verdict: r.verdict, framework: r.framework ?? 1, stricterCheck: r.robustness?.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
+  });
+}
+
+/** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
+const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
+const jobSchedule = (id: JobId) => parseSchedule(process.env[JOBS[id].env]);
+const jobRunning: Partial<Record<JobId, boolean>> = {};
+
+async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
+  const startedAt = new Date().toISOString();
+  if (id === 'download_all') {
+    await startPreload({ log: (line) => console.log(`[schedule] ${line}`) });
+    return downloadSummary(preloadState, startedAt);
+  }
+  validationRunning = true;
+  try {
+    const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
+    return backtestSummary(out, startedAt);
+  } finally {
+    validationRunning = false;
+  }
+}
+
+/** Checked every minute; starts each switched-on job once per day or week after its set time. */
+function scheduledJobsTick(): void {
+  for (const id of Object.keys(JOBS) as JobId[]) {
+    if (jobRunning[id]) continue;
+    const jobs = readJobs(SCHEDULED_JOBS_FILE);
+    const now = new Date();
+    if (!jobDue(jobSchedule(id), jobs[id]?.lastDay, now, SCHEDULE_TZ)) continue;
+    const wait = knownOffline()
+      ? 'Offline: the job waits for the connection.'
+      : id === 'download_all' && preloadJob
+        ? 'Download all was already running; the job waits for it to finish.'
+        : id === 'backtests' && validationRunning
+          ? 'The backtests were already running; the job waits for them to finish.'
+          : null;
+    if (wait) {
+      const last = jobs[id]?.lastSkipped;
+      if (!last || last.reason !== wait || Date.now() - Date.parse(last.at) > 60 * 60 * 1000) writeJobs(SCHEDULED_JOBS_FILE, markSkipped(jobs, id, now.toISOString(), wait));
+      continue;
+    }
+    // Mark the day first, so a slow run or a crash never repeats the job within the day.
+    jobRunning[id] = true;
+    writeJobs(SCHEDULED_JOBS_FILE, markStarted(jobs, id, clockIn(now, SCHEDULE_TZ).day, now.toISOString()));
+    console.log(`[schedule] ${JOBS[id].label}: started.`);
+    void runScheduledJob(id)
+      .catch((e: any) => ({ ok: false, summary: `Failed: ${e?.message || String(e)}` }))
+      .then((r) => {
+        writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), id, new Date().toISOString(), r.ok, r.summary));
+        console.log(`[schedule] ${JOBS[id].label}: ${r.summary}`);
+      })
+      .finally(() => {
+        jobRunning[id] = false;
+      });
+  }
 }
 
 /**
@@ -1920,6 +2012,7 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     ownCds5Y: undefined,
     polymarketContracts: [],
     gdeltRaw: undefined,
+    ucdp: undefined,
   };
   const run = buildDefaultAssessmentRun(input.iso3, openData);
   const desk = (d: keyof SupremeCaseInput['desks']) => ({ ...run.deskDebates[d], consensusSummary: input.desks[d] });
@@ -2136,6 +2229,23 @@ async function startServer() {
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
+  // Each account's own workspace (holdings, watchlists, added countries); the shared file while
+  // sign-in is off. The first admin starts from the shared file, which held the single user's lists.
+  workspaceFileForAccount = (account: Account | null): string => {
+    if (!account) return WORKSPACE_FILE;
+    const file = userWorkspacePath(DATA_DIR, account.id);
+    const firstAdmin = auth.list().filter((a) => a.role === 'admin').sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0];
+    if (firstAdmin?.id === account.id) {
+      try {
+        seedWorkspace(WORKSPACE_FILE, file);
+      } catch (error) {
+        console.error('[workspace] could not copy the shared workspace for the first admin:', (error as Error)?.message);
+      }
+    }
+    return file;
+  };
+  serverJobAccount = () => auth.list().filter((a) => a.role === 'admin' && !a.disabled).sort((a, b) => a.createdAt.localeCompare(b.createdAt))[0] ?? null;
+  const workspaceFor = (res: express.Response) => workspaceFileForAccount(signedIn(res));
   const authStatus = (req: express.Request, res: express.Response) => {
     const mode = currentMode();
     const me = signedIn(res);
@@ -2307,13 +2417,14 @@ async function startServer() {
   // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
   // a larger body than the other routes (a library with documents), so it parses its own.
-  const backupFiles = { research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: WORKSPACE_FILE, reviews: REVIEW_FILE, snapshots: ANSWER_SNAPSHOT_DIR };
+  // A backup holds the team library and the workspace of the account making it (admins only).
+  const backupFilesFor = (res: express.Response) => ({ research: RESEARCH_FILE, watchRules: WATCH_RULES_FILE, workspace: workspaceFor(res), reviews: REVIEW_FILE, snapshots: ANSWER_SNAPSHOT_DIR });
   app.get('/api/backup', (_req, res) => {
-    res.json({ summary: summariseBackup(currentBackup(backupFiles)), fileName: backupFileName() });
+    res.json({ summary: summariseBackup(currentBackup(backupFilesFor(res))), fileName: backupFileName() });
   });
   app.get('/api/backup/download', (_req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${backupFileName()}"`);
-    res.type('application/json').send(JSON.stringify(currentBackup(backupFiles), null, 1));
+    res.type('application/json').send(JSON.stringify(currentBackup(backupFilesFor(res)), null, 1));
   });
   app.post('/api/backup/restore', express.json({ limit: '60mb' }), (req, res) => {
     if (!trusted(req, res)) {
@@ -2322,7 +2433,7 @@ async function startServer() {
     const parsed = parseBackup(req.body?.backup);
     if (!parsed.ok) return res.status(400).json({ error: parsed.error });
     try {
-      const { savedCopy } = restoreBackup(backupFiles, parsed.backup);
+      const { savedCopy } = restoreBackup(backupFilesFor(res), parsed.backup);
       res.json({ ok: true, summary: parsed.summary, savedCopy });
     } catch (error: any) {
       res.status(500).json({ error: `Could not restore the backup (${error?.code || error?.message || 'unknown error'}). Nothing was lost: see data/local/backups/.` });
@@ -2421,6 +2532,7 @@ async function startServer() {
     const field = apiKeyField(id);
     if (!field) return null;
     const report = await checkConnections({
+      ucdp: () => ucdpData(DATA_DIR),
       env,
       only: [field.checkId],
       keySources: sources,
@@ -2478,8 +2590,9 @@ async function startServer() {
   // Holdings, watchlists, added countries and AI settings (data/local/workspace.json), shared by
   // every address the app is opened at. See src/utils/workspaceStore.ts.
   app.get('/api/workspace', (_req, res) => {
-    const w = loadWorkspace(WORKSPACE_FILE);
-    res.json({ values: w.values, updatedAt: w.updatedAt, file: 'data/local/workspace.json' });
+    const file = workspaceFor(res);
+    const w = loadWorkspace(file);
+    res.json({ values: w.values, updatedAt: w.updatedAt, file: path.relative(DATA_DIR, file).startsWith('..') ? file : `data/${path.relative(DATA_DIR, file)}`, perAccount: Boolean(signedIn(res)) });
   });
   app.put('/api/workspace/:key', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
@@ -2487,8 +2600,9 @@ async function startServer() {
     const problem = workspaceProblem(req.params.key, value);
     if (problem) return res.status(400).json({ error: problem });
     try {
-      const before = loadWorkspace(WORKSPACE_FILE).values[req.params.key] ?? null;
-      const w = setWorkspaceValue(WORKSPACE_FILE, req.params.key, value);
+      const file = workspaceFor(res);
+      const before = loadWorkspace(file).values[req.params.key] ?? null;
+      const w = setWorkspaceValue(file, req.params.key, value);
       // The page re-sends these on every load; only a real change goes in the audit log.
       if (before !== value) appendAudit(AUDIT_FILES, { kind: req.params.key === 'econquest_ai_runtime_config_v1' ? 'model' : 'workspace', summary: `Changed ${WORKSPACE_KEYS[req.params.key] || req.params.key}` });
       res.json({ ok: true, updatedAt: w.updatedAt[req.params.key] || null });
@@ -2778,16 +2892,7 @@ async function startServer() {
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
     validationRunning = true;
     try {
-      const out = await runBacktests({
-        specDir: SPEC_DIR,
-        resultFile: VALIDATION_FILE,
-        onResult: (r) =>
-          appendAudit(AUDIT_FILES, {
-            kind: 'validation',
-            summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`,
-            detail: { verdict: r.verdict, framework: r.framework ?? 1, stricterCheck: r.robustness?.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
-          }),
-      });
+      const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
       res.json(out);
     } catch (error: any) {
       res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
@@ -3165,9 +3270,12 @@ async function startServer() {
       const i = out.findIndex((r) => r.id === 'policy_rate');
       out[i] = { ok: false, id: 'policy_rate', reason: 'The BIS publishes no policy rate for this country.' };
     }
+    const v = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+    const validation = Object.fromEntries(Object.values(v.results).map((r) => [r.id, { status: r.status, verdict: r.verdict, ranAt: r.ranAt }]));
     res.json({
       iso3,
       forecasts: out,
+      validation,
       sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
@@ -3192,7 +3300,7 @@ async function startServer() {
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
   const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
-    const rows = shareModeFromValue(loadWorkspace(WORKSPACE_FILE).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
+    const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
     if (req.params.fmt === 'xlsx') {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.attachment(name.replace(/\.csv$/, '.xlsx'));
@@ -3441,6 +3549,29 @@ async function startServer() {
       lastRun: last ? { at: last.checkedAt, trigger: last.trigger, label: TRIGGER_LABEL[last.trigger] || last.trigger } : null,
       nightly: { time: NIGHTLY_CHECK_TIME, timeZone: NIGHTLY_CHECK_TZ, lastDay: state.lastNightlyDay || null, lastSkipped: state.lastSkipped || null },
       file: 'data/local/data-health/source-checks.jsonl',
+    });
+  });
+  // Scheduled jobs: what is switched on, and each job's last runs (Menu > Data health > Scheduled).
+  app.get('/api/scheduled-jobs', (_req, res) => {
+    const jobs = readJobs(SCHEDULED_JOBS_FILE);
+    res.json({
+      timeZone: SCHEDULE_TZ,
+      jobs: (Object.keys(JOBS) as JobId[]).map((id) => {
+        const schedule = jobSchedule(id);
+        return {
+          id,
+          label: JOBS[id].label,
+          what: JOBS[id].what,
+          env: JOBS[id].env,
+          on: schedule.kind === 'daily' || schedule.kind === 'weekly',
+          schedule: describeSchedule(schedule, SCHEDULE_TZ),
+          running: Boolean(jobRunning[id]),
+          lastSkipped: jobs[id]?.lastSkipped || null,
+          runs: [...(jobs[id]?.runs || [])].reverse().slice(0, 10),
+        };
+      }),
+      nightlyCheck: { schedule: process.env.DATA_CHECK_NIGHTLY === 'off' ? 'Off' : `Every day after ${NIGHTLY_CHECK_TIME} (${NIGHTLY_CHECK_TZ})` },
+      file: 'data/local/scheduled-jobs.json',
     });
   });
   // Data health: counts for the menu (failing sources at the last check, figures missing or older than usual now).
@@ -5719,6 +5850,7 @@ ${String(documentText).slice(0, 12000)}
     const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
     try {
       const report = await checkConnections({
+        ucdp: () => ucdpData(DATA_DIR),
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {
@@ -6127,6 +6259,9 @@ ${String(documentText).slice(0, 12000)}
     setInterval(() => void morningTick(), 60_000).unref();
     // Nightly data check: once a day after DATA_CHECK_TIME, kept in the data health history.
     setInterval(() => void nightlyCheckTick(), 60_000).unref();
+    // Scheduled jobs (SCHEDULE_DOWNLOAD_ALL, SCHEDULE_BACKTESTS): off unless set; checked every minute.
+    writeJobs(SCHEDULED_JOBS_FILE, closeInterrupted(readJobs(SCHEDULED_JOBS_FILE), new Date().toISOString()));
+    if ((Object.keys(JOBS) as JobId[]).some((id) => jobSchedule(id).kind !== 'off')) setInterval(scheduledJobsTick, 60_000).unref();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });

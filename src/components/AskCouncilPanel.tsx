@@ -43,6 +43,7 @@ import type { CouncilTiming } from '../utils/councilTiming';
 import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
+import { asksForecast, forecastAnswer, type CountryModels } from '../utils/forecastAgent';
 import { lazyNamed } from './LazyDesk';
 import { chatSuggestions, SUGGESTION_KIND_LABEL } from '../utils/chatSuggestions';
 import { loadHoldings } from '../utils/holdings';
@@ -60,6 +61,12 @@ function runtimeConfig(): Record<string, unknown> {
 
 
 /** The full nine-agent council on the country open now, run from the conversation. */
+/** The app's nowcast and forecast for each country (src/utils/forecastAgent.ts); a failed call reads Missing. */
+async function fetchCountryModels(countries: Array<{ iso3: string; countryName: string }>): Promise<CountryModels[]> {
+  const get = (u: string) => fetch(u).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+  return Promise.all(countries.map(async (c) => ({ iso3: c.iso3, countryName: c.countryName, nowcast: await get(`/api/nowcast/${encodeURIComponent(c.iso3)}`), forecast: await get(`/api/forecast/${encodeURIComponent(c.iso3)}`) })));
+}
+
 export interface FullCouncilStep {
   countryName: string;
   stage: CouncilAssessmentRun['stage'];
@@ -206,7 +213,9 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
     setChoosing(false);
     const desk = runCouncil(text, plan, items, new Date(), docs);
     // The Chart Agent: fetch the series the question names from the app's own history, draw, test.
-    const answers = plan.chart ? [chartAnswer(plan.chart, computeChart(plan.chart, await fetchChartSeries(plan.chart))), ...desk] : desk;
+    const charted = plan.chart ? [chartAnswer(plan.chart, computeChart(plan.chart, await fetchChartSeries(plan.chart))), ...desk] : desk;
+    // Nowcast & Forecast: the app's own estimates join when the question asks about the path ahead.
+    const answers = asksForecast(text) && plan.countries.length ? [...charted, forecastAnswer(await fetchCountryModels(plan.countries.slice(0, 4)))] : charted;
     const askedAt = new Date().toISOString();
     setAsked({ question: text, plan, answers, askedAt, startedAt: (asFollowUp || mode === 'replace') && asked ? asked.startedAt : askedAt });
     setSynthesis(null);

@@ -38,6 +38,9 @@ before(async () => {
       GEMINI_API_KEY: '',
       CDS_FEED: 'csv',
       CDS_CSV_PATH: path.join(dataDir, 'cds.csv'),
+      // Not a time: the job must read as off, with the reason (never started by the tests).
+      SCHEDULE_DOWNLOAD_ALL: 'nightly',
+      SCHEDULE_TZ: 'UTC',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -202,6 +205,20 @@ test('MarketEdge benchmarks: US, China, Russia, UK, EU, India, with sources or r
   assert.equal(body.us10Y.seriesId, 'IRLTLT01USM156N');
   // The UK is a full country, so it comes with its live watchlist figures for the peer fit.
   assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR']);
+});
+
+test('scheduled jobs: off unless set, a bad setting says why, and no run is invented', async () => {
+  const res = await fetch(`${base}/api/scheduled-jobs`);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.timeZone, 'UTC');
+  const byId = Object.fromEntries(body.jobs.map((j: any) => [j.id, j]));
+  assert.equal(byId.download_all.on, false);
+  assert.match(byId.download_all.schedule, /^Off: "nightly" is not a time/);
+  assert.equal(byId.backtests.on, false);
+  assert.equal(byId.backtests.schedule, 'Off');
+  assert.deepEqual(byId.backtests.runs, []);
+  assert.match(body.nightlyCheck.schedule, /Every day after|Off/);
 });
 
 test('an unknown country does not crash the server', async () => {
@@ -457,7 +474,8 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 37);
+  assert.equal(rep.results.length, 38);
+  assert.equal(row('ucdp').state, 'connected', 'the UCDP release shipped in datasets/ucdp/');
   assert.equal(row('bcb_ipca').state, 'connected');
   assert.match(row('bcb_ipca').sample || '', /Brazil IPCA 4\.58% over 12 months \(Sep 2026\)/);
   assert.equal(row('eurostat_hicp').state, 'no_answer');

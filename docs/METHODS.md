@@ -29,6 +29,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Cycle clock | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Timing Agent | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
+| GDP nowcast (bridge equation) | Research | Not validated | None |
+| Forecasts with fan charts (AR models) | Research | Not validated | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
@@ -271,6 +273,30 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **How it is tested:** Not testable as a rule. Checks: number trace, stance check; each answer is in the audit log with its model and figures.
 - **Limits:** Wording and emphasis are the model’s; a different model can lean differently on the same figures.
 - **Code:** `server.ts (synthesiseAnswers), src/utils/askCouncil.ts, src/utils/stanceCheck.ts`
+
+### GDP nowcast (bridge equation)
+
+- **Says:** Where real GDP growth is likely to come in for quarters not published yet.
+- **Rule:** q/q real GDP growth on the quarter's activity-index growth and/or leading-indicator change plus last quarter's growth; months not out yet are an AR forecast of the monthly series.
+- **Reads:** OECD quarterly national accounts (via DBnomics), BCB IBC-Br, Eurostat industrial production, OECD composite leading indicator
+- **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast.json): nowcast made 30 days after each quarter from 2008 against the historical mean; relative RMSE at most 0.9, year-block p at most 0.10, better in half the countries.
+- **Limits:** Fixed release lags, today's data vintage; OECD figures via DBnomics run about five months behind.
+- **Code:** `src/utils/nowcast.ts`
+
+### Forecasts with fan charts (AR models)
+
+- **Says:** Where GDP growth, inflation, the policy rate and government debt may go over the next one to eight quarters, with bands.
+- **Rule:** AR models with the lag order chosen by BIC: GDP q/q growth, monthly y/y inflation, monthly policy-rate changes (no drift), yearly debt changes; 50/70/90% bands from the forecast error.
+- **Reads:** OECD quarterly national accounts and CPI (via DBnomics), BCB IPCA, Eurostat HICP, BIS policy rates, IMF WEO debt
+- **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons.
+- **Limits:** Bands leave out parameter uncertainty; today's data vintage; not compared with past IMF forecasts yet.
+- **Code:** `src/utils/forecasts.ts`
 
 ## Stated-method views
 

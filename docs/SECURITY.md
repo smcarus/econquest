@@ -32,6 +32,14 @@ The setup code stops someone else on the network from claiming the app before yo
   something breaks the chain check. Entries from before accounts existed have no name and still check.
 - **Sign-off**: the name on a review or approval is the signed-in account's, not typed. Approving is an
   Admin step, and the account that reviewed a report cannot approve it (no "self-approved" with accounts).
+- **Own workspace per account**: holdings, watchlists and added countries are kept per account in
+  `data/local/users/<account id>/workspace.json`. The first admin starts from what the single user had
+  saved (`data/local/workspace.json`, which stays as the workspace while sign-in is off). When a different
+  account signs in on the same browser, the previous account's browser copy is removed first. Saved
+  research, policy reviews and sign-offs stay a shared team library, with who saved what in the audit log.
+  The morning brief uses the first active admin's watchlists. A backup holds the team library and the
+  workspace of the admin making it; other accounts' workspaces are in `data/local/users/` and are
+  covered by copying the data folder.
 - **Accounts and sessions are never in a backup** (Menu > Settings > Backup lists what one holds).
 - **CSRF token**: while signed in, every change must carry `X-CSRF-Token`, derived from that browser's
   session (the page gets it at start). A page on another site cannot read it.
@@ -47,7 +55,7 @@ The setup code stops someone else on the network from claiming the app before yo
 
 | Role | Can |
 | --- | --- |
-| Viewer | Read Research, Reports and saved council answers. Cannot ask the council or change anything shared (including watchlists, until each account gets its own workspace). |
+| Viewer | Read Research, Reports and saved council answers, and keep their own watchlists and holdings. Cannot ask the council or change anything shared. |
 | Analyst | Ask the council, save research, run policy reviews and backtests, sign off, refresh data, change watchlists and holdings. Sees which keys are set (masked) but cannot change them. |
 | Admin | Everything, plus data and AI keys, AI model settings, backup and restore, the audit log, connectors and webhooks, watch alerts, the morning brief, and accounts (Menu > Users). |
 
@@ -74,8 +82,7 @@ Under Docker: `docker compose exec econquest npm run users -- list`.
 
 ## Not yet (planned, in order)
 
-1. Separate workspaces per account (watchlists, holdings, saved research).
-2. API keys encrypted at rest with a key kept outside the data folder.
-3. HTTPS through a reverse proxy in the compose stack.
+1. API keys encrypted at rest with a key kept outside the data folder.
+2. HTTPS through a reverse proxy in the compose stack.
 
 Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.

@@ -114,6 +114,7 @@ docker compose -f compose.yml -f compose.gpu.yml up -d --build
 | Logs (one JSON line per message) | `docker compose logs -f econquest` |
 | Stop / start | `docker compose stop` / `docker compose start` |
 | Data check | `docker compose exec econquest npm run check:data` |
+| What ran overnight | Menu > Data health > Scheduled |
 
 `docker compose stop` lets open requests finish (up to 8 seconds) before the app exits.
 
@@ -141,7 +142,9 @@ Config comes only from environment variables (`.env` here, or the full list in t
 | `OLLAMA_BASE_URL` | http://ollama:11434 | Where Ollama is |
 | `OLLAMA_QUICK_MODEL` | qwen2.5:7b | Desk agents |
 | `OLLAMA_DEEP_MODEL` | qwen2.5:32b | Referee steps |
-| `TZ` | UTC | Time zone for the morning brief and nightly data check |
+| `TZ` | UTC | Time zone for the morning brief, the nightly data check and scheduled jobs |
+| `SCHEDULE_DOWNLOAD_ALL` | 02:30 | Daily Download all (every free feed for every country); `off` to stop |
+| `SCHEDULE_BACKTESTS` | sun 03:30 | Weekly run of the pre-registered backtests; `off` to stop |
 | `LOG_FORMAT` | json in the image | `json` or empty for plain text |
 | `SHUTDOWN_TIMEOUT_MS` | 8000 | How long a stop waits for open requests |
 

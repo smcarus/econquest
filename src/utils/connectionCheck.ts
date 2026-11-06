@@ -43,6 +43,7 @@ import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, p
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
+import { UCDP_DATASETS, UCDP_DATASET_IDS, UCDP_DOWNLOADS_PAGE, UCDP_FOLDER, ucdpReading, type UcdpData } from './ucdpConflict';
 import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
 
 export type ConnectionState =
@@ -101,6 +102,8 @@ export interface CheckOptions {
   ai?: { provider?: string; ollamaBaseUrl?: string; ollamaQuickModel?: string; ollamaDeepModel?: string; openAiBaseUrl?: string; geminiModel?: string };
   /** File reader for the own CDS file (injected in tests). */
   readFile?: (path: string) => { text: string; modified: Date } | null;
+  /** The UCDP files read from data/local/ucdp/ (utils/ucdpStore.ts); absent = not checked. */
+  ucdp?: () => UcdpData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -264,6 +267,7 @@ export const SOURCE_IDS = [
   'tesouro',
   'evds',
   'banxico',
+  'ucdp',
   'eia',
   'own_cds',
   'gemini',
@@ -937,6 +941,43 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     }
     // Never echo the key: EIA puts it in the URL, so make sure no reply text carries it.
     return savedNote('EIA_API_KEY', { ...res, detail: res.detail.split(key).join('***') });
+  });
+
+  // UCDP: downloaded CSV files in data/local/ucdp/, read from disk (Sam, 2026-11-06: no live pulls).
+  add('ucdp', async () => {
+    const def: Def = {
+      id: 'ucdp',
+      name: 'UCDP conflict data (downloaded files)',
+      group: 'free',
+      feeds: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year (Politics & Events Agent)',
+      setup: `Download the CSV files from ${UCDP_DOWNLOADS_PAGE} (UCDP/PRIO Armed Conflict, Battle-Related Deaths conflict level, Non-State, One-Sided, Dyadic) and put them, zipped or not, in ${UCDP_FOLDER}. Nothing is fetched.`,
+    };
+    const host = 'your files';
+    if (!opts.ucdp) return setRow(def, 'needs_setup', `The folder ${UCDP_FOLDER} was not checked from here.`, host);
+    let data: UcdpData | null;
+    try {
+      data = opts.ucdp();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The UCDP folder could not be read (${err?.message || err}).`, host);
+    }
+    const files = data ? UCDP_DATASET_IDS.filter((d) => data!.files[d]) : [];
+    if (!data || !files.length) {
+      const skipped = data?.skipped.length ? ` Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '';
+      return setRow(def, 'needs_setup', `No UCDP files in ${UCDP_FOLDER}.${skipped}`, host);
+    }
+    const missing = UCDP_DATASET_IDS.filter((d) => !data!.files[d]);
+    const read = files.map((d) => { const f = data!.files[d]!; return `${UCDP_DATASETS[d].name} ${f.version} (${f.minYear}-${f.maxYear}, ${f.rows} rows)`; });
+    const r = ucdpReading(data, SAMPLE_ISO3);
+    const latest = r?.latest;
+    const sample = latest
+      ? `${SAMPLE_NAME} ${latest.year}: ${latest.conflicts ? `${latest.conflicts.n} armed conflicts` : ''}${latest.totalBest !== undefined ? `${latest.conflicts ? ', ' : ''}${latest.totalBest} deaths from organised violence` : ''}`.replace(/: $/, ': read')
+      : undefined;
+    const warnings = [
+      missing.length ? `Not added: ${missing.map((d) => UCDP_DATASETS[d].name).join(', ')}.` : '',
+      data.skipped.length ? `Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '',
+      Object.keys(data.unknownCodes).length ? `Country codes the app has no country for: ${Object.keys(data.unknownCodes).slice(0, 8).join(', ')}.` : '',
+    ].filter(Boolean).join(' ');
+    return { ...setRow(def, 'connected', `Read ${read.join('; ')}.`, host), ...(sample ? { sample } : {}), ...(warnings ? { warning: warnings } : {}) };
   });
 
   // ---- Your own paid account (off unless switched on) -------------------------------------------
