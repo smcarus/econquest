@@ -72,6 +72,21 @@ export function bcrpEmbigUrl(now = new Date(), monthsBack = 40): string {
   return `https://estadisticas.bcrp.gob.pe/estadisticas/series/api/${codes.join('-')}/json/${start}/${end}/ing`;
 }
 
+/** Why a BCRP reply could not be read, in words, for the connection check and the server log. */
+export function describeBcrpReply(text: string | undefined): string {
+  const t = String(text ?? '').replace(/^\uFEFF/, '').trim();
+  if (!t) return 'BCRP answered with an empty reply.';
+  if (/^<(!doctype|html)/i.test(t))
+    return /<script[^>]+src=/i.test(t) && !/periods/i.test(t)
+      ? "BCRP's site answered with a web page that only loads a script (its bot check) instead of data, so it is not letting the app read the series from this computer."
+      : 'BCRP answered with a web page instead of data.';
+  const doc = safeJson(t) as { config?: { series?: Array<{ name?: string }> }; periods?: unknown[] } | null;
+  if (!doc) return `BCRP answered, but not with JSON (it began "${t.slice(0, 60).replace(/\s+/g, ' ')}").`;
+  const names = (doc.config?.series || []).map((s) => String(s?.name ?? '').split(' - ').pop()).join(', ');
+  if (!Array.isArray(doc.periods) || !doc.periods.length) return `BCRP answered with no months of data${names ? ` (series: ${names})` : ''}.`;
+  return `BCRP answered, but its series were not the eight countries and two aggregates the app reads, in that order (it sent: ${names || 'no series names'}).`;
+}
+
 const MONTHS: Record<string, number> = {
   jan: 1, ene: 1, feb: 2, mar: 3, apr: 4, abr: 4, may: 5, jun: 6, jul: 7,
   aug: 8, ago: 8, sep: 9, set: 9, oct: 10, nov: 11, dec: 12, dic: 12,
@@ -107,7 +122,7 @@ function monthsBefore(period: string, n: number): string {
  * rather than misread.
  */
 export function parseBcrpEmbig(body: unknown, url: string, at = new Date().toISOString()): HcSpreadPull | null {
-  const doc = typeof body === 'string' ? safeJson(body) : body;
+  const doc = typeof body === 'string' ? safeJson(body.replace(/^\uFEFF/, '').trim()) : body;
   if (!doc || typeof doc !== 'object') return null;
   const periods = (doc as { periods?: unknown }).periods;
   const series = (doc as { config?: { series?: Array<{ name?: string }> } }).config?.series;

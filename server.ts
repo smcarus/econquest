@@ -164,7 +164,7 @@ import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { polymarketMoves } from './src/utils/oddsMoves.ts';
-import { bcrpEmbigUrl, parseBcrpEmbig, HC_SPREAD_FEED_LABEL, type HcSpreadPull } from './src/utils/hardCurrencySpread.ts';
+import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig, HC_SPREAD_FEED_LABEL, type HcSpreadPull } from './src/utils/hardCurrencySpread.ts';
 import {
   FRED_10Y_SERIES,
   US_10Y_SERIES,
@@ -536,8 +536,9 @@ async function fetchHcSpreadUncached(): Promise<HcSpreadPull | null> {
       console.warn(`[BCRP EMBIG] HTTP ${res.status}`);
       return null;
     }
-    const got = parseBcrpEmbig(await res.text(), url);
-    if (!got) console.warn('[BCRP EMBIG] reply not understood');
+    const text = await res.text();
+    const got = parseBcrpEmbig(text, url);
+    if (!got) console.warn(`[BCRP EMBIG] ${describeBcrpReply(text)}`);
     return got;
   } catch (e) {
     console.warn(`[BCRP EMBIG] ${describeNetworkError(e, 20000)}`);

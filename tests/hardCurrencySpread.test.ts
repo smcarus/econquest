@@ -100,3 +100,27 @@ test('council inputs carry the spread as a bond spread, or name it missing with 
   assert.ok(line && /185 bps, Sep 2026 avg/.test(line) && /not CDS/.test(line), line);
   assert.ok(!out.lines.some((l: string) => /\bCDS\b/.test(l) && !/not CDS/.test(l)), 'no CDS line while CDS is hidden');
 });
+
+test('the real BCRP reply (fetched 2026-11-06) is read: names with the title prefix, long decimals', async () => {
+  const { describeBcrpReply } = await import('../src/utils/hardCurrencySpread.ts');
+  const pre = 'Indicadores de riesgo para países emergentes: EMBIG - ';
+  const long = ['Perú', 'Argentina', 'Brasil', 'Chile', 'Colombia', 'Ecuador', 'México', 'Venezuela'].map((c) => ({ name: `${pre}Diferencial de Rendimientos del Índice de Bonos de Mercados Emergentes (EMBIG) - ${c}`, dec: '0' }));
+  const real = {
+    config: { title: 'Indicadores de riesgo para países emergentes: EMBIG', series: [...long, { name: `${pre}Latin EMBIG Países Latinoamericanos`, dec: '0' }, { name: `${pre}EMBIG Países Emergentes`, dec: '0' }] },
+    periods: [
+      { name: 'Aug.2026', values: ['108.684404761905', '486.392461333333', '179.180609571429', '89.5565324761905', '191.845119619048', '429.914052047619', '198.310637047619', '4605.34294585714', '225.663616619048', '188.462424476191'] },
+      { name: 'Sep.2026', values: ['107.328391571429', '534.483593619048', '166.759403952381', '89.1163553809524', '206.775517761905', '444.028545047619', '198.469487380952', '4261.9536797619', '189.125041571429', '168.346195142857'] },
+    ],
+  };
+  const p = parseBcrpEmbig('﻿' + JSON.stringify(real), 'u');
+  assert.ok(p);
+  assert.equal(Math.round(p.countries.BRA.bps), 167);
+  assert.equal(p.countries.BRA.period, '2026-09');
+  assert.equal(Math.round(p.countries.VEN.bps), 4262);
+  assert.equal(Math.round(p.aggregates.em!.bps), 168);
+  // What the check says when the site sends its script-only page instead.
+  const page = '<!DOCTYPE html>\n<html>\n<head><script src="/oly-Almost-That" async></script>\n<title></title>\n</head>\n<body>\n</body>\n</html>';
+  assert.match(describeBcrpReply(page), /bot check/);
+  assert.match(describeBcrpReply(''), /empty/);
+  assert.match(describeBcrpReply('{"config":{"series":[{"name":"x - Bolivia"}]},"periods":[{"name":"Sep.2026","values":["1"]}]}'), /Bolivia/);
+});
