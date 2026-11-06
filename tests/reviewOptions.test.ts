@@ -47,6 +47,11 @@ test('sentences with numbers not in the diagnosis are removed; unknown refs and 
   assert.match(out.ranking, /4\.4% \[1\]/);
 });
 
+test('gaps written as one sentence are kept, not dropped', () => {
+  const out = checkOptions({ options: [{ title: 'Hold', how: 'Keep the rate [2].' }], ranking: '', gaps: 'Growth and debt are missing.' }, frame, d, []);
+  assert.deepEqual(out.gaps, ['Growth and debt are missing.']);
+});
+
 test('own options are tidied and, without a model, stand unassessed', () => {
   const u = parseUserOptions([{ title: ' Raise rates ', how: 'x' }, { title: '' }, 'junk']);
   assert.deepEqual(u, [{ title: 'Raise rates', how: 'x' }]);

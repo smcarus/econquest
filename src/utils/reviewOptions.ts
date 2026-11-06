@@ -191,7 +191,8 @@ export function checkOptions(raw: unknown, frame: ReviewFrame, d: Diagnosis, use
   return {
     options,
     ranking: clean(r.ranking, 800),
-    gaps: (Array.isArray(r.gaps) ? r.gaps : []).map((g) => clean(g, 300)).filter(Boolean).slice(0, 8),
+    // A model may write the gaps as one sentence instead of a list: keep it as a one-item list.
+    gaps: (Array.isArray(r.gaps) ? r.gaps : typeof r.gaps === 'string' ? [r.gaps] : []).map((g) => clean(g, 300)).filter(Boolean).slice(0, 8),
     removed,
   };
 }

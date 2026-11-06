@@ -1791,7 +1791,9 @@ async function reviewOptionsStep(
 
 const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() ? v : MODEL_FIELD_MISSING);
 const listOrMissing = (v: unknown): string[] => {
-  const items = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && Boolean(x.trim())) : [];
+  // A model may write a list field as one paragraph: keep it as a one-item list, not Missing.
+  const raw = Array.isArray(v) ? v : typeof v === 'string' ? [v] : [];
+  const items = raw.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()));
   return items.length ? items : [MODEL_FIELD_MISSING];
 };
 
@@ -1861,10 +1863,7 @@ ${MISSING_FIGURES_RULE}
     responseSchema: {
       type: Type.OBJECT,
       properties: {
-        decisionVerdict: {
-          type: Type.STRING,
-          description: 'EXECUTE_TRADES, DEFENSIVE_HEDGE, or HOLD_AND_MONITOR',
-        },
+        decisionVerdict: { type: Type.STRING, enum: ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'] },
         executiveSummary: { type: Type.STRING },
         longTermRegimeOutlook: { type: Type.STRING },
         structuralVulnerabilities: {
