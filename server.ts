@@ -78,6 +78,7 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { figureWatchFiles, readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
+import { MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { tableWorkbook } from './src/utils/xlsxExport';
@@ -4505,8 +4506,6 @@ async function reviewOptionsStep(
   return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
 }
 
-/** What a Supreme Council field shows when the model wrote nothing for it: never the built-in report text. */
-const MODEL_FIELD_MISSING = 'Missing: model gave no answer for this field.';
 const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() ? v : MODEL_FIELD_MISSING);
 const listOrMissing = (v: unknown): string[] => {
   const items = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && Boolean(x.trim())) : [];
@@ -4610,6 +4609,8 @@ ${MISSING_FIGURES_RULE}
         monetaryPolicyExpectedImpact: { type: Type.STRING },
         debtManagementRecommendation: { type: Type.STRING },
         debtManagementExpectedImpact: { type: Type.STRING },
+        tailRiskHedgeInstrument: { type: Type.STRING },
+        riskApproval: { type: Type.STRING, enum: ['APPROVED', 'APPROVED_WITH_HEDGE', 'RESTRICTED'] },
       },
       required: [
         'decisionVerdict',
@@ -4688,6 +4689,11 @@ ${MISSING_FIGURES_RULE}
         ...baseOutput.marketTranslationLayer.riskGuardianCheck,
         factorCrowdingWarning:
           textOrMissing(parsed.factorCrowdingWarning),
+        tailRiskHedgeInstrument: textOrMissing(parsed.tailRiskHedgeInstrument),
+        approvalStatus: ['APPROVED', 'APPROVED_WITH_HEDGE', 'RESTRICTED'].includes(parsed.riskApproval) ? parsed.riskApproval : null,
+        // Nothing in the app estimates these: Missing, never a built-in figure.
+        liquidityHaircutPct: null,
+        maxDrawdownEstimatePct: null,
       },
     },
   };
@@ -4833,6 +4839,10 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
   ];
   // Never asked of the model, so never anything but Missing.
   if (o.globalCoherenceScore !== null) shown.push(['council coherence (not measured)', 'built-in']);
+  const rg = o.marketTranslationLayer.riskGuardianCheck;
+  if (rg.liquidityHaircutPct !== null || rg.maxDrawdownEstimatePct !== null) shown.push(['drawdown/haircut (not estimated)', 'built-in']);
+  if (rg.approvalStatus !== null && !said('riskApproval')) shown.push(['riskApproval', 'built-in']);
+  shown.push(['tailRiskHedgeInstrument', rg.tailRiskHedgeInstrument]);
   for (const [i, x] of t.entries()) {
     if (x.entryLevel !== MODEL_FIELD_MISSING || x.targetLevel !== MODEL_FIELD_MISSING) shown.push([`trade ${i + 1} entry/target level (never asked)`, 'built-in']);
   }

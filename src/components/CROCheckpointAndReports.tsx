@@ -25,7 +25,7 @@ import {
 import { CouncilPipelineReliabilityPanel } from './CouncilPipelineReliabilityPanel';
 import { RichTextWithStatRefs } from './StatRefTooltip';
 import { FigureCheckNote } from './FigureCheckNote';
-import { coherenceText } from '../utils/councilResult';
+import { approvalText, coherenceText, riskPctText } from '../utils/councilResult';
 
 interface CROCheckpointAndReportsProps {
   run: CouncilAssessmentRun;
@@ -729,11 +729,11 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                   <div className="flex items-center justify-between tabular-nums font-semibold text-emerald-400">
                     <span className="inline-flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5" />
-                      <span>Risk Guardian Portfolio Audit: {toDisplayCase(sc.marketTranslationLayer.riskGuardianCheck.approvalStatus)}</span>
+                      <span>Risk Guardian Portfolio Audit: {approvalText(sc.marketTranslationLayer.riskGuardianCheck.approvalStatus)}</span>
                     </span>
                     <span>
-                      Max DD Est: -{sc.marketTranslationLayer.riskGuardianCheck.maxDrawdownEstimatePct}% | Haircut:{' '}
-                      {sc.marketTranslationLayer.riskGuardianCheck.liquidityHaircutPct}%
+                      Max DD Est: {riskPctText(sc.marketTranslationLayer.riskGuardianCheck.maxDrawdownEstimatePct)} | Haircut:{' '}
+                      {riskPctText(sc.marketTranslationLayer.riskGuardianCheck.liquidityHaircutPct)}
                     </span>
                   </div>
                   <p className="text-slate-300 text-xs leading-relaxed">

@@ -1,5 +1,5 @@
 import { withNoteReferences } from '../utils/citations';
-import { coherenceText, modelCouncil } from '../utils/councilResult';
+import { approvalText, coherenceText, modelCouncil, riskPctText } from '../utils/councilResult';
 import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
@@ -212,7 +212,7 @@ export function buildSections(
       ? [
           `**${VERDICT_LABEL[sc.decisionVerdict] || sc.decisionVerdict}.** Stance: ${toDisplayCase(sc.marketTranslationLayer.regimeStance)}.`,
           inputs.deskEnginesLive
-            ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${coherenceText(sc)}. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`
+            ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${coherenceText(sc)}. Risk check: ${approvalText(sc.marketTranslationLayer.riskGuardianCheck.approvalStatus)}.`
             : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Press Refresh now under Research > One country and re-run before taking this to committee.`,
         ]
       : ['No council run yet for this country. Run the council before taking this memo to committee.'];
@@ -285,7 +285,7 @@ export function buildSections(
     const lines: string[] = [];
     const rg = sc?.marketTranslationLayer.riskGuardianCheck;
     if (rg) {
-      lines.push(`- Estimated maximum drawdown ${rg.maxDrawdownEstimatePct}%; liquidity haircut ${rg.liquidityHaircutPct}%.`);
+      lines.push(`- Estimated maximum drawdown: ${riskPctText(rg.maxDrawdownEstimatePct)}; liquidity haircut: ${riskPctText(rg.liquidityHaircutPct)}.`);
       if (rg.tailRiskHedgeInstrument) lines.push(`- Tail hedge: ${rg.tailRiskHedgeInstrument}.`);
       if (rg.factorCrowdingWarning) lines.push(`- Crowding: ${rg.factorCrowdingWarning}`);
     }
@@ -396,7 +396,11 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
   if (include.risks) {
     const rg = sc?.marketTranslationLayer.riskGuardianCheck;
     const lines = rg
-      ? [`In a bad scenario, prices of these investments could fall by around ${rg.maxDrawdownEstimatePct}%. They can also be harder to sell quickly in a stressed market.`]
+      ? [
+          typeof rg.maxDrawdownEstimatePct === 'number'
+            ? `In a bad scenario, prices of these investments could fall by around ${rg.maxDrawdownEstimatePct}%. They can also be harder to sell quickly in a stressed market.`
+            : 'In a bad scenario these investments could lose value and be harder to sell quickly; the app does not estimate by how much yet.',
+        ]
       : ['Describe the main risks to the client here in plain terms.'];
     out.push({ id: 'risks', heading: L.risks, lines });
   }

@@ -5,6 +5,22 @@ import type { CouncilAssessmentRun, SupremeCouncilOutput } from '../types/counci
  * with a built-in report (template text and a verdict) that the older desks still read; it is not a
  * result and must not appear in memos, notes or briefs as one.
  */
+/** What a council report field shows when the model wrote nothing for it: never built-in text. */
+export const MODEL_FIELD_MISSING = 'Missing: model gave no answer for this field.';
+
+/** Drawdown and liquidity haircut: nothing in the app estimates them, so they are never a built-in number. */
+export const RISK_ESTIMATE_MISSING = 'Missing (the app does not estimate this yet)';
+
+/** A risk-check percentage, or Missing with the reason. */
+export function riskPctText(v: number | null | undefined): string {
+  return typeof v === 'number' && Number.isFinite(v) ? `${v}%` : RISK_ESTIMATE_MISSING;
+}
+
+/** The risk check's approval in plain words, or Missing when the model gave none. */
+export function approvalText(v: string | null | undefined): string {
+  return v ? v.replace(/_/g, ' ').toLowerCase() : 'missing (the model gave no approval)';
+}
+
 /** Shown where the council's agreement would go: nothing in the app measures it, so it is never a built-in number. */
 export const COHERENCE_MISSING = 'Missing (the council does not measure agreement yet)';
 

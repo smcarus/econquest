@@ -219,10 +219,14 @@ export interface SupremeCouncilOutput {
     tradeExpressions: TradeExecutionTicket[];
     riskGuardianCheck: {
       factorCrowdingWarning: string;
-      liquidityHaircutPct: number;
-      maxDrawdownEstimatePct: number;
+      /** Not estimated anywhere in the app yet: null (shown as Missing). */
+      liquidityHaircutPct: number | null;
+      /** Not estimated anywhere in the app yet: null (shown as Missing). */
+      maxDrawdownEstimatePct: number | null;
+      /** Written by the referee model, or MODEL_FIELD_MISSING. */
       tailRiskHedgeInstrument: string;
-      approvalStatus: 'APPROVED' | 'APPROVED_WITH_HEDGE' | 'RESTRICTED';
+      /** The referee model's call, or null when it gave none. */
+      approvalStatus: 'APPROVED' | 'APPROVED_WITH_HEDGE' | 'RESTRICTED' | null;
     };
   };
 }

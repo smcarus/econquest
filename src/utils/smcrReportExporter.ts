@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { coherenceText, compositeText } from './councilResult';
+import { approvalText, coherenceText, compositeText, riskPctText } from './councilResult';
 import { AIRuntimeConfig, CouncilAssessmentRun } from '../types/council';
 import { computeFullEconometricForecastSuite } from './econometricForecastingEngine';
 import { runSovereignStrategyBacktest } from './strategyBacktestingEngine';
@@ -309,7 +309,7 @@ ${(sc?.policyResearcherReport.policyRecommendations || [])
 
 ### For the Asset Manager / Trader: Market Translation & Trade Tickets
 - **Portfolio Regime Stance**: \`${sc?.marketTranslationLayer.regimeStance || ''}\`
-- **Risk Guardian Approval**: \`${sc?.marketTranslationLayer.riskGuardianCheck.approvalStatus || ''}\` (Liquidity Haircut: \`${sc?.marketTranslationLayer.riskGuardianCheck.liquidityHaircutPct ?? 0}%\`, Max Drawdown Est: \`${sc?.marketTranslationLayer.riskGuardianCheck.maxDrawdownEstimatePct ?? 0}%\`)
+- **Risk Guardian Approval**: \`${approvalText(sc?.marketTranslationLayer.riskGuardianCheck.approvalStatus)}\` (Liquidity Haircut: \`${riskPctText(sc?.marketTranslationLayer.riskGuardianCheck.liquidityHaircutPct)}\`, Max Drawdown Est: \`${riskPctText(sc?.marketTranslationLayer.riskGuardianCheck.maxDrawdownEstimatePct)}\`)
 - **Factor Crowding Audit**: ${sc?.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning || ''}
 
 | Ticket ID | Asset Class | Instrument | Direction | Weight | Horizon | Entry / Target | Hard Invalidation / Stop Trigger |

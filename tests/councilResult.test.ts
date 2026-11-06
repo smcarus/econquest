@@ -21,3 +21,17 @@ test('coherence and composite: a number when there is one, Missing with the reas
   assert.equal(compositeText({ compositeRiskScore: 0.45 }, 100), '45/100');
   assert.match(compositeText(undefined), /^Missing/);
 });
+
+test('risk check: drawdown and haircut are Missing unless measured; the built-in report carries no figures or approval', async () => {
+  const { riskPctText, approvalText, RISK_ESTIMATE_MISSING, MODEL_FIELD_MISSING } = await import('../src/utils/councilResult.ts');
+  assert.equal(riskPctText(3.4), '3.4%');
+  assert.equal(riskPctText(null), RISK_ESTIMATE_MISSING);
+  assert.equal(approvalText('APPROVED_WITH_HEDGE'), 'approved with hedge');
+  assert.match(approvalText(null), /^missing/);
+  const rg = buildDefaultAssessmentRun('BRA').supremeCouncil!.marketTranslationLayer.riskGuardianCheck;
+  assert.equal(rg.liquidityHaircutPct, null);
+  assert.equal(rg.maxDrawdownEstimatePct, null);
+  assert.equal(rg.approvalStatus, null);
+  assert.equal(rg.tailRiskHedgeInstrument, MODEL_FIELD_MISSING);
+  assert.equal(buildDefaultAssessmentRun('BRA').supremeCouncil!.globalCoherenceScore, null);
+});
