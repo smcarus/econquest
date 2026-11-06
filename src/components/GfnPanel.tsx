@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { Landmark } from 'lucide-react';
 import type { GfnOutcome } from '../utils/grossFinancingNeed';
 import { GFN_EM_BENCHMARK } from '../utils/grossFinancingNeed';
@@ -37,6 +38,7 @@ export const GfnPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3
         <h2 className="ui-section-title flex items-center gap-2">
           <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Gross financing need, {countryName}
+          <ValidationBadge id="gross_financing_need" />
           {reply?.ok && (
             <button
               type="button"

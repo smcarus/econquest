@@ -523,6 +523,14 @@ hold no figures of their own; the handout reads them from the app's series when 
   indicator turn to policy move, CFTC crowding to unwind, and the policy rule check (Taylor gap:
   does a tight reading come before a cut, and a loose one before a hike, within 6 months, judged
   against each bank's inflation target as it stood at the time, from `src/data/inflationTargetHistory.ts`).
+  Beside every verdict the dialog shows a **Holm-adjusted p** across all pre-registered tests on
+  record (every version run of every backtest and nowcast/forecast evaluation, failed ones too) and
+  the number of tests, with whether the verdict still holds at its own pass mark after the
+  correction. The recorded verdict itself is not changed. Panels that describe the past or apply a
+  stated what-if (fiscal reaction, gross financing need, reserve adequacy, inflation after rate
+  changes, costed options, global shock scenarios) carry the badge *Description, not a tested
+  signal*; the policy rule family and the debt fan chart make forward claims and read *Not
+  validated* until their pre-registered tests run.
   Every verdict also carries a *stricter check* (method 2). Method 1 counts each case as independent;
   but turns and policy moves bunch in global cycles, and CFTC entries in several USD crosses land in
   the same weeks, so method 1 overstates how sure a result is. Method 2 redraws whole calendar years

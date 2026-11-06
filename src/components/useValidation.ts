@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import type { BacktestResult } from '../utils/backtest';
 import type { ValidationStatus } from '../data/modelRegister';
 import { forecastRegisterStatus, type ForecastVerdict } from '../utils/forecastRegister';
+import { holmReadings, testsOnRecord, type HolmReading } from '../utils/multipleTesting';
 
 export interface ValidationSpecInfo {
   file: string;
@@ -32,6 +33,8 @@ export interface ValidationReply {
   file: string;
   /** Nowcast and forecast evaluations (npm run forecast:evaluate), by evaluation id. */
   forecasts?: Record<string, ForecastVerdict>;
+  /** Every forecast evaluation version run, with its p and pass mark (for the Holm correction). */
+  forecastTests?: Array<{ id: string; version: number; p: number; alpha: number; status: 'passed' | 'failed' | 'too_few_cases' }>;
 }
 
 let cache: ValidationReply | null = null;
@@ -90,4 +93,11 @@ export function failsStricterCheck(id: string, v: ValidationReply | null): boole
 /** The status to show: a backtest or forecast-evaluation verdict when one exists for this id, else the register's own. */
 export function effectiveStatus(id: string, registerStatus: ValidationStatus, v: ValidationReply | null): ValidationStatus {
   return v?.results?.[id]?.status ?? forecastRegisterStatus(id, v?.forecasts) ?? registerStatus;
+}
+
+/** Holm-adjusted readings for every test on record (src/utils/multipleTesting.ts). */
+export function validationHolm(v: ValidationReply | null): Map<string, HolmReading> {
+  if (!v) return new Map();
+  const alphaFor = (id: string, version: number) => v.specs.find((s) => s.id === id && s.version === version)?.passMark?.maxPValue;
+  return holmReadings(testsOnRecord({ ...(v.versions || {}), ...Object.fromEntries(Object.values(v.results || {}).map((r) => [`${r.id} v${r.specVersion}`, r])) }, alphaFor, v.forecastTests || []));
 }

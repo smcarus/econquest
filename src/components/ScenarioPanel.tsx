@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { Globe2 } from 'lucide-react';
 import { applyScenario, scenarioSentence, type FactorId, type ResponseId, type ScenarioModelOutcome } from '../utils/scenarioEngine';
 import { explainInChat } from '../utils/explainHandoff';
@@ -53,6 +54,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
         <h2 className="ui-section-title flex items-center gap-2">
           <Globe2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Global shock scenarios, {countryName}
+          <ValidationBadge id="global_scenarios" />
           {results.length > 0 && reply && (
             <button
               type="button"

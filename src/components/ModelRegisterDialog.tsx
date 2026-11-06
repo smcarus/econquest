@@ -7,18 +7,20 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, Play, ShieldQuestion, X } from 'lucide-react';
 import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type ValidationStatus } from '../data/modelRegister';
 import { ValidationBadge } from './ValidationBadge';
-import { effectiveStatus, runValidation, useValidation, type ValidationReply } from './useValidation';
+import { effectiveStatus, runValidation, useValidation, validationHolm, type ValidationReply } from './useValidation';
+import { holmSentence } from '../utils/multipleTesting';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
 import { forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
 function downloadCsv(v: ValidationReply | null) {
+  const holmMap = validationHolm(v);
   const rows = registerRows(MODEL_REGISTER, (id) => {
     const r = v?.results?.[id];
-    if (r) return { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}.` };
+    if (r) return { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}. ${holmSentence(holmMap.get(`${r.id} v${r.specVersion}`))}`.trim() };
     const fs = forecastRegisterStatus(id, v?.forecasts);
-    return fs ? { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}.`).join(' ') } : undefined;
+    return fs ? { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}. ${holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}`.trim()).join(' ') } : undefined;
   });
   const text = '\uFEFF' + [REGISTER_HEADER, ...rows, [EXPORT_NOTICE]].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -44,6 +46,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
   }, [focusId]);
 
   const v = useValidation();
+  const holmMap = validationHolm(v);
   const [runError, setRunError] = useState<string | null>(null);
   const counts = MODEL_REGISTER.reduce<Partial<Record<ValidationStatus, number>>>((acc, e) => {
     const s = effectiveStatus(e.id, e.status, v);
@@ -93,6 +96,11 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
           <p className="text-xs text-slate-500 dark:text-slate-400" data-backtest-status>
             {v?.lastRun ? `Backtests last run ${when(v.lastRun.at)}.` : 'Backtests not run yet on this computer.'} They pull the long free histories (BIS policy rates since 1990, OECD leading indicator, CFTC since 2006), so they need a connection and take a minute or two. Same as `npm run backtest`.
           </p>
+          {holmMap.size > 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400" data-holm-summary>
+              {holmMap.size} pre-registered tests on record (every version run, failed ones too). Each verdict below shows its Holm-adjusted p across all of them; {[...holmMap.values()].filter((h) => h.holds).length} hold after the correction. The recorded verdicts are not changed.
+            </p>
+          )}
           {runError && <p className="text-rose-600 dark:text-rose-400">{runError}</p>}
           {v?.lastRun?.problems?.length ? <p className="text-amber-700 dark:text-amber-300">Last run: {v.lastRun.problems.join(' · ')}</p> : null}
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -135,7 +143,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                               <dd data-forecast-verdicts={e.id}>
                                 {fv.map((x) => (
                                   <span key={x.id} className="block" data-forecast-verdict={x.id} data-status={x.status}>
-                                    <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict}
+                                    <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict} <span data-holm={`forecast ${x.id} v${x.specVersion}`}>{holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}</span>
                                   </span>
                                 ))}
                                 <span className="block text-slate-400 dark:text-slate-500">docs/validation/forecasts/ · npm run forecast:evaluate · data/local/validation/forecasts.json</span>
@@ -166,6 +174,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                               <dd data-backtest-verdict={e.id}>
                                 {r.verdict} {r.series.length} series, {r.span.from} to {r.span.to}. Run {when(r.ranAt)} on test version {r.specVersion}
                                 {spec?.hash && spec.hash !== r.specHash ? ' (the test file has changed since: run again)' : ''}.
+                                <span className="block" data-holm={`${r.id} v${r.specVersion}`}>{holmSentence(holmMap.get(`${r.id} v${r.specVersion}`))}</span>
                                 <span className="block text-slate-400 dark:text-slate-500">{r.data}</span>
                               </dd>
                               {earlier.length > 0 && (
@@ -174,7 +183,7 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                   <dd data-backtest-earlier={e.id}>
                                     {earlier.map((x) => (
                                       <span key={x.specVersion} className="block">
-                                        Version {x.specVersion}: {x.verdict}
+                                        Version {x.specVersion}: {x.verdict} {holmSentence(holmMap.get(`${x.id} v${x.specVersion}`))}
                                         {x.robustness && (x.framework ?? 1) === 1 ? ` Stricter check: ${x.robustness.status.replace(/_/g, ' ')}.` : ''}
                                       </span>
                                     ))}

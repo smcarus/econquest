@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { Ruler } from 'lucide-react';
 import type { RuleFamilyOutcome } from '../utils/ruleFamily';
 import { explainInChat } from '../utils/explainHandoff';
@@ -36,6 +37,7 @@ export const RuleFamilyPanel: React.FC<{ iso3: string; countryName: string }> = 
         <h2 className="ui-section-title flex items-center gap-2">
           <Ruler className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Policy rules, {countryName}
+          <ValidationBadge id="rule_family" />
           {reply?.ok && (
             <button
               type="button"

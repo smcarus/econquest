@@ -31,6 +31,14 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
 | GDP nowcast (bridge equation) | Research | Not validated | None |
 | Forecasts with fan charts (AR models) | Research | Not validated | None |
+| Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
+| Gross financing need | Research | Description, not a tested signal | None |
+| Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
+| Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
+| Policy rule family | Research | Not validated | None |
+| Debt fan chart (bootstrap of past shocks) | Research | Not validated | None |
+| Costed fiscal options | Research | Description, not a tested signal | None |
+| Global shock scenarios | Research | Description, not a tested signal | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
@@ -305,6 +313,102 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons. Inflation (last 10 years) and debt (no drift) are re-tested as version 2 after version 1 failed; version 1 stays on record.
 - **Limits:** Bands leave out parameter uncertainty; today's data vintage; not compared with past IMF forecasts yet.
 - **Code:** `src/utils/forecasts.ts`
+
+### Fiscal reaction (Bohn test)
+
+- **Says:** Whether the primary balance has risen with debt in this country's own history.
+- **Rule:** OLS of the primary balance on last year's debt and the output gap, outturn years only, Newey-West errors (Bohn 1998); needs 15 years.
+- **Reads:** IMF Fiscal Monitor primary balance, IMF WEO gross debt, the app's output gap estimate
+- **Shows in:** Country Research > History & data (Fiscal reaction)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: it summarises the past and makes no forward call.
+- **Limits:** Short annual samples; the response can change with governments; not a forecast of future policy.
+- **Code:** `src/utils/bohnTest.ts`
+
+### Gross financing need
+
+- **Says:** How much the government has to borrow each year: deficit plus external debt falling due.
+- **Rule:** Overall deficit plus scheduled external public principal (World Bank IDS), as % of GDP; a lower bound because domestic amortisation has no free source. Benchmark 15% of GDP (IMF MAC DSA, emerging markets).
+- **Reads:** IMF Fiscal Monitor balances, IMF GDP in dollars, World Bank IDS principal projections, QEDS
+- **Shows in:** Country Research > History & data (Gross financing need)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: an accounting sum, no forward call.
+- **Limits:** Lower bound (no domestic amortisation); IDS covers low and middle income borrowers only.
+- **Code:** `src/utils/grossFinancingNeed.ts`
+
+### Reserve adequacy (IMF ARA, partial)
+
+- **Says:** Reserves against the IMF adequacy metric, with the usual months-of-imports and short-term debt cover.
+- **Rule:** IMF ARA weights for floating and fixed regimes on exports, broad money and short-term debt (the other-liabilities term has no free source, so the ratio is an upper bound).
+- **Reads:** World Bank reserves, short-term external debt, broad money, exports, GDP
+- **Shows in:** Country Research > History & data (Reserve adequacy)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a ratio against a published metric, no forward call.
+- **Limits:** Upper bound; FX regime not chosen, both weightings shown; annual data.
+- **Code:** `src/utils/reserveAdequacy.ts`
+
+### Inflation after rate changes (local projections)
+
+- **Says:** How inflation has moved in the months after a one-point policy rate change, in this country's history.
+- **Rule:** Jordà local projections of monthly CPI y/y on the policy rate change, horizons 0 to 24 months, 3 lags, Newey-West bands.
+- **Reads:** BIS policy rates, monthly CPI
+- **Shows in:** Country Research > History & data (Inflation after rate changes)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: reduced-form co-movement, not the effect of policy and not a forecast.
+- **Limits:** Rate moves respond to inflation, so the sign can be the reverse of the causal effect.
+- **Code:** `src/utils/localProjections.ts`
+
+### Policy rule family
+
+- **Says:** The policy rate against five published rules (Taylor 1993, balanced, inflation only, inertial, first difference): inside, above or below their range.
+- **Rule:** r* 2%, the bank's target, IMF output gap (else the app estimate); above or below when the rate is more than 1 point outside the range of the rules.
+- **Reads:** BIS policy rate, monthly inflation, central bank target, output gap
+- **Shows in:** Country Research > History & data (Policy rules)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** To be pre-registered (signal standard): does a reading above (below) the rule range come before a cut (hike) within 6 months more often than the base rate, from 2000, inflation lagged 2 months, whole years resampled (method 2), Holm across all tests on record.
+- **Limits:** r* fixed; output gap revised each vintage; targets hand-entered.
+- **Code:** `src/utils/ruleFamily.ts`
+
+### Debt fan chart (bootstrap of past shocks)
+
+- **Says:** The range debt could take if the next years repeat the shocks of past years.
+- **Rule:** Whole past years of deviations in growth, inflation, interest and primary balance from their means are drawn with replacement onto the IMF baseline; 2000 paths; 10th to 90th percentile.
+- **Reads:** IMF WEO history and projections
+- **Shows in:** Country Research > History & data (Debt sustainability, fan chart)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** To be pre-registered (signal standard): rebuild the fan at past origins with only the years known then, and check that realised debt falls inside the 10-90 band about 80% of the time, across countries, whole years resampled.
+- **Limits:** Past shocks only; no fiscal reaction; IMF baseline as given.
+- **Code:** `src/utils/debtFan.ts`
+
+### Costed fiscal options
+
+- **Says:** What a stated tightening or loosening of the primary balance would do to debt and output on the baseline.
+- **Rule:** Primary balance raised by the stated size, phased in evenly; growth lower by the IMF bucket multiplier range x each year's step; debt from the identity.
+- **Reads:** Debt sustainability baseline (IMF WEO), IMF fiscal multiplier buckets
+- **Shows in:** Country Research > History & data (Debt sustainability, costed options)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: a stated what-if on stated assumptions, not a forecast or a recommendation.
+- **Limits:** Multiplier range is a guide, not estimated for the country; no confidence or interest-rate feedback.
+- **Code:** `src/utils/costedOptions.ts`
+
+### Global shock scenarios
+
+- **Says:** How the currency and policy rate have moved with the US policy rate and the dollar, applied to a stated shock.
+- **Rule:** OLS on monthly changes over the last 15 years; implied move = coefficients x stated shock, 90% band from Newey-West errors.
+- **Reads:** ECB reference rates, BIS policy rates (incl. US)
+- **Shows in:** Country Research > History & data (Global shock scenarios)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: past co-movement applied to a stated shock, not a forecast.
+- **Limits:** Linear, not causal; dollar against the euro, not trade-weighted; oil not a factor yet.
+- **Code:** `src/utils/scenarioEngine.ts`
 
 ## Stated-method views
 
