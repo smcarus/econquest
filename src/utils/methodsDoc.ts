@@ -61,6 +61,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/debtSustainability.ts',
   },
   {
+    id: 'gross_financing_need',
+    name: 'Gross financing need (lower bound)',
+    where: 'Research > History & data',
+    method: [
+      'GFN = overall deficit + amortisation, % of GDP, from last year to five years out. Deficit = minus the IMF Fiscal Monitor overall balance; interest shown = primary minus overall balance.',
+      'Amortisation = World Bank IDS projected principal on public and publicly guaranteed external debt (DT.AMT.DPPG.CD, all creditors) divided by IMF WEO GDP in US dollars (NGDPD) for the same year. QEDS next-12-month general government external principal is shown alongside.',
+      'Flag: a total of 15% of GDP or more, the IMF market-access DSA benchmark for emerging markets.',
+    ],
+    limits: 'Domestic amortisation (local debt held by residents) has no free cross-country source, so the total is a lower bound; for countries that borrow mainly at home it can be far below the true need. IDS covers low- and middle-income countries only. IMF years from this one on and all IDS years are projections.',
+    code: 'src/utils/grossFinancingNeed.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',

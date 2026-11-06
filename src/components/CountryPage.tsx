@@ -32,6 +32,7 @@ const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPan
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
 const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
 const BohnPanel = lazyNamed(() => import('./BohnPanel'), 'BohnPanel');
+const GfnPanel = lazyNamed(() => import('./GfnPanel'), 'GfnPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
@@ -450,6 +451,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Debt sustainability">
             <React.Suspense fallback={<DeskLoading />}>
               <DebtSustainabilityPanel key={`dsa-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-gross-financing-need" className="scroll-mt-4" />
+          <PanelBoundary name="Gross financing need">
+            <React.Suspense fallback={<DeskLoading />}>
+              <GfnPanel key={`gfn-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-reaction" className="scroll-mt-4" />
