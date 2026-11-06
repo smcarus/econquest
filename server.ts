@@ -4651,6 +4651,8 @@ ${MISSING_FIGURES_RULE}
     generatedAt: new Date().toISOString(),
     decisionVerdict: verdict as SupremeCouncilOutput['decisionVerdict'],
     compositeRiskScore: compositeScore,
+    // Nothing measures the council's agreement yet: Missing, never the built-in 0.91.
+    globalCoherenceScore: null,
     executiveSummary: textOrMissing(parsed.executiveSummary),
     policyResearcherReport: {
       ...baseOutput.policyResearcherReport,
@@ -4830,6 +4832,7 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     ]),
   ];
   // Never asked of the model, so never anything but Missing.
+  if (o.globalCoherenceScore !== null) shown.push(['council coherence (not measured)', 'built-in']);
   for (const [i, x] of t.entries()) {
     if (x.entryLevel !== MODEL_FIELD_MISSING || x.targetLevel !== MODEL_FIELD_MISSING) shown.push([`trade ${i + 1} entry/target level (never asked)`, 'built-in']);
   }

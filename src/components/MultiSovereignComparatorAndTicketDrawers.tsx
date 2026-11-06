@@ -21,6 +21,7 @@ import {
   ArrowRight,
   ShieldAlert,
 } from 'lucide-react';
+import { coherenceText, compositeText } from '../utils/councilResult';
 
 // ============================================================================
 // 1. MULTI-SOVEREIGN HEAD-TO-HEAD COMPARATOR DRAWER (2–3 COUNTRIES SIDE-BY-SIDE)
@@ -394,7 +395,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
       `Generated: ${new Date().toISOString()}`,
       ``,
       `## 1. Sovereign tear sheet: ${activeRun.countryName} (${activeRun.iso3})`,
-      `- **Executive Stance**: ${activeRun.supremeCouncil?.marketTranslationLayer.regimeStance || 'Hold & Monitor'} (Composite Risk: ${Math.round((activeRun.supremeCouncil?.compositeRiskScore ?? 0.58) * 100)}/100, Coherence: ${Math.round((activeRun.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100)}%)`,
+      `- **Executive Stance**: ${activeRun.supremeCouncil?.marketTranslationLayer.regimeStance || 'Hold & Monitor'} (Composite Risk: ${compositeText(activeRun.supremeCouncil, 100)}, Coherence: ${coherenceText(activeRun.supremeCouncil)})`,
       `- **Debt & DSA Solvency**: Debt/GDP ${activeRun.openData.imfIndicators.debtToGdpPct.toFixed(1)}% | Primary Balance ${activeRun.openData.imfIndicators.primaryFiscalBalancePct.toFixed(2)}% GDP vs. Stabilizing pb* ${activeRun.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct.toFixed(2)}% GDP (Gap: ${activeRun.openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% GDP)`,
       `- **NSS Yield Curve & Carry+Roll**: 2s10s Slope ${nssSuite.slope2s10sBps > 0 ? '+' : ''}${nssSuite.slope2s10sBps} bps | 2s5s10s Butterfly ${nssSuite.butterfly2s5s10sBps > 0 ? '+' : ''}${nssSuite.butterfly2s5s10sBps} bps | Optimal Carry+Roll Tenor: ${nssSuite.optimalCarryRollTenor.tenorLabel} (+${nssSuite.optimalCarryRollTenor.totalCarryRoll12MBps} bps/yr, Breakeven +${nssSuite.optimalCarryRollTenor.breakevenCushionBps} bps/yr)`,
       `- **Credit & External Buffers**: 5Y CDS ${activeRun.openData.monetaryAndMarket.cds5YSpreadBps} bps | 10Y Yield ${activeRun.openData.monetaryAndMarket.sovereign10YBondYieldPct.toFixed(2)}% | FX Reserves ${activeRun.openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports`,
@@ -487,7 +488,7 @@ export const ExecutiveTearSheetAndTradeTicketDrawer: React.FC<
                 <span>
                   Coherence:{' '}
                   <strong>
-                    {Math.round((activeRun.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100)}%
+                    {coherenceText(activeRun.supremeCouncil)}
                   </strong>
                 </span>
               </div>

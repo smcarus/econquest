@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { coherenceText, compositeText } from './councilResult';
 import { AIRuntimeConfig, CouncilAssessmentRun } from '../types/council';
 import { computeFullEconometricForecastSuite } from './econometricForecastingEngine';
 import { runSovereignStrategyBacktest } from './strategyBacktestingEngine';
@@ -63,8 +64,8 @@ export function buildCanonicalSMCREnvelope(run: CouncilAssessmentRun) {
     },
     sec_02_executive_decision_verdict: {
       decision_verdict: sc?.decisionVerdict || 'DEFENSIVE_HEDGE',
-      composite_risk_score: sc?.compositeRiskScore ?? 0.62,
-      global_coherence_score: sc?.globalCoherenceScore ?? 0.91,
+      composite_risk_score: sc?.compositeRiskScore ?? null,
+      global_coherence_score: typeof sc?.globalCoherenceScore === 'number' ? sc.globalCoherenceScore : null,
       executive_summary: sc?.executiveSummary || '',
       three_regime_probability_matrix: run.regimeDistribution,
       historical_crisis_analogs: run.crisisAnalogs,
@@ -213,7 +214,7 @@ cro_override_applied: ${run.croState.isOverridden}
 
 ## EXECUTIVE DECISION VERDICT & 3-REGIME PROBABILITY SCORECARD
 - **DECISION VERDICT**: **\`${env.sec_02_executive_decision_verdict.decision_verdict}\`**
-- **Composite Risk Score**: \`${env.sec_02_executive_decision_verdict.composite_risk_score.toFixed(2)} / 1.00\` (Global Coherence: \`${(env.sec_02_executive_decision_verdict.global_coherence_score * 100).toFixed(0)}%\`)
+- **Composite Risk Score**: \`${compositeText({ compositeRiskScore: env.sec_02_executive_decision_verdict.composite_risk_score ?? NaN })}\` (Global Coherence: \`${coherenceText({ globalCoherenceScore: env.sec_02_executive_decision_verdict.global_coherence_score })}\`)
 
 ### Executive Synthesis
 ${sc?.executiveSummary || 'Awaiting Supreme Council synthesis.'}
@@ -444,9 +445,7 @@ export function exportSMCRPdfDossier(run: CouncilAssessmentRun): void {
   doc.setTextColor(15, 23, 42);
   doc.text(`VERDICT: ${sc?.decisionVerdict || 'DEFENSIVE_HEDGE'}`, margin + 10, y + 16);
   doc.text(
-    `COMPOSITE RISK: ${(sc?.compositeRiskScore ?? 0.62).toFixed(2)} / 1.00   |   COHERENCE: ${(
-      (sc?.globalCoherenceScore ?? 0.91) * 100
-    ).toFixed(0)}%`,
+    `COMPOSITE RISK: ${compositeText(sc)}   |   COHERENCE: ${coherenceText(sc)}`,
     margin + 195,
     y + 16
   );

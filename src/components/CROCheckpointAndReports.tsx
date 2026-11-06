@@ -25,6 +25,7 @@ import {
 import { CouncilPipelineReliabilityPanel } from './CouncilPipelineReliabilityPanel';
 import { RichTextWithStatRefs } from './StatRefTooltip';
 import { FigureCheckNote } from './FigureCheckNote';
+import { coherenceText } from '../utils/councilResult';
 
 interface CROCheckpointAndReportsProps {
   run: CouncilAssessmentRun;
@@ -579,7 +580,7 @@ export const CROCheckpointAndReports: React.FC<CROCheckpointAndReportsProps> = (
                 <span>
                   Verdict: <strong className="text-amber-400">{toDisplayCase(sc.decisionVerdict)}</strong> · Composite risk:{' '}
                   <strong>{sc.compositeRiskScore.toFixed(2)} / 1.00</strong> · Coherence:{' '}
-                  <strong>{(sc.globalCoherenceScore * 100).toFixed(0)}%</strong>
+                  <strong>{coherenceText(sc)}</strong>
                 </span>
               </div>
               <p className="text-xs text-slate-200 leading-relaxed">
