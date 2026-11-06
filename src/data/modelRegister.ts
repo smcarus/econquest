@@ -224,7 +224,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
     where: 'Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)',
     use: 'Research',
     status: 'not_validated',
-    testPlan: 'Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons.',
+    testPlan: 'Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons. Inflation (last 10 years) and debt (no drift) are re-tested as version 2 after version 1 failed; version 1 stays on record.',
     limits: "Bands leave out parameter uncertainty; today's data vintage; not compared with past IMF forecasts yet.",
     code: 'src/utils/forecasts.ts',
     panels: [],
