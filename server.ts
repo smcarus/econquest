@@ -1,5 +1,6 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { geminiModel } from './src/utils/geminiModel';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
@@ -4575,7 +4576,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           const searchStart = Date.now();
           try {
             const searchResp = await geminiClient().models.generateContent({
-              model: 'gemini-3.8-flash',
+              model: geminiModel(runtimeConfig, process.env),
               contents: `Latest macroeconomic, central bank policy rate, fiscal budget, and geopolitical risk developments for ${baseRun.countryName} (${iso3}): ${baseRun.scenarioPrompt}`,
               config: {
                 tools: [{ googleSearch: {} }],
@@ -4583,7 +4584,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
               },
             });
             const chunks = searchResp.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
-            Object.assign(searchTiming, { ms: Date.now() - searchStart, outcome: 'model', model: 'gemini-3.8-flash', reason: undefined });
+            Object.assign(searchTiming, { ms: Date.now() - searchStart, outcome: 'model', model: geminiModel(runtimeConfig, process.env), reason: undefined });
             return chunks
               .filter((c: any) => c?.web?.uri)
               .slice(0, 6)
@@ -4665,7 +4666,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
             runtimeConfig.agentModelOverrides?.[agent.agentId] ||
             runtimeConfig.deskModelOverrides?.[deskId] ||
             (providerMode === 'gemini'
-              ? runtimeConfig.geminiQuickModel || 'gemini-3.8-flash'
+              ? geminiModel(runtimeConfig, process.env)
               : runtimeConfig.ollamaQuickModel || 'qwen2.5:7b');
           const customDirective = runtimeConfig.agentPromptOverrides?.[agent.agentId];
           agent.structuredPayload = {
@@ -5106,7 +5107,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       const activeProviderLabel =
         geoResult?.providerUsed ||
         sovResult?.providerUsed ||
-        'Google AI Studio (gemini-3.8-flash)';
+        `Google AI Studio (${geminiModel(runtimeConfig, process.env)})`;
       baseRun.runtimeUsed = `${activeProviderLabel} · Grounding: ${
         searchGroundingLinks.length > 0
           ? `${searchGroundingLinks.length} Live Web + ${liveSnapshot.liveApiSourcesActive.length} API Feeds`
