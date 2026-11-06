@@ -37,6 +37,7 @@ import {
 } from '../utils/askCouncil';
 
 import { smallRefereeNote } from '../utils/refereeModel';
+import { AnswerSnapshotDetails } from './AnswerSnapshot';
 import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
@@ -429,6 +430,7 @@ export const AskCouncilPanel: React.FC<{
                   </ul>
                 </details>
               )}
+              {t.synthesis?.snapshot && <AnswerSnapshotDetails snapshot={t.synthesis.snapshot} runtimeConfig={runtimeConfig} />}
     </>
   );
 
