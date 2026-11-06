@@ -4,6 +4,7 @@ import { CouncilAssessmentRun } from '../types/council';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { EconQuestLogo } from './EconQuestLogo';
 import { StatRefBadge, RichTextWithStatRefs } from './StatRefTooltip';
+import { coherenceText } from '../utils/councilResult';
 
 interface ExecutiveBriefScorecardProps {
   run: CouncilAssessmentRun;
@@ -114,7 +115,7 @@ export const ExecutiveBriefScorecard: React.FC<ExecutiveBriefScorecardProps> = (
             <span aria-hidden="true">·</span>
             <span>{run.countryName} ({run.iso3} · {open.currencyCode})</span>
             <span aria-hidden="true">·</span>
-            <span>Council Coherence: {((sc?.globalCoherenceScore ?? 0.91) * 100).toFixed(0)}%</span>
+            <span>Council Coherence: {coherenceText(sc)}</span>
             <button
               type="button"
               onClick={() => setIsCollapsed(true)}

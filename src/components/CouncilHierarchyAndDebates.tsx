@@ -24,6 +24,7 @@ import {
   simulateSovereignRestructuringAndRating,
 } from '../utils/institutionalRiskDeskEngine';
 import { StatRefBadge, RichTextWithStatRefs } from './StatRefTooltip';
+import { coherenceText, compositeText } from '../utils/councilResult';
 
 interface CouncilHierarchyAndDebatesProps {
   run: CouncilAssessmentRun;
@@ -325,11 +326,11 @@ export const CouncilHierarchyAndDebates: React.FC<CouncilHierarchyAndDebatesProp
               SUPREME COUNCIL ORCHESTRATOR (PORTFOLIO &amp; POLICY TRANSLATION LAYER)
             </div>
             <div className="text-sm font-semibold mt-0.5">
-              Global Coherence: {((run.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100).toFixed(0)}% · Verdict:{' '}
+              Global Coherence: {coherenceText(run.supremeCouncil)} · Verdict:{' '}
               <span className="tabular-nums text-amber-400">
                 {run.supremeCouncil?.decisionVerdict || 'AWAITING_CRO_GATE'}
               </span>{' '}
-              · Composite Risk: {(run.supremeCouncil?.compositeRiskScore ?? 0.62).toFixed(2)}
+              · Composite Risk: {compositeText(run.supremeCouncil)}
             </div>
           </div>
 

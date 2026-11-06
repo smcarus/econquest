@@ -3,6 +3,7 @@ import { CouncilAssessmentRun, UserPersonaId } from '../types/council';
 import { Sparkles, ArrowRight, Eye, Layers } from 'lucide-react';
 import { DataProvenanceBadge } from './RealTimeDataProvenanceOverlay';
 import { StatRefBadge } from './StatRefTooltip';
+import { coherenceText } from '../utils/councilResult';
 
 export type WorkspaceDensityMode = 'SIMPLE_BRIEF' | 'PRO_QUANT';
 
@@ -143,7 +144,7 @@ function buildDeskSynthesisForSection(
       return {
         plainEnglishPurpose:
           'Runs a 9-agent adversarial AI committee (Geopolitical, Sovereign Debt, Macro, and Devil’s Advocate desks) that debates bull vs. bear cases before issuing a trade verdict.',
-        liveSovereignSignal: `Supreme Council coherence is ${((run.supremeCouncil?.globalCoherenceScore ?? 0.91) * 100).toFixed(0)}% with regime stance: "${run.supremeCouncil?.marketTranslationLayer.regimeStance}".`,
+        liveSovereignSignal: `Supreme Council coherence: ${coherenceText(run.supremeCouncil)}, with regime stance: "${run.supremeCouncil?.marketTranslationLayer.regimeStance}".`,
         actionableEdge: `${personaPrefix} Inspect where the Devil’s Advocate challenges consensus assumptions before committing risk capital.`,
         nextStepLabel: 'Open CRO Gate & SMCR Dossier',
         nextStepTargetSection: 'cro_reports',

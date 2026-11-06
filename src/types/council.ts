@@ -199,7 +199,8 @@ export interface SupremeCouncilOutput {
   generatedAt: string;
   decisionVerdict: 'EXECUTE_TRADES' | 'DEFENSIVE_HEDGE' | 'HOLD_AND_MONITOR';
   compositeRiskScore: number;
-  globalCoherenceScore: number;
+  /** How far the council agreed, 0-1. Nothing measures it yet, so it is null (shown as Missing). */
+  globalCoherenceScore: number | null;
   executiveSummary: string;
   decisionPointMatrix: DecisionPointRow[];
   policyResearcherReport: {

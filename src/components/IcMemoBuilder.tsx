@@ -1,5 +1,5 @@
 import { withNoteReferences } from '../utils/citations';
-import { modelCouncil } from '../utils/councilResult';
+import { coherenceText, modelCouncil } from '../utils/councilResult';
 import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
@@ -212,7 +212,7 @@ export function buildSections(
       ? [
           `**${VERDICT_LABEL[sc.decisionVerdict] || sc.decisionVerdict}.** Stance: ${toDisplayCase(sc.marketTranslationLayer.regimeStance)}.`,
           inputs.deskEnginesLive
-            ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${(sc.globalCoherenceScore * 100).toFixed(0)}%. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`
+            ? `Composite risk score ${(sc.compositeRiskScore * 100).toFixed(0)} / 100; council agreement ${coherenceText(sc)}. Risk check: ${sc.marketTranslationLayer.riskGuardianCheck.approvalStatus.replace(/_/g, ' ').toLowerCase()}.`
             : `The council ran with figures missing (${inputs.missingDeskInputs.map((p) => PATH_LABEL[p] || p).join(', ')}), so its risk score is left out. Press Refresh now under Research > One country and re-run before taking this to committee.`,
         ]
       : ['No council run yet for this country. Run the council before taking this memo to committee.'];
