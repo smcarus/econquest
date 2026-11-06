@@ -310,6 +310,8 @@ Figures with no history yet are listed with the reason.
 
 **Costed options.** Under Debt sustainability, a table shows four stated options (tighten 0.5, 1 or 2 points of GDP, or loosen 1 point) against the baseline: debt five years out, the change against the baseline and the output lost, each on the low and high end of the IMF's multiplier range for the country's group. When a tightening would push debt/GDP up in the first year because output falls faster than debt, the row says so.
 
+**Global shock scenarios.** Research > History & data asks: if the Fed moves or the dollar swings, how have this country's currency and policy rate moved with it? Pick a preset (Fed +1 point, dollar +5%, both, or the reverse) or type your own moves; the implied currency and policy rate moves update as you type, with 90% bands, the size of a typical unexplained month and a warning when your shock is bigger than anything in the sample. Fitted on the last 15 years of monthly moves; co-movement, not a forecast.
+
 **Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
 its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
 and the app's output gap, outturn years only, with Newey-West errors. A positive, significant

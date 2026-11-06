@@ -28,7 +28,9 @@ import { countrySeries } from '../../utils/seriesHistory';
 import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
-import { fetchDebtSchedule } from '../feeds/rates';
+import { fetchDebtSchedule, fetchFxHistory, loadFxHistory } from '../feeds/rates';
+import { fxDailySeries } from '../../utils/fxHistory';
+import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES } from '../../utils/scenarioEngine';
 
 
 /**
@@ -221,6 +223,49 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     // A first pull can take a while: answer with what is saved and let it finish in the background.
     return saved ?? (await Promise.race([modelHistoryInFlight, new Promise<null>((r) => setTimeout(() => r(null), 20000))]));
   }
+  // Scenario engine (src/utils/scenarioEngine.ts): the country's currency and policy rate on the US
+  // policy rate and the dollar, monthly; the page applies stated shocks to the fitted coefficients.
+  app.get('/api/scenario/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [set, hist, fxFile] = await Promise.all([seriesFor(iso3), modelHistory(), quick(fetchFxHistory()).then((h) => h ?? loadFxHistory())]);
+    const eur = fxDailySeries(fxFile, 'EUR');
+    const usPts = hist?.policyMonthly?.['US']?.points || [];
+    const factors = {
+      ...(usPts.length ? { us_rate: monthlyChanges(monthEnd(usPts.map((p) => ({ date: p.period, value: p.pct }))), 'diff') } : {}),
+      ...('points' in eur ? { dollar: monthlyChanges(monthEnd(eur.points), 'log') } : {}),
+    };
+    const missingFactors = [
+      ...(usPts.length ? [] : ['US policy rate history (BIS, weekly download not done yet)']),
+      ...('points' in eur ? [] : [`euro per dollar history (${eur.reason})`]),
+    ];
+    const fx = set.series.find((x) => x.id === 'fx_per_usd');
+    const area = CBPOL_AREA[iso3];
+    const ownPolicy = area && area !== 'US' ? hist?.policyMonthly?.[area]?.points || [] : [];
+    const models = [
+      iso3 === 'USA'
+        ? { response: 'fx' as const, ok: false as const, reason: 'The US dollar is the base currency' }
+        : fx && fx.freq === 'daily'
+          ? fitScenarioModel('fx', monthlyChanges(monthEnd(fx.points), 'log'), factors)
+          : { response: 'fx' as const, ok: false as const, reason: 'No daily ECB exchange rate history for this currency' },
+      iso3 === 'USA'
+        ? { response: 'policy' as const, ok: false as const, reason: 'The US policy rate is itself a factor' }
+        : ownPolicy.length
+          ? fitScenarioModel('policy', monthlyChanges(monthEnd(ownPolicy.map((p) => ({ date: p.period, value: p.pct }))), 'diff'), factors)
+          : { response: 'policy' as const, ok: false as const, reason: area ? 'BIS policy rate history not downloaded yet' : 'Not in BIS policy rates' },
+    ];
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({
+      iso3,
+      name,
+      models,
+      presets: PRESETS,
+      factors: FACTORS,
+      responses: RESPONSES,
+      missingFactors,
+      method: SCENARIO_METHOD,
+      sources: ['ECB euro reference rates (via Frankfurter)', 'BIS central bank policy rates, monthly'],
+    });
+  });
   app.get('/api/nowcast/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const today = new Date().toISOString().slice(0, 10);

@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
 | Policy rule family | Research | Stated method, no call to test | Not applicable |
 | Costed fiscal options | Research | Stated method, no call to test | Not applicable |
+| Global shock scenarios (scenario engine) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -378,6 +379,14 @@ These show where things stand on a stated method and make no call a backtest cou
 - Debt from the identity d(t) = d(t-1)(1 + i)/(1 + n) - pb, so interest falls with debt. Reports debt at the horizon, the change against the baseline and the output lost; flags when debt rises above the baseline in year 1 (denominator effect).
 - **Limits:** No cycle or lower-bound adjustment to the multiplier, no confidence or risk-premium effects, inflation and interest as in the baseline. Composition (spending or taxes) is not modelled. Stated options on stated assumptions, not a forecast or a recommendation.
 - **Code:** `src/utils/costedOptions.ts`
+
+### Global shock scenarios (scenario engine)
+
+- **Shows in:** Research > History & data
+- One OLS per response on monthly changes over the last 15 years (at least 60 months): the currency (100 x log change of units per US dollar, ECB month-end) and the policy rate (BIS month-end, change in points), each on the US policy rate change (BIS) and the dollar (100 x log change of euros per dollar, ECB).
+- A scenario is a set of stated factor moves (presets: Fed +1 point, dollar +5%, both, the reverse; or your own). Implied move = coefficients x shock, intercept left out; 90% band from the Newey-West covariance of the coefficients. The residual standard deviation is shown as the size of a typical unexplained month.
+- **Limits:** Contemporaneous co-movement, linear in the shock: not causal, and the Fed and the dollar often move for the same reasons as the country. Shocks larger than any month in the sample are flagged as extrapolation. The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet (only five years of monthly prices saved). Currencies the ECB does not publish have no currency model.
+- **Code:** `src/utils/scenarioEngine.ts`
 
 ### Fiscal reaction (Bohn test)
 
