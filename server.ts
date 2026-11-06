@@ -74,6 +74,8 @@ import { cleanSettings, isDue, localClock, morningQuestion, nextRunText, parseMo
 import { planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
 import { pickPrevious, whatChanged } from './src/utils/whatChanged';
 import { toLive } from './src/utils/liveFigures';
+import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
+import { figureWatchFiles, readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
@@ -192,6 +194,7 @@ const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirna
 // Audit log (Menu > Audit log): append-only, hash-chained. See src/utils/auditLog.ts.
 const AUDIT_FILES = auditFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const DATA_HEALTH_FILES = dataHealthFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const FIGURE_WATCH_FILES = figureWatchFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
 // Pre-registered backtests (Menu > Models & validation). See src/utils/backtest.ts.
 const VALIDATION_FILE = validationFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const SPEC_DIR = path.join(__dirname, 'docs', 'validation', 'preregistered');
@@ -2886,6 +2889,13 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     timestamp: Date.now(),
     items,
   };
+  // Figure watch: compare each real figure with the last reading (src/utils/figureWatch.ts).
+  try {
+    const { ledger, events } = watchFigures(readLedger(FIGURE_WATCH_FILES), items.map((r) => toLive(r)));
+    saveWatch(FIGURE_WATCH_FILES, ledger, events);
+  } catch (e) {
+    console.error('[figure-watch]', e);
+  }
   return items;
 }
 
@@ -4390,6 +4400,8 @@ async function nightlyCheckTick(): Promise<void> {
   saveState(DATA_HEALTH_FILES, { lastNightlyDay: clockIn(now, NIGHTLY_CHECK_TZ).day });
   try {
     await runConnectionCheck('nightly');
+    // Rebuild the watchlist from what is saved, so the figure watch runs once a day with no page open.
+    await fetchLiveWatchlistCatalog([], true);
   } catch (e) {
     console.error('[data-check]', e);
   } finally {
@@ -5792,6 +5804,22 @@ async function startServer() {
       lastRun: last ? { at: last.checkedAt, trigger: last.trigger, label: TRIGGER_LABEL[last.trigger] || last.trigger } : null,
       nightly: { time: NIGHTLY_CHECK_TIME, timeZone: NIGHTLY_CHECK_TZ, lastDay: state.lastNightlyDay || null, lastSkipped: state.lastSkipped || null },
       file: 'data/local/data-health/source-checks.jsonl',
+    });
+  });
+  // Data health: figure alerts (went missing, older than usual, jumps, out of range, revised).
+  app.get('/api/data/health/figures', (req, res) => {
+    const iso3 = typeof req.query.iso3 === 'string' ? req.query.iso3.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) : '';
+    const kind = typeof req.query.kind === 'string' && req.query.kind in EVENT_LABEL ? (req.query.kind as FigureEventKind) : null;
+    const limit = Math.min(1000, Math.max(1, Number(req.query.limit) || 200));
+    const ledger = readLedger(FIGURE_WATCH_FILES);
+    const hits = readEvents(FIGURE_WATCH_FILES).filter((e) => (!iso3 || e.iso3 === iso3) && (!kind || e.kind === kind));
+    res.json({
+      open: openIssues(ledger).filter((o) => !iso3 || o.iso3 === iso3),
+      events: hits.slice(-limit).reverse(),
+      total: hits.length,
+      kinds: EVENT_LABEL,
+      watchedSince: Object.keys(ledger.figures).length ? ledger.updatedAt || null : null,
+      files: ['data/local/data-health/figures.json', 'data/local/data-health/figure-events.jsonl'],
     });
   });
   app.get('/api/data/connections', async (req, res) => {
