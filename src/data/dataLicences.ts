@@ -355,8 +355,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'gdelt',
-    name: 'GDELT (DOC API and raw GDELT 2.0 files)',
-    usedFor: 'Headlines and news tone; weekly event counts and news themes per country',
+    name: 'GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files)',
+    usedFor: 'Headlines and news tone; weekly event counts and news themes per country; monthly event history back to 1979',
     terms: [{ label: 'GDELT terms of use', url: 'https://www.gdeltproject.org/about.html#termsofuse' }],
     status: 'open',
     display: 'Allowed in any form, with a citation and link.',
