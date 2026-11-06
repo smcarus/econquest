@@ -20,7 +20,9 @@ import { markImfProjections, parseImfYears } from './officialHistory';
 import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
+import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
+import { forwardStep, type ForwardBody } from './forwardRecord';
+import { appendForward, loadForward } from './forwardRecordStore';
 import { writeFileAtomic } from './atomicWrite';
 
 export interface ValidationFile {
@@ -126,7 +128,7 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
   return { bis, cli, cftc, cpi };
 }
 
-export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void }): Promise<ValidationFile & { problems: string[] }> {
+export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void; forwardFile?: string }): Promise<ValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
@@ -138,11 +140,15 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
     const needGap = runnable.some((s) => (s.spec!.method === 'taylor_gap' && Number(s.spec!.params?.outputWeight) > 0) || s.spec!.method === 'rule_family');
     const gaps = needGap ? await pullOutputGaps(opts.fetcher || defaultFetcher, problems, opts.now || new Date()) : {};
     const at = (opts.now || new Date()).toISOString();
+    const forwardFile = opts.forwardFile ?? path.join(path.dirname(opts.resultFile), 'forward.jsonl');
+    const forward: ForwardBody[] = loadForward(forwardFile).lines;
+    const forwardNew: ForwardBody[] = [];
     for (const { spec, hash } of runnable) {
       const s = spec!;
       let cases: BacktestCase[] = [];
       let series: string[] = [];
       let data = '';
+      const open: OpenCall[] = [];
       if (s.method === 'cli_turn_policy') {
         if (!h.bis || !h.cli) continue;
         data = `${CLI_LABEL}; BIS central bank policy rates (monthly, from 1990)`;
@@ -154,7 +160,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (!cli?.length || !pol?.length) continue;
           seen.add(area);
           series.push(iso3);
-          cases.push(...cliTurnPolicyCases(s, iso3, cli, pol));
+          cases.push(...cliTurnPolicyCases(s, iso3, cli, pol, open));
         }
       } else if (s.method === 'cftc_crowding') {
         if (!h.cftc) continue;
@@ -163,7 +169,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           const weeks = h.cftc.get(def.code);
           if (!weeks?.length) continue;
           series.push(`${def.ccy} (${def.market})`);
-          cases.push(...cftcCrowdingCases(s, def.ccy, weeks));
+          cases.push(...cftcCrowdingCases(s, def.ccy, weeks, open));
         }
       } else if (s.method === 'taylor_gap') {
         if (!h.bis || !h.cpi) continue;
@@ -176,7 +182,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (!infl?.length || !pol?.length) continue;
           if (withGap && !gaps[iso3]?.length) continue;
           series.push(iso3);
-          cases.push(...taylorGapCases(s, iso3, infl, pol, withGap ? gaps[iso3] : undefined));
+          cases.push(...taylorGapCases(s, iso3, infl, pol, withGap ? gaps[iso3] : undefined, open));
         }
       } else if (s.method === 'rule_family') {
         if (!h.bis || !h.cpi) continue;
@@ -187,7 +193,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           const pol = area ? h.bis[area]?.points : undefined;
           if (!infl?.length || !pol?.length || !gaps[iso3]?.length) continue;
           series.push(iso3);
-          cases.push(...ruleFamilyCases(s, iso3, infl, pol, gaps[iso3]));
+          cases.push(...ruleFamilyCases(s, iso3, infl, pol, gaps[iso3], open));
         }
       } else if (s.method === 'regime_quadrant') {
         if (!h.bis || !h.cli || !h.cpi) continue;
@@ -201,7 +207,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (!cli?.length || !infl?.length || !pol?.length) continue;
           seen.add(area);
           series.push(iso3);
-          cases.push(...regimeQuadrantCases(s, iso3, cli, infl, pol));
+          cases.push(...regimeQuadrantCases(s, iso3, cli, infl, pol, open));
         }
       } else if (s.method === 'cycle_clock') {
         if (!h.bis) continue;
@@ -213,7 +219,7 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           if (!pol?.length) continue;
           seen.add(area);
           series.push(iso3);
-          cases.push(...cycleClockCases(s, iso3, pol));
+          cases.push(...cycleClockCases(s, iso3, pol, open));
         }
       } else if (s.method === 'timing_unwind') {
         if (!h.cftc) continue;
@@ -222,16 +228,25 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           const weeks = h.cftc.get(def.code);
           if (!weeks?.length) continue;
           series.push(`${def.ccy} (${def.market})`);
-          cases.push(...timingUnwindCases(s, def.ccy, weeks));
+          cases.push(...timingUnwindCases(s, def.ccy, weeks, open));
         }
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
         continue;
       }
       const result: BacktestResult = { id: s.id, specVersion: s.version, specHash: hash, ranAt: at, ...judgeWithRobustness(s, cases), span: spanOf(cases), series, data, sample: sampleCases(cases) };
+      // Rule 7: open calls of a passing test go on the forward record; recorded calls get their outcome.
+      const step = forwardStep(forward, { key: `${s.id} v${s.version}`, specHash: hash, passing: result.status === 'passed' }, cases, open, at);
+      forward.push(...step);
+      forwardNew.push(...step);
       file.versions = { ...(file.versions || {}), [`${s.id} v${s.version}`]: result };
       file.results[s.id] = result;
       opts.onResult?.(result);
+    }
+    try {
+      appendForward(forwardFile, forwardNew);
+    } catch (e: any) {
+      problems.push(`The forward record could not be saved (${e?.code || e?.message || e})`);
     }
   }
   const out: ValidationFile = { results: file.results, versions: file.versions || {}, lastRun: { at: (opts.now || new Date()).toISOString(), problems } };

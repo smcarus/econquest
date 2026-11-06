@@ -539,7 +539,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   Beside every verdict the dialog shows a **Holm-adjusted p** across all pre-registered tests on
   record (every version run of every backtest and nowcast/forecast evaluation, failed ones too) and
   the number of tests, with whether the verdict still holds at its own pass mark after the
-  correction. The recorded verdict itself is not changed. Panels that describe the past or apply a
+  correction. The recorded verdict itself is not changed. Once a backtest passes, each run also
+  keeps its **forward record** (`data/local/validation/forward.jsonl`): every new call the rule
+  makes is written down while its window is still open, before anyone knows the outcome, and scored
+  by the same rule when the window ends. The dialog shows, under Forward record, how many calls,
+  how many followed against the base rate, and the latest calls. Lines are never edited, and each
+  carries a hash over the line before it, so the dialog says if the file was changed. Panels that describe the past or apply a
   stated what-if (fiscal reaction, gross financing need, reserve adequacy, inflation after rate
   changes, costed options, global shock scenarios) carry the badge *Description, not a tested
   signal*; the policy rule family and the debt fan chart make forward claims and read *Not

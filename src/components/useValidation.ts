@@ -3,6 +3,7 @@
  * register entry's status, so every badge shows the latest. Loaded once, shared by every badge.
  */
 import { useEffect, useState } from 'react';
+import type { ForwardSummary } from '../utils/forwardRecord';
 import type { BacktestResult } from '../utils/backtest';
 import type { ValidationStatus } from '../data/modelRegister';
 import { forecastRegisterStatus, type ForecastVerdict } from '../utils/forecastRegister';
@@ -35,6 +36,9 @@ export interface ValidationReply {
   forecasts?: Record<string, ForecastVerdict>;
   /** Every forecast evaluation version run, with its p and pass mark (for the Holm correction). */
   forecastTests?: Array<{ id: string; version: number; p: number; alpha: number; status: 'passed' | 'failed' | 'too_few_cases' }>;
+  /** Rule 7: calls made after a test passed, by `${id} v${version}` (src/utils/forwardRecord.ts). */
+  forward?: Record<string, ForwardSummary>;
+  forwardCheck?: { chainOk: boolean; badLines: number; lines: number; file: string };
 }
 
 let cache: ValidationReply | null = null;
