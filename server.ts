@@ -170,7 +170,7 @@ import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSo
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
-import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, geminiClient } from './src/server/ai';
+import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, geminiClient, warmDeskModel } from './src/server/ai';
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
@@ -4347,6 +4347,18 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
 
       // Stage 1: Execute 3 Parallel Desk Synthesis Workers + 1 Web Search Grounding Worker
       const searchTiming: StepTiming = { id: 'search', label: 'Web search (Gemini)', ms: 0, outcome: 'skipped' };
+      // Load the desk model first, so its load time is its own step and not the first desk's wait.
+      const warm = await warmDeskModel(providerMode, runtimeConfig);
+      if (warm && !warm.ok) console.warn(`[AI] could not load the desk model before the desks: ${warm.error}`);
+      const warmTiming: StepTiming | null = warm
+        ? {
+            id: 'warmup',
+            label: 'Load the desk model',
+            ms: warm.ms,
+            outcome: warm.ok ? 'model' : 'no_model',
+            ...(warm.ok ? { model: warm.model, ...(warm.loadMs !== undefined ? { stats: { loadMs: warm.loadMs } } : {}) } : { reason: warm.error }),
+          }
+        : null;
       const stage1Start = Date.now();
       const [geoSettled, sovSettled, macroSettled, searchSettled] = await Promise.allSettled([
         tracked(progress, 'geo', executeResilientLlmStep<any>({
@@ -4483,6 +4495,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
         sentTogether: ['geo', 'sov', 'macro', ...(searchTiming.outcome === 'skipped' ? [] : ['search'])],
         steps: [
           { id: 'data', label: 'Country data', ms: stage0Latency, outcome: 'no_model_needed', reason: liveCount ? `${liveCount} live ${liveCount === 1 ? 'source' : 'sources'}` : 'no live source answered' },
+          ...(warmTiming ? [warmTiming] : []),
           stepTiming('geo', 'Geopolitical desk (AG-1 to AG-3)', geoResult, stage1Ms),
           stepTiming('sov', 'Sovereign credit desk (AG-4 to AG-6)', sovResult, stage1Ms),
           stepTiming('macro', 'Macro desk (AG-7 to AG-9)', macroResult, stage1Ms),

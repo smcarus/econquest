@@ -9,8 +9,11 @@ test('summary and debate steps give a local model at least two minutes', () => {
   // Quick steps keep their old limits.
   assert.equal(localStepTimeoutMs('COUNCIL_CHOOSE_AGENTS', undefined, false), 16_000);
   assert.equal(localStepTimeoutMs('STAGE_3_SUPREME_COUNCIL', undefined, true), 120_000); // a referee on a large model
-  assert.equal(localStepTimeoutMs('STAGE_1_GEO_DESK', 40, false), 40_000);
-  assert.equal(localStepTimeoutMs('STAGE_1_GEO_DESK', 2, false), 16_000);
+  // Desks and the cascade wait like the summary: a 7B model on a laptop needs more than 16 s.
+  assert.equal(localStepTimeoutMs('STAGE_1_GEO_DESK', 40, false), LONG_CHAT_STEP_MIN_MS);
+  assert.equal(localStepTimeoutMs('STAGE_1_GEO_DESK', 2, false), LONG_CHAT_STEP_MIN_MS);
+  assert.equal(localStepTimeoutMs('STAGE_2_CONTAGION_CASCADE', 300, false), 300_000);
+  assert.deepEqual(streamWaitFor('STAGE_1_MACRO_DESK', LONG_CHAT_STEP_MIN_MS), { firstTokenMs: LONG_CHAT_STEP_MIN_MS, idleMs: 60_000, totalMs: 300_000 });
 });
 
 test('each failed attempt is said in plain words', () => {
