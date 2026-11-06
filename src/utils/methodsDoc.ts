@@ -101,6 +101,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/sanctionsLists.ts',
   },
   {
+    id: 'gr_var',
+    name: 'Geopolitical risk VaR',
+    where: 'Research > History & data > Global shock scenarios',
+    method: [
+      'Stress months: the Caldara and Iacoviello Geopolitical Risk index (world; and the country index where the file has one) at or above its 90th percentile over the months that also have the currency (at least 100 overlapping months and 20 stress months).',
+      'VaR and expected shortfall: the 95th percentile of the monthly currency change against the US dollar (100 x log change of units per dollar, month-end ECB rates; positive = weaker), and the mean change at or beyond it, in stress months and in all months.',
+      'Global channels: the mean US policy rate and dollar moves of the stress months, put through the country\'s fitted scenario model (Global shock scenarios), with its 90% band from Newey-West coefficient errors.',
+    ],
+    limits: 'Past co-movement with a news-based index, not a forecast. GPR stays high for months at a time, so the stress months are fewer independent episodes than their count, and a 95% tail read from 20 to 40 months is rough. Currency only; no bond or equity prices. Built fresh, not ported from another tool.',
+    code: 'src/utils/grVar.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',
