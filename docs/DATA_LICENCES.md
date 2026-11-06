@@ -21,31 +21,31 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 
 ## Summary
 
-| Source | Status | Show to others | Commercial use | Credit |
-| --- | --- | --- | --- | --- |
-| World Bank indicators and debt statistics (IDS, QEDS) | Open with attribution | Allowed: the data may be shared with third parties under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | The World Bank: <dataset name>: <data source>, e.g. "The World Bank: World Development Indicators". |
-| World Bank Pink Sheet (commodity prices) | Terms not confirmed | Likely covered by the World Bank dataset terms (CC BY 4.0), but the Pink Sheet's own catalog entry could not be read. | Not confirmed. | The World Bank: Commodity Price Data (The Pink Sheet). |
-| IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER) | Permission needed for client or commercial use | Allowed with attribution: the IMF lets users publish and distribute its Data. | Needs permission: email copyright@imf.org. Systematic or bulk automated download also needs permission. | Source: International Monetary Fund, <database name>, <link to the dataset>. |
-| UN Comtrade | Permission needed for client or commercial use | Internal use only. Free, not-for-profit visualisation is exempt; a paid report or dashboard is exempt only below 100,000 original records. | Paid, subscription or otherwise monetised use counts as commercial; commercial APIs need a premium subscription. | Source: UN Comtrade. |
-| WITS (World Integrated Trade Solution) | Permission needed for client or commercial use | The trade shares come from UN Comtrade data, which WITS says is for internal use only. | Needs UNSD's written permission (see UN Comtrade). | Source: UN Comtrade via WITS (World Bank). |
-| BIS statistics (policy rates, real exchange rates, debt securities) | Allowed with conditions | Allowed if the BIS is cited as the source. | Allowed, provided including the statistics adds no extra charge for subscribers or users. | Source: BIS (Bank for International Settlements), <dataset>, e.g. "Source: BIS central bank policy rates". |
-| ECB euro reference rates (through Frankfurter) | Open with attribution | Allowed, free of charge, if the source is quoted and the statistics are not modified. | Allowed ("irrespective of any subsequent commercial or non-commercial use"). | Source: ECB statistics (via Frankfurter). Volatility and year-to-date moves are the app's own calculations from them. |
-| ExchangeRate-API open access (open.er-api.com) | Permission needed for client or commercial use | Not allowed to redistribute; rates may be used for your own end purposes with a credit link on the page. | Allowed for your own currency conversion, not in a product that passes rates on to others. | Rates By Exchange Rate API (linked to https://www.exchangerate-api.com) on every page that uses the rates. |
-| New York Fed markets data | Allowed with conditions | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
-| FRED (St. Louis Fed): 10Y government yields from the OECD | Permission needed for client or commercial use | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
-| OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
-| Eurostat HICP | Open with attribution | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU members only). | Source: Eurostat (prc_hicp_minr). |
-| CFTC Commitments of Traders | Open with attribution | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
-| US Treasury TIC (major foreign holders) | Terms not confirmed | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
-| US EIA open data | Open with attribution | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
-| GDELT (DOC API and raw GDELT 2.0 files) | Open with attribution | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
-| Polymarket | Permission needed for client or commercial use | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
-| Kalshi | Permission needed for client or commercial use | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
-| Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads | Terms not confirmed | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
-| Banco Central do Brasil (SGS 13522, IPCA 12 months) | Terms not confirmed | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
-| Brazil Treasury (Tesouro Direto price history) | Open with attribution | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
-| Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
-| Your own paid data (CDS file, LSEG account) | Terms not confirmed | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
+| Source | Status | Free non-commercial sharing | Show to others | Commercial use | Credit |
+| --- | --- | --- | --- | --- | --- |
+| World Bank indicators and debt statistics (IDS, QEDS) | Open with attribution | Free sharing allowed | Allowed: the data may be shared with third parties under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | The World Bank: <dataset name>: <data source>, e.g. "The World Bank: World Development Indicators". |
+| World Bank Pink Sheet (commodity prices) | Terms not confirmed | Sharing unclear | Likely covered by the World Bank dataset terms (CC BY 4.0), but the Pink Sheet's own catalog entry could not be read. | Not confirmed. | The World Bank: Commodity Price Data (The Pink Sheet). |
+| IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER) | Permission needed for client or commercial use | Free sharing allowed | Allowed with attribution: the IMF lets users publish and distribute its Data. | Needs permission: email copyright@imf.org. Systematic or bulk automated download also needs permission. | Source: International Monetary Fund, <database name>, <link to the dataset>. |
+| UN Comtrade | Permission needed for client or commercial use | Free sharing allowed | Internal use only. Free, not-for-profit visualisation is exempt; a paid report or dashboard is exempt only below 100,000 original records. | Paid, subscription or otherwise monetised use counts as commercial; commercial APIs need a premium subscription. | Source: UN Comtrade. |
+| WITS (World Integrated Trade Solution) | Permission needed for client or commercial use | Do not pass on | The trade shares come from UN Comtrade data, which WITS says is for internal use only. | Needs UNSD's written permission (see UN Comtrade). | Source: UN Comtrade via WITS (World Bank). |
+| BIS statistics (policy rates, real exchange rates, debt securities) | Allowed with conditions | Free sharing allowed | Allowed if the BIS is cited as the source. | Allowed, provided including the statistics adds no extra charge for subscribers or users. | Source: BIS (Bank for International Settlements), <dataset>, e.g. "Source: BIS central bank policy rates". |
+| ECB euro reference rates (through Frankfurter) | Open with attribution | Free sharing allowed | Allowed, free of charge, if the source is quoted and the statistics are not modified. | Allowed ("irrespective of any subsequent commercial or non-commercial use"). | Source: ECB statistics (via Frankfurter). Volatility and year-to-date moves are the app's own calculations from them. |
+| ExchangeRate-API open access (open.er-api.com) | Permission needed for client or commercial use | Do not pass on | Not allowed to redistribute; rates may be used for your own end purposes with a credit link on the page. | Allowed for your own currency conversion, not in a product that passes rates on to others. | Rates By Exchange Rate API (linked to https://www.exchangerate-api.com) on every page that uses the rates. |
+| New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
+| FRED (St. Louis Fed): 10Y government yields from the OECD | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
+| OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
+| Eurostat HICP | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU members only). | Source: Eurostat (prc_hicp_minr). |
+| CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
+| US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
+| US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
+| GDELT (DOC API and raw GDELT 2.0 files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
+| Polymarket | Permission needed for client or commercial use | Sharing unclear | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
+| Kalshi | Permission needed for client or commercial use | Do not pass on | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
+| Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads | Terms not confirmed | Sharing unclear | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
+| Banco Central do Brasil (SGS 13522, IPCA 12 months) | Terms not confirmed | Sharing unclear | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
+| Brazil Treasury (Tesouro Direto price history) | Open with attribution | Free sharing allowed | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
+| Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | Free sharing allowed | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
+| Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
 
 ## Sources
 
@@ -53,6 +53,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 
 - **Used for:** Reserves, current account, external debt, political stability, trade shares; external debt falling due
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets) (checked 2026-11-06)
 - **Show to others:** Allowed: the data may be shared with third parties under CC BY 4.0.
 - **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
@@ -71,6 +72,7 @@ From the terms:
 
 - **Used for:** Monthly commodity prices: oil, gas, metals, farm goods
 - **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Catalog licence not read.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets); [Data Catalog](https://datacatalog.worldbank.org) (checked 2026-11-06)
 - **Show to others:** Likely covered by the World Bank dataset terms (CC BY 4.0), but the Pink Sheet's own catalog entry could not be read.
 - **Commercial use:** Not confirmed.
@@ -81,6 +83,7 @@ From the terms:
 
 - **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution; only commercial reuse needs permission.
 - **Terms read:** [Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-06)
 - **Show to others:** Allowed with attribution: the IMF lets users publish and distribute its Data.
 - **Commercial use:** Needs permission: email copyright@imf.org. Systematic or bulk automated download also needs permission.
@@ -101,6 +104,7 @@ From the terms:
 
 - **Used for:** Goods trade by partner and export mix by HS chapter
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Free sharing allowed. The FAQ exempts free, not-for-profit visualisation and analytics applications.
 - **Terms read:** [Policy on Comtrade data use](https://uncomtrade.org/docs/policy-on-comtrade-data-use/); [Re-dissemination of data (FAQ)](https://uncomtrade.org/docs/re-dissemination-of-data/) (checked 2026-11-06)
 - **Show to others:** Internal use only. Free, not-for-profit visualisation is exempt; a paid report or dashboard is exempt only below 100,000 original records.
 - **Commercial use:** Paid, subscription or otherwise monetised use counts as commercial; commercial APIs need a premium subscription.
@@ -123,6 +127,7 @@ From the terms:
 
 - **Used for:** Export and import shares with China and Russia
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Do not pass on. WITS states its Comtrade-derived data is for internal use only.
 - **Terms read:** [WITS FAQ, Databases (usage conditions)](https://wits.worldbank.org/faqs.html) (checked 2026-11-06)
 - **Show to others:** The trade shares come from UN Comtrade data, which WITS says is for internal use only.
 - **Commercial use:** Needs UNSD's written permission (see UN Comtrade).
@@ -137,6 +142,7 @@ From the terms:
 
 - **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities
 - **Status:** Allowed with conditions
+- **Free non-commercial sharing:** Free sharing allowed. Use is unrestricted with the BIS cited.
 - **Terms read:** [Terms of permitted use of BIS statistics](https://data.bis.org/help/legal); [BIS terms and conditions](https://www.bis.org/terms_conditions.htm) (checked 2026-11-06)
 - **Show to others:** Allowed if the BIS is cited as the source.
 - **Commercial use:** Allowed, provided including the statistics adds no extra charge for subscribers or users.
@@ -155,6 +161,7 @@ From the terms:
 
 - **Used for:** FX volatility; last year's closing rate for the year-to-date move
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Free reuse with the source quoted and the figures unmodified.
 - **Terms read:** [ECB statistics reuse policy](https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html); [Frankfurter licence](https://frankfurter.dev/license/) (checked 2026-11-06)
 - **Show to others:** Allowed, free of charge, if the source is quoted and the statistics are not modified.
 - **Commercial use:** Allowed ("irrespective of any subsequent commercial or non-commercial use").
@@ -171,6 +178,7 @@ From the terms:
 
 - **Used for:** Spot exchange rates against the dollar
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Do not pass on. The terms forbid redistributing the rates.
 - **Terms read:** [Free / open access docs](https://www.exchangerate-api.com/docs/free); [Terms of use](https://www.exchangerate-api.com/terms) (checked 2026-11-06)
 - **Show to others:** Not allowed to redistribute; rates may be used for your own end purposes with a credit link on the page.
 - **Commercial use:** Allowed for your own currency conversion, not in a product that passes rates on to others.
@@ -189,6 +197,7 @@ From the terms:
 
 - **Used for:** Fed funds, SOFR, reverse repo
 - **Status:** Allowed with conditions
+- **Free non-commercial sharing:** Free sharing allowed. The licence covers use, copying and distribution, with the notice for reference rates.
 - **Terms read:** [Terms of Use](https://www.newyorkfed.org/privacy/termsofuse) (checked 2026-11-06)
 - **Show to others:** Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice.
 - **Commercial use:** Allowed for business purposes; no general ban on data.
@@ -205,6 +214,7 @@ From the terms:
 
 - **Used for:** 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, Germany, India (all OECD series on FRED)
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Sharing unclear. The OECD owns the series; FRED says to ask the owner before any use beyond personal use.
 - **Terms read:** [FRED legal](https://fred.stlouisfed.org/legal/); [FRED API terms](https://fred.stlouisfed.org/docs/api/terms_of_use.html); [Example series: Mexico 10Y](https://fred.stlouisfed.org/series/IRLTLT01MXM156N) (checked 2026-11-06)
 - **Show to others:** The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission.
 - **Commercial use:** Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission).
@@ -223,6 +233,7 @@ From the terms:
 
 - **Used for:** Composite leading indicator; headline CPI inflation
 - **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. The OECD data licence was not confirmed.
 - **Terms read:** [OECD terms and conditions](https://www.oecd.org/en/about/terms-conditions.html); [DBnomics legal terms](https://docs.db.nomics.world/legal-terms/) (checked 2026-11-06)
 - **Show to others:** DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here.
 - **Commercial use:** Not confirmed.
@@ -239,6 +250,7 @@ From the terms:
 
 - **Used for:** Monthly inflation for EU members (Poland on the defaults)
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Free reuse with Eurostat named.
 - **Terms read:** [Eurostat copyright and reuse](https://ec.europa.eu/eurostat/about-us/policies/copyright) (checked 2026-11-06)
 - **Show to others:** Allowed without a licence if Eurostat is named and any change to the data is stated.
 - **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU members only).
@@ -254,6 +266,7 @@ From the terms:
 
 - **Used for:** Weekly currency futures positioning
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Public domain.
 - **Terms read:** [CFTC web policy](https://www.cftc.gov/webpolicy/index.htm) (checked 2026-11-06)
 - **Show to others:** Public domain.
 - **Commercial use:** Allowed.
@@ -267,6 +280,7 @@ From the terms:
 
 - **Used for:** Holdings of US Treasuries by country
 - **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms found.
 - **Terms read:** [TIC system page](https://home.treasury.gov/data/treasury-international-capital-tic-system); [Treasury site policies](https://home.treasury.gov/subfooter/site-policies-and-notices) (checked 2026-11-06)
 - **Show to others:** No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages.
 - **Commercial use:** Not stated.
@@ -277,6 +291,7 @@ From the terms:
 
 - **Used for:** Daily Brent and WTI spot prices (with your free key)
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Public domain.
 - **Terms read:** [EIA copyrights and reuse](https://www.eia.gov/about/copyrights_reuse.php) (checked 2026-11-06)
 - **Show to others:** Public domain.
 - **Commercial use:** No restriction stated.
@@ -290,6 +305,7 @@ From the terms:
 
 - **Used for:** Headlines and news tone; weekly event counts and news themes per country
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Any redistribution allowed with a citation and link.
 - **Terms read:** [GDELT terms of use](https://www.gdeltproject.org/about.html#termsofuse) (checked 2026-11-06)
 - **Show to others:** Allowed in any form, with a citation and link.
 - **Commercial use:** Allowed, without fee.
@@ -306,6 +322,7 @@ From the terms:
 
 - **Used for:** Prediction-market odds
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Sharing unclear. A personal licence; redistribution is barred only to capital-markets firms and data distributors, and sharing with others is not addressed.
 - **Terms read:** [Terms of Use (effective 11 Aug 2026)](https://polymarket.com/tos) (checked 2026-11-06)
 - **Show to others:** Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement.
 - **Commercial use:** Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement.
@@ -322,6 +339,7 @@ From the terms:
 
 - **Used for:** Prediction-market odds
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Do not pass on. Sharing with third parties needs Kalshi's written authorization.
 - **Terms read:** [Developer Agreement v1.1](https://assets.kalshi.com/Kalshi-Developer-Agreement.pdf); [Data Terms of Use](https://kalshi-public-docs.s3.amazonaws.com/kalshi-data-terms-of-service.pdf) (checked 2026-11-06)
 - **Show to others:** Not allowed without Kalshi's written authorization.
 - **Commercial use:** Not allowed: personal, non-commercial use only; API use is limited to a member's own trading.
@@ -340,6 +358,7 @@ From the terms:
 
 - **Used for:** USD bond spread over Treasuries for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru, Venezuela (the free stand-in for CDS)
 - **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. The BCRP allows reproduction with citation, but J.P. Morgan's terms for the EMBI levels were not read.
 - **Terms read:** [BCRPData Condiciones de Uso](https://estadisticas.bcrp.gob.pe/estadisticas/series/ayuda/condiciones-de-uso); [Example series: EMBIG Peru](https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias/resultados/PD04709XD/html) (checked 2026-11-06)
 - **Show to others:** The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read.
 - **Commercial use:** Not stated by the BCRP; J.P. Morgan index terms not confirmed.
@@ -356,6 +375,7 @@ From the terms:
 
 - **Used for:** Brazil's IPCA inflation over 12 months
 - **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No licence stated; the footer reads all rights reserved.
 - **Terms read:** [Open data portal: about](https://dadosabertos.bcb.gov.br/pages/sobre-o-portal) (checked 2026-11-06)
 - **Show to others:** The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read.
 - **Commercial use:** Not stated.
@@ -370,6 +390,7 @@ From the terms:
 
 - **Used for:** Brazil 10Y yield (NTN-F)
 - **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Open Database License (ODbL), with credit.
 - **Terms read:** [Dataset page (licence)](https://www.tesourotransparente.gov.br/ckan/dataset/taxas-dos-titulos-ofertados-pelo-tesouro-direto) (checked 2026-11-06)
 - **Show to others:** Allowed under the Open Database License (ODbL).
 - **Commercial use:** Allowed under ODbL (attribution; a shared derived database stays under ODbL).
@@ -383,6 +404,7 @@ From the terms:
 
 - **Used for:** Turkey 10Y yield
 - **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Free sharing allowed. May be published with the source cited; only commercial use needs permission.
 - **Terms read:** [TCMB terms of use (Kullanım Şartları)](https://www.tcmb.gov.tr/wps/wcm/connect/TR/TCMB+TR/Bottom+Menu/Diger/Kullanim+Sartlari) (checked 2026-11-06)
 - **Show to others:** May be published with the source cited.
 - **Commercial use:** Needs the TCMB's written permission.
@@ -397,6 +419,7 @@ From the terms:
 
 - **Used for:** 5Y sovereign CDS (hidden for now)
 - **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Do not pass on. Set by your vendor contract; treated as restricted unless it says otherwise.
 - **Terms read:** [Your own contract with the vendor](https://developers.lseg.com) (checked 2026-11-06)
 - **Show to others:** Set by your own licence with the vendor. Market data licences usually limit display to licensed users.
 - **Commercial use:** Set by your own licence.

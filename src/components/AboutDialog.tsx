@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Info, X } from 'lucide-react';
-import { DATA_LICENCES, LICENCE_STATUS_HELP, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
+import { DATA_LICENCES, LICENCE_SHARE_LABEL, LICENCE_STATUS_HELP, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
  * Menu > About & data licences: what the app is, the standing research notice, and the licence
@@ -84,6 +84,10 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
                 </button>
                 {open === r.id && (
                   <dl className="mt-2 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
+                    <dt className="text-slate-500 dark:text-slate-400">Free sharing</dt>
+                    <dd data-licence-share={r.share}>
+                      {LICENCE_SHARE_LABEL[r.share]}. {r.shareNote}
+                    </dd>
                     <dt className="text-slate-500 dark:text-slate-400">Show to others</dt>
                     <dd>{r.display}</dd>
                     <dt className="text-slate-500 dark:text-slate-400">Commercial use</dt>
