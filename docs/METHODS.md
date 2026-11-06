@@ -35,6 +35,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Description, not a tested signal | None |
 | Sanctions lists | Research | Description, not a tested signal | None |
+| Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Not validated | None |
@@ -53,6 +54,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
 | Country risk scorecard | Research | Stated method, no call to test | Not applicable |
 | Sanctions lists | Research | Stated method, no call to test | Not applicable |
+| Geopolitical risk VaR | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -377,6 +379,18 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Limits:** Not a compliance screen: no aliases, fuzzy matching or 50% ownership rule. Entries without an address in a country do not count for it. EU and UK lists not read yet.
 - **Code:** `src/utils/sanctionsLists.ts`
 
+### Geopolitical risk VaR
+
+- **Says:** How far the currency has fallen in its worst months when geopolitical risk was high, against all months, and how much of that the US rate and dollar moves explain.
+- **Rule:** 95% VaR and expected shortfall of monthly currency changes in months with the Caldara-Iacoviello GPR index (world, and country where covered) at or above its 90th percentile, against all months; mean factor moves of those months put through the scenario model.
+- **Reads:** Caldara-Iacoviello GPR file, ECB exchange rates, BIS policy rates
+- **Shows in:** Country Research > History & data (Global shock scenarios > Geopolitical risk VaR)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: past co-movement with a news index, no forward call.
+- **Limits:** Stress months cluster, so independent episodes are fewer than months; a 95% tail from 20-40 months is rough; currency only; GPR counts newspaper articles.
+- **Code:** `src/utils/grVar.ts`
+
 ### Reserve adequacy (IMF ARA, partial)
 
 - **Says:** Reserves against the IMF adequacy metric, with the usual months-of-imports and short-term debt cover.
@@ -617,6 +631,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Name search: every word of the query (case and accents ignored) must appear in the listed name.
 - **Limits:** Not a compliance screen: the lists' aliases (OFAC ALT.CSV, UN aliases) are not searched, there is no fuzzy matching, and the OFAC 50% rule (firms owned by listed persons) is not applied. Entries with no address or nationality in the country do not count for it. EU and UK lists are not read yet.
 - **Code:** `src/utils/sanctionsLists.ts`
+
+### Geopolitical risk VaR
+
+- **Shows in:** Research > History & data > Global shock scenarios
+- Stress months: the Caldara and Iacoviello Geopolitical Risk index (world; and the country index where the file has one) at or above its 90th percentile over the months that also have the currency (at least 100 overlapping months and 20 stress months).
+- VaR and expected shortfall: the 95th percentile of the monthly currency change against the US dollar (100 x log change of units per dollar, month-end ECB rates; positive = weaker), and the mean change at or beyond it, in stress months and in all months.
+- Global channels: the mean US policy rate and dollar moves of the stress months, put through the country's fitted scenario model (Global shock scenarios), with its 90% band from Newey-West coefficient errors.
+- **Limits:** Past co-movement with a news-based index, not a forecast. GPR stays high for months at a time, so the stress months are fewer independent episodes than their count, and a 95% tail read from 20 to 40 months is rough. Currency only; no bond or equity prices. Built fresh, not ported from another tool.
+- **Code:** `src/utils/grVar.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

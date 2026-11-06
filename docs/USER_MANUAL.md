@@ -364,6 +364,14 @@ any weighting of them would be a guess. A figure that is not on file is listed a
 the reason. The six governance indicators download with the rest of the country's official history,
 so a history saved before this version downloads once more the next time the page is opened online.
 
+**Geopolitical risk VaR.** Under Global shock scenarios, once the Caldara-Iacoviello file is saved
+in `data/local/gpr/` (see the scorecard above), the panel shows how far the currency fell in its
+worst months (95% VaR and expected shortfall) when geopolitical risk was in its top tenth, against
+all months, using the world index and the country index where there is one. Beside it is the move
+the US rate and dollar shifts of those months alone imply, from the scenario model. It is a record of
+the past, not a forecast, and high-risk months come in runs, so there are fewer separate episodes than
+months.
+
 **Sanctions lists.** Research > History & data counts the people, firms, vessels and aircraft on
 the OFAC and UN sanctions lists with an address or nationality in the country, by programme, and
 has a name search across the lists. Run `npm run sanctions:pull` to save the lists in

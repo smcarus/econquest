@@ -32,7 +32,9 @@ import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, loa
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
-import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES } from '../../utils/scenarioEngine';
+import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type ScenarioModel } from '../../utils/scenarioEngine';
+import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../utils/grVar';
+import { gprData } from '../../utils/gprStore';
 
 
 /**
@@ -288,9 +290,21 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
           : { response: 'policy' as const, ok: false as const, reason: area ? 'BIS policy rate history not downloaded yet' : 'Not in BIS policy rates' },
     ];
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    // Geopolitical risk VaR (src/utils/grVar.ts): currency moves in high-GPR months, and the fx model's implied move.
+    const gpr = gprData(DATA_DIR);
+    const fxModel = models[0].ok ? (models[0] as ScenarioModel) : null;
+    const gr: GrVarOutcome =
+      iso3 === 'USA'
+        ? { ok: false, reason: 'The US dollar is the base currency' }
+        : !(fx && fx.freq === 'daily')
+          ? { ok: false, reason: 'No daily ECB exchange rate history for this currency' }
+          : !gpr.ok
+            ? { ok: false, reason: gpr.reason }
+            : grVar(iso3, monthlyChanges(monthEnd(fx.points), 'log'), gpr.table, factors, fxModel);
     res.json({
       iso3,
       name,
+      grVar: gr.ok ? { ...gr, sentence: grVarSentence(name, gr), method: GRVAR_METHOD, file: gpr.ok ? gpr.file : undefined } : { ...gr, method: GRVAR_METHOD },
       models,
       presets: PRESETS,
       factors: FACTORS,

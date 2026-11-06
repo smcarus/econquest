@@ -3,6 +3,7 @@ import { ValidationBadge } from './ValidationBadge';
 import { Globe2 } from 'lucide-react';
 import { applyScenario, scenarioSentence, type FactorId, type ResponseId, type ScenarioModelOutcome } from '../utils/scenarioEngine';
 import { explainInChat } from '../utils/explainHandoff';
+import type { GrVarOutcome } from '../utils/grVar';
 
 /**
  * Country Research > History & data > Global shock scenarios (src/utils/scenarioEngine.ts): the
@@ -20,6 +21,7 @@ interface Reply {
   missingFactors: string[];
   method: string;
   sources: string[];
+  grVar?: (Extract<GrVarOutcome, { ok: true }> & { sentence: string; method: string; file?: string }) | { ok: false; reason: string; method: string };
 }
 
 const f = (v: number, d: number) => (Number.isFinite(v) ? v.toFixed(d) : '—');
@@ -164,6 +166,46 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Method: {reply.method} The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet: only five years of monthly prices are saved. Sources: {reply.sources.join('; ')}.
             </p>
+            {reply.grVar && (
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2" data-gr-var="true">
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                  Geopolitical risk VaR
+                  <ValidationBadge id="gr_var" />
+                </h3>
+                {!reply.grVar.ok ? (
+                  <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">Missing: {reply.grVar.reason}.</p>
+                ) : (
+                  <>
+                    <p className="text-sm text-slate-900 dark:text-white" data-gr-var-sentence="true">{reply.grVar.sentence}</p>
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-slate-500 dark:text-slate-400">
+                          <th className="py-1 pr-3 font-medium">Stress months by</th>
+                          <th className="py-1 pr-3 font-medium text-right">Months</th>
+                          <th className="py-1 pr-3 font-medium text-right">95% VaR, stress / all</th>
+                          <th className="py-1 pr-3 font-medium text-right">Expected shortfall, stress / all</th>
+                          <th className="py-1 font-medium text-right">Global channels imply</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {reply.grVar.blocks.map((b) => (
+                          <tr key={b.basis} className="border-t border-slate-100 dark:border-slate-800 tabular-nums">
+                            <td className="py-0.5 pr-3">{b.basis === 'world' ? 'World GPR' : 'Country GPR'} ≥ {f(b.threshold, 1)}</td>
+                            <td className="py-0.5 pr-3 text-right">{b.stress.months} of {b.all.months}</td>
+                            <td className="py-0.5 pr-3 text-right">{sg(b.stress.var95, 1)}% / {sg(b.all.var95, 1)}%</td>
+                            <td className="py-0.5 pr-3 text-right">{sg(b.stress.es95, 1)}% / {sg(b.all.es95, 1)}%</td>
+                            <td className="py-0.5 text-right">{b.scenario ? `${sg(b.scenario.value, 1)}% (${f(b.scenario.lo, 1)} to ${f(b.scenario.hi, 1)})` : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Positive = weaker currency against the US dollar, monthly. Latest stress months: {reply.grVar.blocks[0].recentStress.join(', ')}.{reply.grVar.notes.length ? ` Not shown: ${reply.grVar.notes.join('; ')}.` : ''} Method: {reply.grVar.method} GPR file: {reply.grVar.file || '—'}. Description, not a tested signal.
+                    </p>
+                  </>
+                )}
+              </div>
+            )}
           </>
         )}
       </div>
