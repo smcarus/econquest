@@ -57,6 +57,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Historical context line | Research | Stated method, no call to test | Not applicable |
 | Claim check | Research | Stated method, no call to test | Not applicable |
 | Story leads | Research | Stated method, no call to test | Not applicable |
+| Publication export | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -657,6 +658,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Moved: what moved since your last visit, by the rules of Since your last visit (read only; opening Compare does not reset it). Ordered records on record first, then by how far back and how large.
 - **Limits:** Only countries with saved yearly history, and only official yearly figures for records; a record in a short series means little, and the figure may be revised again. Gaps between data and market prices are in Where data and price disagree on the same page.
 - **Code:** `src/utils/storyLeads.ts`
+
+### Publication export
+
+- **Shows in:** Research > One country > History & data > History (Publish chart, under the chart)
+- The chart is redrawn on white as SVG, or PNG at twice screen size, with its title, unit and frequency, the figure's source, the period shown, the export date and a credit line.
+- The credit line is the attribution each source asks for in the licence register (src/data/dataLicences.ts), with its placeholder filled from the figure's source text; it can be edited before export.
+- A source whose terms restrict free sharing, or need permission where free sharing is not settled, blocks the export until you tick that you hold permission. Sources with unclear terms, or not named in the register, are listed.
+- **Limits:** The register reflects terms as read on its check date and is not legal advice; you are responsible for what you publish. Only the History chart has the button so far.
+- **Code:** `src/utils/publicationExport.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

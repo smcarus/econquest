@@ -355,6 +355,11 @@ official yearly figures at a record or their highest or lowest in ten years or m
 or World Bank revised by a lot in the last 30 days, and what moved since your last visit. Countries
 with no saved yearly history are named; open their History once to download it.
 
+**Publish a chart.** Under each History chart, Publish chart downloads it as PNG or SVG with
+the title, source, period, the date and a credit line taken from the licence register (you can edit
+it). Sources whose terms restrict free sharing, such as Kalshi or OECD yields served through FRED,
+block the download until you tick that you hold permission.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

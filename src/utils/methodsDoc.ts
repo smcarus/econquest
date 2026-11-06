@@ -149,6 +149,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/storyLeads.ts',
   },
   {
+    id: 'publication_export',
+    name: 'Publication export',
+    where: 'Research > One country > History & data > History (Publish chart, under the chart)',
+    method: [
+      'The chart is redrawn on white as SVG, or PNG at twice screen size, with its title, unit and frequency, the figure\'s source, the period shown, the export date and a credit line.',
+      'The credit line is the attribution each source asks for in the licence register (src/data/dataLicences.ts), with its placeholder filled from the figure\'s source text; it can be edited before export.',
+      'A source whose terms restrict free sharing, or need permission where free sharing is not settled, blocks the export until you tick that you hold permission. Sources with unclear terms, or not named in the register, are listed.',
+    ],
+    limits: 'The register reflects terms as read on its check date and is not legal advice; you are responsible for what you publish. Only the History chart has the button so far.',
+    code: 'src/utils/publicationExport.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',
