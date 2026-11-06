@@ -49,8 +49,15 @@ export function describeAttempt(a: ModelAttempt): string {
   if (code === 'ECONNREFUSED' || /ECONNREFUSED/.test(msg)) return `${a.where} is not running`;
   if (code === 'ENOTFOUND' || code === 'EAI_AGAIN' || /ENOTFOUND|EAI_AGAIN/.test(msg)) return `${a.where} could not be found`;
   if (/HTTP 404/.test(msg)) return `${a.where} answered HTTP 404 (is that model pulled? run "ollama pull" for it)`;
-  const http = msg.match(/HTTP (\d{3})/);
-  if (http) return `${a.where} answered HTTP ${http[1]}`;
+  const http = msg.match(/HTTP (\d{3})(?::\s*(.+))?/);
+  if (http) {
+    const said = http[2]?.trim();
+    if (!said) return `${a.where} answered HTTP ${http[1]}`;
+    const memory = /memory|out of memory|oom|insufficient|resource/i.test(said)
+      ? ' (the computer is short of memory for this model: close other apps or check "ollama ps")'
+      : '';
+    return `${a.where} answered HTTP ${http[1]}: "${said}"${memory}`;
+  }
   if (/fetch failed/i.test(msg)) return `${a.where} could not be reached`;
   return `${a.where} failed (${msg.slice(0, 160) || 'unknown error'})`;
 }

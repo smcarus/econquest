@@ -82,6 +82,24 @@ function resolveStepModelFromGuiConfig(
   return quickDefault;
 }
 
+/** The reason a model endpoint gives with an error status (Ollama sends {"error": "..."}), as ": reason", or "". */
+async function endpointSays(res: Response): Promise<string> {
+  try {
+    const text = (await res.text()).trim();
+    if (!text) return '';
+    let said = text;
+    try {
+      const j = JSON.parse(text);
+      said = typeof j?.error === 'string' ? j.error : typeof j?.error?.message === 'string' ? j.error.message : text;
+    } catch {
+      /* plain text */
+    }
+    return `: ${said.replace(/\s+/g, ' ').slice(0, 300)}`;
+  } catch {
+    return '';
+  }
+}
+
 export async function callOllamaOrOpenAICompatible(
   baseUrl: string,
   model: string,
@@ -157,9 +175,7 @@ export async function callOllamaOrOpenAICompatible(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!postRes.ok) {
-      throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
-    }
+    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}${await endpointSays(postRes)}`);
     const json: any = await postRes.json();
     if (isOllama && inferenceOptions?.statsOut) inferenceOptions.statsOut.value = ollamaStats(json);
     return isOllama ? json?.message?.content || '{}' : json?.choices?.[0]?.message?.content || '{}';
@@ -195,7 +211,7 @@ async function streamOllamaChat(endpoint: string, body: Record<string, unknown>,
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
+    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}${await endpointSays(postRes)}`);
     if (!postRes.body) throw new Error(`Model endpoint ${endpoint} sent no body`);
     const decoder = new TextDecoder();
     let buf = '';
