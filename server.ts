@@ -168,7 +168,7 @@ import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { oecdFetch, fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
-import { officialYieldCache, fetchOfficial10YYield, fetchDebtSchedule, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
+import { officialYieldCache, fetchOfficial10YYield, fetchDebtSchedule, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
@@ -1090,6 +1090,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       forgetHcSpread();
       const n = Object.keys(got.countries).length;
       return { outcome: 'done', note: `${n} countries saved` };
+    }
+    case 'world:fx_history': {
+      const r = await pullFxHistory();
+      const total = Object.keys(r.file.chunks).length;
+      if (!r.read && !total) return { outcome: 'failed', note: 'Frankfurter (ECB reference rates) did not answer' };
+      const note = `${total} quarters saved${r.read ? `, ${r.read} read now` : ''}${r.failed ? `; ${r.failed} not read, next time` : ''}`;
+      return { outcome: r.failed ? 'failed' : 'done', note };
     }
     case 'world:market_extras': {
       const fredIds = [...new Set([US_10Y_SERIES, ...MARKET_EDGE_ANCHORS.map((d) => d.fredSeries).filter((x): x is string => !!x)])];
@@ -4521,13 +4528,15 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
       quick(fetchQnaPull()),
       quick(fetchMonthlyActivity()),
+      // Saved quarters answer at once; a first download finishes in the background.
+      quick(fetchFxHistory()).then((h) => h ?? loadFxHistory()),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -4546,6 +4555,8 @@ async function startServer() {
       archive,
       official,
       hcSpread: hcSpreadPull,
+      fxHistory,
+      currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
   }
   async function worldSeries(): Promise<Series[]> {
