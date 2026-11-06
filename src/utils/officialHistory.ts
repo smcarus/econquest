@@ -57,6 +57,8 @@ export const OFFICIAL_FIGURES: OfficialFigure[] = [
   { id: 'short_term_debt_reserves', source: 'wb', code: 'DT.DOD.DSTC.IR.ZS', label: 'Short-term external debt', unit: '% of reserves' },
   { id: 'short_term_debt_usd', source: 'wb', code: 'DT.DOD.DSTC.CD', label: 'Short-term external debt, US dollars', unit: 'USD bn', transform: (v) => Number((v / 1e9).toFixed(2)), about: 'World Bank IDS: external debt with original maturity of one year or less, all sectors.' },
   { id: 'broad_money_gdp', source: 'wb', code: 'FM.LBL.BMNY.GD.ZS', label: 'Broad money', unit: '% of GDP' },
+  { id: 'terms_of_trade', source: 'wb', code: 'TT.PRI.MRCH.XD.WD', label: 'Terms of trade', unit: 'index (2015 = 100)', about: 'World Bank: net barter terms of trade, export unit values over import unit values. Used in the BEER fair value.' },
+  { id: 'gdp_pc_ppp', source: 'wb', code: 'NY.GDP.PCAP.PP.KD', label: 'GDP per head, PPP', unit: 'constant 2021 international $', about: 'World Bank: GDP per head at purchasing power parity, constant prices. Used against the US as a productivity stand-in in the BEER fair value.' },
   { id: 'exports_usd', source: 'wb', code: 'NE.EXP.GNFS.CD', label: 'Exports of goods and services', unit: 'USD bn', transform: (v) => Number((v / 1e9).toFixed(2)) },
 ];
 

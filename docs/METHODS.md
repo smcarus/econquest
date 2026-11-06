@@ -42,6 +42,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Currency carry | Research | Not validated | None |
 | Currency value (five-year real depreciation) | Research | Not validated | None |
 | Currency momentum (12-1) | Research | Not validated | None |
+| Currency around rate decisions (event study) | Research | Description, not a tested signal | None |
+| BEER fair value of the real exchange rate | Research | Not validated | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
@@ -50,6 +52,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
 | Policy rule family | Research | Stated method, no call to test | Not applicable |
 | Costed fiscal options | Research | Stated method, no call to test | Not applicable |
+| BEER fair value (behavioural equilibrium exchange rate) | Research | Stated method, no call to test | Not applicable |
+| Currency around rate decisions (event study) | Research | Stated method, no call to test | Not applicable |
 | Global shock scenarios (scenario engine) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
@@ -466,6 +470,30 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Limits:** Highest turnover of the three, so the flat cost weighs most; prone to sharp reversals.
 - **Code:** `src/utils/fxFactors.ts`
 
+### Currency around rate decisions (event study)
+
+- **Says:** How the currency has moved against the dollar in the days around its central bank's and the Fed's rate changes.
+- **Rule:** Events = days the BIS daily policy rate changed; average cumulative log change of units per USD from the day before, 10 days before to 20 after, hikes and cuts apart; 90% band from resampling events.
+- **Reads:** BIS daily policy rates, ECB reference rates
+- **Shows in:** Country Research > History & data (Currency around rate decisions)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: an average of past episodes, many of them expected, with no forward call.
+- **Limits:** No measure of surprise (expected moves move little on the day); episodes mixed; ECB fixings, not intraday.
+- **Code:** `src/utils/eventStudy.ts`
+
+### BEER fair value of the real exchange rate
+
+- **Says:** Whether the real effective exchange rate sits above (dear) or below (cheap) the level its fundamentals have gone with in this country.
+- **Rule:** OLS of log BIS real effective rate (yearly) on log terms of trade, log GDP per head at PPP vs the US, and the summed current account (NFA proxy), Newey-West errors (Clark and MacDonald 1998).
+- **Reads:** BIS real effective exchange rates, World Bank terms of trade, GDP per head at PPP, current account
+- **Shows in:** Country Research > History & data (BEER fair value)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Implies the gap closes. A test would ask whether a gap beyond 10% is followed by a real move toward fair value over the next two years more often than not, fitting the model only on years before each origin; not yet registered, and World Bank data are today's vintage.
+- **Limits:** Levels regression on 20-30 annual points, no cointegration test; productivity vs the US, not trade partners; NFA proxied by the summed current account.
+- **Code:** `src/utils/beer.ts`
+
 ## Stated-method views
 
 These show where things stand on a stated method and make no call a backtest could score.
@@ -539,6 +567,22 @@ These show where things stand on a stated method and make no call a backtest cou
 - Debt from the identity d(t) = d(t-1)(1 + i)/(1 + n) - pb, so interest falls with debt. Reports debt at the horizon, the change against the baseline and the output lost; flags when debt rises above the baseline in year 1 (denominator effect).
 - **Limits:** No cycle or lower-bound adjustment to the multiplier, no confidence or risk-premium effects, inflation and interest as in the baseline. Composition (spending or taxes) is not modelled. Stated options on stated assumptions, not a forecast or a recommendation.
 - **Code:** `src/utils/costedOptions.ts`
+
+### BEER fair value (behavioural equilibrium exchange rate)
+
+- **Shows in:** Research > History & data
+- Clark and MacDonald (1998), one country at a time: OLS of the log BIS real broad effective exchange rate (yearly average of complete years) on log net barter terms of trade (World Bank), log GDP per head at PPP against the US (World Bank, a Balassa-Samuelson stand-in), and the current account summed from its first year (a net foreign assets proxy), at least 15 years, Newey-West errors.
+- Misalignment = 100 x (log REER - log fitted). The latest monthly REER is set against the fair value of the latest year with all fundamentals, and the year is stated. Coefficients whose sign is opposite to theory (all three are expected positive) are flagged.
+- **Limits:** A levels regression on 20-30 annual points with no cointegration test: a yardstick, not a forecast, and it implies a gap that closes, which is not tested here. Productivity is against the US, not trade partners. Net foreign assets have no free API, so the summed current account (no valuation changes) stands in. World Bank data are today's vintage.
+- **Code:** `src/utils/beer.ts`
+
+### Currency around rate decisions (event study)
+
+- **Shows in:** Research > History & data
+- Events: every day the BIS daily policy rate series changes (the date the new rate takes effect), its own central bank or the Federal Reserve, split into hikes and cuts; a change within 10 daily observations of the last kept one is dropped so one episode is not counted twice.
+- Path: 100 x log change of units per US dollar (ECB reference rates) from the ECB business day before the event to each day from 10 before to 20 after (up = weaker currency). Average path for hikes and for cuts, 90% band from resampling the events (2,000 draws, fixed seed); at least 5 events per group.
+- **Limits:** Description of the past, not a tested signal. No measure of surprise: an expected decision moves little on the day. Episodes with very different causes are averaged. ECB daily fixings, not intraday prices; currencies the ECB does not publish have no study.
+- **Code:** `src/utils/eventStudy.ts`
 
 ### Global shock scenarios (scenario engine)
 

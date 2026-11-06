@@ -21,6 +21,20 @@ export function reerUrl(iso2: string, now = new Date()): string {
   return `${BIS_API}/WS_EER/M.R.B.${iso2}/all?startPeriod=${start}&format=csv`;
 }
 
+/** BIS real broad effective exchange rate from 1994 (the BEER fair value, src/utils/beer.ts). */
+export function reerLongUrl(iso2: string): string {
+  return `${BIS_API}/WS_EER/M.R.B.${iso2}/all?startPeriod=1994-01&format=csv`;
+}
+
+/** Every month of the real broad index in a BIS CSV, oldest first. */
+export function parseReerMonthly(text: unknown): Array<{ period: string; value: number }> {
+  return parseBisCsv(text)
+    .filter((r) => r.EER_TYPE === 'R' && r.EER_BASKET === 'B' && /^\d{4}-\d{2}$/.test(r.TIME_PERIOD) && r.OBS_VALUE !== '')
+    .map((r) => ({ period: r.TIME_PERIOD, value: Number(r.OBS_VALUE) }))
+    .filter((p) => Number.isFinite(p.value) && p.value > 0)
+    .sort((a, b) => a.period.localeCompare(b.period));
+}
+
 export interface ReerGap {
   latest: number;
   /** YYYY-MM of the latest month. */

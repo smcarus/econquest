@@ -132,6 +132,28 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/costedOptions.ts',
   },
   {
+    id: 'beer',
+    name: 'BEER fair value (behavioural equilibrium exchange rate)',
+    where: 'Research > History & data',
+    method: [
+      'Clark and MacDonald (1998), one country at a time: OLS of the log BIS real broad effective exchange rate (yearly average of complete years) on log net barter terms of trade (World Bank), log GDP per head at PPP against the US (World Bank, a Balassa-Samuelson stand-in), and the current account summed from its first year (a net foreign assets proxy), at least 15 years, Newey-West errors.',
+      'Misalignment = 100 x (log REER - log fitted). The latest monthly REER is set against the fair value of the latest year with all fundamentals, and the year is stated. Coefficients whose sign is opposite to theory (all three are expected positive) are flagged.',
+    ],
+    limits: 'A levels regression on 20-30 annual points with no cointegration test: a yardstick, not a forecast, and it implies a gap that closes, which is not tested here. Productivity is against the US, not trade partners. Net foreign assets have no free API, so the summed current account (no valuation changes) stands in. World Bank data are today\'s vintage.',
+    code: 'src/utils/beer.ts',
+  },
+  {
+    id: 'event_study',
+    name: 'Currency around rate decisions (event study)',
+    where: 'Research > History & data',
+    method: [
+      'Events: every day the BIS daily policy rate series changes (the date the new rate takes effect), its own central bank or the Federal Reserve, split into hikes and cuts; a change within 10 daily observations of the last kept one is dropped so one episode is not counted twice.',
+      'Path: 100 x log change of units per US dollar (ECB reference rates) from the ECB business day before the event to each day from 10 before to 20 after (up = weaker currency). Average path for hikes and for cuts, 90% band from resampling the events (2,000 draws, fixed seed); at least 5 events per group.',
+    ],
+    limits: 'Description of the past, not a tested signal. No measure of surprise: an expected decision moves little on the day. Episodes with very different causes are averaged. ECB daily fixings, not intraday prices; currencies the ECB does not publish have no study.',
+    code: 'src/utils/eventStudy.ts',
+  },
+  {
     id: 'global_scenarios',
     name: 'Global shock scenarios (scenario engine)',
     where: 'Research > History & data',

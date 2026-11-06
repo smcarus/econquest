@@ -23,12 +23,14 @@ import { cpiNowcast, gdpNowcast, nowcastSentence } from '../../utils/nowcast';
 import { forecastSentence, forecastSeries, withImf, type ForecastOutcome } from '../../utils/forecasts';
 import { loadForecastValidation } from '../../utils/forecastEvalRun';
 import { areaSeries } from '../../utils/oecdSdmx';
-import { CBPOL_AREA } from '../../utils/bisPolicyRates';
+import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import { countrySeries } from '../../utils/seriesHistory';
 import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
-import { fetchDebtSchedule, fetchFxHistory, loadFxHistory } from '../feeds/rates';
+import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, loadFxHistory } from '../feeds/rates';
+import { beer, beerSentence } from '../../utils/beer';
+import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
 import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES } from '../../utils/scenarioEngine';
 
@@ -225,6 +227,38 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   }
   // Scenario engine (src/utils/scenarioEngine.ts): the country's currency and policy rate on the US
   // policy rate and the dollar, monthly; the page applies stated shocks to the fitted coefficients.
+  // BEER fair value (src/utils/beer.ts): REER on terms of trade, productivity vs the US and an NFA proxy.
+  app.get('/api/beer/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    if (iso3 === 'USA') return res.json({ iso3, name, ok: false, reason: 'The US is the productivity benchmark in this model, so it has no BEER of its own here' });
+    const [file, usFile, reer] = await Promise.all([
+      quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
+      quick(fetchOfficialHistory('USA')).then((h) => h ?? loadOfficialHistory('USA')),
+      quick(fetchReerLong(iso3)),
+    ]);
+    const pick = (f: typeof file, id: string) => {
+      const fig = OFFICIAL_FIGURES.find((x) => x.id === id);
+      const s = fig && f ? officialSeries(f, fig) : null;
+      return s && 'points' in s ? s.points.filter((p) => !p.note?.includes('projection')) : [];
+    };
+    const r = beer({ reerMonthly: reer || [], tot: pick(file, 'terms_of_trade'), gdpPcPpp: pick(file, 'gdp_pc_ppp'), usGdpPcPpp: pick(usFile, 'gdp_pc_ppp'), currentAccount: pick(file, 'current_account') });
+    res.json({ iso3, name, ...r, ...(r.ok ? { sentence: beerSentence(name, r) } : {}), sources: ['BIS real effective exchange rates (broad, monthly)', 'World Bank WDI: terms of trade, GDP per head at PPP, current account'] });
+  });
+  app.get('/api/event-study/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const bank = req.query.bank === 'fed' ? 'fed' : 'own';
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    if (iso3 === 'USA') return res.json({ iso3, name, ok: false, reason: 'The US dollar is the base currency, so there is no exchange rate against it to study' });
+    const area = bank === 'fed' ? 'US' : CBPOL_AREA[iso3];
+    if (!area || CBPOL_NOT_COVERED.has(iso3)) return res.json({ iso3, name, ok: false, reason: 'This central bank is not in the BIS policy rate data' });
+    const [set, policy] = await Promise.all([seriesFor(iso3), quick(fetchPolicyDaily(area))]);
+    const fx = set.series.find((x) => x.id === 'fx_per_usd');
+    if (!fx || fx.freq !== 'daily') return res.json({ iso3, name, ok: false, reason: 'No daily ECB exchange rate history for this currency' });
+    if (!policy?.length) return res.json({ iso3, name, ok: false, reason: 'The BIS daily policy rate history did not answer' });
+    const study = eventStudy(bank, policy, fx.points);
+    res.json({ iso3, name, ok: true, ...study, sentence: eventSentence(name, study), method: EVENT_METHOD, sources: ['BIS central bank policy rates, daily', 'ECB euro reference rates (via Frankfurter)'] });
+  });
   app.get('/api/scenario/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const [set, hist, fxFile] = await Promise.all([seriesFor(iso3), modelHistory(), quick(fetchFxHistory()).then((h) => h ?? loadFxHistory())]);
