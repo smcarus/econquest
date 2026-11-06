@@ -382,7 +382,16 @@ test('council progress: each step reports as it finishes, honestly marked when n
   });
   // No model answered (no Gemini key in tests): no assessment is made up from built-in text.
   assert.equal(run.status, 503);
-  assert.match((await run.json()).error, /No AI model answered, so the council gave no assessment and no verdict/);
+  const stopped = await run.json();
+  assert.match(stopped.error, /No AI model answered, so the council gave no assessment and no verdict/);
+  // The run's timing comes back even when it stops: each desk measured, marked as no model answered.
+  assert.equal(stopped.timing.version, 1);
+  assert.deepEqual(stopped.timing.steps.map((s: { id: string }) => s.id), ['data', 'geo', 'sov', 'macro', 'search']);
+  for (const s of stopped.timing.steps.filter((x: { id: string }) => ['geo', 'sov', 'macro'].includes(x.id))) {
+    assert.equal(s.outcome, 'no_model', s.id);
+    assert.equal(s.model, undefined, s.id);
+  }
+  assert.ok(stopped.timing.phase1Ms >= stopped.timing.steps[0].ms);
   const { steps } = await (await fetch(`${base}/api/council/progress/${progressId}`)).json();
   assert.equal(steps.data.status, 'done');
   for (const desk of ['geo', 'sov', 'macro']) {

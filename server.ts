@@ -45,6 +45,7 @@ import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type F
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
 import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from './src/utils/refereeModel';
+import { formatDuration, isCouncilTiming, ollamaStats, stepTiming, timingTable, totalMs, type CouncilTiming, type ModelStats, type StepTiming } from './src/utils/councilTiming';
 import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
@@ -202,6 +203,8 @@ const SIGNOFF_FILE = signOffFilePath(process.env.DATA_DIR || path.join(__dirname
 const REVIEW_FILE = reviewFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
 const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
+// Every full council run's step timings, one JSON line each (src/utils/councilTiming.ts).
+const COUNCIL_TIMING_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'local', 'council-timing.jsonl');
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
 // Rebuilt when the Gemini key is changed in Menu > Settings.
@@ -3509,7 +3512,7 @@ async function callOllamaOrOpenAICompatible(
   isOllama: boolean,
   timeoutMs = 20000,
   schemaKeysHint?: string[],
-  inferenceOptions?: { temperature?: number; numCtx?: number; seed?: number },
+  inferenceOptions?: { temperature?: number; numCtx?: number; seed?: number; statsOut?: { value?: ModelStats } },
   /** Ollama only: stream the answer and time out on silence instead of on total length. */
   wait?: StreamWait
 ): Promise<string> {
@@ -3565,7 +3568,7 @@ async function callOllamaOrOpenAICompatible(
         ],
       };
 
-  if (isOllama && wait) return streamOllamaChat(endpoint, body, wait);
+  if (isOllama && wait) return streamOllamaChat(endpoint, body, wait, inferenceOptions?.statsOut);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -3580,6 +3583,7 @@ async function callOllamaOrOpenAICompatible(
       throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
     }
     const json: any = await postRes.json();
+    if (isOllama && inferenceOptions?.statsOut) inferenceOptions.statsOut.value = ollamaStats(json);
     return isOllama ? json?.message?.content || '{}' : json?.choices?.[0]?.message?.content || '{}';
   } finally {
     clearTimeout(timer);
@@ -3587,7 +3591,7 @@ async function callOllamaOrOpenAICompatible(
 }
 
 /** Reads an Ollama /api/chat stream; times out on no first word, on a stall, or on total length. */
-async function streamOllamaChat(endpoint: string, body: Record<string, unknown>, wait: StreamWait): Promise<string> {
+async function streamOllamaChat(endpoint: string, body: Record<string, unknown>, wait: StreamWait, statsOut?: { value?: ModelStats }): Promise<string> {
   const controller = new AbortController();
   let gotFirst = false;
   let why: ModelWaitError | null = null;
@@ -3631,7 +3635,10 @@ async function streamOllamaChat(endpoint: string, body: Record<string, unknown>,
           text += piece;
           if (piece.trim()) gotFirst = true;
         }
-        if (msg?.done) return text || '{}';
+        if (msg?.done) {
+          if (statsOut) statsOut.value = ollamaStats(msg);
+          return text || '{}';
+        }
       }
       arm();
     }
@@ -3737,6 +3744,8 @@ async function executeResilientLlmStep<T>(options: {
   seed?: number;
   /** When usedFallback: why no model answered, in plain words (utils/modelFailure.ts). */
   failure?: string;
+  /** Ollama's own counters for the answer: load, read and write time, tokens (src/utils/councilTiming.ts). */
+  stats?: ModelStats;
 }> {
   const startMs = Date.now();
   const attempts: ModelAttempt[] = [];
@@ -3808,6 +3817,7 @@ async function executeResilientLlmStep<T>(options: {
         }
       }
       try {
+        const statsOut: { value?: ModelStats } = {};
         const rawText = await callOllamaOrOpenAICompatible(
           candidateUrl,
           modelName,
@@ -3822,6 +3832,7 @@ async function executeResilientLlmStep<T>(options: {
             // Long chat steps read every agent's document: with a short window Ollama drops the
             // start of the prompt (the instructions) without saying so.
             numCtx: Math.max(options.runtimeConfig.numCtx ?? serverGuiRuntimeConfig.numCtx ?? 8192, LONG_CHAT_STEPS.has(options.stepName) ? 16384 : 0),
+            statsOut,
           },
           wait
         );
@@ -3839,6 +3850,7 @@ async function executeResilientLlmStep<T>(options: {
             model: modelName,
             temperature: localTemperature,
             ...(options.seed !== undefined ? { seed: options.seed } : {}),
+            ...(statsOut.value ? { stats: statsOut.value } : {}),
           };
         }
         attempts.push({ where, notJson: true });
@@ -3911,6 +3923,17 @@ async function executeResilientLlmStep<T>(options: {
     providerUsed: 'Quantitative Anchor Deterministic Engine',
     failure,
   };
+}
+
+/** Prints a full council run's timings to the server log and keeps one line in data/local/council-timing.jsonl. */
+function logCouncilTiming(iso3: string, timing: CouncilTiming, what: string): void {
+  console.log(`[timing] Full council ${iso3}, ${what}: ${formatDuration(totalMs(timing))}\n${timingTable(timing)}`);
+  try {
+    fs.mkdirSync(path.dirname(COUNCIL_TIMING_FILE), { recursive: true });
+    fs.appendFileSync(COUNCIL_TIMING_FILE, `${JSON.stringify({ at: new Date().toISOString(), iso3, what, timing })}\n`, { mode: 0o600 });
+  } catch (error: any) {
+    console.warn(`[timing] could not save the timing line: ${error?.message || error}`);
+  }
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -6122,6 +6145,8 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
       };
 
       // Stage 1: Execute 3 Parallel Desk Synthesis Workers + 1 Web Search Grounding Worker
+      const searchTiming: StepTiming = { id: 'search', label: 'Web search (Gemini)', ms: 0, outcome: 'skipped' };
+      const stage1Start = Date.now();
       const [geoSettled, sovSettled, macroSettled, searchSettled] = await Promise.allSettled([
         tracked(progress, 'geo', executeResilientLlmStep<any>({
           stepName: 'STAGE_1_GEO_DESK',
@@ -6212,10 +6237,13 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
         })),
         (async () => {
           if (!enableSearch || !process.env.GEMINI_API_KEY) {
-            progress.skip('search', !enableSearch ? 'Web search is turned off' : 'Needs a Gemini key');
+            const why = !enableSearch ? 'Web search is turned off' : 'Needs a Gemini key';
+            searchTiming.reason = why;
+            progress.skip('search', why);
             return [];
           }
           progress.start('search');
+          const searchStart = Date.now();
           try {
             const searchResp = await ai.models.generateContent({
               model: 'gemini-3.8-flash',
@@ -6226,6 +6254,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
               },
             });
             const chunks = searchResp.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+            Object.assign(searchTiming, { ms: Date.now() - searchStart, outcome: 'model', model: 'gemini-3.8-flash', reason: undefined });
             return chunks
               .filter((c: any) => c?.web?.uri)
               .slice(0, 6)
@@ -6235,17 +6264,35 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
                 sourceType: 'Gemini web search (link not checked)',
               }));
           } catch {
+            Object.assign(searchTiming, { ms: Date.now() - searchStart, outcome: 'no_model', reason: 'Web search did not answer' });
             progress.fail('search', 'Web search did not answer');
             return [];
           }
         })(),
       ]);
+      const stage1Ms = Date.now() - stage1Start;
 
       const geoResult = geoSettled.status === 'fulfilled' ? geoSettled.value : null;
       const sovResult = sovSettled.status === 'fulfilled' ? sovSettled.value : null;
       const macroResult = macroSettled.status === 'fulfilled' ? macroSettled.value : null;
+      // How long each step took (src/utils/councilTiming.ts), kept on the run and in the timing log.
+      const phase1Timing = (cascade?: Parameters<typeof stepTiming>[2]): CouncilTiming => ({
+        version: 1,
+        phase1Ms: Date.now() - pipelineStartMs,
+        sentTogether: ['geo', 'sov', 'macro', ...(searchTiming.outcome === 'skipped' ? [] : ['search'])],
+        steps: [
+          { id: 'data', label: 'Country data', ms: stage0Latency, outcome: 'no_model_needed', reason: liveCount ? `${liveCount} live ${liveCount === 1 ? 'source' : 'sources'}` : 'no live source answered' },
+          stepTiming('geo', 'Geopolitical desk (AG-1 to AG-3)', geoResult, stage1Ms),
+          stepTiming('sov', 'Sovereign credit desk (AG-4 to AG-6)', sovResult, stage1Ms),
+          stepTiming('macro', 'Macro desk (AG-7 to AG-9)', macroResult, stage1Ms),
+          searchTiming,
+          ...(cascade !== undefined ? [stepTiming('cascade', 'Cross-desk cascade', cascade)] : []),
+        ],
+      });
       if (![geoResult, sovResult, macroResult].some((r) => r && !r.usedFallback)) {
-        return res.status(503).json({ error: NO_MODEL_COUNCIL });
+        const timing = phase1Timing();
+        logCouncilTiming(iso3, timing, 'stopped: no desk model answered');
+        return res.status(503).json({ error: NO_MODEL_COUNCIL, timing });
       }
       const searchGroundingLinks =
         searchSettled.status === 'fulfilled' && Array.isArray(searchSettled.value)
@@ -6745,6 +6792,8 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       };
 
       const totalLatencyMs = Date.now() - pipelineStartMs;
+      baseRun.timing = phase1Timing(cascadeRes);
+      logCouncilTiming(iso3, baseRun.timing, 'desks ready');
       const stages: PipelineStageTelemetry[] = [
         {
           nodeId: 'STAGE_0_LIVE_DATA',
@@ -6871,6 +6920,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
 
   // 4. Phase 3: Supreme Council Synthesis (Post-CRO Human-in-the-Loop Approval / Override)
   app.post(['/api/council/supreme-council', '/api/council/supreme-synthesis'], async (req, res) => {
+    const supremeStart = Date.now();
     try {
       const { run, croOverrideState, runtimeConfig = {} } = req.body as {
         run: CouncilAssessmentRun;
@@ -7085,8 +7135,22 @@ ${MISSING_FIGURES_RULE}
           : s
       );
 
+      // Timing: phase 1 as measured, your review pause, then this step (src/utils/councilTiming.ts).
+      const before = isCouncilTiming(targetRun.timing) ? targetRun.timing : null;
+      const deskDoneAt = Date.parse(String(targetRun.pipelineExecutionTelemetry?.executedAt || ''));
+      const timing: CouncilTiming | undefined = before
+        ? {
+            ...before,
+            ...(Number.isFinite(deskDoneAt) && supremeStart >= deskDoneAt ? { reviewMs: supremeStart - deskDoneAt } : {}),
+            supremeMs: Date.now() - supremeStart,
+            steps: [...before.steps.filter((s) => s.id !== 'supreme'), stepTiming('supreme', 'Supreme council (referee)', supremeStep)],
+          }
+        : undefined;
+      if (timing) logCouncilTiming(targetRun.iso3, timing, 'report written');
+
       const updatedRun: CouncilAssessmentRun = {
         ...targetRun,
+        ...(timing ? { timing } : {}),
         stage: 'COMPLETED',
         croState: {
           ...cro,

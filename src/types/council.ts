@@ -697,6 +697,8 @@ export interface CouncilAssessmentRun {
   policyDocumentSnippet?: string;
   runtimeUsed: string;
   stage: 'IDLE' | 'RUNNING_PHASE_1_2' | 'AWAITING_CRO_APPROVAL' | 'RUNNING_SUPREME_COUNCIL' | 'COMPLETED';
+  /** How long each step took on this run, measured by the server (src/utils/councilTiming.ts). */
+  timing?: import('../utils/councilTiming').CouncilTiming;
   openData: OpenDataSnapshot;
   charts: AnnotatedChartSpec[];
   subAgents: SubAgentReport[];
