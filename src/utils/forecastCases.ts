@@ -75,6 +75,44 @@ export function gdpNowcastCases(spec: ForecastSpec, data: CountryData[]): { case
   return { cases: out, series: [...new Set(out.map((x) => x.where))].sort() };
 }
 
+/**
+ * Rule 7, the live calls of a passing GDP nowcast: for each country, every quarter that has ended
+ * by `asOf`, is not published yet and is estimated by the bridge, with the benchmark (mean of the
+ * GDP growth published so far) beside it. Recorded before the quarter's GDP is out.
+ */
+export function gdpNowcastOpen(spec: ForecastSpec, data: CountryData[], asOf: string): Array<{ where: string; when: string; what: string; due: string; forecast: { model: number; bench: number } }> {
+  const lag = spec.params.gdpLagDays ?? 60;
+  const out: Array<{ where: string; when: string; what: string; due: string; forecast: { model: number; bench: number } }> = [];
+  for (const c of data) {
+    if (!c.gdpQoq?.length || !(c.activity?.length || c.cli?.length)) continue;
+    const gdp = c.gdpQoq.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
+    const r = gdpNowcast({
+      iso3: c.iso3,
+      asOf,
+      live: true,
+      gdp: { points: gdp, source: '' },
+      activity: c.activity?.length ? { points: c.activity, source: '', label: 'activity' } : null,
+      cli: c.cli?.length ? { points: c.cli, source: '' } : null,
+    });
+    if (!r.ok) continue;
+    const published = new Set(gdp.map((g) => g.date));
+    const values = gdp.map((g) => g.value);
+    if (!values.length) continue;
+    const bench = spec.benchmark === 'mean' ? values.reduce((a, b) => a + b, 0) / values.length : values[values.length - 1];
+    for (const p of r.points) {
+      if (published.has(p.period) || !p.indicators.length || periodEnd(p.period) > asOf) continue;
+      out.push({
+        where: c.iso3,
+        when: p.period,
+        what: `nowcast ${p.mean.toFixed(2)}% q/q against the benchmark ${bench.toFixed(2)}%: closer to the first published figure?`,
+        due: addDays(periodEnd(p.period), lag),
+        forecast: { model: Number(p.mean.toFixed(4)), bench: Number(bench.toFixed(4)) },
+      });
+    }
+  }
+  return out;
+}
+
 export function casesFor(spec: ForecastSpec, data: CountryData[]): { cases: ForecastCase[]; series: string[] } {
   return spec.target === 'gdp_nowcast_q' ? gdpNowcastCases(spec, data) : forecastTargetCases(spec, data);
 }

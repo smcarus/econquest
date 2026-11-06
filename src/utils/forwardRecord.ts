@@ -28,6 +28,8 @@ export interface ForwardCallLine {
   due: string;
   /** Signal tests: the book as recorded, scored as recorded. */
   book?: { long: string[]; short: string[] };
+  /** Forecast tests: the model's and the benchmark's figures as recorded. */
+  forecast?: { model: number; bench: number };
   at: string;
 }
 
@@ -56,7 +58,7 @@ export function forwardStep(
   existing: ForwardBody[],
   test: { key: string; specHash: string; passing: boolean },
   cases: BacktestCase[],
-  open: Array<OpenCall & { book?: { long: string[]; short: string[] } }>,
+  open: Array<OpenCall & { book?: { long: string[]; short: string[] }; forecast?: { model: number; bench: number } }>,
   at: string,
 ): ForwardBody[] {
   const calls = new Set<string>();
@@ -71,7 +73,7 @@ export function forwardStep(
       const k = keyOf(test.key, c.where, c.when);
       if (calls.has(k)) continue;
       calls.add(k);
-      out.push({ kind: 'call', test: test.key, specHash: test.specHash, where: c.where, when: c.when, what: c.what, due: c.due, ...(c.book ? { book: c.book } : {}), at });
+      out.push({ kind: 'call', test: test.key, specHash: test.specHash, where: c.where, when: c.when, what: c.what, due: c.due, ...(c.book ? { book: c.book } : {}), ...(c.forecast ? { forecast: c.forecast } : {}), at });
     }
   }
   const byKey = new Map(cases.map((c) => [keyOf(test.key, c.where, c.when), c]));
@@ -138,6 +140,7 @@ export function forwardSentence(s: ForwardSummary | undefined): string {
   if (!s) return '';
   const head = `Forward record since ${s.since}: ${s.calls} call${s.calls === 1 ? '' : 's'}`;
   if (!s.scored) return `${head}, none scored yet.`;
+  if (s.meanValue !== null && !s.test.startsWith('fx_')) return `${head}, ${s.scored} scored: closer to the published figure than the benchmark in ${s.hits} (${s.hitRatePct}% against ${s.baseRatePct}% in the test), average gain ${s.meanValue} points, ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
   if (s.meanValue !== null) return `${head}, ${s.scored} scored: average net ${s.meanValue}% a period, positive in ${s.hits} (${s.hitRatePct}% against ${s.baseRatePct}% of months in the test), ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
   return `${head}, ${s.scored} scored, ${s.hits} followed (${s.hitRatePct}% against a base rate of ${s.baseRatePct}%), ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
 }

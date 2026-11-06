@@ -7,7 +7,10 @@
 import fs from 'fs';
 import { loadSpecs } from './backtestRun';
 import { judgeForecast, type ForecastResult, type ForecastSpec } from './forecastEval';
-import { casesFor, type CountryData } from './forecastCases';
+import { casesFor, gdpNowcastOpen, type CountryData } from './forecastCases';
+import path from 'path';
+import { forwardStep, type ForwardBody, type ForwardCallLine } from './forwardRecord';
+import { appendForward, loadForward } from './forwardRecordStore';
 import { parseQna, qnaUrl, QNA_LABEL } from './oecdQna';
 import { BCB_IBCBR_SA, EUROSTAT_IP_GEO, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr, IBCBR_LONG, EUROSTAT_IP_LONG } from './monthlyActivity';
 import { pullModelHistory, type TextFetcher } from './modelHistory';
@@ -85,7 +88,7 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
   };
 }
 
-export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test. */ weoStore?: WeoVintageStore }): Promise<ForecastValidationFile & { problems: string[] }> {
+export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test. */ weoStore?: WeoVintageStore; forwardFile?: string }): Promise<ForecastValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
@@ -127,13 +130,39 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
   const rest = runnable.filter((x) => !isFan(x));
   if (rest.length) {
     const { data, sources } = await pullEvaluationData(opts.fetcher, problems, opts.now);
+    const forwardFile = opts.forwardFile ?? path.join(path.dirname(opts.resultFile), 'forward.jsonl');
+    const forward: ForwardBody[] = loadForward(forwardFile).lines;
+    const forwardNew: ForwardBody[] = [];
     for (const { spec, hash } of rest) {
       const s = spec as unknown as ForecastSpec;
       const { cases } = casesFor(s, data);
       const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; countries only (ISO 3166, regional groups and the euro-area aggregate left out); today's vintage, release lags as registered`, at);
+      if (s.target === 'gdp_nowcast_q') {
+        // Rule 7: a passing nowcast's calls for quarters not yet published go on the forward record;
+        // recorded calls are scored on the first published figure (closer than the benchmark = hit).
+        const key = `${s.id} v${s.version}`;
+        const beat = cases.length ? cases.filter((c) => Math.abs(c.model.mean - c.actual) < Math.abs(c.bench.mean - c.actual)).length / cases.length : 0;
+        const actual = new Map(data.flatMap((c) => (c.gdpQoq || []).map((g) => [`${c.iso3}|${g.date}`, g.value] as [string, number])));
+        const scored = forward
+          .filter((l): l is ForwardCallLine => l.kind === 'call' && l.test === key && Boolean(l.forecast) && actual.has(`${l.where}|${l.when}`))
+          .map((l) => {
+            const a = actual.get(`${l.where}|${l.when}`)!;
+            const gain = Math.abs(l.forecast!.bench - a) - Math.abs(l.forecast!.model - a);
+            return { where: l.where, when: l.when, what: l.what, hit: gain > 0, base: beat, value: gain };
+          });
+        const open = result.status === 'passed' ? gdpNowcastOpen(s, data, at.slice(0, 10)) : [];
+        const step = forwardStep(forward, { key, specHash: hash, passing: result.status === 'passed' }, scored, open, at);
+        forward.push(...step);
+        forwardNew.push(...step);
+      }
       file.versions[`${s.id} v${s.version}`] = result;
       file.results[s.id] = result;
       opts.onResult?.(result);
+    }
+    try {
+      appendForward(forwardFile, forwardNew);
+    } catch (e: any) {
+      problems.push(`The forward record could not be saved (${e?.code || e?.message || e})`);
     }
   }
   const out: ForecastValidationFile = { results: file.results, versions: file.versions, lastRun: { at: (opts.now || new Date()).toISOString(), problems } };

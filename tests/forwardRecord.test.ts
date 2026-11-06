@@ -64,3 +64,18 @@ test('the file is a hash chain: an edited line breaks it', () => {
   assert.equal(loadForward(file).chainOk, false);
   fs.rmSync(dir, { recursive: true, force: true });
 });
+
+test('nowcast forward calls: quarters ended but not published, with the benchmark beside them', async () => {
+  const { gdpNowcastOpen } = await import('../src/utils/forecastCases');
+  const quarters = Array.from({ length: 40 }, (_, k) => `${2016 + Math.floor(k / 4)}-Q${(k % 4) + 1}`);
+  const gdpQoq = quarters.slice(0, -1).map((q, k) => ({ date: q, value: 0.5 + 0.1 * Math.sin(k) }));
+  const months = Array.from({ length: 120 }, (_, k) => new Date(Date.UTC(2016, k, 1)).toISOString().slice(0, 7));
+  const activity = months.map((m, k) => ({ date: m, value: 100 + k * 0.2 }));
+  const spec = { id: 'gdp_nowcast', version: 1, registeredOn: '', registeredBy: '', hypothesis: '', target: 'gdp_nowcast_q', params: { gdpLagDays: 60 }, benchmark: 'mean', horizons: [1], sample: { from: '2016-Q1' }, passMark: { maxRelRmse: 1, maxPValue: 1, minSeriesShare: 0, minCasesPerHorizon: 0, minYears: 0 }, knownLimits: [] } as any;
+  const open = gdpNowcastOpen(spec, [{ iso3: 'XXX', gdpQoq, activity }], '2026-01-20');
+  assert.deepEqual(open.map((o) => [o.where, o.when]), [['XXX', '2025-Q4']]);
+  for (const o of open) {
+    assert.ok(!gdpQoq.some((g) => g.date === o.when), 'only unpublished quarters');
+    assert.ok(Number.isFinite(o.forecast.model) && Number.isFinite(o.forecast.bench));
+  }
+});
