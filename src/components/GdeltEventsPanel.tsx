@@ -3,6 +3,8 @@ import { Newspaper } from 'lucide-react';
 import type { GdeltRawReading, GdeltRawSeries } from '../utils/gdeltRaw';
 import { GOLDSTEIN_RULE } from '../utils/gdeltRaw';
 import { rawGdeltFigures } from '../utils/politicsEvents';
+import { requiredCredit } from '../data/requiredCredits';
+import { SourceCredits } from './SourceCredits';
 
 /**
  * Country Research > Markets & signals > News and events: weekly event counts and the economic
@@ -154,6 +156,7 @@ export const GdeltEventsPanel: React.FC<{ iso3: string; countryName: string }> =
               {r.gkg?.sampleShare != null && r.gkg.sampleShare < 1 ? `; one GKG file every ${reply!.gkgEveryHours} hours, theme figures are shares of the articles read` : ''}. An event counts where it took
               place or when {countryName} is an actor.
             </p>
+            <SourceCredits credits={[requiredCredit('gdelt')]} />
           </>
         )}
       </div>
