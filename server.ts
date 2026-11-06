@@ -2688,13 +2688,14 @@ async function startServer() {
     const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
     const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
     // Every forecast evaluation version run, for the Holm correction across all tests on record:
-    // its p is the largest horizon p (every horizon must pass), its alpha the registered pass mark.
+    // its p is its own p where it has one (fan coverage), else the largest horizon p (every horizon
+    // must pass); its alpha the registered pass mark.
     const fSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'forecasts'));
     const forecastTests = Object.values({ ...fv.versions, ...Object.fromEntries(Object.values(fv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) }).map((r) => ({
       id: r.id,
       version: r.specVersion,
       status: r.status,
-      p: r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1,
+      p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
       alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
     }));
     res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests });

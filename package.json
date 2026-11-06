@@ -17,6 +17,7 @@
     "check:data": "tsx scripts/check-connections.ts",
     "check:imf": "tsx scripts/imf-codes.ts",
     "weo:vintages": "tsx scripts/weo-vintages.ts",
+    "weo:pull": "tsx scripts/weo-pull.ts",
     "preload": "tsx server.ts --preload",
     "gdelt:pull": "tsx scripts/gdelt-pull.ts",
     "gdelt:daily": "tsx scripts/gdelt-daily.ts",

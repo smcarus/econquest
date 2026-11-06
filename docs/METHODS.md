@@ -399,9 +399,9 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Shows in:** Country Research > History & data (Debt sustainability, fan chart)
 - **Use:** Research
 - **Status:** Not validated
-- **How it is tested:** To be pre-registered (signal standard): rebuild the fan at past origins with only the years known then, and check that realised debt falls inside the 10-90 band about 80% of the time, across countries, whole years resampled.
+- **How it is tested:** Pre-registered (docs/validation/forecasts/debt_fan_coverage.json): the fan rebuilt at each past October IMF WEO edition (its actual years and its projections, saved in data/local/weo-vintages/) must hold the later debt outturn inside the 10-90 band 70-90% of the time at every horizon 1-5 years, whole target years resampled. Run with npm run forecast:evaluate.
 - **Limits:** Past shocks only; no fiscal reaction; IMF baseline as given.
-- **Code:** `src/utils/debtFan.ts`
+- **Code:** `src/utils/debtFan.ts, src/utils/fanCoverage.ts`
 
 ### Costed fiscal options
 

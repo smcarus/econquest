@@ -7,6 +7,7 @@ import type { ValidationStatus } from '../data/modelRegister';
 export const REGISTER_FORECAST_IDS: Record<string, string[]> = {
   gdp_nowcast: ['gdp_nowcast'],
   app_forecasts: ['cpi_nowcast', 'gdp_forecast', 'cpi_forecast', 'policy_rate_forecast', 'debt_forecast'],
+  debt_fan: ['debt_fan_coverage'],
 };
 
 export interface ForecastVerdict {

@@ -90,6 +90,12 @@ export interface ForecastResult {
   data: string;
   /** A few cases, newest first, so a reader can check them. */
   sample: ForecastCase[];
+  /** The test's own p where it is not a horizon's relative-RMSE p (the fan coverage test). */
+  pValue?: number;
+  /** Fan coverage test only (src/utils/fanCoverage.ts): coverage by horizon, editions used, sample cases. */
+  coverage?: import('./fanCoverage').FanCoverageHorizon[];
+  origins?: string[];
+  fanSample?: import('./fanCoverage').FanCase[];
 }
 
 /* ------------------------------------------------------------------ case generators */

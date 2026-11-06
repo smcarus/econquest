@@ -9,6 +9,7 @@
     "debt_forecast.json": "b0f103786229c9ec676eaa66dc6d3ead1fd473ad21714a66193d304b089f0ff8",
     "cpi_forecast.v2.json": "0872bf313ed712bc5db83c555e9ce7a89b8ed1df57838b0892a0aba16f83635b",
     "cpi_nowcast.v2.json": "913d5756ff9f892644026fcc36f36307115cca1b34c13f0d4508eb53367faa51",
-    "debt_forecast.v2.json": "0046f71259462f52ae426d5e9ee00b7d127f3b1a3aff7334ca26f9f9f51c2dd6"
+    "debt_forecast.v2.json": "0046f71259462f52ae426d5e9ee00b7d127f3b1a3aff7334ca26f9f9f51c2dd6",
+    "debt_fan_coverage.json": "3f05fa27499ad8cc85b00cf7edef1c893c009e84d933b2993506a90f53d97ae7"
   }
 }

@@ -8,12 +8,14 @@ import type { ForecastSpec } from '../src/utils/forecastEval';
 import { FORECAST_MODELS } from '../src/utils/forecasts';
 import { NOWCAST_PARAMS, PUBLICATION_LAG_DAYS } from '../src/utils/nowcast';
 import { runForecastEvaluations } from '../src/utils/forecastEvalRun';
+import { FAN_SEED } from '../src/utils/debtFan';
+import { DSA_HORIZON } from '../src/utils/debtSustainability';
 
 const DIR = path.join(process.cwd(), 'docs', 'validation', 'forecasts');
 
 test('every registered nowcast/forecast evaluation matches its hash in manifest.json', () => {
   const specs = loadSpecs(DIR);
-  assert.equal(specs.length, 9);
+  assert.equal(specs.length, 10);
   for (const s of specs) assert.equal(s.problem, undefined, `${s.file}: ${s.problem}`);
 });
 
@@ -44,6 +46,10 @@ test('the registered rules are the ones the app runs (no silent drift between sp
   assert.equal(n.targetLags, NOWCAST_PARAMS.targetLags);
   assert.equal(n.monthlyMaxLag, NOWCAST_PARAMS.monthlyMaxLag);
   assert.equal(n.minQuarters, NOWCAST_PARAMS.minQuarters);
+  // The fan coverage test rebuilds the panel's fan: same seed, at most the panel's horizon.
+  const fan = byId.debt_fan_coverage.params;
+  assert.equal(fan.seed, FAN_SEED, 'fan coverage seed');
+  assert.ok(fan.horizons <= DSA_HORIZON, 'fan coverage horizons');
 });
 
 test('a changed spec file is refused, and a run with no data answers says so instead of passing anything', async () => {

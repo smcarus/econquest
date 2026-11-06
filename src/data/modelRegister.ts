@@ -310,9 +310,9 @@ export const MODEL_REGISTER: RegisterEntry[] = [
     where: 'Country Research > History & data (Debt sustainability, fan chart)',
     use: 'Research',
     status: 'not_validated',
-    testPlan: 'To be pre-registered (signal standard): rebuild the fan at past origins with only the years known then, and check that realised debt falls inside the 10-90 band about 80% of the time, across countries, whole years resampled.',
+    testPlan: 'Pre-registered (docs/validation/forecasts/debt_fan_coverage.json): the fan rebuilt at each past October IMF WEO edition (its actual years and its projections, saved in data/local/weo-vintages/) must hold the later debt outturn inside the 10-90 band 70-90% of the time at every horizon 1-5 years, whole target years resampled. Run with npm run forecast:evaluate.',
     limits: 'Past shocks only; no fiscal reaction; IMF baseline as given.',
-    code: 'src/utils/debtFan.ts',
+    code: 'src/utils/debtFan.ts, src/utils/fanCoverage.ts',
     panels: [],
   },
   {

@@ -16,6 +16,8 @@ import { areaSeries } from './oecdSdmx';
 import { parseImfYears } from './officialHistory';
 import { writeFileAtomic } from './atomicWrite';
 import { isCountryIso3 } from '../data/iso3166';
+import { fanCoverageCases, judgeFanCoverage, type FanCoverageSpec } from './fanCoverage';
+import { WEO_VINTAGE_SOURCE, type WeoVintageStore } from './weoVintages';
 
 export interface ForecastValidationFile {
   results: Record<string, ForecastResult>;
@@ -83,16 +85,49 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
   };
 }
 
-export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void }): Promise<ForecastValidationFile & { problems: string[] }> {
+export async function runForecastEvaluations(opts: { specDir: string; resultFile: string; fetcher: TextFetcher; now?: Date; onResult?: (r: ForecastResult) => void; /** Past WEO editions, for the debt fan coverage test. */ weoStore?: WeoVintageStore }): Promise<ForecastValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
   const runnable = specs.filter((s) => s.spec).sort((a, b) => a.spec!.id.localeCompare(b.spec!.id) || a.spec!.version - b.spec!.version);
   const file = loadForecastValidation(opts.resultFile);
-  if (runnable.length) {
+  const isFan = (x: { spec?: unknown }) => (x.spec as { target?: string } | undefined)?.target === 'debt_fan_coverage';
+  const at = (opts.now || new Date()).toISOString();
+  // The debt fan coverage test reads saved WEO editions only, nothing from the network.
+  for (const { spec, hash } of runnable.filter(isFan)) {
+    const s = spec as unknown as FanCoverageSpec;
+    const store = opts.weoStore || { editions: [], skipped: [] };
+    if (!store.editions.length) {
+      problems.push(`${s.id}: no past WEO editions saved in data/local/weo-vintages/ (npm run weo:vintages); not run`);
+      continue;
+    }
+    const { cases, origins } = fanCoverageCases(store, s);
+    const j = judgeFanCoverage(s, cases, origins);
+    const result: ForecastResult = {
+      id: s.id,
+      specVersion: s.version,
+      specHash: hash,
+      ranAt: at,
+      status: j.status,
+      verdict: j.verdict,
+      horizons: [],
+      span: j.span,
+      series: j.series,
+      data: `${WEO_VINTAGE_SOURCE}: ${origins.length} editions (${origins[0] || 'none'} to ${origins[origins.length - 1] || 'none'}); outturns from the latest edition saved`,
+      sample: [],
+      pValue: j.pValue,
+      coverage: j.coverage,
+      origins,
+      fanSample: j.sample,
+    };
+    file.versions[`${s.id} v${s.version}`] = result;
+    file.results[s.id] = result;
+    opts.onResult?.(result);
+  }
+  const rest = runnable.filter((x) => !isFan(x));
+  if (rest.length) {
     const { data, sources } = await pullEvaluationData(opts.fetcher, problems, opts.now);
-    const at = (opts.now || new Date()).toISOString();
-    for (const { spec, hash } of runnable) {
+    for (const { spec, hash } of rest) {
       const s = spec as unknown as ForecastSpec;
       const { cases } = casesFor(s, data);
       const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; countries only (ISO 3166, regional groups and the euro-area aggregate left out); today's vintage, release lags as registered`, at);
