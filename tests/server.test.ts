@@ -327,7 +327,7 @@ test('council regression set: each case is checked and reported honestly (stand-
   });
   assert.equal(res.status, 200);
   const report = await res.json();
-  assert.equal(report.total, 4);
+  assert.equal(report.total, 6);
   assert.match(report.setHash, /^[0-9a-f]{64}$/);
   const by = Object.fromEntries(report.results.map((r: { id: string }) => [r.id, r]));
   // The stand-in always writes about Turkey: right for the Turkey case, wrong for the others.

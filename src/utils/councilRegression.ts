@@ -28,10 +28,32 @@ export interface RegressionExpect {
   maxRemoved?: number;
 }
 
+/** A frozen input for the Supreme Council's final step: the figures, desk readings and CRO scores. */
+export interface SupremeCaseInput {
+  iso3: string;
+  countryName: string;
+  currencyCode?: string;
+  /** Each figure by its council path (src/utils/councilInputs.ts); every other figure is MISSING. */
+  figures: Array<{ path: string; value: number; source: string }>;
+  /** Feed names the figures came from, as the data status records them ("IMF", "BIS"...). */
+  feeds: string[];
+  /** Each desk's consensus reading, as the desk debates would give it. */
+  desks: { geopolitical: string; sovereign: string; macro: string };
+  /** The CRO's approved scores (0-1) and notes; scenario shocks left out are MISSING. */
+  cro: { geopoliticalRiskScore: number; sovereignRiskScore: number; macroRiskScore: number; croNotes: string };
+}
+
 export interface RegressionCase {
   id: string;
+  /**
+   * Which step it checks: "summary" (Council chat summary, the default) or "supreme" (the Supreme
+   * Council's final report on the referee model).
+   */
+  kind?: 'summary' | 'supreme';
   question: string;
   answers: AgentAnswer[];
+  /** kind "supreme": the frozen input. */
+  supreme?: SupremeCaseInput;
   expect: RegressionExpect;
 }
 
@@ -76,12 +98,31 @@ export interface RegressionReport {
 export function parseRegressionSet(raw: unknown): RegressionSet {
   const o = raw as Partial<RegressionSet> | null;
   const cases = (Array.isArray(o?.cases) ? o!.cases : []).filter(
-    (c): c is RegressionCase => Boolean(c && typeof c.id === 'string' && typeof c.question === 'string' && Array.isArray(c.answers) && c.expect && typeof c.expect === 'object')
-  );
+    (c): c is RegressionCase =>
+      Boolean(
+        c &&
+          typeof c.id === 'string' &&
+          typeof c.question === 'string' &&
+          c.expect &&
+          typeof c.expect === 'object' &&
+          (c.kind === 'supreme' ? Boolean(c.supreme && Array.isArray(c.supreme.figures)) : Array.isArray(c.answers))
+      )
+  ).map((c) => ({ ...c, answers: Array.isArray(c.answers) ? c.answers : [] }));
   return { ...(o?.about ? { about: o.about } : {}), version: Number(o?.version) || 0, cases };
 }
 
 const re = (p: string) => new RegExp(p, 'i');
+
+/** The text a case's inputs give, for the structural number check. */
+export function caseInputText(c: RegressionCase): string[] {
+  const out = [c.question, JSON.stringify(c.answers)];
+  if (c.supreme) {
+    const { cro } = c.supreme;
+    const composite = Number(((cro.geopoliticalRiskScore + cro.sovereignRiskScore + cro.macroRiskScore) / 3).toFixed(2));
+    out.push(JSON.stringify(c.supreme), String(composite));
+  }
+  return out;
+}
 
 /** Checks one summary against what the case expects. */
 export function checkRegressionCase(c: RegressionCase, out: SynthesisResult): RegressionCaseResult {

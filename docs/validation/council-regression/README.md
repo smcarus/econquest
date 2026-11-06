@@ -4,6 +4,13 @@ The council regression set (`cases.json`) holds fixed questions with frozen inpu
 a good answer must give. It runs through the same steps as the app, on the referee model, at
 temperature 0 with seed 42.
 
+Cases by step (`kind` in `cases.json`):
+
+- `summary` (default): the Council chat summary, from frozen agent answers.
+- `supreme`: the Supreme Council's final report (SMCR-1.0), from frozen figures, desk readings and
+  CRO scores; every other figure is MISSING in the prompt. Only what the model wrote is checked;
+  fields it leaves out are filled from the built-in report in the app and are not counted.
+
 ## Three commands
 
 | Command | Where | What it does |

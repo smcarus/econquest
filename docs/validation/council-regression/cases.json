@@ -1,6 +1,6 @@
 {
-  "about": "Council regression set: fixed agent answers and the reading a good summary must give. The figures are frozen test inputs (copied once from the app's own feeds), never shown as data. Run with `npm run council:regress` against the AI model set in the app; `npm run council:record` records it on the referee model and CI replays that recording (README.md). Change a case only by adding a new id; a case that fails is not edited to pass.",
-  "version": 1,
+  "about": "Council regression set: fixed agent answers (or, for kind \"supreme\", the Supreme Council's frozen inputs) and the reading a good answer must give. The figures are frozen test inputs (copied once from the app's own feeds), never shown as data. Run with `npm run council:regress` against the AI model set in the app; `npm run council:record` records it on the referee model and CI replays that recording (README.md). Change a case only by adding a new id; a case that fails is not edited to pass.",
+  "version": 2,
   "cases": [
     {
       "id": "brazil-tight",
@@ -208,6 +208,92 @@
         "headline": "(cannot|can't|not enough|missing|unclear|without|no (debt )?figures|not possible|not known|insufficient)",
         "gapsMention": "(debt|missing|not available|could not|did not answer|needs setup)",
         "forbid": "\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
+        "maxRemoved": 1
+      }
+    },
+    {
+      "id": "supreme-brazil-tight",
+      "kind": "supreme",
+      "question": "Supreme Council final report: Brazil, with policy far above inflation",
+      "supreme": {
+        "iso3": "BRA",
+        "countryName": "Brazil",
+        "currencyCode": "BRL",
+        "figures": [
+          {
+            "path": "market.policyRatePct",
+            "value": 13.75,
+            "source": "BIS policy rates, Oct 2026 (frozen test input)"
+          },
+          {
+            "path": "imf.cpiInflationPct",
+            "value": 4.4,
+            "source": "BCB IPCA, Sep 2026 (frozen test input)"
+          }
+        ],
+        "feeds": [
+          "BIS policy rates",
+          "IMF"
+        ],
+        "desks": {
+          "geopolitical": "No conflict or sanctions signal for Brazil in the figures given.",
+          "sovereign": "Debt and fiscal figures were not given, so the desk makes no debt call.",
+          "macro": "The policy rate of 13.75% is far above inflation of 4.4%, so monetary policy is tight."
+        },
+        "cro": {
+          "geopoliticalRiskScore": 0.4,
+          "sovereignRiskScore": 0.45,
+          "macroRiskScore": 0.5,
+          "croNotes": "Regression check: frozen inputs only."
+        }
+      },
+      "answers": [],
+      "expect": {
+        "headline": "^(EXECUTE_TRADES|DEFENSIVE_HEDGE|HOLD_AND_MONITOR):",
+        "mention": [
+          "Brazil"
+        ],
+        "forbid": "\\b(monetary )?policy (is|looks|appears) (loose|easy|accommodative)\\b",
+        "maxRemoved": 2
+      }
+    },
+    {
+      "id": "supreme-egypt-missing",
+      "kind": "supreme",
+      "question": "Supreme Council final report: Egypt, with its debt figures missing",
+      "supreme": {
+        "iso3": "EGY",
+        "countryName": "Egypt",
+        "currencyCode": "EGP",
+        "figures": [
+          {
+            "path": "wb.fxReservesMonthsImport",
+            "value": 6.1,
+            "source": "IMF IL, Aug 2026 (frozen test input)"
+          }
+        ],
+        "feeds": [
+          "World Bank"
+        ],
+        "desks": {
+          "geopolitical": "No conflict reading was given for Egypt.",
+          "sovereign": "Government debt and the IMF projection are Missing (the IMF feed did not answer), so the desk cannot judge debt.",
+          "macro": "Official reserves cover 6.1 months of imports."
+        },
+        "cro": {
+          "geopoliticalRiskScore": 0.4,
+          "sovereignRiskScore": 0.45,
+          "macroRiskScore": 0.5,
+          "croNotes": "Regression check: frozen inputs only."
+        }
+      },
+      "answers": [],
+      "expect": {
+        "headline": "^(EXECUTE_TRADES|DEFENSIVE_HEDGE|HOLD_AND_MONITOR):",
+        "mention": [
+          "Egypt"
+        ],
+        "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }
     }

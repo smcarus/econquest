@@ -20,7 +20,7 @@ import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { compareToBaseline, parseRegressionSet, structuralProblems, type RegressionBaseline, type RegressionReport } from '../src/utils/councilRegression.ts';
+import { caseInputText, compareToBaseline, parseRegressionSet, structuralProblems, type RegressionBaseline, type RegressionReport } from '../src/utils/councilRegression.ts';
 import { isSmallModel } from '../src/utils/refereeModel.ts';
 import { callKey, canonical, firstDifference } from './helpers/modelRecording.mjs';
 
@@ -176,7 +176,7 @@ test(
       const byId = new Map(set.cases.map((c) => [c.id, c]));
       const problems = report.results.flatMap((r) => {
         const c = byId.get(r.id);
-        return structuralProblems(r, c ? [c.question, JSON.stringify(c.answers)] : [], isSmallModel);
+        return structuralProblems(r, c ? caseInputText(c) : [], isSmallModel);
       });
       assert.deepEqual(problems, []);
       if (cmp.knownFailing.length) t.diagnostic(`Known failing in the baseline (reported, not new): ${cmp.knownFailing.join(', ')}`);
