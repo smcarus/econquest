@@ -278,6 +278,31 @@ and again whenever a file changes; a newer release of a dataset wins over an old
 - Countries are Gleditsch-Ward numbers in the files, mapped to ISO3 in `src/utils/ucdpConflict.ts`.
   `npm run check:data` shows the files read, the releases and any codes the app has no country for.
 
+### ACLED aggregated files
+
+ACLED (Armed Conflict Location & Event Data) publishes weekly aggregated files, one per region
+(Africa, Asia-Pacific, Europe and Central Asia, Latin America & the Caribbean, Middle East, United
+States & Canada), at <https://acleddata.com/conflict-data/download-data-files/aggregated-data>. A free
+registered myACLED account is enough to download them; the ACLED API needs the Research level, which
+Open accounts (any public email such as gmail.com) do not get. The app does not call ACLED for these.
+
+1. Log in to myACLED and open Aggregated data.
+2. Download the file for your region (as many regions as you like).
+3. Put it, as downloaded (.xlsx or .csv, zipped or not), in `data/local/acled/`. No restart is
+   needed: the folder is read again whenever a file changes.
+
+- The file is recognised by its columns (week, country, event_type, events, fatalities; the others
+  are ignored), in any case and with or without spaces. A file without them is listed as not read in
+  `npm run check:data` (row "ACLED aggregated files").
+- Rows are weekly counts per Admin 1 area and event type. The app adds them into country months; a
+  week counts in the month it starts in (ACLED weeks run Saturday to Friday), and only months the
+  file covers to their last day are used. `population_best` is never added up.
+- The figures are the same as with an ACLED account (twelve months of events and fatalities by
+  type, the last three months against the nine before), labelled with the file name and its date.
+  When you also have an account with API access, the API reading wins.
+- The files stay in `data/local/` on your computer: they are not in git and not shipped with the
+  app, since ACLED's EULA restricts sharing (see Menu > About & data licences).
+
 ## Free, with your own key
 
 Keys marked "Settings or .env" can be pasted in the app under **Menu > Settings > Data API keys**

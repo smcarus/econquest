@@ -151,6 +151,7 @@ import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.t
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
 import { ucdpData } from './src/utils/ucdpStore.ts';
+import { acledFileData } from './src/utils/acledFileStore.ts';
 import { ucdpReading } from './src/utils/ucdpConflict.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -802,14 +803,18 @@ function withAcled(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const got = acledReadingFor(snapshot.iso3, acledCountryName(snapshot.iso3, snapshot.countryName || ''));
   if (!('reading' in got)) return { ...(rest as OpenDataSnapshot), acledMissing: got.missing };
   // Listed with the snapshot's live sources, so the Sources tab and the credit lines name ACLED.
-  const label = `${ACLED_SHORT} (ACLED, accessed ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`;
+  const file = got.reading.fromFile;
+  const label = file
+    ? `${ACLED_SHORT} (your downloaded ACLED aggregated file ${file.file}, saved ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`
+    : `${ACLED_SHORT} (ACLED, accessed ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`;
   const others = (snapshot.liveApiSourcesActive || []).filter((x) => !x.startsWith(ACLED_SHORT));
   const verified = (snapshot.dataStatus?.verifiedLiveSources || []).filter((x) => !x.startsWith(ACLED_SHORT));
   return {
     ...(rest as OpenDataSnapshot),
     acled: got.reading,
     liveApiSourcesActive: [...others, label],
-    ...(snapshot.dataStatus ? { dataStatus: { ...snapshot.dataStatus, verifiedLiveSources: [...verified, label] } } : {}),
+    // A downloaded file is not a live pull, so it is not listed as a verified live source.
+    ...(snapshot.dataStatus ? { dataStatus: { ...snapshot.dataStatus, verifiedLiveSources: file ? verified : [...verified, label] } } : {}),
   };
 }
 /** UCDP conflict figures from the downloaded files in data/local/ucdp/, laid over like the GDELT files. */
@@ -1575,6 +1580,7 @@ const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTi
 async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
   const report = await checkConnections({
     ucdp: () => ucdpData(DATA_DIR),
+    acledFiles: () => acledFileData(DATA_DIR),
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
@@ -2566,6 +2572,7 @@ async function startServer() {
     if (!field) return null;
     const report = await checkConnections({
       ucdp: () => ucdpData(DATA_DIR),
+      acledFiles: () => acledFileData(DATA_DIR),
       env,
       only: [field.checkId],
       keySources: sources,
@@ -5888,6 +5895,7 @@ ${String(documentText).slice(0, 12000)}
     try {
       const report = await checkConnections({
         ucdp: () => ucdpData(DATA_DIR),
+        acledFiles: () => acledFileData(DATA_DIR),
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {

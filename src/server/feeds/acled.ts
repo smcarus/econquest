@@ -9,6 +9,8 @@ import path from 'path';
 import { DATA_DIR } from '../config';
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { describeNetworkError } from '../../utils/connectionCheck';
+import { acledFileReading } from '../../utils/acledFiles';
+import { acledFileData } from '../../utils/acledFileStore';
 import { ACLED_NO_ACCOUNT, ACLED_NO_API, ACLED_TOKEN_URL, acledNextCursor, acledReadUrl, acledTokenBody, parseAcledPage, summariseAcled, type AcledReading, type AcledRow } from '../../utils/acled';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -129,13 +131,28 @@ async function pull(iso3: string, country: string): Promise<void> {
   }
 }
 
+/** The reading from an aggregated file in data/local/acled/, or null. A broken folder never stops the snapshot. */
+function fileReading(countryName: string) {
+  try {
+    return acledFileReading(acledFileData(DATA_DIR), countryName);
+  } catch (err: any) {
+    console.warn(`[ACLED] could not read data/local/acled: ${err?.message || err}`);
+    return null;
+  }
+}
+
 /**
  * The saved reading for a country (or the reason it is missing), and a background pull when the
- * reading is a day old or absent. Never waits on the network.
+ * reading is a day old or absent. Never waits on the network. The API reading wins; without it
+ * (no account, an Open account the API refuses, or a pull still running) an aggregated file you
+ * downloaded into data/local/acled/ is used.
  */
 export function acledReadingFor(iso3: string, countryName: string): { reading: AcledReading } | { missing: string } {
   const acct = acledAccount();
-  if (!acct) return { missing: ACLED_NO_ACCOUNT };
+  if (!acct) {
+    const fromFile = fileReading(countryName);
+    return fromFile ? { reading: fromFile } : { missing: ACLED_NO_ACCOUNT };
+  }
   const code = iso3.toUpperCase();
   const saved = loadStore()[code];
   const fresh = saved && Date.now() - Date.parse(saved.pulledAt) < DAY_MS;
@@ -145,5 +162,7 @@ export function acledReadingFor(iso3: string, countryName: string): { reading: A
     inFlight.set(code, job);
   }
   if (saved) return { reading: saved };
+  const fromFile = fileReading(countryName);
+  if (fromFile) return { reading: fromFile };
   return { missing: lastProblem.get(code) || 'Missing: ACLED pull in progress; it fills in on the next refresh' };
 }

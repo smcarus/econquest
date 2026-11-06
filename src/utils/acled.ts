@@ -101,9 +101,15 @@ export interface AcledReading {
   /** Monthly average events, last three months against the nine before (both within the twelve). */
   recentAvg: number;
   priorAvg: number;
+  /**
+   * Set when the counts come from an aggregated file you downloaded from myACLED (data/local/acled/)
+   * rather than the API. `pulledAt` is then the file's date on disk and `latestEventDate` the last
+   * day of the newest week in the file.
+   */
+  fromFile?: { file: string };
 }
 
-const addMonths = (ym: string, n: number) => {
+export const addMonths = (ym: string, n: number) => {
   const d = new Date(Date.UTC(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)) - 1 + n, 1));
   return d.toISOString().slice(0, 7);
 };
@@ -120,16 +126,29 @@ export function summariseAcled(rows: AcledRow[], country: string, pulledAt: stri
   // The newest month is complete when ACLED has moved past it, or the calendar has.
   const latestMonth = latest.slice(0, 7);
   const end = latestMonth < thisMonth ? latestMonth : addMonths(thisMonth, -1);
-  const start = addMonths(end, -11);
-  const months: AcledMonth[] = [];
-  for (let i = 0; i < 12; i++) months.push({ month: addMonths(start, i), events: 0, fatalities: 0, byType: {} });
-  const at = new Map(months.map((m) => [m.month, m]));
+  const byMonth = new Map<string, AcledMonth>();
   for (const r of rows) {
-    const m = at.get(r.event_date.slice(0, 7));
-    if (!m) continue;
+    const key = r.event_date.slice(0, 7);
+    const m = byMonth.get(key) || { month: key, events: 0, fatalities: 0, byType: {} };
     m.events++;
     m.fatalities += r.fatalities;
     m.byType[r.event_type] = (m.byType[r.event_type] || 0) + 1;
+    byMonth.set(key, m);
+  }
+  return acledReadingFromMonths(byMonth, country, pulledAt, latest, end);
+}
+
+/**
+ * The reading for the twelve months ending at `end` ("YYYY-MM") from counts already grouped by
+ * month. Months absent from `byMonth` count as zero. Null when the twelve months hold no events.
+ */
+export function acledReadingFromMonths(byMonth: Map<string, AcledMonth>, country: string, pulledAt: string, latestEventDate: string, end: string, fromFile?: AcledReading['fromFile']): AcledReading | null {
+  const start = addMonths(end, -11);
+  const months: AcledMonth[] = [];
+  for (let i = 0; i < 12; i++) {
+    const key = addMonths(start, i);
+    const m = byMonth.get(key);
+    months.push({ month: key, events: m?.events || 0, fatalities: m?.fatalities || 0, byType: { ...(m?.byType || {}) } });
   }
   const byType: Record<string, number> = {};
   for (const m of months) for (const [t, n] of Object.entries(m.byType)) byType[t] = (byType[t] || 0) + n;
@@ -139,11 +158,12 @@ export function summariseAcled(rows: AcledRow[], country: string, pulledAt: stri
   return {
     pulledAt,
     country,
-    latestEventDate: latest,
+    latestEventDate,
     months,
     total: { events, fatalities: months.reduce((s, m) => s + m.fatalities, 0), byType, from: start, to: end },
     recentAvg: avg(months.slice(9)),
     priorAvg: avg(months.slice(0, 9)),
+    ...(fromFile ? { fromFile } : {}),
   };
 }
 
@@ -166,6 +186,6 @@ export function acledMonthLabel(ym: string): string {
 }
 
 /** Reason shown when the conflict figures are missing. */
-export const ACLED_NO_ACCOUNT = 'Missing: add your ACLED account (email and password) in Menu > Settings > Data API keys';
+export const ACLED_NO_ACCOUNT = 'Missing: add your ACLED account (email and password) in Menu > Settings > Data API keys, or put an aggregated file downloaded from myACLED in data/local/acled/';
 /** Reason when ACLED refuses the account's API access (Open level). */
-export const ACLED_NO_API = 'Missing: ACLED did not allow API access for this account. Open accounts (public email such as gmail.com) get aggregated downloads only; the API needs the Research level, granted by ACLED\'s access team';
+export const ACLED_NO_API = 'Missing: ACLED did not allow API access for this account. Open accounts (public email such as gmail.com) get aggregated downloads only; the API needs the Research level, granted by ACLED\'s access team. An aggregated file downloaded from myACLED into data/local/acled/ works instead';
