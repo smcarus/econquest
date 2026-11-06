@@ -4,7 +4,7 @@ import { CouncilAssessmentRun } from '../types/council';
 import { ArrowRight, ChevronDown, ChevronUp } from 'lucide-react';
 import { EconQuestLogo } from './EconQuestLogo';
 import { StatRefBadge, RichTextWithStatRefs } from './StatRefTooltip';
-import { coherenceText } from '../utils/councilResult';
+import { coherenceText, TRIGGERS_MISSING } from '../utils/councilResult';
 
 interface ExecutiveBriefScorecardProps {
   run: CouncilAssessmentRun;
@@ -272,15 +272,15 @@ export const ExecutiveBriefScorecard: React.FC<ExecutiveBriefScorecardProps> = (
               3. Key Warning Trigger &amp; Defensive Action
             </div>
             <div className="text-sm font-semibold text-rose-600 dark:text-rose-400 mt-1">
-              Watch if: {topTrigger?.bearBreakTrigger || 'Debt > 88.5% GDP or Primary < -1.2%'}
+              Watch if: {topTrigger?.bearBreakTrigger || TRIGGERS_MISSING}
             </div>
             <p className="text-xs text-slate-600 dark:text-slate-300 mt-1.5 leading-relaxed">
               <strong>Plain-English Action:</strong>{' '}
-              {topTrigger?.requiredActionIfTriggered || 'Hedge long-term local bonds and buy 5-year default insurance (CDS)'}
+              {topTrigger?.requiredActionIfTriggered || TRIGGERS_MISSING}
             </p>
             <div className="mt-2 pt-1.5 border-t border-slate-200/70 dark:border-slate-800">
               <StatRefBadge
-                refText={`Ref: Primary Gap = ${topTrigger?.currentValue || `${open.imfIndicators.debtToGdpPct.toFixed(1)}% GDP`} · Urgency = ${topTrigger?.urgency || 'IMMEDIATE'}`}
+                refText={topTrigger ? `Ref: ${topTrigger.currentValue} · Urgency = ${topTrigger.urgency}` : 'Ref: no decision triggers set'}
               />
             </div>
           </div>

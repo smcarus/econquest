@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf';
-import { approvalText, coherenceText, compositeText, riskPctText } from './councilResult';
+import { approvalText, coherenceText, compositeText, riskPctText, sizingText, ticketCallText, TRIGGERS_MISSING } from './councilResult';
 import { AIRuntimeConfig, CouncilAssessmentRun } from '../types/council';
 import { computeFullEconometricForecastSuite } from './econometricForecastingEngine';
 import { runSovereignStrategyBacktest } from './strategyBacktestingEngine';
@@ -239,7 +239,7 @@ ${run.crisisAnalogs
 ## DECISION-POINT & CATALYST THRESHOLD MATRIX
 | ID | Variable & Indicator | Desk | Provenance | Current Level | Bull Threshold | Bear Regime-Break Trigger | Required Institutional Action if Triggered | Urgency |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: |
-${(sc?.decisionPointMatrix || [])
+${(sc?.decisionPointMatrix?.length ? '' : `| ${TRIGGERS_MISSING} | | | | | | | | |\n`) + (sc?.decisionPointMatrix || [])
   .map(
     (dp) =>
       `| \`${dp.variableId}\` | **${dp.variableName}** | ${dp.deskSource.toUpperCase()} | \`${dp.provenanceTier}\` | \`${dp.currentValue}\` | \`${dp.bullThreshold}\` | \`${dp.bearBreakTrigger}\` | ${dp.requiredActionIfTriggered} | **${dp.urgency}** |`
@@ -317,7 +317,7 @@ ${(sc?.policyResearcherReport.policyRecommendations || [])
 ${(sc?.marketTranslationLayer.tradeExpressions || [])
   .map(
     (t) =>
-      `| \`${t.ticketId}\` | ${t.assetClass} | **${t.instrument}** | \`${t.direction}\` | \`${t.sizingWeightPct}%\` | ${t.targetHorizon} | ${t.entryLevel} -> ${t.targetLevel} | **${t.invalidationStopTrigger}** |`
+      `| \`${t.ticketId}\` | ${t.assetClass} | **${t.instrument}** | \`${ticketCallText(t.direction)}\` | \`${sizingText(t.sizingWeightPct)}\` | ${t.targetHorizon} | ${t.entryLevel} -> ${t.targetLevel} | **${t.invalidationStopTrigger}** |`
   )
   .join('\n')}
 
@@ -659,7 +659,7 @@ export function exportSMCRPdfDossier(run: CouncilAssessmentRun): void {
     doc.setFontSize(8);
     doc.setTextColor(15, 23, 42);
     doc.text(
-      `${trd.ticketId} | [${trd.direction}] ${trd.instrument} (${trd.assetClass}) — Sizing: ${trd.sizingWeightPct}% | Horizon: ${trd.targetHorizon}`,
+      `${trd.ticketId} | [${ticketCallText(trd.direction)}] ${trd.instrument} (${trd.assetClass}) — Sizing: ${sizingText(trd.sizingWeightPct)} | Horizon: ${trd.targetHorizon}`,
       margin + 6,
       y + 11
     );

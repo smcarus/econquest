@@ -817,7 +817,7 @@ export function computeCouncilKellyAndLobExecution(
     run.supremeCouncil?.marketTranslationLayer?.tradeExpressions?.length
       ? run.supremeCouncil.marketTranslationLayer.tradeExpressions.map((t) => ({
           instrument: t.instrument,
-          direction: t.direction,
+          direction: t.direction ?? 'MISSING',
         }))
       : [
           {

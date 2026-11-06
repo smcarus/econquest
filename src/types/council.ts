@@ -181,9 +181,11 @@ export interface TradeExecutionTicket {
   ticketId: string;
   assetClass: 'RATES' | 'FX' | 'SOVEREIGN_CREDIT' | 'COMMODITIES' | 'EQUITY_INDEX';
   instrument: string;
-  direction: 'LONG' | 'SHORT' | 'HEDGE';
-  conviction: 'HIGH' | 'MEDIUM' | 'TACTICAL';
-  sizingWeightPct: number;
+  /** The referee model's call, or null when it gave none (shown as Missing). */
+  direction: 'LONG' | 'SHORT' | 'HEDGE' | null;
+  conviction: 'HIGH' | 'MEDIUM' | 'TACTICAL' | null;
+  /** Nothing in the app sizes trades yet: null (shown as Missing). */
+  sizingWeightPct: number | null;
   targetHorizon: string;
   entryLevel: string;
   targetLevel: string;

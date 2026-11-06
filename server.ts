@@ -4611,6 +4611,13 @@ ${MISSING_FIGURES_RULE}
         debtManagementExpectedImpact: { type: Type.STRING },
         tailRiskHedgeInstrument: { type: Type.STRING },
         riskApproval: { type: Type.STRING, enum: ['APPROVED', 'APPROVED_WITH_HEDGE', 'RESTRICTED'] },
+        ...Object.fromEntries(
+          ['ratesTrade', 'fxTrade', 'commodityTrade', 'creditTrade'].flatMap((k) => [
+            [`${k}Direction`, { type: Type.STRING, enum: ['LONG', 'SHORT', 'HEDGE'] }],
+            [`${k}Conviction`, { type: Type.STRING, enum: ['HIGH', 'MEDIUM', 'TACTICAL'] }],
+            [`${k}Horizon`, { type: Type.STRING }],
+          ])
+        ),
       },
       required: [
         'decisionVerdict',
@@ -4654,6 +4661,8 @@ ${MISSING_FIGURES_RULE}
     compositeRiskScore: compositeScore,
     // Nothing measures the council's agreement yet: Missing, never the built-in 0.91.
     globalCoherenceScore: null,
+    // The council does not set decision triggers yet: none, never the built-in rows.
+    decisionPointMatrix: [],
     executiveSummary: textOrMissing(parsed.executiveSummary),
     policyResearcherReport: {
       ...baseOutput.policyResearcherReport,
@@ -4681,9 +4690,20 @@ ${MISSING_FIGURES_RULE}
         // The model writes the rates, FX, commodity and credit ideas; a part it left out is Missing,
         // not the built-in idea. Entry and target levels are not asked for, so they are never shown.
         const prefix = ['ratesTrade', 'fxTrade', 'commodityTrade', 'creditTrade'][idx];
-        const base = { ...t, entryLevel: MODEL_FIELD_MISSING, targetLevel: MODEL_FIELD_MISSING };
-        if (!prefix) return { ...base, instrument: MODEL_FIELD_MISSING, entryRationale: MODEL_FIELD_MISSING, invalidationStopTrigger: MODEL_FIELD_MISSING };
-        return { ...base, instrument: textOrMissing(parsed[`${prefix}Instrument`]), entryRationale: textOrMissing(parsed[`${prefix}Rationale`]), invalidationStopTrigger: textOrMissing(parsed[`${prefix}Invalidation`]) };
+        // Sizing is not asked for (nothing in the app sizes trades), so it is never shown as a number.
+        const base = { ...t, entryLevel: MODEL_FIELD_MISSING, targetLevel: MODEL_FIELD_MISSING, sizingWeightPct: null };
+        if (!prefix) return { ...base, instrument: MODEL_FIELD_MISSING, entryRationale: MODEL_FIELD_MISSING, invalidationStopTrigger: MODEL_FIELD_MISSING, direction: null, conviction: null, targetHorizon: MODEL_FIELD_MISSING };
+        const dir = parsed[`${prefix}Direction`];
+        const conv = parsed[`${prefix}Conviction`];
+        return {
+          ...base,
+          instrument: textOrMissing(parsed[`${prefix}Instrument`]),
+          entryRationale: textOrMissing(parsed[`${prefix}Rationale`]),
+          invalidationStopTrigger: textOrMissing(parsed[`${prefix}Invalidation`]),
+          direction: ['LONG', 'SHORT', 'HEDGE'].includes(dir) ? dir : null,
+          conviction: ['HIGH', 'MEDIUM', 'TACTICAL'].includes(conv) ? conv : null,
+          targetHorizon: textOrMissing(parsed[`${prefix}Horizon`]),
+        };
       }),
       riskGuardianCheck: {
         ...baseOutput.marketTranslationLayer.riskGuardianCheck,
@@ -4843,6 +4863,15 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
   if (rg.liquidityHaircutPct !== null || rg.maxDrawdownEstimatePct !== null) shown.push(['drawdown/haircut (not estimated)', 'built-in']);
   if (rg.approvalStatus !== null && !said('riskApproval')) shown.push(['riskApproval', 'built-in']);
   shown.push(['tailRiskHedgeInstrument', rg.tailRiskHedgeInstrument]);
+  if (o.decisionPointMatrix.length) shown.push(['decision triggers (not set by the council)', 'built-in']);
+  for (const [i, k] of (['ratesTrade', 'fxTrade', 'commodityTrade', 'creditTrade'] as const).entries()) {
+    const x = t[i];
+    if (!x) continue;
+    if (x.sizingWeightPct !== null) shown.push([`trade ${i + 1} sizing (never asked)`, 'built-in']);
+    if (x.direction !== null && !said(`${k}Direction`)) shown.push([`${k}Direction`, 'built-in']);
+    if (x.conviction !== null && !said(`${k}Conviction`)) shown.push([`${k}Conviction`, 'built-in']);
+    shown.push([`${k}Horizon`, x.targetHorizon]);
+  }
   for (const [i, x] of t.entries()) {
     if (x.entryLevel !== MODEL_FIELD_MISSING || x.targetLevel !== MODEL_FIELD_MISSING) shown.push([`trade ${i + 1} entry/target level (never asked)`, 'built-in']);
   }
