@@ -159,6 +159,7 @@ import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { polymarketMoves } from './src/utils/oddsMoves.ts';
+import { bcrpEmbigUrl, parseBcrpEmbig, HC_SPREAD_FEED_LABEL, type HcSpreadPull } from './src/utils/hardCurrencySpread.ts';
 import {
   FRED_10Y_SERIES,
   US_10Y_SERIES,
@@ -469,6 +470,8 @@ type MarketExtrasFile = {
   fred: Record<string, { at: string; value: OfficialYieldObservation }>;
   fx: Record<string, { at: string; reer?: ReerGap; vol?: FxVol }>;
   effr?: { at: string; value: { pct: number; date: string } };
+  /** Hard-currency bond spreads (BCRP EMBIG), the whole last good pull. */
+  hcSpread?: HcSpreadPull;
 };
 let marketExtras: MarketExtrasFile | null = null;
 function marketExtrasFile(): string {
@@ -479,7 +482,7 @@ function loadMarketExtras(): MarketExtrasFile {
   let f: MarketExtrasFile = { fred: {}, fx: {} };
   try {
     const saved = JSON.parse(fs.readFileSync(marketExtrasFile(), 'utf8')) as Partial<MarketExtrasFile>;
-    f = { fred: saved.fred && typeof saved.fred === 'object' ? saved.fred : {}, fx: saved.fx && typeof saved.fx === 'object' ? saved.fx : {}, ...(saved.effr ? { effr: saved.effr } : {}) };
+    f = { fred: saved.fred && typeof saved.fred === 'object' ? saved.fred : {}, fx: saved.fx && typeof saved.fx === 'object' ? saved.fx : {}, ...(saved.effr ? { effr: saved.effr } : {}), ...(saved.hcSpread ? { hcSpread: saved.hcSpread } : {}) };
   } catch {
     // never saved
   }
@@ -507,6 +510,37 @@ async function fetchFredCached(seriesId: string): Promise<OfficialYieldObservati
   const value = got ?? loadMarketExtras().fred[seriesId]?.value ?? null;
   // A saved figure stands in, but the feed is asked again within the hour.
   fredSeriesCache.set(seriesId, { at: Date.now(), value, ...(got ? {} : { fallback: true }) });
+  return value;
+}
+
+/**
+ * Hard-currency bond spreads for the eight countries BCRP publishes (src/utils/hardCurrencySpread.ts):
+ * one request for all of them, kept 12 hours (1 hour after a miss). A good answer is saved in
+ * market-extras.json; when BCRP does not answer the saved pull stands in, with its own months.
+ */
+let hcSpreadCache: { at: number; value: HcSpreadPull | null; fallback?: boolean } | null = null;
+async function fetchHcSpreadUncached(): Promise<HcSpreadPull | null> {
+  const url = bcrpEmbigUrl();
+  try {
+    const res = await fetchWithTimeout(url, 20000);
+    if (!res.ok) {
+      console.warn(`[BCRP EMBIG] HTTP ${res.status}`);
+      return null;
+    }
+    const got = parseBcrpEmbig(await res.text(), url);
+    if (!got) console.warn('[BCRP EMBIG] reply not understood');
+    return got;
+  } catch (e) {
+    console.warn(`[BCRP EMBIG] ${describeNetworkError(e, 20000)}`);
+    return null;
+  }
+}
+async function fetchHcSpread(opts: { force?: boolean } = {}): Promise<HcSpreadPull | null> {
+  if (!opts.force && hcSpreadCache && Date.now() - hcSpreadCache.at < (hcSpreadCache.value && !hcSpreadCache.fallback ? 12 : 1) * 60 * 60 * 1000) return hcSpreadCache.value;
+  const got = await fetchHcSpreadUncached();
+  if (got) saveMarketExtras((f) => (f.hcSpread = got));
+  const value = got ?? loadMarketExtras().hcSpread ?? null;
+  hcSpreadCache = { at: Date.now(), value, ...(got ? {} : { fallback: true }) };
   return value;
 }
 
@@ -1949,6 +1983,18 @@ async function fetchLiveOpenDataSnapshotNetwork(
   if (us10Y) baseline.us10YYield = us10Y;
   else delete baseline.us10YYield;
 
+  // 6b'''. Hard-currency (USD) bond spread over Treasuries, the free stand-in for CDS (BCRP EMBIG,
+  // eight Latin American countries, monthly). Labelled a bond spread everywhere, never CDS.
+  const hcSpread = (await fetchHcSpread())?.countries[normalizedIso];
+  if (hcSpread) {
+    baseline.monetaryAndMarket.hcBondSpreadBps = Math.round(hcSpread.bps); markLive('market.hcBondSpreadBps', HC_SPREAD_FEED_LABEL);
+    baseline.hcBondSpread = hcSpread;
+    activeSources.push(`${HC_SPREAD_FEED_LABEL}, ${hcSpread.period}`);
+  } else {
+    delete baseline.monetaryAndMarket.hcBondSpreadBps;
+    delete baseline.hcBondSpread;
+  }
+
   // 6b'. Own-account 5Y CDS: the user's licensed quote, the only CDS source.
   const ownCds = (await loadOwnCds()).get(normalizedIso);
   if (ownCds) {
@@ -2314,6 +2360,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const n = Object.keys(file.countries || {}).length;
       const route = keyed ? '' : ' (free preview route; a UN Comtrade key in Menu > Settings is faster)';
       return n ? { outcome: 'done', note: `${n} countries saved${route}` } : { outcome: 'failed', note: `UN Comtrade did not answer${route}` };
+    }
+    case 'world:hc_spread': {
+      const got = await fetchHcSpreadUncached();
+      if (!got) return { outcome: 'failed', note: 'BCRP (central bank of Peru) did not answer' };
+      saveMarketExtras((f) => (f.hcSpread = got));
+      hcSpreadCache = null;
+      const n = Object.keys(got.countries).length;
+      return { outcome: 'done', note: `${n} countries saved` };
     }
     case 'world:market_extras': {
       const fredIds = [...new Set([US_10Y_SERIES, ...MARKET_EDGE_ANCHORS.map((d) => d.fredSeries).filter((x): x is string => !!x)])];
@@ -5004,10 +5058,11 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
+      quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -5023,6 +5078,7 @@ async function startServer() {
       tic,
       archive,
       official,
+      hcSpread: hcSpreadPull,
     });
   }
   async function worldSeries(): Promise<Series[]> {

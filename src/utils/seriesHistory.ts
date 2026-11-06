@@ -18,6 +18,7 @@ import { type CpiBasis } from './oecdInflation';
 import { type TicTable } from './ticHoldings';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './officialHistory';
 import { outputGapFromGrowth, outputGapSeries } from './outputGap';
+import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
 
@@ -74,6 +75,8 @@ export interface SeriesInputs {
   archive?: ArchivedSnapshot[];
   /** Full World Bank / IMF history for the country (src/utils/officialHistory.ts), when downloaded. */
   official?: OfficialHistoryFile | null;
+  /** Hard-currency bond spreads (BCRP EMBIG, monthly), when pulled. */
+  hcSpread?: HcSpreadPull | null;
 }
 
 /** Figures given a history from the pull archive: the live-field key and where the value sits. */
@@ -210,6 +213,17 @@ function ticHoldings(iso3: string, pull: SeriesInputs['tic']): Series | SeriesMi
   return { id: 'tic_holdings', label, unit: 'USD bn', freq: 'monthly', source: 'US Treasury TIC (SLT table 5)', pulledAt: pull.pulledAt, points: sortByDate(points) };
 }
 
+/** USD bond spread over Treasuries, monthly, from BCRP (up to 36 months). A bond spread, not CDS. */
+function hcSpread(iso3: string, pull: SeriesInputs['hcSpread']): Series | SeriesMissing {
+  const label = 'USD bond spread over Treasuries (not CDS)';
+  if (!hasHcSpreadSource(iso3)) return { id: 'hc_spread', label, reason: 'No free official source publishes it for this country' };
+  if (!pull) return { id: 'hc_spread', label, reason: 'BCRP (central bank of Peru) has not answered yet' };
+  const obs = pull.countries[iso3];
+  if (!obs?.history?.length) return { id: 'hc_spread', label, reason: 'Not in the BCRP reply' };
+  const points = sortByDate(obs.history.filter((p) => finite(p.bps)).map((p) => ({ date: p.period, value: p.bps })));
+  return { id: 'hc_spread', label, unit: 'bp', freq: 'monthly', source: HC_SPREAD_SOURCE, pulledAt: pull.at, points, about: HC_SPREAD_NOT_CDS };
+}
+
 /** Archive series for one figure: one point per saved pull that had it live. */
 export function archiveSeries(archive: ArchivedSnapshot[] | undefined, fig: (typeof ARCHIVE_FIGURES)[number]): Series | SeriesMissing {
   const pulls = [...(archive || [])].sort((a, b) => a.pulledAt - b.pulledAt);
@@ -256,6 +270,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     leadingIndicator(code, inputs.cli),
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
+    hcSpread(code, inputs.hcSpread),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];
