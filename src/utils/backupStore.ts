@@ -9,6 +9,9 @@ import { loadLibrary, saveLibrary } from './researchStore';
 import { loadWatchRules, saveWatchRules } from './watchRulesStore';
 import { loadWorkspace, saveWorkspaceValues } from './workspaceStore';
 import { loadReviews } from './policyReviewStore';
+import { MAX_BACKUP_SNAPSHOTS } from './backup';
+import { listSnapshotIds, loadSnapshot, saveSnapshot } from './answerSnapshotStore';
+import fs from 'fs';
 
 export interface BackupFiles {
   research: string;
@@ -16,6 +19,8 @@ export interface BackupFiles {
   workspace: string;
   /** data/local/reviews.json; left out, reviews are not backed up or restored. */
   reviews?: string;
+  /** data/local/snapshots/; left out, answer snapshots are not backed up or restored. */
+  snapshots?: string;
 }
 
 export function currentBackup(files: BackupFiles, now = new Date()): BackupFile {
@@ -25,6 +30,7 @@ export function currentBackup(files: BackupFiles, now = new Date()): BackupFile 
       watchRules: loadWatchRules(files.watchRules),
       workspace: loadWorkspace(files.workspace).values,
       ...(files.reviews ? { reviews: loadReviews(files.reviews).reviews } : {}),
+      ...(files.snapshots ? { snapshots: listSnapshotIds(files.snapshots).slice(0, MAX_BACKUP_SNAPSHOTS).map((id) => loadSnapshot(files.snapshots!, id)).filter((s) => s !== null) } : {}),
     },
     now
   );
@@ -65,5 +71,9 @@ export function restoreBackup(files: BackupFiles, backup: BackupFile, now = new 
   saveWorkspaceValues(files.workspace, workspace, now);
   // An older backup has no reviews: the ones on this computer stay as they are.
   if (files.reviews && backup.contents.reviews) writeFileAtomic(files.reviews, JSON.stringify({ reviews: backup.contents.reviews }, null, 1), 0o600);
+  // Snapshots never change once written: restore adds the ones missing here and leaves the rest.
+  if (files.snapshots) {
+    for (const s of backup.contents.snapshots ?? []) if (!fs.existsSync(path.join(files.snapshots, `${s.id}.json`))) saveSnapshot(files.snapshots, s);
+  }
   return { savedCopy: path.join('data', 'local', 'backups', path.basename(copy)) };
 }
