@@ -10,6 +10,10 @@ Cases by step (`kind` in `cases.json`):
 - `supreme`: the Supreme Council's final report (SMCR-1.0), from frozen figures, desk readings and
   CRO scores; every other figure is MISSING in the prompt. Only what the model wrote is checked;
   fields it leaves out are filled from the built-in report in the app and are not counted.
+- `options`: Policy review step 3 (Options), from a frozen frame and diagnosis figures; every other
+  diagnosis figure is Missing ("not in this test case"). The model readings [13]+ read the app's
+  saved history, so they are left out to keep the case the same on every computer. This step now
+  runs on the referee model too (it ranks options, so it judges).
 
 ## Three commands
 

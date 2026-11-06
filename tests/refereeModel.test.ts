@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { isRefereeStep, isSmallModel, largestModel, modelSizeB, smallRefereeNote } from '../src/utils/refereeModel.ts';
 
 test('referee steps: Supreme Council, chat summary and explanations, debate; not agent picking or desks', () => {
-  for (const s of ['STAGE_3_SUPREME_COUNCIL', 'COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE']) assert.ok(isRefereeStep(s), s);
+  for (const s of ['STAGE_3_SUPREME_COUNCIL', 'COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'REVIEW_OPTIONS']) assert.ok(isRefereeStep(s), s);
   for (const s of ['COUNCIL_CHOOSE_AGENTS', 'STAGE_1_GEO_DESK', 'STAGE_2_CONTAGION_CASCADE', 'AI_MODEL_TEST']) assert.equal(isRefereeStep(s), false, s);
 });
 
