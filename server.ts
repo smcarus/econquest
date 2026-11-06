@@ -1,6 +1,7 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
+import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
@@ -3213,6 +3214,21 @@ async function startServer() {
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
     const r = dsaFrom(file);
     res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}) });
+  });
+  // Fiscal reaction (Bohn test, src/utils/bohnTest.ts): primary balance on last year's debt and the output gap.
+  app.get('/api/bohn/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'Full IMF history not downloaded yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const gap = outputGapFrom(file);
+    const r = bohnTest({ primaryBalance: pick('primary_balance'), debt: pick('debt_gdp'), gap: gap.ok ? gap.years : undefined });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: bohnSentence(r, name), references: BOHN_REFERENCES } : {}) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {

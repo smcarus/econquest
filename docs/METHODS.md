@@ -33,6 +33,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Not validated | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
+| Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
 ## Models and signals
@@ -318,6 +319,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Five-year scenarios: the IMF path as published, a baseline on the IMF inputs with no stock-flow adjustment, ten-year historical averages, and growth, primary balance, interest rate and combined shocks shaped like the IMF standardised stress tests (2013 Staff Guidance Note), with sizes stated by the app.
 - **Limits:** A view on stated assumptions, not a forecast and not an IMF DSA. Shock sizes are the app's choices, not the IMF's country calibration.
 - **Code:** `src/utils/debtSustainability.ts`
+
+### Fiscal reaction (Bohn test)
+
+- **Shows in:** Research > History & data
+- OLS of the IMF Fiscal Monitor primary balance (% of GDP) on the previous year's IMF WEO government debt (% of GDP) and the app's output gap estimate: pb(t) = a + rho x d(t-1) + gamma x gap(t). IMF projection years are left out.
+- Newey-West (HAC, Bartlett) standard errors with lag floor(4 x (n/100)^(2/9)). Needs 15 years; when the output gap covers fewer than 80% of them the regression runs without it and says so.
+- Reading: rho above zero with p below 0.05 = the primary balance responds to debt (Bohn 1998's sufficient condition for sustainability holds in the sample); p below 0.10 = weak; otherwise no response found.
+- **Limits:** A record of past behaviour on the whole sample: the response can change with governments and regimes, and short samples give wide errors. No response found does not by itself show debt is unsustainable. Not a forecast.
+- **Code:** `src/utils/bohnTest.ts`
 
 ### Fiscal multipliers (cited reference view)
 

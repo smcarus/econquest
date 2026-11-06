@@ -61,6 +61,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/debtSustainability.ts',
   },
   {
+    id: 'fiscal_reaction',
+    name: 'Fiscal reaction (Bohn test)',
+    where: 'Research > History & data',
+    method: [
+      'OLS of the IMF Fiscal Monitor primary balance (% of GDP) on the previous year\'s IMF WEO government debt (% of GDP) and the app\'s output gap estimate: pb(t) = a + rho x d(t-1) + gamma x gap(t). IMF projection years are left out.',
+      'Newey-West (HAC, Bartlett) standard errors with lag floor(4 x (n/100)^(2/9)). Needs 15 years; when the output gap covers fewer than 80% of them the regression runs without it and says so.',
+      'Reading: rho above zero with p below 0.05 = the primary balance responds to debt (Bohn 1998\'s sufficient condition for sustainability holds in the sample); p below 0.10 = weak; otherwise no response found.',
+    ],
+    limits: 'A record of past behaviour on the whole sample: the response can change with governments and regimes, and short samples give wide errors. No response found does not by itself show debt is unsustainable. Not a forecast.',
+    code: 'src/utils/bohnTest.ts',
+  },
+  {
     id: 'fiscal_multipliers',
     name: 'Fiscal multipliers (cited reference view)',
     where: 'Research > History & data, Policy review Diagnose, Fiscal & Debt Agent',
