@@ -1,10 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
-import { Download, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
+import { Download, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
 import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
-import { csvNoticeLine } from '../utils/disclaimer';
+import { csvNoticeLine, EXPORT_NOTICE } from '../utils/disclaimer';
+import { creditsFor, framedSvg, shareModeBlock } from '../utils/creditLines';
+import { loadShareMode } from '../utils/shareMode';
 
 /**
  * Council chat > the Chart Agent's chart: the lines the question named, then each test with its
@@ -35,11 +37,36 @@ function downloadCsv(result: ChartResult) {
   const head = ['date', ...result.lines.map((l) => `${l.label} (${l.unit})`)];
   const esc = (s: string) => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
   const body = data.map((r) => [String(r.date), ...result.lines.map((l) => (r[l.key] === undefined ? '' : String(r[l.key])))].map(esc).join(','));
-  const sources = [csvNoticeLine(), ...result.lines.map((l) => `# ${l.label}: ${l.source}`)];
+  const sources = [csvNoticeLine(), ...result.lines.map((l) => `# ${l.label}: ${l.source}`), ...creditsFor(result.lines.map((l) => l.source)).credits.map((c) => `# Credit: ${esc(c)}`)];
   const blob = new Blob([[...sources, head.map(esc).join(','), ...body].join('\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 60) || 'chart'}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+const fileStem = (title: string) => title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 60) || 'chart';
+
+/**
+ * The chart as a stand-alone SVG image: title on top, then under the chart its sources, the credit
+ * each source's terms ask for, the dates and the research notice, so it keeps them wherever it goes.
+ */
+function downloadImage(result: ChartResult, box: HTMLElement | null) {
+  const svg = box?.querySelector('svg.recharts-surface') as SVGSVGElement | null;
+  if (!svg) return;
+  const width = Math.round(Number(svg.getAttribute('width')) || svg.clientWidth || 720);
+  const height = Math.round(Number(svg.getAttribute('height')) || svg.clientHeight || 320);
+  const clone = svg.cloneNode(true) as SVGSVGElement;
+  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+  clone.setAttribute('width', String(width));
+  clone.setAttribute('height', String(height));
+  const { credits } = creditsFor(result.lines.map((l) => l.source));
+  const footer = [footnote(result), ...credits.map((c) => `Credit: ${c}`), `Made with EconQuest on ${new Date().toISOString().slice(0, 10)}. ${EXPORT_NOTICE}`].filter(Boolean);
+  const blob = new Blob([framedSvg(new XMLSerializer().serializeToString(clone), width, height, result.title, footer)], { type: 'image/svg+xml;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${fileStem(result.title)}.svg`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -218,6 +245,9 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<ChartResult>(result);
   const [busy, setBusy] = useState(false);
+  const chartBox = useRef<HTMLDivElement>(null);
+  // Sharing mode: no image or CSV of figures whose sources' terms do not let them be passed on.
+  const blocked = shareModeBlock(result.lines.map((l) => l.source), loadShareMode());
   const redraw = async (transform: Transform, tests: ChartTest[]) => {
     if (!result.request) return;
     const req = { ...result.request, transform, tests: ALL_TESTS.filter((t) => tests.includes(t)) };
@@ -249,12 +279,25 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setOpen(true)} data-council-chart-open="true">
             <Maximize2 className="w-3.5 h-3.5" /> Open larger
           </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={!result.lines.length}>
+          <button
+            type="button"
+            className="ui-btn ui-btn-ghost"
+            onClick={() => downloadImage(result, chartBox.current)}
+            disabled={!result.lines.length || Boolean(blocked)}
+            title={blocked ?? 'Download the chart as an image (SVG) with its sources and credit lines under it'}
+            data-council-chart-image="true"
+          >
+            <ImageIcon className="w-3.5 h-3.5" /> Image
+          </button>
+          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={!result.lines.length || Boolean(blocked)} title={blocked ?? undefined}>
             <Download className="w-3.5 h-3.5" /> CSV
           </button>
         </div>
       </header>
-      <Body result={result} />
+      {blocked && <p className="text-xs text-amber-700 dark:text-amber-400" data-council-chart-blocked="true">{blocked}</p>}
+      <div ref={chartBox}>
+        <Body result={result} />
+      </div>
       {open && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-start justify-center p-2 sm:p-8 overflow-y-auto" role="dialog" aria-modal="true" aria-label={result.title} onClick={() => setOpen(false)}>
           <div className="w-full max-w-5xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-4 space-y-3" onClick={(e) => e.stopPropagation()} data-council-chart-dialog="true">
