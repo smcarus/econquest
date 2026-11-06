@@ -35,7 +35,7 @@ const PF_SHOWN = 3;
 
 type VisitSnapshot = {
   savedAt: string;
-  rows: Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; compositeRisk?: number; yieldSource?: string }>;
+  rows: Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; yieldSource?: string }>;
 };
 
 function loadLastVisit(): VisitSnapshot | null {
@@ -55,7 +55,6 @@ function saveVisit(items: LiveWatchlistItem[]) {
         cds5YBps: it.cds5YBps,
         cdsSource: it.cds5YBps !== undefined ? it.cds5YSource : undefined,
         yield10YPct: it.yield10YPct,
-        compositeRisk: it.compositeRisk,
         yieldSource: it.yield10YSource || 'sample',
       };
     });

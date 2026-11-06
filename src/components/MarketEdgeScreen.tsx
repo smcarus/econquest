@@ -2,18 +2,12 @@ import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { missingReason } from '../utils/liveFigures';
-import { peerBasisNote, peerScreen, type RvLabel } from '../utils/marketsMacro';
+import { peerScreen } from '../utils/marketsMacro';
 import { benchmarkRows, marketEdgePeers, type MarketEdgeAnchorsReply } from '../utils/marketEdgeAnchors';
 import { formatPeriod } from '../utils/officialYields';
 import { requiredCredit } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
 import { byMovingMost, cliTrendText, policyMoveText, signedBps, trendFor, trendForObservation, type MarketTrend } from '../utils/marketTrends';
-
-const RV_CLASS: Record<RvLabel, string> = {
-  cheap: 'text-emerald-700 dark:text-emerald-400',
-  rich: 'text-rose-700 dark:text-rose-400',
-  'in line': 'text-slate-600 dark:text-slate-400',
-};
 
 let anchorsRequest: Promise<MarketEdgeAnchorsReply | null> | null = null;
 
@@ -38,7 +32,7 @@ export function useMarketEdgeAnchors(): MarketEdgeAnchorsReply | null {
 }
 
 /**
- * MarketEdge screen: the watchlist sorted from cheapest to richest 5Y CDS for its risk score,
+ * MarketEdge screen: the watchlist sorted from the widest to the narrowest spread over US Treasuries,
  * then the benchmarks that are always shown. Used on Today and on the Country page.
  */
 export const MarketEdgeScreen: React.FC<{
@@ -55,7 +49,6 @@ export const MarketEdgeScreen: React.FC<{
   const us = anchors?.us10Y;
   const [sortBy, setSortBy] = useState<'value' | 'moving'>('value');
   const screen = useMemo(() => peerScreen(peers, us?.valuePct), [peers, us]);
-  const { fit, realFit, basis } = screen;
   const trendByIso = useMemo(() => new Map(peers.map((p) => [p.iso3, trendFor(p, us)])), [peers, us]);
   const rows = useMemo(
     () => (sortBy === 'moving' ? byMovingMost(screen.rows, (r) => trendByIso.get(r.iso3) || {}) : screen.rows),
@@ -80,13 +73,13 @@ export const MarketEdgeScreen: React.FC<{
         <h3 className="ui-section-title">{title}</h3>
         <p className="ui-label">
           {intro ? `${intro} ` : ''}
-          {peerBasisNote(basis, fit, realFit)}
+          Sorted by the 10Y yield spread over US Treasuries, widest first. Each figure comes from an official series or a live feed; no cheap or rich call is made.
         </p>
         <div className="mt-2 flex items-center gap-2 text-xs" role="group" aria-label="Sort MarketEdge">
           <span className="text-slate-500 dark:text-slate-400">Sort:</span>
           {(
             [
-              ['value', 'Cheap to rich'],
+              ['value', 'Widest spread'],
               ['moving', 'Moving most (3m yield change)'],
             ] as const
           ).map(([k, label]) => (
@@ -119,13 +112,11 @@ export const MarketEdgeScreen: React.FC<{
                 Change 3m · 12m
               </th>
               {!CDS_HIDDEN && <th className="px-3 py-2 text-right font-normal">5Y CDS</th>}
-              <th className="hidden sm:table-cell px-3 py-2 text-right font-normal">Risk score</th>
               <th className="hidden lg:table-cell px-3 py-2 text-right font-normal" title="BIS real broad effective exchange rate against its 10-year average">
                 Real FX vs 10y avg
               </th>
               <th className="hidden xl:table-cell px-3 py-2 text-right font-normal" title="OECD Composite Leading Indicator: phase by the OECD rule on level and monthly change">Leading ind.</th>
               <th className="hidden xl:table-cell px-3 py-2 text-right font-normal" title="The latest change in the policy rate in the BIS monthly series">Last policy move</th>
-              <th className="px-4 py-2 text-right font-normal">{basis === 'real_yield' ? 'Real yield vs peers' : 'CDS vs peers'}</th>
             </tr>
           </thead>
           <tbody>
@@ -158,31 +149,18 @@ export const MarketEdgeScreen: React.FC<{
                       <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title={r.cdsBps === undefined ? missingReason('cds', r.iso3).help : undefined}>{r.cdsNote}</div>
                     </td>
                   )}
-                  <td className="hidden sm:table-cell px-3 py-2 text-right tabular-nums">{r.risk !== undefined ? r.risk.toFixed(2) : <span className="text-slate-400 dark:text-slate-500" title={missingReason('risk', r.iso3).help}>–</span>}</td>
                   <td className="hidden lg:table-cell px-3 py-2 text-right">
                     <div className="tabular-nums">{item?.reerGapPct !== undefined ? `${item.reerGapPct >= 0 ? '+' : ''}${item.reerGapPct.toFixed(0)}%` : '–'}</div>
                     {item?.reerPeriod && <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">BIS, {formatPeriod(item.reerPeriod)}</div>}
                   </td>
                   <TrendCells t={trendByIso.get(r.iso3)} part="cycle" />
-                  {basis === 'real_yield' ? (
-                    <td
-                      className={`px-4 py-2 text-right whitespace-nowrap ${r.realRv ? RV_CLASS[r.realRv.label] : ''}`}
-                      title={r.realYieldPct !== undefined ? `Real 10Y yield ${r.realYieldPct.toFixed(1)}% against about ${r.realRv?.fittedPct.toFixed(1)}% for its risk score` : 'Needs a 10Y yield, inflation and a risk score'}
-                    >
-                      {r.realRv ? `${r.realRv.gapPts >= 0 ? '+' : ''}${r.realRv.gapPts.toFixed(1)} pts ${r.realRv.label}` : '–'}
-                    </td>
-                  ) : (
-                    <td className={`px-4 py-2 text-right whitespace-nowrap ${r.rv ? RV_CLASS[r.rv.label] : ''}`}>
-                      {r.rv ? `${r.rv.gapPct >= 0 ? '+' : ''}${r.rv.gapPct.toFixed(0)}% ${r.rv.label}` : '–'}
-                    </td>
-                  )}
                 </tr>
               );
             })}
             {bench.length > 0 && (
               <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                <td colSpan={CDS_HIDDEN ? 9 : 10} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
-                  Benchmarks, always shown. No risk score in the app yet, so they are not in the cheap or rich fit.
+                <td colSpan={CDS_HIDDEN ? 7 : 8} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
+                  Benchmarks, always shown.
                 </td>
               </tr>
             )}
@@ -208,10 +186,8 @@ export const MarketEdgeScreen: React.FC<{
                     <div className="text-xs text-slate-500 dark:text-slate-400">{b.cdsNote}</div>
                   </td>
                 )}
-                <td className="hidden sm:table-cell px-3 py-2 text-right">–</td>
                 <td className="hidden lg:table-cell px-3 py-2 text-right">–</td>
                 <TrendCells t={benchTrend.get(b.iso3)} part="cycle" />
-                <td className="px-4 py-2 text-right text-slate-500 dark:text-slate-400">–</td>
               </tr>
             ))}
           </tbody>
@@ -219,7 +195,7 @@ export const MarketEdgeScreen: React.FC<{
       </div>
       <p className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400">
         {anchors ? '' : 'Loading the benchmarks. '}
-        Changes are moves in the sourced series, not forecasts. Model readings for discussion, not trade advice. Local-currency yields differ partly because inflation differs; the risk score is the app's own model.
+        Changes are moves in the sourced series, not forecasts. Model readings for discussion, not trade advice. Local-currency yields differ partly because inflation differs.
       </p>
       {us && <SourceCredits credits={[requiredCredit('fred')]} className="px-4 pb-2" />}
     </section>

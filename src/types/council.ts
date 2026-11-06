@@ -477,15 +477,10 @@ export interface WatchlistItem {
   region: string;
   currencyCode: string;
   focusTheme: string;
-  geopoliticalRisk: number;
-  sovereignRisk: number;
-  macroRisk: number;
-  compositeRisk: number;
   yield10YPct: number;
   cds5YBps: number;
   debtToGdpPct: number;
   fxReservesMonths: number;
-  alertStatus: 'CRITICAL' | 'ELEVATED' | 'STABLE';
   /** Whether this row's figures came from live feeds (see utils/dataStatus.ts). Absent = sample. */
   dataMode?: 'live' | 'partial' | 'sample' | 'unverified';
   dataAsOf?: string;
@@ -534,8 +529,6 @@ export interface WatchlistItem {
   /** 'live' when the IMF filled debt/GDP, or the World Bank filled reserves; else built-in. */
   debtSource?: 'live' | 'sample';
   reservesSource?: 'live' | 'sample';
-  /** 'live' when the risk model's main inputs (IMF, World Bank, GDELT) were all live. */
-  riskSource?: 'live' | 'sample';
   /** BIS international government bonds: outstanding and due within a year, USD bn. */
   intlBondsUsdBn?: number;
   intlBondsDue1yUsdBn?: number;
@@ -581,11 +574,6 @@ export interface WatchlistItem {
 
 /** Built-in figures on a watchlist row; LiveWatchlistItem leaves each out unless a live source filled it. */
 export type BuiltInWatchlistField =
-  | 'compositeRisk'
-  | 'geopoliticalRisk'
-  | 'sovereignRisk'
-  | 'macroRisk'
-  | 'alertStatus'
   | 'yield10YPct'
   | 'cds5YBps'
   | 'debtToGdpPct'
@@ -2926,9 +2914,8 @@ export interface WorkspaceSessionSnapshot {
   layoutMode: WorkspaceLayoutMode;
   darkMode: boolean;
   scenarioDirective: string;
-  forecastShocks: ForecastingShockInputs;
-  geopoliticalWargameParams: GeopoliticalWargameParams;
-  liquidityStressParams: LiquidityStressParams;
+  // Old sessions may still carry forecastShocks, geopoliticalWargameParams and liquidityStressParams
+  // (inputs of the retired model desk engines); they are ignored.
   watchlists: WatchlistGroup[];
   activeWatchlistId: string;
   customOnboardedSovereigns: CustomSovereignOnboardingDraft[];

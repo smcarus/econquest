@@ -9,7 +9,7 @@ import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { FRED_10Y_SERIES } from './officialYields';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from './bisPolicyRates';
 
-export type FigureKey = 'risk' | 'cds' | 'hcspread' | 'yield' | 'debt' | 'reserves' | 'cpi' | 'policy';
+export type FigureKey = 'cds' | 'hcspread' | 'yield' | 'debt' | 'reserves' | 'cpi' | 'policy';
 
 export interface MissingReason {
   /** 'setup': a key, file or account is needed. 'unreachable': a free feed did not answer. */
@@ -21,7 +21,6 @@ export interface MissingReason {
 }
 
 export const FIGURE_LABEL: Record<FigureKey, string> = {
-  risk: 'Risk score',
   cds: '5Y CDS',
   hcspread: 'USD bond spread',
   yield: '10Y yield',
@@ -38,12 +37,6 @@ export function hasFreeOfficialYield(iso3: string): boolean {
 
 export function missingReason(key: FigureKey, iso3: string): MissingReason {
   switch (key) {
-    case 'risk':
-      return {
-        kind: 'unreachable',
-        short: 'Needs live inputs',
-        help: 'The risk score is shown only when its IMF, World Bank and GDELT inputs are live. Press Refresh now under Research > One country, or check the connection.',
-      };
     case 'cds':
       return {
         kind: 'setup',
@@ -74,8 +67,6 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
 /** Whether each figure on a row came from a real source. */
 export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey): boolean {
   switch (key) {
-    case 'risk':
-      return it.riskSource === 'live';
     case 'cds':
       return it.cds5YSource === 'own';
     case 'hcspread':
@@ -97,13 +88,9 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
 /** The row with every built-in figure removed. Rows saved before sources were recorded lose all of them. */
 export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem {
   const out: LiveWatchlistItem = { ...it };
-  if (!hasFigure(it, 'risk')) {
-    delete out.compositeRisk;
-    delete out.geopoliticalRisk;
-    delete out.sovereignRisk;
-    delete out.macroRisk;
-    delete out.alertStatus;
-  }
+  // The old composite risk score was never registered or tested and is no longer made; rows
+  // saved before it was retired still carry it, so it is dropped here.
+  for (const k of ['compositeRisk', 'geopoliticalRisk', 'sovereignRisk', 'macroRisk', 'alertStatus', 'riskSource']) delete (out as Record<string, unknown>)[k];
   if (!hasFigure(it, 'cds')) {
     delete out.cds5YBps;
     delete out.cds5YDate;
@@ -138,7 +125,7 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
 }
 
 // CDS is hidden for now (src/utils/cdsHidden.ts), so it is not listed as a missing figure either.
-export const MISSING_KEYS: FigureKey[] = (['risk', 'cds', 'hcspread', 'yield', 'debt', 'reserves', 'cpi', 'policy'] as FigureKey[]).filter((k) => !(CDS_HIDDEN && k === 'cds'));
+export const MISSING_KEYS: FigureKey[] = (['cds', 'hcspread', 'yield', 'debt', 'reserves', 'cpi', 'policy'] as FigureKey[]).filter((k) => !(CDS_HIDDEN && k === 'cds'));
 
 /** For a summary line: which figures are missing on how many rows, and the most useful fix. */
 export function missingSummary(items: Array<WatchlistItem | LiveWatchlistItem>): Array<{ key: FigureKey; count: number; reason: MissingReason }> {

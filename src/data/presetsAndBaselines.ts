@@ -16,44 +16,16 @@ export function registerCustomSovereignInCatalog(
   draft: CustomSovereignOnboardingDraft
 ): WatchlistItem {
   const cleanIso3 = draft.iso3.trim().toUpperCase().slice(0, 3);
-  const cdsNorm = Math.min(0.92, Math.max(0.18, draft.cds5YSpreadBps / 520));
-  const debtNorm = Math.min(0.92, Math.max(0.18, draft.debtToGdpPct / 130));
-  const sovRisk = Number(((cdsNorm * 0.55 + debtNorm * 0.45)).toFixed(2));
-  const macroRisk = Number(
-    Math.min(
-      0.92,
-      Math.max(0.18, (draft.cpiInflationPct / 18) * 0.5 + (draft.sovereign10YBondYieldPct / 22) * 0.5)
-    ).toFixed(2)
-  );
-  const geoRisk = Number(
-    Math.min(
-      0.92,
-      Math.max(0.18, (draft.chokepointExposureIndex / 100) * 0.65 + ((100 - draft.politicalStabilityPercentile) / 100) * 0.35)
-    ).toFixed(2)
-  );
-  const compositeRisk = Number(((geoRisk + sovRisk + macroRisk) / 3).toFixed(2));
-  const alertStatus: WatchlistItem['alertStatus'] =
-    compositeRisk >= 0.65 || draft.cds5YSpreadBps >= 320
-      ? 'CRITICAL'
-      : compositeRisk >= 0.45 || draft.cds5YSpreadBps >= 140
-      ? 'ELEVATED'
-      : 'STABLE';
-
   const newItem: WatchlistItem = {
     iso3: cleanIso3,
     countryName: draft.countryName.trim(),
     region: draft.region.trim(),
     currencyCode: draft.currencyCode.trim().toUpperCase(),
     focusTheme: draft.focusTheme.trim(),
-    geopoliticalRisk: geoRisk,
-    sovereignRisk: sovRisk,
-    macroRisk: macroRisk,
-    compositeRisk,
     yield10YPct: Number(draft.sovereign10YBondYieldPct.toFixed(2)),
     cds5YBps: Math.round(draft.cds5YSpreadBps),
     debtToGdpPct: Number(draft.debtToGdpPct.toFixed(1)),
     fxReservesMonths: Number(draft.fxReservesMonthsImport.toFixed(1)),
-    alertStatus,
   };
 
   const existingIdx = SOVEREIGN_CATALOG.findIndex((c) => c.iso3 === cleanIso3);
@@ -102,15 +74,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Latin America',
     currencyCode: 'BRL',
     focusTheme: 'Fiscal Primary Target Credibility vs. Selic Terminal Rate & Real Yield Cushion',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'ELEVATED',
   },
   {
     iso3: 'TUR',
@@ -118,15 +85,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'EMEA',
     currencyCode: 'TRY',
     focusTheme: 'Orthodox Monetary Disinflation Path, Net FX Reserve Rebuilding & Energy Import Sensitivity',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'CRITICAL',
   },
   {
     iso3: 'EGY',
@@ -134,15 +96,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'MENA / Chokepoint',
     currencyCode: 'EGP',
     focusTheme: 'Bab el-Mandeb Maritime Transit Revenue Shock, IMF EFF Tranche & Rollover Wall',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'CRITICAL',
   },
   {
     iso3: 'ZAF',
@@ -150,15 +107,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Sub-Saharan Africa',
     currencyCode: 'ZAR',
     focusTheme: 'Coalition Fiscal Consolidation, Logistics Bottlenecks & Commodity Terms-of-Trade',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'ELEVATED',
   },
   {
     iso3: 'MEX',
@@ -166,15 +118,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Latin America',
     currencyCode: 'MXN',
     focusTheme: 'North American Trade Tariff Renegotiation, Judicial Reform & Quasi-Sovereign Contingent Liability',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'ELEVATED',
   },
   {
     iso3: 'IDN',
@@ -182,15 +129,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Asia-Pacific',
     currencyCode: 'IDR',
     focusTheme: 'Fiscal Deficit 3% Cap Discipline, Commodity Downstreaming & DXY Spillover Resilience',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'STABLE',
   },
   {
     iso3: 'JPN',
@@ -198,15 +140,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'G10 / Asia-Pacific',
     currencyCode: 'JPY',
     focusTheme: 'BoJ Yield Curve Normalization, JGB Duration Supply & Yen Carry Trade Unwind Spillover',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'ELEVATED',
   },
   {
     iso3: 'GBR',
@@ -214,15 +151,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'G10 / Europe',
     currencyCode: 'GBP',
     focusTheme: 'Gilt Issuance Supply Absorption, Fiscal Headroom Rules & Services Inflation Persistence',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'STABLE',
   },
   {
     iso3: 'POL',
@@ -230,15 +162,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'CEE / Europe',
     currencyCode: 'PLN',
     focusTheme: 'Defence Spending and the EU Deficit Procedure, NBP Easing Path & Frontline Geopolitical Premium',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'STABLE',
   },
   {
     iso3: 'CHL',
@@ -246,15 +173,10 @@ export const SOVEREIGN_CATALOG: WatchlistItem[] = [
     region: 'Latin America',
     currencyCode: 'CLP',
     focusTheme: 'Fiscal Rule Credibility, Copper Terms-of-Trade & BCCh Easing Room',
-    geopoliticalRisk: N,
-    sovereignRisk: N,
-    macroRisk: N,
-    compositeRisk: N,
     yield10YPct: N,
     cds5YBps: N,
     debtToGdpPct: N,
     fxReservesMonths: N,
-    alertStatus: 'STABLE',
   },
 ];
 
@@ -905,11 +827,11 @@ export function buildDefaultAssessmentRun(
   const pmPolicy = openData.polymarketContracts[0];
   const pmFiscal = openData.polymarketContracts[1];
 
-  // Dynamically calibrate sovereign, macro, and geopolitical risk scores from live openData
-  const anchors = computeQuantitativeAnchorScores(openData);
-  const liveSovRisk = anchors.sovereign;
-  const liveMacroRisk = anchors.macro;
-  const liveGeoRisk = anchors.geopolitical;
+  // No built-in risk scores: every desk and agent score starts missing (NaN) and only the model's
+  // own answer fills it (server.ts, full council).
+  const geoRisk = Number.NaN;
+  const sovRisk = Number.NaN;
+  const macRisk = Number.NaN;
 
   const item: WatchlistItem = customOpenData
     ? {
@@ -917,10 +839,6 @@ export function buildDefaultAssessmentRun(
         iso3: openData.iso3,
         countryName: openData.countryName,
         currencyCode: openData.currencyCode,
-        geopoliticalRisk: liveGeoRisk,
-        sovereignRisk: liveSovRisk,
-        macroRisk: liveMacroRisk,
-        compositeRisk: Number(((liveGeoRisk + liveSovRisk + liveMacroRisk) / 3).toFixed(2)),
         yield10YPct: openData.monetaryAndMarket.sovereign10YBondYieldPct,
         cds5YBps: openData.monetaryAndMarket.cds5YSpreadBps,
         debtToGdpPct: openData.imfIndicators.debtToGdpPct,
@@ -948,8 +866,8 @@ export function buildDefaultAssessmentRun(
         deskId: 'geopolitical',
         roleTitle: 'Alternative Data, GDELT Event Velocity & Diplomatic Think-Tank Monitor',
         dataSourcesUsed: ['GDELT 2.0 DOC API', 'CSIS / CrisisWatch Feeds', 'Google Search Grounding'],
-        stance: item.geopoliticalRisk > 0.6 ? 'BEARISH' : 'NEUTRAL',
-        riskScore: item.geopoliticalRisk,
+        stance: geoRisk > 0.6 ? 'BEARISH' : 'NEUTRAL',
+        riskScore: geoRisk,
         confidence: 0.86,
         brierCalibrationWeight: 0.88,
         keyMetrics: [
@@ -976,7 +894,7 @@ export function buildDefaultAssessmentRun(
         structuredPayload: {
           gdelt_conflict_index: openData.gdeltMetrics.conflictIntensityIndex,
           media_tone_score: openData.gdeltMetrics.averageTone,
-          escalation_trigger_active: item.geopoliticalRisk > 0.55,
+          escalation_trigger_active: geoRisk > 0.55,
         },
         groundingSources: openData.gdeltMetrics.topHeadlines.map((h) => ({
           title: h.title,
@@ -992,7 +910,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'Maritime Chokepoints, Physical Supply Chains & Energy Freight Mapper',
         dataSourcesUsed: ['IMF PortWatch Maritime Indicators', 'UN Comtrade Open Trade Flows'],
         stance: openData.monetaryAndMarket.chokepointExposureIndex > 55 ? 'BEARISH' : 'NEUTRAL',
-        riskScore: Number(Math.min(0.95, item.geopoliticalRisk + 0.08).toFixed(2)),
+        riskScore: Number(Math.min(0.95, geoRisk + 0.08).toFixed(2)),
         confidence: 0.84,
         brierCalibrationWeight: 0.91,
         keyMetrics: [
@@ -1037,7 +955,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'OFAC Regulatory Tracker, Tariff Regimes & Polymarket Contract Auditor',
         dataSourcesUsed: ['Polymarket Gamma API', 'OFAC SDN / Tariff Schedules'],
         stance: 'BEARISH',
-        riskScore: Number(Math.min(0.92, item.geopoliticalRisk + 0.05).toFixed(2)),
+        riskScore: Number(Math.min(0.92, geoRisk + 0.05).toFixed(2)),
         confidence: 0.89,
         brierCalibrationWeight: 0.87,
         keyMetrics: [
@@ -1079,7 +997,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'Sovereign Debt-to-GDP, Primary Balance & Rollover Schedule Auditor',
         dataSourcesUsed: ['IMF DataMapper WEO API', 'National Treasury Issuance Schedule'],
         stance: openData.imfIndicators.debtToGdpPct > 75 ? 'BEARISH' : 'BULLISH',
-        riskScore: item.sovereignRisk,
+        riskScore: sovRisk,
         confidence: 0.92,
         brierCalibrationWeight: 0.94,
         keyMetrics: [
@@ -1170,7 +1088,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'Electoral Cycle, Fiscal Consolidation Commitment & Willingness-to-Pay Analyst',
         dataSourcesUsed: ['World Bank WGI Governance API', 'Polymarket Fiscal/Election Contracts', 'IMF Article IV Extract'],
         stance: 'BEARISH',
-        riskScore: Number(Math.min(0.90, item.sovereignRisk + 0.14).toFixed(2)),
+        riskScore: Number(Math.min(0.90, sovRisk + 0.14).toFixed(2)),
         confidence: 0.83,
         brierCalibrationWeight: 0.85,
         keyMetrics: [
@@ -1213,7 +1131,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'Real-Time GDP Nowcasting, CPI Pass-Through & Activity Tracker',
         dataSourcesUsed: ['DBnomics Open Macro Aggregator', 'IMF WEO Real GDP & CPI API'],
         stance: 'NEUTRAL',
-        riskScore: item.macroRisk,
+        riskScore: macRisk,
         confidence: 0.88,
         brierCalibrationWeight: 0.90,
         keyMetrics: [
@@ -1258,7 +1176,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'Monetary Policy NLP Sentiment, Terminal Rate Path & Real Cushion Auditor',
         dataSourcesUsed: ['BIS Central Bank Policy Series', 'Central Bank Minutes NLP', 'IMF Article IV Extract'],
         stance: 'BEARISH',
-        riskScore: Number(Math.min(0.92, item.macroRisk + 0.06).toFixed(2)),
+        riskScore: Number(Math.min(0.92, macRisk + 0.06).toFixed(2)),
         confidence: 0.91,
         brierCalibrationWeight: 0.93,
         keyMetrics: [
@@ -1303,7 +1221,7 @@ export function buildDefaultAssessmentRun(
         roleTitle: 'US Treasury Curve Transmission, DXY Beta & Commodity Shock Modeler',
         dataSourcesUsed: ['US Treasury Fiscal Data API', 'ECB Data Portal', 'Cross-Asset Spillover Matrix'],
         stance: 'BEARISH',
-        riskScore: Number(Math.min(0.90, item.macroRisk + 0.05).toFixed(2)),
+        riskScore: Number(Math.min(0.90, macRisk + 0.05).toFixed(2)),
         confidence: 0.87,
         brierCalibrationWeight: 0.89,
         keyMetrics: [
@@ -1361,10 +1279,10 @@ export function buildDefaultAssessmentRun(
             riskScoreAdjustment: 0.06,
           },
         ],
-        preCascadeRiskScore: item.geopoliticalRisk,
-        postCascadeRiskScore: Number(Math.min(0.95, item.geopoliticalRisk + 0.06).toFixed(2)),
-        consensusStance: item.geopoliticalRisk > 0.6 ? 'DISTRESSED' : 'CAUTIOUS',
-        consensusSummary: `Shipping bottlenecks and tariff risks are pushing import prices up by 15%, creating an immediate inflation shock that passes straight to the Macroeconomic Desk (Ref: Freight/Energy Cost Shock = +15.0% · Post-Debate Geo Risk = ${Number(Math.min(0.95, item.geopoliticalRisk + 0.06).toFixed(2))}).`,
+        preCascadeRiskScore: geoRisk,
+        postCascadeRiskScore: Number(Math.min(0.95, geoRisk + 0.06).toFixed(2)),
+        consensusStance: geoRisk > 0.6 ? 'DISTRESSED' : 'CAUTIOUS',
+        consensusSummary: `Shipping bottlenecks and tariff risks are pushing import prices up by 15%, creating an immediate inflation shock that passes straight to the Macroeconomic Desk (Ref: Freight/Energy Cost Shock = +15.0% · Post-Debate Geo Risk = ${Number(Math.min(0.95, geoRisk + 0.06).toFixed(2))}).`,
         minorityDissents: [],
       },
       sovereign: {
@@ -1386,9 +1304,9 @@ export function buildDefaultAssessmentRun(
             riskScoreAdjustment: 0.08,
           },
         ],
-        preCascadeRiskScore: item.sovereignRisk,
-        postCascadeRiskScore: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
-        consensusStance: item.sovereignRisk > 0.6 ? 'DEFENSIVE' : 'CAUTIOUS',
+        preCascadeRiskScore: sovRisk,
+        postCascadeRiskScore: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
+        consensusStance: sovRisk > 0.6 ? 'DEFENSIVE' : 'CAUTIOUS',
         consensusSummary: `Strong central bank dollar savings protect against a foreign debt default, but high local government debt (${openData.imfIndicators.debtToGdpPct.toFixed(1)}% of GDP) is very vulnerable to rising local interest rates (Ref: FX Reserves = ${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} mos · Gross Debt = ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% GDP).`,
         minorityDissents: [
           {
@@ -1396,10 +1314,10 @@ export function buildDefaultAssessmentRun(
             deskId: 'sovereign',
             agentId: 'ag6_political_will',
             agentName: 'Political Will & Governance Analyst',
-            agentRiskScore: Number(Math.min(0.94, item.sovereignRisk + 0.22).toFixed(2)),
-            deskConsensusScore: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
+            agentRiskScore: Number(Math.min(0.94, sovRisk + 0.22).toFixed(2)),
+            deskConsensusScore: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
             divergenceDelta: 0.22,
-            coreDissentArgument: `Looking only at today's central bank reserves (${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports) can be misleading. Pre-election spending pressure could force off-budget government borrowing, which historically causes local investors to pull money out within two quarters (Ref: Agent Risk Score = ${Number(Math.min(0.94, item.sovereignRisk + 0.22).toFixed(2))} vs. Desk Consensus = ${Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2))}).`,
+            coreDissentArgument: `Looking only at today's central bank reserves (${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of imports) can be misleading. Pre-election spending pressure could force off-budget government borrowing, which historically causes local investors to pull money out within two quarters (Ref: Agent Risk Score = ${Number(Math.min(0.94, sovRisk + 0.22).toFixed(2))} vs. Desk Consensus = ${Number(Math.min(0.95, sovRisk + 0.11).toFixed(2))}).`,
             earlyWarningTrigger: 'Announcement of off-budget spending packages or replacement of fiscally conservative Treasury officials.',
             falsificationThreshold: `Government achieving a primary budget surplus above +0.5% of GDP for two straight quarters.`,
           },
@@ -1424,10 +1342,10 @@ export function buildDefaultAssessmentRun(
             riskScoreAdjustment: 0.09,
           },
         ],
-        preCascadeRiskScore: item.macroRisk,
-        postCascadeRiskScore: Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2)),
+        preCascadeRiskScore: macRisk,
+        postCascadeRiskScore: Number(Math.min(0.95, macRisk + 0.09).toFixed(2)),
         consensusStance: 'DEFENSIVE',
-        consensusSummary: `Rising import and shipping costs will keep inflation elevated, preventing interest rate cuts and pushing local bond yields up by 1.00% to 1.25% (Ref: Terminal Rate Repricing = +100–125 bps · Post-Cascade Macro Risk = ${Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2))}).`,
+        consensusSummary: `Rising import and shipping costs will keep inflation elevated, preventing interest rate cuts and pushing local bond yields up by 1.00% to 1.25% (Ref: Terminal Rate Repricing = +100–125 bps · Post-Cascade Macro Risk = ${Number(Math.min(0.95, macRisk + 0.09).toFixed(2))}).`,
         minorityDissents: [],
       },
     },
@@ -1440,15 +1358,15 @@ export function buildDefaultAssessmentRun(
         receivingAgent: 'Global Spillover Analyst',
         shockVariable: 'energy_and_freight_inflation_impulse_pct',
         shockDelta: '+15.0% Landed Energy/Freight Cost → +95bps Headline CPI',
-        priorRiskScore: item.macroRisk,
-        postCascadeRiskScore: Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2)),
+        priorRiskScore: macRisk,
+        postCascadeRiskScore: Number(Math.min(0.95, macRisk + 0.09).toFixed(2)),
         transmissionMechanism:
           'Higher shipping costs and tariff friction make imported fuel and goods 15% more expensive, which adds +0.95% to consumer inflation over the next year and forces the Central Bank to raise its interest rate path by +1.00% (Ref: Freight Shock = +15.0% → CPI Revision = +95 bps → Terminal Rate = +100 bps).',
         jsonPatch: {
           imported_energy_inflation_shock_pct: 15.0,
           cpi_forecast_revision_bps: 95,
           terminal_policy_rate_revision_bps: 100,
-          macro_risk_score_post_cascade: Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2)),
+          macro_risk_score_post_cascade: Number(Math.min(0.95, macRisk + 0.09).toFixed(2)),
         },
       },
       {
@@ -1459,15 +1377,15 @@ export function buildDefaultAssessmentRun(
         receivingAgent: 'Fiscal Auditor Analyst',
         shockVariable: 'domestic_debt_servicing_cost_pct_gdp',
         shockDelta: '+100bps Policy Rate → +0.85% GDP Interest Burden & +45bps 10Y Term Premium',
-        priorRiskScore: item.sovereignRisk,
-        postCascadeRiskScore: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
+        priorRiskScore: sovRisk,
+        postCascadeRiskScore: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
         transmissionMechanism:
           'Because a large portion of the government’s local debt has floating interest rates or comes due soon, a +1.00% central bank rate hike automatically adds 0.85% of GDP to annual government interest payments and pushes total Debt/GDP 2.4% higher by 2027 (Ref: Policy Rate +100 bps → Interest Expense +0.85% GDP → 2027F Debt/GDP +2.4%).',
         jsonPatch: {
           policy_rate_input_pct: Number((openData.monetaryAndMarket.policyRatePct + 1.0).toFixed(2)),
           annual_interest_cost_delta_pct_gdp: 0.85,
           debt_to_gdp_2027_revised_pct: Number((openData.imfIndicators.debtToGdpForecast2027Pct + 2.4).toFixed(1)),
-          sovereign_risk_score_post_cascade: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
+          sovereign_risk_score_post_cascade: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
         },
       },
     ],
@@ -1531,9 +1449,9 @@ export function buildDefaultAssessmentRun(
       },
     },
     croState: {
-      geopoliticalRiskScore: Number(Math.min(0.95, item.geopoliticalRisk + 0.06).toFixed(2)),
-      sovereignRiskScore: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
-      macroRiskScore: Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2)),
+      geopoliticalRiskScore: Number(Math.min(0.95, geoRisk + 0.06).toFixed(2)),
+      sovereignRiskScore: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
+      macroRiskScore: Number(Math.min(0.95, macRisk + 0.09).toFixed(2)),
       energyInflationShockPct: 15.0,
       debtServicingSpreadBps: 85,
       fxReserveAdequacyMonths: openData.worldBankIndicators.fxReservesMonthsImport,
@@ -1555,9 +1473,9 @@ export function buildDefaultAssessmentRun(
       schemaVersion: 'SMCR-1.0',
       generatedAt: new Date().toISOString(),
       decisionVerdict: 'DEFENSIVE_HEDGE',
-      compositeRiskScore: Number(((item.geopoliticalRisk + item.sovereignRisk + item.macroRisk) / 3 + 0.08).toFixed(2)),
+      compositeRiskScore: Number(((geoRisk + sovRisk + macRisk) / 3 + 0.08).toFixed(2)),
       globalCoherenceScore: null,
-      executiveSummary: `In plain terms: ${item.countryName} is unlikely to default on its US dollar debt because the central bank holds a healthy ${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of import reserves, but its local-currency bonds and currency face rising pressure. Shipping delays and tariff risks (+15% import cost shock) are keeping consumer inflation sticky at ${openData.imfIndicators.cpiInflationPct.toFixed(2)}%, which forces the Central Bank to keep interest rates high at ${openData.monetaryAndMarket.policyRatePct.toFixed(2)}%+. Because government debt is already ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% of GDP and the budget is ${openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% of GDP short of stabilizing debt, high interest rates automatically make the budget deficit worse—favoring defensive hedges against higher long-term local bond yields and currency swings (Ref: Composite Risk = ${Number(((item.geopoliticalRisk + item.sovereignRisk + item.macroRisk) / 3 + 0.08).toFixed(2))} · r - g = +${openData.dsaAnalytics.rMinusGDifferentialPct.toFixed(2)}% · GG Cover = ${openData.debtRollover.greenspanGuidottiRatioPct}%).`,
+      executiveSummary: `In plain terms: ${item.countryName} is unlikely to default on its US dollar debt because the central bank holds a healthy ${openData.worldBankIndicators.fxReservesMonthsImport.toFixed(1)} months of import reserves, but its local-currency bonds and currency face rising pressure. Shipping delays and tariff risks (+15% import cost shock) are keeping consumer inflation sticky at ${openData.imfIndicators.cpiInflationPct.toFixed(2)}%, which forces the Central Bank to keep interest rates high at ${openData.monetaryAndMarket.policyRatePct.toFixed(2)}%+. Because government debt is already ${openData.imfIndicators.debtToGdpPct.toFixed(1)}% of GDP and the budget is ${openData.dsaAnalytics.fiscalConsolidationGapPct.toFixed(2)}% of GDP short of stabilizing debt, high interest rates automatically make the budget deficit worse—favoring defensive hedges against higher long-term local bond yields and currency swings (Ref: Composite Risk = ${Number(((geoRisk + sovRisk + macRisk) / 3 + 0.08).toFixed(2))} · r - g = +${openData.dsaAnalytics.rMinusGDifferentialPct.toFixed(2)}% · GG Cover = ${openData.debtRollover.greenspanGuidottiRatioPct}%).`,
       // The council does not set decision triggers yet: none are built in (Sam's rule).
       decisionPointMatrix: [],
       policyResearcherReport: {
@@ -1688,11 +1606,10 @@ export function buildDefaultAssessmentRun(
           latencyMs: 140,
           retriesUsed: 0,
           schemaVerified: true,
-          quantitativeAnchorScore: anchors.geopolitical,
-          rawModelScore: Number(Math.min(0.95, item.geopoliticalRisk + 0.06).toFixed(2)),
-          finalBoundedScore: Number(Math.min(0.95, item.geopoliticalRisk + 0.06).toFixed(2)),
+          rawModelScore: Number(Math.min(0.95, geoRisk + 0.06).toFixed(2)),
+          finalBoundedScore: Number(Math.min(0.95, geoRisk + 0.06).toFixed(2)),
           anchorDriftClamped: false,
-          diagnosticNote: `3/3 Geopolitical sub-agents & Devil's Advocate debate hydrated within ±0.22 corridor of GDELT/PortWatch anchor (${anchors.geopolitical.toFixed(2)}).`,
+          diagnosticNote: 'Template run: no model has answered yet.',
         },
         {
           nodeId: 'STAGE_1_SOV_DESK',
@@ -1702,9 +1619,8 @@ export function buildDefaultAssessmentRun(
           latencyMs: 152,
           retriesUsed: 0,
           schemaVerified: true,
-          quantitativeAnchorScore: anchors.sovereign,
-          rawModelScore: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
-          finalBoundedScore: Number(Math.min(0.95, item.sovereignRisk + 0.11).toFixed(2)),
+          rawModelScore: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
+          finalBoundedScore: Number(Math.min(0.95, sovRisk + 0.11).toFixed(2)),
           anchorDriftClamped: false,
           diagnosticNote: `3/3 Sovereign sub-agents & Minority Dissent report verified against 5Y CDS (${openData.monetaryAndMarket.cds5YSpreadBps} bps) & Debt/GDP (${openData.imfIndicators.debtToGdpPct.toFixed(1)}%).`,
         },
@@ -1716,9 +1632,8 @@ export function buildDefaultAssessmentRun(
           latencyMs: 148,
           retriesUsed: 0,
           schemaVerified: true,
-          quantitativeAnchorScore: anchors.macro,
-          rawModelScore: Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2)),
-          finalBoundedScore: Number(Math.min(0.95, item.macroRisk + 0.09).toFixed(2)),
+          rawModelScore: Number(Math.min(0.95, macRisk + 0.09).toFixed(2)),
+          finalBoundedScore: Number(Math.min(0.95, macRisk + 0.09).toFixed(2)),
           anchorDriftClamped: false,
           diagnosticNote: `3/3 Macro sub-agents & monetary reaction function verified against Policy Rate (${openData.monetaryAndMarket.policyRatePct.toFixed(2)}%) & CPI (${openData.imfIndicators.cpiInflationPct.toFixed(2)}%).`,
         },
@@ -1740,7 +1655,7 @@ export function buildDefaultAssessmentRun(
           latencyMs: 115,
           retriesUsed: 0,
           schemaVerified: true,
-          finalBoundedScore: Number(((item.geopoliticalRisk + item.sovereignRisk + item.macroRisk) / 3 + 0.08).toFixed(2)),
+          finalBoundedScore: Number(((geoRisk + sovRisk + macRisk) / 3 + 0.08).toFixed(2)),
           diagnosticNote: `SMCR-1.0 Decision Matrix, 4 Cross-Asset Trade Expressions, and Factor Crowding Audit verified.`,
         },
       ],
@@ -1748,52 +1663,4 @@ export function buildDefaultAssessmentRun(
   };
 }
 
-export function computeQuantitativeAnchorScores(openData: OpenDataSnapshot): {
-  geopolitical: number;
-  sovereign: number;
-  macro: number;
-  composite: number;
-} {
-  const cdsNorm = Math.min(1, openData.monetaryAndMarket.cds5YSpreadBps / 520);
-  const debtNorm = Math.min(1, openData.imfIndicators.debtToGdpPct / 135);
-  const reserveDeficitNorm = Math.max(0, Math.min(1, (6.5 - openData.worldBankIndicators.fxReservesMonthsImport) / 6.5));
-  const rMinusGNorm = Math.max(0, Math.min(1, (openData.dsaAnalytics.rMinusGDifferentialPct + 2) / 8));
-  const sovereign = Number(
-    Math.min(
-      0.92,
-      Math.max(0.18, debtNorm * 0.34 + cdsNorm * 0.34 + reserveDeficitNorm * 0.18 + rMinusGNorm * 0.14)
-    ).toFixed(2)
-  );
-
-  const cpiNorm = Math.min(1, openData.imfIndicators.cpiInflationPct / 16);
-  const yieldNorm = Math.min(1, openData.monetaryAndMarket.sovereign10YBondYieldPct / 20);
-  const growthPenalty = Math.max(0, Math.min(1, (3.2 - openData.imfIndicators.realGdpGrowthPct) / 6));
-  const realRatePenalty = openData.monetaryAndMarket.realPolicyRatePct < 1.5 ? 0.65 : 0.25;
-  const macro = Number(
-    Math.min(
-      0.92,
-      Math.max(0.18, cpiNorm * 0.4 + yieldNorm * 0.3 + growthPenalty * 0.18 + realRatePenalty * 0.12)
-    ).toFixed(2)
-  );
-
-  const gdeltNorm = Math.min(1, openData.gdeltMetrics.conflictIntensityIndex / 100);
-  const chokepointNorm = Math.min(1, openData.monetaryAndMarket.chokepointExposureIndex / 100);
-  const polyNorm = Math.min(1, (openData.polymarketContracts[0]?.probabilityPct ?? 55) / 100);
-  const wgiInstabilityNorm = Math.max(
-    0,
-    Math.min(1, (100 - openData.worldBankIndicators.politicalStabilityPercentile) / 100)
-  );
-  const geopolitical = Number(
-    Math.min(
-      0.92,
-      Math.max(
-        0.18,
-        gdeltNorm * 0.36 + chokepointNorm * 0.28 + polyNorm * 0.2 + wgiInstabilityNorm * 0.16
-      )
-    ).toFixed(2)
-  );
-
-  const composite = Number(((geopolitical + sovereign + macro) / 3).toFixed(2));
-  return { geopolitical, sovereign, macro, composite };
-}
 

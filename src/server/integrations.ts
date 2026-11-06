@@ -7,10 +7,6 @@
 import crypto from 'crypto';
 import express from 'express';
 import { AIRuntimeConfig, CouncilAssessmentRun, ExternalInternalConnectorConfig, ExternalInternalConnectorMetricKey, IntegrationBroadcastScope, IntegrationDeliveryReceipt, OpenDataSnapshot, TopLevelIntegrationConfig } from '../types/council.ts';
-import { computeCouncilKellyAndLobExecution, computeCrossCurrencyAndLegalBasis, simulateSovereignRestructuringAndRating } from '../utils/institutionalRiskDeskEngine.ts';
-import { computeFullEconometricForecastSuite } from '../utils/econometricForecastingEngine.ts';
-import { computeGeopoliticalRiskDeskSuite, DEFAULT_WARGAME_PARAMS } from '../utils/geopoliticalRiskEngine.ts';
-import { computeGlobalLiquidityFundingSuite, DEFAULT_LIQUIDITY_STRESS_PARAMS } from '../utils/globalLiquidityEngine.ts';
 
 export const DEFAULT_SERVER_API_CONNECTORS: ExternalInternalConnectorConfig[] = [
   {
@@ -143,21 +139,9 @@ export function buildTopLevelIntegrationPayload(
 ): Record<string, any> {
   const cfg = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
   const includeSubAgents = options?.includeSubAgents ?? cfg.includeSubAgents ?? true;
-  const includeQuantSuites = options?.includeQuantSuites ?? cfg.includeQuantSuites ?? true;
-
-  const geoSuite = computeGeopoliticalRiskDeskSuite(run.openData, DEFAULT_WARGAME_PARAMS);
-  const econSuite = computeFullEconometricForecastSuite(
-    run.openData,
-    geoSuite.portfolioTransmission.propagatedForecastShocks
-  );
-  const liqSuite = computeGlobalLiquidityFundingSuite(
-    run.openData,
-    DEFAULT_LIQUIDITY_STRESS_PARAMS
-  );
-  const restructSuite = simulateSovereignRestructuringAndRating(run.openData);
-  const kellySuite = computeCouncilKellyAndLobExecution(run);
-  const xccySuite = computeCrossCurrencyAndLegalBasis(run.openData);
-
+  // The old model desk suites (GPR z-score, stochastic DSA, restructuring, Kelly sizing) were
+  // never registered or tested and ran on built-in coefficients, so they are not sent any more.
+  // includeQuantSuites stays in the settings for older saved configs but changes nothing.
   const geoAgents = run.subAgents.filter((a) => a.deskId === 'geopolitical');
   const sovAgents = run.subAgents.filter((a) => a.deskId === 'sovereign');
   const macroAgents = run.subAgents.filter((a) => a.deskId === 'macro');
@@ -168,50 +152,18 @@ export function buildTopLevelIntegrationPayload(
       deskName: 'Geopolitical Risk & Chokepoint Desk',
       debateSynthesis: run.deskDebates.geopolitical,
       ...(includeSubAgents ? { subAgents: geoAgents } : {}),
-      ...(includeQuantSuites
-        ? {
-            quantSuite: {
-              gprAndEscalation: geoSuite.gprAndEscalation,
-              chokepoints: geoSuite.chokepoints,
-              sanctionsAndReserveFreeze: geoSuite.sanctionsAndReserves,
-              portfolioTransmission: geoSuite.portfolioTransmission,
-            },
-          }
-        : {}),
     },
     sovereign: {
       deskId: 'sovereign',
       deskName: 'Sovereign Credit & Fiscal Sustainability Desk',
       debateSynthesis: run.deskDebates.sovereign,
       ...(includeSubAgents ? { subAgents: sovAgents } : {}),
-      ...(includeQuantSuites
-        ? {
-            quantSuite: {
-              imfSrdsfGfn: econSuite.imfSrdsfGfn,
-              stochasticDsa: econSuite.stochasticDsa,
-              restructuringAndShadowRating: restructSuite,
-              crossCurrencyAndLegalBasis: xccySuite,
-            },
-          }
-        : {}),
     },
     macro: {
       deskId: 'macro',
       deskName: 'Macroeconomic, Central Bank & FX Liquidity Desk',
       debateSynthesis: run.deskDebates.macro,
       ...(includeSubAgents ? { subAgents: macroAgents } : {}),
-      ...(includeQuantSuites
-        ? {
-            quantSuite: {
-              bvarIrf: econSuite.bvarIrf,
-              nssTermStructure: econSuite.nssTermStructure,
-              markovEws: econSuite.markovEws,
-              fiscalDominanceAndFxBurn: econSuite.fiscalDominanceAndFxBurn,
-              globalLiquidityStressZScore: liqSuite.globalLiquidityStressIndexZScore,
-              swapLineAndRolloverStress: liqSuite.portfolioTransmission,
-            },
-          }
-        : {}),
     },
   };
 
@@ -223,7 +175,7 @@ export function buildTopLevelIntegrationPayload(
       iso3: run.iso3,
       countryName: run.countryName,
       currencyCode: run.openData.currencyCode,
-      creditRating: run.openData.liveCreditRating || 'BB',
+      creditRating: run.openData.liveCreditRating || null,
       spot10YYieldPct: run.openData.monetaryAndMarket.sovereign10YBondYieldPct,
       spot5YCdsBps: run.openData.monetaryAndMarket.cds5YSpreadBps,
       debtToGdpPct: run.openData.imfIndicators.debtToGdpPct,
@@ -256,12 +208,10 @@ export function buildTopLevelIntegrationPayload(
     baseEnvelope.deskOutput = desksObject.macro;
   } else if (scope === 'supreme_council') {
     baseEnvelope.supremeCouncil = run.supremeCouncil;
-    baseEnvelope.kellyExecutionSizing = kellySuite;
   } else {
     baseEnvelope.desks = desksObject;
     baseEnvelope.cascadeContagionSteps = run.cascadeSteps;
     baseEnvelope.supremeCouncil = run.supremeCouncil;
-    baseEnvelope.kellyExecutionSizing = kellySuite;
   }
 
   const rawJsonForHmac = JSON.stringify(baseEnvelope);

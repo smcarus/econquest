@@ -16,7 +16,7 @@ const RegimeQuadrant = lazyNamed(() => import('./RegimeQuadrant'), 'RegimeQuadra
 // Workspace records each visit under this key (TodayPage.tsx); Compare only reads it, so opening
 // Compare does not reset "since your last visit".
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v2';
-function loadLastVisitRows(): Record<string, { cds5YBps?: number; yield10YPct?: number; compositeRisk?: number }> | undefined {
+function loadLastVisitRows(): Record<string, { cds5YBps?: number; yield10YPct?: number }> | undefined {
   try {
     const raw = window.localStorage.getItem(LAST_VISIT_KEY);
     return raw ? JSON.parse(raw).rows : undefined;

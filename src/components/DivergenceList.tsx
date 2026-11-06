@@ -79,7 +79,7 @@ export const DivergenceList: React.FC<{
         </ol>
       )}
       <p className="px-4 py-2 text-xs text-slate-500 dark:text-slate-400">
-        Stated rules on the figures shown, for discussion, not trade advice. {CDS_HIDDEN ? 'The cheap or rich reading' : 'The CDS reading'} leans on the app's own risk score, which has not been backtested.
+        Stated rules on the figures shown, for discussion, not trade advice.
       </p>
     </section>
   );

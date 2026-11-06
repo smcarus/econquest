@@ -68,17 +68,6 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
 /** Where the Country page opens when no role or desk says otherwise. */
 export const DEFAULT_COUNTRY_TAB: CountryTabConfig = COUNTRY_TABS.find((t) => t.id === 'overview')!;
 
-const ALERT_CLASS: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
-  ELEVATED: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
-  STABLE: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-};
-const ALERT_LABEL: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'High risk',
-  ELEVATED: 'Elevated risk',
-  STABLE: 'Stable',
-};
-
 const Figure: React.FC<{ label: string; value: string; title?: string; missing?: string; onHistory?: () => void }> = ({ label, value, title, missing, onHistory }) => (
   <div
     className={`min-w-0 ${onHistory ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50' : ''}`}
@@ -141,8 +130,6 @@ export const CountryPage: React.FC<{
   const open = run.openData;
   const status = useMemo(() => getSnapshotDataStatus(open), [open]);
   const events = useMemo(() => upcomingOfficialEvents([run.iso3], 120), [run.iso3]);
-  // The risk badge only when the score rests on live inputs.
-  const alert = item ? toLive(item).alertStatus : undefined;
   // Which series History opens on, when a header figure was clicked.
   const [historyPick, setHistoryPick] = useState<string | null>(null);
   const showHistory = tabs.some((t) => t.id === 'history');
@@ -177,11 +164,6 @@ export const CountryPage: React.FC<{
               ))}
               <option value="__add">+ Add a country…</option>
             </select>
-            {alert && (
-              <span className={`px-1.5 py-0.5 text-xs font-medium border ${ALERT_CLASS[alert]}`}>
-                {ALERT_LABEL[alert]}
-              </span>
-            )}
             {/* On a phone, Refresh sits beside the country as an icon. */}
             <button
               type="button"

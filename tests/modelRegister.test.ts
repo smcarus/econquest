@@ -21,7 +21,7 @@ test('no rule is marked passed or failed by hand: those statuses come only from 
 
 test('the MarketEdge agent panels carry their rule’s badge', () => {
   assert.equal(registerForPanel(`${EDGE_AGENTS.cb} Agent`)?.id, 'taylor_gap');
-  assert.equal(registerForPanel(`${EDGE_AGENTS.rv} Agent`)?.id, 'cds_rich_cheap');
+  assert.equal(registerForPanel(`${EDGE_AGENTS.rv} Agent`)?.id, 'reer_gap');
   assert.equal(registerForPanel(`${EDGE_AGENTS.fx} Agent`)?.id, 'reer_gap');
   assert.equal(registerForPanel('Shock early warning')?.id, 'shock_warning');
   assert.equal(registerForPanel('OECD inflation (monthly)'), undefined);

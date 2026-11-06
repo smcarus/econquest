@@ -1,32 +1,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cdsVsPeers, fitCdsOnRisk, fitRealYieldOnRisk, INFLATION_TARGETS, marketsMacroBrief, peerBasisNote, peerScreen, policyStance, realYield, realYieldVsPeers } from '../src/utils/marketsMacro.ts';
+import { INFLATION_TARGETS, marketsMacroBrief, peerScreen, policyStance, realYield } from '../src/utils/marketsMacro.ts';
 import { buildBaselineOpenData } from '../src/data/presetsAndBaselines.ts';
 import type { CouncilAssessmentRun, WatchlistItem } from '../src/types/council.ts';
 import { FEED_PATHS, markLive } from './helpers/live.ts';
 
 const NOW = '2026-11-04T12:00:00Z';
-const peer = (iso3: string, risk: number, cds: number, y = 10): WatchlistItem =>
-  ({ iso3, countryName: iso3, compositeRisk: risk, cds5YBps: cds, yield10YPct: y }) as unknown as WatchlistItem;
+const peer = (iso3: string, cds: number, y = 10): WatchlistItem => ({ iso3, countryName: iso3, cds5YBps: cds, yield10YPct: y }) as unknown as WatchlistItem;
 
-test('peer fit: needs four countries with some spread in risk', () => {
-  assert.equal(fitCdsOnRisk([peer('A', 0.3, 100), peer('B', 0.5, 200), peer('C', 0.7, 400)]), null);
-  assert.equal(fitCdsOnRisk([peer('A', 0.5, 100), peer('B', 0.5, 200), peer('C', 0.5, 400), peer('D', 0.5, 300)]), null);
-  // Exact exponential: CDS doubles every 0.2 of risk, so every country is in line.
-  const exact = [peer('A', 0.3, 100), peer('B', 0.5, 200), peer('C', 0.7, 400), peer('D', 0.9, 800)];
-  const fit = fitCdsOnRisk(exact)!;
-  assert.equal(fit.n, 4);
-  for (const p of exact) assert.ok(Math.abs(cdsVsPeers(p.cds5YBps, p.compositeRisk, fit).gapPct) < 1e-6);
-});
-
-test('peer fit: wider than the fit is cheap, tighter is rich; sorted cheapest first', () => {
-  const ps = [peer('A', 0.3, 100), peer('B', 0.5, 300), peer('C', 0.7, 400), peer('D', 0.9, 500), peer('E', 0.6, 150)];
-  const { rows, fit } = peerScreen(ps, 4.1);
-  assert.ok(fit);
-  assert.equal(rows[0].iso3, 'B');
-  assert.equal(rows[0].rv!.label, 'cheap');
-  assert.equal(rows[rows.length - 1].rv!.label, 'rich');
+test('peer screen: widest spread over US Treasuries first, no cheap or rich call', () => {
+  const ps = [peer('A', 100, 10), peer('B', 300, 6), peer('C', 400, 12), peer('D', 500, 8)];
+  const { rows } = peerScreen(ps, 4.1);
+  assert.deepEqual(rows.map((r) => r.iso3), ['C', 'A', 'D', 'B']);
   assert.equal(rows.find((r) => r.iso3 === 'A')!.spreadBps, 590);
+  for (const r of rows) assert.ok(!('rv' in r) && !('risk' in r));
 });
 
 test('policy stance rules read as stated', () => {
@@ -62,7 +49,7 @@ function run(iso3: string, us = true, live = true): CouncilAssessmentRun {
 }
 
 test('brief: figures keep their sources, model readings are tagged model, judgements tie to them', () => {
-  const peers = [peer('BRA', 0.52, 163), peer('MEX', 0.5, 117), peer('ZAF', 0.51, 205), peer('TUR', 0.67, 264), peer('EGY', 0.82, 540)];
+  const peers = [peer('BRA', 163), peer('MEX', 117), peer('ZAF', 205), peer('TUR', 264), peer('EGY', 540)];
   const b = marketsMacroBrief(run('BRA'), peers);
   const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
   assert.equal(rows['Inflation target'].value, '3.0% ± 1.5');
@@ -73,22 +60,21 @@ test('brief: figures keep their sources, model readings are tagged model, judgem
   assert.equal(rows['Real policy rate'].source, 'model, from figures above');
   assert.equal(rows['Real 10Y yield'].value, '9.0%');
   assert.equal(rows['CPI inflation'].source, 'IMF WEO');
-  assert.match(rows['5Y CDS against risk peers'].source, /across 5 countries/);
+  assert.equal(rows['5Y CDS against risk peers'], undefined);
   assert.match(b.judgements[0], /1\.5 pts above the 3\.0% target; with the policy rate at 11\.75%, the real rate is 7\.3%, so policy looks tight/);
   assert.match(b.judgements[1], /940 bps over US Treasuries \(US 10Y 4\.10%, Sep 2026\)/);
   // Readings are grouped under the desk role that owns them.
   assert.deepEqual(b.groups.map((g) => g.title), ['Macro now', 'Reserves and balance of payments (IMF)', 'World reserve currencies (IMF COFER, quarterly)', 'Market pricing', 'Central Bank Watcher Agent', 'Relative Value Agent', 'OECD inflation (monthly)', 'OECD leading indicator (monthly)', 'Cycle clock', 'Shock early warning', 'Signal track record', 'Futures positioning (CFTC, weekly)', 'US Treasury holdings (TIC, monthly)', 'Trade partners (UN Comtrade, annual)', 'FX Valuation Agent', 'Global Spillover Agent']);
-  assert.deepEqual(b.groups[5].rows.map((r) => r.label), ['Carry over US per unit of FX volatility', '5Y CDS against risk peers']);
+  assert.deepEqual(b.groups[5].rows.map((r) => r.label), ['Carry over US per unit of FX volatility']);
 });
 
 test('brief: no US yield, no target, too few peers: says so instead of guessing', () => {
-  const b = marketsMacroBrief(run('EGY', false), [peer('EGY', 0.8, 500)]);
+  const b = marketsMacroBrief(run('EGY', false), [peer('EGY', 500)]);
   const rows = Object.fromEntries(b.groups.flatMap((g) => g.rows).map((r) => [r.label, r]));
   assert.equal(rows['Inflation target'].value, 'Missing');
   assert.equal(rows['US 10Y Treasury'].value, 'Missing');
   assert.equal(rows['US 10Y Treasury'].source, 'FRED did not answer');
   assert.equal(rows['Spread over US 10Y'], undefined);
-  assert.equal(rows['5Y CDS against risk peers'].value, 'Missing');
   assert.match(b.judgements[0], /no inflation target on file/);
 });
 
@@ -153,39 +139,9 @@ test('brief: COFER rows put the country\'s own currency first and say they are a
   assert.equal(coferRows(undefined, 'BRA')[0].value, 'Missing');
 });
 
-const realPeer = (iso3: string, risk: number, y: number, cpi: number): WatchlistItem =>
-  ({ iso3, countryName: iso3, compositeRisk: risk, yield10YPct: y, cpiInflationPct: cpi }) as unknown as WatchlistItem;
-
-test('without CDS the screen reads the real 10Y yield against risk peers', () => {
-  // Real yields 2, 3, 4, 5 on risk 0.3..0.6 sit on a line; E pays 3 pts more than that line.
-  const ps = [realPeer('A', 0.3, 6, 4), realPeer('B', 0.4, 8, 5), realPeer('C', 0.5, 7, 3), realPeer('D', 0.6, 9, 4), realPeer('E', 0.45, 10, 3)];
-  const fit = fitRealYieldOnRisk(ps)!;
-  assert.equal(fit.n, 5);
-  const { rows, basis, fit: cdsFit, realFit } = peerScreen(ps as never, 4.1);
-  assert.equal(cdsFit, null);
-  assert.equal(basis, 'real_yield');
-  assert.ok(realFit);
-  assert.equal(rows[0].iso3, 'E');
-  assert.equal(rows[0].realRv!.label, 'cheap');
-  assert.equal(rows[0].realYieldPct, 7);
-  assert.match(peerBasisNote(basis, cdsFit, realFit), /real 10Y yield .* across 5 countries/);
-  assert.equal(realYieldVsPeers(1.5, 0.3, { a: 0, b: 10, n: 4 }).label, 'rich');
-  assert.equal(realYieldVsPeers(3.5, 0.3, { a: 0, b: 10, n: 4 }).label, 'in line');
-});
-
-test('real-yield fit never fills a missing figure and needs four countries', () => {
+test('real yield never fills a missing figure', () => {
   assert.equal(realYield({ yield10YPct: 8 }), undefined);
-  assert.equal(fitRealYieldOnRisk([realPeer('A', 0.3, 6, 4), realPeer('B', 0.4, 8, 5), realPeer('C', 0.5, 7, 3), { iso3: 'D', compositeRisk: 0.6, yield10YPct: 9 } as never]), null);
-  const { basis } = peerScreen([] as never, 4.1);
-  assert.equal(basis, null);
-  assert.match(peerBasisNote(null, null, null), /needs 4 or more countries/);
-});
-
-test('with CDS on four countries the screen keeps the CDS basis', () => {
-  const ps = [peer('A', 0.3, 100), peer('B', 0.5, 300), peer('C', 0.7, 400), peer('D', 0.9, 500)];
-  const r = peerScreen(ps, 4.1);
-  assert.equal(r.basis, 'cds');
-  assert.equal(r.realFit, null);
+  assert.equal(peerScreen([] as never, 4.1).rows.length, 0);
 });
 
 test('panels with no figure fold away; panels with one figure stay, order kept', async () => {

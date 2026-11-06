@@ -1,6 +1,5 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useState } from 'react';
-import { toDisplayCase } from '../utils/displayCase';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import { WatchlistGroup, WatchlistItem } from '../types/council';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
@@ -76,11 +75,6 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
     const debtVal = Number(customDebtGdp) || 65.0;
     const resVal = Number(customReserves) || 5.0;
 
-    const sovRisk = Math.min(0.92, Math.max(0.2, Number((debtVal / 120).toFixed(2))));
-    const macRisk = Math.min(0.92, Math.max(0.2, Number((yieldVal / 22).toFixed(2))));
-    const geoRisk = resVal < 4.0 ? 0.72 : 0.45;
-    const compRisk = Number(((sovRisk + macRisk + geoRisk) / 3).toFixed(2));
-
     const newItem: WatchlistItem = {
       iso3: iso,
       countryName: customCountry.trim(),
@@ -89,15 +83,11 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
       focusTheme:
         customTheme.trim() ||
         'Sovereign Fiscal Sustainability, Central Bank Policy Path & External Balance Sheet Assessment',
-      geopoliticalRisk: geoRisk,
-      sovereignRisk: sovRisk,
-      macroRisk: macRisk,
-      compositeRisk: compRisk,
       yield10YPct: yieldVal,
-      cds5YBps: Math.round(compRisk * 360),
+      // No CDS for a hand-added country: without your own CDS data (cds5YSource 'own') toLive drops it.
+      cds5YBps: NaN,
       debtToGdpPct: debtVal,
       fxReservesMonths: resVal,
-      alertStatus: compRisk >= 0.65 ? 'CRITICAL' : compRisk >= 0.45 ? 'ELEVATED' : 'STABLE',
     };
 
     onAddSovereignToWatchlist(activeList.id, newItem);
@@ -377,17 +367,6 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                     </span>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span
-                      className={`text-xs tabular-nums font-semibold tabular-nums ${
-                        item.alertStatus === 'CRITICAL'
-                          ? 'text-rose-600 dark:text-rose-400'
-                          : item.alertStatus === 'ELEVATED'
-                          ? 'text-amber-600 dark:text-amber-400'
-                          : 'text-emerald-600 dark:text-emerald-400'
-                      }`}
-                    >
-                      {toDisplayCase(item.alertStatus)} · {(item.compositeRisk * 100).toFixed(0)}
-                    </span>
                     {activeList.items.length > 1 && (
                       <button
                         type="button"
