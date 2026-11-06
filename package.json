@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "start": "node server.ts",
+    "update": "bash scripts/update.sh",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",
