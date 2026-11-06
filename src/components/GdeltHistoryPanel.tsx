@@ -1,3 +1,4 @@
+import { ChartNumbers } from './ChartNumbers';
 import React, { useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { V1Reading, V1Series } from '../utils/gdeltDaily';
@@ -46,7 +47,7 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
         {r && v1Figures(r).sentences.length > 0 && <p className="text-sm text-slate-900 dark:text-white">{v1Figures(r).sentences.join(' ')}</p>}
         {s && (
           <>
-            <div className="h-64">
+            <div className="h-64" role="img" aria-label={`Protests and violence as a share of ${countryName}'s reported events, ${s.points[0]?.month} to ${s.points[s.points.length - 1]?.month}. The numbers are in the table below.`}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={s.points} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
                   <CartesianGrid stroke="currentColor" strokeOpacity={0.1} vertical={false} />
@@ -65,6 +66,11 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
                 {r.violencePctile !== null ? ` (${r.violencePctile}th percentile)` : ''}, against {r.months} months from {r.from}. {V1_PERCENTILE_RULE}.
               </p>
             )}
+            <ChartNumbers
+              caption={`Event history, ${countryName}`}
+              columns={['Month', 'Protests (%)', 'Violence (%)']}
+              rows={s.points.map((p) => [p.month, p.protestPct, p.violencePct])}
+            />
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {s.points.length} months, {s.points[0]?.month} to {s.points[s.points.length - 1]?.month}. Source: {GDELT_V1_SHORT}
               {s.pulledAt ? `, pulled ${s.pulledAt.slice(0, 10)}` : ''}. An event counts where it took place or when the country is an actor.

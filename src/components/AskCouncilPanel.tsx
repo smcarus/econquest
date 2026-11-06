@@ -886,7 +886,7 @@ export const AskCouncilPanel: React.FC<{
               }
             }}
             placeholder={asked ? 'Ask a follow-up, for example: and the currency? or what about Egypt?' : "For example: Is Turkey's central bank behind the curve, and what would a Hormuz closure do?"}
-            className={`flex-1 min-w-0 px-2 py-1.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${page ? 'border-0 focus:outline-none resize-none' : 'border border-slate-200 dark:border-slate-700'}`}
+            className={`flex-1 min-w-0 px-2 py-1.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${page ? 'border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 resize-none' : 'border border-slate-200 dark:border-slate-700'}`}
           />
           <button type="submit" className="ui-btn ui-btn-primary" disabled={!question.trim() || busy}>
             Send

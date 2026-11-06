@@ -1163,6 +1163,12 @@ export default function App() {
   return (
     <CouncilChatProvider items={councilItems}>
     <div className={`min-h-screen bg-slate-50 dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col ${chatDocked ? 'lg:pr-[30rem]' : ''}`}>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:px-3 focus:py-2 focus:bg-white focus:text-slate-900 dark:focus:bg-slate-900 dark:focus:text-white focus:border focus:border-blue-600"
+      >
+        Skip to content
+      </a>
       {/* PRIMARY TOP BAR: BRAND + 4 COMPACT CATEGORY PILL MENUS + CMD+K SEARCH + PERSONA & ACTIONS */}
       <header className="flex items-center justify-between gap-3 min-w-0 px-4 sm:px-6 py-2.5 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-30">
         {/* Zone 1: EconQuest Crest Logo + Sovereign Council Orchestrator Identity */}
@@ -1524,7 +1530,7 @@ export default function App() {
       )}
 
       {/* MAIN WORKSPACE CANVAS: COLLAPSIBLE LEFT WATCHLIST SIDEBAR + RIGHT MAIN VIEWPORT */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <main id="main-content" tabIndex={-1} className="focus:outline-none flex-1 max-w-[1600px] w-full mx-auto px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* Left Watchlist Manager Sidebar (3 columns on desktop when expanded) */}
         {!isWatchlistCollapsed && (
           <aside className="lg:col-span-3">

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChartNumbers } from './ChartNumbers';
 import { Activity } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { LpOutcome } from '../utils/localProjections';
@@ -71,7 +72,7 @@ export const LocalProjectionsPanel: React.FC<{ iso3: string; countryName: string
         {reply?.ok && (
           <>
             <p className="text-sm text-slate-900 dark:text-white" data-lp-sentence="true">{reply.sentence}</p>
-            <div className="h-56">
+            <div className="h-56" role="img" aria-label="Inflation response by month after a one-point rate change, with a 90% band. The numbers are in the table below.">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={reply.steps.map((s) => ({ h: s.h, band: [s.lo, s.hi], beta: s.beta }))} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-700" />
@@ -84,6 +85,12 @@ export const LocalProjectionsPanel: React.FC<{ iso3: string; countryName: string
                 </ComposedChart>
               </ResponsiveContainer>
             </div>
+            <ChartNumbers
+              caption="Inflation after rate changes"
+              columns={['Months after', 'Response (pts)', '90% band low', '90% band high']}
+              rows={reply.steps.map((s) => [s.h, f(s.beta), f(s.lo), f(s.hi)])}
+              newestFirst={false}
+            />
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Points of inflation (% y/y) against the month before the move, per 1 point of policy rate. {reply.n} months, {reply.moves} with a rate change. Method: {reply.method} Sources: {(reply.sources || []).join('; ')}.
             </p>
