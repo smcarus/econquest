@@ -9,6 +9,7 @@ import type { OpenDataSnapshot } from '../types/council';
 import { getSnapshotDataStatus } from './dataStatus';
 import { pathMissing } from './countryNotes';
 import { ARCHIVE_FIGURES, snapshotValue, type Series } from './seriesHistory';
+import { licenceLabelForSource } from './licenceLookup';
 
 export const CSV_BOM = '﻿';
 
@@ -41,7 +42,8 @@ export function seriesRows(iso3: string, series: Series[]): Cell[][] {
   return rows;
 }
 
-export const FIGURES_HEADER = ['iso3', 'country', 'field', 'figure', 'value', 'unit', 'status', 'period', 'source', 'reason_if_missing', 'snapshot_pulled_at'];
+/** `licence` is the strictest licence class among the sources the figure names (src/utils/licenceLookup.ts). */
+export const FIGURES_HEADER = ['iso3', 'country', 'field', 'figure', 'value', 'unit', 'status', 'period', 'source', 'reason_if_missing', 'snapshot_pulled_at', 'licence'];
 
 /** Figures the country pages show, each with its value or why it is missing. */
 export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> = [
@@ -68,10 +70,10 @@ export function figureRows(snapshot: OpenDataSnapshot): Cell[][] {
     const src = live[f.field];
     const v = src ? snapshotValue(snapshot as unknown as Record<string, unknown>, f.field) : undefined;
     if (src && v !== undefined) {
-      return [snapshot.iso3, snapshot.countryName, f.field, f.label, v, f.unit, 'Live', periodFor(snapshot, f.field), src, '', pulledAt];
+      return [snapshot.iso3, snapshot.countryName, f.field, f.label, v, f.unit, 'Live', periodFor(snapshot, f.field), src, '', pulledAt, licenceLabelForSource(src)];
     }
     const why = pathMissing(status, f.field);
-    return [snapshot.iso3, snapshot.countryName, f.field, f.label, null, f.unit, 'Missing', '', '', why.short, pulledAt];
+    return [snapshot.iso3, snapshot.countryName, f.field, f.label, null, f.unit, 'Missing', '', '', why.short, pulledAt, ''];
   });
 }
 

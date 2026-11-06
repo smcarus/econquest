@@ -8,8 +8,8 @@ test('the same source keeps its number; publisher pages are matched on the sourc
   assert.equal(r.cite('BIS, 2026-10-27 (Central Bank of Brazil)'), 2);
   assert.equal(r.cite('IMF WEO, 2025'), 1);
   assert.deepEqual(r.lines('2026-11-05T12:00:00Z'), [
-    '[1] IMF WEO, 2025. https://www.imf.org/external/datamapper/ Read by the app on 2026-11-05.',
-    '[2] BIS, 2026-10-27 (Central Bank of Brazil). https://data.bis.org/topics/CBPOL Read by the app on 2026-11-05.',
+    '[1] IMF WEO, 2025. https://www.imf.org/external/datamapper/ Read by the app on 2026-11-05. Licence: Permission needed for client or commercial use.',
+    '[2] BIS, 2026-10-27 (Central Bank of Brazil). https://data.bis.org/topics/CBPOL Read by the app on 2026-11-05. Licence: Allowed with conditions.',
   ]);
   assert.equal(sourceUrl('CFTC Traders in Financial Futures'), 'https://publicreporting.cftc.gov/');
   assert.equal(sourceUrl('Your data, Bloomberg'), undefined);

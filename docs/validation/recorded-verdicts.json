@@ -1,0 +1,18 @@
+{
+  "note": "Verdicts from the owner's own runs of `npm run backtest`, copied here so the methods note (docs/METHODS.md) can state them. The live verdicts are in data/local/validation/results.json on the computer that ran them (Menu > Models & validation), and they win over this file. Add a row only from a real run; never edit a figure by hand.",
+  "runs": [
+    { "ranAt": "2026-11-05T22:36Z", "where": "Sam's Mac, npm run backtest (first run, method 1)" },
+    { "ranAt": "2026-11-05T22:50Z", "where": "Sam's Mac, npm run backtest (Taylor gap v1)" },
+    { "ranAt": "2026-11-06T02:31Z", "where": "Sam's Mac, npm run backtest (8 tests, method 2 where registered)" }
+  ],
+  "verdicts": [
+    { "id": "cftc_crowding", "version": 1, "ranAt": "2026-11-05T22:36Z", "verdict": "passed", "method": 1, "summary": "195 of 228 crowded weeks unwound (85.5%) against 65.8% after any week; lift 19.8 points, p 1.3e-11 with cases counted as independent; 6 currency futures, 2007-06 to 2026-09." },
+    { "id": "cftc_crowding", "version": 2, "ranAt": "2026-11-06T02:31Z", "verdict": "passed", "method": 2, "summary": "Lift 19.8 points, 90% range 15.7 to 23.8, p 0.00025 (the smallest value 4,000 year-block redraws can give), positive in 6 of 6 currencies." },
+    { "id": "timing_agent", "version": 1, "ranAt": "2026-11-06T02:31Z", "verdict": "passed", "method": 2, "summary": "Lift 21.4 points, 90% range 13.4 to 29.0, positive in 6 of 6 currencies." },
+    { "id": "cycle_clock", "version": 1, "ranAt": "2026-11-06T02:31Z", "verdict": "passed", "method": 2, "summary": "Lift 35.8 points, positive in 24 of 24 countries. Caveat: it confirms that rate moves come in runs; it is not an edge over a forecaster who already expects the next move." },
+    { "id": "cli_turn_policy", "version": 1, "ranAt": "2026-11-05T22:36Z", "verdict": "failed", "method": 1, "summary": "96 of 351 turns (27.4%) came before a policy move the expected way, against a 35.6% base rate; lift -8.3 points. Banks kept moving the same way after leading-indicator turns." },
+    { "id": "taylor_gap", "version": 1, "ranAt": "2026-11-05T22:50Z", "verdict": "failed", "method": 1, "summary": "61 of 161 (37.9%) against a 34.8% base rate; lift 3.1 points, p 0.23; 13 series, 2000-02 to 2026-02." },
+    { "id": "taylor_gap", "version": 2, "ranAt": "2026-11-06T02:31Z", "verdict": "failed", "method": 2, "summary": "Re-test adding the real-time output gap: lift 4.8 points, p 0.149, above the 0.05 pass mark." },
+    { "id": "regime_quadrant", "version": 1, "ranAt": "2026-11-06T02:31Z", "verdict": "failed", "method": 2, "summary": "Lift 2.7 points, p 0.23." }
+  ]
+}

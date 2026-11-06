@@ -4,8 +4,12 @@
  * Figures worked out by a stated rule ("model") are not references; their method stays beside
  * them. Missing figures are not cited.
  *
+ * Each reference also says the licence class of its source (src/utils/licenceLookup.ts), so a
+ * reader knows which figures need the provider's permission before they go to a client.
+ *
  * Browser-safe.
  */
+import { licenceLabelForSource } from './licenceLookup';
 
 export interface Reference {
   n: number;
@@ -65,7 +69,7 @@ export class References {
   }
   lines(accessed: string): string[] {
     const day = accessed.slice(0, 10);
-    return this.list.map((r) => `[${r.n}] ${r.source}.${r.url ? ` ${r.url}` : ''}${day ? ` Read by the app on ${day}.` : ''}`);
+    return this.list.map((r) => `[${r.n}] ${r.source}.${r.url ? ` ${r.url}` : ''}${day ? ` Read by the app on ${day}.` : ''} Licence: ${licenceLabelForSource(r.source)}.`);
   }
 }
 

@@ -21,6 +21,19 @@ export function approvalText(v: string | null | undefined): string {
   return v ? v.replace(/_/g, ' ').toLowerCase() : 'missing (the model gave no approval)';
 }
 
+/** Decision triggers: the council does not set them yet, so none are ever built in. */
+export const TRIGGERS_MISSING = 'Missing (the council does not set decision triggers yet)';
+
+/** A ticket's direction or conviction in plain words, or Missing when the model gave none. */
+export function ticketCallText(v: string | null | undefined): string {
+  return v ? v.replace(/_/g, ' ').toLowerCase() : 'missing';
+}
+
+/** A ticket's portfolio weight, or Missing: nothing in the app sizes trades yet. */
+export function sizingText(v: number | null | undefined): string {
+  return typeof v === 'number' && Number.isFinite(v) ? `${v}%` : 'Missing (the app does not size trades yet)';
+}
+
 /** Shown where the council's agreement would go: nothing in the app measures it, so it is never a built-in number. */
 export const COHERENCE_MISSING = 'Missing (the council does not measure agreement yet)';
 

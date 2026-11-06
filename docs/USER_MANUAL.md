@@ -1,7 +1,33 @@
 # User manual
 
 How to use the terminal, page by page. For setup see the [README](../README.md); for every data
-source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md).
+source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md); for what each source's terms allow
+see [DATA_LICENCES.md](./DATA_LICENCES.md); for how each model and signal works and its backtest
+verdict see [METHODS.md](./METHODS.md).
+
+**Research, not validated advice.** The app is a research workspace. No model in it has been
+independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &
+validation), and nothing in it is a recommendation to buy or sell. Every export ends with that line.
+
+## Start here: a first hour
+
+1. **Start the app** (README: Docker with `start-mac.command`, or `npm run dev`) and open it in the
+   browser. Menu > Settings > AI model > *Test* checks the model; the Supreme Council and summaries use
+   the referee model (qwen2.5:32b by default, `ollama pull qwen2.5:32b` first).
+2. **Check the data.** Menu > Tools > *Data connections* shows each source as Connected, Needs setup
+   or No answer. Add the free keys you want (FRED, EIA, UN Comtrade) under Menu > Settings.
+3. **Save it for offline use.** Menu > Offline data > *Download all country data*. After that the app
+   works without a connection and each figure shows the date it was saved.
+4. **Ask the council.** On Workspace, type a question ("Is Brazil's policy rate too tight?"). Each
+   agent answers with its figures, sources and dates; open a document for the full working, or
+   *Explain* on any figure for where it came from and what moves it.
+5. **Look closer.** Research > one country: Summary, Markets & signals, History & data (output gap,
+   debt sustainability, fiscal multipliers), Sources.
+6. **Write it up.** Save the answer to Reports, start a Policy review, or build a report. Download as
+   Markdown or PDF.
+7. **Before you share.** Check the badge on each signal (Menu > Models & validation) and the terms of
+   each source in the figures (Menu > About & data licences): some ask for a credit line, a few need
+   the provider's permission before figures go to clients or into a paid product.
 
 The header has three pages: **Workspace · Research · Reports**. **Tools** is inside the **Settings**
 window (Menu > Tools, or the Tools tab in Settings). Workspace is the daily start; Research is where
@@ -244,6 +270,8 @@ the *Excel* button next to each CSV button. The workbook holds the same rows and
 *Data* sheet (bold, frozen header with filters; numbers stored as numbers, text as text so nothing runs as
 a formula) and an *About* sheet naming the file and when it was made. Missing values stay Missing.
 
+Every figures download also has a *licence* column, and every References list in a brief or note ends each source with *Licence:*. It gives the licence class of the figure's source from the licence register (Menu > About & data licences): open with attribution, allowed with conditions, permission needed for client or commercial use, or terms not confirmed. A figure worked out from several sources takes the strictest class among them; a source the register does not name says so.
+
 *As of a past day* (below the chart): pick a date and see every figure the app held on that day,
 from its saved pulls, beside today's, with the change where both sides are live. A day without a pull
 uses the pull before it. Each value keeps its own source and period; hover for them, or for the
@@ -412,6 +440,11 @@ hold no figures of their own; the handout reads them from the app's series when 
   it reads hiking or cutting, another move the same way within 6 months) and the Timing Agent's one
   call (`timing_agent.json`: crowded and already turning before a further 3-point unwind within 8
   weeks). Until they are run these three read *Not validated*.
+- **About & data licences**: the standing research notice and the licence register. One row per
+  source: what the app reads from it, what its terms say about showing figures to others and about
+  commercial use, the credit to print, quotes from the terms page with links, and the open questions
+  (rows marked *Permission needed* or *Terms not confirmed*). The *Data licences* button on a
+  country's Sources tab opens it too. The same register is in [DATA_LICENCES.md](./DATA_LICENCES.md).
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it
@@ -517,6 +550,23 @@ day is kept in `data/live/gdelt-raw/`. GKG files are large, so one every `GDELT_
 hours is read (default 3); theme figures are then shares of the articles read, and the panel says
 so. After the first pull the app tops it up once a week by itself (only the new files). Run either
 the app's download or the terminal pull, not both at once.
+
+---
+
+## Sharing your work
+
+Every export ends with the same notice: *Research, not validated advice*, that no model has been
+independently validated, where to see each signal's backtest verdict, and that each source's own
+terms still apply. That covers council briefs and documents (Markdown and PDF), policy review memos
+(Markdown and PDF, under the memo's own banner), reports from Reports, research notebooks, teaching
+handouts, chart CSVs, the model register CSV, the About sheet of every Excel download, and backups.
+Plain CSV tables of figures (*Download these figures*, series) keep their rows clean for other tools,
+so the notice is not inside them; it is on the Excel version's About sheet.
+
+Before figures leave your computer, open Menu > About & data licences. Most sources ask only for a
+credit line (shown on each row). Kalshi, Polymarket, ExchangeRate-API, UN Comtrade, the IMF, the OECD
+yields on FRED and the Turkish central bank need the provider's permission for client or commercial
+use; a few could not be confirmed and are marked so.
 
 ---
 
