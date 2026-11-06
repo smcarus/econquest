@@ -340,6 +340,9 @@ test('council regression set: each case is checked and reported honestly (stand-
   assert.ok(by['options-brazil-inflation'].failures.some((f: string) => /at least 2 expected/.test(f)));
   assert.equal(by['options-brazil-inflation'].model, 'qwen2.5:32b');
   assert.equal(by['supreme-brazil-tight'].pass, false);
+  // The stand-in wrote none of the Supreme Council's fields: each reads Missing, never the built-in report.
+  assert.ok(by['supreme-brazil-tight'].answer.every((l: string) => /Missing: model gave no answer for this field\./.test(l)), JSON.stringify(by['supreme-brazil-tight'].answer));
+  assert.ok(!by['supreme-brazil-tight'].failures.some((f: string) => /built-in text/.test(f)), JSON.stringify(by['supreme-brazil-tight'].failures));
   assert.equal(report.passed, 2);
   assert.match(by['turkey-behind'].snapshotId, /^s\d+-/);
   const saved = JSON.parse(readFileSync(path.join(dataDir, 'local', 'validation', 'council-regression.json'), 'utf8'));

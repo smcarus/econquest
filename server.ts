@@ -4505,6 +4505,10 @@ async function reviewOptionsStep(
   return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
 }
 
+/** What a Supreme Council field shows when the model wrote nothing for it: never the built-in report text. */
+const MODEL_FIELD_MISSING = 'Missing: model gave no answer for this field.';
+const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() ? v : MODEL_FIELD_MISSING);
+
 const SUPREME_INSTRUCTION =
   'You are the Supreme Council Orchestrator for an Institutional Asset Management & Sovereign Policy Research Department. Return strict JSON adhering to the SMCR-1.0 schema. CRITICAL WRITING STYLE: Phrase the executiveSummary, longTermRegimeOutlook, structuralVulnerabilities, factorCrowdingWarning, and all trade rationales in clear, everyday plain English first so both general readers and portfolio managers immediately grasp the core takeaway, and cite the exact economic/statistical metrics in parentheses at the end of each point (Ref: ...).';
 
@@ -4634,65 +4638,43 @@ ${MISSING_FIGURES_RULE}
     generatedAt: new Date().toISOString(),
     decisionVerdict: verdict as SupremeCouncilOutput['decisionVerdict'],
     compositeRiskScore: compositeScore,
-    executiveSummary: parsed.executiveSummary || baseOutput.executiveSummary,
+    executiveSummary: textOrMissing(parsed.executiveSummary),
     policyResearcherReport: {
       ...baseOutput.policyResearcherReport,
       structuralVulnerabilities:
-        Array.isArray(parsed.structuralVulnerabilities) && parsed.structuralVulnerabilities.length > 0
-          ? parsed.structuralVulnerabilities
-          : baseOutput.policyResearcherReport.structuralVulnerabilities,
+        Array.isArray(parsed.structuralVulnerabilities) && parsed.structuralVulnerabilities.some((v: unknown) => typeof v === 'string' && v.trim())
+          ? parsed.structuralVulnerabilities.filter((v: unknown) => typeof v === 'string' && v.trim())
+          : [MODEL_FIELD_MISSING],
       longTermRegimeOutlook:
-        parsed.longTermRegimeOutlook || baseOutput.policyResearcherReport.longTermRegimeOutlook,
+        textOrMissing(parsed.longTermRegimeOutlook),
       policyRecommendations: baseOutput.policyResearcherReport.policyRecommendations.map(
         (rec, idx) => {
-          if (idx === 0 && parsed.fiscalPolicyRecommendation) {
-            return { ...rec, action: String(parsed.fiscalPolicyRecommendation) };
-          }
-          if (idx === 1 && parsed.monetaryPolicyRecommendation) {
-            return { ...rec, action: String(parsed.monetaryPolicyRecommendation) };
-          }
+          if (idx === 0) return { ...rec, action: textOrMissing(parsed.fiscalPolicyRecommendation) };
+          if (idx === 1) return { ...rec, action: textOrMissing(parsed.monetaryPolicyRecommendation) };
           return rec;
         }
       ),
     },
     marketTranslationLayer: {
       ...baseOutput.marketTranslationLayer,
-      regimeStance: parsed.regimeStance || baseOutput.marketTranslationLayer.regimeStance,
+      regimeStance: textOrMissing(parsed.regimeStance),
       tradeExpressions: baseOutput.marketTranslationLayer.tradeExpressions.map((t, idx) => {
-        if (idx === 0 && parsed.ratesTradeInstrument) {
-          return {
-            ...t,
-            instrument: String(parsed.ratesTradeInstrument),
-            entryRationale: String(parsed.ratesTradeRationale || t.entryRationale),
-            invalidationStopTrigger: String(
-              parsed.ratesTradeInvalidation || t.invalidationStopTrigger
-            ),
-          };
+        // The model writes the rates, FX and credit ideas; a part it left out is Missing, not the built-in idea.
+        if (idx === 0) {
+          return { ...t, instrument: textOrMissing(parsed.ratesTradeInstrument), entryRationale: textOrMissing(parsed.ratesTradeRationale), invalidationStopTrigger: textOrMissing(parsed.ratesTradeInvalidation) };
         }
-        if (idx === 1 && parsed.fxTradeInstrument) {
-          return {
-            ...t,
-            instrument: String(parsed.fxTradeInstrument),
-            entryRationale: String(parsed.fxTradeRationale || t.entryRationale),
-            invalidationStopTrigger: String(
-              parsed.fxTradeInvalidation || t.invalidationStopTrigger
-            ),
-          };
+        if (idx === 1) {
+          return { ...t, instrument: textOrMissing(parsed.fxTradeInstrument), entryRationale: textOrMissing(parsed.fxTradeRationale), invalidationStopTrigger: textOrMissing(parsed.fxTradeInvalidation) };
         }
-        if (idx === 3 && parsed.creditTradeInstrument) {
-          return {
-            ...t,
-            instrument: String(parsed.creditTradeInstrument),
-            entryRationale: String(parsed.creditTradeRationale || t.entryRationale),
-          };
+        if (idx === 3) {
+          return { ...t, instrument: textOrMissing(parsed.creditTradeInstrument), entryRationale: textOrMissing(parsed.creditTradeRationale) };
         }
         return t;
       }),
       riskGuardianCheck: {
         ...baseOutput.marketTranslationLayer.riskGuardianCheck,
         factorCrowdingWarning:
-          parsed.factorCrowdingWarning ||
-          baseOutput.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning,
+          textOrMissing(parsed.factorCrowdingWarning),
       },
     },
   };
@@ -4780,18 +4762,11 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
   }
   const o = step.output;
   const p = o.policyResearcherReport;
-  // Only what the model wrote (after the number check); fields it left out are filled from the
-  // built-in report in the app, which says nothing about the model.
+  // What the model wrote (after the number check); a field it left out reads Missing.
   const said = (k: string) => Boolean(step.supremeStep.data && (step.supremeStep.data as Record<string, unknown>)[k]);
   const brief = {
-    headline: `${said('decisionVerdict') && (step.supremeStep.data as Record<string, unknown>).decisionVerdict === o.decisionVerdict ? o.decisionVerdict : '(no verdict chosen)'}: ${said('executiveSummary') ? o.executiveSummary : '(no summary written)'}`,
-    points: [
-      said('longTermRegimeOutlook') ? p.longTermRegimeOutlook : '',
-      said('regimeStance') ? o.marketTranslationLayer.regimeStance : '',
-      ...(said('structuralVulnerabilities') ? p.structuralVulnerabilities || [] : []),
-      said('fiscalPolicyRecommendation') ? p.policyRecommendations[0]?.action : '',
-      said('monetaryPolicyRecommendation') ? p.policyRecommendations[1]?.action : '',
-    ].filter((x): x is string => Boolean(x)),
+    headline: `${said('decisionVerdict') && (step.supremeStep.data as Record<string, unknown>).decisionVerdict === o.decisionVerdict ? o.decisionVerdict : '(no verdict chosen)'}: ${o.executiveSummary}`,
+    points: [p.longTermRegimeOutlook, o.marketTranslationLayer.regimeStance, ...(p.structuralVulnerabilities || []), p.policyRecommendations[0]?.action, p.policyRecommendations[1]?.action].filter((x): x is string => Boolean(x)),
     disagreements: [],
     gaps: [],
   };
@@ -4809,8 +4784,26 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
   };
   const removed = step.reportCheck.check.removed.filter((r) => said(fieldOf(r.where))).map((r) => r.sentence);
   const answer = [brief.headline, ...brief.points];
+  // Structural: a field the model left out must read Missing, never the built-in report's text.
+  const t = o.marketTranslationLayer.tradeExpressions;
+  const shown: Array<[string, string | undefined]> = [
+    ['executiveSummary', o.executiveSummary],
+    ['longTermRegimeOutlook', p.longTermRegimeOutlook],
+    ['regimeStance', o.marketTranslationLayer.regimeStance],
+    ['structuralVulnerabilities', (p.structuralVulnerabilities || []).join(' ')],
+    ['fiscalPolicyRecommendation', p.policyRecommendations[0]?.action],
+    ['monetaryPolicyRecommendation', p.policyRecommendations[1]?.action],
+    ['factorCrowdingWarning', o.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning],
+    ['ratesTradeInstrument', t[0]?.instrument],
+    ['fxTradeInstrument', t[1]?.instrument],
+    ['creditTradeInstrument', t[3]?.instrument],
+  ];
+  const template = shown.filter(([k, v]) => !said(k) && v !== MODEL_FIELD_MISSING).map(([k]) => `${k}: the model wrote nothing, but the report shows built-in text instead of Missing.`);
+  const checked = checkRegressionCase(c, { brief, removed } as SynthesisResult);
+  if (template.length) checked.failures.push(...template);
+  checked.pass = checked.failures.length === 0;
   return {
-    ...checkRegressionCase(c, { brief, removed } as SynthesisResult),
+    ...checked,
     model: step.supremeStep.model ?? null,
     temperature: step.supremeStep.temperature,
     seed: step.supremeStep.seed,

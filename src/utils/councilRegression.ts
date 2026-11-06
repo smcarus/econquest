@@ -230,6 +230,11 @@ export function structuralProblems(r: RegressionCaseResult, inputs: string[], is
   if (isSmall(r.model)) out.push(`${r.id}: ran on ${r.model}, a small model; referee steps need the large referee model.`);
   if (r.temperature !== undefined && r.temperature !== 0) out.push(`${r.id}: ran at temperature ${r.temperature}, not 0.`);
   if (r.seed === undefined || r.seed === null) out.push(`${r.id}: ran without a fixed seed.`);
+  for (const line of r.answer ?? []) {
+    // Template text leaking through: an unfilled number or field from a built-in report.
+    const leak = line.match(/\bNaN\b|\bundefined\b|\[object Object\]/);
+    if (leak) out.push(`${r.id}: the answer shows template text ("${leak[0]}" in "${short(line)}").`);
+  }
   const allowed = new Set(inputs.join('\n').match(NUMBER) ?? []);
   for (const line of r.answer ?? []) {
     for (const n of line.match(NUMBER) ?? []) {
