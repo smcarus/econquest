@@ -9,6 +9,7 @@
  *
  * Browser-safe (no fs): the server hands in what it has pulled.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import { CBPOL_AREA, type CbpolPull } from './bisPolicyRates';
 import { CFTC_CURRENCY_CODES, type CftcWeek } from './cftcPositioning';
 import { type PriceSeries } from './commodityPrices';
@@ -90,7 +91,8 @@ export const ARCHIVE_FIGURES: Array<{ id: string; field: string; label: string; 
   { id: 'external_debt', field: 'wb.externalDebtPctGni', label: 'External debt', unit: '% of GNI' },
   { id: 'stability', field: 'wb.politicalStabilityPercentile', label: 'Political stability rank', unit: 'percentile' },
   { id: 'yield_10y', field: 'market.sovereign10YBondYieldPct', label: '10Y government bond yield', unit: '%' },
-  { id: 'cds_5y', field: 'market.cds5YSpreadBps', label: '5Y CDS (your data)', unit: 'bp' },
+  // 5Y CDS is hidden for now (src/utils/cdsHidden.ts); the USD bond spread has its own monthly series.
+  ...(CDS_HIDDEN ? [] : [{ id: 'cds_5y', field: 'market.cds5YSpreadBps', label: '5Y CDS (your data)', unit: 'bp' }]),
   { id: 'fx_per_usd', field: 'market.exchangeRatePerUsd', label: 'Exchange rate', unit: 'per USD' },
   { id: 'gdelt_tone', field: 'gdelt.averageTone', label: 'News tone (GDELT)', unit: 'tone' },
 ];

@@ -917,9 +917,9 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   if (diag.status === 200) {
     const d = await diag.json();
     assert.equal(d.states.diagnose, 'done');
-    // Twelve indicators, then seven model readings (Missing with a reason when no history is saved).
-    assert.equal(d.review.steps.diagnose.content.figures.length, 19);
-    const models = d.review.steps.diagnose.content.figures.slice(12);
+    // Thirteen indicators, then seven model readings (Missing with a reason when no history is saved).
+    assert.equal(d.review.steps.diagnose.content.figures.length, 20);
+    const models = d.review.steps.diagnose.content.figures.slice(13);
     assert.ok(models.every((m: { group: string; value: number | null; reason: string }) => /Model readings/.test(m.group) && (m.value !== null || m.reason)));
     const opt = (body: unknown) => fetch(`${base}/api/reviews/${review.id}/options`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     const noModel = await opt({ userOptions: [] });

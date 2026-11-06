@@ -70,3 +70,33 @@ test('history series is labelled a bond spread, not CDS', () => {
   const tur = countrySeries('TUR', { hcSpread: p });
   assert.match(tur.missing.find((x) => x.id === 'hc_spread')!.reason, /No free official source/);
 });
+
+test('watchlist rows: the spread shows only with its month, and Missing says why', async () => {
+  const { hasFigure, toLive, missingReason } = await import('../src/utils/liveFigures.ts');
+  const { COLUMN_BY_ID, DEFAULT_COLUMNS } = await import('../src/utils/watchlistView.ts');
+  const base = { iso3: 'BRA', countryName: 'Brazil' } as never;
+  const withSpread = { ...(base as object), hcSpreadBps: 185, hcSpreadPeriod: '2026-09', hcSpreadChange12mBps: -25 } as never;
+  assert.ok(hasFigure(withSpread, 'hcspread'));
+  assert.equal(toLive({ ...(base as object), hcSpreadBps: 185 } as never).hcSpreadBps, undefined, 'no month, no figure');
+  assert.equal(COLUMN_BY_ID.hcSpread.note!(withSpread), 'Sep 2026 avg');
+  assert.match(COLUMN_BY_ID.hcSpread.help, /not CDS/);
+  assert.ok(DEFAULT_COLUMNS.includes('hcSpread'));
+  assert.equal(missingReason('hcspread', 'TUR').short, 'No free source');
+});
+
+test('council inputs carry the spread as a bond spread, or name it missing with the reason', async () => {
+  const { councilInputs } = await import('../src/utils/councilInputs.ts');
+  const p = parseBcrpEmbig(reply, 'u', '2026-11-06T00:00:00Z')!;
+  const snap = {
+    iso3: 'BRA', countryName: 'Brazil', currencyCode: 'BRL',
+    imfIndicators: {}, worldBankIndicators: {}, gdeltMetrics: {},
+    monetaryAndMarket: { hcBondSpreadBps: 185 },
+    liveFields: { 'market.hcBondSpreadBps': 'BCRP EMBIG (USD bond spread)' },
+    dataStatus: { verifiedLiveSources: ['BCRP EMBIG (USD bond spread), 2026-09'], checkedAt: '' },
+    hcBondSpread: p.countries.BRA,
+  } as never;
+  const out = councilInputs(snap);
+  const line = out.lines.find((l: string) => /USD bond spread/.test(l));
+  assert.ok(line && /185 bps, Sep 2026 avg/.test(line) && /not CDS/.test(line), line);
+  assert.ok(!out.lines.some((l: string) => /\bCDS\b/.test(l) && !/not CDS/.test(l)), 'no CDS line while CDS is hidden');
+});

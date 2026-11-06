@@ -3,6 +3,7 @@
  * your own data filled are passed to the agents; every other figure is named as missing, with
  * the reason, so a model cannot treat a built-in value as data (Sam, 2026-11-04).
  */
+import { hcSpreadWhen } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import type { OpenDataSnapshot } from '../types/council';
 import { getSnapshotDataStatus } from './dataStatus';
@@ -21,6 +22,7 @@ const FIGURES: Array<{ label: string; path: string; fmt: (v: number, s: OpenData
   { label: '10Y government yield', path: 'market.sovereign10YBondYieldPct', fmt: (v) => `${v}%` },
   // 5Y CDS is hidden for now (src/utils/cdsHidden.ts), so the council is not told it is missing.
   ...(CDS_HIDDEN ? [] : [{ label: '5Y USD CDS', path: 'market.cds5YSpreadBps', fmt: (v: number) => `${v} bps` }]),
+  { label: 'USD bond spread over US Treasuries (J.P. Morgan EMBI Global via BCRP, monthly average; a bond spread, not CDS)', path: 'market.hcBondSpreadBps', fmt: (v, s) => `${v} bps${s.hcBondSpread ? `, ${hcSpreadWhen(s.hcBondSpread.period)}` : ''}` },
   { label: 'Spot FX', path: 'market.exchangeRatePerUsd', fmt: (v, s) => `${v} ${s.currencyCode}/USD` },
   { label: 'GDELT conflict index', path: 'gdelt.conflictIntensityIndex', fmt: (v) => `${v}/100` },
   { label: 'GDELT news tone', path: 'gdelt.averageTone', fmt: (v) => `${v}` },

@@ -3,12 +3,13 @@
  * series or your own data filled it. AI web-search estimates do not count either (Sam, 23:27Z). Everything else is left out, and the
  * screen says which source is missing and whether it needs setting up or just did not answer.
  */
+import { hcSpreadMissing } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { FRED_10Y_SERIES } from './officialYields';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from './bisPolicyRates';
 
-export type FigureKey = 'risk' | 'cds' | 'yield' | 'debt' | 'reserves' | 'cpi' | 'policy';
+export type FigureKey = 'risk' | 'cds' | 'hcspread' | 'yield' | 'debt' | 'reserves' | 'cpi' | 'policy';
 
 export interface MissingReason {
   /** 'setup': a key, file or account is needed. 'unreachable': a free feed did not answer. */
@@ -22,6 +23,7 @@ export interface MissingReason {
 export const FIGURE_LABEL: Record<FigureKey, string> = {
   risk: 'Risk score',
   cds: '5Y CDS',
+  hcspread: 'USD bond spread',
   yield: '10Y yield',
   debt: 'Debt/GDP',
   reserves: 'Reserves',
@@ -48,6 +50,8 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
         short: 'Needs setup',
         help: 'No free CDS source exists. Connect your own licensed CDS under Menu > Settings > Your own paid data (a CSV file or your LSEG account).',
       };
+    case 'hcspread':
+      return hcSpreadMissing(iso3);
     case 'yield':
       if (iso3 === 'TUR')
         return { kind: 'setup', short: 'Needs EVDS key', help: 'Add the free EVDS key and 10Y series code (central bank of Turkey) under Menu > Settings > Data API keys, or in .env.' };
@@ -74,6 +78,8 @@ export function hasFigure(it: WatchlistItem | LiveWatchlistItem, key: FigureKey)
       return it.riskSource === 'live';
     case 'cds':
       return it.cds5YSource === 'own';
+    case 'hcspread':
+      return typeof it.hcSpreadBps === 'number' && Number.isFinite(it.hcSpreadBps) && Boolean(it.hcSpreadPeriod);
     case 'yield':
       return it.yield10YSource === 'official' || it.yield10YSource === 'uploaded';
     case 'debt':
@@ -103,6 +109,11 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
     delete out.cds5YDate;
     delete out.cds5YProvider;
   }
+  if (!hasFigure(it, 'hcspread')) {
+    delete out.hcSpreadBps;
+    delete out.hcSpreadPeriod;
+    delete out.hcSpreadChange12mBps;
+  }
   if (!hasFigure(it, 'yield')) {
     delete out.yield10YPct;
     delete out.yield10YPeriod;
@@ -127,7 +138,7 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
 }
 
 // CDS is hidden for now (src/utils/cdsHidden.ts), so it is not listed as a missing figure either.
-export const MISSING_KEYS: FigureKey[] = (['risk', 'cds', 'yield', 'debt', 'reserves', 'cpi', 'policy'] as FigureKey[]).filter((k) => !(CDS_HIDDEN && k === 'cds'));
+export const MISSING_KEYS: FigureKey[] = (['risk', 'cds', 'hcspread', 'yield', 'debt', 'reserves', 'cpi', 'policy'] as FigureKey[]).filter((k) => !(CDS_HIDDEN && k === 'cds'));
 
 /** For a summary line: which figures are missing on how many rows, and the most useful fix. */
 export function missingSummary(items: Array<WatchlistItem | LiveWatchlistItem>): Array<{ key: FigureKey; count: number; reason: MissingReason }> {

@@ -3,6 +3,7 @@
  * the pop-out window (?view=watchlist). Choices are kept in this browser's storage, so a change in
  * one window shows in the other.
  */
+import { hcSpreadWhen } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import type { LiveWatchlistItem, WatchlistGroup, WatchlistItem } from '../types/council';
 import { missingReason, type FigureKey, type MissingReason } from './liveFigures';
@@ -25,6 +26,7 @@ export type LastLook = Record<string, { cds5YBps?: number; cdsSource?: string; y
 export type ColumnId =
   | 'risk'
   | 'cds'
+  | 'hcSpread'
   | 'cdsChange'
   | 'yield'
   | 'yieldChange'
@@ -89,6 +91,7 @@ export const COLUMNS: ColumnDef[] = [
   { id: 'risk', label: 'Risk', help: 'Composite risk score, 0 to 1, from the app’s model on live inputs', align: 'left', figure: 'risk', value: (it) => it.compositeRisk, text: (it) => num(it.compositeRisk, 2) },
   { id: 'cds', label: '5Y CDS (bps)', help: 'Five-year credit default swap spread', align: 'right', figure: 'cds', value: (it) => it.cds5YBps, text: (it) => num(it.cds5YBps, 0), note: (it) => (it.cds5YBps === undefined ? undefined : cdsSourceNote(it)) },
   { id: 'cdsChange', label: 'CDS change', help: 'Since your last visit', align: 'right', value: cdsChange, text: (it, l) => signed(cdsChange(it, l), 0), higherIsWorse: true, isChange: true },
+  { id: 'hcSpread', label: 'USD bond spread (bps)', help: 'Extra yield on the government\'s US dollar bonds over US Treasuries, monthly average (J.P. Morgan EMBI Global via the central bank of Peru). A bond spread, not CDS.', align: 'right', figure: 'hcspread', value: (it) => it.hcSpreadBps, text: (it) => num(it.hcSpreadBps, 0), note: (it) => (it.hcSpreadPeriod ? hcSpreadWhen(it.hcSpreadPeriod) : undefined) },
   { id: 'yield', label: '10Y yield', help: 'Ten-year government bond yield', align: 'right', figure: 'yield', value: (it) => it.yield10YPct, text: (it) => num(it.yield10YPct, 2, '%'), note: (it) => (it.yield10YPct === undefined ? undefined : yieldSourceNote(it)) },
   { id: 'yieldChange', label: 'Yield change', help: 'Since your last visit, same kind of source only', align: 'right', value: yieldChangeBp, text: (it, l) => signed(yieldChangeBp(it, l), 0, ' bp'), higherIsWorse: true, isChange: true },
   { id: 'debt', label: 'Debt/GDP', help: 'Government debt as a share of GDP', align: 'right', figure: 'debt', value: (it) => it.debtToGdpPct, text: (it) => num(it.debtToGdpPct, 1, '%'), note: (it) => (it.debtToGdpPct === undefined ? undefined : 'Live, IMF') },
@@ -229,7 +232,7 @@ export const VISIBLE_COLUMNS: ColumnDef[] = COLUMNS.filter((c) => !HIDDEN_COLUMN
 export const COLUMN_BY_ID = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColumnId, ColumnDef>;
 
 /** The columns the Workspace table always showed, in the same order. */
-export const DEFAULT_COLUMNS: ColumnId[] = (['risk', 'cds', 'cdsChange', 'yield', 'yieldChange', 'debt', 'reserves', 'data'] as ColumnId[]).filter((c) => !HIDDEN_COLUMNS.has(c));
+export const DEFAULT_COLUMNS: ColumnId[] = (['risk', 'cds', 'cdsChange', 'hcSpread', 'yield', 'yieldChange', 'debt', 'reserves', 'data'] as ColumnId[]).filter((c) => !HIDDEN_COLUMNS.has(c));
 
 export type SortKey = 'country' | ColumnId;
 export interface WatchlistView {

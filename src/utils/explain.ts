@@ -62,7 +62,7 @@ export const LENSES: Record<LensId, { label: string; agents: CoreAgentId[]; word
     label: 'Markets',
     agents: ['rv', 'fx', 'timing'],
     words: /market|investor|\bbonds?\b|yields?|spreads?|\bcds\b|currenc|\bfx\b|capital flows?|portfolio|positioning|priced|pricing/i,
-    asks: 'what it means for markets: bond yields and spreads, the currency, positioning, what could move them',
+    asks: 'what it means for markets: bond yields and spreads, the currency, positioning, what could move them. The USD bond spread is a bond spread over US Treasuries, not CDS: call it a bond spread',
   },
 };
 
