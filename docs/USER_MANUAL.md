@@ -360,6 +360,11 @@ the title, source, period, the date and a credit line taken from the licence reg
 it). Sources whose terms restrict free sharing, such as Kalshi or OECD yields served through FRED,
 block the download until you tick that you hold permission.
 
+**Unit converters.** Research > One country > History & data turns an amount in the country's
+currency into real terms (prices of another year), US dollars, purchasing power parity and per
+head, each line with the World Bank figure it used and its year. A year with no figure reads
+Missing; the nearest year is never put in its place.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

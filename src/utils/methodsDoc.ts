@@ -161,6 +161,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/publicationExport.ts',
   },
   {
+    id: 'unit_converters',
+    name: 'Unit converters',
+    where: 'Research > One country > History & data',
+    method: [
+      'Real terms: amount x CPI(target year) / CPI(year of the amount), World Bank consumer price index (2010 = 100).',
+      'US dollars: amount / official exchange rate, local currency per US$, average of the year (World Bank, from IMF IFS). Purchasing power parity: amount / World Bank ICP conversion factor for GDP. Per head: amount / mid-year population (World Bank).',
+      'Only the year asked for is used; a year with no figure reads Missing with the years on file. IMF projections are never used.',
+    ],
+    limits: 'Yearly averages: a single day\'s amount converts only roughly, and in high inflation the year\'s average rate can be far from the rate on the day. The GDP PPP factor suits economy-wide amounts, not one household\'s basket.',
+    code: 'src/utils/unitConverters.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',

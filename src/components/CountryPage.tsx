@@ -37,6 +37,7 @@ const BeerPanel = lazyNamed(() => import('./BeerPanel'), 'BeerPanel');
 const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
+const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'UnitConverterPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
@@ -327,6 +328,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Sanctions lists">
             <React.Suspense fallback={<DeskLoading />}>
               <SanctionsPanel key={`sanctions-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-unit-converters" className="scroll-mt-4" />
+          <PanelBoundary name="Unit converters">
+            <React.Suspense fallback={<DeskLoading />}>
+              <UnitConverterPanel key={`conv-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />

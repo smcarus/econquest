@@ -58,6 +58,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Claim check | Research | Stated method, no call to test | Not applicable |
 | Story leads | Research | Stated method, no call to test | Not applicable |
 | Publication export | Research | Stated method, no call to test | Not applicable |
+| Unit converters | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -667,6 +668,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - A source whose terms restrict free sharing, or need permission where free sharing is not settled, blocks the export until you tick that you hold permission. Sources with unclear terms, or not named in the register, are listed.
 - **Limits:** The register reflects terms as read on its check date and is not legal advice; you are responsible for what you publish. Only the History chart has the button so far.
 - **Code:** `src/utils/publicationExport.ts`
+
+### Unit converters
+
+- **Shows in:** Research > One country > History & data
+- Real terms: amount x CPI(target year) / CPI(year of the amount), World Bank consumer price index (2010 = 100).
+- US dollars: amount / official exchange rate, local currency per US$, average of the year (World Bank, from IMF IFS). Purchasing power parity: amount / World Bank ICP conversion factor for GDP. Per head: amount / mid-year population (World Bank).
+- Only the year asked for is used; a year with no figure reads Missing with the years on file. IMF projections are never used.
+- **Limits:** Yearly averages: a single day's amount converts only roughly, and in high inflation the year's average rate can be far from the rate on the day. The GDP PPP factor suits economy-wide amounts, not one household's basket.
+- **Code:** `src/utils/unitConverters.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 
