@@ -5,7 +5,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { checkLog, nextEntry, type AuditCheck, type AuditEntry, type AuditInput } from './auditLog';
+import { checkLog, nextEntry, type AuditActor, type AuditCheck, type AuditEntry, type AuditInput } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
 
 export interface AuditFiles {
@@ -54,10 +54,20 @@ function lastEntry(files: AuditFiles): Pick<AuditEntry, 'seq' | 'hash'> | null {
   return last;
 }
 
+/**
+ * Who is acting right now, for entries that do not say: the server sets this to read the signed-in
+ * account of the request being handled (AsyncLocalStorage), so every route's entry carries it.
+ */
+let currentActor: () => AuditActor | undefined = () => undefined;
+export function setAuditActor(fn: () => AuditActor | undefined): void {
+  currentActor = fn;
+}
+
 /** Append one entry. Never throws: a log that cannot be written must not stop the app answering. */
 export function appendAudit(files: AuditFiles, input: AuditInput, at: Date = new Date()): AuditEntry | null {
   try {
-    const entry = nextEntry(lastEntry(files), input, at);
+    const by = input.by ?? currentActor();
+    const entry = nextEntry(lastEntry(files), by ? { ...input, by } : input, at);
     fs.mkdirSync(path.dirname(files.log), { recursive: true });
     fs.appendFileSync(files.log, JSON.stringify(entry) + '\n', { mode: 0o600 });
     lastByFile.set(files.log, { seq: entry.seq, hash: entry.hash });

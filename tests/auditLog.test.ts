@@ -98,6 +98,19 @@ test('figuresFromAnswers keeps each figure with its agent, country and source, a
   assert.deepEqual(figures, [{ iso3: 'BRA', agent: 'Central Bank Watcher', label: 'Policy rate', value: '13.75%', source: 'BIS policy rates, Oct 2026', tag: 'official' }]);
   const e = nextEntry(null, { kind: 'council', summary: 'Council answer: "Is Brazil tight?"', detail: { model: 'Ollama qwen2.5:7b', figures } });
   const [row] = auditRows([e]);
-  assert.equal(row[4], 'Ollama qwen2.5:7b');
-  assert.equal(row[5], 'BRA Policy rate 13.75% (BIS policy rates, Oct 2026)');
+  assert.equal(row[3], '', 'no account while sign-in is off');
+  assert.equal(row[5], 'Ollama qwen2.5:7b');
+  assert.equal(row[6], 'BRA Policy rate 13.75% (BIS policy rates, Oct 2026)');
+});
+
+test('an entry names the signed-in account and still checks; entries without one keep their old hash', () => {
+  const by = { id: 'a1', username: 'ana', name: 'Ana' };
+  const a = nextEntry(null, { kind: 'research', summary: 'Saved a document in Reports' }, new Date('2026-11-06T05:00:00Z'));
+  const b = nextEntry(a, { kind: 'research', summary: 'Saved a document in Reports', by }, new Date('2026-11-06T05:01:00Z'));
+  assert.equal(a.by, undefined);
+  assert.deepEqual(b.by, by);
+  assert.equal(checkLog([JSON.stringify(a), JSON.stringify(b)]).check.ok, true);
+  const forged = { ...b, by: { ...by, name: 'Sam' } };
+  assert.equal(checkLog([JSON.stringify(a), JSON.stringify(forged)]).check.ok, false, 'changing who did it breaks the chain');
+  assert.equal(auditRows([b])[0][3], 'Ana (ana)');
 });

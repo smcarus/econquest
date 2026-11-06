@@ -193,3 +193,14 @@ test('changes need the CSRF token of their own session; replies carry security h
   assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(res.headers.get('x-powered-by'), null);
 });
+
+test('audit entries name the account that acted, including generic route entries', async () => {
+  const c = cookieOf(await post('/api/auth/sign-in', { username: 'sam', password: 'an even longer and more boring sentence' }));
+  assert.equal((await write('PUT', '/api/watch-rules', { rules: [] }, c)).status, 200);
+  await new Promise((r) => setTimeout(r, 200));
+  const lines = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+  const last = lines.filter((e) => e.summary === 'Changed the watch alerts').pop();
+  assert.deepEqual(last.by && { username: last.by.username, name: last.by.name }, { username: 'sam', name: 'Sam' });
+  const audit = await (await fetch(`${base}/api/audit`, { headers: { Cookie: c } })).json();
+  assert.equal(audit.check.ok, true, 'chain still checks with names in it');
+});

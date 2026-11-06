@@ -197,7 +197,7 @@ export function AuditLogDialog({ onClose }: { onClose: () => void }) {
               <li key={e.seq} className="py-2">
                 <button type="button" onClick={() => setOpen(open === e.seq ? null : e.seq)} aria-expanded={open === e.seq} className="w-full text-left">
                   <span className="text-xs text-slate-500 dark:text-slate-400 block">
-                    {when(e.at)} · {reply.kinds[e.kind] ?? e.kind}
+                    {when(e.at)} · {reply.kinds[e.kind] ?? e.kind}{e.by ? ` · ${e.by.name}` : ''}
                   </span>
                   <span className="block">{e.summary}</span>
                 </button>
