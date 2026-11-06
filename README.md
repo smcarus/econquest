@@ -79,8 +79,13 @@ lost ([DATA_SOURCES.md](./docs/DATA_SOURCES.md#pull-archive)).
 | **Reports** | Country note, issuer note, sustainability assessment, portfolio and client reviews, council brief; Markdown or PDF |
 | **Tools** (Settings > Tools) | Every ready tool grouped by use, data connections, and what each hidden desk would need to come back |
 
-About 40 older desks are hidden while their inputs are not live. Menu > Show all tools brings them
-back; their code is kept.
+About 40 older desks ran on built-in figures and are switched off; no menu item brings them back.
+
+**History & data** on a country also holds the research panels: nowcast and forecasts (each with its
+out-of-sample verdict; a failed forecast is not drawn by default), gross financing need, reserve
+adequacy, debt fan and costed fiscal options, policy rule family, inflation after rate changes, the
+Bohn fiscal reaction test, IMF forecasts by WEO edition and GDELT event history. Armed conflict data
+(UCDP) ships in `datasets/ucdp/`.
 
 ### Council chat
 
