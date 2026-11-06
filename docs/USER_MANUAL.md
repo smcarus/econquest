@@ -720,6 +720,11 @@ use; a few could not be confirmed and are marked so.
   Docker, may be holding port 11434 in front of the Ollama app. Check with `docker ps | grep ollama`;
   stop it (`docker stop ollama`) and open the Ollama app (`open -a Ollama` on a Mac). `ollama list`
   should then show your models. Starting that container again puts it back in front.
+- **The full council is slow on Ollama.** Ollama answers one request at a time per model by default,
+  so the nine desks queue behind each other. To let it answer several at once, quit the Ollama app
+  and start it with `OLLAMA_NUM_PARALLEL=3` (on a Mac: `launchctl setenv OLLAMA_NUM_PARALLEL 3`, then
+  open Ollama again). Each parallel slot needs its own memory for the context, so with a 32B model
+  start at 2 or 3 and watch memory use; answers stay the same, only the wait changes.
 - **Ollama is running but the app cannot reach it.** Use `http://127.0.0.1:11434` rather than
   `localhost` under Menu > Settings > AI model: on some Macs `localhost` goes to IPv6 first and fails.
 - **A change you pulled does not show in the Docker app (port 3737).** `git pull` updates the folder,

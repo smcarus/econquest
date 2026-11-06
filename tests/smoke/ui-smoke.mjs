@@ -57,15 +57,15 @@ try {
 
   browser = await chromium.launch(process.env.PW_CHROMIUM_PATH ? { executablePath: process.env.PW_CHROMIUM_PATH } : {});
 
-  for (const allTools of [false, true]) {
-    const mode = allTools ? 'all tools' : 'core view';
+  // One pass: the old "Show all tools" switch and its desks were removed (#299).
+  for (const allTools of [false]) {
+    const mode = 'app';
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     let where = `${mode}: start`;
     page.on('pageerror', (e) => failures.push(`${where}: page error: ${e.message}`));
     page.on('console', (m) => {
       if (m.type() === 'error' && m.text().startsWith('[panel-error]')) failures.push(`${where}: ${m.text().split('\n')[0]}`);
     });
-    await page.addInitScript((on) => localStorage.setItem('econquest.showAllTools.v1', on ? '1' : '0'), allTools);
 
     const settle = async (label) => {
       where = `${mode}: ${label}`;
