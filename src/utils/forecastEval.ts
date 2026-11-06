@@ -115,6 +115,7 @@ export function unbrokenTail(s: PlainSeries, next: (d: string) => string): Plain
 export function arForecastCases(series: PlainSeries[], spec: Pick<ForecastSpec, 'params' | 'benchmark' | 'horizons' | 'sample'>): ForecastCase[] {
   const maxLag = spec.params.maxLag ?? 4;
   const d = (spec.params.d ?? 0) as 0 | 1;
+  const intercept = (spec.params.intercept ?? 1) !== 0;
   const window = spec.params.window ?? 0;
   const minTrain = spec.params.minTrain ?? 40;
   const maxH = Math.max(...spec.horizons);
@@ -125,7 +126,7 @@ export function arForecastCases(series: PlainSeries[], spec: Pick<ForecastSpec, 
       if (origin < spec.sample.from || (spec.sample.to && origin > spec.sample.to)) continue;
       if (i + 1 < minTrain) continue;
       const train = window > 0 ? s.values.slice(Math.max(0, i + 1 - window), i + 1) : s.values.slice(0, i + 1);
-      const fit = fitAr(train, { maxLag, d });
+      const fit = fitAr(train, { maxLag, d, intercept });
       if ('error' in fit) continue;
       const f = forecastAr(fit, train, maxH);
       for (const h of spec.horizons) {

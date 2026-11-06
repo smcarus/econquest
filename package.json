@@ -24,7 +24,8 @@
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "users": "tsx scripts/users.ts",
-    "backup:drill": "tsx scripts/backup-drill.ts"
+    "backup:drill": "tsx scripts/backup-drill.ts",
+    "forecast:evaluate": "tsx scripts/forecast-evaluate.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
