@@ -33,6 +33,7 @@ const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPane
 const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
 const BohnPanel = lazyNamed(() => import('./BohnPanel'), 'BohnPanel');
 const GfnPanel = lazyNamed(() => import('./GfnPanel'), 'GfnPanel');
+const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
@@ -470,6 +471,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Fiscal reaction">
             <React.Suspense fallback={<DeskLoading />}>
               <BohnPanel key={`bohn-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-local-projections" className="scroll-mt-4" />
+          <PanelBoundary name="Inflation after rate changes">
+            <React.Suspense fallback={<DeskLoading />}>
+              <LocalProjectionsPanel key={`lp-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-fiscal-multipliers" className="scroll-mt-4" />

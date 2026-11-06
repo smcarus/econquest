@@ -97,6 +97,17 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/debtFan.ts',
   },
   {
+    id: 'local_projections',
+    name: 'Inflation after policy rate changes (local projections)',
+    where: 'Research > History & data',
+    method: [
+      'Jorda (2005) local projections on monthly data: inflation (% y/y, OECD or national CPI) h months ahead less the month before, on the change in the BIS month-end policy rate in month t, with 3 lags of both monthly changes. One OLS per horizon: 0, 3, 6, 9, 12, 18, 24 months.',
+      'Newey-West standard errors with lag max(h + 1, floor(4 x (n/100)^(2/9))); 90% bands. Needs 60 months and at least 5 rate changes.',
+    ],
+    limits: 'Reduced form: the rate change is not an identified monetary policy shock. Central banks move ahead of expected inflation, so early responses often have the "wrong" sign (price puzzle). Records co-movement in the sample, not the effect of policy; regimes and targets change over long samples.',
+    code: 'src/utils/localProjections.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',
