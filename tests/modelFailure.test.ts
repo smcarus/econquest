@@ -21,6 +21,14 @@ test('each failed attempt is said in plain words', () => {
   assert.equal(describeAttempt({ where, error: refused }), `${where} is not running`);
   assert.match(describeAttempt({ where, error: new Error('Model endpoint x failed with HTTP 404') }), /HTTP 404 \(is that model pulled/);
   assert.equal(describeAttempt({ where, error: new Error('Model endpoint x failed with HTTP 500') }), `${where} answered HTTP 500`);
+  assert.equal(
+    describeAttempt({ where, error: new Error('Model endpoint x failed with HTTP 500: model requires more system memory (21.5 GiB) than is available (17.2 GiB)') }),
+    `${where} answered HTTP 500: "model requires more system memory (21.5 GiB) than is available (17.2 GiB)" (the computer is short of memory for this model: close other apps or check "ollama ps")`
+  );
+  assert.equal(
+    describeAttempt({ where, error: new Error('Model endpoint x failed with HTTP 500: llama runner process has terminated: exit status 2') }),
+    `${where} answered HTTP 500: "llama runner process has terminated: exit status 2"`
+  );
   assert.equal(describeAttempt({ where, notJson: true }), `${where} answered, but not in the format the app needs`);
   assert.equal(describeAttempt({ where: 'Gemini', error: new Error('API key not valid') }), 'Gemini failed (API key not valid)');
 });
