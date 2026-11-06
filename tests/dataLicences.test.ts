@@ -32,3 +32,15 @@ test('open questions list the restricted and unconfirmed rows', () => {
   assert.ok(open.includes('kalshi') && open.includes('oecd') && open.includes('erapi'));
   assert.ok(!open.includes('gdelt'));
 });
+
+test('every row says whether free, non-commercial sharing is allowed, with a reason', () => {
+  for (const r of DATA_LICENCES) {
+    assert.ok(['allowed', 'restricted', 'unclear'].includes(r.share), r.id);
+    assert.ok(r.shareNote.length > 5, r.id);
+    if (r.status === 'not_verified' && r.share === 'allowed') assert.fail(`${r.id}: unconfirmed terms cannot be marked allowed`);
+  }
+  const by = Object.fromEntries(DATA_LICENCES.map((r) => [r.id, r.share]));
+  assert.equal(by.kalshi, 'restricted');
+  assert.equal(by.erapi, 'restricted');
+  assert.equal(by.gdelt, 'allowed');
+});

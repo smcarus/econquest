@@ -68,3 +68,59 @@ export function dataDirProblem(dataDir: string): string | null {
       : 'Check that the folder exists and can be written.')
   );
 }
+
+/**
+ * LOG_FORMAT=json turns every console line into one JSON object on stdout or stderr
+ * ({"time","level","msg"}), for `docker logs`, journald or a log collector. Without it the
+ * console stays as it is for `npm run dev`. Only the text the code already logs is written.
+ */
+export function installJsonConsole(
+  env: { LOG_FORMAT?: string },
+  out: { write: (s: string) => unknown } = process.stdout,
+  err: { write: (s: string) => unknown } = process.stderr,
+  now: () => Date = () => new Date()
+): boolean {
+  if (String(env.LOG_FORMAT || '').trim().toLowerCase() !== 'json') return false;
+  const text = (args: unknown[]) =>
+    args
+      .map((a) => (a instanceof Error ? a.stack || a.message : typeof a === 'string' ? a : safeJson(a)))
+      .join(' ');
+  const line = (level: string, args: unknown[]) => JSON.stringify({ time: now().toISOString(), level, msg: text(args) }) + '\n';
+  console.log = (...a: unknown[]) => void out.write(line('info', a));
+  console.info = (...a: unknown[]) => void out.write(line('info', a));
+  console.debug = (...a: unknown[]) => void out.write(line('debug', a));
+  console.warn = (...a: unknown[]) => void err.write(line('warn', a));
+  console.error = (...a: unknown[]) => void err.write(line('error', a));
+  return true;
+}
+
+function safeJson(v: unknown): string {
+  try {
+    return JSON.stringify(v) ?? String(v);
+  } catch {
+    return String(v);
+  }
+}
+
+export interface ReadyState {
+  listening: boolean;
+  shuttingDown: boolean;
+  dataProblem: string | null;
+}
+
+/** Readiness: 200 only while the server listens, is not stopping and can write its data folder. */
+export function readiness(s: ReadyState): { status: number; body: { ready: boolean; reason?: string } } {
+  if (s.shuttingDown) return { status: 503, body: { ready: false, reason: 'Shutting down.' } };
+  if (!s.listening) return { status: 503, body: { ready: false, reason: 'Starting.' } };
+  if (s.dataProblem) return { status: 503, body: { ready: false, reason: s.dataProblem } };
+  return { status: 200, body: { ready: true } };
+}
+
+/**
+ * Milliseconds to wait for open requests on a stop signal before exiting anyway.
+ * SHUTDOWN_TIMEOUT_MS, default 8000 (Docker sends SIGKILL 10 s after SIGTERM).
+ */
+export function shutdownTimeoutMs(env: { SHUTDOWN_TIMEOUT_MS?: string }): number {
+  const n = Number(env.SHUTDOWN_TIMEOUT_MS);
+  return Number.isFinite(n) && n >= 0 ? Math.min(n, 120_000) : 8000;
+}
