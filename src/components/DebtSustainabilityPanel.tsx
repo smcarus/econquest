@@ -1,0 +1,191 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import { Landmark } from 'lucide-react';
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import type { DsaOutcome, ScenarioId } from '../utils/debtSustainability';
+
+/**
+ * Country Research > History & data > Debt sustainability: public debt dynamics on IMF figures,
+ * what drove past changes, and stated stress scenarios five years out. A view on stated
+ * assumptions, not a forecast or an IMF DSA.
+ */
+
+type Reply = DsaOutcome & { iso3: string; sentence?: string };
+
+const COLOURS: Record<ScenarioId, string> = {
+  imf: '#0f172a',
+  baseline: '#2563eb',
+  historical: '#64748b',
+  growth: '#d97706',
+  primary: '#059669',
+  interest: '#7c3aed',
+  combined: '#e11d48',
+};
+
+const f1 = (v: number | undefined) => (v === undefined ? '—' : v.toFixed(1));
+const sg1 = (v: number | undefined) => (v === undefined ? '—' : `${v >= 0 ? '+' : ''}${v.toFixed(1)}`);
+
+export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3, countryName }) => {
+  const [reply, setReply] = useState<Reply | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [showPast, setShowPast] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    setReply(null);
+    setError(null);
+    fetch(`/api/debt-sustainability/${encodeURIComponent(iso3)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((b: Reply) => live && setReply(b))
+      .catch((e: Error) => live && setError(`The debt view could not be read (${e.message}).`));
+    return () => {
+      live = false;
+    };
+  }, [iso3]);
+
+  const data = useMemo(() => {
+    if (!reply?.ok) return [];
+    const years = new Map<string, Record<string, number | string>>();
+    for (const h of reply.history.slice(-8)) years.set(h.year, { year: h.year, outturn: h.debt });
+    for (const s of reply.scenarios) {
+      for (const p of s.path) {
+        const row = years.get(p.year) || { year: p.year };
+        row[s.id] = p.debt;
+        years.set(p.year, row);
+      }
+    }
+    return [...years.values()].sort((a, b) => String(a.year).localeCompare(String(b.year)));
+  }, [reply]);
+
+  return (
+    <section className="ui-panel" data-dsa="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+      <header className="ui-panel-header">
+        <h2 className="ui-section-title flex items-center gap-2">
+          <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          Debt sustainability, {countryName}
+        </h2>
+        <p className="ui-label">Government debt, % of GDP: the IMF path, a baseline on the IMF's inputs, and stated stress scenarios. Research, not validated advice.</p>
+      </header>
+      <div className="p-4 space-y-3">
+        {!reply && !error && <p className="ui-body">Loading…</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {reply && !reply.ok && (
+          <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
+            Missing: {reply.reason}.
+          </p>
+        )}
+        {reply?.ok && (
+          <>
+            <p className="text-sm text-slate-900 dark:text-white" data-dsa-sentence="true">
+              {reply.sentence}
+            </p>
+            <dl className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm tabular-nums">
+              <div>
+                <dt className="ui-label">Debt {reply.lastOutturnYear}</dt>
+                <dd className="text-slate-900 dark:text-white">{f1(reply.debtNow)}% of GDP</dd>
+              </div>
+              <div title="Real effective interest rate less real growth, last ten years' averages">
+                <dt className="ui-label">r − g (10-year average)</dt>
+                <dd className="text-slate-900 dark:text-white">{reply.rMinusG === undefined ? 'Missing' : `${sg1(reply.rMinusG)} pts`}</dd>
+              </div>
+              <div>
+                <dt className="ui-label">Debt-stabilising primary balance</dt>
+                <dd className="text-slate-900 dark:text-white">{reply.stabilisingPb === undefined ? 'Missing' : `${sg1(reply.stabilisingPb)}% of GDP`}</dd>
+              </div>
+              <div>
+                <dt className="ui-label">IMF projected primary balance</dt>
+                <dd className="text-slate-900 dark:text-white">{reply.projectedPb === undefined ? 'Missing' : `${sg1(reply.projectedPb)}% of GDP`}</dd>
+              </div>
+            </dl>
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="text-slate-200 dark:text-slate-700" />
+                  <XAxis dataKey="year" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} width={40} unit="%" domain={['auto', 'auto']} />
+                  <Tooltip formatter={(v: unknown) => `${f1(v as number)}% of GDP`} />
+                  <Line dataKey="outturn" name="Outturn" stroke="#0f172a" strokeWidth={2} dot={false} isAnimationActive={false} />
+                  {reply.scenarios.map((s) => (
+                    <Line
+                      key={s.id}
+                      dataKey={s.id}
+                      name={s.label}
+                      stroke={COLOURS[s.id]}
+                      strokeDasharray={s.id === 'imf' ? '2 3' : s.id === 'baseline' ? undefined : '5 4'}
+                      strokeWidth={s.id === 'baseline' || s.id === 'imf' ? 2 : 1.5}
+                      dot={false}
+                      isAnimationActive={false}
+                    />
+                  ))}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-1">
+              {reply.scenarios.map((s) => (
+                <li key={s.id}>
+                  <span style={{ color: COLOURS[s.id] }}>■</span> <span className="text-slate-900 dark:text-white">{s.label}</span>, {f1(s.end)}% by {s.path[s.path.length - 1].year}: {s.about}
+                </li>
+              ))}
+            </ul>
+            {reply.missing.length > 0 && (
+              <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">
+                Missing: {reply.missing.join('; ')}.
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-2">
+              <button type="button" className="ui-pill" aria-pressed={showPast} onClick={() => setShowPast(!showPast)}>
+                {showPast ? 'Hide what moved debt' : 'What moved debt, year by year'}
+              </button>
+              <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/debt-scenarios.csv`} download>
+                Download scenarios (CSV)
+              </a>
+            </div>
+            {showPast && (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm tabular-nums" data-dsa-history="true">
+                  <thead>
+                    <tr className="text-left text-slate-500 dark:text-slate-400">
+                      <th className="py-1 pr-3">Year</th>
+                      <th className="py-1 pr-3">Debt</th>
+                      <th className="py-1 pr-3">Change</th>
+                      <th className="py-1 pr-3" title="Interest rate-growth differential">Interest vs growth</th>
+                      <th className="py-1 pr-3" title="Minus the primary balance">Primary balance</th>
+                      <th className="py-1 pr-3" title="What the identity leaves unexplained">Other (stock-flow)</th>
+                      <th className="py-1 pr-3">Interest rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...reply.history].reverse().slice(0, 12).map((h) => (
+                      <tr key={h.year} className="border-t border-slate-100 dark:border-slate-800">
+                        <td className="py-1 pr-3">{h.year}</td>
+                        <td className="py-1 pr-3">{f1(h.debt)}</td>
+                        <td className="py-1 pr-3">{sg1(h.change)}</td>
+                        <td className="py-1 pr-3">{sg1(h.snowball)}</td>
+                        <td className="py-1 pr-3">{sg1(h.primary)}</td>
+                        <td className="py-1 pr-3">{sg1(h.stockFlow)}</td>
+                        <td className="py-1 pr-3">{h.interestPct === undefined ? '—' : `${f1(h.interestPct)}%`}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Points of GDP. Interest vs growth + primary balance + other = change in debt.</p>
+              </div>
+            )}
+            <details className="text-xs text-slate-500 dark:text-slate-400">
+              <summary className="cursor-pointer">Method and sources</summary>
+              <p className="mt-1">{reply.method}.</p>
+              <p className="mt-1">
+                Outturns to {reply.lastOutturnYear}
+                {reply.pulledAt ? `, history saved ${reply.pulledAt.slice(0, 10)}` : ''}. Later years use IMF projections.
+              </p>
+              <ol className="mt-1 list-decimal pl-4">
+                {reply.sources.map((r) => (
+                  <li key={r}>{r}</li>
+                ))}
+              </ol>
+            </details>
+          </>
+        )}
+      </div>
+    </section>
+  );
+};
