@@ -65,6 +65,7 @@ import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
+import { OPEN_IDEAS_EVENT } from './utils/ideaHandoff';
 import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
 import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
@@ -104,6 +105,7 @@ import {
   ScrollText,
   Activity,
   ShieldQuestion,
+  NotebookPen,
   Info,
   ChevronDown,
   BookOpen,
@@ -139,6 +141,7 @@ const PolicyReviews = lazyNamed(() => import('./components/PolicyReviews'), 'Pol
 const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes'), 'TeachingEpisodes');
 const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
+const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
 const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
 const UsersDialog = lazyNamed(() => import('./components/UsersDialog'), 'UsersDialog');
@@ -267,6 +270,13 @@ export default function App() {
   }, [isDataHealthOpen]);
   // Menu > Models & validation; a status badge anywhere opens it on its row (undefined = closed).
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
+  // Menu > Idea journal, or "Log idea" on a Council chat answer.
+  const [isIdeasOpen, setIsIdeasOpen] = useState(false);
+  useEffect(() => {
+    const go = () => setIsIdeasOpen(true);
+    window.addEventListener(OPEN_IDEAS_EVENT, go);
+    return () => window.removeEventListener(OPEN_IDEAS_EVENT, go);
+  }, []);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
   const [aboutFocus, setAboutFocus] = useState<string | null | undefined>(undefined);
   // Menu > Sharing mode: table downloads hold back figures whose sources' terms do not let them be passed on.
@@ -1394,6 +1404,14 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'ideas',
+                        icon: <NotebookPen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Idea journal',
+                        hint: '',
+                        onClick: () => setIsIdeasOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'share',
                         icon: <ShieldCheck className={`w-3.5 h-3.5 ${shareMode ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
                         label: 'Sharing mode',
@@ -1838,6 +1856,7 @@ export default function App() {
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>

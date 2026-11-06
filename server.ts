@@ -3,6 +3,7 @@ import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_A
 import { geminiModel } from './src/utils/geminiModel';
 import { registerAnalysisRoutes } from './src/server/routes/analysis';
 import { registerReviewRoutes } from './src/server/routes/reviews';
+import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
@@ -2966,6 +2967,7 @@ async function startServer() {
     res.setHeader('Content-Disposition', `attachment; filename="${episodeFileName(ep, teacher)}"`);
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
+  registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

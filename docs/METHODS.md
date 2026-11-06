@@ -44,6 +44,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Currency momentum (12-1) | Research | Not validated | None |
 | Currency around rate decisions (event study) | Research | Description, not a tested signal | None |
 | BEER fair value of the real exchange rate | Research | Not validated | None |
+| Trade idea journal | Research | Description, not a tested signal | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
@@ -54,6 +55,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Costed fiscal options | Research | Stated method, no call to test | Not applicable |
 | BEER fair value (behavioural equilibrium exchange rate) | Research | Stated method, no call to test | Not applicable |
 | Currency around rate decisions (event study) | Research | Stated method, no call to test | Not applicable |
+| Trade idea journal | Research | Stated method, no call to test | Not applicable |
 | Global shock scenarios (scenario engine) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
@@ -494,6 +496,18 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Limits:** Levels regression on 20-30 annual points, no cointegration test; productivity vs the US, not trade partners; NFA proxied by the summed current account.
 - **Code:** `src/utils/beer.ts`
 
+### Trade idea journal
+
+- **Says:** How the trade ideas you logged turned out: hit rate and average currency move by idea type.
+- **Rule:** Each idea (country, currency or policy rate, direction, horizon, optional invalidation, thesis, type) is fixed at entry with the latest published value and a SHA-256 hash, appended to data/local/ideas.jsonl, and scored on the first published value on or after the horizon date.
+- **Reads:** ECB reference rates, BIS daily policy rates, your ideas
+- **Shows in:** Menu > Idea journal; Log idea on a Council chat answer
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Scoring, not a signal: it keeps a record of calls, it does not make them. Hit rates on a few ideas mean little.
+- **Limits:** Currency moves are spot only (no carry); ECB fixings and BIS daily rates, not traded prices; the hash shows a record was changed, it does not stop a file being deleted.
+- **Code:** `src/utils/ideaJournal.ts`
+
 ## Stated-method views
 
 These show where things stand on a stated method and make no call a backtest could score.
@@ -583,6 +597,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Path: 100 x log change of units per US dollar (ECB reference rates) from the ECB business day before the event to each day from 10 before to 20 after (up = weaker currency). Average path for hikes and for cuts, 90% band from resampling the events (2,000 draws, fixed seed); at least 5 events per group.
 - **Limits:** Description of the past, not a tested signal. No measure of surprise: an expected decision moves little on the day. Episodes with very different causes are averaged. ECB daily fixings, not intraday prices; currencies the ECB does not publish have no study.
 - **Code:** `src/utils/eventStudy.ts`
+
+### Trade idea journal
+
+- **Shows in:** Menu > Idea journal
+- An idea is a country, an instrument (its currency against the US dollar from ECB reference rates, or its policy rate from BIS daily data), a direction, a horizon of 7 to 730 days, an optional invalidation (currency ideas: an adverse move of that many %), a thesis and a type (carry, value, momentum, macro, policy, event, other).
+- When logged the server fixes the entry level (latest published value, with its date) and the horizon date, takes the SHA-256 of the record's canonical JSON and appends it to data/local/ideas.jsonl; the app never edits a record, and a changed line is shown as not matching its hash.
+- Scoring: on the first published value on or after the horizon date. Currency: move = 100 x (entry / value - 1) in the idea's direction (units per USD falling = the currency strengthening), a hit when above zero; invalidated if the adverse move is reached on any ECB day first. Policy rate: up, down or unchanged against the entry. Hit rate and average currency move by idea type.
+- **Limits:** Scoring, not a signal. Spot moves only, no carry or costs. Few ideas give a noisy hit rate. The hash shows a change, it does not prevent deletion of the file.
+- **Code:** `src/utils/ideaJournal.ts`
 
 ### Global shock scenarios (scenario engine)
 

@@ -413,6 +413,20 @@ export const MODEL_REGISTER: RegisterEntry[] = [
     code: 'src/utils/beer.ts',
     panels: [],
   },
+  {
+    id: 'idea_journal',
+    name: 'Trade idea journal',
+    says: 'How the trade ideas you logged turned out: hit rate and average currency move by idea type.',
+    method: 'Each idea (country, currency or policy rate, direction, horizon, optional invalidation, thesis, type) is fixed at entry with the latest published value and a SHA-256 hash, appended to data/local/ideas.jsonl, and scored on the first published value on or after the horizon date.',
+    inputs: 'ECB reference rates, BIS daily policy rates, your ideas',
+    where: 'Menu > Idea journal; Log idea on a Council chat answer',
+    use: 'Research',
+    status: 'descriptive',
+    testPlan: 'Scoring, not a signal: it keeps a record of calls, it does not make them. Hit rates on a few ideas mean little.',
+    limits: 'Currency moves are spot only (no carry); ECB fixings and BIS daily rates, not traded prices; the hash shows a record was changed, it does not stop a file being deleted.',
+    code: 'src/utils/ideaJournal.ts',
+    panels: [],
+  },
 ];
 
 export function registerEntry(id: string): RegisterEntry | undefined {

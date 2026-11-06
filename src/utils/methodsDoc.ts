@@ -154,6 +154,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/eventStudy.ts',
   },
   {
+    id: 'idea_journal',
+    name: 'Trade idea journal',
+    where: 'Menu > Idea journal',
+    method: [
+      'An idea is a country, an instrument (its currency against the US dollar from ECB reference rates, or its policy rate from BIS daily data), a direction, a horizon of 7 to 730 days, an optional invalidation (currency ideas: an adverse move of that many %), a thesis and a type (carry, value, momentum, macro, policy, event, other).',
+      'When logged the server fixes the entry level (latest published value, with its date) and the horizon date, takes the SHA-256 of the record\'s canonical JSON and appends it to data/local/ideas.jsonl; the app never edits a record, and a changed line is shown as not matching its hash.',
+      'Scoring: on the first published value on or after the horizon date. Currency: move = 100 x (entry / value - 1) in the idea\'s direction (units per USD falling = the currency strengthening), a hit when above zero; invalidated if the adverse move is reached on any ECB day first. Policy rate: up, down or unchanged against the entry. Hit rate and average currency move by idea type.',
+    ],
+    limits: 'Scoring, not a signal. Spot moves only, no carry or costs. Few ideas give a noisy hit rate. The hash shows a change, it does not prevent deletion of the file.',
+    code: 'src/utils/ideaJournal.ts',
+  },
+  {
     id: 'global_scenarios',
     name: 'Global shock scenarios (scenario engine)',
     where: 'Research > History & data',
