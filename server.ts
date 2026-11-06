@@ -2,6 +2,7 @@
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
+import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
@@ -166,7 +167,7 @@ import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { oecdFetch, fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
-import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
+import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchDebtSchedule } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
@@ -3231,6 +3232,22 @@ async function startServer() {
     const r = bohnTest({ primaryBalance: pick('primary_balance'), debt: pick('debt_gdp'), gap: gap.ok ? gap.years : undefined });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: bohnSentence(r, name), references: BOHN_REFERENCES } : {}) });
+  });
+  // Gross financing need (src/utils/grossFinancingNeed.ts): deficit + external amortisation, a lower bound.
+  app.get('/api/gfn/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [file, schedule] = await Promise.all([
+      quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
+      quick(fetchDebtSchedule(iso3)),
+    ]);
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig && file ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const r = grossFinancingNeed({ primaryBalance: pick('primary_balance'), overallBalance: pick('overall_balance'), gdpUsd: pick('gdp_usd'), schedule: schedule ?? null });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: gfnSentence(r, name) } : {}) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {

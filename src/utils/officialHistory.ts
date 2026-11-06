@@ -37,6 +37,7 @@ export const OFFICIAL_FIGURES: OfficialFigure[] = [
   // IMF Fiscal Monitor series on DataMapper: the WEO codes GGXONLB_NGDP / GGXCNL_NGDP answer empty there.
   { id: 'primary_balance', source: 'imf', code: 'GGXONLB_G01_GDP_PT', label: 'Primary balance', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government primary net lending/borrowing.' },
   { id: 'overall_balance', source: 'imf', code: 'GGXCNL_G01_GDP_PT', label: 'Overall fiscal balance', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government net lending/borrowing. Primary minus overall balance = net interest paid.' },
+  { id: 'gdp_usd', source: 'imf', code: 'NGDPD', label: 'GDP, US dollars', unit: 'USD bn', about: 'IMF WEO: GDP at current prices in US dollars. Used to turn dollar debt flows into % of GDP.' },
   { id: 'gdp_growth', source: 'imf', code: 'NGDP_RPCH', label: 'Real GDP growth', unit: '%' },
   { id: 'cpi_imf', source: 'imf', code: 'PCPIPCH', label: 'Inflation (IMF WEO)', unit: '%' },
   { id: 'output_gap', source: 'imf', code: 'NGAP_NPGDP', label: 'Output gap', unit: '% of potential GDP' },

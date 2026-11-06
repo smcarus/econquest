@@ -33,6 +33,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Not validated | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
+| Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -319,6 +320,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Five-year scenarios: the IMF path as published, a baseline on the IMF inputs with no stock-flow adjustment, ten-year historical averages, and growth, primary balance, interest rate and combined shocks shaped like the IMF standardised stress tests (2013 Staff Guidance Note), with sizes stated by the app.
 - **Limits:** A view on stated assumptions, not a forecast and not an IMF DSA. Shock sizes are the app's choices, not the IMF's country calibration.
 - **Code:** `src/utils/debtSustainability.ts`
+
+### Gross financing need (lower bound)
+
+- **Shows in:** Research > History & data
+- GFN = overall deficit + amortisation, % of GDP, from last year to five years out. Deficit = minus the IMF Fiscal Monitor overall balance; interest shown = primary minus overall balance.
+- Amortisation = World Bank IDS projected principal on public and publicly guaranteed external debt (DT.AMT.DPPG.CD, all creditors) divided by IMF WEO GDP in US dollars (NGDPD) for the same year. QEDS next-12-month general government external principal is shown alongside.
+- Flag: a total of 15% of GDP or more, the IMF market-access DSA benchmark for emerging markets.
+- **Limits:** Domestic amortisation (local debt held by residents) has no free cross-country source, so the total is a lower bound; for countries that borrow mainly at home it can be far below the true need. IDS covers low- and middle-income countries only. IMF years from this one on and all IDS years are projections.
+- **Code:** `src/utils/grossFinancingNeed.ts`
 
 ### Fiscal reaction (Bohn test)
 
