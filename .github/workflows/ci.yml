@@ -35,6 +35,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: Home-server compose file is valid
+        run: docker compose -f deploy/home-server/compose.yml config -q
       - name: Build the production image
         run: docker build -t econquest:ci .
       - name: Start it on an empty data volume and check it answers

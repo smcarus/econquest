@@ -34,6 +34,9 @@ On a Mac you can instead double-click `start-mac.command`, which runs the app in
 http://localhost:3737 (Windows: `scripts/start-windows.bat`). Both ways read and write the same
 `data/` folder, so keys and saved research carry over.
 
+To run it on an always-on Linux box or NAS with Ollama on the same machine, see
+[docs/HOME_SERVER.md](docs/HOME_SERVER.md).
+
 ### First run
 
 A new install shows dashes everywhere until a source answers. Workspace opens with a **Getting
