@@ -273,6 +273,8 @@ Figures with no history yet are listed with the reason.
 
 **Reserve adequacy.** Research > History & data shows reserves in months of imports, against short-term external debt and against broad money, and reserves as a share of the IMF's reserve adequacy (ARA) metric for emerging markets. One term of that metric, other portfolio liabilities, has no free source, so the share shown is an upper bound: under 100% means short of the IMF floor for certain, above 100% does not prove adequacy. Both the floating and the fixed exchange rate weightings are shown.
 
+**Debt fan chart.** Under Debt sustainability, a fan shows where debt could go over five years if the past shocks to growth, inflation, interest and the primary balance repeat: 2,000 paths drawn from whole past years around the IMF baseline, with the 10-90 and 25-75 percentile bands, the median and the share of paths ending above today's debt. It needs 10 past years with all four figures; otherwise it says what is missing.
+
 **Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
 its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
 and the app's output gap, outturn years only, with Newey-West errors. A positive, significant

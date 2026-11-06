@@ -3,6 +3,7 @@ import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_D
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
+import { debtFan, debtFanSentence } from './src/utils/debtFan';
 import { reserveAdequacy, reserveAdequacySentence } from './src/utils/reserveAdequacy';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
@@ -3217,7 +3218,8 @@ async function startServer() {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
     const r = dsaFrom(file);
-    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}) });
+    const fan = r.ok ? debtFan(r) : undefined;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}), ...(fan ? { fan: fan.ok ? { ...fan, sentence: debtFanSentence(fan) } : fan } : {}) });
   });
   // Fiscal reaction (Bohn test, src/utils/bohnTest.ts): primary balance on last year's debt and the output gap.
   app.get('/api/bohn/:iso3', async (req, res) => {
