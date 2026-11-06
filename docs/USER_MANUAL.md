@@ -244,6 +244,8 @@ the *Excel* button next to each CSV button. The workbook holds the same rows and
 *Data* sheet (bold, frozen header with filters; numbers stored as numbers, text as text so nothing runs as
 a formula) and an *About* sheet naming the file and when it was made. Missing values stay Missing.
 
+Every figures download also has a *licence* column, and every References list in a brief or note ends each source with *Licence:*. It gives the licence class of the figure's source from the licence register (Menu > About & data licences): open with attribution, allowed with conditions, permission needed for client or commercial use, or terms not confirmed. A figure worked out from several sources takes the strictest class among them; a source the register does not name says so.
+
 *As of a past day* (below the chart): pick a date and see every figure the app held on that day,
 from its saved pulls, beside today's, with the change where both sides are live. A day without a pull
 uses the pull before it. Each value keeps its own source and period; hover for them, or for the
