@@ -31,6 +31,22 @@ The setup code stops someone else on the network from claiming the app before yo
 - The earlier checks stay: only listed host names are answered (DNS rebinding), and changes sent from
   pages on other sites are refused.
 
+## Roles
+
+| Role | Can |
+| --- | --- |
+| Viewer | Read Research, Reports and saved council answers. Cannot ask the council or change anything shared (including watchlists, until each account gets its own workspace). |
+| Analyst | Ask the council, save research, run policy reviews and backtests, sign off, refresh data, change watchlists and holdings. Sees which keys are set (masked) but cannot change them. |
+| Admin | Everything, plus data and AI keys, AI model settings, backup and restore, the audit log, connectors and webhooks, watch alerts, the morning brief, and accounts (Menu > Users). |
+
+One table in `src/utils/permissions.ts` decides this for every API call; a new route is Analyst
+unless listed. The server refuses, so hiding a button is never the only check. The last active
+admin cannot be demoted or disabled. Disabling an account signs it out at once. A password set
+or reset by an admin is random, shown once, and never logged.
+
+With accounts, an admin may change keys from any browser; the old "only from the computer running
+the app" rule applies only while sign-in is off.
+
 ## Locked out
 
 On the server (picked up by a running app straight away):
@@ -46,11 +62,10 @@ Under Docker: `docker compose exec econquest npm run users -- list`.
 
 ## Not yet (planned, in order)
 
-1. Roles (Viewer, Analyst, Admin): today every account can do everything, as the single user could.
-2. A CSRF token on every change, rate limits on the API and AI calls, security headers.
-3. The account name on every audit entry and on sign-offs, with approver separate from reviewer.
-4. Separate workspaces per account (watchlists, holdings, saved research).
-5. API keys encrypted at rest with a key kept outside the data folder.
-6. HTTPS through a reverse proxy in the compose stack.
+1. A CSRF token on every change, rate limits on the API and AI calls, security headers.
+2. The account name on every audit entry and on sign-offs, with approver separate from reviewer.
+3. Separate workspaces per account (watchlists, holdings, saved research).
+4. API keys encrypted at rest with a key kept outside the data folder.
+5. HTTPS through a reverse proxy in the compose stack.
 
 Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.
