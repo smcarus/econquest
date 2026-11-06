@@ -400,6 +400,11 @@ hold no figures of their own; the handout reads them from the app's series when 
   re-test of the failed Taylor gap that adds the output-gap term (0.5 x the app's real-time output
   gap from IMF real GDP growth, year t used from April of t+1), judged by method 2. The Taylor v2 run
   also pulls IMF real GDP growth for each country with a dated target.
+  Also registered (method 2): the growth and inflation quadrant (`regime_quadrant.json`: both up
+  before a hike, both down before a cut, within 6 months), the cycle clock (`cycle_clock.json`: once
+  it reads hiking or cutting, another move the same way within 6 months) and the Timing Agent's one
+  call (`timing_agent.json`: crowded and already turning before a further 3-point unwind within 8
+  weeks). Until they are run these three read *Not validated*.
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it

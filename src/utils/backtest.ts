@@ -25,7 +25,7 @@ import { targetIn } from '../data/inflationTargetHistory';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind';
 
 export interface BacktestSpec {
   id: string;
@@ -463,6 +463,189 @@ export function cftcCrowdingCases(spec: BacktestSpec, where: string, weeks: Cftc
     if (!dir || !inSample(i) || i - lastEntry[dir] < minGapWeeks) continue;
     lastEntry[dir] = i;
     out.push({ where, when: weeks[i].date, what: `entered crowded ${dir === 1 ? 'long' : 'short'} (${Math.round(r)}th percentile): back ${unwindPts} pts within ${windowWeeks} weeks?`, hit: unwound(i, dir), base: base[dir] });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ shared: policy moves */
+
+/** Policy-move helpers on one monthly BIS series: the sign of the move in a month, and whether a move one way came within a window. */
+function policyMoves(policy: { period: string; pct: number }[], windowMonths: number) {
+  const pct = new Map(policy.map((p) => [p.period, p.pct]));
+  const first = policy[0]?.period ?? '';
+  const last = policy[policy.length - 1]?.period ?? '';
+  const moveIn = (m: string): number => {
+    const a = pct.get(addMonths(m, -1));
+    const b = pct.get(m);
+    return a === undefined || b === undefined ? 0 : Math.sign(Number((b - a).toFixed(4)));
+  };
+  /** True / false when a move `dir` came in (from, from+window]; null when the window runs past the data. */
+  const moved = (from: string, dir: number): boolean | null => {
+    if (addMonths(from, windowMonths) > last || from < first) return null;
+    for (let k = 1; k <= windowMonths; k++) if (moveIn(addMonths(from, k)) === dir) return true;
+    return false;
+  };
+  return { pct, moveIn, moved };
+}
+
+/** Calls from monthly readings: the first month of each run of the same non-zero reading, with the base rate from every row. */
+function callsFromReadings(
+  where: string,
+  rows: { month: string; reading: -1 | 0 | 1; text: string }[],
+  /** Direction of the move each reading points to. */
+  want: (reading: -1 | 1) => -1 | 1,
+  moved: (from: string, dir: number) => boolean | null,
+  windowMonths: number
+): BacktestCase[] {
+  const baseFor = (dir: number) => {
+    let n = 0;
+    let yes = 0;
+    for (const r of rows) {
+      const m = moved(r.month, dir);
+      if (m === null) continue;
+      n++;
+      if (m) yes++;
+    }
+    return n ? yes / n : 0;
+  };
+  const base = { [-1]: baseFor(-1), [1]: baseFor(1) } as Record<number, number>;
+  const out: BacktestCase[] = [];
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r.reading) continue;
+    const prev = rows[i - 1];
+    if (prev && prev.reading === r.reading && addMonths(prev.month, 1) === r.month) continue;
+    const dir = want(r.reading);
+    const hit = moved(r.month, dir);
+    if (hit === null) continue;
+    out.push({ where, when: r.month, what: `${r.text}: ${dir < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`, hit, base: base[dir] });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ growth and inflation quadrant -> policy move */
+
+/**
+ * Each month, with the data published by then: growth = change in the leading indicator over
+ * cliChangeMonths (read cliLagMonths back), inflation = change in y/y inflation over
+ * cpiChangeMonths (read cpiLagMonths back), each "up" above zero, as the app's quadrant.
+ * Both up = a hike call; both down = a cut call; the mixed quadrants make no call. A call is the
+ * first month of a run of the same reading. Base rate: the same move after any month in the span.
+ */
+export function regimeQuadrantCases(
+  spec: BacktestSpec,
+  where: string,
+  cli: { period: string; value: number }[],
+  inflation: { period: string; value: number }[],
+  policy: { period: string; pct: number }[]
+): BacktestCase[] {
+  const { cliLagMonths = 1, cpiLagMonths = 2, cliChangeMonths = 6, cpiChangeMonths = 3, windowMonths = 6 } = spec.params;
+  if (!cli.length || !inflation.length || policy.length < 2) return [];
+  const c = new Map(cli.map((p) => [p.period, p.value]));
+  const i = new Map(inflation.map((p) => [p.period, p.value]));
+  const { moved } = policyMoves(policy, windowMonths);
+  const lo = spec.sample.from;
+  const hi = spec.sample.to || '9999-12';
+  const rows: { month: string; reading: -1 | 0 | 1; text: string }[] = [];
+  for (const p of policy) {
+    if (p.period < lo || p.period > hi) continue;
+    const cm = addMonths(p.period, -cliLagMonths);
+    const im = addMonths(p.period, -cpiLagMonths);
+    const c1 = c.get(cm);
+    const c0 = c.get(addMonths(cm, -cliChangeMonths));
+    const i1 = i.get(im);
+    const i0 = i.get(addMonths(im, -cpiChangeMonths));
+    if (c1 === undefined || c0 === undefined || i1 === undefined || i0 === undefined) continue;
+    const g = c1 - c0;
+    const inf = i1 - i0;
+    const reading = g > 0 && inf > 0 ? 1 : g <= 0 && inf <= 0 ? -1 : 0;
+    rows.push({ month: p.period, reading, text: `growth ${g > 0 ? 'up' : 'down'} (${g >= 0 ? '+' : ''}${g.toFixed(2)} to ${cm}), inflation ${inf > 0 ? 'up' : 'down'} (${inf >= 0 ? '+' : ''}${inf.toFixed(1)} pts to ${im})` });
+  }
+  return callsFromReadings(where, rows, (r) => r, moved, windowMonths);
+}
+
+/* ------------------------------------------------------------------ cycle clock -> next move */
+
+/**
+ * The cycle clock's reading each month: hiking when the latest move in the past holdAfterMonths
+ * (this month included) was a hike, cutting when it was a cut, on hold otherwise, as the app's
+ * clock. A call is the first month of a hiking (cutting) run: the cycle keeps going, so another
+ * hike (cut) comes within windowMonths. Base rate: the same move after any month in the span.
+ */
+export function cycleClockCases(spec: BacktestSpec, where: string, policy: { period: string; pct: number }[]): BacktestCase[] {
+  const { holdAfterMonths = 6, windowMonths = 6 } = spec.params;
+  if (policy.length < 2) return [];
+  const { pct, moveIn, moved } = policyMoves(policy, windowMonths);
+  const lo = spec.sample.from;
+  const hi = spec.sample.to || '9999-12';
+  const rows: { month: string; reading: -1 | 0 | 1; text: string }[] = [];
+  for (const p of policy) {
+    if (p.period < lo || p.period > hi) continue;
+    let reading: -1 | 0 | 1 = 0;
+    for (let k = 0; k < holdAfterMonths; k++) {
+      const m = addMonths(p.period, -k);
+      if (!pct.has(m)) break;
+      const d = moveIn(m);
+      if (d) {
+        reading = d > 0 ? 1 : -1;
+        break;
+      }
+    }
+    rows.push({ month: p.period, reading, text: `${reading > 0 ? 'hiking' : reading < 0 ? 'cutting' : 'on hold'} from ${p.period} (policy ${p.pct.toFixed(2)}%)` });
+  }
+  return callsFromReadings(where, rows, (r) => r, moved, windowMonths);
+}
+
+/* ------------------------------------------------------------------ Timing Agent unwind setup */
+
+/**
+ * The Timing Agent's one call: positioning crowded (at or above highPct, or at or below lowPct,
+ * of the lookback weeks, past weeks only) AND already turning (its share of open interest moved
+ * turnPts or more against the crowd over turnWeeks) = "the setup in which a crowded position
+ * unwinds". Hit: the share moves a further unwindPts the same way within windowWeeks. A setup
+ * counts when the week before was not a setup that way and none was counted in the minGapWeeks
+ * before. Base rate: the same further move after any week with enough history.
+ */
+export function timingUnwindCases(spec: BacktestSpec, where: string, weeks: CftcWeek[]): BacktestCase[] {
+  const { lookbackWeeks = 156, minLookbackWeeks = 52, highPct = 90, lowPct = 10, turnWeeks = 4, turnPts = 3, windowWeeks = 8, unwindPts = 3, minGapWeeks = 8 } = spec.params;
+  const share = weeks.map((w) => (w.levNet / w.openInterest) * 100);
+  const rank = (i: number): number | null => {
+    if (i < minLookbackWeeks) return null;
+    const past = share.slice(Math.max(0, i - lookbackWeeks), i + 1);
+    return (past.filter((v) => v <= share[i]).length / past.length) * 100;
+  };
+  const lo = spec.sample.from;
+  const hi = spec.sample.to || '9999-12-31';
+  const inSample = (i: number) => weeks[i].date >= lo && weeks[i].date <= hi && i + windowWeeks < share.length && i >= Math.max(minLookbackWeeks, turnWeeks);
+  // dir 1 = crowded long, unwinding means the share falls.
+  const further = (i: number, dir: 1 | -1) => share.slice(i + 1, i + 1 + windowWeeks).some((v) => (dir === 1 ? v <= share[i] - unwindPts : v >= share[i] + unwindPts));
+  const baseFor = (dir: 1 | -1) => {
+    let n = 0;
+    let yes = 0;
+    for (let i = 0; i < share.length; i++) {
+      if (!inSample(i)) continue;
+      n++;
+      if (further(i, dir)) yes++;
+    }
+    return n ? yes / n : 0;
+  };
+  const base = { 1: baseFor(1), [-1]: baseFor(-1) } as Record<number, number>;
+  const setupAt = (i: number): 1 | -1 | 0 => {
+    const r = rank(i);
+    if (r === null || i < turnWeeks) return 0;
+    const chg = share[i] - share[i - turnWeeks];
+    if (r >= highPct && chg <= -turnPts) return 1;
+    if (r <= lowPct && chg >= turnPts) return -1;
+    return 0;
+  };
+  const out: BacktestCase[] = [];
+  const lastEntry: Record<number, number> = { 1: -Infinity, [-1]: -Infinity };
+  for (let i = Math.max(minLookbackWeeks, turnWeeks); i < share.length; i++) {
+    const dir = setupAt(i);
+    if (!dir || setupAt(i - 1) === dir || !inSample(i) || i - lastEntry[dir] < minGapWeeks) continue;
+    lastEntry[dir] = i;
+    const chg = share[i] - share[i - turnWeeks];
+    out.push({ where, when: weeks[i].date, what: `crowded ${dir === 1 ? 'long' : 'short'} and turning (${chg >= 0 ? '+' : ''}${chg.toFixed(1)} pts in ${turnWeeks} weeks): a further ${unwindPts} pts within ${windowWeeks} weeks?`, hit: further(i, dir), base: base[dir] });
   }
   return out;
 }
