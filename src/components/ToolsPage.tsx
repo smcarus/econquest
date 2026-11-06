@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useMemo, useState } from 'react';
 import { ArrowRight, CheckCircle2, ChevronRight, CircleDashed } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
@@ -26,7 +27,7 @@ function toolStatus(tool: ReadyTool, items: LiveWatchlistItem[], run: CouncilAss
     case 'marketedge': {
       const y = count((i) => i.yield10YPct);
       const c = count((i) => i.cds5YBps);
-      return { ok: y > 0 || c > 0, text: `${y} of ${n} with an official yield, ${c} of ${n} with your CDS` };
+      return { ok: y > 0 || c > 0, text: CDS_HIDDEN ? `${y} of ${n} with an official yield` : `${y} of ${n} with an official yield, ${c} of ${n} with your CDS` };
     }
     case 'divergences':
     case 'ask_council': {

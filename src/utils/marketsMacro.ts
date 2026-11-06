@@ -3,6 +3,7 @@
  * disagree. Every figure keeps its source tag; the readings in the agent groups (Central Bank Watcher Agent, Relative Value Agent) are simple, stated rules
  * on those figures (tagged model), never data.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import type { CouncilAssessmentRun, LiveWatchlistItem, OpenDataSnapshot, WatchlistItem } from '../types/council';
 import { missingReason } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
@@ -205,8 +206,10 @@ export function peerBasisNote(basis: PeerBasis | null, fit: PeerFit | null, real
   if (basis === 'cds' && fit)
     return `Sorted from cheapest to richest 5Y CDS for its risk score. Model: log CDS fitted on the app's risk score across ${fit.n} countries; more than 15% above the fit counts as cheap, more than 15% below as rich.`;
   if (basis === 'real_yield' && realFit)
-    return `CDS is off or covers fewer than 4 countries, so the reading uses the real 10Y yield (10Y yield less inflation). Sorted from cheapest to richest for its risk score. Model: real yield fitted on the app's risk score across ${realFit.n} countries; more than ${REAL_YIELD_BAND_PTS} pt above the fit counts as cheap, more than ${REAL_YIELD_BAND_PTS} pt below as rich.`;
-  return 'The cheap or rich reading needs 4 or more countries with a CDS figure, or with both a 10Y yield and inflation.';
+    return `${CDS_HIDDEN ? 'The reading uses' : 'CDS is off or covers fewer than 4 countries, so the reading uses'} the real 10Y yield (10Y yield less inflation). Sorted from cheapest to richest for its risk score. Model: real yield fitted on the app's risk score across ${realFit.n} countries; more than ${REAL_YIELD_BAND_PTS} pt above the fit counts as cheap, more than ${REAL_YIELD_BAND_PTS} pt below as rich.`;
+  return CDS_HIDDEN
+    ? 'The cheap or rich reading needs 4 or more countries with both a 10Y yield and inflation.'
+    : 'The cheap or rich reading needs 4 or more countries with a CDS figure, or with both a 10Y yield and inflation.';
 }
 
 /* ------------------------------------------------------------------------------------------

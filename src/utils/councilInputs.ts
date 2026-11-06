@@ -3,6 +3,7 @@
  * your own data filled are passed to the agents; every other figure is named as missing, with
  * the reason, so a model cannot treat a built-in value as data (Sam, 2026-11-04).
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import type { OpenDataSnapshot } from '../types/council';
 import { getSnapshotDataStatus } from './dataStatus';
 import { pathMissing } from './countryNotes';
@@ -18,7 +19,8 @@ const FIGURES: Array<{ label: string; path: string; fmt: (v: number, s: OpenData
   { label: 'World Bank political stability', path: 'wb.politicalStabilityPercentile', fmt: (v) => `${v} percentile` },
   { label: 'Central bank policy rate', path: 'market.policyRatePct', fmt: (v) => `${v}%` },
   { label: '10Y government yield', path: 'market.sovereign10YBondYieldPct', fmt: (v) => `${v}%` },
-  { label: '5Y USD CDS', path: 'market.cds5YSpreadBps', fmt: (v) => `${v} bps` },
+  // 5Y CDS is hidden for now (src/utils/cdsHidden.ts), so the council is not told it is missing.
+  ...(CDS_HIDDEN ? [] : [{ label: '5Y USD CDS', path: 'market.cds5YSpreadBps', fmt: (v: number) => `${v} bps` }]),
   { label: 'Spot FX', path: 'market.exchangeRatePerUsd', fmt: (v, s) => `${v} ${s.currencyCode}/USD` },
   { label: 'GDELT conflict index', path: 'gdelt.conflictIntensityIndex', fmt: (v) => `${v}/100` },
   { label: 'GDELT news tone', path: 'gdelt.averageTone', fmt: (v) => `${v}` },

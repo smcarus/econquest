@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from './src/utils/cdsHidden.ts';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
@@ -352,6 +353,8 @@ async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
 let ownCdsCache: { key: string; at: number; quotes: Map<string, OwnCdsQuote> } | null = null;
 let lsegToken: { token: string; until: number } | null = null;
 async function loadOwnCds(): Promise<Map<string, OwnCdsQuote>> {
+  // CDS is hidden for now (src/utils/cdsHidden.ts): the USD bond spread stands in for it.
+  if (CDS_HIDDEN) return new Map();
   const cfg = ownCdsSettings(process.env);
   if (!cfg) return new Map();
   try {
@@ -5895,7 +5898,7 @@ async function startServer() {
         cleanUrl,
         modelName,
         'You are a Sovereign Macro Council Agent. Return strict JSON.',
-        'Evaluate Brazil (BRA) 5Y CDS at 165 bps and Debt/GDP at 76.8%. Return JSON with keys: stance (BULLISH, BEARISH, or NEUTRAL), riskScore (0.0 to 1.0), and summary (1 sentence).',
+        'Connection test with made-up figures (not data): a country whose US dollar bonds pay 165 bps over US Treasuries and whose debt is 76.8% of GDP. Return JSON with keys: stance (BULLISH, BEARISH, or NEUTRAL), riskScore (0.0 to 1.0), and summary (1 sentence).',
         true,
         15000,
         ['stance', 'riskScore', 'summary']
@@ -6113,7 +6116,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           stepName: 'STAGE_1_GEO_DESK',
           providerMode,
           runtimeConfig,
-          systemInstruction: `You are Managing Director of the Geopolitical Risk Desk overseeing AG-1 (Intelligence Scraper Analyst), AG-2 (Transmission Mapping Analyst), and AG-3 (Sanctions & Legal Analyst). Quantitative Anchor Score: ${anchors.geopolitical}. Keep risk scores anchored near empirical telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands the real-world impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Caldara-Iacoviello GPR Z-Score = +2.1σ | 5Y CDS = 185 bps)".`,
+          systemInstruction: `You are Managing Director of the Geopolitical Risk Desk overseeing AG-1 (Intelligence Scraper Analyst), AG-2 (Transmission Mapping Analyst), and AG-3 (Sanctions & Legal Analyst). Quantitative Anchor Score: ${anchors.geopolitical}. Keep risk scores anchored near empirical telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands the real-world impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Caldara-Iacoviello GPR Z-Score = +2.1σ | USD bond spread = 185 bps)".`,
           prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag1_intel_scraper', 'ag2_transmission_mapper', 'ag3_sanctions_legal'])}\n\nSynthesize individual findings for AG-1, AG-2, and AG-3, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining what is happening in the real world, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
@@ -6141,7 +6144,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           stepName: 'STAGE_1_SOV_DESK',
           providerMode,
           runtimeConfig,
-          systemInstruction: `You are Managing Director of the Sovereign Credit Desk overseeing AG-4 (Fiscal Auditor Analyst), AG-5 (External Balance Sheet Analyst), and AG-6 (Political Will & Governance Analyst). Quantitative Anchor Score: ${anchors.sovereign}. Keep risk scores anchored near empirical Debt/GDP, 5Y CDS, and Reserve Adequacy telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and minority dissents in clear, everyday plain English first so any reader immediately understands the real-world budget and debt impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Debt/GDP = 78.4% | r - g = +1.8% | FX Cover = 4.2 mos)".`,
+          systemInstruction: `You are Managing Director of the Sovereign Credit Desk overseeing AG-4 (Fiscal Auditor Analyst), AG-5 (External Balance Sheet Analyst), and AG-6 (Political Will & Governance Analyst). Quantitative Anchor Score: ${anchors.sovereign}. Keep risk scores anchored near empirical Debt/GDP, USD bond spread, and Reserve Adequacy telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and minority dissents in clear, everyday plain English first so any reader immediately understands the real-world budget and debt impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Debt/GDP = 78.4% | r - g = +1.8% | FX Cover = 4.2 mos)".`,
           prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag4_fiscal_auditor', 'ag5_external_balance', 'ag6_political_will'])}\n\nSynthesize individual findings for AG-4, AG-5, and AG-6, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and formulate AG-6 Political Will's Minority Report dissent. Lead every statement with plain, everyday language explaining what is happening to government finances and foreign reserves, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {

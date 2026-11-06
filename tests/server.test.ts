@@ -104,10 +104,10 @@ test('Mexico: the FRED API answers and its value replaces the sample yield', asy
   assert.equal(s.official10YYield?.period, '2026-09');
   assert.equal(s.monetaryAndMarket.sovereign10YBondYieldPct, 9.35);
   assert.equal(getSnapshotDataStatus(s).yieldSource, 'official');
-  // Own CDS file: latest row used, named with its provider and date.
-  assert.equal(s.monetaryAndMarket.cds5YSpreadBps, 117);
-  assert.deepEqual(s.ownCds5Y, { bps: 117.4, date: '2026-11-03', source: 'Bloomberg' });
-  assert.equal(getSnapshotDataStatus(s).ownCds?.source, 'Bloomberg');
+  // CDS is hidden for now (src/utils/cdsHidden.ts): the own CDS file is set up here but never read.
+  assert.equal(s.ownCds5Y, undefined);
+  assert.equal(getSnapshotDataStatus(s).ownCds, undefined);
+  assert.equal(getSnapshotDataStatus(s).live('market.cds5YSpreadBps'), undefined);
   // Only the yield feed answered, so the snapshot as a whole is not called live.
   assert.notEqual(getSnapshotDataStatus(s).mode, 'live');
 });
@@ -158,9 +158,9 @@ test('watchlist: official yields carry a date, everything else says sample', asy
     assert.equal(byIso.get(iso)?.yield10YSource, 'sample', `${iso} has no official source`);
     assert.equal(byIso.get(iso)?.yield10YPeriod, undefined);
   }
-  assert.equal(byIso.get('MEX')?.cds5YSource, 'own');
-  assert.equal(byIso.get('MEX')?.cds5YDate, '2026-11-03');
-  assert.equal(byIso.get('BRA')?.cds5YSource, 'sample');
+  // CDS hidden for now: the own CDS file is not read, so no row carries a CDS of its own.
+  assert.notEqual(byIso.get('MEX')?.cds5YSource, 'own');
+  assert.equal(byIso.get('MEX')?.cds5YDate, undefined);
   // Policy rate: BIS where the feed has one (Mexico daily, Turkey month-end), else no figure.
   assert.deepEqual(
     [byIso.get('MEX')?.policyRatePct, byIso.get('MEX')?.policyRateSource, byIso.get('MEX')?.policyRateDate, byIso.get('MEX')?.policyRateBank],

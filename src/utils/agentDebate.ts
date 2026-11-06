@@ -7,6 +7,7 @@
  * figure in them is an agent's figure. When an AI model is set up, it then writes the challenged
  * agent's reply and a moderator's view, held to the same number and stance checks as the summary.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import type { AgentAnswer, AgentFinding, AgentId } from './askCouncil';
 import type { Stance, StanceDim } from './stanceCheck';
 
@@ -124,7 +125,7 @@ export const DEBATE_INSTRUCTION = [
   'The reply may concede, partly concede, or hold its ground, and must say which.',
   'Then write a verdict of one or two sentences on where the debate lands, and list what stays open.',
   'Every number you write must appear in the findings. Do not compute new numbers, forecast, or add outside facts.',
-  'Keep each agent\'s stance in its own fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak).',
+  'Keep each agent\'s stance in its own fixed words (policy tight, neutral or loose; ' + (CDS_HIDDEN ? 'cheap, in line or rich against peers' : 'CDS cheap, in line or rich') + '; real exchange rate strong, near average or weak).',
   'Plain English, no advice to buy or sell.',
 ].join(' ');
 

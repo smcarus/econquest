@@ -12,6 +12,7 @@
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import { isCitable, References } from './citations';
 import { taylorCheck, taylorMethod, taylorSentence } from './taylorRule';
 import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
@@ -97,7 +98,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   rv: {
     name: 'Relative Value',
-    covers: 'CDS against risk peers, carry over the US rate',
+    covers: CDS_HIDDEN ? 'real 10Y yield against risk peers, carry over the US rate' : 'CDS against risk peers, carry over the US rate',
     topic: /\bcds\b|spread|cheap|rich|\bvalue\b|valuation|bonds?|yields?|carry|priced|pricing|relative|default|credit/i,
   },
   fx: {
@@ -291,7 +292,7 @@ const FOLLOW_UP: Record<CoreAgentId, string> = {
   cb: 'How does inflation compare with the policy rate?',
   fiscal: 'Is the debt on a rising path, and what falls due next year?',
   politics: 'What is the news tone, and what do prediction markets say?',
-  rv: 'Is CDS cheap or rich against peers?',
+  rv: CDS_HIDDEN ? 'Are its bonds cheap or rich against peers?' : 'Is CDS cheap or rich against peers?',
   fx: 'Is the currency strong or weak for its history?',
   spill: 'How exposed are they to a Hormuz closure?',
   calendar: 'What dates are coming up?',
@@ -681,8 +682,10 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
   const missing: string[] = fit
     ? []
     : realFit
-      ? ['CDS against peers needs 4 or more countries with a CDS figure, so the peer reading uses the real 10Y yield']
-      : ['Peer reading needs 4 or more countries with a CDS figure, or with both a 10Y yield and inflation'];
+      ? CDS_HIDDEN
+        ? []
+        : ['CDS against peers needs 4 or more countries with a CDS figure, so the peer reading uses the real 10Y yield']
+      : [CDS_HIDDEN ? 'Peer reading needs 4 or more countries with both a 10Y yield and inflation' : 'Peer reading needs 4 or more countries with a CDS figure, or with both a 10Y yield and inflation'];
   for (const it of countries) {
     const c = cdsTag(it);
     const y = yieldTag(it);
@@ -690,7 +693,7 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
     if (it.yield10YPct !== undefined) figures.push({ label: '10Y government yield', value: p2(it.yield10YPct), source: y.src, tag: y.q });
     else missing.push(`${it.countryName}: 10Y yield missing (${missingReason('yield', it.iso3).short})`);
     if (it.cds5YBps !== undefined) figures.push({ label: '5Y CDS', value: `${Math.round(it.cds5YBps)} bps`, source: c.src, tag: c.q });
-    else missing.push(`${it.countryName}: 5Y CDS missing (${missingReason('cds', it.iso3).short})`);
+    else if (!CDS_HIDDEN) missing.push(`${it.countryName}: 5Y CDS missing (${missingReason('cds', it.iso3).short})`);
     const parts: string[] = [];
     const stance: Stance[] = [];
     if (fit && it.cds5YBps !== undefined && it.compositeRisk !== undefined) {
@@ -1175,7 +1178,7 @@ export const SYNTHESIS_INSTRUCTION = [
   'Never repeat a finding without saying what it means for the question.',
   'Use ONLY the findings in the documents. Every number you write must appear in them, written as it appears there. Describe sizes and comparisons in words (higher, well above, the largest of the three); do not calculate new numbers, forecast, or add outside facts.',
   'Passages from the Policy Document Agent are quotes from documents the user added: name the document when you use one, and do not treat its forecasts as data.',
-  'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
+  'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; ' + (CDS_HIDDEN ? 'cheap, in line or rich against peers' : 'CDS cheap, in line or rich') + '; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Where agents point different ways, say so under disagreements; do not smooth it over.',
   'List under gaps what the agents could not answer (their Missing data sections), and say less confidently what rests on a document whose coverage is partial or none.',
   'Plain English, full sentences, no advice to buy or sell.',

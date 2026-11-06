@@ -6,7 +6,7 @@ import { FIGURE_LABEL, missingSummary } from '../utils/liveFigures';
 import {
   COLUMN_BY_ID,
   cellMissing,
-  COLUMNS,
+  VISIBLE_COLUMNS,
   DEFAULT_VIEW,
   moveColumn,
   sortBy,
@@ -76,7 +76,7 @@ export const ColumnPicker: React.FC<{ view: WatchlistView; onChange: (v: Watchli
     </div>
     <p className="text-xs text-slate-500 dark:text-slate-400">Tick the figures you want. Arrows change the order. Saved in this browser, for this tab and the pop-out.</p>
     <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-      {[...view.columns.map((id) => COLUMN_BY_ID[id]), ...COLUMNS.filter((c) => !view.columns.includes(c.id))].map((c) => {
+      {[...view.columns.map((id) => COLUMN_BY_ID[id]), ...VISIBLE_COLUMNS.filter((c) => !view.columns.includes(c.id))].map((c) => {
         const on = view.columns.includes(c.id);
         const i = view.columns.indexOf(c.id);
         return (

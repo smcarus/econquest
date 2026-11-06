@@ -3,6 +3,7 @@
  * the pop-out window (?view=watchlist). Choices are kept in this browser's storage, so a change in
  * one window shows in the other.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import type { LiveWatchlistItem, WatchlistGroup, WatchlistItem } from '../types/council';
 import { missingReason, type FigureKey, type MissingReason } from './liveFigures';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
@@ -221,10 +222,14 @@ export function cellMissing(col: ColumnDef, it: LiveWatchlistItem): MissingReaso
   return missingReason(col.figure, it.iso3);
 }
 
+/** CDS columns while CDS is hidden (src/utils/cdsHidden.ts): not offered, and dropped from saved views. */
+const HIDDEN_COLUMNS = new Set<ColumnId>(CDS_HIDDEN ? ['cds', 'cdsChange'] : []);
+/** The columns the table can show. */
+export const VISIBLE_COLUMNS: ColumnDef[] = COLUMNS.filter((c) => !HIDDEN_COLUMNS.has(c.id));
 export const COLUMN_BY_ID = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColumnId, ColumnDef>;
 
 /** The columns the Workspace table always showed, in the same order. */
-export const DEFAULT_COLUMNS: ColumnId[] = ['risk', 'cds', 'cdsChange', 'yield', 'yieldChange', 'debt', 'reserves', 'data'];
+export const DEFAULT_COLUMNS: ColumnId[] = (['risk', 'cds', 'cdsChange', 'yield', 'yieldChange', 'debt', 'reserves', 'data'] as ColumnId[]).filter((c) => !HIDDEN_COLUMNS.has(c));
 
 export type SortKey = 'country' | ColumnId;
 export interface WatchlistView {
@@ -239,8 +244,8 @@ export const DEFAULT_VIEW: WatchlistView = { columns: DEFAULT_COLUMNS, sort: { k
 /** Keeps only known columns, without repeats; falls back to the defaults when nothing usable is left. */
 export function cleanView(raw: unknown): WatchlistView {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<WatchlistView>;
-  const cols = Array.isArray(r.columns) ? r.columns.filter((c, i, a): c is ColumnId => c in COLUMN_BY_ID && a.indexOf(c) === i) : [];
-  const key = r.sort?.key === 'country' || (r.sort?.key && r.sort.key in COLUMN_BY_ID) ? r.sort.key : DEFAULT_VIEW.sort.key;
+  const cols = Array.isArray(r.columns) ? r.columns.filter((c, i, a): c is ColumnId => c in COLUMN_BY_ID && !HIDDEN_COLUMNS.has(c) && a.indexOf(c) === i) : [];
+  const key = r.sort?.key === 'country' || (r.sort?.key && r.sort.key in COLUMN_BY_ID && !HIDDEN_COLUMNS.has(r.sort.key as ColumnId)) ? r.sort.key : DEFAULT_VIEW.sort.key;
   const dir = r.sort?.dir === 'asc' ? 'asc' : 'desc';
   return {
     columns: cols.length ? cols : [...DEFAULT_COLUMNS],

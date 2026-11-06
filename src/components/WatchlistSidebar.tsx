@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useState } from 'react';
 import { toDisplayCase } from '../utils/displayCase';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
@@ -407,7 +408,7 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                   {item.focusTheme}
                 </p>
 
-                <div className="grid grid-cols-4 gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-xs tabular-nums">
+                <div className={`grid ${CDS_HIDDEN ? 'grid-cols-3' : 'grid-cols-4'} gap-2 mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/70 text-xs tabular-nums`}>
                   <div title={`${yieldSourceNote(item)}. ${yieldSourceHelp(item)}`}>
                     <span className="text-slate-400 block">
                       10Y yield
@@ -422,12 +423,15 @@ export const WatchlistSidebar: React.FC<WatchlistSidebarProps> = ({
                       {item.yield10YPct.toFixed(1)}%
                     </span>
                   </div>
-                  <div>
-                    <span className="text-slate-400 block">5Y CDS</span>
-                    <span className="text-slate-800 dark:text-slate-200 font-semibold">
-                      {item.cds5YBps}bp
-                    </span>
-                  </div>
+                  {/* CDS hidden for now (src/utils/cdsHidden.ts). */}
+                  {!CDS_HIDDEN && item.cds5YSource === 'own' && (
+                    <div>
+                      <span className="text-slate-400 block">5Y CDS</span>
+                      <span className="text-slate-800 dark:text-slate-200 font-semibold">
+                        {item.cds5YBps}bp
+                      </span>
+                    </div>
+                  )}
                   <div>
                     <span className="text-slate-400 block">Debt/GDP</span>
                     <span className="text-slate-800 dark:text-slate-200 font-semibold">
