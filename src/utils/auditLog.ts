@@ -18,7 +18,7 @@
 import { createHash } from 'crypto';
 import { apiKeyField } from '../data/apiKeyFields';
 
-export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access';
+export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access' | 'idea';
 
 export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   council: 'Council answer',
@@ -32,6 +32,7 @@ export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   validation: 'Validation',
   signoff: 'Sign-off',
   access: 'Sign-in and accounts',
+  idea: 'Trade idea',
 };
 
 export interface AuditFigure {

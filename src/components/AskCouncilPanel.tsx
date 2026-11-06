@@ -1,7 +1,8 @@
 import { SettingsText } from './SettingsText';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ClipboardList, Copy, Download, FileText, X } from 'lucide-react';
+import { ClipboardList, Copy, Download, FileText, NotebookPen, X } from 'lucide-react';
 import { startPolicyReview } from '../utils/reviewHandoff';
+import { openIdeaJournal } from '../utils/ideaHandoff';
 import { councilBriefMarkdown, downloadCouncilBrief } from '../utils/briefExport';
 import type { CouncilAssessmentRun, CROOverrideState, LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { CouncilApprovalCard } from './CouncilApprovalCard';
@@ -682,6 +683,16 @@ export const AskCouncilPanel: React.FC<{
             onClick={() => startPolicyReview({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, problem: t.asked.question })}
           >
             <ClipboardList className="w-3.5 h-3.5" /> Start a policy review
+          </button>
+          <button
+            type="button"
+            className="ui-btn ui-btn-ghost"
+            disabled={writingNow}
+            title="Log a trade idea from this answer in the idea journal; it is hashed and scored at the horizon"
+            data-council-log-idea="true"
+            onClick={() => openIdeaJournal({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, thesis: [t.asked.question, t.synthesis?.brief?.headline].filter(Boolean).join('\n') })}
+          >
+            <NotebookPen className="w-3.5 h-3.5" /> Log idea
           </button>
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
             <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? 'Copied' : 'Copy'}
