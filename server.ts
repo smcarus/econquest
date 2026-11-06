@@ -10,6 +10,7 @@ import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from '.
 import { dataDirProblem, installJsonConsole, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
+import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
@@ -5043,6 +5044,12 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
+  app.disable('x-powered-by');
+  // Security headers on every reply (src/utils/requestLimits.ts): no framing, no sniffing.
+  app.use((_req, res, next) => {
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+    next();
+  });
 
   // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
   // sentence if it cannot be written, instead of failing later on the first save.
@@ -5115,6 +5122,22 @@ async function startServer() {
     if (roleAtLeast(me.role, needed)) return next();
     res.status(403).json({ error: refusal(me.role, needed), role: me.role, needed });
   });
+  // CSRF token and per-account rate limits (src/utils/requestLimits.ts), once someone is signed in.
+  const limiter = new RateLimiter();
+  app.use((req, res, next) => {
+    const me = signedIn(res);
+    if (!me) return next();
+    if (isWrite(req.method) && !req.path.startsWith('/api/auth/sign-in') && !csrfMatches(req.headers[CSRF_HEADER], res.locals.sessionHash as string)) {
+      return res.status(403).json({ error: 'This change was refused because the page is out of date. Reload the page and try again.', csrf: true });
+    }
+    const ai = isAiCall(req.method, req.path);
+    const wait = limiter.take(`${me.id}:api`, LIMITS.api) || (ai ? limiter.take(`${me.id}:ai`, LIMITS.ai) : 0);
+    if (wait) {
+      res.setHeader('Retry-After', String(wait));
+      return res.status(429).json({ error: ai ? `Too many AI requests from this account. Try again in ${wait} seconds.` : `Too many requests from this account. Try again in ${wait} seconds.` });
+    }
+    next();
+  });
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
@@ -5128,6 +5151,7 @@ async function startServer() {
       setupNeedsCode: mode === 'setup',
       canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || trusted(req, res)),
       sessionIdleHours: Math.round(limits.idleMs / 3600_000),
+      csrfToken: me ? csrfToken(res.locals.sessionHash as string) : null,
     };
   };
   app.get('/api/auth/status', (req, res) => res.json(authStatus(req, res)));

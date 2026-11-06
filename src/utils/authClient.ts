@@ -10,6 +10,8 @@ export interface AuthStatus {
   setupNeedsCode: boolean;
   canCreateFirstAccount: boolean;
   sessionIdleHours: number;
+  /** Sent as X-CSRF-Token on every change while signed in. */
+  csrfToken: string | null;
 }
 
 export async function fetchAuthStatus(fetchFn: typeof fetch = fetch): Promise<AuthStatus | null> {
@@ -43,21 +45,31 @@ export async function postAuth<T = unknown>(path: string, body: unknown): Promis
   }
 }
 
+const WRITE = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
+
 /**
- * Wraps window.fetch once: a 401 carrying `signIn: true` from this app's API means the session
- * ended (timed out, signed out elsewhere, password changed), so the page reloads onto the sign-in form.
+ * Wraps window.fetch once, while signed in:
+ * - every change sent to this app's API carries the CSRF token (src/utils/requestLimits.ts);
+ * - a 401 carrying `signIn: true` means the session ended (timed out, signed out elsewhere,
+ *   password changed), so the page reloads onto the sign-in form.
  */
-export function watchForSignedOut(win: Window = window): void {
+export function watchForSignedOut(win: Window = window, csrf: string | null = null): void {
   const w = win as Window & { __eqSignInWatch?: boolean };
   if (w.__eqSignInWatch) return;
   w.__eqSignInWatch = true;
   const original = win.fetch.bind(win);
   let reloading = false;
   win.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+    const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
+    const sameApp = url.startsWith('/api/') || url.startsWith(`${win.location.origin}/api/`);
+    const method = String(init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
+    if (csrf && sameApp && WRITE.has(method)) {
+      const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : undefined));
+      headers.set('X-CSRF-Token', csrf);
+      init = { ...init, headers };
+    }
     const res = await original(input, init);
     if (res.status === 401 && !reloading) {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-      const sameApp = url.startsWith('/api/') || url.startsWith(`${win.location.origin}/api/`);
       if (sameApp && !url.includes('/api/auth/')) {
         const body = await res.clone().json().catch(() => null);
         if (body && (body as { signIn?: boolean }).signIn) {
