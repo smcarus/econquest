@@ -269,6 +269,15 @@ a figure in the country header to open its history. *Show the numbers* lists eve
 observation, with unit, frequency, source, the source that day and the pull date).
 Figures with no history yet are listed with the reason.
 
+**Past IMF WEO editions (real-time vintages).** To see a figure as the IMF published it at the time
+(for example the October 2018 forecast of Turkey's 2019 growth), download past editions of the WEO
+database from the IMF site (the tab-delimited "By Countries" file for each edition, named like
+WEOOct2018all.xls) and save them in `data/local/weo-vintages/`. Nothing is fetched. `npm run
+weo:vintages` lists what it read and any file it skipped with the reason;
+`npm run weo:vintages -- --country TUR --code NGDP_RPCH --as-of 2019-06-01` shows the edition that
+was out on that date, each year tagged actual, estimate or projection. An edition counts as
+published on the last day of its month, so a test never sees it early.
+
 **Sources.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live
 figure; "Missing" and the reason for the rest, never a number.

@@ -144,6 +144,8 @@ import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
+import { ucdpData } from './src/utils/ucdpStore.ts';
+import { ucdpReading } from './src/utils/ucdpConflict.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
@@ -779,9 +781,24 @@ function topUpGdeltRaw(): void {
 }
 
 function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  return withUcdp(withGdeltRawOnly(snapshot));
+}
+function withGdeltRawOnly(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
   if (reading) return { ...snapshot, gdeltRaw: reading };
   const { gdeltRaw: _drop, ...rest } = snapshot;
+  return rest as OpenDataSnapshot;
+}
+/** UCDP conflict figures from the downloaded files in data/local/ucdp/, laid over like the GDELT files. */
+function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  let reading = null;
+  try {
+    reading = ucdpReading(ucdpData(DATA_DIR), snapshot.iso3);
+  } catch (err: any) {
+    console.warn(`[UCDP] could not read data/local/ucdp: ${err?.message || err}`);
+  }
+  if (reading) return { ...snapshot, ucdp: reading };
+  const { ucdp: _drop, ...rest } = snapshot;
   return rest as OpenDataSnapshot;
 }
 
@@ -1534,6 +1551,7 @@ const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTi
 /** One run of the data connection check, saved to the data health history. */
 async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
   const report = await checkConnections({
+    ucdp: () => ucdpData(DATA_DIR),
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
@@ -1927,6 +1945,7 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     ownCds5Y: undefined,
     polymarketContracts: [],
     gdeltRaw: undefined,
+    ucdp: undefined,
   };
   const run = buildDefaultAssessmentRun(input.iso3, openData);
   const desk = (d: keyof SupremeCaseInput['desks']) => ({ ...run.deskDebates[d], consensusSummary: input.desks[d] });
@@ -2446,6 +2465,7 @@ async function startServer() {
     const field = apiKeyField(id);
     if (!field) return null;
     const report = await checkConnections({
+      ucdp: () => ucdpData(DATA_DIR),
       env,
       only: [field.checkId],
       keySources: sources,
@@ -5745,6 +5765,7 @@ ${String(documentText).slice(0, 12000)}
     const iso3 = String(req.query.iso3 || 'BRA').toUpperCase();
     try {
       const report = await checkConnections({
+        ucdp: () => ucdpData(DATA_DIR),
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {

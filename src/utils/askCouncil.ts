@@ -36,6 +36,7 @@ import { formatPeriod } from './officialYields';
 import { contradiction, DIM_LABEL, policyCall, type Contradiction, type Stance } from './stanceCheck';
 import { searchDocs, type PolicyDoc } from './policyDocs';
 import { MEASURE_LABEL, TOLERANCE, compareClaims, extractClaims, fmtMeasure } from './docFigureCheck';
+import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { TNM_CITATION, multiplierView } from './fiscalMultipliers';
@@ -46,8 +47,8 @@ import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestio
 
 /** Desk agents the planner (or the AI model) can pick. */
 export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing';
-/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for. */
-export type AgentId = CoreAgentId | 'doc' | 'chart';
+/** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts). */
+export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
 
 export interface AgentFigure {
@@ -665,6 +666,13 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
       parts.push(...raw.sentences);
       if (raw.surge) weight = Math.max(weight, 0.5);
     } else missing.push(`${it.countryName}: weekly event counts and economic news themes missing (GDELT raw files not pulled yet: Menu > Offline data, or npm run gdelt:pull)`);
+    if (p.conflict) {
+      const u = ucdpFigures(p.conflict);
+      figures.push(...u.figures);
+      parts.push(...u.sentences);
+      weight = Math.max(weight, u.weight);
+      for (const m of u.missing) missing.push(`${it.countryName}: ${m}`);
+    } else missing.push(`${it.countryName}: armed conflict and conflict deaths missing (${ucdpMissing(null, it.iso3).short}: ${ucdpMissing(null, it.iso3).help})`);
     for (const h of p.headlines || []) {
       figures.push({ label: 'Headline', value: h.title, source: `${h.source}${h.publishedAt ? `, ${h.publishedAt.slice(0, 10)}` : ''} (GDELT, pulled ${p.headlinesPulledAt || ''})`, tag: 'live' });
     }

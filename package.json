@@ -14,6 +14,7 @@
     "test:smoke": "node tests/smoke/ui-smoke.mjs",
     "check:data": "tsx scripts/check-connections.ts",
     "check:imf": "tsx scripts/imf-codes.ts",
+    "weo:vintages": "tsx scripts/weo-vintages.ts",
     "preload": "tsx server.ts --preload",
     "gdelt:pull": "tsx scripts/gdelt-pull.ts",
     "record:feeds": "tsx scripts/record-feeds.ts",
