@@ -35,6 +35,10 @@ services:
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:-}
       SETTINGS_ALLOW_REMOTE: ${SETTINGS_ALLOW_REMOTE:-true}
       TZ: ${TZ:-UTC}
+      # Jobs the server runs by itself (Menu > Data health > Scheduled). "off" turns one off.
+      SCHEDULE_DOWNLOAD_ALL: ${SCHEDULE_DOWNLOAD_ALL:-02:30}
+      SCHEDULE_BACKTESTS: ${SCHEDULE_BACKTESTS:-sun 03:30}
+      SCHEDULE_TZ: ${TZ:-UTC}
     # Every bit of state: settings, keys you saved in Menu > Settings, saved data, logs, reports.
     # Back this one folder up (see "Backups" in the guide).
     volumes:

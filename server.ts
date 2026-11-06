@@ -1,5 +1,5 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
-import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
@@ -97,6 +97,8 @@ import {
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
+import type { BacktestResult } from './src/utils/backtest';
+import { backtestSummary, closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, writeJobs } from './src/utils/scheduledJobs';
 import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
@@ -1586,6 +1588,70 @@ async function morningTick(): Promise<void> {
   await runMorningBrief('schedule').catch((e) => console.error('[morning-brief]', e));
 }
 
+/** Every backtest result goes to the audit log, whether run from Models & validation or on a schedule. */
+function auditBacktestResult(r: BacktestResult): void {
+  appendAudit(AUDIT_FILES, {
+    kind: 'validation',
+    summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`,
+    detail: { verdict: r.verdict, framework: r.framework ?? 1, stricterCheck: r.robustness?.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
+  });
+}
+
+/** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
+const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
+const jobSchedule = (id: JobId) => parseSchedule(process.env[JOBS[id].env]);
+const jobRunning: Partial<Record<JobId, boolean>> = {};
+
+async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
+  const startedAt = new Date().toISOString();
+  if (id === 'download_all') {
+    await startPreload({ log: (line) => console.log(`[schedule] ${line}`) });
+    return downloadSummary(preloadState, startedAt);
+  }
+  validationRunning = true;
+  try {
+    const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
+    return backtestSummary(out, startedAt);
+  } finally {
+    validationRunning = false;
+  }
+}
+
+/** Checked every minute; starts each switched-on job once per day or week after its set time. */
+function scheduledJobsTick(): void {
+  for (const id of Object.keys(JOBS) as JobId[]) {
+    if (jobRunning[id]) continue;
+    const jobs = readJobs(SCHEDULED_JOBS_FILE);
+    const now = new Date();
+    if (!jobDue(jobSchedule(id), jobs[id]?.lastDay, now, SCHEDULE_TZ)) continue;
+    const wait = knownOffline()
+      ? 'Offline: the job waits for the connection.'
+      : id === 'download_all' && preloadJob
+        ? 'Download all was already running; the job waits for it to finish.'
+        : id === 'backtests' && validationRunning
+          ? 'The backtests were already running; the job waits for them to finish.'
+          : null;
+    if (wait) {
+      const last = jobs[id]?.lastSkipped;
+      if (!last || last.reason !== wait || Date.now() - Date.parse(last.at) > 60 * 60 * 1000) writeJobs(SCHEDULED_JOBS_FILE, markSkipped(jobs, id, now.toISOString(), wait));
+      continue;
+    }
+    // Mark the day first, so a slow run or a crash never repeats the job within the day.
+    jobRunning[id] = true;
+    writeJobs(SCHEDULED_JOBS_FILE, markStarted(jobs, id, clockIn(now, SCHEDULE_TZ).day, now.toISOString()));
+    console.log(`[schedule] ${JOBS[id].label}: started.`);
+    void runScheduledJob(id)
+      .catch((e: any) => ({ ok: false, summary: `Failed: ${e?.message || String(e)}` }))
+      .then((r) => {
+        writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), id, new Date().toISOString(), r.ok, r.summary));
+        console.log(`[schedule] ${JOBS[id].label}: ${r.summary}`);
+      })
+      .finally(() => {
+        jobRunning[id] = false;
+      });
+  }
+}
+
 /**
  * Policy review step 3 (REVIEW_OPTIONS): the council proposes and ranks options from the frozen
  * diagnosis, on the referee model at temperature 0 with a fixed seed, then the number check. Used by
@@ -2777,16 +2843,7 @@ async function startServer() {
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
     validationRunning = true;
     try {
-      const out = await runBacktests({
-        specDir: SPEC_DIR,
-        resultFile: VALIDATION_FILE,
-        onResult: (r) =>
-          appendAudit(AUDIT_FILES, {
-            kind: 'validation',
-            summary: `Backtest ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`,
-            detail: { verdict: r.verdict, framework: r.framework ?? 1, stricterCheck: r.robustness?.verdict, specHash: r.specHash, cases: r.cases, hits: r.hits, baseRatePct: r.baseRatePct, pValue: r.pValue, span: r.span, data: r.data },
-          }),
-      });
+      const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
       res.json(out);
     } catch (error: any) {
       res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
@@ -3440,6 +3497,29 @@ async function startServer() {
       lastRun: last ? { at: last.checkedAt, trigger: last.trigger, label: TRIGGER_LABEL[last.trigger] || last.trigger } : null,
       nightly: { time: NIGHTLY_CHECK_TIME, timeZone: NIGHTLY_CHECK_TZ, lastDay: state.lastNightlyDay || null, lastSkipped: state.lastSkipped || null },
       file: 'data/local/data-health/source-checks.jsonl',
+    });
+  });
+  // Scheduled jobs: what is switched on, and each job's last runs (Menu > Data health > Scheduled).
+  app.get('/api/scheduled-jobs', (_req, res) => {
+    const jobs = readJobs(SCHEDULED_JOBS_FILE);
+    res.json({
+      timeZone: SCHEDULE_TZ,
+      jobs: (Object.keys(JOBS) as JobId[]).map((id) => {
+        const schedule = jobSchedule(id);
+        return {
+          id,
+          label: JOBS[id].label,
+          what: JOBS[id].what,
+          env: JOBS[id].env,
+          on: schedule.kind === 'daily' || schedule.kind === 'weekly',
+          schedule: describeSchedule(schedule, SCHEDULE_TZ),
+          running: Boolean(jobRunning[id]),
+          lastSkipped: jobs[id]?.lastSkipped || null,
+          runs: [...(jobs[id]?.runs || [])].reverse().slice(0, 10),
+        };
+      }),
+      nightlyCheck: { schedule: process.env.DATA_CHECK_NIGHTLY === 'off' ? 'Off' : `Every day after ${NIGHTLY_CHECK_TIME} (${NIGHTLY_CHECK_TZ})` },
+      file: 'data/local/scheduled-jobs.json',
     });
   });
   // Data health: counts for the menu (failing sources at the last check, figures missing or older than usual now).
@@ -6126,6 +6206,9 @@ ${String(documentText).slice(0, 12000)}
     setInterval(() => void morningTick(), 60_000).unref();
     // Nightly data check: once a day after DATA_CHECK_TIME, kept in the data health history.
     setInterval(() => void nightlyCheckTick(), 60_000).unref();
+    // Scheduled jobs (SCHEDULE_DOWNLOAD_ALL, SCHEDULE_BACKTESTS): off unless set; checked every minute.
+    writeJobs(SCHEDULED_JOBS_FILE, closeInterrupted(readJobs(SCHEDULED_JOBS_FILE), new Date().toISOString()));
+    if ((Object.keys(JOBS) as JobId[]).some((id) => jobSchedule(id).kind !== 'off')) setInterval(scheduledJobsTick, 60_000).unref();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });

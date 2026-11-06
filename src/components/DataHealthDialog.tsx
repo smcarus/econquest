@@ -5,6 +5,7 @@
  * - Sources: every source's state at the last check, failing since, and its last checks as dots.
  * - Figure alerts: watchlist figures that went missing, got old, jumped, left their range or were revised.
  * - Revisions: IMF and World Bank yearly values changed since the app first downloaded them.
+ * - Scheduled: jobs the server runs by itself (Download all, backtests) and how each run ended.
  *
  * Nothing here changes a figure: it says what to check.
  */
@@ -26,7 +27,15 @@ type FiguresReply = { open: OpenIssue[]; events: FigureEvent[]; total: number; k
 type RevisionRow = HistoryRevision & { iso3: string; figure: string; label: string; unit: string; source: string };
 type RevisionsReply = { revisions: RevisionRow[]; total: number; projectionsHidden: number; countries: number };
 
-export type DataHealthTab = 'sources' | 'figures' | 'revisions';
+type JobRun = { startedAt: string; finishedAt?: string; ok?: boolean; summary?: string };
+type ScheduledReply = {
+  timeZone: string;
+  jobs: Array<{ id: string; label: string; what: string; env: string; on: boolean; schedule: string; running: boolean; lastSkipped: { at: string; reason: string } | null; runs: JobRun[] }>;
+  nightlyCheck: { schedule: string };
+  file: string;
+};
+
+export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled';
 
 const when = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -258,6 +267,56 @@ function RevisionsView() {
   );
 }
 
+function ScheduledView() {
+  const { data, error } = useJson<ScheduledReply>('/api/scheduled-jobs');
+  return (
+    <div className="space-y-3">
+      {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+      <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+        <li className="py-2">
+          <div className="flex flex-wrap items-baseline gap-x-2">
+            <span className="font-medium text-slate-800 dark:text-slate-100">Data check</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{data?.nightlyCheck.schedule}</span>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">Asks every source once; results are on the Sources tab.</p>
+        </li>
+        {(data?.jobs || []).map((j) => (
+          <li key={j.id} className="py-2" data-testid={`scheduled-job-${j.id}`}>
+            <div className="flex flex-wrap items-baseline gap-x-2">
+              <span className="font-medium text-slate-800 dark:text-slate-100">{j.label}</span>
+              <span className={`text-xs ${j.on ? 'text-emerald-700 dark:text-emerald-300' : 'text-slate-500 dark:text-slate-400'}`}>
+                {j.schedule}
+                {j.running ? ' · running now' : ''}
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {j.what}
+              {!j.on ? ` To switch it on, set ${j.env} on the server (see docs/HOME_SERVER.md).` : ''}
+            </p>
+            {j.lastSkipped && <p className="text-xs text-amber-700 dark:text-amber-300">{when(j.lastSkipped.at)}: {j.lastSkipped.reason}</p>}
+            {j.runs.length > 0 && (
+              <table className="mt-1 w-full text-left text-xs">
+                <tbody>
+                  {j.runs.map((r) => (
+                    <tr key={r.startedAt} className="align-top">
+                      <td className="pr-3 whitespace-nowrap tabular-nums">{when(r.startedAt)}</td>
+                      <td className={r.finishedAt ? (r.ok ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300') : 'text-slate-500'}>
+                        {r.finishedAt ? r.summary : 'Running…'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {j.on && !j.runs.length && <p className="text-xs text-slate-500 dark:text-slate-400">No run yet.</p>}
+          </li>
+        ))}
+      </ul>
+      {data && <p className="text-xs text-slate-500 dark:text-slate-400">Kept in {data.file}.</p>}
+    </div>
+  );
+}
+
 export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose: () => void; initialTab?: DataHealthTab }) {
   const [tab, setTab] = useState<DataHealthTab>(initialTab);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -271,6 +330,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
     ['sources', 'Sources'],
     ['figures', 'Figure alerts'],
     ['revisions', 'Revisions'],
+    ['scheduled', 'Scheduled'],
   ];
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -301,6 +361,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
           {tab === 'sources' && <SourcesView />}
           {tab === 'figures' && <FiguresView />}
           {tab === 'revisions' && <RevisionsView />}
+          {tab === 'scheduled' && <ScheduledView />}
         </div>
       </div>
     </div>
