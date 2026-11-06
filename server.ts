@@ -1,5 +1,15 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
-import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { loadWeoVintages } from './src/utils/weoVintagesStore';
+import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
+import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
+import { debtFan, debtFanSentence } from './src/utils/debtFan';
+import { costedOptions } from './src/utils/costedOptions';
+import { multiplierView } from './src/utils/fiscalMultipliers';
+import { localProjections, lpSentence } from './src/utils/localProjections';
+import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInputs } from './src/utils/ruleFamily';
+import { reserveAdequacy, reserveAdequacySentence } from './src/utils/reserveAdequacy';
+import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
@@ -17,6 +27,7 @@ import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLim
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
+import { codeHash } from './src/utils/codeHash';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
 import { COUNCIL_SEED, COUNCIL_TEMPERATURE, compareRuns, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
 import { checkRegressionCase, parseRegressionSet, type RegressionCase, type RegressionCaseResult, type RegressionReport, type SupremeCaseInput } from './src/utils/councilRegression';
@@ -76,7 +87,7 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
-import { MODEL_FIELD_MISSING } from './src/utils/councilResult';
+import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { loadWatchRules, saveWatchRules } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
@@ -100,6 +111,8 @@ import {
   withoutKey,
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
+import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
+import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
 import { backtestSummary, closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, writeJobs } from './src/utils/scheduledJobs';
@@ -151,6 +164,9 @@ import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.t
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
 import { ucdpData } from './src/utils/ucdpStore.ts';
+import { acledFileData } from './src/utils/acledFileStore.ts';
+import { v1FromMonth, v1Reading } from './src/utils/gdeltDaily.ts';
+import { gdeltDailyDir, gdeltDailySeries, loadDailyState } from './src/utils/gdeltDailyStore.ts';
 import { ucdpReading } from './src/utils/ucdpConflict.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -160,11 +176,11 @@ import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { oecdFetch, fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
-import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
+import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchDebtSchedule } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
-import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, ai } from './src/server/ai';
+import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, geminiClient, warmDeskModel } from './src/server/ai';
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
@@ -802,14 +818,18 @@ function withAcled(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const got = acledReadingFor(snapshot.iso3, acledCountryName(snapshot.iso3, snapshot.countryName || ''));
   if (!('reading' in got)) return { ...(rest as OpenDataSnapshot), acledMissing: got.missing };
   // Listed with the snapshot's live sources, so the Sources tab and the credit lines name ACLED.
-  const label = `${ACLED_SHORT} (ACLED, accessed ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`;
+  const file = got.reading.fromFile;
+  const label = file
+    ? `${ACLED_SHORT} (your downloaded ACLED aggregated file ${file.file}, saved ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`
+    : `${ACLED_SHORT} (ACLED, accessed ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`;
   const others = (snapshot.liveApiSourcesActive || []).filter((x) => !x.startsWith(ACLED_SHORT));
   const verified = (snapshot.dataStatus?.verifiedLiveSources || []).filter((x) => !x.startsWith(ACLED_SHORT));
   return {
     ...(rest as OpenDataSnapshot),
     acled: got.reading,
     liveApiSourcesActive: [...others, label],
-    ...(snapshot.dataStatus ? { dataStatus: { ...snapshot.dataStatus, verifiedLiveSources: [...verified, label] } } : {}),
+    // A downloaded file is not a live pull, so it is not listed as a verified live source.
+    ...(snapshot.dataStatus ? { dataStatus: { ...snapshot.dataStatus, verifiedLiveSources: file ? verified : [...verified, label] } } : {}),
   };
 }
 /** UCDP conflict figures from the downloaded files in data/local/ucdp/, laid over like the GDELT files. */
@@ -820,8 +840,20 @@ function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   } catch (err: any) {
     console.warn(`[UCDP] could not read data/local/ucdp: ${err?.message || err}`);
   }
-  if (reading) return { ...snapshot, ucdp: reading };
+  if (reading) return withGdeltDaily({ ...snapshot, ucdp: reading });
   const { ucdp: _drop, ...rest } = snapshot;
+  return withGdeltDaily(rest as OpenDataSnapshot);
+}
+/** GDELT 1.0 monthly history (data/live/gdelt-daily/), laid over like the 2.0 files. */
+function withGdeltDaily(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  let reading = null;
+  try {
+    reading = v1Reading(gdeltDailySeries(DATA_DIR, snapshot.iso3));
+  } catch (err: any) {
+    console.warn(`[GDELT 1.0] could not read data/live/gdelt-daily: ${err?.message || err}`);
+  }
+  if (reading) return { ...snapshot, gdeltDaily: reading };
+  const { gdeltDaily: _drop, ...rest } = snapshot;
   return rest as OpenDataSnapshot;
 }
 
@@ -1575,6 +1607,7 @@ const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTi
 async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
   const report = await checkConnections({
     ucdp: () => ucdpData(DATA_DIR),
+    acledFiles: () => acledFileData(DATA_DIR),
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
@@ -1594,7 +1627,14 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
       }
     },
   });
-  appendCheck(DATA_HEALTH_FILES, recordFromReport(report, trigger));
+  const prev = readChecks(DATA_HEALTH_FILES).at(-1);
+  const record = recordFromReport(report, trigger);
+  appendCheck(DATA_HEALTH_FILES, record);
+  // Server alert when the nightly check finds a source that broke since the run before (src/utils/alertEvents.ts).
+  if (trigger === 'nightly') {
+    const alert = dataCheckAlert(prev, record);
+    if (alert) void notify(alert, LAST_ALERT_FILE);
+  }
   return report;
 }
 
@@ -1656,7 +1696,11 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   }
   validationRunning = true;
   try {
+    const before = loadValidation(VALIDATION_FILE).versions;
     const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
+    // Server alert when a test that passed (same id and version) does not pass now.
+    const regressed = backtestRegressionAlert(backtestRegressions(before, out.versions, startedAt));
+    if (regressed) void notify(regressed, LAST_ALERT_FILE);
     return backtestSummary(out, startedAt);
   } finally {
     validationRunning = false;
@@ -1691,6 +1735,7 @@ function scheduledJobsTick(): void {
       .then((r) => {
         writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), id, new Date().toISOString(), r.ok, r.summary));
         console.log(`[schedule] ${JOBS[id].label}: ${r.summary}`);
+        if (!r.ok) void notify(jobFailedAlert(JOBS[id].label, r.summary), LAST_ALERT_FILE);
       })
       .finally(() => {
         jobRunning[id] = false;
@@ -1759,9 +1804,11 @@ async function reviewOptionsStep(
   return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
 }
 
-const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() ? v : MODEL_FIELD_MISSING);
+const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() && !isModelPlaceholder(v) ? v : MODEL_FIELD_MISSING);
 const listOrMissing = (v: unknown): string[] => {
-  const items = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && Boolean(x.trim())) : [];
+  // A model may write a list field as one paragraph: keep it as a one-item list, not Missing.
+  const raw = Array.isArray(v) ? v : typeof v === 'string' ? [v] : [];
+  const items = raw.filter((x): x is string => typeof x === 'string' && Boolean(x.trim()) && !isModelPlaceholder(x));
   return items.length ? items : [MODEL_FIELD_MISSING];
 };
 
@@ -1831,10 +1878,7 @@ ${MISSING_FIGURES_RULE}
     responseSchema: {
       type: Type.OBJECT,
       properties: {
-        decisionVerdict: {
-          type: Type.STRING,
-          description: 'EXECUTE_TRADES, DEFENSIVE_HEDGE, or HOLD_AND_MONITOR',
-        },
+        decisionVerdict: { type: Type.STRING, enum: ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'] },
         executiveSummary: { type: Type.STRING },
         longTermRegimeOutlook: { type: Type.STRING },
         structuralVulnerabilities: {
@@ -2033,6 +2077,7 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     polymarketContracts: [],
     gdeltRaw: undefined,
     ucdp: undefined,
+    gdeltDaily: undefined,
   };
   const run = buildDefaultAssessmentRun(input.iso3, openData);
   const desk = (d: keyof SupremeCaseInput['desks']) => ({ ...run.deskDebates[d], consensusSummary: input.desks[d] });
@@ -2148,9 +2193,15 @@ async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
   app.disable('x-powered-by');
+  // Behind a reverse proxy (the Caddy "https" profile): trust its X-Forwarded-* headers, so the
+  // app knows the request came over HTTPS (Secure cookie) and from which address (sign-in lockout).
+  // TRUST_PROXY=1 trusts one proxy hop; it can also list addresses, as Express accepts.
+  const trustProxy = String(process.env.TRUST_PROXY || '').trim();
+  if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy === 'true' ? true : trustProxy);
   // Security headers on every reply (src/utils/requestLimits.ts): no framing, no sniffing.
   app.use((_req, res, next) => {
     for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+    if (_req.secure) res.setHeader('Strict-Transport-Security', 'max-age=31536000');
     next();
   });
 
@@ -2165,8 +2216,10 @@ async function startServer() {
   // Liveness: answers as soon as the process serves requests. No feeds, no files, no model,
   // so a container health check every 30 seconds costs nothing. Before the host check so a
   // health probe that names the container's own address is not refused; it reveals nothing.
+  // code: fingerprint of server.ts + src/ when the app started (src/utils/codeHash.ts), so scripts can tell stale code.
+  const startupCodeHash = codeHash(__dirname);
   app.get('/healthz', (_req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', ...(startupCodeHash ? { code: startupCodeHash } : {}) });
   });
   // Readiness: 200 only once listening, while not stopping, and while the data folder can be
   // written (checked at most once a minute). Send traffic only when this says ready.
@@ -2286,7 +2339,7 @@ async function startServer() {
     if (mode === 'off' && !trusted(req, res)) {
       return res.status(403).json({ error: 'The first account can only be created from the computer running the app.' });
     }
-    const address = req.socket.remoteAddress || '';
+    const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds('(setup)', address);
     if (wait) return res.status(429).json({ error: `Too many tries. Wait ${Math.ceil(wait / 60)} minutes.` });
     if (mode === 'setup' && !setupCodeMatches(req.body?.code, setupCode)) {
@@ -2308,7 +2361,7 @@ async function startServer() {
   app.post('/api/auth/sign-in', express.json({ limit: '10kb' }), (req, res) => {
     const username = normaliseUsername(req.body?.username);
     const password = typeof req.body?.password === 'string' ? req.body.password : '';
-    const address = req.socket.remoteAddress || '';
+    const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
     const account = auth.byUsername(username);
@@ -2334,7 +2387,7 @@ async function startServer() {
   app.post('/api/auth/password', express.json({ limit: '10kb' }), (req, res) => {
     const me = signedIn(res);
     if (!me) return res.status(401).json({ error: 'Sign in first.', signIn: true });
-    const address = req.socket.remoteAddress || '';
+    const address = req.ip || req.socket.remoteAddress || '';
     const wait = signInLimiter.waitSeconds(me.username, address);
     if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
     if (!verifyPassword(String(req.body?.current || ''), me.passwordHash)) {
@@ -2554,12 +2607,15 @@ async function startServer() {
       problem: settingsSecretBox().problem,
       unreadable: savedSettings.unreadable ?? [],
     },
+    // Server alerts: the last one sent and how each route went (no keys in it).
+    lastAlert: readLastAlert(LAST_ALERT_FILE),
   });
   const runKeyCheck = async (id: string, env: Record<string, string | undefined>, sources: Record<string, 'app' | 'env' | 'none'>) => {
     const field = apiKeyField(id);
     if (!field) return null;
     const report = await checkConnections({
       ucdp: () => ucdpData(DATA_DIR),
+      acledFiles: () => acledFileData(DATA_DIR),
       env,
       only: [field.checkId],
       keySources: sources,
@@ -2916,7 +2972,9 @@ async function startServer() {
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
     const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json' });
+    const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+    const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
+    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts });
   });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
@@ -3182,7 +3240,110 @@ async function startServer() {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
     const r = dsaFrom(file);
-    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}) });
+    const fan = r.ok ? debtFan(r) : undefined;
+    // Costed options use the IMF bucket-approach first-year multiplier range for the country's group (normal times).
+    const mv = r.ok ? multiplierView({ iso3, debtPctGdp: { value: r.debtNow, year: r.lastOutturnYear } }) : undefined;
+    const options = r.ok && mv ? costedOptions(r, { low: mv.guide.low, high: mv.guide.high, source: `IMF bucket approach, ${mv.guide.bucket} bucket, normal times (TNM 14/04)` }) : undefined;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}), ...(fan ? { fan: fan.ok ? { ...fan, sentence: debtFanSentence(fan) } : fan } : {}), ...(options ? { options } : {}) });
+  });
+  // Fiscal reaction (Bohn test, src/utils/bohnTest.ts): primary balance on last year's debt and the output gap.
+  app.get('/api/bohn/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'Full IMF history not downloaded yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const gap = outputGapFrom(file);
+    const r = bohnTest({ primaryBalance: pick('primary_balance'), debt: pick('debt_gdp'), gap: gap.ok ? gap.years : undefined });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: bohnSentence(r, name), references: BOHN_REFERENCES } : {}) });
+  });
+  // Gross financing need (src/utils/grossFinancingNeed.ts): deficit + external amortisation, a lower bound.
+  app.get('/api/gfn/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const [file, schedule] = await Promise.all([
+      quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
+      quick(fetchDebtSchedule(iso3)),
+    ]);
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig && file ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const r = grossFinancingNeed({ primaryBalance: pick('primary_balance'), overallBalance: pick('overall_balance'), gdpUsd: pick('gdp_usd'), schedule: schedule ?? null });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: gfnSentence(r, name) } : {}) });
+  });
+  // Reserve adequacy (src/utils/reserveAdequacy.ts): traditional ratios and the IMF ARA metric without other liabilities.
+  app.get('/api/reserve-adequacy/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const r = reserveAdequacy({ reservesUsd: pick('reserves_usd'), shortTermDebtUsd: pick('short_term_debt_usd'), broadMoneyGdp: pick('broad_money_gdp'), exportsUsd: pick('exports_usd'), gdpUsd: pick('gdp_usd'), reservesMonths: pick('reserves_months') });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: reserveAdequacySentence(r, name) } : {}) });
+  });
+  // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
+  app.get('/api/local-projections/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const why = (id: string) => set.missing.find((m) => m.id === id)?.reason;
+    const cpi = pick('cpi_monthly');
+    const rate = pick('policy_rate');
+    if (!cpi) return res.json({ iso3, ok: false, reason: `Monthly inflation: ${why('cpi_monthly') || 'not saved'}` });
+    if (!rate) return res.json({ iso3, ok: false, reason: `Policy rate: ${why('policy_rate') || 'not saved'}` });
+    const r = localProjections(cpi.points, rate.points);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: lpSentence(r, name), sources: [cpi.source, rate.source].filter(Boolean) } : {}) });
+  });
+  // Policy rule family (src/utils/ruleFamily.ts): the policy rate against five stated rules.
+  app.get('/api/rule-family/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const set = await seriesFor(iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const last = (id: string) => {
+      const pts = pick(id)?.points || [];
+      return pts[pts.length - 1];
+    };
+    const rate = last('policy_rate');
+    const cpi = last('cpi_monthly');
+    // Output gap: the IMF's where it publishes one, else the app's estimate; this year, else the latest before it.
+    const file = loadOfficialHistory(iso3);
+    const year = String(new Date().getUTCFullYear());
+    let gap: RuleFamilyInputs['gap'];
+    const imfFig = OFFICIAL_FIGURES.find((f) => f.id === 'output_gap');
+    const imf = imfFig && file ? officialSeries(file, imfFig) : null;
+    const imfPts = imf && 'points' in imf ? imf.points.filter((p) => p.date <= year) : [];
+    if (imfPts.length) {
+      const cur = imfPts[imfPts.length - 1];
+      const prev = imfPts.find((p) => p.date === String(Number(cur.date) - 1));
+      gap = { pct: cur.value, year: cur.date, source: 'imf', ...(prev ? { prevPct: prev.value } : {}) };
+    } else {
+      const est = outputGapFrom(file);
+      const yrs = est.ok ? est.years.filter((y) => y.year <= year && typeof y.central === 'number') : [];
+      if (yrs.length) {
+        const cur = yrs[yrs.length - 1];
+        const prev = yrs.find((y) => y.year === String(Number(cur.year) - 1));
+        gap = { pct: cur.central!, year: cur.year, source: 'estimate', ...(prev?.central !== undefined ? { prevPct: prev.central } : {}) };
+      }
+    }
+    const r = ruleFamily({
+      ...(rate ? { policyPct: rate.value } : {}),
+      ...(cpi ? { inflation: { pct: cpi.value, month: cpi.date.slice(0, 7) } } : {}),
+      ...(INFLATION_TARGETS[iso3] ? { targetPct: INFLATION_TARGETS[iso3].pct } : {}),
+      ...(gap ? { gap } : {}),
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, method: RULE_FAMILY_METHOD, ...(r.ok ? { sentence: ruleFamilySentence(r, name), sources: [pick('policy_rate')?.source, pick('cpi_monthly')?.source, gap ? (gap.source === 'imf' ? 'IMF WEO output gap (NGAP_NPGDP)' : "The app's output gap estimate") : undefined, INFLATION_TARGETS[iso3]?.bank].filter(Boolean) } : {}) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {
@@ -3311,6 +3472,23 @@ async function startServer() {
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
   });
+  // Past IMF WEO editions you saved in data/local/weo-vintages/ (src/utils/weoVintages.ts). Read again
+  // when ?fresh=1, so files added while the app runs are picked up.
+  app.get('/api/weo-vintages', (req, res) => {
+    const store = loadWeoVintages(DATA_DIR, { fresh: req.query.fresh === '1' });
+    res.json({
+      folder: 'data/local/weo-vintages',
+      editions: store.editions.map((e) => ({ vintage: e.vintage, label: vintageLabel(e.vintage), file: e.file, countries: Object.keys(e.rows).length })),
+      skipped: store.skipped,
+    });
+  });
+  app.get('/api/weo-vintages/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '');
+    const code = String(req.query.code || 'NGDP_RPCH');
+    if (!(WEO_VINTAGE_CODES as readonly string[]).includes(code)) return res.status(400).json({ error: 'UNKNOWN_CODE', message: `Indicator ${code} is not kept from WEO editions.` });
+    const year = typeof req.query.year === 'string' ? req.query.year : undefined;
+    res.json(weoVintageReply(loadWeoVintages(DATA_DIR, { fresh: req.query.fresh === '1' }), iso3, code, year));
+  });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const set = await seriesFor(iso3);
@@ -3425,6 +3603,11 @@ async function startServer() {
     const cfg = gdeltRawConfig(process.env);
     res.json({ series, reading: gdeltRawReading(series), pull: loadGdeltRawPullState(gdeltRawDir(DATA_DIR)), weeks: cfg.weeks, gkgEveryHours: cfg.gkgEveryMinutes / 60 });
   });
+  app.get('/api/gdelt-daily/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const series = gdeltDailySeries(DATA_DIR, iso3);
+    res.json({ series, reading: v1Reading(series), pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
+  });
   app.get('/api/track-record/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const { record, policyMissing } = await trackRecordFor(iso3);
@@ -3533,7 +3716,8 @@ async function startServer() {
     setSavedSettings(next.settings);
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
-    const check = await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
+    // Saving an alert setting sends nothing: the Test button does that.
+    const check = apiKeyField(req.params.id)?.section === 'alerts' ? null : await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
     res.json({ ...keysReply(req, res), check });
   });
   app.delete('/api/settings/keys/:id', async (req, res) => {
@@ -3560,6 +3744,8 @@ async function startServer() {
       const problem = field.validate(value);
       if (problem) return res.status(400).json({ error: problem });
     }
+    // Server alerts: Test sends a real test message on that route (src/server/alerts.ts).
+    if (field.section === 'alerts') return res.json({ check: await testAlertRoute(field, value, process.env) });
     const env = value ? { ...process.env, [field.id]: value } : process.env;
     const sources = value ? { ...keySources(ENV_FILE_KEYS, savedSettings), [field.id]: 'app' as const } : keySources(ENV_FILE_KEYS, savedSettings);
     const check = await runKeyCheck(field.id, env, sources).catch(() => null);
@@ -4277,6 +4463,18 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
 
       // Stage 1: Execute 3 Parallel Desk Synthesis Workers + 1 Web Search Grounding Worker
       const searchTiming: StepTiming = { id: 'search', label: 'Web search (Gemini)', ms: 0, outcome: 'skipped' };
+      // Load the desk model first, so its load time is its own step and not the first desk's wait.
+      const warm = await warmDeskModel(providerMode, runtimeConfig);
+      if (warm && !warm.ok) console.warn(`[AI] could not load the desk model before the desks: ${warm.error}`);
+      const warmTiming: StepTiming | null = warm
+        ? {
+            id: 'warmup',
+            label: 'Load the desk model',
+            ms: warm.ms,
+            outcome: warm.ok ? 'model' : 'no_model',
+            ...(warm.ok ? { model: warm.model, ...(warm.loadMs !== undefined ? { stats: { loadMs: warm.loadMs } } : {}) } : { reason: warm.error }),
+          }
+        : null;
       const stage1Start = Date.now();
       const [geoSettled, sovSettled, macroSettled, searchSettled] = await Promise.allSettled([
         tracked(progress, 'geo', executeResilientLlmStep<any>({
@@ -4376,7 +4574,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           progress.start('search');
           const searchStart = Date.now();
           try {
-            const searchResp = await ai.models.generateContent({
+            const searchResp = await geminiClient().models.generateContent({
               model: 'gemini-3.8-flash',
               contents: `Latest macroeconomic, central bank policy rate, fiscal budget, and geopolitical risk developments for ${baseRun.countryName} (${iso3}): ${baseRun.scenarioPrompt}`,
               config: {
@@ -4413,6 +4611,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
         sentTogether: ['geo', 'sov', 'macro', ...(searchTiming.outcome === 'skipped' ? [] : ['search'])],
         steps: [
           { id: 'data', label: 'Country data', ms: stage0Latency, outcome: 'no_model_needed', reason: liveCount ? `${liveCount} live ${liveCount === 1 ? 'source' : 'sources'}` : 'no live source answered' },
+          ...(warmTiming ? [warmTiming] : []),
           stepTiming('geo', 'Geopolitical desk (AG-1 to AG-3)', geoResult, stage1Ms),
           stepTiming('sov', 'Sovereign credit desk (AG-4 to AG-6)', sovResult, stage1Ms),
           stepTiming('macro', 'Macro desk (AG-7 to AG-9)', macroResult, stage1Ms),
@@ -5882,6 +6081,7 @@ ${String(documentText).slice(0, 12000)}
     try {
       const report = await checkConnections({
         ucdp: () => ucdpData(DATA_DIR),
+        acledFiles: () => acledFileData(DATA_DIR),
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {

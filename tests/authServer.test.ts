@@ -31,6 +31,7 @@ before(async () => {
       PORT: String(port),
       DATA_DIR: dataDir,
       AUTH: 'on',
+      TRUST_PROXY: '1',
       ECONQUEST_SECRET_KEY: 'test-master-key-that-is-long-enough-1234',
       GEMINI_API_KEY: '',
     },
@@ -235,4 +236,18 @@ test('a key saved in Settings is encrypted on disk with the master key from the 
   assert.equal(keys.encryption.keyFrom, 'ECONQUEST_SECRET_KEY');
   assert.ok(!JSON.stringify(keys).includes('test-master-key'), 'master key never sent');
   assert.equal(keys.keys.find((k: { id: string }) => k.id === 'FRED_API_KEY').source, 'app');
+});
+
+test('behind an HTTPS proxy (TRUST_PROXY=1) the cookie is Secure and HSTS is sent', async () => {
+  const res = await fetch(`${base}/api/auth/sign-in`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Forwarded-Proto': 'https', 'X-Forwarded-For': '203.0.113.9' },
+    body: JSON.stringify({ username: 'sam', password: 'an even longer and more boring sentence' }),
+  });
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('set-cookie') || '', /; Secure/);
+  assert.equal(res.headers.get('strict-transport-security'), 'max-age=31536000');
+  const plain = await post('/api/auth/sign-in', { username: 'sam', password: 'an even longer and more boring sentence' });
+  assert.ok(!(plain.headers.get('set-cookie') || '').includes('Secure'), 'plain HTTP keeps a cookie the browser will send');
+  assert.equal(plain.headers.get('strict-transport-security'), null);
 });

@@ -7,7 +7,7 @@
 import { AIRuntimeConfig, SubAgentReport } from '../types/council.ts';
 import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from '../utils/refereeModel';
 import { ThinkingLevel, GoogleGenAI } from '@google/genai';
-import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, type ModelAttempt, ModelWaitError, ollamaHasModel, type StreamWait, streamWaitFor } from '../utils/modelFailure';
+import { describeFailures, isLongLocalStep, localStepTimeoutMs, LONG_CHAT_STEPS, type ModelAttempt, ModelWaitError, ollamaHasModel, type StreamWait, streamWaitFor } from '../utils/modelFailure';
 import { ollamaBaseUrlDefault } from '../utils/serverRuntime';
 import { serverGuiRuntimeConfig } from './integrations';
 import { type ModelStats, ollamaStats } from '../utils/councilTiming';
@@ -22,11 +22,17 @@ export const makeGeminiClient = () =>
       },
     },
   });
-export let ai = makeGeminiClient();
+// Built on first use, so a computer that only runs Ollama never constructs it (the SDK warns at
+// construction when no key is set).
+let gemini: GoogleGenAI | null = null;
+export function geminiClient(): GoogleGenAI {
+  if (!gemini) gemini = makeGeminiClient();
+  return gemini;
+}
 
-/** Rebuild the Gemini client after the key changes in Menu > Settings. */
+/** Rebuild the Gemini client after the key changes in Menu > Settings (on its next use). */
 export function resetGeminiClient(): void {
-  ai = makeGeminiClient();
+  gemini = null;
 }
 
 function resolveStepModelFromGuiConfig(
@@ -80,6 +86,42 @@ function resolveStepModelFromGuiConfig(
     return deskOverrides.supremeCouncil?.trim() || deepDefault;
   }
   return quickDefault;
+}
+
+/** The reason a model endpoint gives with an error status (Ollama sends {"error": "..."}), as ": reason", or "". */
+async function endpointSays(res: Response): Promise<string> {
+  try {
+    const text = (await res.text()).trim();
+    if (!text) return '';
+    let said = text;
+    try {
+      const j = JSON.parse(text);
+      said = typeof j?.error === 'string' ? j.error : typeof j?.error?.message === 'string' ? j.error.message : text;
+    } catch {
+      /* plain text */
+    }
+    return `: ${said.replace(/\s+/g, ' ').slice(0, 300)}`;
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * The keys a local model must return, with what each holds. Ollama gets only this text (not the
+ * schema Gemini gets), so allowed values and lists must be spelled out here or the model writes
+ * free text (for example "Proceed with caution" instead of HOLD_AND_MONITOR).
+ */
+export function schemaKeyHints(properties: Record<string, any>): string[] {
+  return Object.entries(properties).map(([key, p]) => {
+    const type = String(p?.type || '').toUpperCase();
+    if (Array.isArray(p?.enum) && p.enum.length) return `${key} (exactly one of: ${p.enum.join(', ')})`;
+    if (type === 'ARRAY') {
+      const items = p?.items;
+      const of = String(items?.type || '').toUpperCase() === 'STRING' ? 'strings' : String(items?.type || '').toUpperCase() === 'OBJECT' ? 'objects' : 'items';
+      return `${key} (a JSON list of ${of})`;
+    }
+    return key;
+  });
 }
 
 export async function callOllamaOrOpenAICompatible(
@@ -157,9 +199,7 @@ export async function callOllamaOrOpenAICompatible(
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!postRes.ok) {
-      throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
-    }
+    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}${await endpointSays(postRes)}`);
     const json: any = await postRes.json();
     if (isOllama && inferenceOptions?.statsOut) inferenceOptions.statsOut.value = ollamaStats(json);
     return isOllama ? json?.message?.content || '{}' : json?.choices?.[0]?.message?.content || '{}';
@@ -195,7 +235,7 @@ async function streamOllamaChat(endpoint: string, body: Record<string, unknown>,
       body: JSON.stringify(body),
       signal: controller.signal,
     });
-    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}`);
+    if (!postRes.ok) throw new Error(`Model endpoint ${endpoint} failed with HTTP ${postRes.status}${await endpointSays(postRes)}`);
     if (!postRes.body) throw new Error(`Model endpoint ${endpoint} sent no body`);
     const decoder = new TextDecoder();
     let buf = '';
@@ -296,6 +336,45 @@ export function normalizeStance(raw: unknown, fallbackScore: number): SubAgentRe
   return 'NEUTRAL';
 }
 
+/** The configured Ollama address, then the ones Docker uses for the Mac host or a bundled service. */
+export function ollamaCandidateUrls(configuredBaseUrl: string): string[] {
+  if (configuredBaseUrl.includes('localhost') || configuredBaseUrl.includes('127.0.0.1')) return [configuredBaseUrl, 'http://host.docker.internal:11434', 'http://ollama:11434'];
+  if (configuredBaseUrl.includes('host.docker.internal')) return [configuredBaseUrl, 'http://localhost:11434', 'http://ollama:11434'];
+  return [configuredBaseUrl];
+}
+
+/**
+ * Loads the full council's desk model into Ollama before the desks start, so its load time is
+ * measured on its own and not charged to the first desk. Empty prompt: Ollama loads and answers
+ * at once. Returns null when the provider is not Ollama.
+ */
+export async function warmDeskModel(providerMode: string, runtimeConfig: Partial<AIRuntimeConfig>): Promise<{ ms: number; model: string; ok: boolean; loadMs?: number; error?: string } | null> {
+  if (!['ollama', 'hybrid', 'hybrid_failover'].includes(providerMode)) return null;
+  const model = resolveStepModelFromGuiConfig('STAGE_1_GEO_DESK', false, runtimeConfig);
+  const t0 = Date.now();
+  let lastError = 'Ollama did not answer';
+  for (const url of ollamaCandidateUrls(runtimeConfig.ollamaBaseUrl || ollamaBaseUrlDefault(process.env))) {
+    try {
+      const r = await fetch(`${url.replace(/\/+$/, '')}/api/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model, prompt: '', keep_alive: '30m', stream: false }),
+        signal: AbortSignal.timeout(180_000),
+      });
+      const j: any = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        lastError = `Ollama at ${url} answered HTTP ${r.status}${j?.error ? `: ${String(j.error).slice(0, 160)}` : ''}`;
+        continue;
+      }
+      const loadMs = typeof j?.load_duration === 'number' ? Math.round(j.load_duration / 1e6) : undefined;
+      return { ms: Date.now() - t0, model, ok: true, ...(loadMs !== undefined ? { loadMs } : {}) };
+    } catch (error: any) {
+      lastError = error?.name === 'TimeoutError' ? `Ollama at ${url} took longer than 180 s to load ${model}` : `Ollama at ${url}: ${error?.cause?.code || error?.message || error}`;
+    }
+  }
+  return { ms: Date.now() - t0, model, ok: false, error: lastError };
+}
+
 export async function executeResilientLlmStep<T>(options: {
   stepName: string;
   providerMode: string;
@@ -334,9 +413,7 @@ export async function executeResilientLlmStep<T>(options: {
   // large "Referee model", never on the fast one (src/utils/refereeModel.ts).
   const isDeepCouncilStep = isRefereeStep(options.stepName) || options.thinkingLevel === ThinkingLevel.HIGH;
 
-  const schemaKeysHint = options.responseSchema?.properties
-    ? Object.keys(options.responseSchema.properties)
-    : undefined;
+  const schemaKeysHint = options.responseSchema?.properties ? schemaKeyHints(options.responseSchema.properties) : undefined;
 
   // 1. Try Local / Self-Hosted Ollama or OpenAI-Compatible Runtime first when selected (or in hybrid mode)
   if (
@@ -364,19 +441,9 @@ export async function executeResilientLlmStep<T>(options: {
     const stepTimeoutMs = localStepTimeoutMs(options.stepName, customTimeoutSec, isDeepCouncilStep);
 
     // Build candidate endpoints so Docker containers automatically resolve host.docker.internal or bundled ollama service
-    const candidateUrls = [configuredBaseUrl];
-    if (isOllama) {
-      if (
-        configuredBaseUrl.includes('localhost') ||
-        configuredBaseUrl.includes('127.0.0.1')
-      ) {
-        candidateUrls.push('http://host.docker.internal:11434', 'http://ollama:11434');
-      } else if (configuredBaseUrl.includes('host.docker.internal')) {
-        candidateUrls.push('http://localhost:11434', 'http://ollama:11434');
-      }
-    }
+    const candidateUrls = isOllama ? ollamaCandidateUrls(configuredBaseUrl) : [configuredBaseUrl];
 
-    const wait = isOllama && LONG_CHAT_STEPS.has(options.stepName) ? streamWaitFor(options.stepName, stepTimeoutMs) : undefined;
+    const wait = isOllama && isLongLocalStep(options.stepName) ? streamWaitFor(options.stepName, stepTimeoutMs) : undefined;
     const localTemperature = options.temperature ?? options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2;
     for (const candidateUrl of candidateUrls) {
       const where = isOllama ? `Ollama ${modelName} at ${candidateUrl}` : `${modelName} at ${candidateUrl}`;
@@ -448,7 +515,7 @@ export async function executeResilientLlmStep<T>(options: {
           const backoffMs = 350 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 180);
           await new Promise((r) => setTimeout(r, backoffMs));
         }
-        const resp = await ai.models.generateContent({
+        const resp = await geminiClient().models.generateContent({
           model: 'gemini-3.8-flash',
           contents: `${options.systemInstruction}\n\n${options.prompt}`,
           config: {

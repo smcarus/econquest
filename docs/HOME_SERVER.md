@@ -69,15 +69,52 @@ The server needs outbound internet for the free data feeds. Nothing has to be op
 
 ## Opening the app
 
-The app listens on the server itself only (`BIND_ADDRESS=127.0.0.1`). There is no sign-in yet,
-so anyone who can reach the page can read your research and change keys. Two ways in:
+The app listens on the server itself only (`BIND_ADDRESS=127.0.0.1`). While it has no accounts
+and nobody else can reach it, there is no sign-in. Three ways in:
 
-- **SSH tunnel (recommended).** From your Mac: `ssh -N -L 3737:127.0.0.1:3737 you@homeserver`,
-  then open http://localhost:3737.
-- **Your home network, on purpose.** In `.env` set `BIND_ADDRESS=0.0.0.0` and list the names you
-  type in the browser in `ALLOWED_HOSTS`, for example
-  `ALLOWED_HOSTS=homeserver.local,192.168.1.20`. Then `docker compose up -d`. Do not forward the
-  port on your router.
+- **SSH tunnel.** From your Mac: `ssh -N -L 3737:127.0.0.1:3737 you@homeserver`, then open
+  http://localhost:3737.
+- **HTTPS with sign-in (recommended for more than one person).** See the next section.
+- **Your home network, plain HTTP.** In `.env` set `BIND_ADDRESS=0.0.0.0` and list the names you
+  type in the browser in `ALLOWED_HOSTS`, for example `ALLOWED_HOSTS=homeserver.local,192.168.1.20`.
+  Passwords then cross your network unencrypted; prefer HTTPS. Do not forward the port on your router.
+
+Whenever the app is reachable from other computers (`ALLOWED_HOSTS` set), it asks for the first
+admin account before anything else. That needs the one-time setup code from the log:
+
+```sh
+docker compose logs econquest | grep "setup code"
+```
+
+After that everyone signs in; the admin adds accounts under Menu > Users. Locked out:
+`docker compose exec econquest npm run users -- reset-password <username>`. Details:
+[SECURITY.md](./SECURITY.md).
+
+## HTTPS and sign-in
+
+1. In `.env`:
+
+   ```sh
+   COMPOSE_PROFILES=ollama,https
+   SITE_ADDRESS=homeserver.local
+   ALLOWED_HOSTS=homeserver.local
+   TRUST_PROXY=1
+   COOKIE_SECURE=true
+   ECONQUEST_SECRET_KEY=...        # openssl rand -base64 32; keep a copy elsewhere
+   ```
+
+   Leave `BIND_ADDRESS=127.0.0.1`: only Caddy is published (ports 80 and 443).
+2. `docker compose up -d`, then open https://homeserver.local.
+3. With `TLS_MODE=internal` (the default) the certificate comes from Caddy's own authority, so
+   browsers warn until you trust it once on each computer. Copy it out with
+   `docker compose cp caddy:/data/caddy/pki/authorities/local/root.crt .` and add it to Keychain
+   Access (Mac: set it to Always Trust) or the system store. For a real domain whose ports 80 and
+   443 reach this box, set `TLS_MODE` to your email address instead and Caddy gets a Let's Encrypt
+   certificate.
+4. Get the setup code (above), create the admin account, then add the others under Menu > Users.
+
+`ECONQUEST_SECRET_KEY` encrypts the keys you save in Menu > Settings. It is not in the data folder,
+so the data folder backup does not hold it: keep it in your password manager.
 
 ## NAS (Synology, QNAP, Unraid, TrueNAS)
 
@@ -98,6 +135,11 @@ Delete `COMPOSE_PROFILES=ollama` from `.env` and set the URL, for example
 on a Mac, `launchctl setenv OLLAMA_HOST 0.0.0.0` and restart Ollama. Then
 `docker compose up -d`.
 
+On a Mac, keep only one Ollama on port 11434. If another Docker stack also runs an Ollama container
+there, it answers instead of the Mac app: it has no Apple GPU and only Docker's memory share, so
+the 32B referee is killed while loading ("signal: killed") and desks time out. `docker ps` shows
+it; stop it or move it to another port.
+
 ## NVIDIA GPU
 
 Install the NVIDIA Container Toolkit, then start with both files:
@@ -117,6 +159,42 @@ docker compose -f compose.yml -f compose.gpu.yml up -d --build
 | What ran overnight | Menu > Data health > Scheduled |
 
 `docker compose stop` lets open requests finish (up to 8 seconds) before the app exits.
+
+## Server alerts
+
+A server left running should tell you when something breaks. Set a webhook, email, or both in
+Menu > Settings > Server alerts (or in `.env`), and press Test: it sends a real test message.
+Nothing is sent until one is set.
+
+| Setting | Example | What it is |
+|---|---|---|
+| `ALERT_WEBHOOK_URL` | `https://hooks.slack.com/services/…` | Where to post the message |
+| `ALERT_SMTP_URL` | `smtps://you%40gmail.com:APP-PASSWORD@smtp.gmail.com:465` | The mail server that sends alert emails (write `@` in the user name as `%40`) |
+| `ALERT_EMAIL_TO` | `you@example.com` | Who gets them (several separated by commas) |
+| `ALERT_EMAIL_FROM` | `econquest@example.com` | Optional sender; default the user name in `ALERT_SMTP_URL` |
+
+What sends an alert:
+
+| Event | When |
+|---|---|
+| Data source broke | The nightly data check (05:30, `DATA_CHECK_TIME`) finds a source that connected at the run before and fails now. One alert when it breaks, not every night it stays broken. |
+| Scheduled job failed | A scheduled Download all or backtest run ends not ok: a failed step, stopped early, a feed that did not answer, or a crash. |
+| Backtest regression | A pre-registered backtest, same id and version, that passed at its last run does not pass now. A new version is a new test, so it does not count. |
+
+Checks and backtests you run yourself in the app send nothing: you see the result. Settings >
+Server alerts shows the last alert and whether each route took it; `docker compose logs
+econquest | grep alert` shows every one.
+
+The webhook message is shaped for the address: `text` for Slack and Google Chat, `content` for
+Discord, plain text for ntfy.sh. Any other address gets one JSON object (`text`, `title`, `lines`,
+`kind`, `at`), which Mattermost and Rocket.Chat read as well, or your own receiver can sort by
+`kind`. Gmail needs an app password (2-step verification on, then Google Account > Security >
+App passwords).
+
+Messages say what failed and when. They never carry a key or password: every line is checked
+against every saved key and setting, and anything that looks like a key in a web address is
+blanked, before it leaves the server. The webhook address and the mail server are kept like
+keys (masked, encrypted on disk when `ECONQUEST_SECRET_KEY` is set, never in backups).
 
 ## Where things are kept
 
@@ -152,4 +230,4 @@ Config comes only from environment variables (`.env` here, or the full list in t
 
 The image is built so a cluster needs no code change: config by environment, one volume at
 `/app/data`, Ollama by URL, `/healthz` for liveness and `/readyz` for readiness, clean stop on
-SIGTERM, logs on stdout. A Helm chart is a small step once sign-in and multiple users exist.
+SIGTERM, logs on stdout. A Helm chart is a small step now that sign-in and multiple users exist.

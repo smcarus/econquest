@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import type { BacktestResult } from '../utils/backtest';
 import type { ValidationStatus } from '../data/modelRegister';
+import { forecastRegisterStatus, type ForecastVerdict } from '../utils/forecastRegister';
 
 export interface ValidationSpecInfo {
   file: string;
@@ -29,6 +30,8 @@ export interface ValidationReply {
   specs: ValidationSpecInfo[];
   running: boolean;
   file: string;
+  /** Nowcast and forecast evaluations (npm run forecast:evaluate), by evaluation id. */
+  forecasts?: Record<string, ForecastVerdict>;
 }
 
 let cache: ValidationReply | null = null;
@@ -84,7 +87,7 @@ export function failsStricterCheck(id: string, v: ValidationReply | null): boole
   return !!r && r.status === 'passed' && (r.framework ?? 1) === 1 && r.robustness?.status === 'failed';
 }
 
-/** The status to show: a backtest verdict when one exists for this id, else the register's own. */
+/** The status to show: a backtest or forecast-evaluation verdict when one exists for this id, else the register's own. */
 export function effectiveStatus(id: string, registerStatus: ValidationStatus, v: ValidationReply | null): ValidationStatus {
-  return v?.results?.[id]?.status ?? registerStatus;
+  return v?.results?.[id]?.status ?? forecastRegisterStatus(id, v?.forecasts) ?? registerStatus;
 }

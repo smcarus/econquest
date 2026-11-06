@@ -211,3 +211,46 @@ export function vintageLabel(vintage: string): string {
   const [y, m] = vintage.split('-');
   return `${FULL[Number(m) - 1] ?? m} ${y}`;
 }
+
+export const WEO_VINTAGE_LABELS: Record<string, string> = {
+  NGDP_RPCH: 'Real GDP growth (%)',
+  PCPIPCH: 'Inflation, average (%)',
+  GGXWDG_NGDP: 'Government debt (% of GDP)',
+  BCA_NGDPD: 'Current account (% of GDP)',
+  GGXCNL_NGDP: 'Overall fiscal balance (% of GDP)',
+  GGXONLB_NGDP: 'Primary balance (% of GDP)',
+  NGAP_NPGDP: 'Output gap (% of potential GDP)',
+  LUR: 'Unemployment rate (%)',
+};
+
+export interface WeoVintageReply {
+  iso3: string;
+  code: string;
+  label: string;
+  /** Editions saved (any country). */
+  editions: number;
+  /** Years any edition gives for this country and indicator, oldest first. */
+  years: string[];
+  year: string | null;
+  releases: Array<{ vintage: string; label: string; value: number; kind: WeoValueKind }>;
+  /** One line comparing the first and the latest figure for the year, when there are two or more. */
+  sentence?: string;
+}
+
+/** What the History & data panel shows: every edition's figure for one year. */
+export function weoVintageReply(store: WeoVintageStore | null | undefined, iso3: string, code: string, year?: string): WeoVintageReply {
+  const iso = String(iso3 || '').toUpperCase();
+  const label = WEO_VINTAGE_LABELS[code] ?? code;
+  const years = [...new Set((store?.editions || []).flatMap((e) => Object.keys(e.rows[iso]?.[code]?.years || {})))].sort();
+  const thisYear = String(new Date().getUTCFullYear());
+  const pick = year && years.includes(year) ? year : years.includes(thisYear) ? thisYear : years[years.length - 1] ?? null;
+  const releases = pick ? weoReleasesForYear(store, iso, code, pick).map((r) => ({ ...r, label: vintageLabel(r.vintage) })) : [];
+  let sentence: string | undefined;
+  if (releases.length >= 2) {
+    const a = releases[0];
+    const b = releases[releases.length - 1];
+    const d = b.value - a.value;
+    sentence = `The IMF's ${label.replace(/ \(.*\)$/, '').toLowerCase()} figure for ${pick} went from ${a.value} (${a.label}, ${a.kind}) to ${b.value} (${b.label}, ${b.kind}), ${d === 0 ? 'unchanged' : `${d > 0 ? 'up' : 'down'} ${Math.abs(Number(d.toFixed(2)))}`} across ${releases.length} editions.`;
+  }
+  return { iso3: iso, code, label, editions: store?.editions.length ?? 0, years, year: pick, releases, ...(sentence ? { sentence } : {}) };
+}

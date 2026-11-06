@@ -21,7 +21,7 @@ export interface ApiKeyField {
   /** False for settings that are not secret (a series code, a file path): shown in full. Default true. */
   secret?: boolean;
   /** Where Settings lists it: free sources with your own key (default), or your own paid data. */
-  section?: 'free_key' | 'own_account' | 'ai';
+  section?: 'free_key' | 'own_account' | 'ai' | 'alerts';
   /** Hint in the empty box, for settings that are not keys. */
   placeholder?: string;
   /** A pick-one setting (shown as a list) instead of a typed value. */
@@ -240,6 +240,69 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     checkId: 'gemini',
     section: 'ai',
     validate: (v) => (/^[A-Za-z0-9_-]{20,128}$/.test(v) ? null : 'A Gemini key is a run of letters, digits, dashes and underscores (usually starting AIza). Check it was copied in full.'),
+  },
+  // ---- Server alerts (src/utils/serverAlerts.ts) ---------------------------------------------
+  // Test sends a real test message instead of a connection check, so checkId names no check row.
+  {
+    id: 'ALERT_WEBHOOK_URL',
+    label: 'Webhook address',
+    provider: 'Slack, Discord, Google Chat, ntfy or your own receiver',
+    feeds: 'Where the server posts a short message when the nightly data check finds a source that broke, a scheduled job fails, or a backtest that passed fails.',
+    withoutIt: 'Without it (and without email below) no alert is sent; Menu > Data health still shows everything.',
+    getKeyUrl: 'https://api.slack.com/messaging/webhooks',
+    getKeySteps: 'In Slack: create an app, turn on Incoming Webhooks and copy the address. In Discord: Channel settings > Integrations > Webhooks. The address works like a password, so it is kept masked.',
+    checkId: 'alert_webhook',
+    section: 'alerts',
+    placeholder: 'https://hooks.slack.com/services/…',
+    validate: (v) => (/^https?:\/\/[^\s]+$/.test(v) && !/\s/.test(v) ? null : 'A webhook address starts with https:// (or http:// on your own network).'),
+  },
+  {
+    id: 'ALERT_SMTP_URL',
+    label: 'Mail server for alert emails',
+    provider: 'Your email provider (SMTP)',
+    feeds: 'The mail server that sends alert emails, as smtps://user:password@host:465 (or smtp://…:587). It holds a password, so it is kept masked.',
+    withoutIt: 'Without it no alert email is sent.',
+    getKeyUrl: 'https://support.google.com/accounts/answer/185833',
+    getKeySteps: 'Gmail: turn on 2-step verification, make an app password, then use smtps://you%40gmail.com:APP-PASSWORD@smtp.gmail.com:465 (write @ in the user name as %40).',
+    checkId: 'alert_email',
+    section: 'alerts',
+    placeholder: 'smtps://user:password@smtp.example.com:465',
+    validate: (v) => {
+      try {
+        const u = new URL(v);
+        return /^smtps?:$/.test(u.protocol) && u.hostname ? null : 'The mail server starts with smtps:// or smtp://, then user:password@host:port.';
+      } catch {
+        return 'The mail server starts with smtps:// or smtp://, then user:password@host:port. Write @ in the user name as %40.';
+      }
+    },
+  },
+  {
+    id: 'ALERT_EMAIL_TO',
+    label: 'Send alert emails to',
+    provider: 'Email',
+    feeds: 'Who gets alert emails: one address, or several separated by commas.',
+    withoutIt: 'Without it no alert email is sent.',
+    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
+    getKeySteps: 'Any address you read.',
+    checkId: 'alert_email',
+    section: 'alerts',
+    secret: false,
+    placeholder: 'you@example.com',
+    validate: (v) => (v.split(',').every((a) => /^[^@\s,]+@[^@\s,]+\.[^@\s,]+$/.test(a.trim())) ? null : 'Use one email address, or several separated by commas.'),
+  },
+  {
+    id: 'ALERT_EMAIL_FROM',
+    label: 'Alert emails come from',
+    provider: 'Email',
+    feeds: 'The sender address on alert emails. Optional: without it the user name in the mail server address is used when it is an email address.',
+    withoutIt: 'Many mail servers only accept their own account as the sender.',
+    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/HOME_SERVER.md#server-alerts',
+    getKeySteps: 'Usually the same account as the mail server.',
+    checkId: 'alert_email',
+    section: 'alerts',
+    secret: false,
+    placeholder: 'econquest@example.com',
+    validate: (v) => (/^([^<>]*<)?[^@\s<>]+@[^@\s<>]+\.[^@\s<>]+>?$/.test(v.trim()) ? null : 'Use an email address, e.g. econquest@example.com.'),
   },
 ];
 

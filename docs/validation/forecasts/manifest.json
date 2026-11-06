@@ -6,6 +6,9 @@
     "cpi_nowcast.json": "b26921be3e3350c6fd8383276ce1b63fd2ac335cd80fd47a8fd4878f84f0d2a4",
     "cpi_forecast.json": "452f8da5c376c3e9d2b65f4cbc47345ddc8636362bad6f46683f598f83dafd05",
     "policy_rate_forecast.json": "cc6e4fd6faf3cfe80ac72aa3e308508af18be3347cac65e00ee128c4f109359a",
-    "debt_forecast.json": "b0f103786229c9ec676eaa66dc6d3ead1fd473ad21714a66193d304b089f0ff8"
+    "debt_forecast.json": "b0f103786229c9ec676eaa66dc6d3ead1fd473ad21714a66193d304b089f0ff8",
+    "cpi_forecast.v2.json": "0872bf313ed712bc5db83c555e9ce7a89b8ed1df57838b0892a0aba16f83635b",
+    "cpi_nowcast.v2.json": "913d5756ff9f892644026fcc36f36307115cca1b34c13f0d4508eb53367faa51",
+    "debt_forecast.v2.json": "0046f71259462f52ae426d5e9ee00b7d127f3b1a3aff7334ca26f9f9f51c2dd6"
   }
 }

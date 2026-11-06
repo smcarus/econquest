@@ -1,7 +1,7 @@
 /**
  * `npm run council:regress`: runs the council regression set (docs/validation/council-regression/)
  * through the running app, on the AI model set under Menu > Settings > AI model, and prints each
- * case. The app must be running (Docker: http://localhost:3737; `npm run dev`: http://localhost:3000;
+ * case. The app must be running (Docker: http://127.0.0.1:3737; `npm run dev`: http://127.0.0.1:3000;
  * or set APP_URL). The report is saved in data/local/validation/council-regression.json and each case
  * is an answer snapshot you can open and re-run. Exits 1 when a case fails.
  *
@@ -12,16 +12,26 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { compareToBaseline, type RegressionBaseline, type RegressionReport } from '../src/utils/councilRegression';
+import { codeHash } from '../src/utils/codeHash';
 
-const candidates = process.env.APP_URL ? [process.env.APP_URL] : ['http://localhost:3737', 'http://localhost:3000'];
+const candidates = process.env.APP_URL ? [process.env.APP_URL] : ['http://127.0.0.1:3737', 'http://127.0.0.1:3000'];
 let report: RegressionReport | null = null;
 let lastError = '';
+// Set when the running app's code differs from this folder's (an old Docker build, or a dev server not restarted after a pull).
+let staleApp: string | null = null;
+const localCode = codeHash(process.cwd());
 for (const base of candidates) {
+  let health: { code?: string } = {};
   try {
-    await fetch(`${base}/api/ai/runtime-defaults`, { signal: AbortSignal.timeout(3000) });
+    health = await (await fetch(`${base}/healthz`, { signal: AbortSignal.timeout(3000) })).json().catch(() => ({}));
   } catch {
     lastError = `no app at ${base}`;
     continue;
+  }
+  if (localCode && health.code !== localCode) {
+    const how = base.endsWith(':3737') ? 'rebuild the Docker app (double-click start-mac.command, or `docker compose up -d --build econquest`)' : 'stop `npm run dev` and start it again';
+    staleApp = `The app at ${base} is running ${health.code ? 'different code from' : 'code older than'} this folder, so its answers do not test what you pulled. To fix: ${how}, then run this again.`;
+    console.log(`WARNING: ${staleApp}`);
   }
   console.log(`Running the council regression set on the app at ${base} (each case waits for the referee model)...`);
   const r = await fetch(`${base}/api/council/regression`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
@@ -52,9 +62,10 @@ if (existsSync(baselineFile)) {
   else {
     console.log(`Differs from the recorded baseline (${baseline.model}, ${baseline.recordedAt.slice(0, 10)}):`);
     for (const d of cmp.drift) console.log(`  ${d}`);
-    console.log('If the new answers are right, run `npm run council:record` and send the zip it makes in the project thread.');
+    if (!staleApp) console.log('If the new answers are right, run `npm run council:record` and send the zip it makes in the project thread.');
   }
 } else {
   console.log('No recorded baseline yet: run `npm run council:record` to make one.');
 }
+if (staleApp) console.log(`\nWARNING: ${staleApp}`);
 process.exit(report.passed === report.total ? 0 : 1);

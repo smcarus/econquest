@@ -9,13 +9,16 @@ import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type Valid
 import { ValidationBadge } from './ValidationBadge';
 import { effectiveStatus, runValidation, useValidation, type ValidationReply } from './useValidation';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
+import { forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegister';
 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
 function downloadCsv(v: ValidationReply | null) {
   const rows = registerRows(MODEL_REGISTER, (id) => {
     const r = v?.results?.[id];
-    return r ? { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}.` } : undefined;
+    if (r) return { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}.` };
+    const fs = forecastRegisterStatus(id, v?.forecasts);
+    return fs ? { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}.`).join(' ') } : undefined;
   });
   const text = '\uFEFF' + [REGISTER_HEADER, ...rows, [EXPORT_NOTICE]].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -123,8 +126,22 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                       const spec = mine[0];
                       const earlier = Object.values(v?.versions || {}).filter((x) => x.id === e.id && x.specVersion !== v?.results?.[e.id]?.specVersion).sort((a, b) => b.specVersion - a.specVersion);
                       const r = v?.results?.[e.id];
+                      const fv = forecastVerdicts(e.id, v?.forecasts);
                       return (
                         <>
+                          {fv.length > 0 && (
+                            <>
+                              <dt className="text-slate-500 dark:text-slate-400">Evaluation verdicts</dt>
+                              <dd data-forecast-verdicts={e.id}>
+                                {fv.map((x) => (
+                                  <span key={x.id} className="block" data-forecast-verdict={x.id} data-status={x.status}>
+                                    <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict}
+                                  </span>
+                                ))}
+                                <span className="block text-slate-400 dark:text-slate-500">docs/validation/forecasts/ · npm run forecast:evaluate · data/local/validation/forecasts.json</span>
+                              </dd>
+                            </>
+                          )}
                           {spec && (
                             <>
                               <dt className="text-slate-500 dark:text-slate-400">Pre-registered test</dt>

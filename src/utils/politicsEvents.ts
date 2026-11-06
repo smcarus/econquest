@@ -16,6 +16,7 @@
  */
 import type { OpenDataSnapshot } from '../types/council';
 import type { UcdpReading } from './ucdpConflict';
+import type { V1Reading } from './gdeltDaily';
 import { EVENT_SURGE_RULE, GOLDSTEIN_RULE, isEventSurge, type GdeltRawReading } from './gdeltRaw';
 import { ACLED_RISING_RULE, ACLED_SHORT, acledLagMonths, acledMonthLabel, acledRising, type AcledReading } from './acled';
 
@@ -30,6 +31,8 @@ export interface PoliticsFigures {
   raw?: GdeltRawReading;
   /** UCDP conflict figures from the downloaded files. */
   conflict?: UcdpReading;
+  /** GDELT 1.0 monthly history: latest complete month against all months on disk. */
+  history?: V1Reading;
   /** ACLED conflict events (your own ACLED account): twelve months of counts. */
   acledEvents?: AcledReading;
   /** Why the ACLED figures are missing, in words. */
@@ -84,6 +87,7 @@ export function politicsFromSnapshot(snap: OpenDataSnapshot): PoliticsFigures | 
   }
   if (snap.gdeltRaw?.weekStart) out.raw = snap.gdeltRaw;
   if (snap.ucdp?.latest) out.conflict = snap.ucdp;
+  if (snap.gdeltDaily?.month) out.history = snap.gdeltDaily;
   if (snap.acled?.months?.length) out.acledEvents = snap.acled;
   else if (snap.acledMissing) out.acledMissing = snap.acledMissing;
   // A reason alone is not a figure: it rides along only when something else is on hand.
@@ -182,18 +186,23 @@ export function rawGdeltFigures(r: GdeltRawReading): {
  * ACLED returned for the window shown; the "rising" reading is a stated rule on top.
  */
 export function acledFigures(r: AcledReading, now = new Date()): {
-  figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }>;
+  figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'official' | 'model' }>;
   sentences: string[];
   rising: boolean;
 } {
   const window = `${acledMonthLabel(r.total.from)} to ${acledMonthLabel(r.total.to)}`;
   const lag = acledLagMonths(r, now);
-  const lagNote = lag >= 3 ? `; newest event ${r.latestEventDate}, so your ACLED access lags about ${lag} months` : '';
-  const src = `ACLED (Armed Conflict Location & Event Data), accessed ${r.pulledAt.slice(0, 10)}, country = ${r.country}; monthly counts worked out by the app${lagNote}`;
+  const file = r.fromFile;
+  const lagNote =
+    lag < 3 ? '' : file ? `; the file ends ${r.latestEventDate}, about ${lag} months ago: download a newer one from myACLED` : `; newest event ${r.latestEventDate}, so your ACLED access lags about ${lag} months`;
+  const src = file
+    ? `ACLED (Armed Conflict Location & Event Data) aggregated file you downloaded (${file.file}, saved ${r.pulledAt.slice(0, 10)}, weeks to ${r.latestEventDate}), country = ${r.country}; weekly Admin 1 counts added into months by the app, a week counted in the month it starts${lagNote}`
+    : `ACLED (Armed Conflict Location & Event Data), accessed ${r.pulledAt.slice(0, 10)}, country = ${r.country}; monthly counts worked out by the app${lagNote}`;
+  const tag = file ? ('official' as const) : ('live' as const);
   const types = Object.entries(r.total.byType).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t.toLowerCase()} ${n}`).join(', ');
-  const figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }> = [
-    { label: `Conflict events, ${window}`, value: `${r.total.events} events (${types}); ${r.total.fatalities} reported fatalities`, source: src, tag: 'live' },
-    { label: 'Conflict events a month', value: `${r.recentAvg} over the last three months, against ${r.priorAvg} over the nine before`, source: `${ACLED_SHORT}; ${window}`, tag: 'live' },
+  const figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'official' | 'model' }> = [
+    { label: `Conflict events, ${window}`, value: `${r.total.events} events (${types}); ${r.total.fatalities} reported fatalities`, source: src, tag },
+    { label: 'Conflict events a month', value: `${r.recentAvg} over the last three months, against ${r.priorAvg} over the nine before`, source: `${ACLED_SHORT}${file ? ' (downloaded file)' : ''}; ${window}`, tag },
   ];
   const rising = acledRising(r);
   const sentences: string[] = [];

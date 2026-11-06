@@ -22,6 +22,7 @@ import { AsOfPanel } from './AsOfPanel';
 import { DecisionReplayPanel } from './DecisionReplayPanel';
 import { TrackRecordPanel } from './TrackRecordPanel';
 import { GdeltEventsPanel } from './GdeltEventsPanel';
+import { GdeltHistoryPanel } from './GdeltHistoryPanel';
 import { PanelBoundary } from './PanelBoundary';
 import { ResearchSectionNav } from './ResearchSections';
 import { lazyNamed, DeskLoading } from './LazyDesk';
@@ -29,6 +30,12 @@ import { lazyNamed, DeskLoading } from './LazyDesk';
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
+const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
+const BohnPanel = lazyNamed(() => import('./BohnPanel'), 'BohnPanel');
+const GfnPanel = lazyNamed(() => import('./GfnPanel'), 'GfnPanel');
+const RuleFamilyPanel = lazyNamed(() => import('./RuleFamilyPanel'), 'RuleFamilyPanel');
+const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
+const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
@@ -428,6 +435,9 @@ export const CountryPage: React.FC<{
           <React.Suspense fallback={<DeskLoading />}>
             <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
           </React.Suspense>
+          <PanelBoundary name="Event history">
+            <GdeltHistoryPanel key={`gdelt-daily-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+          </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />
           <PanelBoundary name="Nowcast and forecasts">
             <React.Suspense fallback={<DeskLoading />}>
@@ -446,10 +456,46 @@ export const CountryPage: React.FC<{
               <DebtSustainabilityPanel key={`dsa-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
+          <div id="tool-gross-financing-need" className="scroll-mt-4" />
+          <PanelBoundary name="Gross financing need">
+            <React.Suspense fallback={<DeskLoading />}>
+              <GfnPanel key={`gfn-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-reserve-adequacy" className="scroll-mt-4" />
+          <PanelBoundary name="Reserve adequacy">
+            <React.Suspense fallback={<DeskLoading />}>
+              <ReserveAdequacyPanel key={`ara-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-fiscal-reaction" className="scroll-mt-4" />
+          <PanelBoundary name="Fiscal reaction">
+            <React.Suspense fallback={<DeskLoading />}>
+              <BohnPanel key={`bohn-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-rule-family" className="scroll-mt-4" />
+          <PanelBoundary name="Policy rules">
+            <React.Suspense fallback={<DeskLoading />}>
+              <RuleFamilyPanel key={`rules-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-local-projections" className="scroll-mt-4" />
+          <PanelBoundary name="Inflation after rate changes">
+            <React.Suspense fallback={<DeskLoading />}>
+              <LocalProjectionsPanel key={`lp-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
           <div id="tool-fiscal-multipliers" className="scroll-mt-4" />
           <PanelBoundary name="Fiscal multipliers">
             <React.Suspense fallback={<DeskLoading />}>
               <FiscalMultiplierPanel key={`mult-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} item={item} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-weo-vintages" className="scroll-mt-4" />
+          <PanelBoundary name="IMF forecasts by edition">
+            <React.Suspense fallback={<DeskLoading />}>
+              <WeoVintagesPanel key={`weo-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-as-of" className="scroll-mt-4" />

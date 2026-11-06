@@ -17,6 +17,7 @@
     "weo:vintages": "tsx scripts/weo-vintages.ts",
     "preload": "tsx server.ts --preload",
     "gdelt:pull": "tsx scripts/gdelt-pull.ts",
+    "gdelt:daily": "tsx scripts/gdelt-daily.ts",
     "record:feeds": "tsx scripts/record-feeds.ts",
     "backtest": "tsx scripts/backtest.ts",
     "council:regress": "tsx scripts/council-regress.ts",
@@ -26,7 +27,8 @@
     "docs:methods": "tsx scripts/docs-methods.ts",
     "users": "tsx scripts/users.ts",
     "backup:drill": "tsx scripts/backup-drill.ts",
-    "forecast:evaluate": "tsx scripts/forecast-evaluate.ts"
+    "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",
+    "forecast:worst": "tsx scripts/forecast-worst.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
@@ -39,6 +41,7 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
+    "nodemailer": "^10.3.1",
     "pdfjs-dist": "^6.5.438",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
@@ -52,6 +55,7 @@
   "devDependencies": {
     "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
+    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.21",

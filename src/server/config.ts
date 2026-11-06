@@ -78,3 +78,5 @@ export const WORKSPACE_FILE = workspaceFilePath(DATA_DIR);
 export const COUNCIL_TIMING_FILE = path.join(DATA_DIR, 'local', 'council-timing.jsonl');
 /** Scheduled jobs on the server (src/utils/scheduledJobs.ts): last runs of Download all and the backtests. */
 export const SCHEDULED_JOBS_FILE = path.join(DATA_DIR, 'local', 'scheduled-jobs.json');
+/** Server alerts (src/server/alerts.ts): the last alert sent, with how each route went (no keys). */
+export const LAST_ALERT_FILE = path.join(DATA_DIR, 'local', 'last-alert.json');

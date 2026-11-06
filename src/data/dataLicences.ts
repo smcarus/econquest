@@ -355,8 +355,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'gdelt',
-    name: 'GDELT (DOC API and raw GDELT 2.0 files)',
-    usedFor: 'Headlines and news tone; weekly event counts and news themes per country',
+    name: 'GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files)',
+    usedFor: 'Headlines and news tone; weekly event counts and news themes per country; monthly event history back to 1979',
     terms: [{ label: 'GDELT terms of use', url: 'https://www.gdeltproject.org/about.html#termsofuse' }],
     status: 'open',
     display: 'Allowed in any form, with a citation and link.',
@@ -510,8 +510,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'acled',
-    name: 'ACLED (Armed Conflict Location & Event Data), with your account',
-    usedFor: 'Conflict events per country over twelve months (only when you add your own ACLED account)',
+    name: 'ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files',
+    usedFor: 'Conflict events per country over twelve months (only when you add your own ACLED account, or put an aggregated file you downloaded from myACLED in data/local/acled/)',
     terms: [
       { label: 'ACLED End User License Agreement (1 Nov 2026)', url: 'https://acleddata.com/eula/' },
       { label: 'ACLED Attribution Policy (5 Nov 2026)', url: 'https://acleddata.com/attributionpolicy' },
@@ -527,7 +527,7 @@ export const DATA_LICENCES: LicenceRow[] = [
       'The Licensee may only publish or distribute materials incorporating ACLED\'s Data where such materials are transformative in nature and do not allow reverse engineering of the underlying dataset.',
       'ACLED as the source of the data must be clearly and prominently acknowledged. This applies to uses of the original ACLED data as well as any manipulation of or additions to the data.',
     ],
-    flag: 'Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only.',
+    flag: 'Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.',
     share: 'restricted',
     shareNote: 'Non-commercial research use only; publishing needs transformative work that cannot be reversed into the data.',
     checked: '2026-11-06',

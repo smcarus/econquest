@@ -269,6 +269,25 @@ a figure in the country header to open its history. *Show the numbers* lists eve
 observation, with unit, frequency, source, the source that day and the pull date).
 Figures with no history yet are listed with the reason.
 
+**Gross financing need.** Research > History & data shows, year by year, the deficit plus external public debt falling due, as % of GDP (IMF Fiscal Monitor, World Bank IDS and QEDS, IMF WEO GDP in dollars). Domestic debt falling due has no free source, so the total is labelled "at least": a lower bound. Years at or above 15% of GDP, the IMF market-access flag for emerging markets, are highlighted.
+
+**Reserve adequacy.** Research > History & data shows reserves in months of imports, against short-term external debt and against broad money, and reserves as a share of the IMF's reserve adequacy (ARA) metric for emerging markets. One term of that metric, other portfolio liabilities, has no free source, so the share shown is an upper bound: under 100% means short of the IMF floor for certain, above 100% does not prove adequacy. Both the floating and the fixed exchange rate weightings are shown.
+
+**Debt fan chart.** Under Debt sustainability, a fan shows where debt could go over five years if the past shocks to growth, inflation, interest and the primary balance repeat: 2,000 paths drawn from whole past years around the IMF baseline, with the 10-90 and 25-75 percentile bands, the median and the share of paths ending above today's debt. It needs 10 past years with all four figures; otherwise it says what is missing.
+
+**Inflation after rate changes.** Research > History & data shows how inflation has moved in the 0 to 24 months after a one-point policy rate change, estimated by local projections on the monthly CPI and BIS policy rate history, with 90% bands. It is a record of co-movement, not the effect of policy: central banks raise rates when they expect inflation to rise, so the first months often show inflation going up.
+
+**Policy rules.** Research > History & data sets the policy rate against five standard rules on the same inputs (Taylor 1993, balanced approach, inflation only, inertial, first difference), with each rule's formula and prescription, the range they span and whether the policy rate sits above, below or inside it. The neutral real rate is fixed at 2% (Taylor's), and the panel says how each rule shifts if it is lower.
+
+**Costed options.** Under Debt sustainability, a table shows four stated options (tighten 0.5, 1 or 2 points of GDP, or loosen 1 point) against the baseline: debt five years out, the change against the baseline and the output lost, each on the low and high end of the IMF's multiplier range for the country's group. When a tightening would push debt/GDP up in the first year because output falls faster than debt, the row says so.
+
+**Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
+its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
+and the app's output gap, outturn years only, with Newey-West errors. A positive, significant
+response is Bohn's sufficient condition for sustainability; the panel says "responds", "weak" or
+"no response found", shows the years used and has Explain. A record of past behaviour, not a
+forecast.
+
 **Past IMF WEO editions (real-time vintages).** To see a figure as the IMF published it at the time
 (for example the October 2018 forecast of Turkey's 2019 growth), download past editions of the WEO
 database from the IMF site (the tab-delimited "By Countries" file for each edition, named like
@@ -276,7 +295,9 @@ WEOOct2018all.xls) and save them in `data/local/weo-vintages/`. Nothing is fetch
 weo:vintages` lists what it read and any file it skipped with the reason;
 `npm run weo:vintages -- --country TUR --code NGDP_RPCH --as-of 2019-06-01` shows the edition that
 was out on that date, each year tagged actual, estimate or projection. An edition counts as
-published on the last day of its month, so a test never sees it early.
+published on the last day of its month, so a test never sees it early. The same files feed Research > History &
+data > IMF forecasts by edition: pick an indicator and a year to see every edition's figure for it,
+each marked data, IMF estimate or IMF projection at the time.
 
 **Sources.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live

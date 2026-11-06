@@ -15,6 +15,7 @@ import { CBPOL_AREA } from './bisPolicyRates';
 import { areaSeries } from './oecdSdmx';
 import { parseImfYears } from './officialHistory';
 import { writeFileAtomic } from './atomicWrite';
+import { isCountryIso3 } from '../data/iso3166';
 
 export interface ForecastValidationFile {
   results: Record<string, ForecastResult>;
@@ -46,7 +47,9 @@ export async function pullEvaluationData(fetcher: TextFetcher, problems: string[
   const isos = new Set<string>([...Object.keys(qna || {}), ...Object.keys(CBPOL_AREA), ...Object.keys((debtBody?.values?.[IMF_DEBT] as object) || {})]);
   const data: CountryData[] = [];
   const seenArea = new Set<string>();
-  for (const iso3 of [...isos].filter((x) => /^[A-Z]{3}$/.test(x)).sort()) {
+  // Countries only: feeds also carry regional groups with three-letter codes (IMF WHQ, NMQ, MAE...)
+  // and the app's EUU (euro area), which would be scored as if they were countries.
+  for (const iso3 of [...isos].filter(isCountryIso3).sort()) {
     const g = qna?.[iso3]?.qoq;
     const act = iso3 === 'BRA' ? ibc?.points : eu[iso3]?.points;
     const cli = areaSeries(iso3, hist.cli ?? undefined);
@@ -92,7 +95,7 @@ export async function runForecastEvaluations(opts: { specDir: string; resultFile
     for (const { spec, hash } of runnable) {
       const s = spec as unknown as ForecastSpec;
       const { cases } = casesFor(s, data);
-      const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; today's vintage, release lags as registered`, at);
+      const result = judgeForecast(s, hash, cases, `${sources[s.target] || s.target}; countries only (ISO 3166, regional groups and the euro-area aggregate left out); today's vintage, release lags as registered`, at);
       file.versions[`${s.id} v${s.version}`] = result;
       file.results[s.id] = result;
       opts.onResult?.(result);

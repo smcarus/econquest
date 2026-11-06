@@ -33,6 +33,13 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Not validated | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
+| Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
+| Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
+| Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
+| Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
+| Policy rule family | Research | Stated method, no call to test | Not applicable |
+| Costed fiscal options | Research | Stated method, no call to test | Not applicable |
+| Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
 ## Models and signals
@@ -294,7 +301,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
 - **Use:** Research
 - **Status:** Not validated
-- **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons.
+- **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons. Inflation (last 10 years) and debt (no drift) are re-tested as version 2 after version 1 failed; version 1 stays on record.
 - **Limits:** Bands leave out parameter uncertainty; today's data vintage; not compared with past IMF forecasts yet.
 - **Code:** `src/utils/forecasts.ts`
 
@@ -318,6 +325,68 @@ These show where things stand on a stated method and make no call a backtest cou
 - Five-year scenarios: the IMF path as published, a baseline on the IMF inputs with no stock-flow adjustment, ten-year historical averages, and growth, primary balance, interest rate and combined shocks shaped like the IMF standardised stress tests (2013 Staff Guidance Note), with sizes stated by the app.
 - **Limits:** A view on stated assumptions, not a forecast and not an IMF DSA. Shock sizes are the app's choices, not the IMF's country calibration.
 - **Code:** `src/utils/debtSustainability.ts`
+
+### Gross financing need (lower bound)
+
+- **Shows in:** Research > History & data
+- GFN = overall deficit + amortisation, % of GDP, from last year to five years out. Deficit = minus the IMF Fiscal Monitor overall balance; interest shown = primary minus overall balance.
+- Amortisation = World Bank IDS projected principal on public and publicly guaranteed external debt (DT.AMT.DPPG.CD, all creditors) divided by IMF WEO GDP in US dollars (NGDPD) for the same year. QEDS next-12-month general government external principal is shown alongside.
+- Flag: a total of 15% of GDP or more, the IMF market-access DSA benchmark for emerging markets.
+- **Limits:** Domestic amortisation (local debt held by residents) has no free cross-country source, so the total is a lower bound; for countries that borrow mainly at home it can be far below the true need. IDS covers low- and middle-income countries only. IMF years from this one on and all IDS years are projections.
+- **Code:** `src/utils/grossFinancingNeed.ts`
+
+### Reserve adequacy (IMF ARA, partial)
+
+- **Shows in:** Research > History & data
+- Traditional ratios: reserves in months of imports, reserves / short-term external debt (Greenspan-Guidotti, 100%), reserves / broad money (20%).
+- IMF ARA EM metric without other portfolio liabilities: 30% of short-term external debt (World Bank IDS) + 5% (floating) or 10% (fixed) of broad money (World Bank, % of GDP x IMF WEO GDP in US$) + 5% or 10% of exports of goods and services (World Bank). Both weightings shown; reserves include gold.
+- Reading: reserves under 100% of the floating-weight partial metric are under 100% of the full IMF metric whatever the regime; above that, adequacy cannot be shown without the missing term.
+- **Limits:** Other portfolio liabilities (from the international investment position) have no free cross-country source, so the ratio is an upper bound of the IMF's. The exchange rate regime is not a free feed. Short-term debt is World Bank IDS, low- and middle-income countries only; annual data lag a year or more.
+- **Code:** `src/utils/reserveAdequacy.ts`
+
+### Debt fan chart (stochastic)
+
+- **Shows in:** Research > History & data > Debt sustainability
+- Centred on the debt sustainability baseline (the debt identity on the IMF's projected growth, inflation, interest and primary balance), five years.
+- Each simulated year draws one whole past year (bootstrap with replacement, up to the last 25 outturn years with all four inputs, at least 10) and adds that year's deviations from the sample means to the baseline inputs, so the four shocks keep their joint behaviour. Interest shocks phase in as a fifth of the debt rolls over each year.
+- 2,000 paths with a fixed seed; reports the 10th, 25th, 50th, 75th and 90th percentiles by year and the share of paths ending above today's debt and above the baseline. Shape of the IMF market-access DSA fan (IMF 2013).
+- **Limits:** Only shocks the sample has seen; no stock-flow adjustments (valuation, bank support), which drive many debt jumps. Centred on the IMF's inputs, not an app forecast. CPI inflation stands in for the GDP deflator.
+- **Code:** `src/utils/debtFan.ts`
+
+### Inflation after policy rate changes (local projections)
+
+- **Shows in:** Research > History & data
+- Jorda (2005) local projections on monthly data: inflation (% y/y, OECD or national CPI) h months ahead less the month before, on the change in the BIS month-end policy rate in month t, with 3 lags of both monthly changes. One OLS per horizon: 0, 3, 6, 9, 12, 18, 24 months.
+- Newey-West standard errors with lag max(h + 1, floor(4 x (n/100)^(2/9))); 90% bands. Needs 60 months and at least 5 rate changes.
+- **Limits:** Reduced form: the rate change is not an identified monetary policy shock. Central banks move ahead of expected inflation, so early responses often have the "wrong" sign (price puzzle). Records co-movement in the sample, not the effect of policy; regimes and targets change over long samples.
+- **Code:** `src/utils/localProjections.ts`
+
+### Policy rule family
+
+- **Shows in:** Research > History & data
+- Five rules on the same inputs (latest monthly inflation pi, the bank's stated target pi*, output gap, r* 2%): Taylor (1993) r* + pi + 0.5(pi - pi*) + 0.5 gap; balanced approach, gap weight 1.0; inflation only, no gap term; inertial 0.85 x current rate + 0.15 x Taylor (1993); first difference current rate + 0.5(pi - pi*) + 0.5 x change in the gap over a year.
+- Output gap: IMF WEO (NGAP_NPGDP) for this year where published (a projection), else the app's own estimate, labelled. Rules needing the gap show Missing without it.
+- Reading: the policy rate more than 1 point above every rule = tight on all; more than 1 point below = loose on all; otherwise inside the range.
+- **Limits:** r* is a stated parameter, not data: each point lower moves the level rules one point down, the inertial rule 0.15 and the first-difference rule not at all. Rules are cross-checks of stance, not forecasts; banks also weigh the exchange rate, financial stability and expectations. Annual output gaps are revised every WEO.
+- **Code:** `src/utils/ruleFamily.ts`
+
+### Costed fiscal options
+
+- **Shows in:** Research > History & data > Debt sustainability
+- Four stated options against the debt sustainability baseline on IMF inputs: tighten 0.5 pt at once, 1 pt over 2 years, 2 pts over 3 years, loosen 1 pt at once. The primary balance rises by the step each year and stays up.
+- Real growth in a step year is lower by multiplier x step (output level loss persists; later growth as baseline). Multiplier: the IMF bucket-approach first-year range for the country's group in normal times (TNM 14/04 Table 6: emerging 0.1-0.3, advanced 0.4-0.6), both ends shown.
+- Debt from the identity d(t) = d(t-1)(1 + i)/(1 + n) - pb, so interest falls with debt. Reports debt at the horizon, the change against the baseline and the output lost; flags when debt rises above the baseline in year 1 (denominator effect).
+- **Limits:** No cycle or lower-bound adjustment to the multiplier, no confidence or risk-premium effects, inflation and interest as in the baseline. Composition (spending or taxes) is not modelled. Stated options on stated assumptions, not a forecast or a recommendation.
+- **Code:** `src/utils/costedOptions.ts`
+
+### Fiscal reaction (Bohn test)
+
+- **Shows in:** Research > History & data
+- OLS of the IMF Fiscal Monitor primary balance (% of GDP) on the previous year's IMF WEO government debt (% of GDP) and the app's output gap estimate: pb(t) = a + rho x d(t-1) + gamma x gap(t). IMF projection years are left out.
+- Newey-West (HAC, Bartlett) standard errors with lag floor(4 x (n/100)^(2/9)). Needs 15 years; when the output gap covers fewer than 80% of them the regression runs without it and says so.
+- Reading: rho above zero with p below 0.05 = the primary balance responds to debt (Bohn 1998's sufficient condition for sustainability holds in the sample); p below 0.10 = weak; otherwise no response found.
+- **Limits:** A record of past behaviour on the whole sample: the response can change with governments and regimes, and short samples give wide errors. No response found does not by itself show debt is unsustainable. Not a forecast.
+- **Code:** `src/utils/bohnTest.ts`
 
 ### Fiscal multipliers (cited reference view)
 

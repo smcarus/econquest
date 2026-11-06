@@ -38,7 +38,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
 | US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
-| GDELT (DOC API and raw GDELT 2.0 files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
+| GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
 | UCDP (Uppsala Conflict Data Program) downloaded files | Open with attribution | Free sharing allowed | Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset. | Allowed (CC BY 4.0 sets no commercial limit). | UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5). |
 | Polymarket | Permission needed for client or commercial use | Sharing unclear | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
 | Kalshi | Permission needed for client or commercial use | Do not pass on | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
@@ -47,7 +47,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Banco de México (SIE API, INPC), with your token | Terms not confirmed | Sharing unclear | Not confirmed. The terms are shown on the token page, which could not be read from the build machine. | Not stated here. | Fuente: Banco de México, SIE (serie SP30578). |
 | Brazil Treasury (Tesouro Direto price history) | Open with attribution | Free sharing allowed | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
 | Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | Free sharing allowed | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
-| ACLED (Armed Conflict Location & Event Data), with your account | Allowed with conditions | Do not pass on | Free for non-commercial use, including internal research. Anything published must be transformative and must not let the underlying data be rebuilt; ACLED must be named as the source. | Not allowed without a corporate licence from ACLED; governments and multilateral bodies need a public-sector licence. | ACLED (Armed Conflict Location & Event Data), accessed [date], www.acleddata.com; filters and any changes stated. |
+| ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files | Allowed with conditions | Do not pass on | Free for non-commercial use, including internal research. Anything published must be transformative and must not let the underlying data be rebuilt; ACLED must be named as the source. | Not allowed without a corporate licence from ACLED; governments and multilateral bodies need a public-sector licence. | ACLED (Armed Conflict Location & Event Data), accessed [date], www.acleddata.com; filters and any changes stated. |
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
 
 ## Sources
@@ -304,9 +304,9 @@ From the terms:
 
 > U.S. government publications are in the public domain and are not subject to copyright protection. You may use and/or distribute any of our data, files, databases, reports, graphs, charts, and other information products
 
-### GDELT (DOC API and raw GDELT 2.0 files)
+### GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files)
 
-- **Used for:** Headlines and news tone; weekly event counts and news themes per country
+- **Used for:** Headlines and news tone; weekly event counts and news themes per country; monthly event history back to 1979
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Any redistribution allowed with a citation and link.
 - **Terms read:** [GDELT terms of use](https://www.gdeltproject.org/about.html#termsofuse) (checked 2026-11-06)
@@ -443,16 +443,16 @@ From the terms:
 
 > Sitede yer alan bilgiler, kaynak gösterilmek suretiyle yayımlanabilir; ancak bu bilgilerin ticari amaçlarla kullanımı TCMB'nin yazılı iznine tabidir.
 
-### ACLED (Armed Conflict Location & Event Data), with your account
+### ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files
 
-- **Used for:** Conflict events per country over twelve months (only when you add your own ACLED account)
+- **Used for:** Conflict events per country over twelve months (only when you add your own ACLED account, or put an aggregated file you downloaded from myACLED in data/local/acled/)
 - **Status:** Allowed with conditions
 - **Free non-commercial sharing:** Do not pass on. Non-commercial research use only; publishing needs transformative work that cannot be reversed into the data.
 - **Terms read:** [ACLED End User License Agreement (1 Nov 2026)](https://acleddata.com/eula/); [ACLED Attribution Policy (5 Nov 2026)](https://acleddata.com/attributionpolicy); [myACLED access levels (FAQ)](https://acleddata.com/myacled-faqs) (checked 2026-11-06)
 - **Show to others:** Free for non-commercial use, including internal research. Anything published must be transformative and must not let the underlying data be rebuilt; ACLED must be named as the source.
 - **Commercial use:** Not allowed without a corporate licence from ACLED; governments and multilateral bodies need a public-sector licence.
 - **Credit:** ACLED (Armed Conflict Location & Event Data), accessed [date], www.acleddata.com; filters and any changes stated.
-- **Open question:** Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only.
+- **Open question:** Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
 
 From the terms:
 
@@ -493,5 +493,5 @@ From the terms:
 14. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
 15. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
 16. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
-17. **ACLED (Armed Conflict Location & Event Data), with your account** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only.
+17. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
 18. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.

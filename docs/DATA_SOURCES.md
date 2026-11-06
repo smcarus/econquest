@@ -58,6 +58,7 @@ own-data switch in Settings).
 | IMF COFER | World shares of official FX reserves by currency (US dollar, euro, renminbi, yen, sterling and others), quarterly | api.imf.org | 1 day, on disk |
 | GDELT | Headlines and news tone (a risk score input) | api.gdeltproject.org | 7 days, on disk (`GDELT_REFRESH_DAYS`) |
 | GDELT 2.0 raw files (events and Global Knowledge Graph) | Weekly event counts per country (protests, sanctions, violence, Goldstein and tone) and economic-theme shares of news (inflation, central bank, debt, currency, fiscal, lenders and more) with tone and the people and organisations named | data.gdeltproject.org/gdeltv2/ | Per day on disk (`data/live/gdelt-raw/`), look-back `GDELT_RAW_WEEKS` (default 8) |
+| GDELT 1.0 event files | Monthly event history per country (events, protests, sanctions, violence, Goldstein, tone; share of all events GDELT coded), back to 1979 if wanted. Alongside the 2.0 files, not instead | data.gdeltproject.org/events/ | Per month on disk (`data/live/gdelt-daily/`), from `GDELT_DAILY_FROM` (default 2016-01) |
 | Polymarket, Kalshi | Prediction-market odds | gamma-api.polymarket.com, api.elections.kalshi.com | per request |
 | New York Fed | Fed funds, SOFR, reverse repo | markets.newyorkfed.org | 3 min to 6 h |
 | Spot FX | Exchange rates against the dollar | open.er-api.com (backup: Frankfurter) | 3 min |
@@ -106,6 +107,19 @@ Notes from the first check on Sam's Mac (2026-11-05):
   are shares of the articles read, and the share of files read is shown with them. The pull is the
   last step of *Download all country data* (no per-step time limit; Stop works mid-pull). After the
   first pull the server tops it up weekly (`GDELT_REFRESH_DAYS`), new files only.
+- **GDELT 1.0 event files** (`npm run gdelt:daily`, add `-- --estimate` to see the size first, or
+  `-- --from 1979` for the whole history) are listed with their sizes in
+  `data.gdeltproject.org/events/filesizes`: one zip per year for 1979-2005, per month for January
+  2006 to March 2013 (both by the date the event took place, 57 columns), then one per day from
+  1 April 2013 (the events GDELT found that day, 58 columns). Each zip is streamed, unzipped and read
+  line by line as it arrives, then dropped (a year file unzips to over a gigabyte, so it is never held
+  whole); one small file per month is kept in `data/live/gdelt-daily/`, listing the files already in
+  it, so nothing is counted twice and a later run fetches only new days. Sizes: about 14 MB for 1979
+  rising to 160 MB for 2000, 10 to 100 MB per month for 2006-2013, and 2 to 8 MB per day since; from
+  2016 that is roughly 25 GB to download, all of it about 35 GB. GDELT's volume grew many times over
+  the years, so the readings use shares (protests as a share of the country's events, the country's
+  share of all events), never raw counts across years. Same country rule and FIPS mapping as the 2.0
+  files; the 2.0 15-minute pull is unchanged and still gives the weekly figures and news themes.
 - **Brazil Treasury** serves the whole price history, about 15 MB, slowly (60 seconds on the Mac).
   The app allows 90 seconds, downloads it once at a time, and keeps the answer on disk
   (`data/live/tesouro.json`) so a restart does not download it again.
@@ -263,6 +277,31 @@ and again whenever a file changes; a newer release of a dataset wins over an old
   A conflict fought in more than one country counts in each of them.
 - Countries are Gleditsch-Ward numbers in the files, mapped to ISO3 in `src/utils/ucdpConflict.ts`.
   `npm run check:data` shows the files read, the releases and any codes the app has no country for.
+
+### ACLED aggregated files
+
+ACLED (Armed Conflict Location & Event Data) publishes weekly aggregated files, one per region
+(Africa, Asia-Pacific, Europe and Central Asia, Latin America & the Caribbean, Middle East, United
+States & Canada), at <https://acleddata.com/conflict-data/download-data-files/aggregated-data>. A free
+registered myACLED account is enough to download them; the ACLED API needs the Research level, which
+Open accounts (any public email such as gmail.com) do not get. The app does not call ACLED for these.
+
+1. Log in to myACLED and open Aggregated data.
+2. Download the file for your region (as many regions as you like).
+3. Put it, as downloaded (.xlsx or .csv, zipped or not), in `data/local/acled/`. No restart is
+   needed: the folder is read again whenever a file changes.
+
+- The file is recognised by its columns (week, country, event_type, events, fatalities; the others
+  are ignored), in any case and with or without spaces. A file without them is listed as not read in
+  `npm run check:data` (row "ACLED aggregated files").
+- Rows are weekly counts per Admin 1 area and event type. The app adds them into country months; a
+  week counts in the month it starts in (ACLED weeks run Saturday to Friday), and only months the
+  file covers to their last day are used. `population_best` is never added up.
+- The figures are the same as with an ACLED account (twelve months of events and fatalities by
+  type, the last three months against the nine before), labelled with the file name and its date.
+  When you also have an account with API access, the API reading wins.
+- The files stay in `data/local/` on your computer: they are not in git and not shipped with the
+  app, since ACLED's EULA restricts sharing (see Menu > About & data licences).
 
 ## Free, with your own key
 

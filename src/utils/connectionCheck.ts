@@ -44,6 +44,8 @@ import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, p
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
+import { GDELT_V1_SIZES_URL, parseFileSizes } from './gdeltDaily';
+import { ACLED_AGGREGATED_PAGE, ACLED_FOLDER, acledFileReading, type AcledFileData } from './acledFiles';
 import { UCDP_DATASETS, UCDP_DATASET_IDS, UCDP_DOWNLOADS_PAGE, UCDP_FOLDER, ucdpReading, type UcdpData } from './ucdpConflict';
 import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
 
@@ -105,6 +107,8 @@ export interface CheckOptions {
   readFile?: (path: string) => { text: string; modified: Date } | null;
   /** The UCDP files read from data/local/ucdp/ (utils/ucdpStore.ts); absent = not checked. */
   ucdp?: () => UcdpData | null;
+  /** The ACLED aggregated files in data/local/acled/ (server: acledFileData). */
+  acledFiles?: () => AcledFileData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -242,6 +246,7 @@ export const SOURCE_IDS = [
   'imf_reserves',
   'imf_cofer',
   'gdelt',
+  'gdelt_v1',
   'polymarket',
   'kalshi',
   'nyfed',
@@ -270,6 +275,7 @@ export const SOURCE_IDS = [
   'banxico',
   'ucdp',
   'acled',
+  'acled_files',
   'eia',
   'own_cds',
   'gemini',
@@ -435,7 +441,23 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     ).then((r) =>
       r.state === 'refused' && r.httpStatus === 429
         ? { ...r, detail: 'GDELT refused: too many requests from this connection (HTTP 429). It allows one request every 5 seconds and keeps refusing for a while after it is exceeded. The app pauses GDELT for 15 minutes after a refusal; check again after that.' }
-        : r
+        : r.state === 'no_answer'
+          ? { ...r, detail: `${r.detail} GDELT's news search (api.gdeltproject.org) is a separate server from its event files (data.gdeltproject.org) and is sometimes slow or down for hours. The app keeps the last saved headlines and tone, each with its own date, and tries again within the hour; nothing for you to change.` }
+          : r
+    )
+  );
+
+  add('gdelt_v1', () =>
+    httpCheck(
+      { id: 'gdelt_v1', name: 'GDELT 1.0 event files', group: 'free', feeds: 'Monthly event history per country back to 1979 (npm run gdelt:daily)' },
+      fetchFn,
+      GDELT_V1_SIZES_URL,
+      Math.max(T, 20000),
+      (r) => {
+        const files = parseFileSizes(r.text || '');
+        const days = files.filter((f) => f.kind === 'day');
+        return files.length ? `${files.length} files listed, newest ${days.at(-1)?.period || files.at(-1)!.period}` : null;
+      }
     )
   );
 
@@ -973,6 +995,31 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       return { ...read, state: 'needs_setup', detail: 'Signed in, but ACLED did not allow API access for this account. Open accounts (public email such as gmail.com) get aggregated downloads only; the API needs the Research level.' };
     }
     return read.state === 'connected' && opts.keySources?.ACLED_PASSWORD === 'app' ? { ...read, detail: `${read.detail} (account saved in Settings)` } : read;
+  });
+
+  add('acled_files', async () => {
+    const def: Def = {
+      id: 'acled_files',
+      name: 'ACLED aggregated files (downloaded)',
+      group: 'free',
+      feeds: 'Conflict events per country over twelve months, for the Politics & Events Agent, when no ACLED API reading is on hand',
+      setup: `Log in at ${ACLED_AGGREGATED_PAGE} (a free registered myACLED account is enough), download your region's aggregated file and put it, as downloaded (.xlsx or .csv, zipped or not), in ${ACLED_FOLDER}. Nothing is fetched. The API reading, when your account has one, wins.`,
+    };
+    const host = 'your files';
+    if (!opts.acledFiles) return setRow(def, 'optional', `The folder ${ACLED_FOLDER} was not checked from here.`, host);
+    let data: AcledFileData | null;
+    try {
+      data = opts.acledFiles();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The ACLED folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '';
+    if (!data || !data.files.length) return setRow(def, 'optional', `No ACLED aggregated file in ${ACLED_FOLDER}.${skipped ? ` ${skipped}` : ''}`, host);
+    const read = data.files.map((f) => `${f.file} (${f.countries} countries, weeks ${f.firstWeek} to ${f.lastWeek}, ${f.rows} rows)`);
+    const first = [...data.countries.values()][0];
+    const r = first ? acledFileReading(data, first.name, now) : null;
+    const sample = r ? `${r.country}: ${r.total.events} events, ${r.total.fatalities} fatalities, ${r.total.from} to ${r.total.to}` : undefined;
+    return { ...setRow(def, 'connected', `Read ${read.join('; ')}.`, host), ...(sample ? { sample } : {}), ...(skipped ? { warning: skipped } : {}) };
   });
 
   add('eia', async () => {
