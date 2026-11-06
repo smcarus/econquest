@@ -34,6 +34,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Description, not a tested signal | None |
+| Sanctions lists | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Not validated | None |
@@ -51,6 +52,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
 | Country risk scorecard | Research | Stated method, no call to test | Not applicable |
+| Sanctions lists | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -363,6 +365,18 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
 - **Code:** `src/utils/countryRiskScorecard.ts`
 
+### Sanctions lists
+
+- **Says:** How many people, firms, vessels and aircraft on the OFAC and UN sanctions lists have an address or nationality in the country, under which programmes; and a plain-text name search.
+- **Rule:** Counts of list entries tied to the country by address (OFAC, UN) or nationality (UN), by list, type and programme. Name search: every word of the query in the listed name.
+- **Reads:** OFAC SDN and non-SDN lists, UN Security Council Consolidated List (files you download)
+- **Shows in:** Country Research > History & data (Sanctions lists)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: counts from official lists, no forward call.
+- **Limits:** Not a compliance screen: no aliases, fuzzy matching or 50% ownership rule. Entries without an address in a country do not count for it. EU and UK lists not read yet.
+- **Code:** `src/utils/sanctionsLists.ts`
+
 ### Reserve adequacy (IMF ARA, partial)
 
 - **Says:** Reserves against the IMF adequacy metric, with the usual months-of-imports and short-term debt cover.
@@ -592,6 +606,16 @@ These show where things stand on a stated method and make no call a backtest cou
 - No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
 - **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
 - **Code:** `src/utils/countryRiskScorecard.ts`
+
+### Sanctions lists
+
+- **Shows in:** Research > History & data
+- Files you download into data/local/sanctions/ (npm run sanctions:pull tries the official addresses): OFAC SDN.CSV and ADD.CSV, the non-SDN CONS_PRIM.CSV and CONS_ADD.CSV (legacy CSV layout), and the UN Security Council consolidated.xml.
+- An entry counts for a country when one of its addresses is in the country (OFAC, UN) or one of its nationalities is (UN). An entry can count for several countries. Country names are matched to ISO codes by a stated table; names it cannot match are listed, never guessed.
+- Counts by list and by type (people, firms and bodies, vessels, aircraft), the programmes with the most entries as the list names them, and UN entries by the year first listed.
+- Name search: every word of the query (case and accents ignored) must appear in the listed name.
+- **Limits:** Not a compliance screen: the lists' aliases (OFAC ALT.CSV, UN aliases) are not searched, there is no fuzzy matching, and the OFAC 50% rule (firms owned by listed persons) is not applied. Entries with no address or nationality in the country do not count for it. EU and UK lists are not read yet.
+- **Code:** `src/utils/sanctionsLists.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

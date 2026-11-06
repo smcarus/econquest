@@ -37,6 +37,7 @@ const BeerPanel = lazyNamed(() => import('./BeerPanel'), 'BeerPanel');
 const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
+const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
@@ -338,6 +339,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Country risk scorecard">
             <React.Suspense fallback={<DeskLoading />}>
               <RiskScorecardPanel key={`risk-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-sanctions" className="scroll-mt-4" />
+          <PanelBoundary name="Sanctions lists">
+            <React.Suspense fallback={<DeskLoading />}>
+              <SanctionsPanel key={`sanctions-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />

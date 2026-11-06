@@ -362,6 +362,13 @@ any weighting of the four would be a guess. A figure that is not on file is list
 the reason. The six governance indicators download with the rest of the country's official history,
 so a history saved before this version downloads once more the next time the page is opened online.
 
+**Sanctions lists.** Research > History & data counts the people, firms, vessels and aircraft on
+the OFAC and UN sanctions lists with an address or nationality in the country, by programme, and
+has a name search across the lists. Run `npm run sanctions:pull` to save the lists in
+`data/local/sanctions/` (or download them by hand: see docs/DATA_SOURCES.md). This is not a
+compliance screen: aliases are not searched, there is no fuzzy matching, and firms owned by listed
+people are not counted. A name that is not found is not cleared.
+
 **Armed conflict (UCDP).** The Uppsala Conflict Data Program's yearly files (armed conflicts,
 battle deaths, non-state and one-sided violence, CC BY 4.0) ship with the app in `datasets/ucdp/`. A
 newer release saved in `data/local/ucdp/` (CSV or zip, from ucdp.uu.se/downloads) is read in their

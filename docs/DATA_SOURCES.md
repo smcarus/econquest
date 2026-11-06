@@ -247,6 +247,16 @@ Notes from the first check on Sam's Mac (2026-11-05):
 
 ## Free, downloaded files (nothing fetched)
 
+### Sanctions lists (OFAC, UN)
+
+Country Research > History & data > Sanctions lists reads files you download into
+`data/local/sanctions/`: OFAC's SDN.CSV and ADD.CSV and the non-SDN CONS_PRIM.CSV and CONS_ADD.CSV
+(from <https://ofac.treasury.gov/sanctions-list-service>, the legacy CSV layout), and the UN Security
+Council consolidated.xml (<https://main.un.org/securitycouncil/en/content/un-sc-consolidated-list>).
+`npm run sanctions:pull` tries the official download addresses and keeps a file only if it reads as
+the list; if a site refuses, download the file by hand into the same folder. No key is needed. The
+EU and UK lists are not read yet.
+
 ### UCDP conflict data
 
 The Uppsala Conflict Data Program publishes its datasets as CSV files at
