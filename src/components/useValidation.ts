@@ -24,6 +24,7 @@ export interface ValidationSpecInfo {
 
 export interface ValidationReply {
   results: Record<string, BacktestResult>;
+  versions?: Record<string, BacktestResult>;
   lastRun?: { at: string; problems: string[] };
   specs: ValidationSpecInfo[];
   running: boolean;

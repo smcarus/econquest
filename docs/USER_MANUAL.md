@@ -374,6 +374,9 @@ hold no figures of their own; the handout reads them from the app's series when 
   keeps its verdict; when it passed but fails method 2 the badge reads *Passed, fails stricter check*.
   A test file with `"framework": 2` is judged by method 2. A new version of a failed rule carries
   `retestOf` (the earlier version, its verdict and what changed) and is shown as a re-test.
+  Later versions sit beside the first as `<id>.v2.json`, `<id>.v3.json`; every version runs, the
+  badge shows the latest, and the row lists the earlier versions' verdicts. Registered so far:
+  `cftc_crowding.v2.json`, the same rule as v1 judged by method 2.
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it

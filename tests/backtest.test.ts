@@ -5,7 +5,7 @@ import os from 'os';
 import path from 'path';
 import { addMonths, binomialUpperTail, cftcCrowdingCases, cliTurnPolicyCases, judge, judgeWithRobustness, monthlyRuns, robustness, taylorGapCases, type BacktestCase, type BacktestSpec } from '../src/utils/backtest';
 import { targetIn } from '../src/data/inflationTargetHistory';
-import { loadSpecs, runBacktests, sha256 } from '../src/utils/backtestRun';
+import { loadSpecs, loadValidation, runBacktests, sha256 } from '../src/utils/backtestRun';
 import { registerEntry } from '../src/data/modelRegister';
 
 const SPEC_DIR = path.join(process.cwd(), 'docs', 'validation', 'preregistered');
@@ -29,7 +29,9 @@ test('every registered test file matches its hash in manifest.json and names a r
   for (const s of specs) {
     assert.equal(s.problem, undefined, `${s.file}: ${s.problem}`);
     assert.ok(registerEntry(s.spec!.id), `${s.file} names no register entry`);
-    assert.equal(`${s.spec!.id}.json`, s.file);
+    assert.ok(s.file === `${s.spec!.id}.json` ? s.spec!.version === 1 : s.file === `${s.spec!.id}.v${s.spec!.version}.json`, `${s.file} should be ${s.spec!.id}.json (v1) or ${s.spec!.id}.v${s.spec!.version}.json`);
+    if (s.spec!.version > 1) assert.equal(s.spec!.framework, 2, `${s.file}: later versions are judged by method 2`);
+    if (s.spec!.retestOf) assert.ok(s.spec!.retestOf.version < s.spec!.version && s.spec!.retestOf.change.length > 20);
   }
 });
 
@@ -236,4 +238,28 @@ test('judgeWithRobustness: a method 1 test keeps its verdict; a framework 2 test
   assert.equal(v2.status, 'failed');
   assert.equal(v2.pValue, v2.robustness.pValue);
   assert.match(v2.verdict, /method 2/);
+});
+
+test('runBacktests runs every version and keeps each verdict; the latest version shows on the badge', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spec-'));
+  const base = { method: 'cli_turn_policy' as const, sample: { from: '1990-01' }, passMark: { minCases: 1, minLiftPts: 10, maxPValue: 0.05 } };
+  const v1 = JSON.stringify(spec({ id: 'r', ...base }));
+  const v2 = JSON.stringify(spec({ id: 'r', version: 2, framework: 2, retestOf: { version: 1, verdict: 'failed', change: 'something stated before the run' }, ...base }));
+  fs.writeFileSync(path.join(dir, 'r.json'), v1);
+  fs.writeFileSync(path.join(dir, 'r.v2.json'), v2);
+  fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ files: { 'r.json': sha256(v1), 'r.v2.json': sha256(v2) } }));
+  const resultFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'bt-')), 'results.json');
+  const cli = cliPeak();
+  const bisCsv = ['FREQ,REF_AREA,UNIT_MEASURE,TIME_PERIOD,OBS_VALUE', ...cli.map((p) => `M,BR,368,${p.period},${p.period >= '2001-12' ? 5 : 6}`)].join('\n');
+  const dbn = { series: { docs: [{ dimensions: { REF_AREA: 'BRA', FREQ: 'M', MEASURE: 'LI', ADJUSTMENT: 'AA', METHODOLOGY: 'H', UNIT_MEASURE: 'IX', TRANSFORMATION: 'IX' }, period: cli.map((p) => p.period), value: cli.map((p) => p.value) }] } };
+  const out = await runBacktests({
+    specDir: dir,
+    resultFile,
+    fetcher: async (url) => (url.includes('stats.bis.org') ? bisCsv : url.includes('db.nomics') && !url.includes('PRICES') ? JSON.stringify(dbn) : Promise.reject(new Error('HTTP 503'))),
+  });
+  assert.equal(out.results.r.specVersion, 2);
+  assert.equal(out.results.r.framework, 2);
+  assert.deepEqual(Object.keys(out.versions!).sort(), ['r v1', 'r v2']);
+  assert.equal(out.versions!['r v1'].framework, 1);
+  assert.deepEqual(Object.keys(loadValidation(resultFile).versions!).sort(), ['r v1', 'r v2']);
 });
