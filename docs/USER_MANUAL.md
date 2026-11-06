@@ -544,7 +544,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   makes is written down while its window is still open, before anyone knows the outcome, and scored
   by the same rule when the window ends. The dialog shows, under Forward record, how many calls,
   how many followed against the base rate, and the latest calls. Lines are never edited, and each
-  carries a hash over the line before it, so the dialog says if the file was changed. Panels that describe the past or apply a
+  carries a hash over the line before it, so the dialog says if the file was changed. A passing
+  currency factor test (`npm run signals:evaluate`) does the same with its book: the long and short
+  currencies at the latest complete month-end are recorded before that month's return exists, and
+  scored as recorded (net of the same flat cost) once the month ends. Panels that describe the past or apply a
   stated what-if (fiscal reaction, gross financing need, reserve adequacy, inflation after rate
   changes, costed options, global shock scenarios) carry the badge *Description, not a tested
   signal*; the policy rule family and the debt fan chart make forward claims and read *Not

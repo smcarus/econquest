@@ -26,6 +26,8 @@ export interface ForwardCallLine {
   when: string;
   what: string;
   due: string;
+  /** Signal tests: the book as recorded, scored as recorded. */
+  book?: { long: string[]; short: string[] };
   at: string;
 }
 
@@ -36,6 +38,8 @@ export interface ForwardOutcomeLine {
   when: string;
   hit: boolean;
   base: number;
+  /** Signal tests: the period's net return, %. */
+  value?: number;
   at: string;
 }
 
@@ -52,7 +56,7 @@ export function forwardStep(
   existing: ForwardBody[],
   test: { key: string; specHash: string; passing: boolean },
   cases: BacktestCase[],
-  open: OpenCall[],
+  open: Array<OpenCall & { book?: { long: string[]; short: string[] } }>,
   at: string,
 ): ForwardBody[] {
   const calls = new Set<string>();
@@ -67,7 +71,7 @@ export function forwardStep(
       const k = keyOf(test.key, c.where, c.when);
       if (calls.has(k)) continue;
       calls.add(k);
-      out.push({ kind: 'call', test: test.key, specHash: test.specHash, where: c.where, when: c.when, what: c.what, due: c.due, at });
+      out.push({ kind: 'call', test: test.key, specHash: test.specHash, where: c.where, when: c.when, what: c.what, due: c.due, ...(c.book ? { book: c.book } : {}), at });
     }
   }
   const byKey = new Map(cases.map((c) => [keyOf(test.key, c.where, c.when), c]));
@@ -75,7 +79,8 @@ export function forwardStep(
     if (scored.has(k)) continue;
     const c = byKey.get(k);
     if (!c) continue;
-    out.push({ kind: 'outcome', test: test.key, where: c.where, when: c.when, hit: c.hit, base: Number(c.base.toFixed(4)), at });
+    const value = (c as BacktestCase & { value?: number }).value;
+    out.push({ kind: 'outcome', test: test.key, where: c.where, when: c.when, hit: c.hit, base: Number(c.base.toFixed(4)), ...(value !== undefined ? { value: Number(value.toFixed(4)) } : {}), at });
   }
   return out;
 }
@@ -89,6 +94,8 @@ export interface ForwardSummary {
   hitRatePct: number | null;
   baseRatePct: number | null;
   pending: number;
+  /** Signal tests: average net return per period over the scored calls, %. */
+  meanValue: number | null;
   small: boolean;
   /** The latest calls, newest first, with their outcome when scored. */
   recent: Array<{ where: string; when: string; what: string; due: string; hit?: boolean }>;
@@ -113,6 +120,7 @@ export function forwardSummary(lines: ForwardBody[]): Record<string, ForwardSumm
       hitRatePct: res.length ? pct(hits / res.length) : null,
       baseRatePct: res.length ? pct(res.reduce((a, o) => a + o.base, 0) / res.length) : null,
       pending: calls.length - res.length,
+      meanValue: res.some((o) => o.value !== undefined) ? Number((res.reduce((a, o) => a + (o.value ?? 0), 0) / res.length).toFixed(3)) : null,
       small: res.length < SMALL_SAMPLE,
       recent: [...calls]
         .sort((a, b) => (a.when < b.when ? 1 : a.when > b.when ? -1 : 0))
@@ -130,5 +138,6 @@ export function forwardSentence(s: ForwardSummary | undefined): string {
   if (!s) return '';
   const head = `Forward record since ${s.since}: ${s.calls} call${s.calls === 1 ? '' : 's'}`;
   if (!s.scored) return `${head}, none scored yet.`;
+  if (s.meanValue !== null) return `${head}, ${s.scored} scored: average net ${s.meanValue}% a period, positive in ${s.hits} (${s.hitRatePct}% against ${s.baseRatePct}% of months in the test), ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
   return `${head}, ${s.scored} scored, ${s.hits} followed (${s.hitRatePct}% against a base rate of ${s.baseRatePct}%), ${s.pending} still open${s.small ? '; too few to lean on' : ''}.`;
 }
