@@ -158,7 +158,8 @@ import { v1FromMonth, v1Reading } from './src/utils/gdeltDaily.ts';
 import { gdeltDailyDir, gdeltDailySeries, loadAllMonths, loadDailyState } from './src/utils/gdeltDailyStore.ts';
 /** Files on disk the unrest onset backtest reads, loaded only when it runs. */
 const backtestLocal = { gdeltMonths: () => loadAllMonths(gdeltDailyDir(DATA_DIR)), ucdp: () => ucdpData(DATA_DIR) };
-import { ucdpReading } from './src/utils/ucdpConflict.ts';
+import { ucdpMissing, ucdpReading } from './src/utils/ucdpConflict.ts';
+import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
@@ -317,7 +318,7 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
   const pulledAt = new Date().toISOString();
   // Revision tracking: values the IMF or World Bank changed since the last download are kept with the old value.
   const revisions = mergeRevisions(prev?.revisions, historyRevisions(prev, { series, pulledAt }));
-  const file: OfficialHistoryFile = { iso3, pulledAt, series, ...(Object.keys(failed).length ? { failed } : {}), ...(revisions ? { revisions } : {}) };
+  const file: OfficialHistoryFile = { iso3, pulledAt, series, asked: OFFICIAL_FIGURES.map((f) => f.id), ...(Object.keys(failed).length ? { failed } : {}), ...(revisions ? { revisions } : {}) };
   writeFileAtomic(historyFile(iso3), JSON.stringify(file));
   return file;
 }
@@ -325,7 +326,9 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
 function fetchOfficialHistory(iso3: string, opts: { force?: boolean } = {}): Promise<OfficialHistoryFile | null> {
   const key = String(iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const saved = loadOfficialHistory(key);
-  const due = !saved || opts.force || Date.now() - Date.parse(saved.pulledAt) > HISTORY_REFRESH_MS;
+  // A figure added to the app since the file was saved makes it due, once.
+  const newFigure = !!saved && OFFICIAL_FIGURES.some((f) => (saved.asked ? !saved.asked.includes(f.id) : !saved.series[f.id] && !saved.failed?.[f.id]));
+  const due = !saved || opts.force || newFigure || Date.now() - Date.parse(saved.pulledAt) > HISTORY_REFRESH_MS;
   if (!due) return Promise.resolve(saved);
   const existing = historyInFlight.get(key);
   if (existing) return existing;
@@ -3094,6 +3097,29 @@ async function startServer() {
     const series = gdeltDailySeries(DATA_DIR, iso3);
     const spikes = spikeMonths(series);
     res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
+  });
+  // Country risk scorecard (src/utils/countryRiskScorecard.ts): governance, conflict, unrest, economy; no overall score.
+  app.get('/api/risk-scorecard/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const official: ScorecardInputs['official'] = {};
+    for (const id of [...WGI_IDS, ...ECONOMY_IDS]) {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      if (fig) official[id] = officialSeries(file, fig);
+    }
+    const ucdp = ucdpData(DATA_DIR);
+    const conflict = ucdpReading(ucdp, iso3);
+    const series = gdeltDailySeries(DATA_DIR, iso3);
+    const sc = countryRiskScorecard({
+      official,
+      officialMissingReason: file ? undefined : 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)',
+      conflict,
+      conflictMissing: conflict ? undefined : ucdpMissing(ucdp, iso3).short,
+      spikes: spikeMonths(series),
+      spikesMissing: series ? undefined : 'GDELT 1.0 files not pulled yet (npm run gdelt:daily)',
+    });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });
   });
   app.get('/api/track-record/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
