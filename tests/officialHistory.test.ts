@@ -75,3 +75,14 @@ test('summary: "latest" is the newest outturn, not an IMF projection', async () 
   assert.equal(sum.projectedTo, '2030');
   assert.equal(sum.count, 3);
 });
+
+test('fiscal balances come from the IMF Fiscal Monitor codes DataMapper serves (the WEO codes answer empty)', async () => {
+  const { OFFICIAL_FIGURES: figs, officialSeries: ser } = await import('../src/utils/officialHistory.ts');
+  const pb = figs.find((f) => f.id === 'primary_balance')!;
+  const ob = figs.find((f) => f.id === 'overall_balance')!;
+  assert.equal(pb.code, 'GGXONLB_G01_GDP_PT');
+  assert.equal(ob.code, 'GGXCNL_G01_GDP_PT');
+  const s = ser({ iso3: 'BRA', pulledAt: '2026-11-05T00:00:00Z', series: { primary_balance: { points: [{ date: '2024', value: -0.4 }] } } }, pb, new Date('2026-11-05'));
+  assert.ok('points' in s);
+  assert.match((s as { source: string }).source, /IMF Fiscal Monitor \(GGXONLB_G01_GDP_PT\)/);
+});

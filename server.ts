@@ -1735,7 +1735,9 @@ async function fetchLiveOpenDataSnapshotNetwork(
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)
     (async () => {
-      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_NGDP', 'NGAP_NPGDP'];
+      // Primary balance is the Fiscal Monitor series on DataMapper (GGXONLB_G01_GDP_PT); the WEO code
+      // GGXONLB_NGDP comes back empty there. NGAP_NPGDP is asked for in case the IMF adds it.
+      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_G01_GDP_PT', 'NGAP_NPGDP'];
       const results = await Promise.allSettled(
         imfMetrics.map(async (metric) => {
           const res = await fetchWithTimeout(
@@ -1784,7 +1786,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
             baseline.imfIndicators.outputGapPct = Number(gap.toFixed(2)); markLive('imf.outputGapPct', 'IMF WEO');
             (baseline.imfIndicators.years ||= {})['imf.outputGapPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
           }
-        } else if (metric === 'GGXONLB_NGDP') {
+        } else if (metric === 'GGXONLB_G01_GDP_PT') {
           const pb = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof pb === 'number') {
             baseline.imfIndicators.primaryFiscalBalancePct = Number(pb.toFixed(2)); markLive('imf.primaryFiscalBalancePct', 'IMF WEO');

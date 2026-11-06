@@ -725,7 +725,7 @@ export function runPreFlightModelIntegrityAudit(
     {
       feedId: 'FEED-IMF-WEO',
       institutionName: 'IMF DataMapper WEO v1',
-      endpointOrDataset: 'GGXWDG_NGDP, GGXONLB_NGDP, NGDP_RPCH, PCPIPCH',
+      endpointOrDataset: 'GGXWDG_NGDP, GGXONLB_G01_GDP_PT, NGDP_RPCH, PCPIPCH',
       metricsProvided: 'Gross Debt (% GDP), Primary Balance (% GDP), Real GDP Growth (%), CPI (%)',
       status: openData.liveApiSourcesActive.some((s) => s.includes('IMF'))
         ? 'LIVE_SYNCED'
