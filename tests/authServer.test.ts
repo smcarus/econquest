@@ -31,6 +31,7 @@ before(async () => {
       PORT: String(port),
       DATA_DIR: dataDir,
       AUTH: 'on',
+      ECONQUEST_SECRET_KEY: 'test-master-key-that-is-long-enough-1234',
       GEMINI_API_KEY: '',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -220,4 +221,18 @@ test('each account has its own workspace; the first admin kept the single user\'
   assert.equal((await (await fetch(`${base}/api/workspace`, { headers: { Cookie: sam } })).json()).values.sovereign_council_watchlists_v1, undefined, "not in Sam's");
   const shared = JSON.parse(readFileSync(path.join(dataDir, 'local', 'workspace.json'), 'utf8'));
   assert.equal(shared.values.sovereign_council_watchlists_v1, undefined, 'shared file untouched');
+});
+
+test('a key saved in Settings is encrypted on disk with the master key from the environment', async () => {
+  const sam = cookieOf(await post('/api/auth/sign-in', { username: 'sam', password: 'an even longer and more boring sentence' }));
+  const res = await put('/api/settings/keys/FRED_API_KEY', { value: 'abcdefabcdefabcdefabcdefabcdefab' }, sam);
+  assert.equal(res.status, 200);
+  const raw = readFileSync(path.join(dataDir, 'local', 'settings.json'), 'utf8');
+  assert.ok(!raw.includes('abcdefabcdef'), 'no plain key on disk');
+  assert.match(raw, /enc:v1:/);
+  const keys = await (await fetch(`${base}/api/settings/keys`, { headers: { Cookie: sam } })).json();
+  assert.equal(keys.encryption.atRest, true);
+  assert.equal(keys.encryption.keyFrom, 'ECONQUEST_SECRET_KEY');
+  assert.ok(!JSON.stringify(keys).includes('test-master-key'), 'master key never sent');
+  assert.equal(keys.keys.find((k: { id: string }) => k.id === 'FRED_API_KEY').source, 'app');
 });

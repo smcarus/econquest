@@ -40,6 +40,13 @@ The setup code stops someone else on the network from claiming the app before yo
   The morning brief uses the first active admin's watchlists. A backup holds the team library and the
   workspace of the admin making it; other accounts' workspaces are in `data/local/users/` and are
   covered by copying the data folder.
+- **Keys encrypted at rest**: with a master key set, the data and AI keys saved in Menu > Settings are
+  written to `data/local/settings.json` with AES-256-GCM. The master key is never in the data folder; it
+  comes from `ECONQUEST_SECRET_KEY` (32+ characters, e.g. `openssl rand -base64 32`), the file named by
+  `ECONQUEST_SECRET_KEY_FILE`, or the Docker secret `/run/secrets/econquest_secret_key`. Keys saved
+  before are encrypted at the next start. Without a master key they stay plain text in a mode-600 file,
+  and Menu > Settings says so. Keep a copy of the master key: without it, encrypted keys cannot be
+  opened and must be entered again (they are kept, not deleted, until then).
 - **Accounts and sessions are never in a backup** (Menu > Settings > Backup lists what one holds).
 - **CSRF token**: while signed in, every change must carry `X-CSRF-Token`, derived from that browser's
   session (the page gets it at start). A page on another site cannot read it.
@@ -82,7 +89,6 @@ Under Docker: `docker compose exec econquest npm run users -- list`.
 
 ## Not yet (planned, in order)
 
-1. API keys encrypted at rest with a key kept outside the data folder.
-2. HTTPS through a reverse proxy in the compose stack.
+1. HTTPS through a reverse proxy in the compose stack.
 
 Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.

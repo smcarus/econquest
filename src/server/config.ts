@@ -9,7 +9,7 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { applyKeysToEnv, envKeySnapshot, loadSettings, settingsFilePath, type SavedSettings } from '../utils/userSettings';
+import { applyKeysToEnv, envKeySnapshot, loadSettings, saveSettings, settingsFilePath, settingsSecretBox, type LoadedSettings, type SavedSettings } from '../utils/userSettings';
 import { researchFilePath } from '../utils/researchStore';
 import { auditFiles } from '../utils/auditStore';
 import { dataHealthFiles } from '../utils/dataHealthStore';
@@ -33,10 +33,30 @@ export const DATA_DIR = process.env.DATA_DIR || path.join(APP_ROOT, 'data');
 // Keys saved in the app (Menu > Settings > API keys) win over .env; see src/utils/userSettings.ts.
 export const ENV_FILE_KEYS = envKeySnapshot(process.env);
 export const SETTINGS_FILE = settingsFilePath(DATA_DIR);
-export let savedSettings: SavedSettings = loadSettings(SETTINGS_FILE);
+export let savedSettings: LoadedSettings = loadSettings(SETTINGS_FILE);
+// Keys encrypted at rest (src/utils/secretBox.ts): with a master key set, plain keys left from before
+// are encrypted now; a master key that is set but unusable, or keys it cannot open, are said once.
+{
+  const { box, problem } = settingsSecretBox();
+  if (problem) console.error(`[settings] ${problem}`);
+  if (box && savedSettings.plainOnDisk) {
+    try {
+      saveSettings(SETTINGS_FILE, savedSettings);
+      savedSettings = loadSettings(SETTINGS_FILE);
+      console.log(`[settings] Saved keys are now encrypted at rest (master key from ${box.source}).`);
+    } catch (error) {
+      console.error('[settings] could not encrypt the saved keys:', (error as Error)?.message);
+    }
+  }
+  if (savedSettings.unreadable?.length) {
+    console.error(`[settings] ${savedSettings.unreadable.length} saved key(s) cannot be opened (${savedSettings.unreadable.join(', ')}): they were encrypted with a master key that is not set now. Set the same ECONQUEST_SECRET_KEY, or save the keys again in Menu > Settings.`);
+  }
+}
 /** Replace the saved settings held in memory (after a key is saved or removed). */
 export function setSavedSettings(next: SavedSettings): void {
-  savedSettings = next;
+  // Keys still sealed with a master key that is not set stay on disk; keep reporting them.
+  const unreadable = loadSettings(SETTINGS_FILE).unreadable;
+  savedSettings = unreadable?.length ? { ...next, unreadable } : next;
 }
 applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 

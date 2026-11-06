@@ -92,6 +92,7 @@ import {
   isLocalRequest,
   keySources,
   saveSettings,
+  settingsSecretBox,
   withKey,
   withoutKey,
 } from './src/utils/userSettings';
@@ -2460,6 +2461,13 @@ async function startServer() {
     requestFrom: req.socket.remoteAddress || '',
     inDocker: process.env.SELF_HOSTED_DOCKER === 'true',
     savedIn: path.relative(__dirname, SETTINGS_FILE).startsWith('..') ? SETTINGS_FILE : path.relative(__dirname, SETTINGS_FILE),
+    // Whether saved keys are encrypted on disk, and with a master key from where (never the key).
+    encryption: {
+      atRest: Boolean(settingsSecretBox().box),
+      keyFrom: settingsSecretBox().box?.source ?? null,
+      problem: settingsSecretBox().problem,
+      unreadable: savedSettings.unreadable ?? [],
+    },
   });
   const runKeyCheck = async (id: string, env: Record<string, string | undefined>, sources: Record<string, 'app' | 'env' | 'none'>) => {
     const field = apiKeyField(id);
