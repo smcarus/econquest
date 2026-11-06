@@ -33,6 +33,8 @@ jobs:
         run: npx playwright install chromium
       - name: UI smoke test (every page, all feeds down)
         run: npm run test:smoke
+      - name: UI journeys (skip link, council chat, country sections, keys, sign-in)
+        run: npm run test:journeys
 
   docker:
     runs-on: ubuntu-latest

@@ -13,6 +13,7 @@
     "lint": "tsc --noEmit",
     "test": "tsx --test \"tests/*.test.ts\"",
     "test:smoke": "node tests/smoke/ui-smoke.mjs",
+    "test:journeys": "node tests/smoke/journeys.mjs",
     "check:data": "tsx scripts/check-connections.ts",
     "check:imf": "tsx scripts/imf-codes.ts",
     "weo:vintages": "tsx scripts/weo-vintages.ts",
