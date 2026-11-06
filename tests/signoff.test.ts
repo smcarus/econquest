@@ -53,3 +53,19 @@ test('sign-offs are saved apart from the reports, mode 600', () => {
   assert.deepEqual(recordFor(loadSignOffs(file), 'brief', 'b-1'), r);
   if (process.platform !== 'win32') assert.equal(fs.statSync(file).mode & 0o777, 0o600);
 });
+
+test('with accounts the name comes from the account and the reviewer cannot approve', () => {
+  const h = 'h1';
+  const ana = { id: 'acc-ana', displayName: 'Ana Analyst' };
+  const sam = { id: 'acc-sam', displayName: 'Sam' };
+  const r1 = takeStep(undefined, 'brief', 'b-9', h, { step: 'reviewed', by: 'Someone Else' }, new Date(), ana);
+  assert.ok(!('error' in r1));
+  const rec = (r1 as any).record as SignOffRecord;
+  assert.equal(rec.history[0].by, 'Ana Analyst', 'typed name ignored');
+  assert.equal(rec.history[0].byAccount, 'acc-ana');
+  assert.match((takeStep(rec, 'brief', 'b-9', h, { step: 'approved', by: 'x' }, new Date(), ana) as any).error, /someone else must approve/);
+  const r2 = takeStep(rec, 'brief', 'b-9', h, { step: 'approved', by: '' }, new Date(), sam);
+  assert.ok(!('error' in r2));
+  assert.equal((r2 as any).entry.selfApproved, undefined);
+  assert.equal(signOffView((r2 as any).record, h).approvedBy, 'Sam');
+});

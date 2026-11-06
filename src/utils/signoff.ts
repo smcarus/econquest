@@ -8,6 +8,10 @@
  * "self-approved, no second reviewer", like EXC-002 in the Python econquest program. An approved
  * report cannot be deleted until the approval is withdrawn. Every step goes in the audit log.
  *
+ * With accounts (src/utils/auth.ts) the name is the signed-in account's, not typed, and the step
+ * records the account id. Then separation of duties applies: the account that reviewed a report
+ * cannot approve it; the server refuses instead of labelling it self-approved.
+ *
  * Kept in data/local/signoffs.json, apart from the reports, so the library format is unchanged.
  * Server-only (node:crypto); the browser imports types only.
  */
@@ -34,8 +38,10 @@ export interface SignOffEntry {
   /** SHA-256 of the report content when the step was taken. */
   contentHash: string;
   note?: string;
-  /** On an approval by the same person who reviewed it. */
+  /** On an approval by the same person who reviewed it (only possible while sign-in is off). */
   selfApproved?: boolean;
+  /** The signed-in account that took the step; absent while sign-in is off. */
+  byAccount?: string;
 }
 
 export type SignOffKind = 'brief' | 'review';
@@ -86,6 +92,14 @@ export function signOffView(record: SignOffRecord | undefined, currentHash: stri
   return { status: 'reviewed', reviewedBy: reviewed?.by, at: reviewed?.at, contentHash: currentHash, history };
 }
 
+/** The latest review since the last withdrawal. */
+function liveReview(record: SignOffRecord | undefined): SignOffEntry | undefined {
+  const history = record?.history ?? [];
+  let start = 0;
+  history.forEach((h, i) => h.step === 'withdrawn' && (start = i + 1));
+  return history.slice(start).filter((h) => h.step === 'reviewed').pop();
+}
+
 /** Takes one step, or returns why it cannot be taken. */
 export function takeStep(
   record: SignOffRecord | undefined,
@@ -93,24 +107,30 @@ export function takeStep(
   id: string,
   currentHash: string,
   input: { step: unknown; by: unknown; note?: unknown },
-  now: Date = new Date()
+  now: Date = new Date(),
+  account?: { id: string; displayName: string }
 ): { record: SignOffRecord; entry: SignOffEntry } | { error: string } {
   const step = input.step;
   if (step !== 'reviewed' && step !== 'approved' && step !== 'withdrawn') return { error: 'The step must be reviewed, approved or withdrawn.' };
-  const by = typeof input.by === 'string' ? input.by.trim().replace(/\s+/g, ' ').slice(0, 60) : '';
+  const typed = account ? account.displayName : input.by;
+  const by = typeof typed === 'string' ? typed.trim().replace(/\s+/g, ' ').slice(0, 60) : '';
   if (!by) return { error: 'A name is needed to sign.' };
   const note = typeof input.note === 'string' && input.note.trim() ? input.note.trim().slice(0, 500) : undefined;
   const view = signOffView(record, currentHash);
   if (step === 'approved' && view.status !== 'reviewed') return { error: view.status === 'approved' ? 'Already approved.' : 'Mark it reviewed first.' };
   if (step === 'reviewed' && (view.status === 'reviewed' || view.status === 'approved')) return { error: `Already ${view.status}.` };
   if (step === 'withdrawn' && view.status === 'draft') return { error: 'Nothing to withdraw.' };
+  if (account && step === 'approved' && liveReview(record)?.byAccount === account.id) {
+    return { error: 'You reviewed this report, so someone else must approve it.' };
+  }
   const entry: SignOffEntry = {
     step,
     by,
     at: now.toISOString(),
     contentHash: currentHash,
     ...(note ? { note } : {}),
-    ...(step === 'approved' && view.reviewedBy && view.reviewedBy.toLowerCase() === by.toLowerCase() ? { selfApproved: true } : {}),
+    ...(account ? { byAccount: account.id } : {}),
+    ...(!account && step === 'approved' && view.reviewedBy && view.reviewedBy.toLowerCase() === by.toLowerCase() ? { selfApproved: true } : {}),
   };
   return { record: { kind, id, history: [...(record?.history ?? []), entry].slice(-50) }, entry };
 }
