@@ -104,6 +104,26 @@ full council and saved research.
   approval before the final report, which also appears in the chat. It needs Gemini or Ollama (Menu > Settings > AI model). If no model answers, the
   council gives no assessment and no verdict and says so; a desk whose model did not answer is left
   empty. Agent confidence is shown only when the model gave one.
+- *Pin this conversation to the figures held now*: answers in the conversation keep using those
+  figures even if the feeds refresh. *Use the latest figures* under the box unpins it.
+
+**Snapshots and Re-run.** Every AI summary or explanation is pinned to a snapshot, shown folded
+under the answer (`Snapshot 715d5502 · latest data · qwen2.5:32b`). Open it to see when the
+question was asked, which data it used, the AI model, the temperature (0) and seed (42), short
+hashes of the instructions, the prompt, the inputs and the answer, each agent document read, and
+every figure with its source and period. *Re-run on this snapshot* sends exactly the same inputs
+to the model set now and says whether the answer is the same word for word, or what changed and
+why (a different model, changed app instructions, or the model itself). Snapshots are kept in
+`data/local/snapshots/`, named in Menu > Audit log, written into saved and downloaded briefs
+(under Method), and included in Menu > Backup. A snapshot edited after it was saved is not
+re-run.
+
+**Regression check.** `npm run council:regress` (with the app running) sends a fixed set of
+questions with frozen agent answers (`docs/validation/council-regression/cases.json`) through
+the same summary step, on your AI model, and checks each reading: for example that Brazil's
+policy is read as tight, or that Egypt's debt is not called sustainable when its debt figures are
+missing. It prints PASS or FAIL per case with the reason and saves the report in
+`data/local/validation/council-regression.json`; each case is a snapshot you can re-run.
 
 **Watch alerts.** Rules you set on the timing figures, for example "CFTC positioning percentile at
 or above 90 for any country". There are no built-in thresholds, and a missing figure never
