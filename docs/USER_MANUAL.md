@@ -537,7 +537,13 @@ hold no figures of their own; the handout reads them from the app's series when 
   stated what-if (fiscal reaction, gross financing need, reserve adequacy, inflation after rate
   changes, costed options, global shock scenarios) carry the badge *Description, not a tested
   signal*; the policy rule family and the debt fan chart make forward claims and read *Not
-  validated* until their pre-registered tests run.
+  validated* until their pre-registered tests run. **Currency carry, value and momentum** are
+  pre-registered in `docs/validation/signals/` and run with `npm run signals:evaluate` (results in
+  `data/local/validation/signals.json`): each month the top third of 25 floating currencies by the
+  signal is held long and the bottom third short against the dollar, the monthly return is taken
+  net of a flat 0.25% cost per unit traded, and it must beat holding dollars with whole years
+  resampled (p at most 0.05). Policy rates stand in for money-market rates. A failed factor stays
+  failed; it is not re-tuned.
   Every verdict also carries a *stricter check* (method 2). Method 1 counts each case as independent;
   but turns and policy moves bunch in global cycles, and CFTC entries in several USD crosses land in
   the same weeks, so method 1 overstates how sure a result is. Method 2 redraws whole calendar years

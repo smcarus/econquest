@@ -1,0 +1,8 @@
+{
+  "note": "SHA-256 of each pre-registered currency factor test. The runner refuses a file whose hash is not listed here; a changed test needs a new version and a new hash, committed before it is run.",
+  "files": {
+    "fx_carry.json": "734186a8615865b4da54058178554c28e3c20f06e093907dff8d75ce83d595dd",
+    "fx_value.json": "ec39d0a3c685226fa28c13672805ea4b07f476ced12767a2b5c04c79363db369",
+    "fx_momentum.json": "fc041c36e4e88f498c8375de684f98c18364d7981d5d2fff107dd75f883a9a92"
+  }
+}

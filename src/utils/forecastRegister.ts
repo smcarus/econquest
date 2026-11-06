@@ -8,6 +8,10 @@ export const REGISTER_FORECAST_IDS: Record<string, string[]> = {
   gdp_nowcast: ['gdp_nowcast'],
   app_forecasts: ['cpi_nowcast', 'gdp_forecast', 'cpi_forecast', 'policy_rate_forecast', 'debt_forecast'],
   debt_fan: ['debt_fan_coverage'],
+  // Currency factor tests (docs/validation/signals/, npm run signals:evaluate) use the same verdict shape.
+  fx_carry: ['fx_carry'],
+  fx_value: ['fx_value'],
+  fx_momentum: ['fx_momentum'],
 };
 
 export interface ForecastVerdict {

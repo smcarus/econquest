@@ -39,6 +39,9 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Debt fan chart (bootstrap of past shocks) | Research | Not validated | None |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
+| Currency carry | Research | Not validated | None |
+| Currency value (five-year real depreciation) | Research | Not validated | None |
+| Currency momentum (12-1) | Research | Not validated | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
@@ -426,6 +429,42 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **How it is tested:** Description, not a tested signal: past co-movement applied to a stated shock, not a forecast.
 - **Limits:** Linear, not causal; dollar against the euro, not trade-weighted; oil not a factor yet.
 - **Code:** `src/utils/scenarioEngine.ts`
+
+### Currency carry
+
+- **Says:** Currencies with higher policy rates than the US have tended to pay more than they lose to depreciation.
+- **Rule:** Each month, long the third of currencies with the highest policy rate gap to the US, short the lowest third, equal weights against the dollar, held a month (Lustig and Verdelhan 2007; Menkhoff et al. 2012).
+- **Reads:** ECB reference rates (month-end, per USD), BIS policy rates
+- **Shows in:** Models & validation (pre-registered test); no panel yet
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/signals/fx_carry.json): mean monthly return net of a flat 0.25% cost per unit traded above zero (holding dollars), whole years resampled, p at most 0.05, at least 120 months over 10 years; Holm across every test on record.
+- **Limits:** Policy rates stand in for money-market rates; crash risk in sell-offs; month-end fixings, not tradable prices.
+- **Code:** `src/utils/fxFactors.ts`
+
+### Currency value (five-year real depreciation)
+
+- **Says:** Currencies that have cheapened most in real terms against the dollar over five years have tended to recover.
+- **Rule:** Each month, long the third of currencies with the largest five-year real depreciation (consumer prices lagged two months), short the third with the least (Asness, Moskowitz and Pedersen 2013; Menkhoff et al. 2017).
+- **Reads:** ECB reference rates, BIS policy rates (for the return), OECD consumer prices
+- **Shows in:** Models & validation (pre-registered test); no panel yet
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/signals/fx_value.json): as carry, mean monthly net return above zero, whole years resampled, p at most 0.05; Holm across every test on record.
+- **Limits:** Consumer prices only; currencies without OECD prices drop out; value pays slowly and can lose for years.
+- **Code:** `src/utils/fxFactors.ts`
+
+### Currency momentum (12-1)
+
+- **Says:** Currencies that have paid most over the past year (leaving out the latest month) have tended to keep doing so.
+- **Rule:** Each month, long the third of currencies with the highest excess return over months t-12 to t-1, short the lowest third (Asness, Moskowitz and Pedersen 2013; Menkhoff et al. 2012).
+- **Reads:** ECB reference rates, BIS policy rates
+- **Shows in:** Models & validation (pre-registered test); no panel yet
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/signals/fx_momentum.json): as carry, mean monthly net return above zero, whole years resampled, p at most 0.05; Holm across every test on record.
+- **Limits:** Highest turnover of the three, so the flat cost weighs most; prone to sharp reversals.
+- **Code:** `src/utils/fxFactors.ts`
 
 ## Stated-method views
 
