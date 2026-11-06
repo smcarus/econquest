@@ -132,7 +132,8 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                       labelFormatter={(label) => {
                         const d = String(label ?? '');
                         const pt = series.points.find((p) => p.date === d);
-                        return pt?.note ? `${d} · ${pt.note}` : d;
+                        const extra = [pt?.note, pt?.revised].filter(Boolean).join(' · ');
+                        return extra ? `${d} · ${extra}` : d;
                       }}
                     />
                     <Line type="linear" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={series.points.length <= 40} isAnimationActive={false} />
@@ -170,7 +171,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                       <tr className="text-left text-slate-500 dark:text-slate-400">
                         <th className="py-1 pr-3 font-normal">Date</th>
                         <th className="py-1 pr-3 font-normal text-right">{series.unit}</th>
-                        {series.points.some((p) => p.note) && <th className="py-1 font-normal">{series.freq === 'per pull' ? 'Source that day' : 'Note'}</th>}
+                        {series.points.some((p) => p.note || p.revised) && <th className="py-1 font-normal">{series.freq === 'per pull' ? 'Source that day' : 'Note'}</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -178,7 +179,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                         <tr key={p.date} className="border-t border-slate-100 dark:border-slate-800">
                           <td className="py-1 pr-3">{p.date}</td>
                           <td className="py-1 pr-3 text-right">{fmt(p.value, series.unit)}</td>
-                          {series.points.some((x) => x.note) && <td className="py-1">{p.note || ''}</td>}
+                          {series.points.some((x) => x.note || x.revised) && <td className="py-1">{[p.note, p.revised].filter(Boolean).join(' · ')}</td>}
                         </tr>
                       ))}
                     </tbody>
