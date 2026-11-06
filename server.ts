@@ -40,8 +40,9 @@ import { type CommodityReply } from './src/utils/commodityPrices';
 import { comtradeMissing } from './src/utils/comtradeTrade';
 import { ticHoldingFor } from './src/utils/ticHoldings';
 import { cliFor, cliTurns } from './src/utils/oecdCli';
-import { loadForecastValidation } from './src/utils/forecastEvalRun';
-import { loadSignalValidation } from './src/utils/fxFactorsRun';
+import { loadForecastValidation, runForecastEvaluations } from './src/utils/forecastEvalRun';
+import { loadSignalValidation, runSignalEvaluations } from './src/utils/fxFactorsRun';
+import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
@@ -61,7 +62,7 @@ import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
 import { appendAudit, rawAudit, readAudit, setAuditActor } from './src/utils/auditStore';
-import { loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
+import { defaultFetcher, loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, signOffView } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
@@ -104,7 +105,7 @@ import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
-import { backtestSummary, closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, writeJobs } from './src/utils/scheduledJobs';
+import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, testsSummary, type TestsPart, writeJobs } from './src/utils/scheduledJobs';
 import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
@@ -1676,6 +1677,9 @@ function auditBacktestResult(r: BacktestResult): void {
   });
 }
 
+const FORECAST_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'forecasts.json');
+const SIGNAL_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'signals.json');
+
 /** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
 const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
 const jobSchedule = (id: JobId) => parseSchedule(process.env[JOBS[id].env]);
@@ -1687,14 +1691,63 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
     await startPreload({ log: (line) => console.log(`[schedule] ${line}`) });
     return downloadSummary(preloadState, startedAt);
   }
+  // The weekly tests job: backtests, then the forecast evaluations and currency signal tests, each
+  // run as `npm run backtest`, `forecast:evaluate` and `signals:evaluate` run them, so every
+  // passing test's forward record (data/local/validation/forward.jsonl) grows without a hand run.
+  // One part failing does not stop the others.
   validationRunning = true;
   try {
-    const before = loadValidation(VALIDATION_FILE).versions;
-    const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal });
+    const parts: TestsPart[] = [];
+    const regressedAll: Parameters<typeof backtestRegressionAlert>[0] = [];
+    const part = async <T extends { versions?: Record<string, any>; results: Record<string, { status: string; ranAt: string }>; problems: string[] }>(
+      noun: string,
+      before: () => Record<string, any>,
+      run: () => Promise<T>
+    ) => {
+      try {
+        const was = before();
+        const out = await run();
+        regressedAll.push(...backtestRegressions(was, out.versions, startedAt));
+        parts.push({ noun, out });
+      } catch (e: any) {
+        parts.push({ noun, error: String(e?.message || e).slice(0, 200) });
+      }
+    };
+    await part('Backtests', () => loadValidation(VALIDATION_FILE).versions || {}, () =>
+      runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal })
+    );
+    await part('Forecast evaluations', () => loadForecastValidation(FORECAST_RESULT_FILE).versions, () =>
+      runForecastEvaluations({
+        specDir: path.join(APP_ROOT, 'docs', 'validation', 'forecasts'),
+        resultFile: FORECAST_RESULT_FILE,
+        fetcher: defaultFetcher,
+        weoStore: loadWeoVintages(DATA_DIR, { fresh: true }),
+        onResult: (r) =>
+          appendAudit(AUDIT_FILES, {
+            kind: 'validation',
+            summary: `Forecast evaluation ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')} (scheduled)`,
+            detail: { verdict: r.verdict, specHash: r.specHash, span: r.span, series: r.series.length, data: r.data },
+          }),
+      })
+    );
+    await part('Signal tests', () => loadSignalValidation(SIGNAL_RESULT_FILE).versions, () =>
+      runSignalEvaluations({
+        specDir: path.join(APP_ROOT, 'docs', 'validation', 'signals'),
+        resultFile: SIGNAL_RESULT_FILE,
+        fetcher: defaultFetcher,
+        savedFx: loadFxHistory(),
+        onResult: (r) =>
+          appendAudit(AUDIT_FILES, {
+            kind: 'validation',
+            summary: `Signal test ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')} (scheduled)`,
+            detail: { verdict: r.verdict, specHash: r.specHash, span: r.span, currencies: r.currencies.length },
+          }),
+      })
+    );
     // Server alert when a test that passed (same id and version) does not pass now.
-    const regressed = backtestRegressionAlert(backtestRegressions(before, out.versions, startedAt));
+    const regressed = backtestRegressionAlert(regressedAll.sort((a, b) => a.id.localeCompare(b.id)));
     if (regressed) void notify(regressed, LAST_ALERT_FILE);
-    return backtestSummary(out, startedAt);
+    return testsSummary(parts, startedAt);
   } finally {
     validationRunning = false;
   }

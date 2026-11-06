@@ -1,13 +1,14 @@
 /**
  * Scheduled jobs on the server (a home server left on overnight): Download all and the
- * pre-registered backtests, each run at a set local time, with every run kept so Menu > Data
+ * pre-registered tests (backtests, forecast evaluations and currency signal tests), each run at a
+ * set local time, with every run kept so Menu > Data
  * health > Scheduled can say what ran, when, and how it ended.
  *
  * Off unless switched on in the environment, so a laptop running `npm run dev` never starts a
  * long download by itself. The home-server compose file switches both on.
  *
  *   SCHEDULE_DOWNLOAD_ALL="02:30"      every day at 02:30
- *   SCHEDULE_BACKTESTS="sun 03:30"     every Sunday at 03:30
+ *   SCHEDULE_BACKTESTS="sun 03:30"     every Sunday at 03:30 (backtests, then forecast and signal tests)
  *   SCHEDULE_TZ="Europe/London"        time zone for both (default: the computer's)
  *   "off" (or nothing) leaves a job off.
  *
@@ -26,9 +27,9 @@ export const JOBS: Record<JobId, { label: string; env: string; what: string }> =
     what: 'Pulls every free feed for every country, so pages open with the latest figures (same as Menu > Offline data > Download all).',
   },
   backtests: {
-    label: 'Backtests',
+    label: 'Pre-registered tests',
     env: 'SCHEDULE_BACKTESTS',
-    what: 'Runs the pre-registered backtests on the latest data; verdicts appear in Menu > Models & validation.',
+    what: 'Runs the pre-registered backtests, forecast evaluations and currency signal tests on the latest data, adding to each passing test\'s forward record; verdicts appear in Menu > Models & validation.',
   },
 };
 
@@ -167,4 +168,34 @@ export function backtestSummary(out: { results: Record<string, { status: string;
   const problems = n ? `${n} problem${n === 1 ? '' : 's'} (${out.problems[0]}${n > 1 ? ', …' : ''})` : '';
   if (!ran.length) return { ok: false, summary: `No backtest ran${problems ? `: ${problems}` : ''}.` };
   return { ok: n === 0, summary: `${ran.length} backtest${ran.length === 1 ? '' : 's'} run: ${parts.join(', ')}${problems ? `; ${problems}` : ''}.` };
+}
+
+/** One part of the weekly tests job: its name, and the run's results (or why it could not run). */
+export interface TestsPart {
+  noun: string;
+  out?: { results: Record<string, { status: string; ranAt: string }>; problems: string[] };
+  error?: string;
+}
+
+/**
+ * Summary line for the weekly tests job: each part (backtests, forecast evaluations, signal tests)
+ * counted as backtestSummary does. Not ok when any part did not run or had a problem.
+ */
+export function testsSummary(parts: TestsPart[], startedAt: string): { ok: boolean; summary: string } {
+  let ok = true;
+  const lines = parts.map((p) => {
+    if (p.error || !p.out) {
+      ok = false;
+      return `${p.noun}: did not run (${p.error || 'no result'})`;
+    }
+    const ran = Object.values(p.out.results).filter((r) => r.ranAt >= startedAt);
+    const counts = new Map<string, number>();
+    for (const r of ran) counts.set(r.status, (counts.get(r.status) || 0) + 1);
+    const n = p.out.problems.length;
+    if (n || !ran.length) ok = false;
+    const problems = n ? `${n} problem${n === 1 ? '' : 's'} (${p.out.problems[0]}${n > 1 ? ', …' : ''})` : '';
+    if (!ran.length) return `${p.noun}: none ran${problems ? `, ${problems}` : ''}`;
+    return `${p.noun}: ${ran.length} run, ${[...counts].map(([k, c]) => `${c} ${k.replace(/_/g, ' ')}`).join(', ')}${problems ? `; ${problems}` : ''}`;
+  });
+  return { ok, summary: `${lines.join('. ')}.` };
 }

@@ -13,6 +13,7 @@ import {
   markFinished,
   markSkipped,
   markStarted,
+  testsSummary,
   parseSchedule,
   readJobs,
   writeJobs,
@@ -95,4 +96,22 @@ test('summaries count only what this run did', () => {
   };
   assert.deepEqual(backtestSummary({ results, problems: [] }, '2026-11-08T03:31:00Z'), { ok: true, summary: '2 backtests run: 1 passed, 1 failed.' });
   assert.deepEqual(backtestSummary({ results, problems: ['FRED: no answer'] }, '2026-11-09T00:00:00Z'), { ok: false, summary: 'No backtest ran: 1 problem (FRED: no answer).' });
+});
+
+test('testsSummary counts each part of the weekly tests job and is not ok when a part fails', () => {
+  const at = '2026-11-08T03:30:00Z';
+  const bt = { results: { a: { status: 'passed', ranAt: '2026-11-08T03:31:00Z' }, b: { status: 'failed', ranAt: '2026-11-08T03:32:00Z' } }, problems: [] };
+  const fc = { results: { g: { status: 'passed', ranAt: '2026-11-08T03:40:00Z' }, old: { status: 'failed', ranAt: '2026-11-01T03:40:00Z' } }, problems: [] };
+  assert.deepEqual(
+    testsSummary([{ noun: 'Backtests', out: bt }, { noun: 'Forecast evaluations', out: fc }], at),
+    { ok: true, summary: 'Backtests: 2 run, 1 passed, 1 failed. Forecast evaluations: 1 run, 1 passed.' }
+  );
+  assert.deepEqual(
+    testsSummary([{ noun: 'Backtests', out: bt }, { noun: 'Signal tests', error: 'BIS: no answer' }], at),
+    { ok: false, summary: 'Backtests: 2 run, 1 passed, 1 failed. Signal tests: did not run (BIS: no answer).' }
+  );
+  assert.deepEqual(
+    testsSummary([{ noun: 'Signal tests', out: { results: {}, problems: ['Frankfurter: timeout', 'BIS: 503'] } }], at),
+    { ok: false, summary: 'Signal tests: none ran, 2 problems (Frankfurter: timeout, …).' }
+  );
 });

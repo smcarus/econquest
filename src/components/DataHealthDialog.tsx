@@ -5,7 +5,7 @@
  * - Sources: every source's state at the last check, failing since, and its last checks as dots.
  * - Figure alerts: watchlist figures that went missing, got old, jumped, left their range or were revised.
  * - Revisions: IMF and World Bank yearly values changed since the app first downloaded them.
- * - Scheduled: jobs the server runs by itself (Download all, backtests) and how each run ended.
+ * - Scheduled: jobs the server runs by itself (Download all, the pre-registered tests) and how each run ended.
  *
  * Nothing here changes a figure: it says what to check.
  */
