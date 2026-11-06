@@ -34,6 +34,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['bcb', /Banco Central do Brasil|\bBCB\b|\bSGS\b|\bIPCA\b/],
   ['tesouro', /Tesouro/i],
   ['banxico', /Banxico|Banco de México|\bSIE\b/],
+  ['acled', /\bACLED\b/],
   ['evds', /\bEVDS\b|\bTCMB\b|\bCBRT\b/],
   ['own', /\byour (own|holdings|connector)\b|\bLSEG\b|\byour \S+ data\b/i],
   ['pinksheet', /Pink Sheet|pink_sheet/i],

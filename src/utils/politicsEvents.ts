@@ -17,6 +17,7 @@
 import type { OpenDataSnapshot } from '../types/council';
 import type { UcdpReading } from './ucdpConflict';
 import { EVENT_SURGE_RULE, GOLDSTEIN_RULE, isEventSurge, type GdeltRawReading } from './gdeltRaw';
+import { ACLED_RISING_RULE, ACLED_SHORT, acledLagMonths, acledMonthLabel, acledRising, type AcledReading } from './acled';
 
 export interface PoliticsFigures {
   tone?: { value: number; pulledAt: string };
@@ -29,6 +30,10 @@ export interface PoliticsFigures {
   raw?: GdeltRawReading;
   /** UCDP conflict figures from the downloaded files. */
   conflict?: UcdpReading;
+  /** ACLED conflict events (your own ACLED account): twelve months of counts. */
+  acledEvents?: AcledReading;
+  /** Why the ACLED figures are missing, in words. */
+  acledMissing?: string;
 }
 
 export const GDELT_SHORT = 'GDELT news tone';
@@ -79,7 +84,11 @@ export function politicsFromSnapshot(snap: OpenDataSnapshot): PoliticsFigures | 
   }
   if (snap.gdeltRaw?.weekStart) out.raw = snap.gdeltRaw;
   if (snap.ucdp?.latest) out.conflict = snap.ucdp;
-  return Object.keys(out).length ? out : undefined;
+  if (snap.acled?.months?.length) out.acledEvents = snap.acled;
+  else if (snap.acledMissing) out.acledMissing = snap.acledMissing;
+  // A reason alone is not a figure: it rides along only when something else is on hand.
+  const figures = Object.keys(out).filter((k) => k !== 'acledMissing');
+  return figures.length ? out : undefined;
 }
 
 export type ToneBand = 'very negative' | 'negative' | 'mixed' | 'positive';
@@ -166,4 +175,33 @@ export function rawGdeltFigures(r: GdeltRawReading): {
   const names = [...r.topPersons.slice(0, 3).map((p) => p.name), ...r.topOrgs.slice(0, 3).map((o) => o.name)];
   if (names.length) figures.push({ label: 'Most named in economic coverage (4 weeks)', value: names.join(', '), source: `${GDELT_GKG_SHORT}, ${pulled}`, tag: 'live' });
   return { figures, sentences, surge };
+}
+
+/**
+ * Figures and sentences from ACLED monthly counts for the Politics & Events Agent. Counts are what
+ * ACLED returned for the window shown; the "rising" reading is a stated rule on top.
+ */
+export function acledFigures(r: AcledReading, now = new Date()): {
+  figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }>;
+  sentences: string[];
+  rising: boolean;
+} {
+  const window = `${acledMonthLabel(r.total.from)} to ${acledMonthLabel(r.total.to)}`;
+  const lag = acledLagMonths(r, now);
+  const lagNote = lag >= 3 ? `; newest event ${r.latestEventDate}, so your ACLED access lags about ${lag} months` : '';
+  const src = `ACLED (Armed Conflict Location & Event Data), accessed ${r.pulledAt.slice(0, 10)}, country = ${r.country}; monthly counts worked out by the app${lagNote}`;
+  const types = Object.entries(r.total.byType).sort((a, b) => b[1] - a[1]).map(([t, n]) => `${t.toLowerCase()} ${n}`).join(', ');
+  const figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }> = [
+    { label: `Conflict events, ${window}`, value: `${r.total.events} events (${types}); ${r.total.fatalities} reported fatalities`, source: src, tag: 'live' },
+    { label: 'Conflict events a month', value: `${r.recentAvg} over the last three months, against ${r.priorAvg} over the nine before`, source: `${ACLED_SHORT}; ${window}`, tag: 'live' },
+  ];
+  const rising = acledRising(r);
+  const sentences: string[] = [];
+  if (rising) {
+    figures.push({ label: 'Conflict reading', value: 'rising', source: `Rule: ${ACLED_RISING_RULE}`, tag: 'model' });
+    sentences.push(`ACLED records more conflict events lately: ${r.recentAvg} a month over the last three months against ${r.priorAvg} before.`);
+  } else {
+    sentences.push(`ACLED records ${r.total.events} conflict events over ${window}.`);
+  }
+  return { figures, sentences, rising };
 }

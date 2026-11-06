@@ -33,6 +33,7 @@ const SOURCE_PAGES: Array<[RegExp, string]> = [
   [/Banco Central do Brasil|\bBCB\b|IPCA/i, 'https://www3.bcb.gov.br/sgspub/'],
   [/Eurostat|HICP/i, 'https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table'],
   [/FRED/i, 'https://fred.stlouisfed.org/'],
+  [/\bACLED\b/i, 'https://acleddata.com/'],
   [/Banxico|Banco de México/i, 'https://www.banxico.org.mx/SieInternet/'],
   [/Tesouro/i, 'https://www.tesourotransparente.gov.br/'],
   [/EVDS|CBRT/i, 'https://evds3.tcmb.gov.tr/'],

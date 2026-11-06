@@ -20,6 +20,7 @@ import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
+import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
 import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
@@ -268,6 +269,7 @@ export const SOURCE_IDS = [
   'evds',
   'banxico',
   'ucdp',
+  'acled',
   'eia',
   'own_cds',
   'gemini',
@@ -936,6 +938,41 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       return { ...res, state: 'needs_setup', detail: `Banxico did not accept ${keyPhrase('BANXICO_TOKEN')} (HTTP ${res.httpStatus}). Check it was copied in full.` };
     }
     return savedNote('BANXICO_TOKEN', res);
+  });
+
+  add('acled', async () => {
+    const def: Def = {
+      id: 'acled',
+      name: 'ACLED (conflict events)',
+      group: 'free_key',
+      feeds: 'Conflict events per country over twelve months, for the Politics & Events Agent',
+      setup: 'Menu > Settings > Data API keys, or in .env: ACLED_EMAIL="..." and ACLED_PASSWORD="..." (free for non-commercial use; the API needs a myACLED Research-level account).',
+    };
+    const email = (env.ACLED_EMAIL || '').trim();
+    const password = env.ACLED_PASSWORD || '';
+    if (!email && !password) return setRow(def, 'needs_setup', 'Not set up. The conflict figures read Missing until it is.', 'acleddata.com');
+    if (!email || !password) return setRow(def, 'needs_setup', `The ACLED ${email ? 'password' : 'email'} is empty (Menu > Settings or ${email ? 'ACLED_PASSWORD' : 'ACLED_EMAIL'}).`, 'acleddata.com');
+    let bearer = '';
+    const tok = await httpCheck(def, fetchFn, ACLED_TOKEN_URL, T, (r) => {
+      const t = (parseJson(r.text) as { access_token?: unknown } | null)?.access_token;
+      bearer = typeof t === 'string' ? t : '';
+      return bearer ? 'signed in' : null;
+    }, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' }, body: acledTokenBody(email, password).toString() }, 'ACLED answered the sign-in, but without an access token.');
+    if (tok.state === 'refused' && [400, 401, 403].includes(tok.httpStatus || 0)) {
+      return { ...tok, state: 'needs_setup', detail: `ACLED did not accept the email and password${opts.keySources?.ACLED_PASSWORD === 'app' ? ' saved in Settings' : ' in ACLED_EMAIL / ACLED_PASSWORD'} (HTTP ${tok.httpStatus}).` };
+    }
+    if (tok.state !== 'connected') return tok;
+    // A token alone does not prove API access: Open accounts sign in but cannot read events.
+    const read = await httpCheck(def, fetchFn, acledReadUrl('Mexico', now).replace(/limit=\d+/, 'limit=5'), T, (r) => {
+      const rows = parseAcledPage(parseJson(r.text));
+      if (!rows) return null;
+      const last = rows.reduce((m, x) => (x.event_date > m ? x.event_date : m), '');
+      return rows.length ? `Mexico events read, newest ${last}` : 'API answered (no Mexico events in the window)';
+    }, { headers: { Authorization: `Bearer ${bearer}`, Accept: 'application/json' } }, 'ACLED answered, but not with the event rows the app reads.');
+    if (read.state === 'refused' && (read.httpStatus === 401 || read.httpStatus === 403)) {
+      return { ...read, state: 'needs_setup', detail: 'Signed in, but ACLED did not allow API access for this account. Open accounts (public email such as gmail.com) get aggregated downloads only; the API needs the Research level.' };
+    }
+    return read.state === 'connected' && opts.keySources?.ACLED_PASSWORD === 'app' ? { ...read, detail: `${read.detail} (account saved in Settings)` } : read;
   });
 
   add('eia', async () => {

@@ -116,6 +116,31 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     validate: (v) => (/^[A-Za-z0-9]{32,128}$/.test(v) ? null : 'A Banxico token is a long run of letters and digits (usually 64). Check it was copied in full.'),
   },
 
+  {
+    id: 'ACLED_EMAIL',
+    placeholder: 'you@university.edu',
+    label: 'ACLED account email',
+    provider: 'ACLED (Armed Conflict Location & Event Data)',
+    feeds: 'Conflict events (battles, violence against civilians, explosions, riots, protests) for each country over twelve months, for the Politics & Events Agent and the Sources tab. Needs the ACLED password below as well. Not secret, shown in full.',
+    withoutIt: 'Without an ACLED account the conflict figures read Missing.',
+    getKeyUrl: 'https://acleddata.com/register/',
+    getKeySteps: 'Free for non-commercial use. Register a myACLED account. API access needs the Research level: a public email (gmail.com and similar) gets the Open level, which has no API; ask ACLED\'s access team to move your account.',
+    checkId: 'acled',
+    secret: false,
+    validate: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ? null : 'Enter the email address you use to sign in to myACLED.'),
+  },
+  {
+    id: 'ACLED_PASSWORD',
+    label: 'ACLED account password',
+    provider: 'ACLED (Armed Conflict Location & Event Data)',
+    feeds: 'Used only to ask ACLED for a 24-hour access token. Never written to backups, the audit log, logs or exports.',
+    withoutIt: 'Without it the conflict figures read Missing, even with the email set.',
+    getKeyUrl: 'https://acleddata.com/register/',
+    getKeySteps: 'The password of your myACLED account.',
+    checkId: 'acled',
+    validate: (v) => (v.length >= 6 && v.length <= 200 ? null : 'Enter your myACLED password.'),
+  },
+
   // ---- Your own paid data: off unless you switch it on (licensed to you, never built in) ----
   {
     id: 'CDS_FEED',
