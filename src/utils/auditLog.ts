@@ -18,7 +18,7 @@
 import { createHash } from 'crypto';
 import { apiKeyField } from '../data/apiKeyFields';
 
-export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff';
+export type AuditKind = 'council' | 'research' | 'export' | 'settings' | 'data' | 'model' | 'workspace' | 'audit' | 'validation' | 'signoff' | 'access';
 
 export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   council: 'Council answer',
@@ -31,6 +31,7 @@ export const AUDIT_KIND_LABEL: Record<AuditKind, string> = {
   audit: 'Audit log',
   validation: 'Validation',
   signoff: 'Sign-off',
+  access: 'Sign-in and accounts',
 };
 
 export interface AuditFigure {
@@ -178,6 +179,8 @@ export function describeRequest(method: string, path: string): AuditInput | null
   if (/^\/api\/council\/(synthesise|debate|choose-agents|rerun|regression)$/.test(p)) return null;
   if (/^\/api\/ai\/(ollama-status|runtime-config-load)$/.test(p)) return null;
   if (p === '/api/audit/check') return null;
+  // Sign-in, sign-out and account changes are logged by their routes, with the account name.
+  if (/^\/api\/auth\//.test(p)) return null;
   // Sign-offs are logged by their route, with the name and content hash.
   if (/^\/api\/signoffs\//.test(p)) return null;
 
