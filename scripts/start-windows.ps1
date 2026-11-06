@@ -39,6 +39,12 @@ try {
     $HostOllamaActive = $false
 }
 
+# The app runs as an ordinary user (uid 1000), not root. Data saved by an older version that ran as
+# root is handed to that user once, so the app can keep writing it.
+Write-Host "[INFO] Building the app image and checking the data folder owner..." -ForegroundColor Yellow
+docker compose build econquest
+docker compose run --rm --no-deps --user root --entrypoint chown econquest -R 1000:1000 /app/data *> $null
+
 if ($HostOllamaActive) {
     Write-Host "[OK] Detected native Windows Ollama on http://localhost:11434." -ForegroundColor Green
     $env:OLLAMA_BASE_URL = "http://host.docker.internal:11434"

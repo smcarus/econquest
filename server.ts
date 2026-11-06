@@ -7,6 +7,7 @@ import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap
 import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
+import { dataDirProblem, ollamaBaseUrlDefault } from './src/utils/serverRuntime';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
@@ -3784,7 +3785,7 @@ async function executeResilientLlmStep<T>(options: {
   ) {
     const isOllama = options.providerMode !== 'openai_compatible';
     const configuredBaseUrl = isOllama
-      ? options.runtimeConfig.ollamaBaseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+      ? options.runtimeConfig.ollamaBaseUrl || ollamaBaseUrlDefault(process.env)
       : options.runtimeConfig.openAiBaseUrl ||
         process.env.OPENAI_COMPATIBLE_BASE_URL ||
         'http://localhost:8000/v1';
@@ -4864,6 +4865,21 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
+
+  // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
+  // sentence if it cannot be written, instead of failing later on the first save.
+  const dataProblem = dataDirProblem(DATA_DIR);
+  if (dataProblem) {
+    console.error(`[startup] ${dataProblem}`);
+    process.exit(1);
+  }
+
+  // Liveness: answers as soon as the process serves requests. No feeds, no files, no model,
+  // so a container health check every 30 seconds costs nothing. Before the host check so a
+  // health probe that names the container's own address is not refused; it reveals nothing.
+  app.get('/healthz', (_req, res) => {
+    res.json({ status: 'ok' });
+  });
 
   // Keep the server for this computer's own pages: refuse other host names (DNS rebinding) and
   // changes sent from pages on other sites. See src/utils/requestGuard.ts.
@@ -6280,7 +6296,7 @@ async function startServer() {
 
   // 2b. Self-Hosted Ollama / External AI Runtime Health & Model Discovery
   app.post('/api/ai/ollama-status', async (req, res) => {
-    const { ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434' } = req.body || {};
+    const { ollamaBaseUrl = ollamaBaseUrlDefault(process.env) } = req.body || {};
     const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
     const candidateEndpoints = [cleanUrl];
     if (cleanUrl.includes('localhost') || cleanUrl.includes('127.0.0.1')) {
@@ -6331,7 +6347,7 @@ async function startServer() {
   // 2c. In-App Ollama Model Pull Trigger (POST /api/ai/ollama-pull)
   app.post('/api/ai/ollama-pull', async (req, res) => {
     const {
-      ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      ollamaBaseUrl = ollamaBaseUrlDefault(process.env),
       modelName = 'qwen2.5:7b',
     } = req.body || {};
     const cleanUrl = String(ollamaBaseUrl).replace(/\/+$/, '');
@@ -6380,7 +6396,7 @@ async function startServer() {
   // 2d. Live Agent Model Micro-Benchmark & JSON Schema Verification (POST /api/ai/ollama-test)
   app.post('/api/ai/ollama-test', async (req, res) => {
     const {
-      ollamaBaseUrl = process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
+      ollamaBaseUrl = ollamaBaseUrlDefault(process.env),
       modelName = 'qwen2.5:7b',
       phase = 'PHASE_1_2_SUB_AGENTS',
     } = req.body || {};

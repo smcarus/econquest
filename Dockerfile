@@ -1,56 +1,55 @@
 # ==============================================================================
-# EconQuest — Sovereign Council Orchestrator
-# Multi-Stage Production Dockerfile (macOS Apple Silicon ARM64 & Windows AMD64)
+# EconQuest — production image
+#
+# One image for the Mac (Docker Desktop) and a Linux home server or NAS.
+#   - Config only through environment variables (see .env.example); nothing is baked in.
+#   - All state under one folder, DATA_DIR=/app/data: mount a single volume there.
+#   - Ollama is reached by URL (OLLAMA_BASE_URL), never assumed to run in this container.
+#   - Runs as the unprivileged "node" user (uid 1000), not root.
 # ==============================================================================
 
-# Stage 1: Build Frontend Assets
+# Stage 1: install everything and build the web pages into /app/dist
 FROM node:22-alpine AS builder
-
 WORKDIR /app
-
-# Copy package manifests first for optimal layer caching
-COPY package.json package-lock.json* ./
-
-# Install full dependencies required for Vite + TypeScript build
-RUN npm install --legacy-peer-deps
-
-# Copy application source
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY . .
-
-# Build production Vite frontend into /app/dist
 RUN npm run build
 
-# Stage 2: Production Runtime (Express + tsx + Static SPA)
-FROM node:22-alpine AS runner
+# Stage 2: runtime dependencies only (no Vite build tools, Playwright or TypeScript checker)
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --no-audit --no-fund && npm cache clean --force
 
+# Stage 3: the image that runs
+FROM node:22-alpine AS runner
 WORKDIR /app
 
-# Install curl for container healthcheck and bash for helper scripts
-RUN apk add --no-cache curl bash
+ENV NODE_ENV=production \
+    SELF_HOSTED_DOCKER=true \
+    PORT=3000 \
+    DATA_DIR=/app/data
 
-ENV NODE_ENV=production
-ENV SELF_HOSTED_DOCKER=true
-ENV PORT=3000
-ENV DEFAULT_AI_PROVIDER=ollama
-ENV OLLAMA_BASE_URL=http://host.docker.internal:11434
-ENV OLLAMA_QUICK_MODEL=qwen2.5:7b
-ENV OLLAMA_DEEP_MODEL=qwen2.5:32b
+COPY --chown=node:node package.json package-lock.json ./
+COPY --chown=node:node --from=deps /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/dist ./dist
+COPY --chown=node:node server.ts tsconfig.json metadata.json README.md ./
+COPY --chown=node:node src ./src
+COPY --chown=node:node scripts ./scripts
+COPY --chown=node:node docs ./docs
 
-# Copy package files and node_modules from builder
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
+# The one state folder. A volume mounted here keeps settings, saved data and logs across
+# upgrades; the image itself holds no state.
+RUN mkdir -p /app/data/local && chown -R node:node /app/data
+VOLUME ["/app/data"]
 
-# Copy compiled frontend assets and server runtime files
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/server.ts ./server.ts
-COPY --from=builder /app/src ./src
-COPY --from=builder /app/README.md ./README.md
-COPY --from=builder /app/docs ./docs
-COPY --from=builder /app/metadata.json ./metadata.json
-
+USER node
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:3000/api/health/full-sweep || exit 1
+# Liveness only: /healthz touches no feeds, files or model.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -q -O /dev/null "http://127.0.0.1:${PORT}/healthz" || exit 1
 
-CMD ["npx", "tsx", "server.ts"]
+# Node runs as process 1 and handles the stop signal itself, so `docker stop` is clean.
+CMD ["node", "--import", "tsx", "server.ts"]

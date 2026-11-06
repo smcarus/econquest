@@ -29,3 +29,21 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: UI smoke test (every page, all feeds down)
         run: npm run test:smoke
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the production image
+        run: docker build -t econquest:ci .
+      - name: Start it on an empty data volume and check it answers
+        run: |
+          docker run -d --name eq -p 127.0.0.1:3000:3000 -v eq-data:/app/data econquest:ci
+          for i in $(seq 1 30); do curl -sf http://127.0.0.1:3000/healthz && break; sleep 2; done
+          curl -sf http://127.0.0.1:3000/healthz
+          test "$(docker exec eq id -u)" = "1000"
+          curl -sf -o /dev/null http://127.0.0.1:3000/
+      - name: Server log
+        if: always()
+        run: docker logs eq || true

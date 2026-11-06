@@ -1,10 +1,16 @@
+# Keep the build context small and free of state and secrets.
 node_modules
 dist
 .git
+.github
+.aistudio
 .env
-.env.local
-.DS_Store
-Thumbs.db
+.env.*
+!.env.example
+data
+tests
 *.log
 npm-debug.log*
-.aistudio
+.DS_Store
+Thumbs.db
+bun.lock
