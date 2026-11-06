@@ -44,6 +44,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Currency momentum (12-1) | Research | Not validated | None |
 | Currency around rate decisions (event study) | Research | Description, not a tested signal | None |
 | BEER fair value of the real exchange rate | Research | Not validated | None |
+| Unrest spikes (GDELT) and conflict onset | Research | Not validated | None |
 | Trade idea journal | Research | Description, not a tested signal | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
@@ -55,6 +56,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Costed fiscal options | Research | Stated method, no call to test | Not applicable |
 | BEER fair value (behavioural equilibrium exchange rate) | Research | Stated method, no call to test | Not applicable |
 | Currency around rate decisions (event study) | Research | Stated method, no call to test | Not applicable |
+| Unrest spikes (GDELT) and conflict onset | Research | Stated method, no call to test | Not applicable |
 | Trade idea journal | Research | Stated method, no call to test | Not applicable |
 | Global shock scenarios (scenario engine) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
@@ -496,6 +498,34 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Limits:** Levels regression on 20-30 annual points, no cointegration test; productivity vs the US, not trade partners; NFA proxied by the summed current account.
 - **Code:** `src/utils/beer.ts`
 
+### Unrest spikes (GDELT) and conflict onset
+
+- **Says:** Months when protests or violence stand far above the country's own last two years, and whether such a year has come before armed conflict the next year.
+- **Rule:** Protests and violence as a share of the country's GDELT 1.0 events each month, as a z-score against its previous 24 complete months (floor 0.25 points); a spike is z of 3 or more, an episode the first month of a run.
+- **Reads:** GDELT 1.0 event files on disk, UCDP/PRIO Armed Conflict Dataset
+- **Shows in:** Country Research > History & data (Event history)
+- **Use:** Research
+- **Status:** Not validated
+- **How it is tested:** Pre-registered (docs/validation/preregistered/unrest_onset.json): among country-years with no armed conflict, is a year with a spike episode followed by conflict located in the country the next year more often than quiet years in general (pooled base rate), from 2018, whole years resampled; Holm across every test on record.
+- **Limits:** UCDP is yearly, so the outcome is next-year conflict, not within months; about seven recent years; pooled base rate; machine-coded news events.
+- **Code:** `src/utils/unrestSpikes.ts`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/unrest_onset.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2018). In a country with no state-based armed conflict this year (UCDP/PRIO), a year with an unrest spike episode (protests or violence as a share of the country's GDELT events at 3 or more standard deviations above its own previous 24 months) is followed by armed conflict located in the country the next calendar year more often than quiet country-years in general. Pass mark: at least 30 cases, a lift of 3 points or more over the base rate, p at or below 0.05, at least 6 years. SHA-256 18f450717cf993d0…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: UCDP's yearly files only: the outcome is armed conflict (25 or more battle deaths in the year) located in the country the next calendar year, not within 3 months as the plan first said. A monthly test would need the UCDP event dataset (GED), not on disk.
+- v1: GDELT 1.0 months on disk start in 2016 (npm run gdelt:daily), so with a 24-month baseline the first year scored is 2018 and the last is the year before the latest UCDP year: about seven years, all of them recent.
+- v1: The base rate is pooled over every quiet country-year in the sample, since onsets are too rare for a rate per country. Countries differ a great deal in how likely conflict is, so a pass can partly reflect which countries have spikes.
+- v1: A conflict that was active in earlier years, paused for a year and restarted counts as an onset.
+- v1: GDELT codes events from news reports by machine; coverage and coding errors vary by country and year. Shares are used, not counts, since volume grew many times over.
+
 ### Trade idea journal
 
 - **Says:** How the trade ideas you logged turned out: hit rate and average currency move by idea type.
@@ -597,6 +627,14 @@ These show where things stand on a stated method and make no call a backtest cou
 - Path: 100 x log change of units per US dollar (ECB reference rates) from the ECB business day before the event to each day from 10 before to 20 after (up = weaker currency). Average path for hikes and for cuts, 90% band from resampling the events (2,000 draws, fixed seed); at least 5 events per group.
 - **Limits:** Description of the past, not a tested signal. No measure of surprise: an expected decision moves little on the day. Episodes with very different causes are averaged. ECB daily fixings, not intraday prices; currencies the ECB does not publish have no study.
 - **Code:** `src/utils/eventStudy.ts`
+
+### Unrest spikes (GDELT) and conflict onset
+
+- **Shows in:** Research > History & data (Event history)
+- Each complete month (daily files covering the month), protests (CAMEO root 14) and violence (roots 18 to 20) as a share of the events GDELT 1.0 places in the country or names it as an actor. z = (share - mean of the previous 24 complete months) / max(their standard deviation, 0.25 points). A spike is z of 3 or more; an episode is the first month of a run of spikes. Only earlier months enter the baseline.
+- Pre-registered test (unrest_onset v1): every country-year from 2018 with at least 10 scored months and no state-based armed conflict located in the country (UCDP/PRIO). A year with a spike episode is a call that conflict is located in the country the next calendar year. Base rate: the share of all such quiet country-years followed by conflict, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 6 years.
+- **Limits:** UCDP files are yearly, so the outcome is the next calendar year. GDELT on disk starts in 2016, leaving about seven scored years. The pooled base rate mixes countries with very different risks. News-based machine coding, with coverage that varies by country and year.
+- **Code:** `src/utils/unrestSpikes.ts`
 
 ### Trade idea journal
 

@@ -154,6 +154,17 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/eventStudy.ts',
   },
   {
+    id: 'unrest_onset',
+    name: 'Unrest spikes (GDELT) and conflict onset',
+    where: 'Research > History & data (Event history)',
+    method: [
+      "Each complete month (daily files covering the month), protests (CAMEO root 14) and violence (roots 18 to 20) as a share of the events GDELT 1.0 places in the country or names it as an actor. z = (share - mean of the previous 24 complete months) / max(their standard deviation, 0.25 points). A spike is z of 3 or more; an episode is the first month of a run of spikes. Only earlier months enter the baseline.",
+      'Pre-registered test (unrest_onset v1): every country-year from 2018 with at least 10 scored months and no state-based armed conflict located in the country (UCDP/PRIO). A year with a spike episode is a call that conflict is located in the country the next calendar year. Base rate: the share of all such quiet country-years followed by conflict, pooled. Method 2: whole years resampled, p at most 0.05, a lift of at least 3 points, 30 cases over 6 years.',
+    ],
+    limits: 'UCDP files are yearly, so the outcome is the next calendar year. GDELT on disk starts in 2016, leaving about seven scored years. The pooled base rate mixes countries with very different risks. News-based machine coding, with coverage that varies by country and year.',
+    code: 'src/utils/unrestSpikes.ts',
+  },
+  {
     id: 'idea_journal',
     name: 'Trade idea journal',
     where: 'Menu > Idea journal',

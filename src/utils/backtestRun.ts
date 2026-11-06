@@ -20,8 +20,11 @@ import { markImfProjections, parseImfYears } from './officialHistory';
 import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
-import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
+import { cftcCrowdingCases, cliTurnPolicyCases, cycleClockCases, regimeQuadrantCases, taylorGapCases, ruleFamilyCases, timingUnwindCases, unrestOnsetCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec, type OpenCall } from './backtest';
 import { forwardStep, type ForwardBody } from './forwardRecord';
+import { onsetYears } from './unrestOnset';
+import type { V1Month } from './gdeltDaily';
+import type { UcdpData } from './ucdpConflict';
 import { appendForward, loadForward } from './forwardRecordStore';
 import { writeFileAtomic } from './atomicWrite';
 
@@ -128,7 +131,7 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
   return { bis, cli, cftc, cpi };
 }
 
-export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void; forwardFile?: string }): Promise<ValidationFile & { problems: string[] }> {
+export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void; forwardFile?: string; /** Files on disk some tests read (GDELT months, UCDP), loaded only when such a test runs. */ local?: { gdeltMonths: () => V1Month[]; ucdp: () => UcdpData | null } }): Promise<ValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
@@ -230,6 +233,17 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
           series.push(`${def.ccy} (${def.market})`);
           cases.push(...timingUnwindCases(s, def.ccy, weeks, open));
         }
+      } else if (s.method === 'unrest_onset') {
+        const months = opts.local?.gdeltMonths() || [];
+        const ucdp = opts.local?.ucdp() || null;
+        if (!months.length || !ucdp?.files.acd) {
+          problems.push(`${s.id}: needs the GDELT 1.0 months on disk (npm run gdelt:daily) and the UCDP/PRIO Armed Conflict Dataset; not run`);
+          continue;
+        }
+        data = `GDELT 1.0 event files on disk (${months.length} months), protests and violence as a share of each country's events; UCDP/PRIO Armed Conflict Dataset ${ucdp.files.acd.version} (conflict located in the country)`;
+        const years = onsetYears(months, ucdp, { baselineMonths: s.params.baselineMonths, zSpike: s.params.zSpike, sdFloorPts: s.params.sdFloorPts });
+        series = [...new Set(years.map((y) => y.where))];
+        cases.push(...unrestOnsetCases(s, years, open));
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
         continue;

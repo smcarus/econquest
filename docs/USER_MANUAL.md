@@ -343,6 +343,16 @@ country's events each month, from the GDELT 1.0 daily event files (shares, not c
 GDELT's volume grew many times over the years). It is empty until the files are pulled with
 `npm run gdelt:daily` (below); before that it says Missing and how to fill it.
 
+**Unrest spikes.** Under the same panel, a month is a spike when protests or violence, as a share
+of the country's events, stand 3 or more standard deviations above the country's previous 24
+complete months (with a floor of 0.25 points on the deviation, so a flat history does not turn a
+small move into a spike). Only past months enter the baseline, so each reading is what could have
+been said at the time. The first month of a run is an episode. Whether a spike episode in a
+country without armed conflict is followed by conflict the next year is the pre-registered test
+`unrest_onset` (Menu > Models & validation), run with the other backtests once the GDELT files and
+the UCDP files are on disk. UCDP is yearly, so the test can only ask about the next calendar year.
+Until it passes, the badge says it is not validated.
+
 **Armed conflict (UCDP).** The Uppsala Conflict Data Program's yearly files (armed conflicts,
 battle deaths, non-state and one-sided violence, CC BY 4.0) ship with the app in `datasets/ucdp/`. A
 newer release saved in `data/local/ucdp/` (CSV or zip, from ucdp.uu.se/downloads) is read in their
