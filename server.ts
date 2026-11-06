@@ -82,7 +82,7 @@ import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
-import { CLIENT_MODE_KEY, clientModeFromValue, withholdForClients } from './src/utils/clientMode';
+import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
@@ -5739,10 +5739,10 @@ async function startServer() {
   // Downloads (src/utils/csvExport.ts): CSV with unit, source and dates per value; Missing with its reason.
   // Each table downloads as .csv or .xlsx (src/utils/xlsxExport.ts): same rows, same columns.
   type TableCell = string | number | null | undefined;
-  // Client mode (Menu > Client mode, src/utils/clientMode.ts): values whose source's terms do not allow
-  // showing them to clients are held back from every table download.
+  // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
+  // them be passed on for free are held back from every table download.
   const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
-    const rows = clientModeFromValue(loadWorkspace(WORKSPACE_FILE).values[CLIENT_MODE_KEY]) ? withholdForClients(header, allRows) : allRows;
+    const rows = shareModeFromValue(loadWorkspace(WORKSPACE_FILE).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
     if (req.params.fmt === 'xlsx') {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.attachment(name.replace(/\.csv$/, '.xlsx'));

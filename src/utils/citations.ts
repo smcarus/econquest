@@ -10,7 +10,7 @@
  * Browser-safe.
  */
 import { licenceLabelForSource } from './licenceLookup';
-import { withheldReason } from './clientMode';
+import { withheldReason } from './shareMode';
 
 export interface Reference {
   n: number;
@@ -74,7 +74,7 @@ export class References {
     const held = this.list.filter((r) => withheldReason(r.source)).map((r) => `[${r.n}]`);
     if (held.length)
       lines.push(
-        `Before sharing outside your own research: ${held.join(', ')} ${held.length === 1 ? 'comes from a source' : 'come from sources'} whose terms need the provider's permission for client use, or are not confirmed (Menu > About & data licences). Client mode holds them back from table downloads.`
+        `Before sharing: ${held.join(', ')} ${held.length === 1 ? 'comes from a source' : 'come from sources'} whose terms do not let the figures be passed on, or do not say (Menu > About & data licences). Sharing mode holds them back from table downloads.`
       );
     return lines;
   }

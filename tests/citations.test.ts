@@ -10,7 +10,6 @@ test('the same source keeps its number; publisher pages are matched on the sourc
   assert.deepEqual(r.lines('2026-11-05T12:00:00Z'), [
     '[1] IMF WEO, 2025. https://www.imf.org/external/datamapper/ Read by the app on 2026-11-05. Licence: Permission needed for client or commercial use.',
     '[2] BIS, 2026-10-27 (Central Bank of Brazil). https://data.bis.org/topics/CBPOL Read by the app on 2026-11-05. Licence: Allowed with conditions.',
-    "Before sharing outside your own research: [1] comes from a source whose terms need the provider's permission for client use, or are not confirmed (Menu > About & data licences). Client mode holds them back from table downloads.",
   ]);
   assert.equal(sourceUrl('CFTC Traders in Financial Futures'), 'https://publicreporting.cftc.gov/');
   assert.equal(sourceUrl('Your data, Bloomberg'), undefined);
@@ -35,8 +34,7 @@ test('notes: sourced rows get a marker and a References section; model and Missi
   assert.deepEqual(out[0].lines, ['- Debt / GDP: 77.7% [1]', '- Debt path: rising (model: IMF projection less 2025)', '- Reserves: Missing (World Bank did not answer)', 'Plain sentence.']);
   assert.deepEqual(out[1].lines, ['- Current account: -2.3% of GDP [2]', '- Debt again: 77.7% [1]']);
   assert.equal(out[2].heading, 'References');
-  assert.equal(out[2].lines.length, 3);
-  assert.match(out[2].lines[2], /^Before sharing outside your own research: \[1\] comes from a source/);
+  assert.equal(out[2].lines.length, 2);
   // Nothing to cite: no References section.
   assert.equal(withNoteReferences([{ heading: 'A', lines: ['- X: Missing (no source)'] }], '2026-11-05').length, 1);
 });
