@@ -10,6 +10,7 @@
  * Browser-safe.
  */
 import { licenceLabelForSource } from './licenceLookup';
+import { withheldReason } from './clientMode';
 
 export interface Reference {
   n: number;
@@ -69,7 +70,13 @@ export class References {
   }
   lines(accessed: string): string[] {
     const day = accessed.slice(0, 10);
-    return this.list.map((r) => `[${r.n}] ${r.source}.${r.url ? ` ${r.url}` : ''}${day ? ` Read by the app on ${day}.` : ''} Licence: ${licenceLabelForSource(r.source)}.`);
+    const lines = this.list.map((r) => `[${r.n}] ${r.source}.${r.url ? ` ${r.url}` : ''}${day ? ` Read by the app on ${day}.` : ''} Licence: ${licenceLabelForSource(r.source)}.`);
+    const held = this.list.filter((r) => withheldReason(r.source)).map((r) => `[${r.n}]`);
+    if (held.length)
+      lines.push(
+        `Before sharing outside your own research: ${held.join(', ')} ${held.length === 1 ? 'comes from a source' : 'come from sources'} whose terms need the provider's permission for client use, or are not confirmed (Menu > About & data licences). Client mode holds them back from table downloads.`
+      );
+    return lines;
   }
 }
 

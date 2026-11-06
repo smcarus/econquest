@@ -396,6 +396,7 @@ hold no figures of their own; the handout reads them from the app's series when 
 - **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
+- **Client mode**: for downloads that go to someone else. On, every table download (figures, series, Compare countries, As of; CSV and Excel) holds back each value whose source needs the provider's permission for client use, whose terms are not confirmed, or that the licence register does not name: the row stays with its source, and the value reads *Withheld* with the reason. A *Client mode* pill in the header shows it is on; click it to turn it off. References in briefs and notes always end with which ones need permission before sharing. Saved in `data/local/workspace.json`.
 - **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
 - **Morning brief** (Settings > Morning brief): at a time you set, the council answers your standing
   questions (up to four; three starting ones on policy stance, cheap or rich, and coming dates) about

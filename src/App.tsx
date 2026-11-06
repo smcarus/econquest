@@ -198,6 +198,7 @@ import { OPEN_SETTINGS_EVENT, SettingsDialog, type SettingsTab } from './compone
 import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 import { loadCouncilBrief } from './utils/askCouncil';
+import { loadClientMode, saveClientMode } from './utils/clientMode';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -651,6 +652,13 @@ export default function App() {
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
   const [aboutFocus, setAboutFocus] = useState<string | null | undefined>(undefined);
+  // Menu > Client mode: table downloads hold back figures whose sources need permission for client use.
+  const [clientMode, setClientModeState] = useState<boolean>(() => loadClientMode());
+  const toggleClientMode = () =>
+    setClientModeState((on) => {
+      saveClientMode(!on);
+      return !on;
+    });
   useEffect(() => {
     const onOpen = (e: Event) => setRegisterFocus(((e as CustomEvent).detail as string | null) ?? null);
     window.addEventListener(OPEN_REGISTER_EVENT, onOpen);
@@ -2572,6 +2580,18 @@ export default function App() {
 
           <OfflinePill status={onlineStatus} onOpen={() => setIsOfflineDataOpen(true)} />
 
+          {clientMode && (
+            <button
+              type="button"
+              onClick={toggleClientMode}
+              title="Client mode is on: downloads hold back figures whose sources need permission for client use. Click to turn it off."
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap text-amber-700 dark:text-amber-300"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Client mode</span>
+            </button>
+          )}
+
           <div className="relative" ref={headerMenuRef}>
             <button
               type="button"
@@ -2694,6 +2714,15 @@ export default function App() {
                         label: 'Models & validation',
                         hint: '',
                         onClick: () => setRegisterFocus(null),
+                        className: '',
+                      },
+                      {
+                        key: 'client',
+                        icon: <ShieldCheck className={`w-3.5 h-3.5 ${clientMode ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
+                        label: 'Client mode',
+                        hint: clientMode ? 'On' : 'Off',
+                        title: 'On: downloads hold back figures whose sources need the provider\'s permission before they go to a client (Menu > About & data licences).',
+                        onClick: toggleClientMode,
                         className: '',
                       },
                       {
