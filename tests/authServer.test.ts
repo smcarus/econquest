@@ -120,3 +120,45 @@ test('changing the password signs out other sessions and is in the audit log wit
   assert.ok(!raw.includes('boring'), 'no password in the log');
   assert.ok(!raw.includes(adminCookie.split('=')[1]), 'no session token in the log');
 });
+
+const put = (p: string, body: unknown, cookie: string) =>
+  fetch(`${base}${p}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify(body) });
+
+test('roles: the admin adds accounts; viewers only read, analysts cannot touch keys, users or the audit log', async () => {
+  const addA = await post('/api/users', { username: 'ana', displayName: 'Ana', role: 'analyst' }, adminCookie);
+  assert.equal(addA.status, 200);
+  const a = await addA.json();
+  assert.match(a.password, /^[A-Za-z0-9]{20}$/, 'random password shown once');
+  const addV = await (await post('/api/users', { username: 'vic', displayName: 'Vic', role: 'viewer' }, adminCookie)).json();
+  const ana = cookieOf(await post('/api/auth/sign-in', { username: 'ana', password: a.password }));
+  const vic = cookieOf(await post('/api/auth/sign-in', { username: 'vic', password: addV.password }));
+
+  assert.equal((await fetch(`${base}/api/workspace`, { headers: { Cookie: vic } })).status, 200, 'viewer reads');
+  const vw = await put('/api/workspace/econquest.watchlists.v1', { value: '[]' }, vic);
+  assert.equal(vw.status, 403);
+  assert.match((await vw.json()).error, /Viewer/);
+  assert.equal((await post('/api/users', { username: 'x1', displayName: 'X', role: 'admin' }, vic)).status, 403);
+
+  assert.equal((await fetch(`${base}/api/settings/keys`, { headers: { Cookie: ana } })).status, 200, 'analyst sees masked keys');
+  const keys = await (await fetch(`${base}/api/settings/keys`, { headers: { Cookie: ana } })).json();
+  assert.equal(keys.canEdit, false);
+  assert.equal((await put('/api/settings/keys/FRED_API_KEY', { value: 'abcdefabcdefabcdefabcdefabcdefab' }, ana)).status, 403);
+  assert.equal((await fetch(`${base}/api/audit`, { headers: { Cookie: ana } })).status, 403);
+  assert.equal((await fetch(`${base}/api/users`, { headers: { Cookie: ana } })).status, 403);
+  assert.equal((await fetch(`${base}/api/backup/download`, { headers: { Cookie: ana } })).status, 403);
+  assert.equal((await fetch(`${base}/api/settings/keys`, { headers: { Cookie: adminCookie } }).then((r) => r.json())).canEdit, true);
+
+  // The last admin cannot be demoted or disabled; disabling signs the person out.
+  const users = (await (await fetch(`${base}/api/users`, { headers: { Cookie: adminCookie } })).json()).accounts as Array<{ id: string; username: string }>;
+  const samId = users.find((u) => u.username === 'sam')!.id;
+  const vicId = users.find((u) => u.username === 'vic')!.id;
+  assert.equal((await put(`/api/users/${samId}`, { role: 'analyst' }, adminCookie)).status, 409);
+  assert.equal((await put(`/api/users/${vicId}`, { disabled: true }, adminCookie)).status, 200);
+  assert.equal((await fetch(`${base}/api/workspace`, { headers: { Cookie: vic } })).status, 401);
+  assert.equal((await post('/api/auth/sign-in', { username: 'vic', password: addV.password })).status, 401);
+
+  const raw = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8');
+  assert.match(raw, /Sam \(sam\) added the account Ana \(ana\) as analyst/);
+  assert.match(raw, /changed the account vic: disabled/);
+  assert.ok(!raw.includes(a.password) && !raw.includes(addV.password), 'new passwords never logged');
+});

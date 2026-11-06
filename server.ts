@@ -9,7 +9,8 @@ import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, 
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { dataDirProblem, installJsonConsole, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
-import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, type Account } from './src/utils/auth';
+import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
+import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
@@ -5023,6 +5024,17 @@ async function startServer() {
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
     res.status(401).json({ error: mode === 'setup' ? 'Create the first admin account to start using the app.' : 'Sign in to use the app.', signIn: true, mode });
   });
+  // Roles (src/utils/permissions.ts): one table for every API call. Sign-in off = the single user.
+  app.use((req, res, next) => {
+    const me = signedIn(res);
+    if (!me) return next(); // sign-in off, or an open path, or the integration API with its own key
+    const needed = requiredRole(req.method, req.path);
+    if (roleAtLeast(me.role, needed)) return next();
+    res.status(403).json({ error: refusal(me.role, needed), role: me.role, needed });
+  });
+  // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
+  // account (whose role the table above has checked) may make them from anywhere.
+  const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
   const authStatus = (req: express.Request, res: express.Response) => {
     const mode = currentMode();
     const me = signedIn(res);
@@ -5031,7 +5043,7 @@ async function startServer() {
       account: me ? publicAccount(me) : null,
       // In 'off' mode the person can already change everything, so the first account needs no code.
       setupNeedsCode: mode === 'setup',
-      canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || isLocalRequest(req.socket.remoteAddress, process.env)),
+      canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || trusted(req, res)),
       sessionIdleHours: Math.round(limits.idleMs / 3600_000),
     };
   };
@@ -5039,7 +5051,7 @@ async function startServer() {
   app.post('/api/auth/setup', express.json({ limit: '10kb' }), (req, res) => {
     if (auth.count() > 0) return res.status(409).json({ error: 'An admin account already exists. Sign in instead.' });
     const mode = currentMode();
-    if (mode === 'off' && !isLocalRequest(req.socket.remoteAddress, process.env)) {
+    if (mode === 'off' && !trusted(req, res)) {
       return res.status(403).json({ error: 'The first account can only be created from the computer running the app.' });
     }
     const address = req.socket.remoteAddress || '';
@@ -5104,6 +5116,59 @@ async function startServer() {
     appendAudit(AUDIT_FILES, { kind: 'access', summary: `Changed own password: ${accountName(me)}${ended ? ` (signed out ${ended} other session${ended === 1 ? '' : 's'})` : ''}` });
     res.json({ ok: true, endedSessions: ended });
   });
+  // Menu > Users (admin only, enforced by the role table): add accounts, change role, disable,
+  // reset a password. The last active admin can never be demoted or disabled.
+  const randomPassword = () => {
+    const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from(crypto.randomBytes(20), (b) => alphabet[b % alphabet.length]).join('');
+  };
+  const usersReply = () => ({ accounts: auth.list().map((a) => ({ ...publicAccount(a), sessions: auth.sessionCountFor(a.id) })) });
+  app.get('/api/users', (_req, res) => res.json(usersReply()));
+  app.post('/api/users', express.json({ limit: '10kb' }), (req, res) => {
+    const me = signedIn(res)!;
+    const username = normaliseUsername(req.body?.username);
+    const displayName = typeof req.body?.displayName === 'string' ? req.body.displayName : '';
+    const role = req.body?.role as Role;
+    const problem = usernameProblem(username) || displayNameProblem(displayName) || (ROLES.includes(role) ? null : 'Choose a role.');
+    if (problem) return res.status(400).json({ error: problem });
+    if (auth.byUsername(username)) return res.status(409).json({ error: `The username "${username}" is taken.` });
+    const password = randomPassword();
+    const account = newAccount({ username, displayName, role, password });
+    auth.add(account);
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `${accountName(me)} added the account ${accountName(account)} as ${role}` });
+    res.json({ ...usersReply(), created: publicAccount(account), password });
+  });
+  app.put('/api/users/:id', express.json({ limit: '10kb' }), (req, res) => {
+    const me = signedIn(res)!;
+    const target = auth.byId(String(req.params.id));
+    if (!target) return res.status(404).json({ error: 'No such account.' });
+    const role = req.body?.role === undefined ? target.role : (req.body.role as Role);
+    const disabled = req.body?.disabled === undefined ? Boolean(target.disabled) : req.body.disabled === true;
+    const displayName = typeof req.body?.displayName === 'string' ? req.body.displayName : target.displayName;
+    const problem = (ROLES.includes(role) ? null : 'Choose a role.') || displayNameProblem(displayName);
+    if (problem) return res.status(400).json({ error: problem });
+    const losesAdmin = target.role === 'admin' && !target.disabled && (role !== 'admin' || disabled);
+    if (losesAdmin && auth.activeAdminCount() <= 1) return res.status(409).json({ error: 'This is the last active admin. Make another account admin first.' });
+    const updated = auth.update(target.id, (a) => ({ ...a, role, disabled, displayName: displayName.trim() }));
+    if (disabled && !target.disabled) auth.endSessionsFor(target.id);
+    const changes = [
+      role !== target.role ? `role ${target.role} -> ${role}` : '',
+      disabled !== Boolean(target.disabled) ? (disabled ? 'disabled' : 'enabled') : '',
+      updated.displayName !== target.displayName ? `name "${target.displayName}" -> "${updated.displayName}"` : '',
+    ].filter(Boolean);
+    if (changes.length) appendAudit(AUDIT_FILES, { kind: 'access', summary: `${accountName(me)} changed the account ${target.username}: ${changes.join(', ')}` });
+    res.json(usersReply());
+  });
+  app.post('/api/users/:id/reset-password', (req, res) => {
+    const me = signedIn(res)!;
+    const target = auth.byId(String(req.params.id));
+    if (!target) return res.status(404).json({ error: 'No such account.' });
+    const password = randomPassword();
+    auth.update(target.id, (a) => ({ ...a, passwordHash: hashPassword(password), passwordChangedAt: new Date().toISOString() }));
+    const ended = auth.endSessionsFor(target.id, target.id === me.id ? (res.locals.sessionHash as string) : undefined);
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `${accountName(me)} reset the password of ${accountName(target)} (signed out ${ended} session${ended === 1 ? '' : 's'})` });
+    res.json({ ...usersReply(), password });
+  });
 
   // Audit log: every change, download and AI step that succeeds is written once it has answered,
   // by what it did (route), never by its body, so keys and document text stay out of the log.
@@ -5148,7 +5213,7 @@ async function startServer() {
     res.type('application/json').send(JSON.stringify(currentBackup(backupFiles), null, 1));
   });
   app.post('/api/backup/restore', express.json({ limit: '60mb' }), (req, res) => {
-    if (!isLocalRequest(req.socket.remoteAddress, process.env)) {
+    if (!trusted(req, res)) {
       return res.status(403).json({ error: `A backup can only be restored from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
     }
     const parsed = parseBackup(req.body?.backup);
@@ -5242,9 +5307,9 @@ async function startServer() {
   let connectionReportCache: { at: number; report: ConnectionReport } | null = null;
   // 1a'. Settings > API keys: your own keys, saved on this computer only (src/utils/userSettings.ts).
   // The browser gets masked values only; changes are accepted from this computer only.
-  const keysReply = (req: express.Request) => ({
+  const keysReply = (req: express.Request, res: express.Response) => ({
     keys: describeKeys(ENV_FILE_KEYS, savedSettings),
-    canEdit: isLocalRequest(req.socket.remoteAddress, process.env),
+    canEdit: trusted(req, res) && (!signedIn(res) || signedIn(res)!.role === 'admin'),
     requestFrom: req.socket.remoteAddress || '',
     inDocker: process.env.SELF_HOSTED_DOCKER === 'true',
     savedIn: path.relative(__dirname, SETTINGS_FILE).startsWith('..') ? SETTINGS_FILE : path.relative(__dirname, SETTINGS_FILE),
@@ -5280,21 +5345,21 @@ async function startServer() {
     if (id === 'GEMINI_API_KEY') ai = makeGeminiClient();
   };
   const refuseRemote = (req: express.Request, res: express.Response): boolean => {
-    if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
+    if (trusted(req, res)) return false;
     res.status(403).json({ error: `Keys can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}). Under Docker, pull the latest docker-compose.yml and rebuild, or set SETTINGS_ALLOW_REMOTE="true" in .env.` });
     return true;
   };
-  app.get('/api/settings/keys', (req, res) => res.json(keysReply(req)));
+  app.get('/api/settings/keys', (req, res) => res.json(keysReply(req, res)));
   // Settings, connector tests and webhooks can only be used from the computer running the app.
   const refuseRemoteChange = (req: express.Request, res: express.Response): boolean => {
-    if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
+    if (trusted(req, res)) return false;
     res.status(403).json({ error: `This can only be used from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
     return true;
   };
 
   // Research library: council conversations and policy documents kept in data/local/research.json.
   const refuseRemoteResearch = (req: express.Request, res: express.Response): boolean => {
-    if (isLocalRequest(req.socket.remoteAddress, process.env)) return false;
+    if (trusted(req, res)) return false;
     res.status(403).json({ error: `Saved research can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
     return true;
   };
@@ -6092,7 +6157,7 @@ async function startServer() {
 
   app.get('/api/watch-rules', (_req, res) => res.json({ rules: loadWatchRules(WATCH_RULES_FILE), file: 'data/local/watch-rules.json' }));
   app.put('/api/watch-rules', (req, res) => {
-    if (isLocalRequest(req.socket.remoteAddress, process.env) === false) {
+    if (trusted(req, res) === false) {
       return res.status(403).json({ error: `Watch alerts can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
     }
     const rules = parseRules(req.body);
@@ -6116,7 +6181,7 @@ async function startServer() {
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
     const check = await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
-    res.json({ ...keysReply(req), check });
+    res.json({ ...keysReply(req, res), check });
   });
   app.delete('/api/settings/keys/:id', async (req, res) => {
     if (refuseRemote(req, res)) return;
@@ -6130,7 +6195,7 @@ async function startServer() {
     savedSettings = next;
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
-    res.json(keysReply(req));
+    res.json(keysReply(req, res));
   });
   // Test a key before saving it (or the key in use when no value is sent). Nothing is saved.
   app.post('/api/settings/keys/:id/test', async (req, res) => {
