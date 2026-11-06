@@ -4508,6 +4508,10 @@ async function reviewOptionsStep(
 /** What a Supreme Council field shows when the model wrote nothing for it: never the built-in report text. */
 const MODEL_FIELD_MISSING = 'Missing: model gave no answer for this field.';
 const textOrMissing = (v: unknown): string => (typeof v === 'string' && v.trim() ? v : MODEL_FIELD_MISSING);
+const listOrMissing = (v: unknown): string[] => {
+  const items = Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && Boolean(x.trim())) : [];
+  return items.length ? items : [MODEL_FIELD_MISSING];
+};
 
 const SUPREME_INSTRUCTION =
   'You are the Supreme Council Orchestrator for an Institutional Asset Management & Sovereign Policy Research Department. Return strict JSON adhering to the SMCR-1.0 schema. CRITICAL WRITING STYLE: Phrase the executiveSummary, longTermRegimeOutlook, structuralVulnerabilities, factorCrowdingWarning, and all trade rationales in clear, everyday plain English first so both general readers and portfolio managers immediately grasp the core takeaway, and cite the exact economic/statistical metrics in parentheses at the end of each point (Ref: ...).';
@@ -4595,8 +4599,17 @@ ${MISSING_FIGURES_RULE}
         fxTradeInvalidation: { type: Type.STRING },
         creditTradeInstrument: { type: Type.STRING },
         creditTradeRationale: { type: Type.STRING },
+        creditTradeInvalidation: { type: Type.STRING },
+        commodityTradeInstrument: { type: Type.STRING },
+        commodityTradeRationale: { type: Type.STRING },
+        commodityTradeInvalidation: { type: Type.STRING },
+        transmissionPathways: { type: Type.ARRAY, items: { type: Type.STRING } },
         fiscalPolicyRecommendation: { type: Type.STRING },
+        fiscalPolicyExpectedImpact: { type: Type.STRING },
         monetaryPolicyRecommendation: { type: Type.STRING },
+        monetaryPolicyExpectedImpact: { type: Type.STRING },
+        debtManagementRecommendation: { type: Type.STRING },
+        debtManagementExpectedImpact: { type: Type.STRING },
       },
       required: [
         'decisionVerdict',
@@ -4641,17 +4654,20 @@ ${MISSING_FIGURES_RULE}
     executiveSummary: textOrMissing(parsed.executiveSummary),
     policyResearcherReport: {
       ...baseOutput.policyResearcherReport,
-      structuralVulnerabilities:
-        Array.isArray(parsed.structuralVulnerabilities) && parsed.structuralVulnerabilities.some((v: unknown) => typeof v === 'string' && v.trim())
-          ? parsed.structuralVulnerabilities.filter((v: unknown) => typeof v === 'string' && v.trim())
-          : [MODEL_FIELD_MISSING],
+      structuralVulnerabilities: listOrMissing(parsed.structuralVulnerabilities),
+      transmissionPathways: listOrMissing(parsed.transmissionPathways),
       longTermRegimeOutlook:
         textOrMissing(parsed.longTermRegimeOutlook),
       policyRecommendations: baseOutput.policyResearcherReport.policyRecommendations.map(
         (rec, idx) => {
-          if (idx === 0) return { ...rec, action: textOrMissing(parsed.fiscalPolicyRecommendation) };
-          if (idx === 1) return { ...rec, action: textOrMissing(parsed.monetaryPolicyRecommendation) };
-          return rec;
+          // Fiscal, monetary, debt management: the model writes each action and its expected impact.
+          const keys = [
+            ['fiscalPolicyRecommendation', 'fiscalPolicyExpectedImpact'],
+            ['monetaryPolicyRecommendation', 'monetaryPolicyExpectedImpact'],
+            ['debtManagementRecommendation', 'debtManagementExpectedImpact'],
+          ][idx];
+          if (!keys) return { ...rec, action: MODEL_FIELD_MISSING, expectedImpact: MODEL_FIELD_MISSING };
+          return { ...rec, action: textOrMissing(parsed[keys[0]]), expectedImpact: textOrMissing(parsed[keys[1]]) };
         }
       ),
     },
@@ -4659,17 +4675,12 @@ ${MISSING_FIGURES_RULE}
       ...baseOutput.marketTranslationLayer,
       regimeStance: textOrMissing(parsed.regimeStance),
       tradeExpressions: baseOutput.marketTranslationLayer.tradeExpressions.map((t, idx) => {
-        // The model writes the rates, FX and credit ideas; a part it left out is Missing, not the built-in idea.
-        if (idx === 0) {
-          return { ...t, instrument: textOrMissing(parsed.ratesTradeInstrument), entryRationale: textOrMissing(parsed.ratesTradeRationale), invalidationStopTrigger: textOrMissing(parsed.ratesTradeInvalidation) };
-        }
-        if (idx === 1) {
-          return { ...t, instrument: textOrMissing(parsed.fxTradeInstrument), entryRationale: textOrMissing(parsed.fxTradeRationale), invalidationStopTrigger: textOrMissing(parsed.fxTradeInvalidation) };
-        }
-        if (idx === 3) {
-          return { ...t, instrument: textOrMissing(parsed.creditTradeInstrument), entryRationale: textOrMissing(parsed.creditTradeRationale) };
-        }
-        return t;
+        // The model writes the rates, FX, commodity and credit ideas; a part it left out is Missing,
+        // not the built-in idea. Entry and target levels are not asked for, so they are never shown.
+        const prefix = ['ratesTrade', 'fxTrade', 'commodityTrade', 'creditTrade'][idx];
+        const base = { ...t, entryLevel: MODEL_FIELD_MISSING, targetLevel: MODEL_FIELD_MISSING };
+        if (!prefix) return { ...base, instrument: MODEL_FIELD_MISSING, entryRationale: MODEL_FIELD_MISSING, invalidationStopTrigger: MODEL_FIELD_MISSING };
+        return { ...base, instrument: textOrMissing(parsed[`${prefix}Instrument`]), entryRationale: textOrMissing(parsed[`${prefix}Rationale`]), invalidationStopTrigger: textOrMissing(parsed[`${prefix}Invalidation`]) };
       }),
       riskGuardianCheck: {
         ...baseOutput.marketTranslationLayer.riskGuardianCheck,
@@ -4766,7 +4777,14 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
   const said = (k: string) => Boolean(step.supremeStep.data && (step.supremeStep.data as Record<string, unknown>)[k]);
   const brief = {
     headline: `${said('decisionVerdict') && (step.supremeStep.data as Record<string, unknown>).decisionVerdict === o.decisionVerdict ? o.decisionVerdict : '(no verdict chosen)'}: ${o.executiveSummary}`,
-    points: [p.longTermRegimeOutlook, o.marketTranslationLayer.regimeStance, ...(p.structuralVulnerabilities || []), p.policyRecommendations[0]?.action, p.policyRecommendations[1]?.action].filter((x): x is string => Boolean(x)),
+    points: [
+      p.longTermRegimeOutlook,
+      o.marketTranslationLayer.regimeStance,
+      ...(p.structuralVulnerabilities || []),
+      ...(p.transmissionPathways || []),
+      ...p.policyRecommendations.flatMap((r) => [r.action, r.expectedImpact]),
+      ...o.marketTranslationLayer.tradeExpressions.flatMap((x) => [x.instrument, x.entryRationale, x.invalidationStopTrigger]),
+    ].filter((x): x is string => Boolean(x)),
     disagreements: [],
     gaps: [],
   };
@@ -4774,13 +4792,19 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
   const fieldOf = (where: string): string => {
     if (/^Executive summary/.test(where)) return 'executiveSummary';
     if (/^Vulnerability/.test(where)) return 'structuralVulnerabilities';
+    if (/^Transmission pathway/.test(where)) return 'transmissionPathways';
+    const impact = /^Policy recommendation (\d), expected impact/.exec(where)?.[1];
+    if (impact) return ['', 'fiscalPolicyExpectedImpact', 'monetaryPolicyExpectedImpact', 'debtManagementExpectedImpact'][Number(impact)] ?? '';
+    if (/^Policy recommendation 3\b/.test(where)) return 'debtManagementRecommendation';
     if (/^Long-term outlook/.test(where)) return 'longTermRegimeOutlook';
     if (/^Regime stance/.test(where)) return 'regimeStance';
     if (/^Policy recommendation 1\b/.test(where)) return 'fiscalPolicyRecommendation';
     if (/^Policy recommendation 2\b/.test(where)) return 'monetaryPolicyRecommendation';
     if (/^Crowding warning/.test(where)) return 'factorCrowdingWarning';
     const t = /^Trade idea (\d)/.exec(where)?.[1];
-    return t === '1' ? 'ratesTradeRationale' : t === '2' ? 'fxTradeRationale' : t === '4' ? 'creditTradeRationale' : '';
+    const inval = /invalidation/.test(where);
+    const trade = ({ '1': 'ratesTrade', '2': 'fxTrade', '3': 'commodityTrade', '4': 'creditTrade' } as Record<string, string>)[t ?? ''];
+    return trade ? `${trade}${inval ? 'Invalidation' : 'Rationale'}` : '';
   };
   const removed = step.reportCheck.check.removed.filter((r) => said(fieldOf(r.where))).map((r) => r.sentence);
   const answer = [brief.headline, ...brief.points];
@@ -4791,13 +4815,24 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     ['longTermRegimeOutlook', p.longTermRegimeOutlook],
     ['regimeStance', o.marketTranslationLayer.regimeStance],
     ['structuralVulnerabilities', (p.structuralVulnerabilities || []).join(' ')],
+    ['transmissionPathways', (p.transmissionPathways || []).join(' ')],
     ['fiscalPolicyRecommendation', p.policyRecommendations[0]?.action],
+    ['fiscalPolicyExpectedImpact', p.policyRecommendations[0]?.expectedImpact],
     ['monetaryPolicyRecommendation', p.policyRecommendations[1]?.action],
+    ['monetaryPolicyExpectedImpact', p.policyRecommendations[1]?.expectedImpact],
+    ['debtManagementRecommendation', p.policyRecommendations[2]?.action],
+    ['debtManagementExpectedImpact', p.policyRecommendations[2]?.expectedImpact],
     ['factorCrowdingWarning', o.marketTranslationLayer.riskGuardianCheck.factorCrowdingWarning],
-    ['ratesTradeInstrument', t[0]?.instrument],
-    ['fxTradeInstrument', t[1]?.instrument],
-    ['creditTradeInstrument', t[3]?.instrument],
+    ...(['ratesTrade', 'fxTrade', 'commodityTrade', 'creditTrade'] as const).flatMap((k, i): Array<[string, string | undefined]> => [
+      [`${k}Instrument`, t[i]?.instrument],
+      [`${k}Rationale`, t[i]?.entryRationale],
+      [`${k}Invalidation`, t[i]?.invalidationStopTrigger],
+    ]),
   ];
+  // Never asked of the model, so never anything but Missing.
+  for (const [i, x] of t.entries()) {
+    if (x.entryLevel !== MODEL_FIELD_MISSING || x.targetLevel !== MODEL_FIELD_MISSING) shown.push([`trade ${i + 1} entry/target level (never asked)`, 'built-in']);
+  }
   const template = shown.filter(([k, v]) => !said(k) && v !== MODEL_FIELD_MISSING).map(([k]) => `${k}: the model wrote nothing, but the report shows built-in text instead of Missing.`);
   const checked = checkRegressionCase(c, { brief, removed } as SynthesisResult);
   if (template.length) checked.failures.push(...template);
