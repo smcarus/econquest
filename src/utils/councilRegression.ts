@@ -194,6 +194,15 @@ export interface BaselineComparison {
 
 const short = (t: string) => (t.length > 140 ? `${t.slice(0, 137)}...` : t);
 
+/** The first sentence that differs between two checked answers, in words. */
+export function answerDiff(before: string[] | undefined, after: string[] | undefined): string {
+  if (!before || !after) return 'The recording does not keep the full answer to compare.';
+  const gone = before.find((x) => !after.includes(x));
+  const added = after.find((x) => !before.includes(x));
+  if (!gone && !added) return 'Same sentences in a different order or list.';
+  return [gone ? `Recorded: "${short(gone)}"` : '', added ? `Now: "${short(added)}"` : ''].filter(Boolean).join(' ');
+}
+
 /** Compares a run with the recorded baseline, case by case. */
 export function compareToBaseline(report: RegressionReport, baseline: RegressionBaseline): BaselineComparison {
   const drift: string[] = [];
@@ -212,7 +221,8 @@ export function compareToBaseline(report: RegressionReport, baseline: Regression
     if (b.promptHash && r.promptHash && b.promptHash !== r.promptHash) drift.push(`${r.id}: the prompt sent to the model changed.`);
     if ((r.model ?? null) !== (b.model ?? null)) drift.push(`${r.id}: answered by ${r.model || 'no model'}, recorded on ${b.model || 'no model'}.`);
     if (b.outputHash && r.outputHash !== b.outputHash) {
-      drift.push(`${r.id}: the answer changed. Recorded: "${short(b.headline || '(none)')}" Now: "${short(r.headline || '(none)')}"`);
+      if ((b.headline || '') !== (r.headline || '')) drift.push(`${r.id}: the answer changed. Recorded: "${short(b.headline || '(none)')}" Now: "${short(r.headline || '(none)')}"`);
+      else drift.push(`${r.id}: same headline, the rest of the answer changed. ${answerDiff(b.answer, r.answer)}`);
     }
   }
   for (const id of was.keys()) if (!report.results.some((r) => r.id === id)) drift.push(`${id}: in the recording, no longer in the case file.`);
