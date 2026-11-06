@@ -38,6 +38,8 @@ import {
 
 import { smallRefereeNote } from '../utils/refereeModel';
 import { AnswerSnapshotDetails } from './AnswerSnapshot';
+import { CouncilTimingNote } from './CouncilTimingNote';
+import type { CouncilTiming } from '../utils/councilTiming';
 import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/explain';
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
@@ -64,7 +66,7 @@ export interface FullCouncilStep {
   deskState: CROOverrideState;
   draft: CROOverrideState;
   /** Set only for a report written in this session, never for the built-in example run. */
-  result?: { reportId: string; verdict: string; summary: string; figureCheck?: CouncilAssessmentRun['figureCheck'] };
+  result?: { reportId: string; verdict: string; summary: string; figureCheck?: CouncilAssessmentRun['figureCheck']; timing?: CouncilTiming };
   /** The run's id for live step progress; null until a run starts in this session. */
   progressId: string | null;
   onRun: () => void;
@@ -811,6 +813,7 @@ export const AskCouncilPanel: React.FC<{
                   <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{fc.result.summary}</p>
                   <FigureCheckNote check={fc.result.figureCheck?.desks} what="desk debates" />
                   <FigureCheckNote check={fc.result.figureCheck?.report} what="final report" />
+                  {fc.result.timing && <CouncilTimingNote timing={fc.result.timing} />}
                   {fc.onOpenFullReview && (
                     <button type="button" className="ui-btn" onClick={fc.onOpenFullReview}>
                       Open the full report
