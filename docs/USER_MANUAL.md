@@ -277,6 +277,8 @@ Figures with no history yet are listed with the reason.
 
 **Inflation after rate changes.** Research > History & data shows how inflation has moved in the 0 to 24 months after a one-point policy rate change, estimated by local projections on the monthly CPI and BIS policy rate history, with 90% bands. It is a record of co-movement, not the effect of policy: central banks raise rates when they expect inflation to rise, so the first months often show inflation going up.
 
+**Policy rules.** Research > History & data sets the policy rate against five standard rules on the same inputs (Taylor 1993, balanced approach, inflation only, inertial, first difference), with each rule's formula and prescription, the range they span and whether the policy rate sits above, below or inside it. The neutral real rate is fixed at 2% (Taylor's), and the panel says how each rule shifts if it is lower.
+
 **Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
 its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
 and the app's output gap, outturn years only, with Newey-West errors. A positive, significant

@@ -37,6 +37,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
+| Policy rule family | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -358,6 +359,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Newey-West standard errors with lag max(h + 1, floor(4 x (n/100)^(2/9))); 90% bands. Needs 60 months and at least 5 rate changes.
 - **Limits:** Reduced form: the rate change is not an identified monetary policy shock. Central banks move ahead of expected inflation, so early responses often have the "wrong" sign (price puzzle). Records co-movement in the sample, not the effect of policy; regimes and targets change over long samples.
 - **Code:** `src/utils/localProjections.ts`
+
+### Policy rule family
+
+- **Shows in:** Research > History & data
+- Five rules on the same inputs (latest monthly inflation pi, the bank's stated target pi*, output gap, r* 2%): Taylor (1993) r* + pi + 0.5(pi - pi*) + 0.5 gap; balanced approach, gap weight 1.0; inflation only, no gap term; inertial 0.85 x current rate + 0.15 x Taylor (1993); first difference current rate + 0.5(pi - pi*) + 0.5 x change in the gap over a year.
+- Output gap: IMF WEO (NGAP_NPGDP) for this year where published (a projection), else the app's own estimate, labelled. Rules needing the gap show Missing without it.
+- Reading: the policy rate more than 1 point above every rule = tight on all; more than 1 point below = loose on all; otherwise inside the range.
+- **Limits:** r* is a stated parameter, not data: each point lower moves the level rules one point down, the inertial rule 0.15 and the first-difference rule not at all. Rules are cross-checks of stance, not forecasts; banks also weigh the exchange rate, financial stability and expectations. Annual output gaps are revised every WEO.
+- **Code:** `src/utils/ruleFamily.ts`
 
 ### Fiscal reaction (Bohn test)
 
