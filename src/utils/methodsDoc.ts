@@ -132,6 +132,17 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/costedOptions.ts',
   },
   {
+    id: 'global_scenarios',
+    name: 'Global shock scenarios (scenario engine)',
+    where: 'Research > History & data',
+    method: [
+      'One OLS per response on monthly changes over the last 15 years (at least 60 months): the currency (100 x log change of units per US dollar, ECB month-end) and the policy rate (BIS month-end, change in points), each on the US policy rate change (BIS) and the dollar (100 x log change of euros per dollar, ECB).',
+      'A scenario is a set of stated factor moves (presets: Fed +1 point, dollar +5%, both, the reverse; or your own). Implied move = coefficients x shock, intercept left out; 90% band from the Newey-West covariance of the coefficients. The residual standard deviation is shown as the size of a typical unexplained month.',
+    ],
+    limits: 'Contemporaneous co-movement, linear in the shock: not causal, and the Fed and the dollar often move for the same reasons as the country. Shocks larger than any month in the sample are flagged as extrapolation. The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet (only five years of monthly prices saved). Currencies the ECB does not publish have no currency model.',
+    code: 'src/utils/scenarioEngine.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',

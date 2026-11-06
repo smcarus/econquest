@@ -73,6 +73,12 @@ export function neweyWestLag(n: number): number {
 
 /** HAC (Newey-West, Bartlett) standard errors for OLS with an intercept. Null when not solvable. */
 export function neweyWestSe(X: number[][], residuals: number[], lags: number): number[] | null {
+  const V = neweyWestCov(X, residuals, lags);
+  return V ? V.map((r, i) => Math.sqrt(Math.max(0, r[i]))) : null;
+}
+
+/** HAC (Newey-West, Bartlett) covariance of the OLS coefficients (intercept first). Null when not solvable. */
+export function neweyWestCov(X: number[][], residuals: number[], lags: number): number[][] | null {
   const Z = X.map((r) => [1, ...r]);
   const k = Z[0].length;
   const n = Z.length;
@@ -89,8 +95,7 @@ export function neweyWestSe(X: number[][], residuals: number[], lags: number): n
     }
   }
   const mul = (A: number[][], B: number[][]) => A.map((r) => B[0].map((_, j) => r.reduce((s, v, m) => s + v * B[m][j], 0)));
-  const V = mul(mul(inv, S), inv);
-  return V.map((r, i) => Math.sqrt(Math.max(0, r[i])));
+  return mul(mul(inv, S), inv);
 }
 
 export function bohnTest(inputs: BohnInputs): BohnOutcome {

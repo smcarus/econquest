@@ -31,6 +31,7 @@ const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVinta
 const BohnPanel = lazyNamed(() => import('./BohnPanel'), 'BohnPanel');
 const GfnPanel = lazyNamed(() => import('./GfnPanel'), 'GfnPanel');
 const RuleFamilyPanel = lazyNamed(() => import('./RuleFamilyPanel'), 'RuleFamilyPanel');
+const ScenarioPanel = lazyNamed(() => import('./ScenarioPanel'), 'ScenarioPanel');
 const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
@@ -364,6 +365,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Fiscal reaction">
             <React.Suspense fallback={<DeskLoading />}>
               <BohnPanel key={`bohn-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-global-scenarios" className="scroll-mt-4" />
+          <PanelBoundary name="Global shock scenarios">
+            <React.Suspense fallback={<DeskLoading />}>
+              <ScenarioPanel key={`scenario-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-rule-family" className="scroll-mt-4" />
