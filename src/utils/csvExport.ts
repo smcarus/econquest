@@ -46,6 +46,7 @@ export const FIGURES_HEADER = ['iso3', 'country', 'field', 'figure', 'value', 'u
 /** Figures the country pages show, each with its value or why it is missing. */
 const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> = [
   ...ARCHIVE_FIGURES.map((f) => ({ field: f.field, label: f.label, unit: f.unit })),
+  { field: 'market.hcBondSpreadBps', label: 'USD bond spread over US Treasuries (not CDS)', unit: 'bp' },
   { field: 'imf.debtToGdpForecast2027Pct', label: 'Government debt, 2027 forecast', unit: '% of GDP' },
   { field: 'market.policyRatePct', label: 'Policy rate', unit: '%' },
 ];
@@ -53,6 +54,7 @@ const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> = [
 function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.sovereign10YBondYieldPct') return snapshot.official10YYield?.period ?? '';
   if (field === 'market.cds5YSpreadBps') return snapshot.ownCds5Y?.date ?? '';
+  if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';

@@ -1,6 +1,6 @@
 /**
  * Policy review, step 2 "Diagnose": the app's model readings as they could have been worked out on
- * the As-of day (Sam, 2026-11-06). They join the diagnosis as numbered figures after the twelve
+ * the As-of day (Sam, 2026-11-06). They join the diagnosis as numbered figures after the standard indicators
  * indicators, so Options, Evidence and the memo cite them like any other figure.
  *
  * As-of rule: an IMF yearly outturn counts only once it would have been published. The April WEO
@@ -35,7 +35,7 @@ export interface ReviewModelInputs {
   primaryBalance?: Series;
   overallBalance?: Series;
   inflation?: Series;
-  /** The diagnosis's twelve indicator figures (debt and policy rate are read from them). */
+  /** The diagnosis's standard indicator figures (debt and policy rate are read from them). */
   figures: DiagnosisFigure[];
 }
 

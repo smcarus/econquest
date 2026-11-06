@@ -25,6 +25,8 @@ export const DIAGNOSIS_FIELDS: Array<{ field: string; group: string }> = [
   { field: 'wb.currentAccountPctGdp', group: 'External' },
   { field: 'wb.externalDebtPctGni', group: 'External' },
   { field: 'wb.politicalStabilityPercentile', group: 'Politics' },
+  // Added last so the reference numbers [1]..[12] of the standard indicators keep their meaning.
+  { field: 'market.hcBondSpreadBps', group: 'Markets' },
 ];
 
 /** Indicators a goal can name, as shown in the Frame step (labels from the figure list). */

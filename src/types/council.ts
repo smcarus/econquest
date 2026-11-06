@@ -480,6 +480,11 @@ export interface WatchlistItem {
   cds5YSource?: 'own' | 'ai_estimate' | 'sample';
   cds5YDate?: string;
   cds5YProvider?: string;
+  /** USD bond spread over US Treasuries, bps (J.P. Morgan EMBI Global via BCRP, monthly). Only from the feed; a bond spread, not CDS. */
+  hcSpreadBps?: number;
+  /** YYYY-MM of that monthly average. */
+  hcSpreadPeriod?: string;
+  hcSpreadChange12mBps?: number;
   /** Official figures only: YYYY-MM (monthly average) or YYYY-MM-DD (daily rate). */
   yield10YPeriod?: string;
   yield10YFrequency?: 'monthly' | 'daily';

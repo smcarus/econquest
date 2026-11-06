@@ -12,6 +12,7 @@
  * - The synthesis (server side, Gemini or Ollama) is checked here: any sentence with a number
  *   that does not trace back to an agent's figures is removed and listed.
  */
+import { hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import { isCitable, References } from './citations';
 import { taylorCheck, taylorMethod, taylorSentence } from './taylorRule';
@@ -98,7 +99,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   },
   rv: {
     name: 'Relative Value',
-    covers: CDS_HIDDEN ? 'real 10Y yield against risk peers, carry over the US rate' : 'CDS against risk peers, carry over the US rate',
+    covers: CDS_HIDDEN ? 'USD bond spread over Treasuries, real 10Y yield against risk peers, carry over the US rate' : 'CDS against risk peers, carry over the US rate',
     topic: /\bcds\b|spread|cheap|rich|\bvalue\b|valuation|bonds?|yields?|carry|priced|pricing|relative|default|credit/i,
   },
   fx: {
@@ -692,6 +693,12 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
     const figures: AgentFigure[] = [];
     if (it.yield10YPct !== undefined) figures.push({ label: '10Y government yield', value: p2(it.yield10YPct), source: y.src, tag: y.q });
     else missing.push(`${it.countryName}: 10Y yield missing (${missingReason('yield', it.iso3).short})`);
+    // USD bond spread over Treasuries: the free stand-in for CDS, always named a bond spread.
+    if (it.hcSpreadBps !== undefined && it.hcSpreadPeriod) {
+      figures.push({ label: 'USD bond spread over US Treasuries (a bond spread, not CDS)', value: `${Math.round(it.hcSpreadBps)} bps`, source: `J.P. Morgan EMBI Global via BCRP, ${hcSpreadWhen(it.hcSpreadPeriod)}`, tag: 'live' });
+      if (it.hcSpreadChange12mBps !== undefined)
+        figures.push({ label: 'USD bond spread, change on a year earlier', value: `${it.hcSpreadChange12mBps >= 0 ? '+' : ''}${it.hcSpreadChange12mBps} bps`, source: `J.P. Morgan EMBI Global via BCRP, ${hcSpreadWhen(it.hcSpreadPeriod)}`, tag: 'live' });
+    } else missing.push(`${it.countryName}: USD bond spread missing (${hcSpreadMissing(it.iso3).short})`);
     if (it.cds5YBps !== undefined) figures.push({ label: '5Y CDS', value: `${Math.round(it.cds5YBps)} bps`, source: c.src, tag: c.q });
     else if (!CDS_HIDDEN) missing.push(`${it.countryName}: 5Y CDS missing (${missingReason('cds', it.iso3).short})`);
     const parts: string[] = [];

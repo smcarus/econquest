@@ -2201,7 +2201,7 @@ function dsaFrom(file: OfficialHistoryFile | null | undefined): DsaOutcome {
 
 /**
  * Adds the model readings (output gap, debt dynamics, multiplier range) worked out only from data
- * known by the diagnosis's As-of day (src/utils/reviewModels.ts), as numbered figures after the twelve.
+ * known by the diagnosis's As-of day (src/utils/reviewModels.ts), as numbered figures after the standard indicators.
  */
 function withModelFigures(d: Diagnosis): Diagnosis {
   const file = loadOfficialHistory(d.iso3);
@@ -2726,6 +2726,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     return cachedWatchlistLive.items;
   }
 
+  const hcPull = await fetchHcSpread().catch(() => null);
   const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
@@ -2810,6 +2811,10 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           macroRisk: mac,
           compositeRisk: comp,
           ...watchlistYieldFields(snap, fetchedOfficial),
+          ...((() => {
+            const hc = hcPull?.countries[catItem.iso3];
+            return hc ? { hcSpreadBps: Math.round(hc.bps), hcSpreadPeriod: hc.period, ...(hc.change12mBps !== undefined ? { hcSpreadChange12mBps: hc.change12mBps } : {}) } : {};
+          })()),
           cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
           cds5YSource: status.ownCds ? 'own' : 'sample',
           ...(status.ownCds ? { cds5YDate: status.ownCds.date, cds5YProvider: status.ownCds.source } : {}),

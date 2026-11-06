@@ -25,7 +25,7 @@ test('every standard indicator is listed in order with a reference; missing ones
   assert.equal(figureText(d.figures[0]), '4.4% [1] (IMF WEO, 2026)');
   assert.equal(d.figures[1].reason, 'BIS feed did not answer');
   assert.equal(d.figures[2].reason, 'not in this pull');
-  assert.match(d.coverage, /^1 of 12 indicators live, 11 missing/);
+  assert.match(d.coverage, /^1 of 13 indicators live, 12 missing/);
 });
 
 test('real rate and r minus g are worked out only from live inputs, saying how and noting mixed periods', () => {
