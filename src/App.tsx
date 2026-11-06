@@ -64,14 +64,9 @@ import { PortfolioSummary } from './components/PortfolioSummary';
 import { BookBriefPanel } from './components/BookBriefPanel';
 import { HoldingsPanel } from './components/HoldingsPanel';
 import { PortfolioOverlayPanel } from './components/PortfolioOverlayPanel';
-import { IcMemoBuilder } from './components/IcMemoBuilder';
-import { ResearchNotebooks } from './components/ResearchNotebooks';
-import { PolicyReviews } from './components/PolicyReviews';
 import { START_REVIEW_EVENT } from './utils/reviewHandoff';
 import { EXPLAIN_EVENT } from './utils/explainHandoff';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './utils/refereeModel';
-import { SavedCouncilDocuments } from './components/CouncilDocuments';
-import { TeachingEpisodes } from './components/TeachingEpisodes';
 import { ResearchScopeBar, isResearchScope, type ResearchScope } from './components/ResearchScopeBar';
 import { ResearchCompare } from './components/ResearchCompare';
 import { LiveCountBadge, ResearchHeader, SourcesGrid } from './components/ResearchSections';
@@ -88,12 +83,12 @@ import { loadHoldings, saveHoldings,   type Holding } from './utils/holdings';
 
 type AppArea = 'today' | 'country' | 'compare' | 'portfolio' | 'reports' | 'desks';
 import { EconQuestLogo } from './components/EconQuestLogo';
-import { lazyNamed } from './components/LazyDesk';
+import { lazyNamed, DeskLoading } from './components/LazyDesk';
+import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { describeSnapshotSync } from './utils/syncMessages';
 import {
   ExecutiveTearSheetAndTradeTicketDrawer,
 } from './components/MultiSovereignComparatorAndTicketDrawers';
-import { GlobalTerminalProvenanceAndStatRefController } from './components/RealTimeDataProvenanceOverlay';
 import {
   computeSovereignNssYieldCurveSuite,
   DEFAULT_NSS_SHOCK_INPUTS,
@@ -121,12 +116,7 @@ import {
   Users,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
-import { AuditLogDialog } from './components/AuditLogDialog';
-import { DataHealthDialog } from './components/DataHealthDialog';
-import { ModelRegisterDialog } from './components/ModelRegisterDialog';
 import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
-import { AccountDialog } from './components/AccountDialog';
-import { UsersDialog } from './components/UsersDialog';
 import type { PublicAccount } from './utils/auth';
 import { fetchAuthStatus } from './utils/authClient';
 import { ROLE_LABEL } from './utils/authLabels';
@@ -142,6 +132,16 @@ import { loadShareMode, saveShareMode } from './utils/shareMode';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
+const GlobalTerminalProvenanceAndStatRefController = lazyNamed(() => import('./components/RealTimeDataProvenanceOverlay'), 'GlobalTerminalProvenanceAndStatRefController');
+const IcMemoBuilder = lazyNamed(() => import('./components/IcMemoBuilder'), 'IcMemoBuilder');
+const ResearchNotebooks = lazyNamed(() => import('./components/ResearchNotebooks'), 'ResearchNotebooks');
+const PolicyReviews = lazyNamed(() => import('./components/PolicyReviews'), 'PolicyReviews');
+const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes'), 'TeachingEpisodes');
+const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
+const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
+const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
+const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
+const UsersDialog = lazyNamed(() => import('./components/UsersDialog'), 'UsersDialog');
 const CustomSovereignOnboardingModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'CustomSovereignOnboardingModal');
 const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SelfHostAndOllamaRuntimeModal');
 const SovereignManualAndGithubModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SovereignManualAndGithubModal');
@@ -1752,7 +1752,7 @@ export default function App() {
               onChangeDesk={(d) => setActiveNavSection(d as NavSectionId)}
               renderDesk={(d) =>
                 d === 'ic_memo_builder' ? (
-                  <>
+                  <Suspense fallback={<DeskLoading />}>
                   <div id="tool-policy-reviews" className="mb-3 scroll-mt-4">
                     <PanelBoundary name="Policy reviews">
                       <PolicyReviews countries={liveWatchlistItems} defaultIso3={run.iso3} />
@@ -1790,7 +1790,7 @@ export default function App() {
                       <TeachingEpisodes countries={liveWatchlistItems} />
                     </PanelBoundary>
                   </div>
-                  </>
+                  </Suspense>
                 ) : null
               }
             />
@@ -1810,12 +1810,14 @@ export default function App() {
       </main>
 
       {/* GLOBAL REAL-TIME DATA PROVENANCE OVERLAY & INTERACTIVE STATISTICAL REFERENCE TOOLTIP CONTROLLER */}
+      <Suspense fallback={null}>
       <GlobalTerminalProvenanceAndStatRefController
         run={run}
         activeNavSection={activeNavSection}
         onRefreshLiveOpenData={() => handlePullLiveOpenData(run.iso3, run.countryName, false)}
         isFetchingData={isFetchingOpenData}
       />
+      </Suspense>
 
       {isCustomSovereignModalOpen && (
         <Suspense fallback={null}>
@@ -1828,11 +1830,11 @@ export default function App() {
       )}
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
-      {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
-      {isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}
-      {registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}
-      {isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}
-      {isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}
+      <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
+      <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
       {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>

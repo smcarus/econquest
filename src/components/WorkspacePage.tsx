@@ -1,5 +1,4 @@
 import React from 'react';
-import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
 
 /**
  * A workflow page (Portfolio, Reports): a title, an optional summary panel, then tabs.
@@ -78,13 +77,7 @@ export const WORKFLOW_ONLY_DESKS: Record<string, string> = {
 };
 
 export function deskLabel(id: string): string {
-  if (WORKFLOW_ONLY_DESKS[id]) return WORKFLOW_ONLY_DESKS[id];
-  try {
-    const { moduleItem } = findPillarForNavSection(id);
-    return moduleItem.id === id ? moduleItem.shortLabel || moduleItem.label : id;
-  } catch {
-    return id;
-  }
+  return WORKFLOW_ONLY_DESKS[id] || id;
 }
 
 interface WorkspacePageProps {
