@@ -34,6 +34,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
+| Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -329,6 +330,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Flag: a total of 15% of GDP or more, the IMF market-access DSA benchmark for emerging markets.
 - **Limits:** Domestic amortisation (local debt held by residents) has no free cross-country source, so the total is a lower bound; for countries that borrow mainly at home it can be far below the true need. IDS covers low- and middle-income countries only. IMF years from this one on and all IDS years are projections.
 - **Code:** `src/utils/grossFinancingNeed.ts`
+
+### Reserve adequacy (IMF ARA, partial)
+
+- **Shows in:** Research > History & data
+- Traditional ratios: reserves in months of imports, reserves / short-term external debt (Greenspan-Guidotti, 100%), reserves / broad money (20%).
+- IMF ARA EM metric without other portfolio liabilities: 30% of short-term external debt (World Bank IDS) + 5% (floating) or 10% (fixed) of broad money (World Bank, % of GDP x IMF WEO GDP in US$) + 5% or 10% of exports of goods and services (World Bank). Both weightings shown; reserves include gold.
+- Reading: reserves under 100% of the floating-weight partial metric are under 100% of the full IMF metric whatever the regime; above that, adequacy cannot be shown without the missing term.
+- **Limits:** Other portfolio liabilities (from the international investment position) have no free cross-country source, so the ratio is an upper bound of the IMF's. The exchange rate regime is not a free feed. Short-term debt is World Bank IDS, low- and middle-income countries only; annual data lag a year or more.
+- **Code:** `src/utils/reserveAdequacy.ts`
 
 ### Fiscal reaction (Bohn test)
 

@@ -3,6 +3,7 @@ import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, DATA_D
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
+import { reserveAdequacy, reserveAdequacySentence } from './src/utils/reserveAdequacy';
 import { vintageLabel, weoVintageReply, WEO_VINTAGE_CODES } from './src/utils/weoVintages';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
@@ -3248,6 +3249,20 @@ async function startServer() {
     const r = grossFinancingNeed({ primaryBalance: pick('primary_balance'), overallBalance: pick('overall_balance'), gdpUsd: pick('gdp_usd'), schedule: schedule ?? null });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...r, ...(r.ok ? { sentence: gfnSentence(r, name) } : {}) });
+  });
+  // Reserve adequacy (src/utils/reserveAdequacy.ts): traditional ratios and the IMF ARA metric without other liabilities.
+  app.get('/api/reserve-adequacy/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    if (!file) return res.json({ iso3, ok: false, reason: 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)' });
+    const pick = (id: string) => {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+      const s = fig ? officialSeries(file, fig) : null;
+      return s && 'points' in s ? s : undefined;
+    };
+    const r = reserveAdequacy({ reservesUsd: pick('reserves_usd'), shortTermDebtUsd: pick('short_term_debt_usd'), broadMoneyGdp: pick('broad_money_gdp'), exportsUsd: pick('exports_usd'), gdpUsd: pick('gdp_usd'), reservesMonths: pick('reserves_months') });
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: reserveAdequacySentence(r, name) } : {}) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {

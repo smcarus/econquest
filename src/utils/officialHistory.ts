@@ -55,6 +55,9 @@ export const OFFICIAL_FIGURES: OfficialFigure[] = [
   },
   { id: 'reserves_usd', source: 'wb', code: 'FI.RES.TOTL.CD', label: 'Total reserves incl. gold', unit: 'USD bn', transform: (v) => Number((v / 1e9).toFixed(2)) },
   { id: 'short_term_debt_reserves', source: 'wb', code: 'DT.DOD.DSTC.IR.ZS', label: 'Short-term external debt', unit: '% of reserves' },
+  { id: 'short_term_debt_usd', source: 'wb', code: 'DT.DOD.DSTC.CD', label: 'Short-term external debt, US dollars', unit: 'USD bn', transform: (v) => Number((v / 1e9).toFixed(2)), about: 'World Bank IDS: external debt with original maturity of one year or less, all sectors.' },
+  { id: 'broad_money_gdp', source: 'wb', code: 'FM.LBL.BMNY.GD.ZS', label: 'Broad money', unit: '% of GDP' },
+  { id: 'exports_usd', source: 'wb', code: 'NE.EXP.GNFS.CD', label: 'Exports of goods and services', unit: 'USD bn', transform: (v) => Number((v / 1e9).toFixed(2)) },
 ];
 
 export interface OfficialRun {
