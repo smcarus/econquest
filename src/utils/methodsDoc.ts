@@ -113,6 +113,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/grVar.ts',
   },
   {
+    id: 'historical_context',
+    name: 'Historical context line',
+    where: 'Research > History & data > History (under the chart)',
+    method: [
+      'The latest real observation of the figure (IMF projections left out) against all earlier observations: a record high or low, or "highest/lowest since" the most recent earlier date at least as extreme, whichever run is longer.',
+      'A "since" date is shown only when it is far enough back to matter: at least 3 years (yearly), 4 quarters, 12 months, 26 weeks or 60 days.',
+      'Where it sits: the share of all observations at or below it. Change on the observation one year earlier, in points for shares and rates.',
+    ],
+    limits: 'Only the history the app has saved for that figure; a short series makes "on record" weak, so the first date is always given. No rank among peers yet.',
+    code: 'src/utils/historicalContext.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',

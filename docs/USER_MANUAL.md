@@ -338,6 +338,11 @@ tuned and run again under the same name; a new method is a new test. The Nowcast
 in Council chat gives the same figures with the same verdicts. `npm run forecast:worst` lists the
 series where a model missed most.
 
+**Historical context.** Under each History chart a line puts the latest figure in its own
+history: a record or "highest since" (only when that date is far enough back to matter), where it
+sits among all the saved observations, and the change on a year earlier. IMF projections are left
+out.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

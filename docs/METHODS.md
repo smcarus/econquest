@@ -55,6 +55,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Country risk scorecard | Research | Stated method, no call to test | Not applicable |
 | Sanctions lists | Research | Stated method, no call to test | Not applicable |
 | Geopolitical risk VaR | Research | Stated method, no call to test | Not applicable |
+| Historical context line | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -640,6 +641,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Global channels: the mean US policy rate and dollar moves of the stress months, put through the country's fitted scenario model (Global shock scenarios), with its 90% band from Newey-West coefficient errors.
 - **Limits:** Past co-movement with a news-based index, not a forecast. GPR stays high for months at a time, so the stress months are fewer independent episodes than their count, and a 95% tail read from 20 to 40 months is rough. Currency only; no bond or equity prices. Built fresh, not ported from another tool.
 - **Code:** `src/utils/grVar.ts`
+
+### Historical context line
+
+- **Shows in:** Research > History & data > History (under the chart)
+- The latest real observation of the figure (IMF projections left out) against all earlier observations: a record high or low, or "highest/lowest since" the most recent earlier date at least as extreme, whichever run is longer.
+- A "since" date is shown only when it is far enough back to matter: at least 3 years (yearly), 4 quarters, 12 months, 26 weeks or 60 days.
+- Where it sits: the share of all observations at or below it. Change on the observation one year earlier, in points for shares and rates.
+- **Limits:** Only the history the app has saved for that figure; a short series makes "on record" weak, so the first date is always given. No rank among peers yet.
+- **Code:** `src/utils/historicalContext.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

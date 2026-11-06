@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
+import { contextSentence, historicalContext } from '../utils/historicalContext';
 
 /**
  * Country Research > History: every figure that has a run of real observations, as a chart with
@@ -83,6 +84,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
   }, [iso3, current?.id]);
 
   const gaps = useMemo(() => (series ? seriesGaps(series) : []), [series]);
+  const context = useMemo(() => (series ? historicalContext(series.points, series.freq) : null), [series]);
 
   if (failed) {
     return (
@@ -121,6 +123,11 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
           {series && (
             <>
               {series.about && <p className="text-xs text-slate-500 dark:text-slate-400">{series.about}</p>}
+              {context && (
+                <p className="text-sm text-slate-900 dark:text-white" data-history-context="true">
+                  {contextSentence(series.label, series.unit, context)}
+                </p>
+              )}
               <div className="h-64" data-history-chart="true">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={series.points} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
