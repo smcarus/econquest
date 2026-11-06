@@ -9,3 +9,6 @@ coverage/
 data/live/
 data/archive/
 data/local/
+deploy/home-server/.env
+deploy/home-server/data/
+deploy/home-server/ollama/

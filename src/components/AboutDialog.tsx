@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Info, X } from 'lucide-react';
+import { REQUIRED_CREDITS } from '../data/requiredCredits';
+import { SourceCredits } from './SourceCredits';
 import { DATA_LICENCES, LICENCE_SHARE_LABEL, LICENCE_STATUS_HELP, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
@@ -58,6 +60,15 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
             Research, not validated advice. No model in the app has been independently validated; each signal shows its pre-registered
             backtest verdict under Menu &gt; Models &amp; validation. Nothing here is a recommendation to buy or sell.
           </p>
+          <h3 className="ui-section-title">Credits</h3>
+          <p>Three sources ask for a visible credit wherever their figures show. The app shows each one beside those figures, and here:</p>
+          <ul className="space-y-1" data-about-credits>
+            {REQUIRED_CREDITS.map((c) => (
+              <li key={c.id}>
+                <SourceCredits credits={[c]} className="!text-sm !text-slate-700 dark:!text-slate-200" />
+              </li>
+            ))}
+          </ul>
           <h3 className="ui-section-title">Data licences</h3>
           <p>
             What each source&apos;s own terms say about showing its figures to other people and about commercial use, with the credit it

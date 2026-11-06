@@ -25,6 +25,9 @@ pretended. Nothing in the app treats a self-approved report as independently rev
 
 ## What a multi-user server version would need
 
+Status 2026-11-06: items 1 and 2 are built as local accounts and Viewer / Analyst / Admin roles
+(the Approver duties sit with Admin for now); see [SECURITY.md](./SECURITY.md).
+
 Only worth building once a second person uses the app. In order:
 
 1. **Accounts.** Sign-in (an identity provider such as Google Workspace or Microsoft Entra, or

@@ -11,6 +11,8 @@ import { hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCal
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { getSnapshotDataStatus } from '../utils/dataStatus';
 import { countryDataSources, pathMissing } from '../utils/countryNotes';
+import { creditsForSources } from '../data/requiredCredits';
+import { SourceCredits } from './SourceCredits';
 import { describeAge, freshnessChecks } from '../utils/freshness';
 import { toLive } from '../utils/liveFigures';
 import { isCoreCountryTab } from '../utils/simpleMode';
@@ -359,6 +361,7 @@ export const CountryPage: React.FC<{
                   </button>
                 </div>
                 <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Before sharing these figures, check each source&apos;s terms: some need a credit, a few need the provider&apos;s permission for client or commercial use.</p>
+                <SourceCredits credits={creditsForSources(run.openData?.liveApiSourcesActive ?? [])} className="mt-1" />
               </header>
             </section>
             <FreshnessPanel item={watchlistItems.find((w) => w.iso3 === run.iso3)} />

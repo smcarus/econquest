@@ -16,6 +16,7 @@ export const WORKSPACE_KEYS: Record<string, string> = {
   sovereign_council_watchlists_v1: 'watchlists',
   econquest_custom_sovereigns_v1: 'countries you added',
   econquest_ai_runtime_config_v1: 'AI model settings',
+  'econquest.shareMode.v1': 'sharing mode',
 };
 
 /** Largest value kept for one key (a long holdings list is well under this). */

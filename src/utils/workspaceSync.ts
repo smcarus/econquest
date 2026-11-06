@@ -12,6 +12,7 @@ export const SYNCED_KEYS = [
   'sovereign_council_watchlists_v1',
   'econquest_custom_sovereigns_v1',
   'econquest_ai_runtime_config_v1',
+  'econquest.shareMode.v1',
 ] as const;
 
 const isSynced = (key: string) => (SYNCED_KEYS as readonly string[]).includes(key);

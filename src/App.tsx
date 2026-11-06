@@ -184,12 +184,19 @@ import {
   Wrench,
   MessageSquare,
   HardDriveDownload,
+  UserRound,
+  Users,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { AuditLogDialog } from './components/AuditLogDialog';
 import { DataHealthDialog } from './components/DataHealthDialog';
 import { ModelRegisterDialog } from './components/ModelRegisterDialog';
 import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
+import { AccountDialog } from './components/AccountDialog';
+import { UsersDialog } from './components/UsersDialog';
+import type { PublicAccount } from './utils/auth';
+import { fetchAuthStatus } from './utils/authClient';
+import { ROLE_LABEL } from './utils/authLabels';
 import { OPEN_REGISTER_EVENT } from './components/ValidationBadge';
 import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
 import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
@@ -198,6 +205,7 @@ import { OPEN_SETTINGS_EVENT, SettingsDialog, type SettingsTab } from './compone
 import { PanelBoundary } from './components/PanelBoundary';
 import { reviveMissing, reviveWatchlistGroups } from './utils/reviveMissing';
 import { loadCouncilBrief } from './utils/askCouncil';
+import { loadShareMode, saveShareMode } from './utils/shareMode';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
@@ -651,6 +659,24 @@ export default function App() {
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
   const [aboutFocus, setAboutFocus] = useState<string | null | undefined>(undefined);
+  // Menu > Sharing mode: table downloads hold back figures whose sources' terms do not let them be passed on.
+  const [shareMode, setShareModeState] = useState<boolean>(() => loadShareMode());
+  const toggleShareMode = () =>
+    setShareModeState((on) => {
+      saveShareMode(!on);
+      return !on;
+    });
+  // Menu > Account: the signed-in name beside the item, or that sign-in is off.
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [accountHint, setAccountHint] = useState('');
+  const [me, setMe] = useState<PublicAccount | null>(null);
+  const [isUsersOpen, setIsUsersOpen] = useState(false);
+  useEffect(() => {
+    void fetchAuthStatus().then((s) => {
+      setMe(s?.account ?? null);
+      setAccountHint(!s ? '' : s.account ? `${s.account.displayName} · ${ROLE_LABEL[s.account.role]}` : s.mode === 'off' ? 'Sign-in off' : '');
+    });
+  }, []);
   useEffect(() => {
     const onOpen = (e: Event) => setRegisterFocus(((e as CustomEvent).detail as string | null) ?? null);
     window.addEventListener(OPEN_REGISTER_EVENT, onOpen);
@@ -2572,6 +2598,18 @@ export default function App() {
 
           <OfflinePill status={onlineStatus} onOpen={() => setIsOfflineDataOpen(true)} />
 
+          {shareMode && (
+            <button
+              type="button"
+              onClick={toggleShareMode}
+              title="Sharing mode is on: downloads hold back figures whose sources' terms do not let them be passed on. Click to turn it off."
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap text-amber-700 dark:text-amber-300"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Sharing mode</span>
+            </button>
+          )}
+
           <div className="relative" ref={headerMenuRef}>
             <button
               type="button"
@@ -2681,6 +2719,26 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'account',
+                        icon: <UserRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Account',
+                        hint: accountHint,
+                        onClick: () => setIsAccountOpen(true),
+                        className: '',
+                      },
+                      ...(me?.role === 'admin'
+                        ? [
+                            {
+                              key: 'users',
+                              icon: <Users className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                              label: 'Users',
+                              hint: '',
+                              onClick: () => setIsUsersOpen(true),
+                              className: '',
+                            },
+                          ]
+                        : []),
+                      {
                         key: 'audit',
                         icon: <ScrollText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'Audit log',
@@ -2694,6 +2752,15 @@ export default function App() {
                         label: 'Models & validation',
                         hint: '',
                         onClick: () => setRegisterFocus(null),
+                        className: '',
+                      },
+                      {
+                        key: 'share',
+                        icon: <ShieldCheck className={`w-3.5 h-3.5 ${shareMode ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
+                        label: 'Sharing mode',
+                        hint: shareMode ? 'On' : 'Off',
+                        title: 'On: downloads hold back figures whose sources\' terms do not let them be passed on, or do not say (Menu > About & data licences).',
+                        onClick: toggleShareMode,
                         className: '',
                       },
                       {
@@ -2739,6 +2806,8 @@ export default function App() {
                     ]
                   )
                     .filter((item) => showAllTools || !['qa', 'present', 'ab', 'pdf'].includes(item.key))
+                    // The audit log is for admins once accounts exist (src/utils/permissions.ts).
+                    .filter((item) => item.key !== 'audit' || !me || me.role === 'admin')
                     .map((item) => (
                     <button
                       key={item.key}
@@ -3771,6 +3840,8 @@ export default function App() {
       {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
       {isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}
       {registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}
+      {isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}
+      {isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}
       {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>
