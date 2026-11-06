@@ -5891,6 +5891,17 @@ async function startServer() {
       file: 'data/local/data-health/source-checks.jsonl',
     });
   });
+  // Data health: counts for the menu (failing sources at the last check, figures missing or older than usual now).
+  app.get('/api/data/health/summary', (_req, res) => {
+    const last = readChecks(DATA_HEALTH_FILES).at(-1);
+    const open = openIssues(readLedger(FIGURE_WATCH_FILES));
+    res.json({
+      failingSources: (last?.rows || []).filter((r) => isFailure(r.state)).length,
+      lastCheckAt: last?.checkedAt || null,
+      missingFigures: open.filter((o) => o.kind === 'missing').length,
+      staleFigures: open.filter((o) => o.kind === 'stale').length,
+    });
+  });
   // Data health: figure alerts (went missing, older than usual, jumps, out of range, revised).
   app.get('/api/data/health/figures', (req, res) => {
     const iso3 = typeof req.query.iso3 === 'string' ? req.query.iso3.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) : '';

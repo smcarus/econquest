@@ -426,6 +426,25 @@ hold no figures of their own; the handout reads them from the app's series when 
   time it opens: an entry changed or removed after it was written shows as "Check failed". Someone who
   rewrites the whole file could rebuild the chain, so keep the latest hash or an export elsewhere if
   that matters. Keys, document text and holdings amounts are never logged. The log is not in backups.
+- **Data health**: whether the data is still coming in, and whether any of it changed under you.
+  The menu shows how many sources failed at the last check and how many watchlist figures are
+  missing now. Three tabs:
+  - *Sources*: every source's state at the last check, failing first, with "No answer since <date>
+    (n checks in a row)", how many of its last checks connected, and its last 14 checks as dots. The
+    app checks every source once a night after 05:30 (`DATA_CHECK_TIME`, `DATA_CHECK_TZ` in `.env`;
+    a Mac asleep then checks when it wakes, an offline one waits for the connection). *Check now*,
+    *Check again* under Tools and `npm run check:data` add to the same history.
+  - *Figure alerts*: each watchlist figure is compared with the last reading at every rebuild. An
+    alert is kept when a figure went missing (and stayed missing 30 minutes), came back, got older
+    than its source usually runs, jumped more than that kind of figure plausibly moves in one step,
+    left its plausible range (a units slip, most likely), or came back with a new value for a period
+    already read (a revision). *Open now* lists what is missing or old at this moment. Alerts never
+    change a figure; they say what to check.
+  - *Revisions*: IMF and World Bank yearly values that changed between full-history downloads, with
+    the old value, the new one and the date the change was seen. Revised IMF projections are hidden
+    unless you tick *Include IMF projections* (every WEO revises them). The History tab shows the same
+    as "Revised from X on <date>" beside the year.
+  Kept in `data/local/data-health/` and in `data/history/` (never keys).
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
   (briefs, documents, notebooks, teaching episodes), policy reviews, watch alerts, holdings, watchlists, added
   countries and AI model settings. API keys are never in it. *Choose a backup file* shows what a

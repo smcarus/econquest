@@ -171,6 +171,7 @@ import {
   Plus,
   Database,
   ScrollText,
+  Activity,
   ShieldQuestion,
   Info,
   ChevronDown,
@@ -186,6 +187,7 @@ import {
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { AuditLogDialog } from './components/AuditLogDialog';
+import { DataHealthDialog } from './components/DataHealthDialog';
 import { ModelRegisterDialog } from './components/ModelRegisterDialog';
 import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
 import { OPEN_REGISTER_EVENT } from './components/ValidationBadge';
@@ -628,6 +630,23 @@ export default function App() {
   const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState<boolean>(false);
   const [isOfflineDataOpen, setIsOfflineDataOpen] = useState<boolean>(false);
   const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
+  // Menu > Data health, and the counts shown beside it (refreshed every 5 minutes).
+  const [isDataHealthOpen, setIsDataHealthOpen] = useState<boolean>(false);
+  const [dataHealthSummary, setDataHealthSummary] = useState<{ failingSources: number; missingFigures: number; staleFigures: number } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch('/api/data/health/summary')
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => alive && j && setDataHealthSummary(j))
+        .catch(() => undefined);
+    load();
+    const t = setInterval(load, 5 * 60_000);
+    return () => {
+      alive = false;
+      clearInterval(t);
+    };
+  }, [isDataHealthOpen]);
   // Menu > Models & validation; a status badge anywhere opens it on its row (undefined = closed).
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
@@ -2647,6 +2666,21 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'health',
+                        icon: <Activity className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Data health',
+                        hint: dataHealthSummary
+                          ? [
+                              dataHealthSummary.failingSources ? `${dataHealthSummary.failingSources} failing` : '',
+                              dataHealthSummary.missingFigures ? `${dataHealthSummary.missingFigures} missing` : '',
+                            ]
+                              .filter(Boolean)
+                              .join(' · ')
+                          : '',
+                        onClick: () => setIsDataHealthOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'audit',
                         icon: <ScrollText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'Audit log',
@@ -3735,6 +3769,7 @@ export default function App() {
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
+      {isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}
       {registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}
       {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
       {isManualModalOpen && (
