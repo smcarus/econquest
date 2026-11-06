@@ -44,6 +44,8 @@ import { focusQuestion, withExplainAgents, type ExplainFocus } from '../utils/ex
 import { EXPLAIN_EVENT } from '../utils/explainHandoff';
 import { PRESETS, computeChart, fetchChartSeries } from '../utils/councilChart';
 import { lazyNamed } from './LazyDesk';
+import { chatSuggestions, SUGGESTION_KIND_LABEL } from '../utils/chatSuggestions';
+import { loadHoldings } from '../utils/holdings';
 // The chart card (recharts) loads only when an answer has a chart.
 const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
 
@@ -368,6 +370,11 @@ export const AskCouncilPanel: React.FC<{
     items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, choosing, docs, setDocs,
     debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy, pinned, pinData,
   } = useCouncilChat();
+  // Welcome suggestions from your holdings, watchlist moves and your last saved question (src/utils/chatSuggestions.ts).
+  const suggestions = React.useMemo(
+    () => chatSuggestions({ holdings: loadHoldings(), items, recent: lib.briefs, examples: EXAMPLES }),
+    [items, lib.briefs],
+  );
   /** Save to Reports: the answer becomes the council brief there, and each document is kept. Stays in the chat. */
   const saveAnswer = (b: SavedCouncilBrief | null, docs: CouncilDocument[]) => {
     if (!b) return;
@@ -728,9 +735,18 @@ export const AskCouncilPanel: React.FC<{
               Agents answer from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.
             </p>
             <div className={`flex flex-wrap gap-1.5 ${page ? 'justify-center' : ''}`}>
-              {EXAMPLES.map((ex) => (
-                <button key={ex} type="button" className="ui-pill" disabled={busy} onClick={() => void ask(ex, 'new')}>
-                  {ex}
+              {suggestions.map((sug) => (
+                <button
+                  key={sug.text}
+                  type="button"
+                  className="ui-pill"
+                  disabled={busy}
+                  onClick={() => void ask(sug.text, 'new')}
+                  title={sug.why || undefined}
+                  data-council-suggestion={sug.kind}
+                >
+                  {SUGGESTION_KIND_LABEL[sug.kind] && <span className="text-slate-500 dark:text-slate-400">{SUGGESTION_KIND_LABEL[sug.kind]} · </span>}
+                  {sug.text}
                 </button>
               ))}
             </div>
