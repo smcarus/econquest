@@ -29,7 +29,8 @@ WORKDIR /app
 ENV NODE_ENV=production \
     SELF_HOSTED_DOCKER=true \
     PORT=3000 \
-    DATA_DIR=/app/data
+    DATA_DIR=/app/data \
+    LOG_FORMAT=json
 
 COPY --chown=node:node package.json package-lock.json ./
 COPY --chown=node:node --from=deps /app/node_modules ./node_modules
