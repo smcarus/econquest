@@ -159,7 +159,7 @@ From the terms:
 
 ### ECB euro reference rates (through Frankfurter)
 
-- **Used for:** FX volatility; last year's closing rate for the year-to-date move
+- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with the source quoted and the figures unmodified.
 - **Terms read:** [ECB statistics reuse policy](https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html); [Frankfurter licence](https://frankfurter.dev/license/) (checked 2026-11-06)

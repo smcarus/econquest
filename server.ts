@@ -52,6 +52,7 @@ import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflat
 import { pullImfExternal, type ImfExternal, type ImfStructure } from './src/utils/imfReserves';
 import { pullCofer, type CoferReading } from './src/utils/imfCofer';
 import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
+import { EMPTY_FX_HISTORY, fxQuarterUrl, parseFxQuarter, quartersToPull, readFxHistoryFile, type FxHistoryFile } from './src/utils/fxHistory';
 import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
@@ -570,6 +571,79 @@ async function fetchHcSpread(opts: { force?: boolean } = {}): Promise<HcSpreadPu
   const value = got ?? loadMarketExtras().hcSpread ?? null;
   hcSpreadCache = { at: Date.now(), value, ...(got ? {} : { fallback: true }) };
   return value;
+}
+
+/**
+ * Daily exchange rate history (src/utils/fxHistory.ts): ECB reference rates per US dollar since
+ * 1999, pulled one calendar quarter per request, newest first, four at a time. Saved to
+ * data/live/fx-history.json after each batch so a stopped pull keeps what it read. Finished
+ * quarters are never pulled again; the current one is pulled again after 12 hours. One pull runs
+ * at a time; callers that cannot wait race it against a timeout and read the saved file.
+ */
+let fxHistoryMemory: FxHistoryFile | null = null;
+let fxHistoryPending: Promise<{ file: FxHistoryFile; read: number; failed: number }> | null = null;
+function fxHistoryPath(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'fx-history.json');
+}
+function loadFxHistory(): FxHistoryFile {
+  if (fxHistoryMemory) return fxHistoryMemory;
+  try {
+    fxHistoryMemory = readFxHistoryFile(JSON.parse(fs.readFileSync(fxHistoryPath(), 'utf8')));
+  } catch {
+    fxHistoryMemory = { ...EMPTY_FX_HISTORY, chunks: {} };
+  }
+  return fxHistoryMemory;
+}
+function saveFxHistory(file: FxHistoryFile) {
+  try {
+    fs.mkdirSync(path.dirname(fxHistoryPath()), { recursive: true });
+    writeFileAtomic(fxHistoryPath(), JSON.stringify(file));
+  } catch (err: any) {
+    console.warn(`[FX history] could not save: ${err?.message || err}`);
+  }
+}
+async function pullFxHistory(): Promise<{ file: FxHistoryFile; read: number; failed: number }> {
+  if (fxHistoryPending) return fxHistoryPending;
+  fxHistoryPending = (async () => {
+    const file = loadFxHistory();
+    const todo = quartersToPull(file);
+    let read = 0;
+    let failed = 0;
+    for (let i = 0; i < todo.length; i += 4) {
+      const batch = todo.slice(i, i + 4);
+      const got = await Promise.all(batch.map(async (key) => {
+        const url = fxQuarterUrl(key);
+        if (!url) return null;
+        try {
+          const res = await fetchWithTimeout(url, 10000);
+          if (!res.ok) return null;
+          const rates = parseFxQuarter(await res.json());
+          return rates ? { key, rates } : null;
+        } catch {
+          return null;
+        }
+      }));
+      const at = new Date().toISOString();
+      for (const g of got) if (g) file.chunks[g.key] = { pulledAt: at, rates: g.rates };
+      const n = got.filter(Boolean).length;
+      read += n;
+      failed += batch.length - n;
+      if (n) saveFxHistory(file);
+      // The newest batch failing entirely means Frankfurter is not answering: stop and keep what is saved.
+      if (!n) {
+        failed += todo.length - i - batch.length;
+        break;
+      }
+    }
+    if (failed) console.warn(`[FX history] ${read} quarters read, ${failed} not read (Frankfurter did not answer)`);
+    return { file, read, failed };
+  })().finally(() => {
+    fxHistoryPending = null;
+  });
+  return fxHistoryPending;
+}
+async function fetchFxHistory(): Promise<FxHistoryFile> {
+  return quartersToPull(loadFxHistory()).length ? (await pullFxHistory()).file : loadFxHistory();
 }
 
 /** US 10Y (OECD monthly, via FRED): the benchmark for spreads over Treasuries in MarketEdge. */
@@ -2540,6 +2614,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       hcSpreadCache = null;
       const n = Object.keys(got.countries).length;
       return { outcome: 'done', note: `${n} countries saved` };
+    }
+    case 'world:fx_history': {
+      const r = await pullFxHistory();
+      const total = Object.keys(r.file.chunks).length;
+      if (!r.read && !total) return { outcome: 'failed', note: 'Frankfurter (ECB reference rates) did not answer' };
+      const note = `${total} quarters saved${r.read ? `, ${r.read} read now` : ''}${r.failed ? `; ${r.failed} not read, next time` : ''}`;
+      return { outcome: r.failed ? 'failed' : 'done', note };
     }
     case 'world:market_extras': {
       const fredIds = [...new Set([US_10Y_SERIES, ...MARKET_EDGE_ANCHORS.map((d) => d.fredSeries).filter((x): x is string => !!x)])];
@@ -5972,13 +6053,15 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
       quick(fetchQnaPull()),
       quick(fetchMonthlyActivity()),
+      // Saved quarters answer at once; a first download finishes in the background.
+      quick(fetchFxHistory()).then((h) => h ?? loadFxHistory()),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -5997,6 +6080,8 @@ async function startServer() {
       archive,
       official,
       hcSpread: hcSpreadPull,
+      fxHistory,
+      currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
   }
   async function worldSeries(): Promise<Series[]> {
