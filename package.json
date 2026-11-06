@@ -27,7 +27,8 @@
     "docs:methods": "tsx scripts/docs-methods.ts",
     "users": "tsx scripts/users.ts",
     "backup:drill": "tsx scripts/backup-drill.ts",
-    "forecast:evaluate": "tsx scripts/forecast-evaluate.ts"
+    "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",
+    "forecast:worst": "tsx scripts/forecast-worst.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

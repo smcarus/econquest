@@ -22,11 +22,17 @@ export const makeGeminiClient = () =>
       },
     },
   });
-export let ai = makeGeminiClient();
+// Built on first use, so a computer that only runs Ollama never constructs it (the SDK warns at
+// construction when no key is set).
+let gemini: GoogleGenAI | null = null;
+export function geminiClient(): GoogleGenAI {
+  if (!gemini) gemini = makeGeminiClient();
+  return gemini;
+}
 
-/** Rebuild the Gemini client after the key changes in Menu > Settings. */
+/** Rebuild the Gemini client after the key changes in Menu > Settings (on its next use). */
 export function resetGeminiClient(): void {
-  ai = makeGeminiClient();
+  gemini = null;
 }
 
 function resolveStepModelFromGuiConfig(
@@ -464,7 +470,7 @@ export async function executeResilientLlmStep<T>(options: {
           const backoffMs = 350 * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 180);
           await new Promise((r) => setTimeout(r, backoffMs));
         }
-        const resp = await ai.models.generateContent({
+        const resp = await geminiClient().models.generateContent({
           model: 'gemini-3.8-flash',
           contents: `${options.systemInstruction}\n\n${options.prompt}`,
           config: {

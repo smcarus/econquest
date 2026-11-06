@@ -170,7 +170,7 @@ import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSo
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
-import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, ai } from './src/server/ai';
+import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, geminiClient } from './src/server/ai';
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
@@ -2947,7 +2947,9 @@ async function startServer() {
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
     const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json' });
+    const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+    const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
+    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts });
   });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
@@ -4444,7 +4446,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           progress.start('search');
           const searchStart = Date.now();
           try {
-            const searchResp = await ai.models.generateContent({
+            const searchResp = await geminiClient().models.generateContent({
               model: 'gemini-3.8-flash',
               contents: `Latest macroeconomic, central bank policy rate, fiscal budget, and geopolitical risk developments for ${baseRun.countryName} (${iso3}): ${baseRun.scenarioPrompt}`,
               config: {
