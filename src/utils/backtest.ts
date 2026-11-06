@@ -26,7 +26,7 @@ import { ruleFamily } from './ruleFamily';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset';
 
 export interface BacktestSpec {
   id: string;
@@ -781,6 +781,49 @@ export function timingUnwindCases(spec: BacktestSpec, where: string, weeks: Cftc
     }
     lastEntry[dir] = i;
     out.push({ where, when: weeks[i].date, what, hit: further(i, dir), base: base[dir] });
+  }
+  return out;
+}
+
+/* ------------------------------------------------------------------ unrest spike -> conflict onset */
+
+/** One country-year for the unrest onset test. */
+export interface OnsetYear {
+  where: string;
+  year: number;
+  /** Complete GDELT months in the year with a full baseline. */
+  months: number;
+  /** Spike episodes in the year (protests or violence), as "YYYY-MM protests". */
+  episodes: string[];
+  /** No state-based armed conflict located in the country this year (UCDP/PRIO). */
+  quiet: boolean;
+  /** Conflict located in the country next year; null when UCDP does not cover next year yet. */
+  next: boolean | null;
+}
+
+/**
+ * Unrest spike -> conflict onset: among quiet country-years (no state-based armed conflict located
+ * in the country, UCDP/PRIO) with at least minMonthsInYear complete GDELT months, those with a
+ * spike episode are calls that a conflict starts the next calendar year. Base rate: the share of
+ * every quiet country-year in the sample followed by a conflict, pooled (onsets are too rare for a
+ * per-country rate). Quiet spike years whose next year UCDP does not cover yet are open calls.
+ */
+export function unrestOnsetCases(spec: BacktestSpec, years: OnsetYear[], open?: OpenCall[]): BacktestCase[] {
+  const { minMonthsInYear = 10 } = spec.params;
+  const lo = Number(spec.sample.from);
+  const hi = spec.sample.to ? Number(spec.sample.to) : 9999;
+  const usable = years.filter((y) => y.quiet && y.months >= minMonthsInYear && y.year >= lo && y.year <= hi);
+  const known = usable.filter((y) => y.next !== null);
+  const base = known.length ? known.filter((y) => y.next).length / known.length : 0;
+  const out: BacktestCase[] = [];
+  for (const y of usable) {
+    if (!y.episodes.length) continue;
+    const what = `spike episodes in ${y.year} (${y.episodes.slice(0, 3).join(', ')}${y.episodes.length > 3 ? ', ...' : ''}) with no armed conflict: conflict in ${y.year + 1}?`;
+    if (y.next === null) {
+      open?.push({ where: y.where, when: String(y.year), what, due: String(y.year + 1) });
+      continue;
+    }
+    out.push({ where: y.where, when: String(y.year), what, hit: y.next, base });
   }
   return out;
 }

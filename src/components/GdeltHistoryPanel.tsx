@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { V1Reading, V1Series } from '../utils/gdeltDaily';
 import { GDELT_V1_SHORT, V1_PERCENTILE_RULE, v1Figures } from '../utils/gdeltDaily';
+import type { SpikeMonth } from '../utils/unrestSpikes';
+import { ValidationBadge } from './ValidationBadge';
 
 /**
  * Research > History & data > Event history: protests and violence as a share of the country's
@@ -10,7 +12,7 @@ import { GDELT_V1_SHORT, V1_PERCENTILE_RULE, v1Figures } from '../utils/gdeltDai
  * since GDELT's volume grew many times over the years. Before a pull it says Missing and how.
  */
 
-type Reply = { series: V1Series | null; reading: V1Reading | null; pull: { pulledAt?: string; note?: string }; from: string };
+type Reply = { series: V1Series | null; reading: V1Reading | null; spikes?: SpikeMonth[]; spikeSentence?: string | null; spikeMethod?: string; pull: { pulledAt?: string; note?: string }; from: string };
 
 export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3, countryName }) => {
   const [reply, setReply] = useState<Reply | null>(null);
@@ -32,7 +34,7 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
   return (
     <section className="ui-panel" data-gdelt-daily="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
       <header className="ui-panel-header">
-        <h2 className="ui-section-title">Event history, {countryName}</h2>
+        <h2 className="ui-section-title flex items-center gap-2">Event history, {countryName} <ValidationBadge id="unrest_onset" /></h2>
         <p className="ui-label">Protests and violence as a share of the country&apos;s reported events, month by month, from GDELT&apos;s own event files.</p>
       </header>
       <div className="p-4 space-y-3">
@@ -65,6 +67,25 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
                 {r.month}: protests {r.protestPct}%{r.protestPctile !== null ? ` (${r.protestPctile}th percentile)` : ''}, violence {r.violencePct}%
                 {r.violencePctile !== null ? ` (${r.violencePctile}th percentile)` : ''}, against {r.months} months from {r.from}. {V1_PERCENTILE_RULE}.
               </p>
+            )}
+            {reply?.spikeSentence && (
+              <div className="space-y-1" data-unrest-spikes="true">
+                <p className="text-sm text-slate-900 dark:text-white">{reply.spikeSentence}</p>
+                {(reply.spikes || []).filter((x) => x.episodes.length).length > 0 && (
+                  <ul className="text-xs text-slate-600 dark:text-slate-300 list-disc pl-5">
+                    {(reply.spikes || [])
+                      .filter((x) => x.episodes.length)
+                      .slice(-8)
+                      .reverse()
+                      .map((x) => (
+                        <li key={x.month}>
+                          {x.month}: spike in {x.episodes.join(' and ')} (protests {x.protestPct}%, z {x.protestZ}; violence {x.violencePct}%, z {x.violenceZ})
+                        </li>
+                      ))}
+                  </ul>
+                )}
+                {reply.spikeMethod && <p className="text-xs text-slate-500 dark:text-slate-400">{reply.spikeMethod} Whether a spike year comes before armed conflict the next year is a pre-registered test (Models &amp; validation).</p>}
+              </div>
             )}
             <ChartNumbers
               caption={`Event history, ${countryName}`}

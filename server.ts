@@ -5,6 +5,7 @@ import { registerAnalysisRoutes } from './src/server/routes/analysis';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { forwardSummary } from './src/utils/forwardRecord';
+import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
 import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
@@ -154,7 +155,9 @@ import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, 
 import { ucdpData } from './src/utils/ucdpStore.ts';
 import { acledFileData } from './src/utils/acledFileStore.ts';
 import { v1FromMonth, v1Reading } from './src/utils/gdeltDaily.ts';
-import { gdeltDailyDir, gdeltDailySeries, loadDailyState } from './src/utils/gdeltDailyStore.ts';
+import { gdeltDailyDir, gdeltDailySeries, loadAllMonths, loadDailyState } from './src/utils/gdeltDailyStore.ts';
+/** Files on disk the unrest onset backtest reads, loaded only when it runs. */
+const backtestLocal = { gdeltMonths: () => loadAllMonths(gdeltDailyDir(DATA_DIR)), ucdp: () => ucdpData(DATA_DIR) };
 import { ucdpReading } from './src/utils/ucdpConflict.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -1684,7 +1687,7 @@ async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: strin
   validationRunning = true;
   try {
     const before = loadValidation(VALIDATION_FILE).versions;
-    const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
+    const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal });
     // Server alert when a test that passed (same id and version) does not pass now.
     const regressed = backtestRegressionAlert(backtestRegressions(before, out.versions, startedAt));
     if (regressed) void notify(regressed, LAST_ALERT_FILE);
@@ -2718,7 +2721,7 @@ async function startServer() {
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });
     validationRunning = true;
     try {
-      const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult });
+      const out = await runBacktests({ specDir: SPEC_DIR, resultFile: VALIDATION_FILE, onResult: auditBacktestResult, local: backtestLocal });
       res.json(out);
     } catch (error: any) {
       res.status(500).json({ error: `The backtests could not run (${error?.message || 'unknown error'}).` });
@@ -3089,7 +3092,8 @@ async function startServer() {
   app.get('/api/gdelt-daily/:iso3', (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const series = gdeltDailySeries(DATA_DIR, iso3);
-    res.json({ series, reading: v1Reading(series), pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
+    const spikes = spikeMonths(series);
+    res.json({ series, reading: v1Reading(series), spikes: spikes.slice(-36), spikeSentence: series ? spikeSentence(SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, spikes) : null, spikeMethod: SPIKE_METHOD, pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
   app.get('/api/track-record/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

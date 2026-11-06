@@ -7,12 +7,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { runBacktests, validationFilePath } from '../src/utils/backtestRun';
 import { appendAudit, auditFiles } from '../src/utils/auditStore';
+import { gdeltDailyDir, loadAllMonths } from '../src/utils/gdeltDailyStore';
+import { ucdpData } from '../src/utils/ucdpStore';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
 const out = await runBacktests({
   specDir: path.join(root, 'docs', 'validation', 'preregistered'),
   resultFile: validationFilePath(dataDir),
+  local: { gdeltMonths: () => loadAllMonths(gdeltDailyDir(dataDir)), ucdp: () => ucdpData(dataDir) },
   onResult: (r) =>
     appendAudit(auditFiles(dataDir), {
       kind: 'validation',
