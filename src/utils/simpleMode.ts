@@ -1,51 +1,15 @@
 /**
- * Core view: the app opens stripped down to the few things each role needs, while the best
- * workflows and screens are worked out. Everything else is still built and still works; it is
- * hidden behind one switch, "Show all tools", in Menu. The switch is saved in this browser only.
- *
- * Core set
- * - Top bar: Workspace, Research (one country, compare countries, my holdings), Reports, Menu.
- * - Today: watchlist, MarketEdge screen and the official calendar.
- * - Country: Brief, MarketEdge, Overview and History.
- * - Portfolio: holdings import, book brief and summary (no desk tabs).
- * - Reports: the note builder with the brief-based templates.
+ * Report templates shown in Reports: the ones built on the role briefs. The other templates
+ * (IC memo, client letter) belonged to the old desks, which ran on built-in figures and were
+ * removed (Sam, 2026-11-04: no built-in figures), so links to them open the nearest one here.
  */
-import type { ReportTemplate, WorkflowArea } from '../data/navigation';
+import type { ReportTemplate } from '../data/navigation';
 
-export const SHOW_ALL_TOOLS_KEY = 'econquest.showAllTools.v1';
-
-export function loadShowAllTools(): boolean {
-  try {
-    return localStorage.getItem(SHOW_ALL_TOOLS_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-export function saveShowAllTools(on: boolean): void {
-  try {
-    localStorage.setItem(SHOW_ALL_TOOLS_KEY, on ? '1' : '0');
-  } catch {
-    // private window or blocked storage: the switch just won't be remembered
-  }
-}
-
-export const CORE_COUNTRY_TABS = ['brief', 'macro', 'overview', 'history'] as const;
-
-/** Report templates in the core view: the ones built on the role briefs. */
 export const CORE_REPORTS: ReportTemplate[] = ['economist', 'banker', 'official', 'book', 'client_review', 'council'];
 
-export function visibleNav(nav: WorkflowArea[], showAll: boolean): WorkflowArea[] {
-  return showAll ? nav : nav.filter((a) => a !== 'desks');
-}
-
-export function isCoreCountryTab(tab: string): boolean {
-  return (CORE_COUNTRY_TABS as readonly string[]).includes(tab);
-}
-
-/** The template to open: the requested one if it is shown, else its nearest core template. */
-export function visibleReport(report: ReportTemplate, showAll: boolean): ReportTemplate {
-  if (showAll || CORE_REPORTS.includes(report)) return report;
+/** The template to open: the requested one if it is shown, else its nearest shown template. */
+export function visibleReport(report: ReportTemplate): ReportTemplate {
+  if (CORE_REPORTS.includes(report)) return report;
   if (report === 'ic') return 'book';
   if (report === 'client') return 'client_review';
   return 'economist';

@@ -4348,10 +4348,9 @@ async function startServer() {
       const baseRun: CouncilAssessmentRun = buildDefaultAssessmentRun(iso3, liveSnapshot);
       baseRun.countryName = countryName || baseRun.countryName;
       baseRun.scenarioPrompt = scenarioPrompt || baseRun.scenarioPrompt;
-      baseRun.policyDocumentTitle = policyDocumentTitle || baseRun.policyDocumentTitle;
-      baseRun.policyDocumentSnippet = policyDocumentText
-        ? policyDocumentText.slice(0, 600)
-        : baseRun.policyDocumentSnippet;
+      // Only a document the user actually supplied goes to the council; there is no built-in one.
+      baseRun.policyDocumentTitle = policyDocumentText ? policyDocumentTitle || 'Document added by the user' : undefined;
+      baseRun.policyDocumentSnippet = policyDocumentText ? policyDocumentText.slice(0, 600) : undefined;
       baseRun.openData = liveSnapshot;
       baseRun.charts = buildAnnotatedChartsForSovereign(liveSnapshot);
 
@@ -4373,9 +4372,7 @@ async function startServer() {
       const councilIn = councilInputs(liveSnapshot);
       const sharedContextHeader = `Target Sovereign: ${baseRun.countryName} (${iso3})
 Scenario Directive: ${baseRun.scenarioPrompt}
-Policy Document (${baseRun.policyDocumentTitle || 'Primary Extract'}): ${
-        policyDocumentText ? policyDocumentText.slice(0, 3000) : baseRun.policyDocumentSnippet
-      }
+${policyDocumentText ? `Policy Document (${baseRun.policyDocumentTitle}): ${policyDocumentText.slice(0, 3000)}` : 'Policy Document: none added by the user.'}
 Debate Rounds Requested: ${maxDebateRounds}
 
 Country figures (only live feeds, official series and your own data; nothing built in):
