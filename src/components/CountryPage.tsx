@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
 import React, { useMemo, useState } from 'react';
 import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
@@ -66,7 +67,8 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
     label: 'Markets',
     desks: [
       'quant_nss_yield_curve',
-      'quant_cds_basis',
+      // The CDS-bond basis desk is hidden with CDS for now (src/utils/cdsHidden.ts).
+      ...(CDS_HIDDEN ? [] : ['quant_cds_basis']),
       'fx_beer_feer_equilibrium',
       'decision_dislocation_screener',
       'global_liquidity',

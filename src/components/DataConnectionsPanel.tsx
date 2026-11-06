@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, CircleDashed, CircleOff, RefreshCw, Settings2, XCircle } from 'lucide-react';
 import { API_KEY_FIELDS } from '../data/apiKeyFields';
@@ -146,7 +147,8 @@ export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ s
       {report && open && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 px-4 pb-3">
           {(['free', 'free_key', 'own_account', 'ai'] as ConnectionGroup[]).map((g) => {
-            const rows = report.results.filter((r) => r.group === g);
+            // The own-data CDS row is hidden with CDS for now (src/utils/cdsHidden.ts).
+            const rows = report.results.filter((r) => r.group === g && !(CDS_HIDDEN && r.id === 'own_cds'));
             if (!rows.length) return null;
             return (
               <div key={g} className="pt-3">

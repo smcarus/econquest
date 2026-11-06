@@ -294,7 +294,8 @@ test('Relative Value Agent: with CDS off it compares the real 10Y yield against 
   const eee = rv.findings.find((f) => f.iso3 === 'EEE')!;
   assert.match(eee.reading, /real 10Y yield pays more than peers/);
   assert.ok(eee.figures.some((f) => f.label === 'Real yield against risk peers' && /cheap/.test(f.value)));
-  assert.ok(rv.missing.some((m) => /uses the real 10Y yield/.test(m)));
+  // CDS is hidden for now (src/utils/cdsHidden.ts), so the real-yield reading is not explained as a CDS fallback.
+  assert.ok(!rv.missing.some((m) => /CDS/.test(m)));
 });
 
 test('synthesis task: asks for an interpreted answer and ends with the question', async () => {

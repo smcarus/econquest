@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   COLUMN_BY_ID,
   DEFAULT_COLUMNS,
+  VISIBLE_COLUMNS,
   addToList,
   cleanView,
   moveColumn,
@@ -29,19 +30,23 @@ test('default view is the table the Workspace always showed: risk, high to low',
 });
 
 test('saved choices are cleaned: unknown or repeated columns dropped, empty falls back to defaults', () => {
-  assert.deepEqual(cleanView({ columns: ['cpi', 'bogus', 'cpi', 'cds'] }).columns, ['cpi', 'cds']);
+  assert.deepEqual(cleanView({ columns: ['cpi', 'bogus', 'cpi', 'debt'] }).columns, ['cpi', 'debt']);
+  // CDS is hidden for now (src/utils/cdsHidden.ts): saved CDS columns are dropped, never shown.
+  assert.deepEqual(cleanView({ columns: ['cds', 'cdsChange', 'cpi'], sort: { key: 'cds', dir: 'asc' } }).columns, ['cpi']);
+  assert.equal(cleanView({ sort: { key: 'cds', dir: 'asc' } }).sort.key, 'risk');
+  assert.ok(!DEFAULT_COLUMNS.includes('cds') && !VISIBLE_COLUMNS.some((c) => c.id === 'cds' || c.id === 'cdsChange'));
   assert.deepEqual(cleanView({ columns: [] }).columns, DEFAULT_COLUMNS);
   assert.deepEqual(cleanView({ sort: { key: 'nope', dir: 'sideways' } }).sort, { key: 'risk', dir: 'desc' });
   assert.equal(cleanView({ watchlistId: 'wl-1' }).watchlistId, 'wl-1');
 });
 
 test('columns toggle and move; the last column cannot be turned off', () => {
-  let v = cleanView({ columns: ['cds'] });
-  assert.deepEqual(toggleColumn(v, 'cds').columns, ['cds']);
+  let v = cleanView({ columns: ['debt'] });
+  assert.deepEqual(toggleColumn(v, 'debt').columns, ['debt']);
   v = toggleColumn(v, 'cpi');
-  assert.deepEqual(v.columns, ['cds', 'cpi']);
-  assert.deepEqual(moveColumn(v, 'cpi', -1).columns, ['cpi', 'cds']);
-  assert.deepEqual(moveColumn(v, 'cpi', 1).columns, ['cds', 'cpi']); // already last
+  assert.deepEqual(v.columns, ['debt', 'cpi']);
+  assert.deepEqual(moveColumn(v, 'cpi', -1).columns, ['cpi', 'debt']);
+  assert.deepEqual(moveColumn(v, 'cpi', 1).columns, ['debt', 'cpi']); // already last
 });
 
 test('sorting: a header flips direction; text starts A to Z; rows with no figure go last', () => {

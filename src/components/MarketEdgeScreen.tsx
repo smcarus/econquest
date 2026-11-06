@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { missingReason } from '../utils/liveFigures';
@@ -115,7 +116,7 @@ export const MarketEdgeScreen: React.FC<{
               <th className="hidden md:table-cell px-3 py-2 text-right font-normal" title="Change in the 10Y yield against 3 and 12 months earlier (monthly averages). Spread change is against the US 10Y over the same 3 months.">
                 Change 3m · 12m
               </th>
-              <th className="px-3 py-2 text-right font-normal">5Y CDS</th>
+              {!CDS_HIDDEN && <th className="px-3 py-2 text-right font-normal">5Y CDS</th>}
               <th className="hidden sm:table-cell px-3 py-2 text-right font-normal">Risk score</th>
               <th className="hidden lg:table-cell px-3 py-2 text-right font-normal" title="BIS real broad effective exchange rate against its 10-year average">
                 Real FX vs 10y avg
@@ -149,10 +150,12 @@ export const MarketEdgeScreen: React.FC<{
                   </td>
                   <td className="hidden md:table-cell px-3 py-2 text-right tabular-nums">{r.spreadBps !== undefined ? `${r.spreadBps} bps` : '–'}</td>
                   <TrendCells t={trendByIso.get(r.iso3)} part="change" />
-                  <td className="px-3 py-2 text-right">
-                    <div className={`tabular-nums ${r.cdsBps === undefined ? 'text-slate-400 dark:text-slate-500' : ''}`}>{r.cdsBps !== undefined ? `${Math.round(r.cdsBps)} bps` : '–'}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title={r.cdsBps === undefined ? missingReason('cds', r.iso3).help : undefined}>{r.cdsNote}</div>
-                  </td>
+                  {!CDS_HIDDEN && (
+                    <td className="px-3 py-2 text-right">
+                      <div className={`tabular-nums ${r.cdsBps === undefined ? 'text-slate-400 dark:text-slate-500' : ''}`}>{r.cdsBps !== undefined ? `${Math.round(r.cdsBps)} bps` : '–'}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap" title={r.cdsBps === undefined ? missingReason('cds', r.iso3).help : undefined}>{r.cdsNote}</div>
+                    </td>
+                  )}
                   <td className="hidden sm:table-cell px-3 py-2 text-right tabular-nums">{r.risk !== undefined ? r.risk.toFixed(2) : <span className="text-slate-400 dark:text-slate-500" title={missingReason('risk', r.iso3).help}>–</span>}</td>
                   <td className="hidden lg:table-cell px-3 py-2 text-right">
                     <div className="tabular-nums">{item?.reerGapPct !== undefined ? `${item.reerGapPct >= 0 ? '+' : ''}${item.reerGapPct.toFixed(0)}%` : '–'}</div>
@@ -176,7 +179,7 @@ export const MarketEdgeScreen: React.FC<{
             })}
             {bench.length > 0 && (
               <tr className="border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40">
-                <td colSpan={10} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
+                <td colSpan={CDS_HIDDEN ? 9 : 10} className="px-4 py-1.5 text-xs text-slate-500 dark:text-slate-400">
                   Benchmarks, always shown. No risk score in the app yet, so they are not in the cheap or rich fit.
                 </td>
               </tr>
@@ -197,10 +200,12 @@ export const MarketEdgeScreen: React.FC<{
                   {b.iso3 === 'USA' && b.yieldPct !== undefined ? 'benchmark' : b.spreadBps !== undefined ? `${b.spreadBps} bps` : '–'}
                 </td>
                 <TrendCells t={benchTrend.get(b.iso3)} part="change" />
-                <td className="px-3 py-2 text-right">
-                  <div className="tabular-nums">{b.cdsBps !== undefined ? `${Math.round(b.cdsBps)} bps` : '–'}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{b.cdsNote}</div>
-                </td>
+                {!CDS_HIDDEN && (
+                  <td className="px-3 py-2 text-right">
+                    <div className="tabular-nums">{b.cdsBps !== undefined ? `${Math.round(b.cdsBps)} bps` : '–'}</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">{b.cdsNote}</div>
+                  </td>
+                )}
                 <td className="hidden sm:table-cell px-3 py-2 text-right">–</td>
                 <td className="hidden lg:table-cell px-3 py-2 text-right">–</td>
                 <TrendCells t={benchTrend.get(b.iso3)} part="cycle" />

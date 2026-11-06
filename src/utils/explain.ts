@@ -18,6 +18,7 @@
  *
  * Browser-safe.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import { COUNCIL_AGENTS, AGENT_ORDER, isDocFinding, sentenceCheck, type AgentAnswer, type CoreAgentId, type CouncilBrief, type CouncilPlan } from './askCouncil';
 import type { Contradiction } from './stanceCheck';
 import { isCitable, References, type Reference } from './citations';
@@ -217,7 +218,7 @@ export const EXPLAIN_INSTRUCTION = [
   'Use ONLY the figures in the documents and the figure the user pressed Explain on. Every number you write must appear there, written as it appears. Describe sizes in words (well above, far below); never calculate new numbers, forecast, or add outside facts, dates or events.',
   'For households and firms there are no surveys in the app: reason from inflation, rates and the currency, and say it is a reading of those figures.',
   'Write a lens only from the agents named for it. If a lens has no figures, leave it out; the app says it is missing.',
-  'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; CDS cheap, in line or rich; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
+  'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; ' + (CDS_HIDDEN ? 'cheap, in line or rich against peers' : 'CDS cheap, in line or rich') + '; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Passages from the Policy Document Agent are quotes from the user\'s documents: name the document, and do not treat its forecasts as data.',
   'Plain English, full sentences, short. No advice to buy or sell.',
 ].join(' ');

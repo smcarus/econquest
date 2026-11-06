@@ -41,8 +41,8 @@ test('sources grid: with no feed answering, every figure reads Missing with a re
       assert.ok(c.short.length > 0, `${r.iso3} ${c.key} has a reason`);
     }
   }
-  // CDS has no free source, so it always needs setup.
-  assert.equal(rows[0].cells.find((c) => c.key === 'cds')!.kind, 'setup');
+  // CDS is hidden for now (src/utils/cdsHidden.ts): no CDS cell at all.
+  assert.equal(rows[0].cells.find((c) => c.key === 'cds'), undefined);
 });
 
 test('sources grid: a figure from a live feed reads Live', () => {

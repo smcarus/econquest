@@ -3,6 +3,7 @@
  * series or your own data filled it. AI web-search estimates do not count either (Sam, 23:27Z). Everything else is left out, and the
  * screen says which source is missing and whether it needs setting up or just did not answer.
  */
+import { CDS_HIDDEN } from './cdsHidden';
 import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { FRED_10Y_SERIES } from './officialYields';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from './bisPolicyRates';
@@ -125,7 +126,8 @@ export function toLive(it: WatchlistItem | LiveWatchlistItem): LiveWatchlistItem
   return out;
 }
 
-export const MISSING_KEYS: FigureKey[] = ['risk', 'cds', 'yield', 'debt', 'reserves', 'cpi', 'policy'];
+// CDS is hidden for now (src/utils/cdsHidden.ts), so it is not listed as a missing figure either.
+export const MISSING_KEYS: FigureKey[] = (['risk', 'cds', 'yield', 'debt', 'reserves', 'cpi', 'policy'] as FigureKey[]).filter((k) => !(CDS_HIDDEN && k === 'cds'));
 
 /** For a summary line: which figures are missing on how many rows, and the most useful fix. */
 export function missingSummary(items: Array<WatchlistItem | LiveWatchlistItem>): Array<{ key: FigureKey; count: number; reason: MissingReason }> {

@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Archive, CheckCircle2, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
@@ -201,7 +202,8 @@ export type SettingsTab = 'ai' | 'keys' | 'paid' | 'morning' | 'backup' | 'tools
 const PAGES: Array<{ id: SettingsTab; label: string; sections: Array<'free_key' | 'own_account' | 'ai'> }> = [
   { id: 'ai', label: 'AI model', sections: [] },
   { id: 'keys', label: 'Free data keys', sections: ['free_key'] },
-  { id: 'paid', label: 'Your own paid data', sections: ['own_account'] },
+  // Holds only the own-data CDS switch, hidden for now (src/utils/cdsHidden.ts).
+  ...(CDS_HIDDEN ? [] : [{ id: 'paid' as const, label: 'Your own paid data', sections: ['own_account' as const] }]),
   { id: 'morning', label: 'Morning brief', sections: [] },
   { id: 'backup', label: 'Backup', sections: [] },
   { id: 'tools', label: 'Tools', sections: [] },

@@ -1,3 +1,4 @@
+import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useMemo } from 'react';
 import { Upload } from 'lucide-react';
 import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
@@ -138,7 +139,8 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             value={`${signed(s.book.dv01UsdK, (v) => `$${v.toFixed(1)}k`)} / bp`}
             note={s.book.missingDuration ? `${s.book.missingDuration} position${s.book.missingDuration === 1 ? '' : 's'} without duration left out` : 'Loss per 1 bp wider spreads'}
           />
-          {s.avgCds ? (
+          {/* CDS hidden for now (src/utils/cdsHidden.ts). */}
+          {CDS_HIDDEN ? null : s.avgCds ? (
             <Stat label="Weighted 5Y CDS" value={`${s.avgCds.value.toFixed(0)} bps`} note={coverNote(s.avgCds) || 'your CDS data'} />
           ) : (
             <Stat label="Weighted 5Y CDS" value="Missing" note={missingReason('cds', '').short} help={missingReason('cds', '').help} missing />
