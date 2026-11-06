@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { Landmark } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { DsaOutcome, ScenarioId } from '../utils/debtSustainability';
@@ -155,7 +156,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
             </ul>
             {reply.fan && (
               <div className="space-y-2" data-dsa-fan="true">
-                <h3 className="text-sm font-medium text-slate-900 dark:text-white">Fan chart: debt under past shocks</h3>
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">Fan chart: debt under past shocks <ValidationBadge id="debt_fan" /></h3>
                 {!reply.fan.ok && (
                   <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">
                     Missing: {reply.fan.reason}.
@@ -187,7 +188,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
             )}
             {reply.options && (
               <div className="space-y-2" data-dsa-options="true">
-                <h3 className="text-sm font-medium text-slate-900 dark:text-white">Costed options: tightening or loosening the primary balance</h3>
+                <h3 className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">Costed options: tightening or loosening the primary balance <ValidationBadge id="costed_options" /></h3>
                 {!reply.options.ok && (
                   <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">
                     Missing: {reply.options.reason}.

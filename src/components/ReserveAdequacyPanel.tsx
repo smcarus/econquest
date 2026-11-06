@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { Vault } from 'lucide-react';
 import type { ReserveAdequacyOutcome } from '../utils/reserveAdequacy';
 import { explainInChat } from '../utils/explainHandoff';
@@ -36,6 +37,7 @@ export const ReserveAdequacyPanel: React.FC<{ iso3: string; countryName: string 
         <h2 className="ui-section-title flex items-center gap-2">
           <Vault className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Reserve adequacy, {countryName}
+          <ValidationBadge id="reserve_adequacy" />
           {reply?.ok && (
             <button
               type="button"

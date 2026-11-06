@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { Scale } from 'lucide-react';
 import type { BohnOutcome } from '../utils/bohnTest';
 import { explainInChat } from '../utils/explainHandoff';
@@ -37,6 +38,7 @@ export const BohnPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
         <h2 className="ui-section-title flex items-center gap-2">
           <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Fiscal reaction, {countryName}
+          <ValidationBadge id="fiscal_reaction" />
           {reply?.ok && (
             <button
               type="button"

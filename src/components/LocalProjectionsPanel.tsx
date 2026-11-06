@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ValidationBadge } from './ValidationBadge';
 import { ChartNumbers } from './ChartNumbers';
 import { Activity } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -37,6 +38,7 @@ export const LocalProjectionsPanel: React.FC<{ iso3: string; countryName: string
         <h2 className="ui-section-title flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Inflation after rate changes, {countryName}
+          <ValidationBadge id="local_projections" />
           {reply?.ok && (
             <button
               type="button"
