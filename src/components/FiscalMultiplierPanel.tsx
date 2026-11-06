@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { Scale } from 'lucide-react';
 import type { WatchlistItem } from '../types/council';
 import { multiplierView } from '../utils/fiscalMultipliers';
+import { explainInChat } from '../utils/explainHandoff';
 
 /**
  * Country Research > History & data > Fiscal multipliers: where the country sits in the IMF
@@ -25,6 +26,24 @@ export const FiscalMultiplierPanel: React.FC<{ iso3: string; countryName: string
         <h2 className="ui-section-title flex items-center gap-2">
           <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Fiscal multipliers, {countryName}
+          <button
+            type="button"
+            className="ui-btn ml-auto text-xs"
+            data-explain-panel="true"
+            onClick={() =>
+              explainInChat({
+                kind: 'panel',
+                label: `Fiscal multipliers, ${countryName}`,
+                value: `${mv.guide.low} to ${mv.guide.high} first year, normal times (${mv.guide.bucket} bucket)`,
+                source: mv.method,
+                iso3,
+                countryName,
+                detail: [`Trough ${mv.cycle.trough.low} to ${mv.cycle.trough.high}; peak ${mv.cycle.peak.low} to ${mv.cycle.peak.high}`, mv.cycle.note, ...mv.literature.slice(0, 5).map((l) => `${l.finding}: ${l.value} [${l.source}]`)],
+              })
+            }
+          >
+            Explain
+          </button>
         </h2>
         <p className="ui-label">How much output moves per unit of fiscal tightening or stimulus in the first year. Published reference ranges, not an estimate for this country.</p>
       </header>

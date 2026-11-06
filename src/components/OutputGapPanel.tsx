@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Activity } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { OUTPUT_GAP_REFERENCES, outputGapSentence, type OutputGapResult } from '../utils/outputGap';
+import { explainInChat } from '../utils/explainHandoff';
 
 /**
  * Country Research > History & data > Output gap: the app's estimate from IMF real GDP growth,
@@ -55,6 +56,27 @@ export const OutputGapPanel: React.FC<{ iso3: string; countryName: string }> = (
         <h2 className="ui-section-title flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Output gap, {countryName}
+          {reply?.ok && (
+            <button
+              type="button"
+              className="ui-btn ml-auto text-xs"
+              data-explain-panel="true"
+              onClick={() =>
+                explainInChat({
+                  kind: 'panel',
+                  label: `Output gap, ${countryName}`,
+                  value: `${reply.latest.central >= 0 ? '+' : ''}${reply.latest.central.toFixed(2)}% of potential GDP (band ${reply.latest.low} to ${reply.latest.high})`,
+                  source: reply.method,
+                  asOf: reply.latest.year,
+                  iso3,
+                  countryName,
+                  detail: reply.years.filter((g) => !g.projection).slice(-6).map((g) => `${g.year}: middle ${g.central}, HP100 ${g.hp100}, HP6.25 ${g.hp625}, Hamilton ${g.hamilton ?? 'n/a'}`),
+                })
+              }
+            >
+              Explain
+            </button>
+          )}
         </h2>
         <p className="ui-label">How far output is above or below its trend, % of potential GDP. Estimated by the app from IMF real GDP growth; not an official figure.</p>
       </header>

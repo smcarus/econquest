@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Landmark } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { DsaOutcome, ScenarioId } from '../utils/debtSustainability';
+import { explainInChat } from '../utils/explainHandoff';
 
 /**
  * Country Research > History & data > Debt sustainability: public debt dynamics on IMF figures,
@@ -62,6 +63,30 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
         <h2 className="ui-section-title flex items-center gap-2">
           <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           Debt sustainability, {countryName}
+          {reply?.ok && (
+            <button
+              type="button"
+              className="ui-btn ml-auto text-xs"
+              data-explain-panel="true"
+              onClick={() =>
+                explainInChat({
+                  kind: 'panel',
+                  label: `Debt sustainability, ${countryName}`,
+                  value: reply.sentence,
+                  source: reply.method,
+                  asOf: reply.lastOutturnYear,
+                  iso3,
+                  countryName,
+                  detail: [
+                    ...reply.scenarios.map((s) => `${s.label}: ${s.end}% of GDP by ${s.path[s.path.length - 1].year}`),
+                    ...(reply.rMinusG !== undefined ? [`r - g (10-year average): ${reply.rMinusG} pts`] : []),
+                  ].slice(0, 8),
+                })
+              }
+            >
+              Explain
+            </button>
+          )}
         </h2>
         <p className="ui-label">Government debt, % of GDP: the IMF path, a baseline on the IMF's inputs, and stated stress scenarios. Research, not validated advice.</p>
       </header>
