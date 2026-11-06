@@ -6,6 +6,7 @@ import {
   WatchlistItem,
 } from '../types/council';
 import {
+  OSINT_MISSING_NOTE,
   DEFAULT_WARGAME_PARAMS,
   computeGeopoliticalRiskDeskSuite,
 } from '../utils/geopoliticalRiskEngine';
@@ -181,7 +182,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                   : 'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 text-slate-500'
               }`}
             >
-              GDELT Conflict Nodes ({osintEvents.length})
+              Events you logged ({osintEvents.length})
             </button>
             <button
               type="button"
@@ -228,6 +229,9 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
               Sovereign Risk Choropleth
             </button>
           </div>
+          {showLayerGdeltNodes && osintEvents.length === 0 && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1" data-osint-missing>{OSINT_MISSING_NOTE}</p>
+          )}
 
           {/* Quick Shock Wargame Presets */}
           <div className="flex flex-wrap items-center gap-1.5">
@@ -640,7 +644,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
               </text>
             </g>
 
-            {/* LAYER 4: GDELT 2.0 / ACLED CONFLICT & OSINT ALERT NODES */}
+            {/* LAYER 4: EVENTS THE USER LOGGED (no built-in events; no feed gives located events yet) */}
             {showLayerGdeltNodes &&
               osintEvents.map((ev, idx) => {
                 const evPt = projectLatLon(ev.lat, ev.lon);
@@ -707,7 +711,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-full bg-rose-600 inline-block" />
-                <span>GDELT / ACLED Conflict Alert</span>
+                <span>Event you logged (not from a feed)</span>
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-4 h-0.5 bg-blue-600 inline-block" />
@@ -759,7 +763,7 @@ export const HeroGeopoliticalMapCard: React.FC<HeroGeopoliticalMapCardProps> = (
                 </p>
                 <div className="grid grid-cols-2 gap-2 pt-1 tabular-nums text-xs">
                   <div className="p-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                    <span className="text-slate-500 block">Goldstein / ACLED</span>
+                    <span className="text-slate-500 block">Goldstein / severity (keyword rule)</span>
                     <span className="font-semibold text-rose-600 dark:text-rose-400">
                       {selectedEvent.goldsteinScale.toFixed(1)} · {selectedEvent.acledSeverityScore}/100
                     </span>
