@@ -20,6 +20,9 @@ small real answer, through the same address and reader the app uses, and comes b
 | Refused | It answered with an HTTP error (key rejected, not found, rate limited). |
 | Unreadable answer | It answered, but not in the format the app reads. The source may have changed. |
 
+What each source's terms allow (showing figures to others, commercial use, the credit to print) is in
+[DATA_LICENCES.md](DATA_LICENCES.md), and in the app under Menu > About & data licences.
+
 ### Check history
 
 Every run of the check is kept in `data/local/data-health/source-checks.jsonl`, one line per run,

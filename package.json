@@ -19,7 +19,8 @@
     "record:feeds": "tsx scripts/record-feeds.ts",
     "backtest": "tsx scripts/backtest.ts",
     "council:regress": "tsx scripts/council-regress.ts",
-    "council:record": "tsx scripts/council-record.ts"
+    "council:record": "tsx scripts/council-record.ts",
+    "docs:licences": "tsx scripts/docs-licences.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
