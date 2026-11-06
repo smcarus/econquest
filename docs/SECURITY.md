@@ -27,6 +27,11 @@ The setup code stops someone else on the network from claiming the app before yo
 - **Password change** (Menu > Account) signs the account out on every other browser.
 - **Audit log** records the first account, each sign-in, failed sign-in, sign-out and password change,
   with the account name, never the password or token.
+- **Who did it**: every audit entry written while someone is signed in names the account (Menu >
+  Audit log, and a By column in the CSV). The name is part of the entry's hash, so changing who did
+  something breaks the chain check. Entries from before accounts existed have no name and still check.
+- **Sign-off**: the name on a review or approval is the signed-in account's, not typed. Approving is an
+  Admin step, and the account that reviewed a report cannot approve it (no "self-approved" with accounts).
 - **Accounts and sessions are never in a backup** (Menu > Settings > Backup lists what one holds).
 - **CSRF token**: while signed in, every change must carry `X-CSRF-Token`, derived from that browser's
   session (the page gets it at start). A page on another site cannot read it.
@@ -69,9 +74,8 @@ Under Docker: `docker compose exec econquest npm run users -- list`.
 
 ## Not yet (planned, in order)
 
-1. The account name on every audit entry and on sign-offs, with approver separate from reviewer.
-2. Separate workspaces per account (watchlists, holdings, saved research).
-3. API keys encrypted at rest with a key kept outside the data folder.
-4. HTTPS through a reverse proxy in the compose stack.
+1. Separate workspaces per account (watchlists, holdings, saved research).
+2. API keys encrypted at rest with a key kept outside the data folder.
+3. HTTPS through a reverse proxy in the compose stack.
 
 Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.

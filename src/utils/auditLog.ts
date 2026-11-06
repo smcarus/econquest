@@ -44,8 +44,16 @@ export interface AuditFigure {
   tag: string;
 }
 
+/** Who did it: the signed-in account. Absent while sign-in is off (one user, no accounts). */
+export interface AuditActor {
+  id: string;
+  username: string;
+  name: string;
+}
+
 export interface AuditInput {
   kind: AuditKind;
+  by?: AuditActor;
   /** One line in plain words, e.g. 'Council answer: "Is Brazil debt sustainable?"'. */
   summary: string;
   detail?: Record<string, unknown>;
@@ -75,8 +83,9 @@ export function canonicalJson(value: unknown): string {
 }
 
 export function entryHash(e: Omit<AuditEntry, 'hash'>): string {
-  const { seq, at, kind, summary, detail, prev } = e;
-  return createHash('sha256').update(canonicalJson({ seq, at, kind, summary, detail: detail ?? null, prev })).digest('hex');
+  const { seq, at, kind, summary, detail, prev, by } = e;
+  // `by` is left out of the hash when absent, so entries written before accounts existed still check.
+  return createHash('sha256').update(canonicalJson({ seq, at, kind, summary, detail: detail ?? null, prev, by })).digest('hex');
 }
 
 /** The next entry after `last` (null for an empty log). */
@@ -88,6 +97,7 @@ export function nextEntry(last: Pick<AuditEntry, 'seq' | 'hash'> | null, input: 
     summary: String(input.summary).slice(0, 500),
     ...(input.detail ? { detail: input.detail } : {}),
     prev: last ? last.hash : GENESIS,
+    ...(input.by ? { by: { id: input.by.id, username: input.by.username, name: input.by.name } } : {}),
   };
   return { ...base, hash: entryHash(base) };
 }
@@ -224,7 +234,7 @@ export function describeRequest(method: string, path: string): AuditInput | null
   return { kind: 'data', summary: `${m} ${p}` };
 }
 
-export const AUDIT_HEADER = ['Entry', 'Time (UTC)', 'Kind', 'What happened', 'AI model', 'Figures used', 'Detail', 'Hash'];
+export const AUDIT_HEADER = ['Entry', 'Time (UTC)', 'Kind', 'By', 'What happened', 'AI model', 'Figures used', 'Detail', 'Hash'];
 
 export function auditRows(entries: AuditEntry[]): Array<Array<string | number>> {
   return entries.map((e) => {
@@ -236,6 +246,7 @@ export function auditRows(entries: AuditEntry[]): Array<Array<string | number>> 
       e.seq,
       e.at,
       AUDIT_KIND_LABEL[e.kind] ?? e.kind,
+      e.by ? `${e.by.name} (${e.by.username})` : '',
       e.summary,
       typeof d.model === 'string' ? d.model : '',
       figures.map((f) => `${f.iso3} ${f.label} ${f.value} (${f.source})`).join('; '),

@@ -11,6 +11,7 @@ import { loadWorkspace, setWorkspaceValue, workspaceProblem, WORKSPACE_KEYS } fr
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { dataDirProblem, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
@@ -33,6 +34,9 @@ import { type CommodityReply } from './src/utils/commodityPrices';
 import { comtradeMissing } from './src/utils/comtradeTrade';
 import { ticHoldingFor } from './src/utils/ticHoldings';
 import { cliFor, cliTurns } from './src/utils/oecdCli';
+import { qnaFor, QNA_LABEL } from './src/utils/oecdQna';
+import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from './src/utils/modelHistory';
+import { cpiNowcast, gdpNowcast, nowcastSentence } from './src/utils/nowcast';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
@@ -50,7 +54,7 @@ import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBr
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
 import { loadLibrary, saveLibrary } from './src/utils/researchStore';
-import { appendAudit, rawAudit, readAudit } from './src/utils/auditStore';
+import { appendAudit, rawAudit, readAudit, setAuditActor } from './src/utils/auditStore';
 import { loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
@@ -161,7 +165,7 @@ import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_DAYS, GDELT_REFRESH_MS, fetchGdeltQuarterly } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
+import { oecdFetch, fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
 import { officialYieldCache, fetchOfficial10YYield, fetchDebtSchedule, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
 
@@ -3639,6 +3643,8 @@ async function startServer() {
   const limits = sessionLimits(process.env);
   const auth = new AuthStore(DATA_DIR, limits);
   const signInLimiter = new SignInLimiter();
+  const actorStore = new AsyncLocalStorage<{ id: string; username: string; name: string }>();
+  setAuditActor(() => actorStore.getStore());
   let setupCode: string | null = null;
   const currentMode = () => authMode(auth.count(), process.env);
   const announceSetupCode = () => {
@@ -3656,6 +3662,9 @@ async function startServer() {
     if (hit) {
       res.locals.account = hit.account;
       res.locals.sessionHash = hit.session.tokenHash;
+      // Every audit entry written while handling this request names the account.
+      const a = hit.account;
+      return actorStore.run({ id: a.id, username: a.username, name: a.displayName }, next);
     }
     if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
@@ -3828,10 +3837,11 @@ async function startServer() {
   // Audit log: every change, download and AI step that succeeds is written once it has answered,
   // by what it did (route), never by its body, so keys and document text stay out of the log.
   app.use((req, res, next) => {
+    const by = actorStore.getStore();
     res.on('finish', () => {
       if (res.statusCode >= 400) return;
       const what = describeRequest(req.method, req.originalUrl || req.url);
-      if (what) appendAudit(AUDIT_FILES, what);
+      if (what) appendAudit(AUDIT_FILES, by ? { ...what, by } : what);
     });
     next();
   });
@@ -3854,7 +3864,7 @@ async function startServer() {
     const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
-    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', note, '', '', '', '']]));
+    res.send(toCsv(AUDIT_HEADER, [...auditRows(entries), ['', '', 'Check', '', note, '', '', '', '']]));
   });
   // Backup and restore (Menu > Settings > Backup): saved research, policy reviews, watch alerts, holdings,
   // watchlists and AI settings in one file, never API keys. See src/utils/backup.ts. Restore takes
@@ -4058,10 +4068,12 @@ async function startServer() {
   });
   app.post('/api/signoffs/brief/:id', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
+    // Approving is an Admin step once accounts exist (docs/RISK_AND_COMPLIANCE.md: the Approver).
+    if (signedIn(res) && req.body?.step === 'approved' && signedIn(res)!.role !== 'admin') return res.status(403).json({ error: refusal(signedIn(res)!.role, 'admin') });
     const b = loadLibrary(RESEARCH_FILE).briefs.find((x) => x.id === req.params.id);
     if (!b) return res.status(404).json({ error: 'No saved conversation with that id.' });
     const hash = reportHash(b as any);
-    const out = takeStep(recordFor(loadSignOffs(SIGNOFF_FILE), 'brief', b.id), 'brief', b.id, hash, req.body || {});
+    const out = takeStep(recordFor(loadSignOffs(SIGNOFF_FILE), 'brief', b.id), 'brief', b.id, hash, req.body || {}, new Date(), signedIn(res) ?? undefined);
     if ('error' in out) return res.status(400).json({ error: out.error });
     try {
       saveSignOff(SIGNOFF_FILE, out.record);
@@ -4279,11 +4291,13 @@ async function startServer() {
   // Sign-off on a review's memo: same steps as a saved report, on the memo step's hash.
   app.post('/api/signoffs/review/:id', (req, res) => {
     if (refuseRemoteChange(req, res)) return;
+    // Approving is an Admin step once accounts exist (docs/RISK_AND_COMPLIANCE.md: the Approver).
+    if (signedIn(res) && req.body?.step === 'approved' && signedIn(res)!.role !== 'admin') return res.status(403).json({ error: refusal(signedIn(res)!.role, 'admin') });
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
     if (stepStates(r).memo !== 'done') return res.status(400).json({ error: 'Write the memo first (and run it again if it is out of date).' });
     const hash = r.steps.memo!.hash;
-    const out = takeStep(recordFor(loadSignOffs(SIGNOFF_FILE), 'review', r.id), 'review', r.id, hash, req.body || {});
+    const out = takeStep(recordFor(loadSignOffs(SIGNOFF_FILE), 'review', r.id), 'review', r.id, hash, req.body || {}, new Date(), signedIn(res) ?? undefined);
     if ('error' in out) return res.status(400).json({ error: out.error });
     try {
       saveSignOff(SIGNOFF_FILE, out.record);
@@ -4617,6 +4631,65 @@ async function startServer() {
     if ('error' in replay) return res.status(404).json({ error: 'NO_REPLAY', message: replay.error, ...base });
     if (!cpi && why('cpi_monthly')) replay.missing = replay.missing.map((m) => (m === 'monthly inflation' ? `monthly inflation (${why('cpi_monthly')})` : m));
     res.json({ ...base, replay, sentence: replaySentence(replay) });
+  });
+  // Nowcasts (src/utils/nowcast.ts): GDP and inflation for periods whose official figure is not out
+  // yet, from published figures only. Long histories for the fits come from data/live/model-history.json
+  // (src/utils/modelHistory.ts), pulled at most once a week; DBnomics calls go through the OECD queue.
+  let modelHistoryInFlight: Promise<ModelHistory | null> | null = null;
+  const modelFetcher = async (url: string): Promise<string> => {
+    if (url.includes('db.nomics.world')) {
+      const r = await oecdFetch(url, 60000);
+      if (!r || r.status < 200 || r.status >= 300) throw new Error(r ? `HTTP ${r.status}` : 'paused after a refusal');
+      return r.text;
+    }
+    const r = await fetchWithTimeout(url, 60000);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.text();
+  };
+  async function modelHistory(): Promise<ModelHistory | null> {
+    const saved = loadModelHistory(DATA_DIR);
+    if (saved && Date.now() - Date.parse(saved.pulledAt) < MODEL_HISTORY_MAX_AGE_MS) return saved;
+    modelHistoryInFlight ??= pullModelHistory(modelFetcher, saved)
+      .then((h) => {
+        if (h.policyMonthly || h.cli || h.cpi) saveModelHistory(DATA_DIR, h);
+        return h;
+      })
+      .catch(() => saved)
+      .finally(() => {
+        modelHistoryInFlight = null;
+      });
+    // A first pull can take a while: answer with what is saved and let it finish in the background.
+    return saved ?? (await Promise.race([modelHistoryInFlight, new Promise<null>((r) => setTimeout(() => r(null), 20000))]));
+  }
+  app.get('/api/nowcast/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const today = new Date().toISOString().slice(0, 10);
+    const asOf = parseAsOfDate(req.query.asOf) ?? today;
+    if (asOf > today) return res.status(400).json({ error: 'BAD_DATE', message: 'The As-of date cannot be in the future.' });
+    const [qna, activity, hist, nationalCpi] = await Promise.all([quick(fetchQnaPull()), quick(fetchMonthlyActivity()), modelHistory(), quick(fetchNationalCpi())]);
+    const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
+    const act = activity?.series?.[iso3];
+    const cliPts = areaSeries(iso3, hist?.cli ?? undefined);
+    const cpiRun = spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]);
+    const inputs = {
+      iso3,
+      asOf,
+      live: asOf === today,
+      gdp: gdpPts.length ? { points: gdpPts.map((p) => ({ date: p.period, value: p.value })), source: QNA_LABEL, pulledAt: qna?.pulledAt } : null,
+      activity: act?.points?.length ? { points: act.points.map((p) => ({ date: p.period, value: p.value })), source: act.long, label: act.short, pulledAt: activity?.pulledAt } : null,
+      cli: cliPts?.length ? { points: cliPts.map((p) => ({ date: p.period, value: p.value })), source: 'OECD composite leading indicator via DBnomics', pulledAt: hist?.pulledAt } : null,
+      cpi: cpiRun ? { ...cpiRun, pulledAt: hist?.pulledAt } : null,
+    };
+    const gdp = gdpNowcast(inputs);
+    const cpi = cpiNowcast(inputs);
+    res.json({
+      iso3,
+      asOf,
+      gdp,
+      cpi,
+      sentences: [gdp, cpi].filter((r): r is Extract<typeof r, { ok: true }> => r.ok).map(nowcastSentence),
+      history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
+    });
   });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

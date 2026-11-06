@@ -25,7 +25,7 @@ import { writeFileAtomic } from '../../utils/atomicWrite';
 let oecdQueue: Promise<unknown> = Promise.resolve();
 let oecdLastCallAt = 0;
 let oecdPausedUntil = 0;
-async function oecdFetch(url: string, timeoutMs: number): Promise<{ status: number; text: string } | null> {
+export async function oecdFetch(url: string, timeoutMs: number): Promise<{ status: number; text: string } | null> {
   const run = async () => {
     if (Date.now() < oecdPausedUntil) {
       console.warn(`[OECD] paused after a refusal; asking again in ${Math.ceil((oecdPausedUntil - Date.now()) / 60000)} min`);
