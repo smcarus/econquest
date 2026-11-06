@@ -17,6 +17,7 @@ import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHolding
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
+import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
@@ -255,6 +256,8 @@ export const SOURCE_IDS = [
   'bcb_ipca',
   'bcrp_embig',
   'eurostat_hicp',
+  'bcb_ibcbr',
+  'eurostat_ip',
   'comtrade',
   'fred_csv',
   'fred_api',
@@ -734,6 +737,38 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     );
     return res.state === 'bad_reply' ? { ...res, detail: describeBcrpReply(lastText) } : res;
   });
+
+  add('bcb_ibcbr', () =>
+    httpCheck(
+      { id: 'bcb_ibcbr', name: 'Banco Central do Brasil IBC-Br (SGS)', group: 'free', feeds: "Brazil's monthly economic activity index, seasonally adjusted, for the GDP nowcast" },
+      fetchFn,
+      bcbSgsSinceUrl(BCB_IBCBR_SA, `01/01/${year - 1}`),
+      T,
+      (r) => {
+        const s = parseIbcBr(parseJson(r.text));
+        const last = s?.points[s.points.length - 1];
+        return last ? `Brazil IBC-Br ${fmt(last.value, 1)} (${formatMonth(last.period)}, seasonally adjusted)` : null;
+      },
+      {},
+      'The BCB answered, but not with the SGS series 24364 rows the app reads.'
+    )
+  );
+
+  add('eurostat_ip', () =>
+    httpCheck(
+      { id: 'eurostat_ip', name: 'Eurostat industrial production', group: 'free', feeds: 'Monthly industrial production index for EU members (and Turkey where Eurostat has it), for the GDP nowcast' },
+      fetchFn,
+      eurostatIpUrl(['PL'], `${year - 1}-01`),
+      T,
+      (r) => {
+        const s = parseEurostatIp(parseJson(r.text), ['POL']).POL;
+        const last = s?.points[s.points.length - 1];
+        return last ? `Poland industrial production ${fmt(last.value, 1)} (${formatMonth(last.period)}, 2021 = 100)` : null;
+      },
+      {},
+      'Eurostat answered, but not with the sts_inpr_m index the app reads (B-D, PRD, SCA, I21).'
+    )
+  );
 
   add('eurostat_hicp', () =>
     httpCheck(

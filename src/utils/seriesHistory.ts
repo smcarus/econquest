@@ -16,6 +16,7 @@ import { type PriceSeries } from './commodityPrices';
 import { areaSeries } from './oecdSdmx';
 import { type CliSeries } from './oecdCli';
 import { QNA_SOURCE, qnaFor, type QnaSeries } from './oecdQna';
+import { activityMissing, type ActivitySeries } from './monthlyActivity';
 import { type CpiBasis } from './oecdInflation';
 import { type TicTable } from './ticHoldings';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './officialHistory';
@@ -72,6 +73,8 @@ export interface SeriesInputs {
   cli?: { pulledAt: string; series: CliSeries } | null;
   /** OECD quarterly real GDP growth (src/utils/oecdQna.ts). */
   qna?: { pulledAt: string; series: QnaSeries } | null;
+  /** Monthly activity indexes (src/utils/monthlyActivity.ts), by ISO3. */
+  activity?: { pulledAt: string; series: Record<string, ActivitySeries> } | null;
   cpi?: { pulledAt: string; series: Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }> } | null;
   cftc?: { pulledAt: string; weeks: Record<string, CftcWeek[]> } | null;
   tic?: { pulledAt: string; table: TicTable } | null;
@@ -194,6 +197,23 @@ function quarterlyGdp(iso3: string, pull: SeriesInputs['qna']): Array<Series | S
   });
 }
 
+/** Monthly activity index (BCB IBC-Br, Eurostat industrial production), for the GDP nowcast. */
+function activityIndex(iso3: string, pull: SeriesInputs['activity']): Series | SeriesMissing {
+  const label = 'Activity index, monthly';
+  const a = pull?.series?.[iso3];
+  if (!a?.points?.length) return { id: 'activity_monthly', label, reason: activityMissing(iso3, Boolean(pull)) };
+  return {
+    id: 'activity_monthly',
+    label: `${label} (${a.short})`,
+    unit: a.unit,
+    freq: 'monthly',
+    source: a.long,
+    pulledAt: pull!.pulledAt,
+    points: sortByDate(a.points.filter((p) => finite(p.value)).map((p) => ({ date: p.period, value: p.value }))),
+    about: 'Seasonally adjusted volume index; it comes out four to eight weeks after the month, well before quarterly GDP.',
+  };
+}
+
 function inflation(iso3: string, pull: SeriesInputs['cpi'], oecdAnswered = true): Series | SeriesMissing {
   const label = 'Inflation, monthly';
   if (!pull) return { id: 'cpi_monthly', label, reason: 'Monthly inflation has not answered yet' };
@@ -300,6 +320,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     inflation(code, inputs.cpi, inputs.cpiOecdAnswered !== false),
     leadingIndicator(code, inputs.cli),
     ...quarterlyGdp(code, inputs.qna),
+    activityIndex(code, inputs.activity),
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
     hcSpread(code, inputs.hcSpread),
