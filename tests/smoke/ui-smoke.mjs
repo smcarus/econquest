@@ -123,6 +123,12 @@ try {
         await page.waitForSelector('[data-register-counts]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > Models & validation did not open`));
         await settle('Models & validation');
         await page.keyboard.press('Escape');
+        // Menu > About & data licences shows the research notice and the licence register.
+        await page.getByRole('button', { name: 'Menu', exact: true }).click();
+        await page.getByRole('menuitem', { name: /^About & data licences/ }).first().click();
+        await page.waitForSelector('[data-licence-counts]', { timeout: 15_000 }).catch(() => failures.push(`${mode}: Menu > About & data licences did not open`));
+        await settle('About & data licences');
+        await page.keyboard.press('Escape');
         continue;
       }
       const nav = page.getByRole('button', { name: navName, exact: true }).first();

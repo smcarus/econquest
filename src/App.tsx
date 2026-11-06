@@ -172,6 +172,7 @@ import {
   Database,
   ScrollText,
   ShieldQuestion,
+  Info,
   ChevronDown,
   Briefcase,
   BookOpen,
@@ -186,6 +187,7 @@ import {
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { AuditLogDialog } from './components/AuditLogDialog';
 import { ModelRegisterDialog } from './components/ModelRegisterDialog';
+import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
 import { OPEN_REGISTER_EVENT } from './components/ValidationBadge';
 import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
 import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
@@ -628,6 +630,8 @@ export default function App() {
   const [isAuditLogOpen, setIsAuditLogOpen] = useState<boolean>(false);
   // Menu > Models & validation; a status badge anywhere opens it on its row (undefined = closed).
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
+  // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
+  const [aboutFocus, setAboutFocus] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     const onOpen = (e: Event) => setRegisterFocus(((e as CustomEvent).detail as string | null) ?? null);
     window.addEventListener(OPEN_REGISTER_EVENT, onOpen);
@@ -792,10 +796,13 @@ export default function App() {
         open();
       }
     };
+    const openAbout = (e: Event) => setAboutFocus((e as CustomEvent<{ id?: string }>).detail?.id ?? null);
     window.addEventListener(OPEN_SETTINGS_EVENT, open);
+    window.addEventListener(OPEN_ABOUT_EVENT, openAbout);
     window.addEventListener('keydown', onKey);
     return () => {
       window.removeEventListener(OPEN_SETTINGS_EVENT, open);
+      window.removeEventListener(OPEN_ABOUT_EVENT, openAbout);
       window.removeEventListener('keydown', onKey);
     };
   }, []);
@@ -2656,6 +2663,14 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'about',
+                        icon: <Info className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'About & data licences',
+                        hint: '',
+                        onClick: () => setAboutFocus(null),
+                        className: '',
+                      },
+                      {
                         key: 'manual',
                         icon: <BookOpen className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'User manual',
@@ -3721,6 +3736,7 @@ export default function App() {
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
       {registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}
+      {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>
       <SovereignManualAndGithubModal

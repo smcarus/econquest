@@ -1,6 +1,7 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
 import React, { useMemo, useState } from 'react';
+import { openDataLicences } from './AboutDialog';
 import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { findPillarForNavSection } from './ActivityPillarWorkspaceController';
@@ -353,7 +354,11 @@ export const CountryPage: React.FC<{
                   <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.xlsx`} download>
                     Excel
                   </a>
+                  <button type="button" className="ui-btn ui-btn-ghost inline-flex" onClick={() => openDataLicences()} data-open-licences>
+                    Data licences
+                  </button>
                 </div>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Before sharing these figures, check each source&apos;s terms: some need a credit, a few need the provider&apos;s permission for client or commercial use.</p>
               </header>
             </section>
             <FreshnessPanel item={watchlistItems.find((w) => w.iso3 === run.iso3)} />
