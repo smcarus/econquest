@@ -547,7 +547,9 @@ hold no figures of their own; the handout reads them from the app's series when 
   carries a hash over the line before it, so the dialog says if the file was changed. A passing
   currency factor test (`npm run signals:evaluate`) does the same with its book: the long and short
   currencies at the latest complete month-end are recorded before that month's return exists, and
-  scored as recorded (net of the same flat cost) once the month ends. Panels that describe the past or apply a
+  scored as recorded (net of the same flat cost) once the month ends. A passing nowcast
+  (`npm run forecast:evaluate`) records its figure for each quarter that has ended but is not
+  published, with the benchmark beside it, and scores both on the first published figure. Panels that describe the past or apply a
   stated what-if (fiscal reaction, gross financing need, reserve adequacy, inflation after rate
   changes, costed options, global shock scenarios) carry the badge *Description, not a tested
   signal*; the policy rule family and the debt fan chart make forward claims and read *Not
