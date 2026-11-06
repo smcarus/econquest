@@ -159,6 +159,8 @@ import { gdeltDailyDir, gdeltDailySeries, loadAllMonths, loadDailyState } from '
 /** Files on disk the unrest onset backtest reads, loaded only when it runs. */
 const backtestLocal = { gdeltMonths: () => loadAllMonths(gdeltDailyDir(DATA_DIR)), ucdp: () => ucdpData(DATA_DIR) };
 import { ucdpMissing, ucdpReading } from './src/utils/ucdpConflict.ts';
+import { gprForCountry } from './src/utils/gprIndex.ts';
+import { gprData } from './src/utils/gprStore.ts';
 import { countrySanctions, sanctionsSentence, searchSanctions, SANCTIONS_METHOD } from './src/utils/sanctionsLists.ts';
 import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
@@ -3112,6 +3114,7 @@ async function startServer() {
     const ucdp = ucdpData(DATA_DIR);
     const conflict = ucdpReading(ucdp, iso3);
     const series = gdeltDailySeries(DATA_DIR, iso3);
+    const gpr = gprData(DATA_DIR);
     const sc = countryRiskScorecard({
       official,
       officialMissingReason: file ? undefined : 'Full official history not downloaded yet (Menu > Offline data, or open History & data while online)',
@@ -3119,6 +3122,8 @@ async function startServer() {
       conflictMissing: conflict ? undefined : ucdpMissing(ucdp, iso3).short,
       spikes: spikeMonths(series),
       spikesMissing: series ? undefined : 'GDELT 1.0 files not pulled yet (npm run gdelt:daily)',
+      gpr: gpr.ok ? gprForCountry(gpr.table, iso3) : null,
+      gprMissing: gpr.ok ? undefined : gpr.reason,
     });
     const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
     res.json({ iso3, ...sc, sentence: scorecardSentence(name, sc), method: SCORECARD_METHOD });

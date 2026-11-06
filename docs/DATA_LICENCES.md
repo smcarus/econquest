@@ -42,6 +42,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | UCDP (Uppsala Conflict Data Program) downloaded files | Open with attribution | Free sharing allowed | Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset. | Allowed (CC BY 4.0 sets no commercial limit). | UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5). |
 | OFAC sanctions lists (US Treasury) | Terms not confirmed | Sharing unclear | Not confirmed: the terms page could not be read from where this register was written. | Not confirmed. | Office of Foreign Assets Control, US Department of the Treasury. |
 | UN Security Council Consolidated List | Terms not confirmed | Sharing unclear | Not confirmed: the terms page could not be read from where this register was written. | Not confirmed. | United Nations Security Council Consolidated List. |
+| Caldara-Iacoviello Geopolitical Risk index | Terms not confirmed | Sharing unclear | Not confirmed: the data page could not be read from where this register was written. | Not confirmed. | Caldara, Dario and Matteo Iacoviello (2022), "Measuring Geopolitical Risk", American Economic Review 112(4), 1194-1225. |
 | Polymarket | Permission needed for client or commercial use | Sharing unclear | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
 | Kalshi | Permission needed for client or commercial use | Do not pass on | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
 | Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads | Terms not confirmed | Sharing unclear | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
@@ -359,6 +360,17 @@ From the terms:
 - **Credit:** United Nations Security Council Consolidated List.
 - **Open question:** Read the UN terms of use for the consolidated list and update this row before showing list counts to others.
 
+### Caldara-Iacoviello Geopolitical Risk index
+
+- **Used for:** Monthly geopolitical risk index, world and 44 countries (file you save in data/local/gpr/), in the country risk scorecard
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Terms not read.
+- **Terms read:** [Geopolitical Risk Index page](https://www.matteoiacoviello.com/gpr.htm) (checked 2026-11-06)
+- **Show to others:** Not confirmed: the data page could not be read from where this register was written.
+- **Commercial use:** Not confirmed.
+- **Credit:** Caldara, Dario and Matteo Iacoviello (2022), "Measuring Geopolitical Risk", American Economic Review 112(4), 1194-1225.
+- **Open question:** Read the terms and citation request on the GPR data page and update this row before showing the index to others.
+
 ### Polymarket
 
 - **Used for:** Prediction-market odds
@@ -513,11 +525,12 @@ From the terms:
 10. **US Treasury TIC (major foreign holders)** (Terms not confirmed): Treasury does not state a licence for TIC. Its Fiscal Data site says its data is "free, without restriction" for commercial use, but that page does not cover TIC.
 11. **OFAC sanctions lists (US Treasury)** (Terms not confirmed): Read the terms on the OFAC Sanctions List Service page and update this row before showing list counts to others.
 12. **UN Security Council Consolidated List** (Terms not confirmed): Read the UN terms of use for the consolidated list and update this row before showing list counts to others.
-13. **Polymarket** (Permission needed for client or commercial use): A desk, fund or fintech using the app professionally falls inside the restriction. Keep Polymarket odds to personal research, or agree terms with Polymarket.
-14. **Kalshi** (Permission needed for client or commercial use): The strictest terms in the app. Showing Kalshi odds to anyone else, or using them in a professional setting, needs Kalshi's written authorization.
-15. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
-16. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
-17. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
-18. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
-19. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
-20. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+13. **Caldara-Iacoviello Geopolitical Risk index** (Terms not confirmed): Read the terms and citation request on the GPR data page and update this row before showing the index to others.
+14. **Polymarket** (Permission needed for client or commercial use): A desk, fund or fintech using the app professionally falls inside the restriction. Keep Polymarket odds to personal research, or agree terms with Polymarket.
+15. **Kalshi** (Permission needed for client or commercial use): The strictest terms in the app. Showing Kalshi odds to anyone else, or using them in a professional setting, needs Kalshi's written authorization.
+16. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
+17. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
+18. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
+19. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
+20. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
+21. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.

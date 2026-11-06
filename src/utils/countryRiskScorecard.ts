@@ -5,6 +5,7 @@
  *   Governance  World Bank Worldwide Governance Indicators, six estimates (world mean 0, sd 1)
  *   Conflict    UCDP/PRIO armed conflict located in the country and UCDP deaths, latest coded year
  *   Unrest      GDELT 1.0 protest and violence spikes (utils/unrestSpikes.ts)
+ *   Geopolitical Caldara-Iacoviello Geopolitical Risk index, country and world (utils/gprIndex.ts)
  *   Economy     IMF WEO and World Bank: debt, growth, inflation, current account, reserves, external debt
  *
  * There is no overall score. Any weighting of these pillars would be a guess, and a single number
@@ -16,8 +17,9 @@
 import type { Series, SeriesMissing, SeriesPoint } from './seriesHistory';
 import type { UcdpReading } from './ucdpConflict';
 import type { SpikeMonth } from './unrestSpikes';
+import { GPR_SOURCE, type GprCountry, type GprReading } from './gprIndex';
 
-export type PillarId = 'governance' | 'conflict' | 'unrest' | 'economy';
+export type PillarId = 'governance' | 'conflict' | 'unrest' | 'geopolitical' | 'economy';
 
 export interface ScoreRow {
   label: string;
@@ -48,13 +50,15 @@ export interface ScorecardInputs {
   conflictMissing?: string;
   spikes?: SpikeMonth[];
   spikesMissing?: string;
+  gpr?: GprCountry | null;
+  gprMissing?: string;
 }
 
 export const WGI_IDS = ['wgi_voice', 'wgi_stability', 'wgi_effectiveness', 'wgi_regulatory', 'wgi_rule_of_law', 'wgi_corruption'] as const;
 export const ECONOMY_IDS = ['debt_gdp', 'gdp_growth', 'cpi_imf', 'current_account', 'reserves_months', 'external_debt'] as const;
 
 export const SCORECARD_METHOD =
-  'Each figure as published, with its year. Governance: World Bank WGI estimates, where 0 is the world average and 1 is one standard deviation; the change is against five years earlier. Conflict: UCDP/PRIO armed conflicts located in the country and UCDP best estimates of deaths for the latest year UCDP has coded, with the three years before. Unrest: the latest complete GDELT month against the country\'s previous 24 months (a spike is z of 3 or more). Economy: latest outturn year (IMF projections left out), against five years earlier. No overall score: any weights would be a guess.';
+  'Each figure as published, with its year. Governance: World Bank WGI estimates, where 0 is the world average and 1 is one standard deviation; the change is against five years earlier. Conflict: UCDP/PRIO armed conflicts located in the country and UCDP best estimates of deaths for the latest year UCDP has coded, with the three years before. Unrest: the latest complete GDELT month against the country\'s previous 24 months (a spike is z of 3 or more). Geopolitical risk: the Caldara-Iacoviello news index for the country and the world, against all months on file. Economy: latest outturn year (IMF projections left out), against five years earlier. No overall score: any weights would be a guess.';
 
 const r2 = (v: number) => Math.round(v * 100) / 100;
 const isSeries = (s: Series | SeriesMissing | undefined): s is Series => !!s && 'points' in s && Array.isArray(s.points) && s.points.length > 0;
@@ -147,6 +151,21 @@ function unrestPillar(inp: ScorecardInputs): Pillar {
   return p;
 }
 
+function gprPillar(inp: ScorecardInputs): Pillar {
+  const p: Pillar = { id: 'geopolitical', label: 'Geopolitical risk (news index)', source: GPR_SOURCE, rows: [], missing: [] };
+  const g = inp.gpr;
+  if (!g) {
+    p.missing.push(`GPR index: ${inp.gprMissing || 'no GPR file read'}`);
+    return p;
+  }
+  const row = (r: GprReading): ScoreRow => ({ label: r.label, value: r.value, unit: 'index', when: r.month, context: `at or above ${r.percentile}% of months on file; 12-month mean ${r.mean12}, all-time mean ${r.meanAll}` });
+  if (g.country) p.rows.push(row(g.country));
+  else p.missing.push(`Country index: ${g.countryMissing || 'not in the file'}`);
+  if (g.world) p.rows.push(row(g.world));
+  else p.missing.push('World index: the GPR column is empty');
+  return p;
+}
+
 export interface Scorecard {
   pillars: Pillar[];
   /** Pillars with at least one figure. */
@@ -158,6 +177,7 @@ export function countryRiskScorecard(inp: ScorecardInputs): Scorecard {
     officialPillar('governance', 'Governance', WGI_IDS, inp, wgiContext, 'estimate'),
     conflictPillar(inp),
     unrestPillar(inp),
+    gprPillar(inp),
     officialPillar('economy', 'Economy', ECONOMY_IDS, inp),
   ];
   return { pillars, filled: pillars.filter((p) => p.rows.length).length };
