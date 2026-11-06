@@ -1,5 +1,5 @@
 {
-  "about": "Council regression set: fixed agent answers and the reading a good summary must give. The figures are frozen test inputs (copied once from the app's own feeds), never shown as data. Run with `npm run council:regress` against the AI model set in the app; CI runs it against a stand-in model to check the harness. Change a case only by adding a new id; a case that fails is not edited to pass.",
+  "about": "Council regression set: fixed agent answers and the reading a good summary must give. The figures are frozen test inputs (copied once from the app's own feeds), never shown as data. Run with `npm run council:regress` against the AI model set in the app; `npm run council:record` records it on the referee model and CI replays that recording (README.md). Change a case only by adding a new id; a case that fails is not edited to pass.",
   "version": 1,
   "cases": [
     {

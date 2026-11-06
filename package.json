@@ -18,7 +18,8 @@
     "gdelt:pull": "tsx scripts/gdelt-pull.ts",
     "record:feeds": "tsx scripts/record-feeds.ts",
     "backtest": "tsx scripts/backtest.ts",
-    "council:regress": "tsx scripts/council-regress.ts"
+    "council:regress": "tsx scripts/council-regress.ts",
+    "council:record": "tsx scripts/council-record.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

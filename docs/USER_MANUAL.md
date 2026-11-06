@@ -123,7 +123,14 @@ questions with frozen agent answers (`docs/validation/council-regression/cases.j
 the same summary step, on your AI model, and checks each reading: for example that Brazil's
 policy is read as tight, or that Egypt's debt is not called sustainable when its debt figures are
 missing. It prints PASS or FAIL per case with the reason and saves the report in
-`data/local/validation/council-regression.json`; each case is a snapshot you can re-run.
+`data/local/validation/council-regression.json`; each case is a snapshot you can re-run. When a
+recorded baseline exists it also says whether the answers match it.
+
+**Recorded baseline (real-model regression in CI).** `npm run council:record` runs the same set
+on your referee model (qwen2.5:32b) on a private copy of the server and records every model
+reply. Once those are committed, CI replays them and fails when a code change alters what the
+model is asked or what the checked answers say. See
+`docs/validation/council-regression/README.md`.
 
 **Watch alerts.** Rules you set on the timing figures, for example "CFTC positioning percentile at
 or above 90 for any country". There are no built-in thresholds, and a missing figure never
