@@ -170,7 +170,7 @@ import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSo
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
-import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, ai } from './src/server/ai';
+import { callOllamaOrOpenAICompatible, sanitizeAndParseJson, NO_MODEL_DESK, NO_MODEL_COUNCIL, clampScoreToAnchor, normalizeStance, executeResilientLlmStep, resetGeminiClient, geminiClient } from './src/server/ai';
 
 const __dirname = APP_ROOT;
 let validationRunning = false;
@@ -4444,7 +4444,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           progress.start('search');
           const searchStart = Date.now();
           try {
-            const searchResp = await ai.models.generateContent({
+            const searchResp = await geminiClient().models.generateContent({
               model: 'gemini-3.8-flash',
               contents: `Latest macroeconomic, central bank policy rate, fiscal budget, and geopolitical risk developments for ${baseRun.countryName} (${iso3}): ${baseRun.scenarioPrompt}`,
               config: {
