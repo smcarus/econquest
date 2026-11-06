@@ -34,6 +34,10 @@ On a Mac you can instead double-click `start-mac.command`, which runs the app in
 http://localhost:3737 (Windows: `scripts/start-windows.bat`). Both ways read and write the same
 `data/` folder, so keys and saved research carry over.
 
+To update later, run `npm run update` (or double-click `update-mac.command`): it pulls, runs
+`npm install` when the packages changed, and rebuilds the Docker app, which `git pull` alone does
+not update. It also warns when a Docker Ollama holds port 11434 in front of the Ollama app.
+
 To run it on an always-on Linux box or NAS with Ollama on the same machine, see
 [docs/HOME_SERVER.md](docs/HOME_SERVER.md).
 
