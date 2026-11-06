@@ -52,8 +52,26 @@ after(() => {
   if (dataDir) rmSync(dataDir, { recursive: true, force: true });
 });
 
-const post = (p: string, body: unknown, cookie = '') =>
-  fetch(`${base}${p}`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...(cookie ? { Cookie: cookie } : {}) }, body: JSON.stringify(body) });
+/** The CSRF token for a session, as the page gets it from /api/auth/status. */
+const csrfCache = new Map<string, string>();
+async function csrfFor(cookie: string): Promise<string> {
+  if (!csrfCache.has(cookie)) {
+    const s = await (await fetch(`${base}/api/auth/status`, { headers: { Cookie: cookie } })).json();
+    csrfCache.set(cookie, s.csrfToken || '');
+  }
+  return csrfCache.get(cookie)!;
+}
+const write = async (method: string, p: string, body: unknown, cookie = '', csrf = true) =>
+  fetch(`${base}${p}`, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(cookie ? { Cookie: cookie } : {}),
+      ...(cookie && csrf ? { 'X-CSRF-Token': await csrfFor(cookie) } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+const post = (p: string, body: unknown, cookie = '') => write('POST', p, body, cookie);
 const cookieOf = (res: Response) => (res.headers.get('set-cookie') || '').split(';')[0];
 
 let adminCookie = '';
@@ -121,8 +139,7 @@ test('changing the password signs out other sessions and is in the audit log wit
   assert.ok(!raw.includes(adminCookie.split('=')[1]), 'no session token in the log');
 });
 
-const put = (p: string, body: unknown, cookie: string) =>
-  fetch(`${base}${p}`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: cookie }, body: JSON.stringify(body) });
+const put = (p: string, body: unknown, cookie: string) => write('PUT', p, body, cookie);
 
 test('roles: the admin adds accounts; viewers only read, analysts cannot touch keys, users or the audit log', async () => {
   const addA = await post('/api/users', { username: 'ana', displayName: 'Ana', role: 'analyst' }, adminCookie);
@@ -161,4 +178,18 @@ test('roles: the admin adds accounts; viewers only read, analysts cannot touch k
   assert.match(raw, /Sam \(sam\) added the account Ana \(ana\) as analyst/);
   assert.match(raw, /changed the account vic: disabled/);
   assert.ok(!raw.includes(a.password) && !raw.includes(addV.password), 'new passwords never logged');
+});
+
+test('changes need the CSRF token of their own session; replies carry security headers', async () => {
+  const c = cookieOf(await post('/api/auth/sign-in', { username: 'sam', password: 'an even longer and more boring sentence' }));
+  const none = await write('PUT', '/api/watch-rules', { rules: [] }, c, false);
+  assert.equal(none.status, 403);
+  assert.equal((await none.json()).csrf, true);
+  const wrong = await fetch(`${base}/api/watch-rules`, { method: 'PUT', headers: { 'Content-Type': 'application/json', Cookie: c, 'X-CSRF-Token': await csrfFor(adminCookie) }, body: '{"rules":[]}' });
+  assert.equal(wrong.status, 403, "another session's token does not work");
+  assert.equal((await write('PUT', '/api/watch-rules', { rules: [] }, c)).status, 200);
+  const res = await fetch(`${base}/api/auth/status`);
+  assert.equal(res.headers.get('x-frame-options'), 'DENY');
+  assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(res.headers.get('x-powered-by'), null);
 });
