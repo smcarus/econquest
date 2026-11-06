@@ -271,6 +271,8 @@ Figures with no history yet are listed with the reason.
 
 **Gross financing need.** Research > History & data shows, year by year, the deficit plus external public debt falling due, as % of GDP (IMF Fiscal Monitor, World Bank IDS and QEDS, IMF WEO GDP in dollars). Domestic debt falling due has no free source, so the total is labelled "at least": a lower bound. Years at or above 15% of GDP, the IMF market-access flag for emerging markets, are highlighted.
 
+**Reserve adequacy.** Research > History & data shows reserves in months of imports, against short-term external debt and against broad money, and reserves as a share of the IMF's reserve adequacy (ARA) metric for emerging markets. One term of that metric, other portfolio liabilities, has no free source, so the share shown is an upper bound: under 100% means short of the IMF floor for certain, above 100% does not prove adequacy. Both the floating and the fixed exchange rate weightings are shown.
+
 **Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
 its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
 and the app's output gap, outturn years only, with Newey-West errors. A positive, significant

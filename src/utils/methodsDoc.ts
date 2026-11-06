@@ -73,6 +73,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/grossFinancingNeed.ts',
   },
   {
+    id: 'reserve_adequacy',
+    name: 'Reserve adequacy (IMF ARA, partial)',
+    where: 'Research > History & data',
+    method: [
+      'Traditional ratios: reserves in months of imports, reserves / short-term external debt (Greenspan-Guidotti, 100%), reserves / broad money (20%).',
+      'IMF ARA EM metric without other portfolio liabilities: 30% of short-term external debt (World Bank IDS) + 5% (floating) or 10% (fixed) of broad money (World Bank, % of GDP x IMF WEO GDP in US$) + 5% or 10% of exports of goods and services (World Bank). Both weightings shown; reserves include gold.',
+      'Reading: reserves under 100% of the floating-weight partial metric are under 100% of the full IMF metric whatever the regime; above that, adequacy cannot be shown without the missing term.',
+    ],
+    limits: 'Other portfolio liabilities (from the international investment position) have no free cross-country source, so the ratio is an upper bound of the IMF\'s. The exchange rate regime is not a free feed. Short-term debt is World Bank IDS, low- and middle-income countries only; annual data lag a year or more.',
+    code: 'src/utils/reserveAdequacy.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',
