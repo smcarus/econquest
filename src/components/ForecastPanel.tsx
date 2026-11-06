@@ -52,6 +52,8 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const [fc, setFc] = useState<ForecastReply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [measure, setMeasure] = useState<ForecastId>('gdp_qoq');
+  // A forecast that failed its pre-registered test is not drawn unless asked for (honest labels).
+  const [showFailed, setShowFailed] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -75,6 +77,10 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const forecast = fc?.forecasts.find((r) => r.id === measure);
   const nowcast = m.nowcast && now ? now[m.nowcast] : undefined;
   const statuses = m.evalIds.map((id) => ({ id, v: fc?.validation?.[id] ?? { status: 'not_run' as const, verdict: 'The pre-registered evaluation has not been run yet (npm run forecast:evaluate).' } }));
+  const failedEval = (kind: 'nowcast' | 'forecast') => statuses.some((s) => s.id.includes(kind) && s.v.status === 'failed');
+  const forecastFailed = failedEval('forecast');
+  const nowcastFailed = failedEval('nowcast');
+  const drawForecast = !forecastFailed || showFailed;
 
   const data = useMemo(() => {
     if (!forecast?.ok) return [];
@@ -84,6 +90,8 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
       return rows.get(p)!;
     };
     for (const h of forecast.history) row(h.date).actual = h.value;
+    if (nowcast?.ok) for (const p of nowcast.points) row(p.period).nowcast = p.mean;
+    if (!drawForecast) return [...rows.values()].sort((a, b) => (String(a.period) < String(b.period) ? -1 : 1));
     const last = forecast.lastObserved;
     // The fan starts at the last real figure so the bands join the line.
     Object.assign(row(last.period), { mean: last.value, b90: [last.value, last.value], b70: [last.value, last.value], b50: [last.value, last.value] });
@@ -91,7 +99,6 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
       const b = (lvl: number) => p.bands.find((x) => x.level === lvl);
       Object.assign(row(p.period), { mean: p.mean, b90: b(90) && [b(90)!.lo, b(90)!.hi], b70: b(70) && [b(70)!.lo, b(70)!.hi], b50: b(50) && [b(50)!.lo, b(50)!.hi] });
     }
-    if (nowcast?.ok) for (const p of nowcast.points) row(p.period).nowcast = p.mean;
     // Yearly IMF points sit on the last period of each year shown.
     if (forecast.imf && forecast.freq !== 'annual') {
       for (const ip of forecast.imf.points) {
@@ -100,7 +107,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
       }
     } else if (forecast.imf) for (const ip of forecast.imf.points) row(ip.period).imf = ip.value;
     return [...rows.values()].sort((a, b) => (String(a.period) < String(b.period) ? -1 : 1));
-  }, [forecast, nowcast]);
+  }, [forecast, nowcast, drawForecast]);
 
   const explain = () => {
     if (!forecast?.ok) return;
@@ -109,7 +116,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
     explainInChat({
       kind: 'panel',
       label: `${forecast.label}, ${countryName}`,
-      value: `${f1(p4.mean)}${forecast.unit === '%' ? '%' : ` ${forecast.unit}`} in ${p4.period}${b70 ? ` (70% band ${f1(b70.lo)} to ${f1(b70.hi)})` : ''}; app forecast, not validated advice`,
+      value: `${f1(p4.mean)}${forecast.unit === '%' ? '%' : ` ${forecast.unit}`} in ${p4.period}${b70 ? ` (70% band ${f1(b70.lo)} to ${f1(b70.hi)})` : ''}; app forecast, ${forecastFailed ? 'FAILED its pre-registered out-of-sample test, illustration only' : 'not validated advice'}`,
       source: forecast.method,
       asOf: forecast.lastObserved.period,
       iso3,
@@ -140,7 +147,10 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
       <div className="p-4 space-y-3">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Measure">
           {MEASURES.map((x) => (
-            <button key={x.id} type="button" className="ui-pill" aria-pressed={measure === x.id} onClick={() => setMeasure(x.id)}>
+            <button key={x.id} type="button" className="ui-pill" aria-pressed={measure === x.id} onClick={() => {
+                setMeasure(x.id);
+                setShowFailed(false);
+              }}>
               {x.label}
             </button>
           ))}
@@ -167,7 +177,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                   const b = p.bands.find((x) => x.level === 70);
                   return (
                     <p key={p.period}>
-                      <strong>Nowcast {p.period}:</strong> {f1(p.mean)}%{b ? ` (70% band ${f1(b.lo)} to ${f1(b.hi)})` : ''}. <span className="text-slate-500 dark:text-slate-400">{p.how}</span>
+                      <strong>Nowcast {p.period}{nowcastFailed ? ' (failed its out-of-sample test)' : ''}:</strong> {f1(p.mean)}%{b ? ` (70% band ${f1(b.lo)} to ${f1(b.hi)})` : ''}. <span className="text-slate-500 dark:text-slate-400">{p.how}</span>
                     </p>
                   );
                 })}
@@ -180,6 +190,16 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
               <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
                 Forecast Missing: {forecast.reason}
               </p>
+            )}
+            {forecast?.ok && forecastFailed && (
+              <div className="text-sm text-red-700 dark:text-red-400 flex flex-wrap items-center gap-2" data-forecast-failed="true">
+                <span>
+                  This forecast failed its pre-registered out-of-sample test, so {showFailed ? 'it is shown as an illustration only' : 'it is not drawn'}. Published figures{forecast.imf ? ' and the IMF projection' : ''} are shown.
+                </span>
+                <button type="button" className="ui-btn text-xs" aria-pressed={showFailed} onClick={() => setShowFailed((v) => !v)}>
+                  {showFailed ? 'Hide the failed forecast' : 'Show it anyway'}
+                </button>
+              </div>
             )}
             {forecast?.ok && (
               <>
@@ -196,8 +216,8 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                       <Area dataKey="b70" name="70% band" stroke="none" fill="#3b82f6" fillOpacity={0.18} isAnimationActive={false} />
                       <Area dataKey="b50" name="50% band" stroke="none" fill="#3b82f6" fillOpacity={0.25} isAnimationActive={false} />
                       <Line dataKey="actual" name="Published" stroke="#64748b" dot={false} strokeWidth={2} isAnimationActive={false} />
-                      <Line dataKey="mean" name="App forecast" stroke="#2563eb" strokeDasharray="5 4" dot={false} strokeWidth={2} isAnimationActive={false} />
-                      <Line dataKey="nowcast" name="App nowcast" stroke="none" dot={{ r: 4, fill: '#7c3aed', stroke: '#7c3aed' }} activeDot={false} isAnimationActive={false} />
+                      <Line dataKey="mean" name={forecastFailed ? 'App forecast (failed test)' : 'App forecast'} stroke="#2563eb" strokeDasharray="5 4" dot={false} strokeWidth={2} isAnimationActive={false} />
+                      <Line dataKey="nowcast" name={nowcastFailed ? 'App nowcast (failed test)' : 'App nowcast'} stroke="none" dot={{ r: 4, fill: '#7c3aed', stroke: '#7c3aed' }} activeDot={false} isAnimationActive={false} />
                       <Line dataKey="imf" name="IMF projection (yearly)" stroke="none" dot={{ r: 5, fill: '#d97706', stroke: '#d97706' }} activeDot={false} isAnimationActive={false} />
                     </ComposedChart>
                   </ResponsiveContainer>
@@ -208,7 +228,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                       <thead>
                         <tr className="text-left text-slate-500 dark:text-slate-400">
                           <th className="py-1 pr-3">Year</th>
-                          <th className="py-1 pr-3">App (same yearly basis)</th>
+                          {drawForecast && <th className="py-1 pr-3">App (same yearly basis)</th>}
                           <th className="py-1 pr-3">IMF projection</th>
                         </tr>
                       </thead>
@@ -216,7 +236,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                         {forecast.imf.points.map((p) => (
                           <tr key={p.period} className="border-t border-slate-100 dark:border-slate-800">
                             <td className="py-1 pr-3">{p.period}</td>
-                            <td className="py-1 pr-3">{f1(forecast.imf!.app.find((a) => a.period === p.period)?.value)}</td>
+                            {drawForecast && <td className="py-1 pr-3">{f1(forecast.imf!.app.find((a) => a.period === p.period)?.value)}</td>}
                             <td className="py-1 pr-3">{f1(p.value)}</td>
                           </tr>
                         ))}
