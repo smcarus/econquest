@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { forecastRegisterStatus, forecastVerdicts, type ForecastVerdict } from '../src/utils/forecastRegister';
+import { forecastRegisterStatus, forecastVerdicts, worstSeries, type ForecastVerdict } from '../src/utils/forecastRegister';
 
 const v = (id: string, status: ForecastVerdict['status']): ForecastVerdict => ({ id, status, verdict: `${id} ${status}`, specVersion: 1, specHash: 'h', ranAt: '2026-11-06T12:00:00Z' });
 
@@ -17,4 +17,8 @@ test('the forecasts entry fails when any of its evaluations failed and passes on
   assert.equal(forecastRegisterStatus('app_forecasts', four), undefined);
   assert.equal(forecastVerdicts('app_forecasts', four).length, 4);
   assert.equal(forecastRegisterStatus('taylor_gap', all), undefined);
+});
+
+test('worstSeries lists the highest relative RMSE first', () => {
+  assert.deepEqual(worstSeries([{ where: 'A', relRmse: 0.8 }, { where: 'B', relRmse: 9 }, { where: 'C', relRmse: 1.2 }], 2).map((x) => x.where), ['B', 'C']);
 });

@@ -32,3 +32,8 @@ export function forecastRegisterStatus(entryId: string, results: Record<string, 
 export function forecastVerdicts(entryId: string, results: Record<string, ForecastVerdict> | undefined): ForecastVerdict[] {
   return (REGISTER_FORECAST_IDS[entryId] || []).map((id) => results?.[id]).filter((r): r is ForecastVerdict => Boolean(r));
 }
+
+/** The n series with the highest relative RMSE (model against benchmark), worst first. */
+export function worstSeries<T extends { where: string; relRmse: number }>(bySeries: T[], n: number): T[] {
+  return bySeries.slice().sort((a, b) => b.relRmse - a.relRmse).slice(0, n);
+}
