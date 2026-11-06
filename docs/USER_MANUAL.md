@@ -222,7 +222,7 @@ On a phone the scopes read *<country> · Compare · Holdings*.
 ### Compare countries
 
 Your watchlist side by side. Opening it does not count as a visit for *Since your last visit*.
-**Summary** holds the first and third panels below, **Markets & signals** the second and fourth,
+**Summary** holds the first and third panels below, **Markets & signals** the second, fourth and fifth,
 **History & data** the table, and **Sources** a grid of every country and key figure, each Live or
 Missing with its reason.
 
@@ -243,6 +243,13 @@ that quadrant means for policy. A country without both figures is listed with wh
 **Scenarios.** Who is most exposed to a Hormuz closure, a Taiwan blockade, tighter Russia
 sanctions, and the last 12 months of commodity prices, from UN Comtrade trade shares, World Bank
 Pink Sheet and EIA prices.
+
+**Fed balance sheet.** The dollar liquidity backdrop from the Federal Reserve's weekly H.4.1 release
+and the NY Fed, via FRED (no key needed): total assets, bank reserves, the Treasury General Account
+and overnight reverse repos, in billions, each with its own date, its change over 4 and 52 weeks and
+a two-year line. *Net liquidity* (total assets less the Treasury account less reverse repos) is a
+market shorthand, not an official series; it shows only when all three have a value on the same
+Wednesday. A series FRED does not answer for uses the last saved pull, with its dates, or reads Missing.
 
 **Compare countries.** Tick countries and figures, then *Build table*. *Latest values* gives one cell per
 country and figure, with its period underneath; hover for the source, or for the reason when it reads

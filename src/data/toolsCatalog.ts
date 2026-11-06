@@ -69,6 +69,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'compare', anchor: 'tool-panel' },
   },
   {
+    id: 'fed_balance_sheet',
+    category: 'screen',
+    title: 'Fed balance sheet',
+    what: 'Federal Reserve total assets, bank reserves, the Treasury General Account and overnight reverse repos, each with its date and its change over 4 and 52 weeks, plus net liquidity when all parts share a Wednesday.',
+    sources: 'Federal Reserve H.4.1 and NY Fed via FRED (no key needed)',
+    target: { area: 'compare', anchor: 'tool-fed-balance-sheet' },
+  },
+  {
     id: 'regime_quadrant',
     category: 'screen',
     title: 'Growth and inflation',

@@ -69,6 +69,7 @@ const ANCHOR_SECTION: Record<string, ResearchSectionId> = {
   'tool-regime': 'summary',
   'tool-marketedge': 'markets',
   'tool-scenarios': 'markets',
+  'tool-fed-balance-sheet': 'markets',
   'tool-panel': 'history',
   'tool-holdings-signals': 'markets',
 };
