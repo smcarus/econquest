@@ -49,6 +49,8 @@ import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, ans
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
+import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
+import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
 import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
@@ -789,9 +791,26 @@ function withGdeltRaw(snapshot: OpenDataSnapshot): OpenDataSnapshot {
 }
 function withGdeltRawOnly(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   const reading = gdeltRawReadingFor(snapshot.iso3);
-  if (reading) return { ...snapshot, gdeltRaw: reading };
+  if (reading) return withAcled({ ...snapshot, gdeltRaw: reading });
   const { gdeltRaw: _drop, ...rest } = snapshot;
-  return rest as OpenDataSnapshot;
+  return withAcled(rest as OpenDataSnapshot);
+}
+
+/** ACLED monthly counts (your own account), or the reason they are missing. Never waits on the network. */
+function withAcled(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const { acled: _a, acledMissing: _m, ...rest } = snapshot;
+  const got = acledReadingFor(snapshot.iso3, acledCountryName(snapshot.iso3, snapshot.countryName || ''));
+  if (!('reading' in got)) return { ...(rest as OpenDataSnapshot), acledMissing: got.missing };
+  // Listed with the snapshot's live sources, so the Sources tab and the credit lines name ACLED.
+  const label = `${ACLED_SHORT} (ACLED, accessed ${got.reading.pulledAt.slice(0, 10)}, ${got.reading.total.from} to ${got.reading.total.to})`;
+  const others = (snapshot.liveApiSourcesActive || []).filter((x) => !x.startsWith(ACLED_SHORT));
+  const verified = (snapshot.dataStatus?.verifiedLiveSources || []).filter((x) => !x.startsWith(ACLED_SHORT));
+  return {
+    ...(rest as OpenDataSnapshot),
+    acled: got.reading,
+    liveApiSourcesActive: [...others, label],
+    ...(snapshot.dataStatus ? { dataStatus: { ...snapshot.dataStatus, verifiedLiveSources: [...verified, label] } } : {}),
+  };
 }
 /** UCDP conflict figures from the downloaded files in data/local/ucdp/, laid over like the GDELT files. */
 function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -2568,6 +2587,7 @@ async function startServer() {
       forgetNationalCpi(['TUR']);
     }
     if (id === 'BANXICO_TOKEN') forgetNationalCpi(['MEX']);
+    if (id.startsWith('ACLED_')) forgetAcled();
     if (id.startsWith('CDS_') || id.startsWith('LSEG_')) forgetOwnCds();
     if (id === 'GEMINI_API_KEY') resetGeminiClient();
   };

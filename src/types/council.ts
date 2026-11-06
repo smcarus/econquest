@@ -398,6 +398,10 @@ export interface OpenDataSnapshot {
   gdeltRaw?: import('../utils/gdeltRaw').GdeltRawReading;
   /** UCDP conflict figures from the downloaded CSV files in data/local/ucdp/; laid over when served (utils/ucdpConflict.ts). */
   ucdp?: import('../utils/ucdpConflict').UcdpReading;
+  /** ACLED conflict events, monthly counts for twelve months, with your own ACLED account; laid over when served (utils/acled.ts). */
+  acled?: import('../utils/acled').AcledReading;
+  /** Why the ACLED figures are missing, in words (no account, no API access, no answer). */
+  acledMissing?: string;
   gdeltMetrics: {
     conflictIntensityIndex: number;
     averageTone: number;
