@@ -50,3 +50,9 @@ test('tickets and triggers: no built-in sizing, calls or decision triggers in th
   assert.equal(ticketCallText(null), 'missing');
   assert.match(TRIGGERS_MISSING, /^Missing/);
 });
+
+test('a placeholder the model writes ("NA", "N/A", "none") counts as no answer', async () => {
+  const { isModelPlaceholder } = await import('../src/utils/councilResult.ts');
+  for (const p of ['NA', 'N/A', 'n/a.', 'none', ' - ', 'Unknown']) assert.equal(isModelPlaceholder(p), true, p);
+  for (const t of ['Brazilian Government Bond', 'Unclear due to missing data.', 'NAFTA trade']) assert.equal(isModelPlaceholder(t), false, t);
+});

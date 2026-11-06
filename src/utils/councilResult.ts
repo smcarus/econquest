@@ -7,6 +7,8 @@ import type { CouncilAssessmentRun, SupremeCouncilOutput } from '../types/counci
  */
 /** What a council report field shows when the model wrote nothing for it: never built-in text. */
 export const MODEL_FIELD_MISSING = 'Missing: model gave no answer for this field.';
+/** A placeholder a model writes instead of an answer ("NA", "N/A", "none", "-"): treated as no answer. */
+export const isModelPlaceholder = (v: string): boolean => /^\s*(n\/?a|none|null|nil|-+|tbd|unknown)\.?\s*$/i.test(v);
 
 /** Drawdown and liquidity haircut: nothing in the app estimates them, so they are never a built-in number. */
 export const RISK_ESTIMATE_MISSING = 'Missing (the app does not estimate this yet)';
