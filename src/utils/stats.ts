@@ -279,7 +279,7 @@ function solve(A: number[][], b: number[]): number[] | null {
   return M.map((row, i) => row[n] / row[i]);
 }
 
-function invert(A: number[][]): number[][] | null {
+export function invert(A: number[][]): number[][] | null {
   const n = A.length;
   const cols: number[][] = [];
   for (let j = 0; j < n; j++) {

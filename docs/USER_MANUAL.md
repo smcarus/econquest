@@ -269,6 +269,13 @@ a figure in the country header to open its history. *Show the numbers* lists eve
 observation, with unit, frequency, source, the source that day and the pull date).
 Figures with no history yet are listed with the reason.
 
+**Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
+its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
+and the app's output gap, outturn years only, with Newey-West errors. A positive, significant
+response is Bohn's sufficient condition for sustainability; the panel says "responds", "weak" or
+"no response found", shows the years used and has Explain. A record of past behaviour, not a
+forecast.
+
 **Past IMF WEO editions (real-time vintages).** To see a figure as the IMF published it at the time
 (for example the October 2018 forecast of Turkey's 2019 growth), download past editions of the WEO
 database from the IMF site (the tab-delimited "By Countries" file for each edition, named like
