@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { Download, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
@@ -90,7 +91,8 @@ const ChartLines: React.FC<{ result: ChartResult; height: number }> = ({ result,
   const right = result.lines.some((l) => l.axis === 'right');
   const unitOf = (axis: 'left' | 'right') => result.lines.find((l) => l.axis === axis)?.unit ?? '';
   return (
-    <div style={{ height }} data-council-chart-lines={result.lines.length}>
+    <>
+    <div style={{ height }} data-council-chart-lines={result.lines.length} role="img" aria-label={`${result.title}. The numbers are in the table below.`}>
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ top: 8, right: right ? 8 : 16, bottom: 4, left: 0 }}>
           <CartesianGrid stroke="currentColor" strokeOpacity={0.1} vertical={false} />
@@ -117,6 +119,12 @@ const ChartLines: React.FC<{ result: ChartResult; height: number }> = ({ result,
         </LineChart>
       </ResponsiveContainer>
     </div>
+    <ChartNumbers
+      caption={result.title}
+      columns={['Date', ...result.lines.map((l) => `${l.label} (${l.unit})`)]}
+      rows={data.map((r) => [String(r.date), ...result.lines.map((l) => (typeof r[l.key] === 'number' ? fmt(r[l.key] as number) : ''))])}
+    />
+    </>
   );
 };
 
@@ -129,7 +137,8 @@ const ScatterFit: React.FC<{ result: ChartResult; height: number }> = ({ result,
   const hi = Math.max(...xs);
   const fit = s.fit ? [{ x: lo, y: s.fit.a + s.fit.b * lo }, { x: hi, y: s.fit.a + s.fit.b * hi }] : [];
   return (
-    <div style={{ height }} data-council-chart-scatter={s.pairs.length} className={cross ? 'pb-5' : ''}>
+    <>
+    <div style={{ height }} data-council-chart-scatter={s.pairs.length} className={cross ? 'pb-5' : ''} role="img" aria-label={`${s.yLabel} against ${s.xLabel}, ${s.pairs.length} ${cross ? 'countries' : 'points'}. The numbers are in the table below.`}>
       {cross && <div className="text-xs text-slate-500 dark:text-slate-400">↑ {s.yLabel}</div>}
       <ResponsiveContainer width="100%" height="100%">
         <ScatterChart margin={{ top: cross ? 20 : 8, right: cross ? 48 : 16, bottom: 16, left: 0 }}>
@@ -145,6 +154,13 @@ const ScatterFit: React.FC<{ result: ChartResult; height: number }> = ({ result,
         </ScatterChart>
       </ResponsiveContainer>
     </div>
+    <ChartNumbers
+      caption={`${s.yLabel} against ${s.xLabel}`}
+      columns={[cross ? 'Country' : 'Date', s.xLabel, s.yLabel]}
+      rows={s.pairs.map((p) => [p.date, fmt(p.x), fmt(p.y)])}
+      newestFirst={!cross}
+    />
+    </>
   );
 };
 
