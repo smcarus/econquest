@@ -27,6 +27,13 @@ Cases by step (`kind` in `cases.json`):
 under Settings > AI model is used. A model of 8B or less is refused. Set `OLLAMA_URL` if Ollama is
 not at `http://localhost:11434`.
 
+Before recording, check that the Mac's own Ollama app answers on port 11434, not a Docker container:
+`docker ps` must not list an Ollama container publishing 11434, and `ollama ps` should show
+`100% GPU`. A Docker Ollama on a Mac runs on the CPU with Docker's memory cap, so a 32B model is
+killed while loading (`HTTP 500: llama-server process has terminated: signal: killed`) and desks
+time out. Stop it (`docker stop <name>`), open the Ollama app, and pull the models again there if
+`ollama list` no longer shows them.
+
 ## What fails the build
 
 1. **A step asks the model something that was not recorded.** Each model call is named by a hash of

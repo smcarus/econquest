@@ -53,9 +53,11 @@ export function describeAttempt(a: ModelAttempt): string {
   if (http) {
     const said = http[2]?.trim();
     if (!said) return `${a.where} answered HTTP ${http[1]}`;
-    const memory = /memory|out of memory|oom|insufficient|resource/i.test(said)
-      ? ' (the computer is short of memory for this model: close other apps or check "ollama ps")'
-      : '';
+    const memory = /signal: killed/i.test(said)
+      ? ' (the model was killed while loading, usually for lack of memory: on a Mac check that "docker ps" shows no Ollama container on port 11434 and that "ollama ps" says GPU)'
+      : /memory|out of memory|oom|insufficient|resource/i.test(said)
+        ? ' (the computer is short of memory for this model: close other apps or check "ollama ps")'
+        : '';
     return `${a.where} answered HTTP ${http[1]}: "${said}"${memory}`;
   }
   if (/fetch failed/i.test(msg)) return `${a.where} could not be reached`;
