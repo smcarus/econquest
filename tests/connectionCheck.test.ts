@@ -164,6 +164,18 @@ test('GDELT text instead of JSON points at its rate limit', async () => {
   assert.match(row('gdelt').detail, /5 seconds/);
 });
 
+test('GDELT news search not answering says the event files are separate and the last pull is kept', async () => {
+  const fetchFn: FetchFn = async (u) => {
+    if (u.includes('api.gdeltproject.org')) throw Object.assign(new TypeError('fetch failed'), { cause: { code: 'UND_ERR_CONNECT_TIMEOUT' } });
+    return healthy(u);
+  };
+  const { row } = await byId({ env: {}, fetchFn });
+  assert.equal(row('gdelt').state, 'no_answer');
+  assert.match(row('gdelt').detail, /timed out/);
+  assert.match(row('gdelt').detail, /data\.gdeltproject\.org/);
+  assert.match(row('gdelt').detail, /last saved headlines/);
+});
+
 test('HTTP errors are refused with the status', async () => {
   const fetchFn: FetchFn = async (u) => (u.includes('imf.org') ? new Response('busy', { status: 503 }) : healthy(u));
   const { row } = await byId({ env: {}, fetchFn });

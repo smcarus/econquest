@@ -441,7 +441,9 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     ).then((r) =>
       r.state === 'refused' && r.httpStatus === 429
         ? { ...r, detail: 'GDELT refused: too many requests from this connection (HTTP 429). It allows one request every 5 seconds and keeps refusing for a while after it is exceeded. The app pauses GDELT for 15 minutes after a refusal; check again after that.' }
-        : r
+        : r.state === 'no_answer'
+          ? { ...r, detail: `${r.detail} GDELT's news search (api.gdeltproject.org) is a separate server from its event files (data.gdeltproject.org) and is sometimes slow or down for hours. The app keeps the last saved headlines and tone, each with its own date, and tries again within the hour; nothing for you to change.` }
+          : r
     )
   );
 

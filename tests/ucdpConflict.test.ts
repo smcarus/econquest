@@ -29,7 +29,9 @@ function folderWith(zipped: boolean): string {
 
 test('CSV reader keeps quoted commas and empty cells', () => {
   assert.deepEqual(parseCsv('a,b,c\n1,"x, y",""\r\n2,,"say ""hi"""\n'), [['a', 'b', 'c'], ['1', 'x, y', ''], ['2', '', 'say "hi"']]);
-  assert.deepEqual(gwCell('750, 770, 760'), { iso3: ['IND', 'PAK'], unknown: [760] });
+  assert.deepEqual(gwCell('750, 770, 999'), { iso3: ['IND', 'PAK'], unknown: [999] });
+  // States that no longer exist count under today's country: South Vietnam with Vietnam once.
+  assert.deepEqual(gwCell('816, 817, 680, 751'), { iso3: ['VNM', 'YEM', 'IND'], unknown: [] });
 });
 
 test('each UCDP file is recognised by its columns', () => {
@@ -102,6 +104,7 @@ test('the release shipped in datasets/ucdp/ reads all five files and matches the
   assert.deepEqual(Object.keys(data.files).sort(), ['acd', 'brd', 'dyadic', 'nonstate', 'onesided']);
   assert.ok(Object.values(data.files).every((f) => f!.version === '26.1' && f!.maxYear === 2025));
   assert.deepEqual(data.skipped, []);
+  assert.deepEqual(data.unknownCodes, {}, 'every Gleditsch-Ward code in the release has a country');
   const ukr = ucdpReading(data, 'UKR')!;
   assert.equal(ukr.latest.stateBased?.best, 94741);
   assert.equal(ucdpReading(data, 'MEX')!.latest.nonState?.best, 7775);
