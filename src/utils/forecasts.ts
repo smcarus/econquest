@@ -25,9 +25,9 @@ export type ForecastId = 'gdp_qoq' | 'cpi_yoy' | 'policy_rate' | 'debt_gdp';
 
 export const FORECAST_MODELS: Record<ForecastId, { maxLag: number; d: 0 | 1; intercept: boolean; window: number; steps: number; minObs: number }> = {
   gdp_qoq: { maxLag: 4, d: 0, intercept: true, window: 0, steps: 8, minObs: 40 },
-  cpi_yoy: { maxLag: 13, d: 0, intercept: true, window: 0, steps: 24, minObs: 60 },
+  cpi_yoy: { maxLag: 13, d: 0, intercept: true, window: 120, steps: 24, minObs: 60 },
   policy_rate: { maxLag: 3, d: 1, intercept: false, window: 120, steps: 24, minObs: 60 },
-  debt_gdp: { maxLag: 2, d: 1, intercept: true, window: 0, steps: 2, minObs: 20 },
+  debt_gdp: { maxLag: 2, d: 1, intercept: false, window: 0, steps: 2, minObs: 20 },
 };
 
 export interface FanPoint {

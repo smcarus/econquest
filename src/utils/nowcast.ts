@@ -79,7 +79,7 @@ export interface NowcastInputs {
   cpi?: { points: DatedPoint[]; source: string; pulledAt?: string } | null;
 }
 
-export const NOWCAST_PARAMS = { targetLags: 1, monthlyMaxLag: 3, minQuarters: 24, cpiMaxLag: 13, gdpArMaxLag: 4 };
+export const NOWCAST_PARAMS = { targetLags: 1, monthlyMaxLag: 3, minQuarters: 24, cpiMaxLag: 13, cpiWindow: 120, gdpArMaxLag: 4 };
 
 const nextQuarter = (q: string) => {
   const y = Number(q.slice(0, 4));
@@ -213,7 +213,7 @@ export function cpiNowcast(inp: NowcastInputs, params = NOWCAST_PARAMS): Nowcast
   const last = run[run.length - 1];
   const steps = monthsBetween(last.date, inp.asOf.slice(0, 7));
   if (steps <= 0) return { ok: false, target, reason: `Inflation for ${last.date} is already published; there is no month to nowcast.` };
-  const fit = fitAr(run.map((p) => p.value), { maxLag: params.cpiMaxLag });
+  const fit = fitAr(run.slice(-params.cpiWindow).map((p) => p.value), { maxLag: params.cpiMaxLag });
   if ('error' in fit) return { ok: false, target, reason: fit.error };
   const f = forecastAr(fit, run.map((p) => p.value), steps);
   return {
@@ -231,7 +231,7 @@ export function cpiNowcast(inp: NowcastInputs, params = NOWCAST_PARAMS): Nowcast
       how: `AR(${fit.p}) on inflation itself, ${k + 1} month${k ? 's' : ''} past the newest figure.`,
       indicators: [],
     })),
-    method: `AR on monthly y/y inflation, lag order 0-${params.cpiMaxLag} by BIC, least squares on the unbroken run of months. No timelier price indicator is wired in yet, so this is a short-range projection. Bands: 50/70/90% from the AR's forecast error (normal).`,
+    method: `AR on monthly y/y inflation, lag order 0-${params.cpiMaxLag} by BIC, least squares on the last ${params.cpiWindow} months. No timelier price indicator is wired in yet, so this is a short-range projection. Bands: 50/70/90% from the AR's forecast error (normal).`,
     fit: { from: run[params.cpiMaxLag]?.date ?? run[0].date, to: last.date, n: fit.n, sigma: r2(fit.sigma) },
     inputs: [{ label: 'Inflation, monthly y/y', source: inp.cpi.source, newest: last.date, pulledAt: inp.cpi.pulledAt }],
     caveats: [

@@ -301,7 +301,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
 - **Use:** Research
 - **Status:** Not validated
-- **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons.
+- **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons. Inflation (last 10 years) and debt (no drift) are re-tested as version 2 after version 1 failed; version 1 stays on record.
 - **Limits:** Bands leave out parameter uncertainty; today's data vintage; not compared with past IMF forecasts yet.
 - **Code:** `src/utils/forecasts.ts`
 

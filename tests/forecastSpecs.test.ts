@@ -13,12 +13,17 @@ const DIR = path.join(process.cwd(), 'docs', 'validation', 'forecasts');
 
 test('every registered nowcast/forecast evaluation matches its hash in manifest.json', () => {
   const specs = loadSpecs(DIR);
-  assert.equal(specs.length, 6);
+  assert.equal(specs.length, 9);
   for (const s of specs) assert.equal(s.problem, undefined, `${s.file}: ${s.problem}`);
 });
 
 test('the registered rules are the ones the app runs (no silent drift between spec and code)', () => {
-  const byId = Object.fromEntries(loadSpecs(DIR).map((s) => [s.spec!.id, s.spec as unknown as ForecastSpec]));
+  // The newest version of each evaluation is the one the app must match.
+  const byId: Record<string, ForecastSpec> = {};
+  for (const s of loadSpecs(DIR)) {
+    const sp = s.spec as unknown as ForecastSpec;
+    if (!byId[sp.id] || sp.version > byId[sp.id].version) byId[sp.id] = sp;
+  }
   const same = (id: string, m: (typeof FORECAST_MODELS)[keyof typeof FORECAST_MODELS]) => {
     const p = byId[id].params;
     assert.equal(p.maxLag, m.maxLag, `${id} maxLag`);
@@ -31,6 +36,7 @@ test('the registered rules are the ones the app runs (no silent drift between sp
   same('cpi_nowcast', FORECAST_MODELS.cpi_yoy);
   same('policy_rate_forecast', FORECAST_MODELS.policy_rate);
   same('debt_forecast', FORECAST_MODELS.debt_gdp);
+  assert.equal(byId.cpi_nowcast.params.window, NOWCAST_PARAMS.cpiWindow, 'cpi nowcast window');
   const n = byId.gdp_nowcast.params;
   assert.equal(n.gdpLagDays, PUBLICATION_LAG_DAYS.gdp);
   assert.equal(n.activityLagDays, PUBLICATION_LAG_DAYS.activity);
