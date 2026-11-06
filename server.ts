@@ -7,7 +7,7 @@ import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap
 import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
-import { dataDirProblem, ollamaBaseUrlDefault } from './src/utils/serverRuntime';
+import { dataDirProblem, installJsonConsole, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
@@ -187,6 +187,8 @@ import {
 } from './src/utils/officialYields.ts';
 
 dotenv.config();
+// LOG_FORMAT=json (set in the Docker image): one JSON line per log message on stdout/stderr.
+installJsonConsole(process.env);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -5052,6 +5054,15 @@ async function startServer() {
   app.get('/healthz', (_req, res) => {
     res.json({ status: 'ok' });
   });
+  // Readiness: 200 only once listening, while not stopping, and while the data folder can be
+  // written (checked at most once a minute). Send traffic only when this says ready.
+  const lifecycle = { listening: false, shuttingDown: false };
+  let readyCheck = { at: 0, problem: null as string | null };
+  app.get('/readyz', (_req, res) => {
+    if (Date.now() - readyCheck.at > 60_000) readyCheck = { at: Date.now(), problem: dataDirProblem(DATA_DIR) };
+    const r = readiness({ ...lifecycle, dataProblem: readyCheck.problem });
+    res.status(r.status).json(r.body);
+  });
 
   // Keep the server for this computer's own pages: refuse other host names (DNS rebinding) and
   // changes sent from pages on other sites. See src/utils/requestGuard.ts.
@@ -8799,7 +8810,8 @@ ${String(documentText).slice(0, 12000)}
   // your watch rules. Inside Docker the container must listen on every interface; docker-compose
   // then publishes it on 127.0.0.1 only. HOST=0.0.0.0 in .env opens it to your network on purpose.
   const HOST = (process.env.HOST || '').trim() || (process.env.SELF_HOSTED_DOCKER === 'true' ? '0.0.0.0' : '127.0.0.1');
-  app.listen(PORT, HOST, () => {
+  const httpServer = app.listen(PORT, HOST, () => {
+    lifecycle.listening = true;
     console.log(`Sovereign & Macro Council Server listening on http://localhost:${PORT}${HOST === '127.0.0.1' ? ' (this computer only)' : ` (on ${HOST})`}`);
     setTimeout(() => void refreshStaleSnapshots(), 5000);
     // Hourly check: a full pull is redone after a week, a short one (a feed failed) after an hour.
@@ -8811,6 +8823,37 @@ ${String(documentText).slice(0, 12000)}
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.
     setInterval(() => void (knownOffline() ? null : topUpGdeltRaw()), SNAPSHOT_RETRY_MS).unref();
   });
+
+  // Graceful stop (docker stop, systemctl stop, Ctrl+C): stop taking new requests, close the live
+  // update streams, let open requests finish, then exit. Gives up after SHUTDOWN_TIMEOUT_MS.
+  const stop = (signal: string) => {
+    if (lifecycle.shuttingDown) {
+      console.log(`[shutdown] ${signal} again: stopping now`);
+      process.exit(1);
+    }
+    lifecycle.shuttingDown = true;
+    const waitMs = shutdownTimeoutMs(process.env);
+    console.log(`[shutdown] ${signal}: finishing open requests (up to ${Math.round(waitMs / 1000)} s)`);
+    sseClients.forEach((clientRes) => {
+      try {
+        clientRes.end();
+      } catch {
+        /* already closed */
+      }
+    });
+    sseClients.clear();
+    httpServer.close(() => {
+      console.log('[shutdown] stopped cleanly');
+      process.exit(0);
+    });
+    httpServer.closeIdleConnections?.();
+    setTimeout(() => {
+      console.log('[shutdown] open requests did not finish in time; stopping');
+      process.exit(0);
+    }, waitMs).unref();
+  };
+  process.once('SIGTERM', () => stop('SIGTERM'));
+  process.on('SIGINT', () => stop('SIGINT'));
 }
 
 if (process.argv.includes('--preload')) void runPreloadCli();

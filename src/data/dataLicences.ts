@@ -11,6 +11,14 @@
  * the two differ, so the in-app register (Menu > About & data licences) and the document never drift.
  */
 
+export type LicenceShare = 'allowed' | 'restricted' | 'unclear';
+
+export const LICENCE_SHARE_LABEL: Record<LicenceShare, string> = {
+  allowed: 'Free sharing allowed',
+  restricted: 'Do not pass on',
+  unclear: 'Sharing unclear',
+};
+
 export type LicenceStatus = 'open' | 'conditions' | 'permission' | 'not_verified';
 
 export interface LicenceRow {
@@ -29,6 +37,10 @@ export interface LicenceRow {
   quotes: string[];
   /** What is unclear or needs action. Rows with a flag are listed in "Open questions". */
   flag?: string;
+  /** Free, non-commercial sharing of the figures with other people (an open-source research note, a
+   * public chart). Judged from the quotes above; 'unclear' when the terms do not settle it. */
+  share: LicenceShare;
+  shareNote: string;
   checked: string;
 }
 
@@ -64,6 +76,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'Some datasets and indicators are provided by third parties, and may not be redistributed or reused without the consent of the original data provider',
     ],
     flag: 'Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator\'s metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read.',
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 allows sharing with credit.',
     checked: D,
   },
   {
@@ -80,6 +94,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     attribution: 'The World Bank: Commodity Price Data (The Pink Sheet).',
     quotes: [],
     flag: 'Read the Pink Sheet licence field in the World Bank Data Catalog before showing commodity prices to clients. Some prices in it come from third parties.',
+    share: 'unclear',
+    shareNote: 'Catalog licence not read.',
     checked: D,
   },
   {
@@ -98,6 +114,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'The IMF prohibits bulk download of information by automated technology without explicit permission',
     ],
     flag: 'Commercial reuse (for example a paid service or client deliverables) needs the IMF\'s permission. Whether the app\'s "Download all country data" counts as bulk automated download is not addressed by the terms. COFER and Fiscal Monitor are not named, but fall under "statistical data ... that explicitly identify the International Monetary Fund as the source".',
+    share: 'allowed',
+    shareNote: 'IMF Data may be published and distributed with attribution; only commercial reuse needs permission.',
     checked: D,
   },
   {
@@ -120,6 +138,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'Use "Source: UN Comtrade."',
     ],
     flag: 'The policy page and the FAQ read differently (blanket "internal use only" against the FAQ\'s exemptions). The app stores a few hundred rows per country, well under 100,000, but confirm with comtrade@un.org before a paid product.',
+    share: 'allowed',
+    shareNote: 'The FAQ exempts free, not-for-profit visualisation and analytics applications.',
     checked: D,
   },
   {
@@ -135,6 +155,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'These data are copyrighted by the United Nations. They are made available for internal use only and may not be re-disseminated in any form without written permission of the United Nations Statistics Division (UNSD).',
     ],
     flag: 'Same position as UN Comtrade. Where Comtrade has the shares the app already uses Comtrade instead.',
+    share: 'restricted',
+    shareNote: 'WITS states its Comtrade-derived data is for internal use only.',
     checked: D,
   },
   {
@@ -155,6 +177,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'if the statistics will be used in a commercial publication or product, their inclusion in the publication or product will not result in any additional charge to subscribers or other users;',
     ],
     flag: 'In a paid product the BIS figures must not be what is charged for. The general bis.org terms allow redistribution "for non-commercial purposes", which the statistics terms override for statistics.',
+    share: 'allowed',
+    shareNote: 'Use is unrestricted with the BIS cited.',
     checked: D,
   },
   {
@@ -174,6 +198,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'Frankfurter doesn\'t own the rates, so it can\'t give you rights the provider doesn\'t. If a provider publishes terms of use, they apply.',
     ],
     flag: 'Derived figures (volatility, year-to-date change) should be labelled as the app\'s calculation so they are not presented as ECB statistics.',
+    share: 'allowed',
+    shareNote: 'Free reuse with the source quoted and the figures unmodified.',
     checked: D,
   },
   {
@@ -194,6 +220,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'Use of the exchange rates we provide for actual transactions or as financial data is explicitly not recommended.',
     ],
     flag: 'Spot rates shown to clients or in exports would be redistribution. Options: switch spot FX to the ECB rates (Frankfurter, already the backup) for anything shared, or ask ExchangeRate-API in writing.',
+    share: 'restricted',
+    shareNote: 'The terms forbid redistributing the rates.',
     checked: D,
   },
   {
@@ -210,6 +238,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'None of the Content is investment advice.',
     ],
     flag: 'Exports that include SOFR or the fed funds rate should carry the reference-rate notice above.',
+    share: 'allowed',
+    shareNote: 'The licence covers use, copying and distribution, with the notice for reference rates.',
     checked: D,
   },
   {
@@ -231,6 +261,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.',
     ],
     flag: 'The yields belong to the OECD; FRED\'s terms conflict on client display. Settle it through the OECD\'s own licence (see the OECD row, not yet confirmed).',
+    share: 'unclear',
+    shareNote: 'The OECD owns the series; FRED says to ask the owner before any use beyond personal use.',
     checked: D,
   },
   {
@@ -250,6 +282,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'All OECD data should be cited as follows: OECD (year), (dataset name), (data source) DOI or https://data-explorer.oecd.org/. (accessed on (date)).',
     ],
     flag: 'Read the OECD data licence on oecd.org in a browser (the page needs JavaScript) and update this row; the FRED yields depend on it too.',
+    share: 'unclear',
+    shareNote: 'The OECD data licence was not confirmed.',
     checked: D,
   },
   {
@@ -265,6 +299,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'Eurostat has a policy of encouraging free re-use of its data, both for non-commercial and commercial purposes.',
       'when re-use involves modifications to the data or text, this must be stated clearly to the end user of the information.',
     ],
+    share: 'allowed',
+    shareNote: 'Free reuse with Eurostat named.',
     checked: D,
   },
   {
@@ -279,6 +315,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     quotes: [
       'Government information at the CFTC website is in the public domain. Public domain information may be freely distributed and copied, but it is requested that in any subsequent use the CFTC be given appropriate acknowledgement.',
     ],
+    share: 'allowed',
+    shareNote: 'Public domain.',
     checked: D,
   },
   {
@@ -295,6 +333,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     attribution: 'Source: US Treasury, Treasury International Capital (TIC) system.',
     quotes: [],
     flag: 'Treasury does not state a licence for TIC. Its Fiscal Data site says its data is "free, without restriction" for commercial use, but that page does not cover TIC.',
+    share: 'unclear',
+    shareNote: 'No terms found.',
     checked: D,
   },
   {
@@ -309,6 +349,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     quotes: [
       'U.S. government publications are in the public domain and are not subject to copyright protection. You may use and/or distribute any of our data, files, databases, reports, graphs, charts, and other information products',
     ],
+    share: 'allowed',
+    shareNote: 'Public domain.',
     checked: D,
   },
   {
@@ -325,6 +367,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'available for unlimited and unrestricted use for any academic, commercial, or governmental use of any kind without fee.',
     ],
     flag: 'Headlines link to news articles owned by their publishers; GDELT\'s terms cover GDELT\'s data, not the articles.',
+    share: 'allowed',
+    shareNote: 'Any redistribution allowed with a citation and link.',
     checked: D,
   },
   {
@@ -341,6 +385,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'Sell, resell, sublicense, redistribute, or otherwise commercially exploit the Data to any Capital Market Client or market data distributor, unless otherwise agreed to in writing by us;',
     ],
     flag: 'A desk, fund or fintech using the app professionally falls inside the restriction. Keep Polymarket odds to personal research, or agree terms with Polymarket.',
+    share: 'unclear',
+    shareNote: 'A personal licence; redistribution is barred only to capital-markets firms and data distributors, and sharing with others is not addressed.',
     checked: D,
   },
   {
@@ -361,6 +407,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'You may access content only for your personal use for non-commercial purposes.',
     ],
     flag: 'The strictest terms in the app. Showing Kalshi odds to anyone else, or using them in a professional setting, needs Kalshi\'s written authorization.',
+    share: 'restricted',
+    shareNote: 'Sharing with third parties needs Kalshi\'s written authorization.',
     checked: D,
   },
   {
@@ -380,6 +428,8 @@ export const DATA_LICENCES: LicenceRow[] = [
       'La responsabilidad sobre las estadísticas cuya fuente es externa al Banco recae en la entidad que provee el dato original.',
     ],
     flag: 'EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan\'s terms for republished EMBI levels are confirmed.',
+    share: 'unclear',
+    shareNote: 'The BCRP allows reproduction with citation, but J.P. Morgan\'s terms for the EMBI levels were not read.',
     checked: D,
   },
   {
@@ -393,6 +443,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     attribution: 'Fonte: Banco Central do Brasil, SGS série 13522.',
     quotes: ['© Banco Central do Brasil - Todos os direitos reservados'],
     flag: 'Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.',
+    share: 'unclear',
+    shareNote: 'No licence stated; the footer reads all rights reserved.',
     checked: D,
   },
   {
@@ -405,6 +457,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     commercial: 'Allowed under ODbL (attribution; a shared derived database stays under ODbL).',
     attribution: 'Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL).',
     quotes: ['Licença Aberta para Bases de Dados (ODbL) do Open Data Commons'],
+    share: 'allowed',
+    shareNote: 'Open Database License (ODbL), with credit.',
     checked: D,
   },
   {
@@ -418,6 +472,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     attribution: 'Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye).',
     quotes: ['Sitede yer alan bilgiler, kaynak gösterilmek suretiyle yayımlanabilir; ancak bu bilgilerin ticari amaçlarla kullanımı TCMB\'nin yazılı iznine tabidir.'],
     flag: 'These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.',
+    share: 'allowed',
+    shareNote: 'May be published with the source cited; only commercial use needs permission.',
     checked: D,
   },
   {
@@ -431,6 +487,8 @@ export const DATA_LICENCES: LicenceRow[] = [
     attribution: 'As your vendor contract requires.',
     quotes: [],
     flag: 'Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.',
+    share: 'restricted',
+    shareNote: 'Set by your vendor contract; treated as restricted unless it says otherwise.',
     checked: D,
   },
 ];
@@ -464,9 +522,9 @@ export function licencesMarkdown(rows: LicenceRow[] = DATA_LICENCES): string {
     '',
     '## Summary',
     '',
-    '| Source | Status | Show to others | Commercial use | Credit |',
-    '| --- | --- | --- | --- | --- |',
-    ...rows.map((r) => `| ${esc(r.name)} | ${LICENCE_STATUS_LABEL[r.status]} | ${esc(r.display)} | ${esc(r.commercial)} | ${esc(r.attribution)} |`),
+    '| Source | Status | Free non-commercial sharing | Show to others | Commercial use | Credit |',
+    '| --- | --- | --- | --- | --- | --- |',
+    ...rows.map((r) => `| ${esc(r.name)} | ${LICENCE_STATUS_LABEL[r.status]} | ${LICENCE_SHARE_LABEL[r.share]} | ${esc(r.display)} | ${esc(r.commercial)} | ${esc(r.attribution)} |`),
     '',
     '## Sources',
     '',
@@ -475,6 +533,7 @@ export function licencesMarkdown(rows: LicenceRow[] = DATA_LICENCES): string {
     out.push(`### ${r.name}`, '');
     out.push(`- **Used for:** ${r.usedFor}`);
     out.push(`- **Status:** ${LICENCE_STATUS_LABEL[r.status]}`);
+    out.push(`- **Free non-commercial sharing:** ${LICENCE_SHARE_LABEL[r.share]}. ${r.shareNote}`);
     out.push(`- **Terms read:** ${r.terms.map((t) => `[${t.label}](${t.url})`).join('; ')} (checked ${r.checked})`);
     out.push(`- **Show to others:** ${r.display}`);
     out.push(`- **Commercial use:** ${r.commercial}`);
