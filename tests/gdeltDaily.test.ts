@@ -8,7 +8,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { zipSync, strToU8 } from 'fflate';
-import { filesFrom, lineSplitter, parseFileSizes, v1FromMonth, v1Reader, v1Reading, v1Series, type V1Month } from '../src/utils/gdeltDaily.ts';
+import { v1Figures, filesFrom, lineSplitter, parseFileSizes, v1FromMonth, v1Reader, v1Reading, v1Series, type V1Month } from '../src/utils/gdeltDaily.ts';
 import { gdeltDailyDir, gdeltDailySeries, loadMonth, pullGdeltDaily } from '../src/utils/gdeltDailyStore.ts';
 import { emptyEventAgg } from '../src/utils/gdeltRaw.ts';
 
@@ -115,4 +115,13 @@ test('reading needs 24 complete months and ranks the latest against them', () =>
   assert.equal(r.protestPctile, 100);
   assert.equal(r.goldsteinPctile, 0, 'the most conflictual month on record');
   assert.equal(v1Reading(v1Series('ARG', months.slice(0, 20))), null);
+});
+
+test('agent figures name GDELT 1.0 and the history; a 90th-percentile month gets a sentence', () => {
+  const r = { month: '2026-09', months: 100, from: '2018-05', protestPct: 30, violencePct: 2, goldsteinMean: 0.5, protestPctile: 99, violencePctile: 40, goldsteinPctile: 50, pulledAt: '2026-11-06T00:00:00Z' };
+  const out = v1Figures(r);
+  assert.ok(out.figures.every((f) => f.source.startsWith('GDELT 1.0 event files, pulled 2026-11-06; 100 months from 2018-05')));
+  assert.match(out.figures[0].value, /30% \(99th percentile\)/);
+  assert.equal(out.sentences.length, 1);
+  assert.equal(out.weight, 0.5);
 });

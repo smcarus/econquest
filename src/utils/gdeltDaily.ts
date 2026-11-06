@@ -299,3 +299,44 @@ export function v1Reading(s: V1Series | null | undefined): V1Reading | null {
 export function bytesOf(files: V1File[]): number {
   return files.reduce((a, f) => a + f.bytes, 0);
 }
+
+/* ------------------------------------------------------------------------------------------
+ * Words.
+ * ------------------------------------------------------------------------------------------ */
+
+export const V1_PERCENTILE_RULE = 'percentile = share of earlier months on disk at or below this month; 90th or above = unusually high, 10th or below = unusually low';
+
+const ord = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'}`;
+
+/** Figures and sentences for the Politics & Events Agent. Shares are what the files hold; the bands are a stated rule. */
+export function v1Figures(r: V1Reading): { figures: Array<{ label: string; value: string; source: string; tag: 'live' | 'model' }>; sentences: string[]; weight: number } {
+  const src = `${GDELT_V1_SHORT}, pulled ${r.pulledAt?.slice(0, 10) || 'date unknown'}; ${r.months} months from ${r.from}`;
+  const p = (v: number | null) => (v === null ? '' : ` (${ord(v)} percentile)`);
+  const figures = [
+    { label: `Protests as a share of events, ${r.month}`, value: `${r.protestPct}%${p(r.protestPctile)}`, source: `${src}; ${V1_PERCENTILE_RULE}`, tag: 'live' as const },
+    { label: `Violence as a share of events, ${r.month}`, value: `${r.violencePct}%${p(r.violencePctile)}`, source: `${src}; CAMEO roots 18-20`, tag: 'live' as const },
+    { label: `Event intensity (Goldstein), ${r.month}`, value: `${r.goldsteinMean >= 0 ? '+' : ''}${r.goldsteinMean}${p(r.goldsteinPctile)}`, source: `${src}; -10 most conflictual, +10 most cooperative`, tag: 'live' as const },
+  ];
+  const sentences: string[] = [];
+  let weight = 0;
+  if ((r.protestPctile ?? 0) >= 90) {
+    sentences.push(`Protests made up ${r.protestPct}% of reported events in ${r.month}, higher than in ${r.protestPctile}% of months since ${r.from}.`);
+    weight = 0.5;
+  }
+  if ((r.violencePctile ?? 0) >= 90) {
+    sentences.push(`Violence made up ${r.violencePct}% of reported events in ${r.month}, among the highest shares since ${r.from}.`);
+    weight = Math.max(weight, 0.5);
+  }
+  if (r.goldsteinPctile !== null && r.goldsteinPctile <= 10) {
+    sentences.push(`Events in ${r.month} were among the most conflictual since ${r.from} on the Goldstein scale.`);
+    weight = Math.max(weight, 0.4);
+  }
+  return { figures, sentences, weight };
+}
+
+/** Why there is no long-run reading. */
+export function v1Missing(pulled: boolean): { short: string; help: string } {
+  return pulled
+    ? { short: 'fewer than 24 complete months of GDELT 1.0 files on disk', help: 'Pull further back with npm run gdelt:daily -- --from 2016.' }
+    : { short: 'GDELT 1.0 files not pulled yet', help: 'Pull them with npm run gdelt:daily (about 25 GB from 2016; -- --estimate shows the size first).' };
+}

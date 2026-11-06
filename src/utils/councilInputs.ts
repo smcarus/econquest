@@ -4,6 +4,7 @@
  * the reason, so a model cannot treat a built-in value as data (Sam, 2026-11-04).
  */
 import { ucdpInputLine, ucdpMissing } from './ucdpConflict';
+import { v1Missing } from './gdeltDaily';
 import { hcSpreadWhen } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import type { OpenDataSnapshot } from '../types/council';
@@ -71,6 +72,13 @@ export function councilInputs(snapshot: OpenDataSnapshot): CouncilInputs {
   } else lines.push('- GDELT economic themes: MISSING (GDELT raw files not pulled yet)');
   // UCDP downloaded files (data/local/ucdp/): only when read; never a built-in value.
   lines.push(ucdpInputLine(snapshot.ucdp?.latest ? snapshot.ucdp : null, ucdpMissing(null, snapshot.iso3)));
+  // GDELT 1.0 monthly history (data/live/gdelt-daily/): only when pulled; shares, not counts.
+  const h = snapshot.gdeltDaily;
+  lines.push(
+    h
+      ? `- GDELT long-run events, ${h.month}: protests ${h.protestPct}% of events (percentile ${h.protestPctile ?? 'n/a'}), violence ${h.violencePct}% (percentile ${h.violencePctile ?? 'n/a'}), Goldstein ${h.goldsteinMean} (percentile ${h.goldsteinPctile ?? 'n/a'}), against ${h.months} months from ${h.from} (GDELT 1.0 event files, pulled ${h.pulledAt?.slice(0, 10) || 'date unknown'})`
+      : `- GDELT long-run events: MISSING (${v1Missing(false).short})`
+  );
   const missingDeskInputs = DESK_ENGINE_INPUTS.filter((path) => !status.isLive(path));
   return { lines, live, missing, deskEnginesLive: missingDeskInputs.length === 0, missingDeskInputs };
 }

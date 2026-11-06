@@ -152,6 +152,8 @@ import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
 import { ucdpData } from './src/utils/ucdpStore.ts';
 import { acledFileData } from './src/utils/acledFileStore.ts';
+import { v1FromMonth, v1Reading } from './src/utils/gdeltDaily.ts';
+import { gdeltDailyDir, gdeltDailySeries, loadDailyState } from './src/utils/gdeltDailyStore.ts';
 import { ucdpReading } from './src/utils/ucdpConflict.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
@@ -825,8 +827,20 @@ function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   } catch (err: any) {
     console.warn(`[UCDP] could not read data/local/ucdp: ${err?.message || err}`);
   }
-  if (reading) return { ...snapshot, ucdp: reading };
+  if (reading) return withGdeltDaily({ ...snapshot, ucdp: reading });
   const { ucdp: _drop, ...rest } = snapshot;
+  return withGdeltDaily(rest as OpenDataSnapshot);
+}
+/** GDELT 1.0 monthly history (data/live/gdelt-daily/), laid over like the 2.0 files. */
+function withGdeltDaily(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  let reading = null;
+  try {
+    reading = v1Reading(gdeltDailySeries(DATA_DIR, snapshot.iso3));
+  } catch (err: any) {
+    console.warn(`[GDELT 1.0] could not read data/live/gdelt-daily: ${err?.message || err}`);
+  }
+  if (reading) return { ...snapshot, gdeltDaily: reading };
+  const { gdeltDaily: _drop, ...rest } = snapshot;
   return rest as OpenDataSnapshot;
 }
 
@@ -2039,6 +2053,7 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
     polymarketContracts: [],
     gdeltRaw: undefined,
     ucdp: undefined,
+    gdeltDaily: undefined,
   };
   const run = buildDefaultAssessmentRun(input.iso3, openData);
   const desk = (d: keyof SupremeCaseInput['desks']) => ({ ...run.deskDebates[d], consensusSummary: input.desks[d] });
@@ -3437,6 +3452,11 @@ async function startServer() {
     const series = gdeltRawSeriesFor(iso3);
     const cfg = gdeltRawConfig(process.env);
     res.json({ series, reading: gdeltRawReading(series), pull: loadGdeltRawPullState(gdeltRawDir(DATA_DIR)), weeks: cfg.weeks, gkgEveryHours: cfg.gkgEveryMinutes / 60 });
+  });
+  app.get('/api/gdelt-daily/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const series = gdeltDailySeries(DATA_DIR, iso3);
+    res.json({ series, reading: v1Reading(series), pull: loadDailyState(gdeltDailyDir(DATA_DIR)), from: v1FromMonth(process.env) });
   });
   app.get('/api/track-record/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
