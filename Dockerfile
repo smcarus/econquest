@@ -39,6 +39,7 @@ COPY --chown=node:node server.ts tsconfig.json metadata.json README.md ./
 COPY --chown=node:node src ./src
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node docs ./docs
+COPY --chown=node:node datasets ./datasets
 
 # The one state folder. A volume mounted here keeps settings, saved data and logs across
 # upgrades; the image itself holds no state.

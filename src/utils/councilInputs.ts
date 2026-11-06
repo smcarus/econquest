@@ -3,6 +3,7 @@
  * your own data filled are passed to the agents; every other figure is named as missing, with
  * the reason, so a model cannot treat a built-in value as data (Sam, 2026-11-04).
  */
+import { ucdpInputLine, ucdpMissing } from './ucdpConflict';
 import { hcSpreadWhen } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import type { OpenDataSnapshot } from '../types/council';
@@ -68,6 +69,8 @@ export function councilInputs(snapshot: OpenDataSnapshot): CouncilInputs {
     const t = raw.gkg.themes.slice(0, 5).map((x) => `${x.label} ${x.sharePct}%${x.baselineSharePct !== undefined ? ` (before ${x.baselineSharePct}%)` : ''}`).join(', ');
     lines.push(`- GDELT economic themes, share of ${raw.gkg.articles} articles naming the country, week of ${raw.weekStart}: ${t}; GKG tone ${raw.gkg.toneMean} (GDELT Global Knowledge Graph, pulled ${raw.pulledAt?.slice(0, 10) || 'date unknown'})`);
   } else lines.push('- GDELT economic themes: MISSING (GDELT raw files not pulled yet)');
+  // UCDP downloaded files (data/local/ucdp/): only when read; never a built-in value.
+  lines.push(ucdpInputLine(snapshot.ucdp?.latest ? snapshot.ucdp : null, ucdpMissing(null, snapshot.iso3)));
   const missingDeskInputs = DESK_ENGINE_INPUTS.filter((path) => !status.isLive(path));
   return { lines, live, missing, deskEnginesLive: missingDeskInputs.length === 0, missingDeskInputs };
 }

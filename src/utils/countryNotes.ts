@@ -1,3 +1,4 @@
+import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { HC_SPREAD_LABEL, hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
 import type { CouncilAssessmentRun } from '../types/council';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from './dataStatus';
@@ -294,7 +295,26 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
       title: 'News',
       rows: [r('News tone (GDELT)', 'gdelt.averageTone', (v) => v.toFixed(1))],
     },
+    ucdpGroup(open),
   ];
+}
+
+/** Conflict figures from the UCDP files in data/local/ucdp/, or Missing with the reason. */
+function ucdpGroup(open: CouncilAssessmentRun['openData']): BriefGroup {
+  const title = 'Conflict (UCDP downloaded files)';
+  const u = open.ucdp;
+  if (!u?.latest) {
+    const why = ucdpMissing(null, open.iso3);
+    return { title, rows: [missingRow('Armed conflict and conflict deaths (UCDP)', { kind: 'setup', short: why.short, help: why.help })] };
+  }
+  const { figures, missing } = ucdpFigures(u);
+  return {
+    title,
+    rows: [
+      ...figures.map((f) => ({ label: f.label, value: f.value, source: f.tag === 'model' ? f.source : `${f.source} (CC BY 4.0, cite UCDP)`, verified: f.tag !== 'model' })),
+      ...missing.map((m) => missingRow(m.split(' not added')[0], { kind: 'setup', short: 'file not added', help: m })),
+    ],
+  };
 }
 
 /* ------------------------------------------------------------------------------------------

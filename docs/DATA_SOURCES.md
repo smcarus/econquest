@@ -230,6 +230,40 @@ Notes from the first check on Sam's Mac (2026-11-05):
   applies each commodity's actual 12-month Pink Sheet move to the country's export mix and its
   fuel imports. Each line reads Missing when a figure it needs did not load.
 
+## Free, downloaded files (nothing fetched)
+
+### UCDP conflict data
+
+The Uppsala Conflict Data Program publishes its datasets as CSV files at
+<https://ucdp.uu.se/downloads/> (free, CC BY 4.0, cite the publications listed with each dataset).
+The app does not call UCDP. The 26.1 release of the five files below is shipped in the repository
+(`datasets/ucdp/`, unchanged, with its licence and citations in the README there), so the figures work
+with no setup. For a newer release, download the same files and put them, as the .zip or the .csv
+inside, in `data/local/ucdp/` (or replace the shipped ones). The app reads both folders when it starts
+and again whenever a file changes; a newer release of a dataset wins over an older one.
+
+| File (26.1 release) | Fills | Years |
+| --- | --- | --- |
+| UCDP/PRIO Armed Conflict Dataset (`UcdpPrioConflict_v26_1.csv`) | Armed conflicts located in the country, how many at war intensity (1,000+ battle deaths), their type, the opposing sides; conflicts elsewhere where the government is a side or a supporter | 1946-2025 |
+| UCDP Battle-Related Deaths, conflict level (`BattleDeaths_v26_1_conf.csv`) | Battle deaths in state-based conflict where the battles took place (best, low, high) | 1989-2025 |
+| UCDP Non-State Conflict (`NonState_v26_1.csv`) | Deaths in fighting between armed groups, neither a government | 1989-2025 |
+| UCDP One-Sided Violence (`OneSided_v26_1.csv`) | Civilians killed deliberately by a government or an armed group | 1989-2025 |
+| UCDP Dyadic Dataset (`Dyadic_v26_1.csv`) | Pairs of warring sides in conflicts located in the country | 1946-2025 |
+
+- Each file is recognised by its columns, not its name, so next year's release (27.1) reads the same.
+  If two releases of one dataset are in the folder, the newer one is used and the older one is listed
+  as skipped.
+- The figures are for the latest year in the files, with the three years before it. They show under
+  Research > Sources ("Conflict (UCDP downloaded files)"), in the Politics & Events Agent and in the
+  council's figure list, each labelled UCDP with the release.
+- A country UCDP codes with no rows in a year had no conflict UCDP recorded (a real zero: UCDP codes
+  the whole world). A file not in the folder makes its figures Missing with the file to add. Hong Kong
+  has no UCDP code (it counts under China).
+- UCDP counts organised violence only, where a conflict or actor reached 25 deaths in a calendar year.
+  A conflict fought in more than one country counts in each of them.
+- Countries are Gleditsch-Ward numbers in the files, mapped to ISO3 in `src/utils/ucdpConflict.ts`.
+  `npm run check:data` shows the files read, the releases and any codes the app has no country for.
+
 ## Free, with your own key
 
 Keys marked "Settings or .env" can be pasted in the app under **Menu > Settings > Data API keys**

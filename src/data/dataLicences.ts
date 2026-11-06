@@ -372,6 +372,23 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: D,
   },
   {
+    id: 'ucdp',
+    name: 'UCDP (Uppsala Conflict Data Program) downloaded files',
+    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year (files you put in data/local/ucdp/)',
+    terms: [{ label: 'UCDP downloads (licence and citations)', url: 'https://ucdp.uu.se/downloads/' }],
+    status: 'open',
+    display: 'Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset.',
+    commercial: 'Allowed (CC BY 4.0 sets no commercial limit).',
+    attribution:
+      'UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5).',
+    quotes: [
+      'All datasets are free of charge and licensed under CC BY 4.0 (https://creativecommons.org/licenses/by/4.0/) — you are free to use and redistribute them provided you cite the relevant publications listed with each dataset.',
+    ],
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 allows sharing with a citation of the dataset publications.',
+    checked: D,
+  },
+  {
     id: 'polymarket',
     name: 'Polymarket',
     usedFor: 'Prediction-market odds',

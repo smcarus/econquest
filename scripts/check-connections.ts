@@ -18,6 +18,7 @@ import path from 'path';
 import { checkConnections, formatReport, isFailure } from '../src/utils/connectionCheck.ts';
 import { formatChanges, recordFromReport } from '../src/utils/dataHealth.ts';
 import { appendCheck, dataHealthFiles, readChecks } from '../src/utils/dataHealthStore.ts';
+import { ucdpData } from '../src/utils/ucdpStore.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
 dotenv.config();
@@ -30,6 +31,7 @@ applyKeysToEnv(process.env, envFileKeys, saved);
 const report = await checkConnections({
   env: process.env,
   keySources: keySources(envFileKeys, saved),
+  ucdp: () => ucdpData(dataDir),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };
