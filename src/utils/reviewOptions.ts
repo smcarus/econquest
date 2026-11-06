@@ -15,7 +15,7 @@ import type { ReviewFrame } from './policyReview';
 import type { Diagnosis } from './reviewDiagnosis';
 import { traces } from './askCouncil';
 
-export const OPTIONS_TEMPLATE_VERSION = 'review-options-v1';
+export const OPTIONS_TEMPLATE_VERSION = 'review-options-v2';
 export const MAX_OPTIONS = 6;
 export const MAX_USER_OPTIONS = 4;
 
@@ -91,6 +91,7 @@ export const OPTIONS_INSTRUCTION = [
   'Propose and rank realistic policy options that move the goal indicator the right way while respecting the constraints. Cover more than one lever where the evidence allows. Assess every option the principal added, even if you rank it low.',
   'For each option say how it works, what it should do to the goal, how long it takes, the trade-offs, who bears the cost, what would have to be true for it to work, and the main risks. Each lens gives one sentence on the option from its own angle.',
   'Use ONLY the figures in the diagnosis and the frame and cite them by reference number, e.g. [2]. Every number you write must appear there. Describe sizes in words; do not calculate new numbers, forecast numbers or add outside facts.',
+  'Figures in the "Model readings" group are the app\'s own estimates (output gap, debt dynamics) or a published reference range (fiscal multiplier), worked out only from data known on the As of day: use them to judge cyclical position, debt room and how much a fiscal change moves output, and say an option rests on an estimate when it does.',
   'Where a figure the option depends on is Missing, say so in mustBeTrue or risks and rank it with less confidence. List under gaps what the missing figures stop you from judging.',
   'This is research, not validated advice: do not claim certainty, and never give advice to buy or sell securities.',
   'Plain English, full sentences.',

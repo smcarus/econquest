@@ -58,6 +58,7 @@ import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditS
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { buildDiagnosis, type Diagnosis } from './src/utils/reviewDiagnosis';
+import { reviewModelFigures } from './src/utils/reviewModels';
 import { buildMemo, parseMemoInputs, type MemoStep } from './src/utils/reviewMemo';
 import { buildOutcomes } from './src/utils/reviewOutcomes';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from './src/utils/reviewEvidence';
@@ -2144,6 +2145,31 @@ function dsaFrom(file: OfficialHistoryFile | null | undefined): DsaOutcome {
   };
   if (!file) return { ok: false, reason: 'Full IMF history not downloaded yet (Menu > Offline data, or open History & data while online)', missing: [] };
   return debtSustainability({ debt: pick('debt_gdp'), primaryBalance: pick('primary_balance'), overallBalance: pick('overall_balance'), realGrowth: pick('gdp_growth'), inflation: pick('cpi_imf') });
+}
+
+/**
+ * Adds the model readings (output gap, debt dynamics, multiplier range) worked out only from data
+ * known by the diagnosis's As-of day (src/utils/reviewModels.ts), as numbered figures after the twelve.
+ */
+function withModelFigures(d: Diagnosis): Diagnosis {
+  const file = loadOfficialHistory(d.iso3);
+  const pick = (id: string) => {
+    const fig = OFFICIAL_FIGURES.find((f) => f.id === id);
+    const s = fig ? officialSeries(file, fig) : null;
+    return s && 'points' in s ? s : undefined;
+  };
+  const models = reviewModelFigures({
+    iso3: d.iso3,
+    asOf: d.asOf,
+    growth: pick('gdp_growth'),
+    debt: pick('debt_gdp'),
+    primaryBalance: pick('primary_balance'),
+    overallBalance: pick('overall_balance'),
+    inflation: pick('cpi_imf'),
+    figures: d.figures,
+  });
+  const ready = models.filter((m) => m.value !== null).length;
+  return { ...d, figures: [...d.figures, ...models], coverage: `${d.coverage} ${ready} of ${models.length} model readings worked out.` };
 }
 
 /**
@@ -4583,7 +4609,7 @@ async function startServer() {
       });
     }
     const pulledAt = new Date(past.pulledAt).toISOString();
-    const diagnosis = buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: frame.asOf, pullDate: past.date, pulledAt, incomplete: past.incomplete });
+    const diagnosis = withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: frame.asOf, pullDate: past.date, pulledAt, incomplete: past.incomplete }));
     const out = saveStep(r, 'diagnose', diagnosis);
     if ('error' in out) return res.status(400).json({ error: out.error });
     if (!writeReview(res, out.review)) return;
@@ -4754,7 +4780,7 @@ async function startServer() {
     const past = archivedSnapshot(frame.iso3, today);
     if (!past) return res.status(409).json({ error: `No saved pull for ${frame.iso3} yet. Open the country so the app saves one, then check again.` });
     const pulledAt = new Date(past.pulledAt).toISOString();
-    const now = buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: today, pullDate: past.date, pulledAt, incomplete: past.incomplete });
+    const now = withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: today, pullDate: past.date, pulledAt, incomplete: past.incomplete }));
     const content = buildOutcomes(frame, r.steps.diagnose!.content as Diagnosis, now, r.steps.memo!.content as MemoStep, today);
     const out = saveStep(r, 'outcomes', content);
     if ('error' in out) return res.status(400).json({ error: out.error });
