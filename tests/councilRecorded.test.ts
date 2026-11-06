@@ -103,6 +103,7 @@ test('baseline checks: drift, newly failing cases and invented numbers are named
   assert.ok(cmp.drift.some((d) => /prompt sent to the model changed/.test(d)));
   assert.ok(cmp.drift.some((d) => /answer changed.*Policy is tight.*Policy is loose/.test(d)));
   assert.deepEqual(structuralProblems(r, ['13.75%'], isSmallModel), []);
+  assert.match(structuralProblems({ ...r, answer: ['Reserves cover NaN months of imports.'] }, [], isSmallModel)[0], /template text \("NaN"/);
   assert.match(structuralProblems(r, ['4.4%'], isSmallModel)[0], /quotes 13.75, which no input gave/);
   assert.match(structuralProblems({ ...r, model: 'qwen2.5:7b' }, ['13.75%'], isSmallModel)[0], /small model/);
   assert.match(structuralProblems({ ...r, model: null }, [], isSmallModel)[0], /no model answered/);
