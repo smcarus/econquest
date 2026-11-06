@@ -2946,7 +2946,9 @@ async function startServer() {
   app.get('/api/validation', (_req, res) => {
     const v = loadValidation(VALIDATION_FILE);
     const specs = loadSpecs(SPEC_DIR).map((s) => ({ file: s.file, hash: s.hash, problem: s.problem, ...(s.spec ? { id: s.spec.id, version: s.spec.version, registeredOn: s.spec.registeredOn, hypothesis: s.spec.hypothesis, passMark: s.spec.passMark, params: s.spec.params, sample: s.spec.sample, knownLimits: s.spec.knownLimits, framework: s.spec.framework === 2 ? 2 : 1, retestOf: s.spec.retestOf } : {}) }));
-    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json' });
+    const fv = loadForecastValidation(path.join(DATA_DIR, 'local', 'validation', 'forecasts.json'));
+    const forecasts = Object.fromEntries(Object.values(fv.results).map((r) => [r.id, { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt }]));
+    res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts });
   });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
