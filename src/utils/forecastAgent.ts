@@ -35,6 +35,7 @@ const EVAL_FOR: Record<string, string> = { gdp_qoq: 'gdp_forecast', cpi_yoy: 'cp
 export function forecastFinding(c: CountryModels): { finding: AgentFinding | null; missing: string[] } {
   const figures: AgentFigure[] = [];
   const missing: string[] = [];
+  const failedNames: string[] = [];
   const status = (id: string) => STATUS_WORDS[c.forecast?.validation?.[id]?.status ?? 'not_run'] ?? STATUS_WORDS.not_run;
   for (const [key, evalId] of [['gdp', 'gdp_nowcast'], ['cpi', 'cpi_nowcast']] as const) {
     const n = c.nowcast?.[key];
@@ -45,8 +46,10 @@ export function forecastFinding(c: CountryModels): { finding: AgentFinding | nul
     }
     const p = n.points[n.points.length - 1];
     const b = p.bands.find((x) => x.level === 70);
+    const failed = c.forecast?.validation?.[evalId]?.status === 'failed';
+    if (failed) failedNames.push(`${key === 'gdp' ? 'GDP' : 'inflation'} nowcast`);
     figures.push({
-      label: `App nowcast, ${key === 'gdp' ? 'real GDP growth q/q' : 'inflation y/y'}, ${p.period}`,
+      label: `App nowcast${failed ? ' (failed its out-of-sample test)' : ''}, ${key === 'gdp' ? 'real GDP growth q/q' : 'inflation y/y'}, ${p.period}`,
       value: `${f1(p.mean)}%${b ? ` (70% band ${f1(b.lo)} to ${f1(b.hi)})` : ''}`,
       source: `app nowcast, not validated advice (${status(evalId)}); ${p.how} Last published ${n.lastPublished.period}: ${f1(n.lastPublished.value)}%`,
       tag: 'model',
@@ -59,8 +62,10 @@ export function forecastFinding(c: CountryModels): { finding: AgentFinding | nul
     }
     const p = r.path[Math.min(3, r.path.length - 1)];
     const b = p.bands.find((x) => x.level === 70);
+    const failed = c.forecast?.validation?.[EVAL_FOR[r.id]]?.status === 'failed';
+    if (failed) failedNames.push(r.label.replace(/ forecast.*$/i, '').toLowerCase());
     figures.push({
-      label: `App forecast, ${r.label.replace(/ forecast.*$/i, '').toLowerCase()}, ${p.period}`,
+      label: `App forecast${failed ? ' (failed its out-of-sample test)' : ''}, ${r.label.replace(/ forecast.*$/i, '').toLowerCase()}, ${p.period}`,
       value: `${f1(p.mean)}${r.unit === '%' ? '%' : ` ${r.unit}`}${b ? ` (70% band ${f1(b.lo)} to ${f1(b.hi)})` : ''}`,
       source: `app forecast, not validated advice (${status(EVAL_FOR[r.id])}); ${r.method.split('. Bands')[0]}; from ${f1(r.lastObserved.value)} in ${r.lastObserved.period}`,
       tag: 'model',
@@ -71,9 +76,13 @@ export function forecastFinding(c: CountryModels): { finding: AgentFinding | nul
   }
   if (!figures.length) return { finding: null, missing };
   const gdpN = c.nowcast?.gdp;
-  const reading = gdpN?.ok
+  const base = gdpN?.ok
     ? `The app's nowcast puts ${gdpN.points[gdpN.points.length - 1].period} real GDP growth at ${f1(gdpN.points[gdpN.points.length - 1].mean)}% q/q; these are app estimates, not validated advice.`
     : `App forecasts for ${c.countryName}, with bands; app estimates, not validated advice.`;
+  // A model that failed its pre-registered test is named in the reading, not only in a source line.
+  const reading = failedNames.length
+    ? `${base} Failed their pre-registered out-of-sample test: ${failedNames.join(', ')}; treat those figures as illustration, not a forecast.`
+    : base;
   return { finding: { iso3: c.iso3, countryName: c.countryName, reading, figures, weight: 0.5 }, missing };
 }
 

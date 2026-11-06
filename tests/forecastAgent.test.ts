@@ -33,6 +33,10 @@ test('figures are labelled app estimates with their evaluation status; IMF proje
   assert.match(f[0].source, /^app nowcast, not validated advice \(not validated, evaluation not run yet\)/);
   assert.equal(f[0].tag, 'model');
   assert.match(f[1].source, /evaluation FAILED/);
+  // A failed model is named in its label and in the reading, not only in the source line.
+  assert.match(f[1].label, /^App forecast \(failed its out-of-sample test\), government debt/);
+  assert.doesNotMatch(f[0].label, /failed/);
+  assert.match(a.findings[0].reading, /Failed their pre-registered out-of-sample test: government debt; treat those figures as illustration/);
   assert.equal(f[2].tag, 'official');
   assert.match(f[2].source, /the IMF's forecast, not the app's/);
   assert.match(a.missing[0], /Brazil: inflation nowcast missing \(No monthly inflation series/);
