@@ -24,6 +24,7 @@ It lives in **Reports > Policy reviews**. A review can also be started from a Co
 - Each saved step keeps its content, the time, the SHA-256 of the content and the hash of the step
   before it. Changing an earlier step marks every later step **Out of date** until it is run again,
   so a memo can never rest on figures it was not written from.
+- Model readings [13]-[19] follow the twelve indicators: output gap (one-sided HP and Hamilton), r minus g, debt-stabilising primary balance, debt five years on at 10-year averages and under a combined shock, and the IMF bucket fiscal multiplier range. They use only IMF yearly outturns published by the As of day (from April, last year; before April, the year before), never projections; the figures are today's IMF vintage of those years, so later revisions show (src/utils/reviewModels.ts).
 - The As of day fixes the data: running Diagnose again on the same review gives the same figures
   from the same archived pull. Statistical tests are deterministic given their inputs and settings.
 - AI wording can differ between runs. Every run is kept, so two runs can be compared side by side.
