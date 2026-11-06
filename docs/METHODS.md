@@ -36,6 +36,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
+| Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -349,6 +350,14 @@ These show where things stand on a stated method and make no call a backtest cou
 - 2,000 paths with a fixed seed; reports the 10th, 25th, 50th, 75th and 90th percentiles by year and the share of paths ending above today's debt and above the baseline. Shape of the IMF market-access DSA fan (IMF 2013).
 - **Limits:** Only shocks the sample has seen; no stock-flow adjustments (valuation, bank support), which drive many debt jumps. Centred on the IMF's inputs, not an app forecast. CPI inflation stands in for the GDP deflator.
 - **Code:** `src/utils/debtFan.ts`
+
+### Inflation after policy rate changes (local projections)
+
+- **Shows in:** Research > History & data
+- Jorda (2005) local projections on monthly data: inflation (% y/y, OECD or national CPI) h months ahead less the month before, on the change in the BIS month-end policy rate in month t, with 3 lags of both monthly changes. One OLS per horizon: 0, 3, 6, 9, 12, 18, 24 months.
+- Newey-West standard errors with lag max(h + 1, floor(4 x (n/100)^(2/9))); 90% bands. Needs 60 months and at least 5 rate changes.
+- **Limits:** Reduced form: the rate change is not an identified monetary policy shock. Central banks move ahead of expected inflation, so early responses often have the "wrong" sign (price puzzle). Records co-movement in the sample, not the effect of policy; regimes and targets change over long samples.
+- **Code:** `src/utils/localProjections.ts`
 
 ### Fiscal reaction (Bohn test)
 
