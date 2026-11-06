@@ -1,4 +1,5 @@
 import { upcomingOfficialEvents } from './officialCalendar';
+import { MODEL_FIELD_MISSING } from '../utils/councilResult';
 import {
   AnnotatedChartSpec,
   CouncilAssessmentRun,
@@ -1697,10 +1698,11 @@ export function buildDefaultAssessmentRun(
         ],
         riskGuardianCheck: {
           factorCrowdingWarning: `Factor Audit Passed: Replaced outright unhedged short local FX with a 25-delta option risk reversal to avoid paying ${openData.monetaryAndMarket.policyRatePct.toFixed(2)}% annualized negative carry while paired with the 2s10s rate steepener.`,
-          liquidityHaircutPct: 12.5,
-          maxDrawdownEstimatePct: 3.4,
-          tailRiskHedgeInstrument: `3M USD/${openData.currencyCode} OTM Call Spread + 5Y Sovereign CDS Overlay`,
-          approvalStatus: 'APPROVED_WITH_HEDGE',
+          // Never built-in figures or calls (Sam's rule): Missing until a model or a measure fills them.
+          liquidityHaircutPct: null,
+          maxDrawdownEstimatePct: null,
+          tailRiskHedgeInstrument: MODEL_FIELD_MISSING,
+          approvalStatus: null,
         },
       },
     },
