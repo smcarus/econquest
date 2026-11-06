@@ -5,6 +5,8 @@ import { missingReason } from '../utils/liveFigures';
 import { peerBasisNote, peerScreen, type RvLabel } from '../utils/marketsMacro';
 import { benchmarkRows, marketEdgePeers, type MarketEdgeAnchorsReply } from '../utils/marketEdgeAnchors';
 import { formatPeriod } from '../utils/officialYields';
+import { requiredCredit } from '../data/requiredCredits';
+import { SourceCredits } from './SourceCredits';
 import { byMovingMost, cliTrendText, policyMoveText, signedBps, trendFor, trendForObservation, type MarketTrend } from '../utils/marketTrends';
 
 const RV_CLASS: Record<RvLabel, string> = {
@@ -219,6 +221,7 @@ export const MarketEdgeScreen: React.FC<{
         {anchors ? '' : 'Loading the benchmarks. '}
         Changes are moves in the sourced series, not forecasts. Model readings for discussion, not trade advice. Local-currency yields differ partly because inflation differs; the risk score is the app's own model.
       </p>
+      {us && <SourceCredits credits={[requiredCredit('fred')]} className="px-4 pb-2" />}
     </section>
   );
 };

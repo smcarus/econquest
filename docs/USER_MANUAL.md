@@ -124,6 +124,12 @@ full council and saved research.
   date (or the chart's latest points and test results), to Council chat and asks the council to
   explain it; on Research the chat opens in its side panel. Follow up with "and for households?" to
   narrow it.
+- *Chat charts: Image and CSV*: each chart the Chart Agent draws in the chat has *Image* (an SVG
+  file) and *CSV*. The image carries the title on top and, under the chart, its sources, the credit
+  each source's terms ask for (from the licence register), the dates, the day it was made and the
+  research notice, so it keeps them wherever it is pasted. The CSV lists the same credits as `#`
+  lines. With Sharing mode on, both buttons are off for a chart that uses a source whose terms do
+  not let its figures be passed on, and the card says which.
 - *Saved research*: every brief and document is kept on this computer
   (`data/local/research.json`). Open, copy, send to Reports or delete from the list.
 - *Run the full council*: nine desk agents debate the open country, then pause in the chat for your

@@ -12,6 +12,7 @@ import { describeNetworkError } from '../../utils/connectionCheck';
 import { fetchWithTimeout } from '../http';
 import { isBotCheck, OECD_HEADERS, OECD_PAUSE_MS } from '../../utils/oecdSdmx';
 import { parseQna, type QnaSeries, qnaUrl } from '../../utils/oecdQna';
+import { type ActivitySeries, BCB_IBCBR_SA, bcbSgsSinceUrl, EUROSTAT_IP_GEO, eurostatIpUrl, parseEurostatIp, parseIbcBr } from '../../utils/monthlyActivity';
 import { type CliSeries, cliUrl, parseCli } from '../../utils/oecdCli';
 import { type CpiSeries, cpiUrl, parseCpi } from '../../utils/oecdInflation';
 import { writeFileAtomic } from '../../utils/atomicWrite';
@@ -308,4 +309,83 @@ export async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
     nationalCpiInFlight = null;
   });
   return nationalCpiInFlight;
+}
+
+/**
+ * Monthly activity indexes for the GDP nowcast (src/utils/monthlyActivity.ts): BCB IBC-Br for
+ * Brazil, Eurostat industrial production for EU members (and Turkey where Eurostat has it). Full
+ * history, asked once a day, kept on disk (data/live/monthly-activity.json); a failed pull keeps
+ * the last good series per country.
+ */
+type ActivityPull = { pulledAt: string; series: Record<string, ActivitySeries> };
+let activityMemory: { pull: ActivityPull | null; triedAt: number } | null = null;
+let activityInFlight: Promise<ActivityPull | null> | null = null;
+function activityFile(): string {
+  return path.join(DATA_DIR, 'live', 'monthly-activity.json');
+}
+export async function fetchMonthlyActivity(): Promise<ActivityPull | null> {
+  if (!activityMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(activityFile(), 'utf8')) as ActivityPull;
+      if (saved?.pulledAt && saved.series) activityMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (activityMemory?.pull && Date.now() - Date.parse(activityMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return activityMemory.pull;
+  if (activityMemory && Date.now() - activityMemory.triedAt < 60 * 60 * 1000) return activityMemory.pull;
+  if (activityInFlight) return activityInFlight;
+  activityInFlight = (async () => {
+    const prev = activityMemory?.pull ?? null;
+    const series: Record<string, ActivitySeries> = { ...(prev?.series || {}) };
+    let answered = 0;
+    const isoInCatalog = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
+    await Promise.allSettled([
+      (async () => {
+        if (!isoInCatalog.has('BRA')) return;
+        try {
+          const res = await fetchWithTimeout(bcbSgsSinceUrl(BCB_IBCBR_SA), 20000);
+          if (!res.ok) return console.warn(`[BCB SGS] IBC-Br refused (HTTP ${res.status})`);
+          const s = parseIbcBr(await res.json());
+          if (s) {
+            series.BRA = s;
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[BCB SGS] IBC-Br: ${describeNetworkError(e, 20000)}`);
+        }
+      })(),
+      (async () => {
+        const eu = SOVEREIGN_CATALOG.filter((c) => EUROSTAT_IP_GEO[c.iso3]).map((c) => c.iso3);
+        if (!eu.length) return;
+        try {
+          const res = await fetchWithTimeout(eurostatIpUrl(eu.map((i) => EUROSTAT_IP_GEO[i])), 30000);
+          if (!res.ok) return console.warn(`[Eurostat] industrial production refused (HTTP ${res.status})`);
+          const got = parseEurostatIp(await res.json(), eu);
+          for (const [iso3, s] of Object.entries(got)) {
+            series[iso3] = s;
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[Eurostat] industrial production: ${describeNetworkError(e, 30000)}`);
+        }
+      })(),
+    ]);
+    if (!answered) {
+      activityMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: ActivityPull = { pulledAt: new Date().toISOString(), series };
+    activityMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(activityFile()), { recursive: true });
+      writeFileAtomic(activityFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    activityInFlight = null;
+  });
+  return activityInFlight;
 }

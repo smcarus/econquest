@@ -42,6 +42,6 @@ void fetchAuthStatus().then((status) => {
     createRoot(document.getElementById('root')!).render(<SignInPage status={status} />);
     return;
   }
-  if (status && status.mode !== 'off') watchForSignedOut();
+  if (status && status.mode !== 'off') watchForSignedOut(window, status.csrfToken);
   start();
 });

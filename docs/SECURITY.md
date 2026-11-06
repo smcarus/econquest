@@ -28,6 +28,13 @@ The setup code stops someone else on the network from claiming the app before yo
 - **Audit log** records the first account, each sign-in, failed sign-in, sign-out and password change,
   with the account name, never the password or token.
 - **Accounts and sessions are never in a backup** (Menu > Settings > Backup lists what one holds).
+- **CSRF token**: while signed in, every change must carry `X-CSRF-Token`, derived from that browser's
+  session (the page gets it at start). A page on another site cannot read it.
+- **Rate limits per account**: 600 requests a minute in all, and 10 a minute (20 at once) for calls that
+  run the AI model. Over the limit the server answers 429 with Retry-After.
+- **Security headers** on every reply: no framing (`X-Frame-Options: DENY`, `frame-ancestors 'none'`),
+  `nosniff`, `Referrer-Policy: same-origin`, no camera, microphone or location, no `X-Powered-By`.
+  A full Content-Security-Policy for scripts is not set yet.
 - The earlier checks stay: only listed host names are answered (DNS rebinding), and changes sent from
   pages on other sites are refused.
 
@@ -62,10 +69,9 @@ Under Docker: `docker compose exec econquest npm run users -- list`.
 
 ## Not yet (planned, in order)
 
-1. A CSRF token on every change, rate limits on the API and AI calls, security headers.
-2. The account name on every audit entry and on sign-offs, with approver separate from reviewer.
-3. Separate workspaces per account (watchlists, holdings, saved research).
-4. API keys encrypted at rest with a key kept outside the data folder.
-5. HTTPS through a reverse proxy in the compose stack.
+1. The account name on every audit entry and on sign-offs, with approver separate from reviewer.
+2. Separate workspaces per account (watchlists, holdings, saved research).
+3. API keys encrypted at rest with a key kept outside the data folder.
+4. HTTPS through a reverse proxy in the compose stack.
 
 Accounts record a provider (`local` today) so Google or Microsoft sign-in can be added later.

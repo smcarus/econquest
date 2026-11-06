@@ -8,7 +8,6 @@ import path from 'path';
 import { BIS_ISO2, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from '../../utils/bisDebtSecurities';
 import { CDS_HIDDEN } from '../../utils/cdsHidden.ts';
 import { DATA_DIR } from '../config';
-import { Type } from '@google/genai';
 import { bcrpEmbigUrl, describeBcrpReply, type HcSpreadPull, parseBcrpEmbig } from '../../utils/hardCurrencySpread.ts';
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { evdsSeriesUrl, FRED_10Y_SERIES, fredApiUrl, fredCsvUrl, isValidEvdsSeriesCode, type OfficialYieldObservation, parseEvdsLatest, parseFredApiLatest, parseFredCsvLatest, parseTesouroDiretoLatest, TESOURO_DIRETO_CSV_URL, US_10Y_SERIES } from '../../utils/officialYields.ts';

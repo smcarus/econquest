@@ -12,6 +12,7 @@ import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from '.
 import { dataDirProblem, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
+import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
@@ -160,7 +161,7 @@ import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_DAYS, GDELT_REFRESH_MS, fetchGdeltQuarterly } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi } from './src/server/feeds/oecd';
+import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
 import { officialYieldCache, fetchOfficial10YYield, fetchDebtSchedule, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
 
@@ -1027,6 +1028,8 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCpiPull(), 'OECD (DBnomics)');
     case 'world:national_cpi':
       return had(await fetchNationalCpi(), 'BCB / Eurostat');
+    case 'world:activity':
+      return had(await fetchMonthlyActivity(), 'BCB / Eurostat');
     case 'world:cftc':
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
@@ -3589,6 +3592,12 @@ async function supremeRegressionCase(c: RegressionCase, runtimeConfig: Partial<A
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
+  app.disable('x-powered-by');
+  // Security headers on every reply (src/utils/requestLimits.ts): no framing, no sniffing.
+  app.use((_req, res, next) => {
+    for (const [k, v] of Object.entries(SECURITY_HEADERS)) res.setHeader(k, v);
+    next();
+  });
 
   // All state lives under DATA_DIR (one mounted volume in Docker). Stop at once with a clear
   // sentence if it cannot be written, instead of failing later on the first save.
@@ -3661,6 +3670,22 @@ async function startServer() {
     if (roleAtLeast(me.role, needed)) return next();
     res.status(403).json({ error: refusal(me.role, needed), role: me.role, needed });
   });
+  // CSRF token and per-account rate limits (src/utils/requestLimits.ts), once someone is signed in.
+  const limiter = new RateLimiter();
+  app.use((req, res, next) => {
+    const me = signedIn(res);
+    if (!me) return next();
+    if (isWrite(req.method) && !req.path.startsWith('/api/auth/sign-in') && !csrfMatches(req.headers[CSRF_HEADER], res.locals.sessionHash as string)) {
+      return res.status(403).json({ error: 'This change was refused because the page is out of date. Reload the page and try again.', csrf: true });
+    }
+    const ai = isAiCall(req.method, req.path);
+    const wait = limiter.take(`${me.id}:api`, LIMITS.api) || (ai ? limiter.take(`${me.id}:ai`, LIMITS.ai) : 0);
+    if (wait) {
+      res.setHeader('Retry-After', String(wait));
+      return res.status(429).json({ error: ai ? `Too many AI requests from this account. Try again in ${wait} seconds.` : `Too many requests from this account. Try again in ${wait} seconds.` });
+    }
+    next();
+  });
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
@@ -3674,6 +3699,7 @@ async function startServer() {
       setupNeedsCode: mode === 'setup',
       canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || trusted(req, res)),
       sessionIdleHours: Math.round(limits.idleMs / 3600_000),
+      csrfToken: me ? csrfToken(res.locals.sessionHash as string) : null,
     };
   };
   app.get('/api/auth/status', (req, res) => res.json(authStatus(req, res)));
@@ -4480,12 +4506,13 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
       quick(fetchQnaPull()),
+      quick(fetchMonthlyActivity()),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -4496,6 +4523,7 @@ async function startServer() {
       cbpol,
       cli,
       qna,
+      activity,
       cpiOecdAnswered: Boolean(cpi),
       cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
