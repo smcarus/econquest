@@ -1,19 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Calculator } from 'lucide-react';
-import type { SeriesPoint } from '../utils/seriesHistory';
 import { convertAll, fmtAmount, CONVERTER_METHOD, type ConverterSeries } from '../utils/unitConverters';
 
 /**
  * Country Research > History & data > Unit converters (src/utils/unitConverters.ts): a local
  * currency amount in real terms, US dollars, PPP and per head, each with its factor and source.
  */
-
-const IDS: Array<[keyof ConverterSeries, string]> = [
-  ['cpi', 'cpi_index'],
-  ['population', 'population'],
-  ['fx', 'fx_lcu_usd'],
-  ['ppp', 'ppp_factor'],
-];
 
 export const UnitConverterPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3, countryName }) => {
   const [series, setSeries] = useState<ConverterSeries | null>(null);
@@ -26,30 +18,23 @@ export const UnitConverterPanel: React.FC<{ iso3: string; countryName: string }>
     let live = true;
     setSeries(null);
     setMissing([]);
-    Promise.all(
-      IDS.map(([key, id]) =>
-        fetch(`/api/series/${encodeURIComponent(iso3)}/${id}`)
-          .then(async (r) => {
-            const b = await r.json().catch(() => ({}));
-            return r.ok ? { key, points: (b.points || []) as SeriesPoint[] } : { key, error: String(b.message || `HTTP ${r.status}`) };
-          })
-          .catch((e: Error) => ({ key, error: e.message }))
-      )
-    ).then((rows) => {
-      if (!live) return;
-      const s: ConverterSeries = {};
-      const miss: string[] = [];
-      for (const r of rows) {
-        if ('points' in r) s[r.key] = r.points;
-        else miss.push(r.error);
-      }
-      setSeries(s);
-      setMissing(miss);
-      const years = (s.cpi || s.fx || []).filter((p) => p.note !== 'IMF projection').map((p) => String(p.date).slice(0, 4));
-      const last = years[years.length - 1] || String(new Date().getUTCFullYear() - 1);
-      setYear((y) => y || last);
-      setTarget((t) => t || last);
-    });
+    fetch(`/api/unit-converters/${encodeURIComponent(iso3)}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((b: { series: ConverterSeries; missing: string[] }) => {
+        if (!live) return;
+        const s = b.series || {};
+        setSeries(s);
+        setMissing(b.missing || []);
+        const years = (s.cpi || s.fx || []).filter((p) => p.note !== 'IMF projection').map((p) => String(p.date).slice(0, 4));
+        const last = years[years.length - 1] || String(new Date().getUTCFullYear() - 1);
+        setYear((y) => y || last);
+        setTarget((t) => t || last);
+      })
+      .catch((e: Error) => {
+        if (!live) return;
+        setSeries({});
+        setMissing([`The converter figures could not be read (${e.message}).`]);
+      });
     return () => {
       live = false;
     };

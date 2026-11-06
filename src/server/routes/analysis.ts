@@ -56,6 +56,20 @@ export interface AnalysisDeps {
 
 export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   const { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom } = deps;
+  // Unit converters (src/utils/unitConverters.ts): the four World Bank series in one reply, so the panel holds one connection.
+  app.get('/api/unit-converters/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const series: Record<string, unknown> = {};
+    const missing: string[] = [];
+    for (const [key, id] of [['cpi', 'cpi_index'], ['population', 'population'], ['fx', 'fx_lcu_usd'], ['ppp', 'ppp_factor']] as const) {
+      const fig = OFFICIAL_FIGURES.find((f) => f.id === id)!;
+      const s = officialSeries(file, fig);
+      if ('points' in s) series[key] = s.points;
+      else missing.push(`${fig.label}: Missing. ${s.reason}.`);
+    }
+    res.json({ iso3, series, missing });
+  });
   // Story leads (src/utils/storyLeads.ts): records and recent revisions in the saved yearly history, no download.
   app.get('/api/story-leads', (req, res) => {
     const codes = String(req.query.iso3 || '')
