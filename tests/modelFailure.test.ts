@@ -29,6 +29,10 @@ test('each failed attempt is said in plain words', () => {
     describeAttempt({ where, error: new Error('Model endpoint x failed with HTTP 500: llama runner process has terminated: exit status 2') }),
     `${where} answered HTTP 500: "llama runner process has terminated: exit status 2"`
   );
+  assert.match(
+    describeAttempt({ where, error: new Error('Model endpoint x failed with HTTP 500: llama-server process has terminated: signal: killed') }),
+    /killed while loading.*docker ps/
+  );
   assert.equal(describeAttempt({ where, notJson: true }), `${where} answered, but not in the format the app needs`);
   assert.equal(describeAttempt({ where: 'Gemini', error: new Error('API key not valid') }), 'Gemini failed (API key not valid)');
 });

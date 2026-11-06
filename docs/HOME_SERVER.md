@@ -135,6 +135,11 @@ Delete `COMPOSE_PROFILES=ollama` from `.env` and set the URL, for example
 on a Mac, `launchctl setenv OLLAMA_HOST 0.0.0.0` and restart Ollama. Then
 `docker compose up -d`.
 
+On a Mac, keep only one Ollama on port 11434. If another Docker stack also runs an Ollama container
+there, it answers instead of the Mac app: it has no Apple GPU and only Docker's memory share, so
+the 32B referee is killed while loading ("signal: killed") and desks time out. `docker ps` shows
+it; stop it or move it to another port.
+
 ## NVIDIA GPU
 
 Install the NVIDIA Container Toolkit, then start with both files:
