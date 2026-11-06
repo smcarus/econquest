@@ -8,7 +8,9 @@ terms page on the date shown. Where a page could not be read or does not answer 
 "Terms not confirmed" rather than guessing. This is a research note, not legal advice: a question that
 matters for a client or a sale should go to the provider in writing.
 
-The same register is in the app under **Menu > About & data licences**.
+The same register is in the app under **Menu > About & data licences**. Every export (council briefs and
+documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backups) ends with the line
+"Research, not validated advice." and points here (src/utils/disclaimer.ts).
 
 | Status | Meaning |
 | --- | --- |

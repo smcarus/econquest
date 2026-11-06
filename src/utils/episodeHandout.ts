@@ -6,6 +6,7 @@
 import type { DecisionReplay } from './decisionReplay';
 import { replaySentence } from './decisionReplay';
 import type { Episode } from './researchLibrary';
+import { withNotice } from './disclaimer';
 
 const p2 = (v: number) => `${v.toFixed(2)}%`;
 
@@ -40,7 +41,7 @@ export function episodeMarkdown(
   else lines.push('_No questions set for this episode yet._');
   lines.push('', 'Answer from the figures above and from Council chat in the app; name the source of every figure you use.', '');
   if (opts.teacher && ep.notes.trim()) lines.push('## Notes (teacher copy)', '', ep.notes.trim(), '');
-  return lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n';
+  return withNotice(lines.join('\n').replace(/\n{3,}/g, '\n\n').trim() + '\n');
 }
 
 export function episodeFileName(ep: Episode, teacher = false): string {

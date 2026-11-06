@@ -9,6 +9,7 @@ import { SignOffControl, refreshSignOffs } from './SignOffControl';
 import { GOAL_MOVE_LABEL, type OutcomesStep } from '../utils/reviewOutcomes';
 import { START_REVIEW_EVENT, takeReviewPrefill } from '../utils/reviewHandoff';
 import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, type PolicyOption, type UserOption } from '../utils/reviewOptions';
+import { withNotice } from '../utils/disclaimer';
 
 /**
  * Reports > Policy reviews: a guided, repeatable case file for one country and one problem.
@@ -879,7 +880,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                     <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setEditingMemo(true)}>
                       <Pencil className="w-3.5 h-3.5" /> Change choices
                     </button>
-                    <button type="button" className="ui-btn" onClick={() => saveFile(memoFileName(memo, 'md'), memo.markdown, 'text/markdown;charset=utf-8')}>
+                    <button type="button" className="ui-btn" onClick={() => saveFile(memoFileName(memo, 'md'), withNotice(memo.markdown), 'text/markdown;charset=utf-8')}>
                       <Download className="w-3.5 h-3.5" /> Markdown
                     </button>
                     <button

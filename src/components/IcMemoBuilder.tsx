@@ -23,6 +23,7 @@ import { buildBankerSections, BANKER_SECTIONS } from '../utils/bankerNote';
 import { buildOfficialSections, OFFICIAL_SECTIONS } from '../utils/officialNote';
 import { COUNCIL_SECTIONS, councilBriefSections, loadCouncilBrief } from '../utils/askCouncil';
 import { BOOK_SECTIONS, bookView, buildBookSections, buildClientReviewSections, CLIENT_REVIEW_SECTIONS } from '../utils/bookNote';
+import { withNotice } from '../utils/disclaimer';
 
 /**
  * One builder for the investment committee memo. It pulls the current country view,
@@ -490,7 +491,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const html = useMemo(() => memoMarkdownToHtml(memo), [memo]);
 
   const download = () => {
-    const blob = new Blob([memo], { type: 'text/markdown;charset=utf-8' });
+    const blob = new Blob([withNotice(memo)], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -500,7 +501,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   };
   const copy = async () => {
     try {
-      await navigator.clipboard.writeText(memo);
+      await navigator.clipboard.writeText(withNotice(memo));
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -513,7 +514,7 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
     w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${memoTitle.replace(/</g, '&lt;')}</title>
 <style>body{font-family:'Public Sans',-apple-system,Segoe UI,sans-serif;max-width:720px;margin:40px auto;color:#0f172a;line-height:1.5;font-size:14px}
 h1{font-size:22px;margin:0 0 4px}h2{font-size:15px;margin:22px 0 6px;border-bottom:1px solid #e2e8f0;padding-bottom:4px}
-p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head><body>${html}</body></html>`);
+p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head><body>${memoMarkdownToHtml(withNotice(memo))}</body></html>`);
     w.document.close();
     w.focus();
     w.print();

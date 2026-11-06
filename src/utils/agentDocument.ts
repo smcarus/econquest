@@ -23,6 +23,7 @@ import type { ChartResult } from './councilChart';
 import { isCitable, References, type Reference } from './citations';
 import { COUNCIL_AGENTS, isDocFinding, tagLabel, type AgentAnswer, type AgentId, type FigureTag, type SynthesisResult } from './askCouncil';
 import { DIM_LABEL } from './stanceCheck';
+import { withNotice } from './disclaimer';
 
 export const DOC_TEMPLATE_VERSION = 1;
 
@@ -287,7 +288,7 @@ export function documentSections(d: CouncilDocument) {
 export function documentMarkdown(d: CouncilDocument): string {
   const out = [`# ${d.kind === 'agent' ? `${d.agentName} Agent` : 'Synthesis'}`, '', `Standard council document, template v${d.version}.`, ''];
   for (const s of documentSections(d)) out.push(`## ${s.heading}`, '', ...s.lines, '');
-  return out.join('\n');
+  return withNotice(out.join('\n'));
 }
 
 /**

@@ -4,6 +4,7 @@ import { Download, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
 import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
+import { csvNoticeLine } from '../utils/disclaimer';
 
 /**
  * Council chat > the Chart Agent's chart: the lines the question named, then each test with its
@@ -34,7 +35,7 @@ function downloadCsv(result: ChartResult) {
   const head = ['date', ...result.lines.map((l) => `${l.label} (${l.unit})`)];
   const esc = (s: string) => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
   const body = data.map((r) => [String(r.date), ...result.lines.map((l) => (r[l.key] === undefined ? '' : String(r[l.key])))].map(esc).join(','));
-  const sources = result.lines.map((l) => `# ${l.label}: ${l.source}`);
+  const sources = [csvNoticeLine(), ...result.lines.map((l) => `# ${l.label}: ${l.source}`)];
   const blob = new Blob([[...sources, head.map(esc).join(','), ...body].join('\n')], { type: 'text/csv;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
