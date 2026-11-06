@@ -1128,6 +1128,8 @@ export interface SynthesisResult {
   /** Sentences removed because they described an agent's call in an opposing word. */
   contradicted?: Contradiction[];
   reason?: string;
+  /** What the answer was pinned to: inputs, model, temperature, seed and hashes (src/utils/answerSnapshot.ts). */
+  snapshot?: import('./answerSnapshot').SnapshotSummary;
 }
 
 export const SYNTHESIS_INSTRUCTION = [

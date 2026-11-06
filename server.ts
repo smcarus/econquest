@@ -1,12 +1,15 @@
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
-import { OFFICIAL_FIGURES, officialPoints, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
+import { OFFICIAL_FIGURES, officialPoints, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
+import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
+import { COUNCIL_SEED, COUNCIL_TEMPERATURE, compareRuns, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
+import { buildSnapshot, loadSnapshot, saveSnapshot, sha256, snapshotDir, verifySnapshot } from './src/utils/answerSnapshotStore';
 import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
 import { TRACK_RECORD_HEADER, trackRecord, trackRecordRows, trackRecordSentence, type ArchivedDay } from './src/utils/trackRecord';
 import { INFLATION_TARGETS } from './src/utils/marketsMacro';
@@ -40,7 +43,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
 import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from './src/utils/refereeModel';
 import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
-import { documentsAsText, isCouncilDocument, toAgentDocuments, type CouncilDocument } from './src/utils/agentDocument';
+import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
@@ -1732,7 +1735,9 @@ async function fetchLiveOpenDataSnapshotNetwork(
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)
     (async () => {
-      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_NGDP', 'NGAP_NPGDP'];
+      // Primary balance is the Fiscal Monitor series on DataMapper (GGXONLB_G01_GDP_PT); the WEO code
+      // GGXONLB_NGDP comes back empty there. NGAP_NPGDP is asked for in case the IMF adds it.
+      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_G01_GDP_PT', 'NGAP_NPGDP'];
       const results = await Promise.allSettled(
         imfMetrics.map(async (metric) => {
           const res = await fetchWithTimeout(
@@ -1781,7 +1786,7 @@ async function fetchLiveOpenDataSnapshotNetwork(
             baseline.imfIndicators.outputGapPct = Number(gap.toFixed(2)); markLive('imf.outputGapPct', 'IMF WEO');
             (baseline.imfIndicators.years ||= {})['imf.outputGapPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
           }
-        } else if (metric === 'GGXONLB_NGDP') {
+        } else if (metric === 'GGXONLB_G01_GDP_PT') {
           const pb = getLatestImfValue(series, ['2025', '2026', '2024']);
           if (typeof pb === 'number') {
             baseline.imfIndicators.primaryFiscalBalancePct = Number(pb.toFixed(2)); markLive('imf.primaryFiscalBalancePct', 'IMF WEO');
@@ -2118,6 +2123,14 @@ function fetchOfficialHistory(iso3: string, opts: { force?: boolean } = {}): Pro
     .finally(() => historyInFlight.delete(key));
   historyInFlight.set(key, job);
   return job;
+}
+
+/** The app's output gap estimate (src/utils/outputGap.ts) from a saved history, or why there is none. */
+function outputGapFrom(file: OfficialHistoryFile | null | undefined): OutputGapResult {
+  const fig = OFFICIAL_FIGURES.find((f) => f.id === 'gdp_growth')!;
+  const s = officialSeries(file, fig);
+  if (!('points' in s)) return { ok: false, reason: s.reason };
+  return outputGapFromGrowth(s.points, { pulledAt: s.pulledAt });
 }
 
 /**
@@ -2706,8 +2719,12 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           cpiInflationPct: snap.imfIndicators.cpiInflationPct,
           cpiSource: lf['imf.cpiInflationPct'] ? 'live' : 'sample',
           ...(lf['imf.outputGapPct'] && Number.isFinite(snap.imfIndicators.outputGapPct)
-            ? { outputGap: { pct: snap.imfIndicators.outputGapPct as number, year: snap.imfIndicators.years?.['imf.outputGapPct'] || '' } }
-            : {}),
+            ? { outputGap: { pct: snap.imfIndicators.outputGapPct as number, year: snap.imfIndicators.years?.['imf.outputGapPct'] || '', source: 'imf' as const } }
+            : (() => {
+                // The IMF publishes no output gap series; the app's stated estimate from saved IMF growth history.
+                const est = outputGapFrom(loadOfficialHistory(catItem.iso3));
+                return est.ok ? { outputGap: { pct: est.latest.central, year: est.latest.year, source: 'estimate' as const, low: est.latest.low, high: est.latest.high } } : {};
+              })()),
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
           ...(prices && (cpi || nationalCpi)
             ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
@@ -3384,7 +3401,7 @@ async function callOllamaOrOpenAICompatible(
   isOllama: boolean,
   timeoutMs = 20000,
   schemaKeysHint?: string[],
-  inferenceOptions?: { temperature?: number; numCtx?: number },
+  inferenceOptions?: { temperature?: number; numCtx?: number; seed?: number },
   /** Ollama only: stream the answer and time out on silence instead of on total length. */
   wait?: StreamWait
 ): Promise<string> {
@@ -3407,6 +3424,7 @@ async function callOllamaOrOpenAICompatible(
     inferenceOptions.numCtx <= 65536
       ? Math.round(inferenceOptions.numCtx)
       : 8192;
+  const seed = Number.isInteger(inferenceOptions?.seed) ? inferenceOptions!.seed : undefined;
 
   const isReasoningModel = /deepseek-r1|qwq|qwen3/i.test(model);
   const body = isOllama
@@ -3419,6 +3437,7 @@ async function callOllamaOrOpenAICompatible(
         options: {
           temperature,
           num_ctx: numCtx,
+          ...(seed !== undefined ? { seed } : {}),
           // A cap so a model that keeps emitting blank JSON padding cannot run on forever.
           ...(wait ? { num_predict: isReasoningModel ? 4096 : 2048 } : {}),
         },
@@ -3431,6 +3450,7 @@ async function callOllamaOrOpenAICompatible(
         model,
         response_format: { type: 'json_object' },
         temperature,
+        ...(seed !== undefined ? { seed } : {}),
         messages: [
           { role: 'system', content: `${systemPrompt}${schemaInstruction}` },
           { role: 'user', content: userPrompt },
@@ -3593,6 +3613,9 @@ async function executeResilientLlmStep<T>(options: {
   thinkingLevel?: ThinkingLevel;
   fallbackValue: T;
   maxRetries?: number;
+  /** Fixed sampling for steps that must give the same answer on a re-run (src/utils/answerSnapshot.ts). */
+  temperature?: number;
+  seed?: number;
 }): Promise<{
   data: T;
   latencyMs: number;
@@ -3600,6 +3623,10 @@ async function executeResilientLlmStep<T>(options: {
   schemaVerified: boolean;
   usedFallback: boolean;
   providerUsed: string;
+  /** The model that answered and the sampling it ran with (not set when no model answered). */
+  model?: string;
+  temperature?: number;
+  seed?: number;
   /** When usedFallback: why no model answered, in plain words (utils/modelFailure.ts). */
   failure?: string;
 }> {
@@ -3655,6 +3682,7 @@ async function executeResilientLlmStep<T>(options: {
     }
 
     const wait = isOllama && LONG_CHAT_STEPS.has(options.stepName) ? streamWaitFor(options.stepName, stepTimeoutMs) : undefined;
+    const localTemperature = options.temperature ?? options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2;
     for (const candidateUrl of candidateUrls) {
       const where = isOllama ? `Ollama ${modelName} at ${candidateUrl}` : `${modelName} at ${candidateUrl}`;
       if (wait) {
@@ -3681,8 +3709,8 @@ async function executeResilientLlmStep<T>(options: {
           stepTimeoutMs,
           schemaKeysHint,
           {
-            temperature:
-              options.runtimeConfig.temperature ?? serverGuiRuntimeConfig.temperature ?? 0.2,
+            temperature: localTemperature,
+            seed: options.seed,
             // Long chat steps read every agent's document: with a short window Ollama drops the
             // start of the prompt (the instructions) without saying so.
             numCtx: Math.max(options.runtimeConfig.numCtx ?? serverGuiRuntimeConfig.numCtx ?? 8192, LONG_CHAT_STEPS.has(options.stepName) ? 16384 : 0),
@@ -3700,6 +3728,9 @@ async function executeResilientLlmStep<T>(options: {
             providerUsed: isOllama
               ? `Local Ollama (${modelName} · ${isRefereeStep(options.stepName) ? 'Referee' : isDeepCouncilStep ? 'Phase 3 Deep' : 'Phase 1-2 Sub-Agents'})`
               : `OpenAI-Compatible (${modelName})`,
+            model: modelName,
+            temperature: localTemperature,
+            ...(options.seed !== undefined ? { seed: options.seed } : {}),
           };
         }
         attempts.push({ where, notJson: true });
@@ -3728,6 +3759,9 @@ async function executeResilientLlmStep<T>(options: {
             responseSchema: options.responseSchema,
             // Policy review steps run at temperature 0 so a rerun reads as close as the model allows.
             ...(options.stepName.startsWith('REVIEW_') ? { temperature: 0 } : {}),
+            // Council chat answers too, with a fixed seed (src/utils/answerSnapshot.ts).
+            ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+            ...(options.seed !== undefined ? { seed: options.seed } : {}),
           },
         });
         const { parsed, schemaVerified } = sanitizeAndParseJson<T>(
@@ -3745,6 +3779,9 @@ async function executeResilientLlmStep<T>(options: {
               options.providerMode === 'gemini'
                 ? 'Google AI Studio (gemini-3.8-flash)'
                 : 'Hybrid Failover -> Google AI Studio (gemini-3.8-flash)',
+            model: 'gemini-3.8-flash',
+            ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
+            ...(options.seed !== undefined ? { seed: options.seed } : {}),
           };
         }
         if (attempt === maxRetries) attempts.push({ where: 'Gemini', notJson: true });
@@ -3822,7 +3859,7 @@ function tracked<T extends { usedFallback: boolean }>(progress: ReturnType<typeo
 
 /** The synthesis agent: a short brief from the agents' answers only, checked for untraceable numbers (Council chat and the morning brief). */
 /** Audit log entry for one council answer: question, model, every figure with source and period. */
-function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string): void {
+function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: SynthesisResult, scope: string | undefined, via: string, snap?: AnswerSnapshot): void {
   appendAudit(AUDIT_FILES, {
     kind: 'council',
     summary: `Council answer: "${question.slice(0, 200)}"`,
@@ -3831,6 +3868,20 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
       question,
       ...(scope ? { scope } : {}),
       model: out.provider || null,
+      ...(snap
+        ? {
+            snapshot: {
+              id: snap.id,
+              inputsHash: snap.inputsHash,
+              outputHash: snap.outputHash,
+              promptHash: snap.settings.promptHash,
+              temperature: snap.settings.temperature,
+              seed: snap.settings.seed,
+              asOf: snap.inputs.asOf,
+              ...(snap.rerunOf ? { rerunOf: snap.rerunOf } : {}),
+            },
+          }
+        : {}),
       ...(out.brief ? { headline: out.brief.headline } : { noModel: out.reason || 'no AI model answered' }),
       agents: answers.map((a) => a.name),
       figures: figuresFromAnswers(answers),
@@ -3843,22 +3894,102 @@ function auditCouncilAnswer(question: string, answers: AgentAnswer[], out: Synth
   });
 }
 
+/** What the summary step sent and ran with, filled in by synthesiseAnswers for the snapshot. */
+interface SynthesisTrace {
+  system?: string;
+  prompt?: string;
+  template?: string;
+  model?: string;
+  temperature?: number;
+  seed?: number;
+}
+
+interface SynthesisOpts {
+  scope?: string;
+  countries?: number;
+  earlier?: Array<{ question: string; headline?: string }>;
+  runtimeConfig?: any;
+  explain?: ExplainPlan;
+  /** When the question was asked; kept in the documents so a re-run sends the same prompt. */
+  askedAt?: string;
+  trace?: SynthesisTrace;
+}
+
+const ANSWER_SNAPSHOT_DIR = snapshotDir(process.env.DATA_DIR || path.join(__dirname, 'data'));
+
+/**
+ * The summary (or explanation) plus its snapshot (src/utils/answerSnapshot.ts): the inputs, model,
+ * temperature, seed and prompt hash, saved under data/local/snapshots/ and named in the audit log.
+ */
+async function answerAndRecord(question: string, answers: AgentAnswer[], opts: SynthesisOpts & { asOf?: string | null }, via: string, rerunOf?: string): Promise<SynthesisResult> {
+  const askedAt = opts.askedAt || new Date().toISOString();
+  const earlier = (opts.earlier || []).map((t) => ({ question: String(t.question).slice(0, 500), ...(t.headline ? { headline: String(t.headline).slice(0, 600) } : {}) }));
+  const trace: SynthesisTrace = {};
+  const out = await synthesiseAnswers(question, answers, { ...opts, earlier, askedAt, trace });
+  let snap: AnswerSnapshot | undefined;
+  try {
+    snap = saveSnapshot(
+      ANSWER_SNAPSHOT_DIR,
+      buildSnapshot({
+        inputs: {
+          question,
+          ...(opts.scope ? { scope: opts.scope } : {}),
+          ...(opts.countries !== undefined ? { countries: opts.countries } : {}),
+          earlier,
+          ...(opts.explain ? { explain: opts.explain } : {}),
+          askedAt,
+          asOf: opts.asOf ?? null,
+          answers,
+        },
+        settings: {
+          step: 'COUNCIL_SYNTHESIS',
+          mode: opts.explain ? 'explain' : 'summary',
+          providerMode: String(opts.runtimeConfig?.providerMode || 'gemini'),
+          model: trace.model ?? modelFromProvider(out.provider),
+          temperature: trace.temperature ?? COUNCIL_TEMPERATURE,
+          seed: trace.seed ?? COUNCIL_SEED,
+          templateHash: sha256(trace.template || ''),
+          promptHash: sha256(`${trace.system || ''}\n\n${trace.prompt || ''}`),
+        },
+        output: {
+          provider: out.provider || null,
+          brief: out.brief,
+          removed: out.removed.length,
+          contradicted: out.contradicted?.length ?? 0,
+          ...(out.reason ? { reason: out.reason } : {}),
+        },
+        documents: councilAgentDocs(question, answers, { ...opts, askedAt }),
+        via,
+        rerunOf,
+      })
+    );
+  } catch (error: any) {
+    console.warn(`[snapshot] could not save the answer snapshot: ${error?.message || error}`);
+  }
+  auditCouncilAnswer(question, answers, out, opts.scope, via, snap);
+  return snap ? { ...out, snapshot: summariseSnapshot(snap) } : out;
+}
+
 async function synthesiseAnswers(
   question: string,
   answers: AgentAnswer[],
-  opts: { scope?: string; countries?: number; earlier?: Array<{ question: string; headline?: string }>; runtimeConfig?: any; explain?: ExplainPlan } = {}
+  opts: SynthesisOpts = {}
 ): Promise<SynthesisResult> {
   const empty: CouncilBrief = { headline: '', points: [], disagreements: [], gaps: [] };
-  if (opts.explain) return explainAnswers(question, answers, opts as typeof opts & { explain: ExplainPlan });
+  if (opts.explain) return explainAnswers(question, answers, opts as SynthesisOpts & { explain: ExplainPlan });
   try {
+    // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
+    const prompt = (earlierAsText(opts.earlier || []) + councilDocsText(question, answers, opts)).slice(0, 22000) + synthesisTask(question);
+    if (opts.trace) Object.assign(opts.trace, { system: SYNTHESIS_INSTRUCTION, prompt, template: SYNTHESIS_INSTRUCTION + '\n' + synthesisTask('{question}') });
     const step = await executeResilientLlmStep<CouncilBrief>({
       stepName: 'COUNCIL_SYNTHESIS',
       providerMode: opts.runtimeConfig?.providerMode || 'gemini',
       runtimeConfig: opts.runtimeConfig || {},
       thinkingLevel: ThinkingLevel.LOW,
       systemInstruction: SYNTHESIS_INSTRUCTION,
-      // The synthesis reads the agents' standard documents (utils/agentDocument.ts), all in one template.
-      prompt: (earlierAsText(opts.earlier || []) + councilDocsText(question, answers, opts)).slice(0, 22000) + synthesisTask(question),
+      prompt,
+      temperature: COUNCIL_TEMPERATURE,
+      seed: COUNCIL_SEED,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -3872,6 +4003,7 @@ async function synthesiseAnswers(
       fallbackValue: empty,
       maxRetries: 1,
     });
+    if (opts.trace) Object.assign(opts.trace, { model: step.model, temperature: step.temperature, seed: step.seed });
     if (step.usedFallback) {
       const out: SynthesisResult = {
         brief: null,
@@ -3901,35 +4033,43 @@ async function synthesiseAnswers(
 }
 
 /** The council's documents as the synthesis reads them (shared by the summary and explain mode). */
-function councilDocsText(question: string, answers: AgentAnswer[], opts: { scope?: string; countries?: number }): string {
-  return documentsAsText(
-    toAgentDocuments(answers, {
+function councilDocsText(question: string, answers: AgentAnswer[], opts: { scope?: string; countries?: number; askedAt?: string }): string {
+  return documentsAsText(councilAgentDocs(question, answers, opts));
+}
+
+/** The agents' standard documents (src/utils/agentDocument.ts) for one question. */
+function councilAgentDocs(question: string, answers: AgentAnswer[], opts: { scope?: string; countries?: number; askedAt?: string }): AgentDocument[] {
+  return toAgentDocuments(answers, {
       question,
-      askedAt: new Date().toISOString(),
+      // The question's own time, so a re-run sends the same documents.
+      askedAt: opts.askedAt || new Date().toISOString(),
       scope: opts.scope || 'the countries asked',
       countriesAsked:
         opts.countries && Number.isInteger(opts.countries) && opts.countries > 0 && opts.countries < 300
           ? opts.countries
           : new Set(answers.flatMap((a) => a.findings.filter((f) => !isDocFinding(f)).map((f) => f.iso3))).size,
-    })
-  );
+  });
 }
 
 /** Explain mode (src/utils/explain.ts): facts apart from interpretation, by lens, every sentence checked. */
 async function explainAnswers(
   question: string,
   answers: AgentAnswer[],
-  opts: { scope?: string; countries?: number; earlier?: Array<{ question: string; headline?: string }>; runtimeConfig?: any; explain: ExplainPlan }
+  opts: SynthesisOpts & { explain: ExplainPlan }
 ): Promise<SynthesisResult> {
   const coverage = lensCoverage(opts.explain.lenses, answers);
   try {
+    const prompt = (earlierAsText(opts.earlier || []) + focusAsText(opts.explain.focus) + councilDocsText(question, answers, opts)).slice(0, 22000) + explainTask(question, coverage);
+    if (opts.trace) Object.assign(opts.trace, { system: EXPLAIN_INSTRUCTION, prompt, template: EXPLAIN_INSTRUCTION + '\n' + explainTask('{question}', []) });
     const step = await executeResilientLlmStep<RawExplain>({
       stepName: 'COUNCIL_SYNTHESIS',
       providerMode: opts.runtimeConfig?.providerMode || 'gemini',
       runtimeConfig: opts.runtimeConfig || {},
       thinkingLevel: ThinkingLevel.LOW,
       systemInstruction: EXPLAIN_INSTRUCTION,
-      prompt: (earlierAsText(opts.earlier || []) + focusAsText(opts.explain.focus) + councilDocsText(question, answers, opts)).slice(0, 22000) + explainTask(question, coverage),
+      prompt,
+      temperature: COUNCIL_TEMPERATURE,
+      seed: COUNCIL_SEED,
       responseSchema: {
         type: Type.OBJECT,
         properties: {
@@ -3949,6 +4089,7 @@ async function explainAnswers(
       fallbackValue: {},
       maxRetries: 1,
     });
+    if (opts.trace) Object.assign(opts.trace, { model: step.model, temperature: step.temperature, seed: step.seed });
     if (step.usedFallback) {
       return { brief: null, removed: [], reason: `No AI model answered: ${step.failure || 'no model is set up'}. Set it up or test it under Menu > Settings > AI model.` };
     }
@@ -4057,10 +4198,13 @@ async function runMorningBrief(trigger: MorningBriefRun['trigger']): Promise<Mor
         const lib = loadLibrary(RESEARCH_FILE);
         const prevSummary = pickPrevious(summarise(lib).briefs.filter((b) => b.question === morningQuestion(q)), id, answers);
         const prev = prevSummary ? lib.briefs.find((b) => b.id === prevSummary.id) : undefined;
-        const synthesis = answers.some((a) => a.findings.length)
-          ? await synthesiseAnswers(q, answers, { scope: plan.scopeNote, countries: plan.countries.length, runtimeConfig })
-          : { brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' };
-        auditCouncilAnswer(morningQuestion(q), answers, synthesis, plan.scopeNote, `Morning brief (${trigger})`);
+        let synthesis: SynthesisResult;
+        if (answers.some((a) => a.findings.length)) {
+          synthesis = await answerAndRecord(q, answers, { scope: plan.scopeNote, countries: plan.countries.length, runtimeConfig, askedAt }, `Morning brief (${trigger})`);
+        } else {
+          synthesis = { brief: null, removed: [], reason: 'The agents found no figures to answer with, so there is nothing to summarise.' };
+          auditCouncilAnswer(morningQuestion(q), answers, synthesis, plan.scopeNote, `Morning brief (${trigger})`);
+        }
         const brief: SavedCouncilBrief = {
           question: morningQuestion(q),
           askedAt,
@@ -4845,6 +4989,12 @@ async function startServer() {
     res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
     res.setHeader('Content-Disposition', `attachment; filename="${episodeFileName(ep, teacher)}"`);
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
+  });
+  // Output gap (src/utils/outputGap.ts): HP and Hamilton filters on saved IMF real GDP growth.
+  app.get('/api/output-gap/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    res.json({ iso3, ...outputGapFrom(file) });
   });
   // Replicate a rate decision (src/utils/decisionReplay.ts): the week-before data, the rule, the move.
   app.get('/api/decision-replay/:iso3', async (req, res) => {
@@ -6986,15 +7136,43 @@ ${MISSING_FIGURES_RULE}
       return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
     }
     const scope = typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : undefined;
-    const out = await synthesiseAnswers(question, answers, {
-      scope,
-      countries: Number.isInteger(req.body?.countries) ? req.body.countries : undefined,
-      earlier: Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [],
-      runtimeConfig: req.body?.runtimeConfig || {},
-      explain: explainFromBody(req.body),
-    });
-    auditCouncilAnswer(question, answers, out, scope, 'Council chat');
+    const askedAt = typeof req.body?.askedAt === 'string' && !Number.isNaN(Date.parse(req.body.askedAt)) ? new Date(req.body.askedAt).toISOString() : undefined;
+    const out = await answerAndRecord(
+      question,
+      answers,
+      {
+        scope,
+        countries: Number.isInteger(req.body?.countries) ? req.body.countries : undefined,
+        earlier: Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [],
+        runtimeConfig: req.body?.runtimeConfig || {},
+        explain: explainFromBody(req.body),
+        askedAt,
+        asOf: parseAsOfDate(req.body?.asOf),
+      },
+      'Council chat'
+    );
     res.json(out);
+  });
+
+  // Re-run: the same snapshot (inputs, documents, question time) sent again, compared with the first answer.
+  app.post('/api/council/rerun', async (req, res) => {
+    const id = typeof req.body?.id === 'string' ? req.body.id : '';
+    const first = loadSnapshot(ANSWER_SNAPSHOT_DIR, id);
+    if (!first) return res.status(404).json({ error: `No snapshot ${id.slice(0, 40)} on this computer.` });
+    const tampered = verifySnapshot(first);
+    if (tampered.length) return res.status(409).json({ error: `Snapshot ${first.id} was changed after it was saved (${tampered.join(' and ')} no longer match their hash), so it is not re-run.` });
+    const inp = first.inputs;
+    const out = await answerAndRecord(
+      inp.question,
+      inp.answers,
+      { scope: inp.scope, countries: inp.countries, earlier: inp.earlier, explain: inp.explain, askedAt: inp.askedAt, asOf: inp.asOf, runtimeConfig: req.body?.runtimeConfig || {} },
+      `Re-run of ${first.id}`,
+      first.id
+    );
+    const comparison = out.snapshot
+      ? compareRuns({ snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, { snapshot: out.snapshot, brief: out.brief, provider: out.provider })
+      : null;
+    res.json({ original: { snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, rerun: out, comparison });
   });
 
   app.post('/api/council/analyze-policy-document', async (req, res) => {

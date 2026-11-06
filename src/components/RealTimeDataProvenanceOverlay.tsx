@@ -461,7 +461,7 @@ function resolveDataProvenanceForContextUnchecked(
     secondaryEndpoints: [
       {
         authority: 'IMF WEO Primary Fiscal Balance (% of GDP)',
-        endpointUri: `https://www.imf.org/external/datamapper/api/v1/GGXONLB_NGDP/${iso3}`,
+        endpointUri: `https://www.imf.org/external/datamapper/api/v1/GGXONLB_G01_GDP_PT/${iso3}`,
         purpose: 'General government primary net lending/borrowing (% GDP)',
       },
       {
@@ -490,8 +490,8 @@ function resolveDataProvenanceForContextUnchecked(
       },
       {
         fieldLabel: 'Primary Fiscal Balance (% of GDP)',
-        jsonPath: `$.values.GGXONLB_NGDP.${iso3}['2025']`,
-        indicatorCode: 'GGXONLB_NGDP',
+        jsonPath: `$.values.GGXONLB_G01_GDP_PT.${iso3}['2025']`,
+        indicatorCode: 'GGXONLB_G01_GDP_PT',
         liveValue: `${run.openData.imfIndicators.primaryFiscalBalancePct >= 0 ? '+' : ''}${run.openData.imfIndicators.primaryFiscalBalancePct.toFixed(2)}% GDP (pb*: ${run.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct >= 0 ? '+' : ''}${run.openData.dsaAnalytics.debtStabilizingPrimaryBalancePct.toFixed(2)}%)`,
         tier: 'TIER_1_MULTILATERAL_API',
       },

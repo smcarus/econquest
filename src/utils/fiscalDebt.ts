@@ -3,7 +3,7 @@
  *
  * Every figure here comes from a live feed the app already pulls, and only when that feed answered:
  * - IMF World Economic Outlook (DataMapper): general government gross debt, % of GDP
- *   (GGXWDG_NGDP), the IMF's own projection a year or two out, primary balance (GGXONLB_NGDP) and
+ *   (GGXWDG_NGDP), the IMF's own projection a year or two out, primary balance (GGXONLB_G01_GDP_PT) and
  *   real GDP growth (NGDP_RPCH), each with the WEO year it is for.
  * - World Bank QEDS: general government external principal falling due in the next 12 months.
  * - World Bank IDS: projected public external debt service by calendar year.
