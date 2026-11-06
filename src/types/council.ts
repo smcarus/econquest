@@ -378,6 +378,8 @@ export interface OpenDataSnapshot {
     realPolicyRatePct: number;
     sovereign10YBondYieldPct: number;
     cds5YSpreadBps: number;
+    /** Hard-currency (USD) bond spread over Treasuries, bps, BCRP EMBIG monthly. Set only from the feed; never a built-in value. */
+    hcBondSpreadBps?: number;
     exchangeRatePerUsd: number;
     fxYtdChangePct: number;
     chokepointExposureIndex: number;
@@ -406,6 +408,8 @@ export interface OpenDataSnapshot {
   us10YYield?: import('../utils/officialYields').OfficialYieldObservation;
   /** 5Y CDS from the user's own licensed data, when the own-account switch is on (utils/ownCds.ts). */
   ownCds5Y?: { bps: number; date: string; source: string };
+  /** Hard-currency (USD) bond spread over Treasuries when BCRP covers the country (utils/hardCurrencySpread.ts). A bond spread, not CDS. */
+  hcBondSpread?: import('../utils/hardCurrencySpread').HcSpreadObservation;
   /** Government external debt falling due, when QEDS or IDS answered (see utils/debtSchedule.ts). */
   debtSchedule?: import('../utils/debtSchedule').DebtSchedule;
   livePlumbingOverrides?: {

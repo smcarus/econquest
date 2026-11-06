@@ -1,3 +1,4 @@
+import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
 import React, { useMemo, useState } from 'react';
 import { GitCompare, Plus, RefreshCw, Ticket } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
@@ -101,9 +102,12 @@ export const DEFAULT_COUNTRY_TAB: CountryTabConfig = COUNTRY_TABS.find((t) => t.
 
 /** Restructuring is only relevant for stressed credits. */
 export function isRestructuringRelevant(item: WatchlistItem | undefined, run: CouncilAssessmentRun): boolean {
-  // Only real figures decide this: your own CDS, or a risk score built on live inputs.
-  const cds = getSnapshotDataStatus(run.openData).live('market.cds5YSpreadBps');
-  return (cds !== undefined && cds >= 400) || (item ? toLive(item).alertStatus === 'CRITICAL' : false);
+  // Only real figures decide this: your own CDS, a distressed USD bond spread (1,000 bps or more,
+  // the usual distress line for EMBI spreads), or a risk score built on live inputs.
+  const status = getSnapshotDataStatus(run.openData);
+  const cds = status.live('market.cds5YSpreadBps');
+  const hc = status.live('market.hcBondSpreadBps');
+  return (cds !== undefined && cds >= 400) || (hc !== undefined && hc >= 1000) || (item ? toLive(item).alertStatus === 'CRITICAL' : false);
 }
 
 /** The tab (and desk) that holds a given desk id, for links from Today and elsewhere. */
@@ -154,7 +158,8 @@ const Figure: React.FC<{ label: string; value: string; title?: string; missing?:
 /** The header's key figures, each shown only from a real source. */
 const HEADER_FIGURES: Array<{ path: string; label: string; fmt: (v: number) => string; series: string }> = [
   { path: 'imf.debtToGdpPct', label: 'Debt / GDP', fmt: (v) => `${v.toFixed(1)}%`, series: 'debt_gdp' },
-  { path: 'market.cds5YSpreadBps', label: '5Y CDS', fmt: (v) => `${Math.round(v)} bps`, series: 'cds_5y' },
+  // The free stand-in for CDS (hidden for now): a bond spread, labelled as one.
+  { path: 'market.hcBondSpreadBps', label: HC_SPREAD_LABEL, fmt: (v) => `${Math.round(v)} bps`, series: 'hc_spread' },
   { path: 'market.sovereign10YBondYieldPct', label: '10Y yield', fmt: (v) => `${v.toFixed(2)}%`, series: 'yield_10y' },
   { path: 'market.policyRatePct', label: 'Policy rate', fmt: (v) => `${v.toFixed(2)}%`, series: 'policy_rate' },
   { path: 'wb.fxReservesMonthsImport', label: 'Reserves', fmt: (v) => `${v.toFixed(1)} mo`, series: 'reserves_months' },
@@ -275,10 +280,10 @@ export const CountryPage: React.FC<{
               return (
                 <Figure
                   key={f.path}
-                  label={f.path === 'market.cds5YSpreadBps' && status.ownCds ? `5Y CDS, ${formatPeriod(status.ownCds.date)}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `10Y yield, ${describeOfficialYield(status.officialYield).when}` : f.label}
+                  label={f.path === 'market.hcBondSpreadBps' && open.hcBondSpread ? `${HC_SPREAD_LABEL}, ${hcSpreadWhen(open.hcBondSpread.period)}` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `5Y CDS, ${formatPeriod(status.ownCds.date)}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `10Y yield, ${describeOfficialYield(status.officialYield).when}` : f.label}
                   value={v === undefined ? 'Missing' : f.fmt(v)}
                   missing={why?.short}
-                  title={why ? why.help : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `Official figure: ${describeOfficialYield(status.officialYield).long}.` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `Your own ${status.ownCds.source} quote.` : undefined}
+                  title={why ? why.help : f.path === 'market.hcBondSpreadBps' && open.hcBondSpread ? `${HC_SPREAD_LONG}, ${hcSpreadWhen(open.hcBondSpread.period)}, ${HC_SPREAD_SOURCE}. ${HC_SPREAD_NOT_CDS}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `Official figure: ${describeOfficialYield(status.officialYield).long}.` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `Your own ${status.ownCds.source} quote.` : undefined}
                   onHistory={
                     showHistory
                       ? () => {

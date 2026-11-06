@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { bcrpEmbigUrl, parseBcrpEmbig } from './hardCurrencySpread';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
@@ -250,6 +251,7 @@ export const SOURCE_IDS = [
   'oecd_cli',
   'oecd_cpi',
   'bcb_ipca',
+  'bcrp_embig',
   'eurostat_hicp',
   'comtrade',
   'fred_csv',
@@ -682,6 +684,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       {},
       'The BCB answered, but not with the SGS series 13522 rows the app reads.'
+    )
+  );
+
+  add('bcrp_embig', () =>
+    httpCheck(
+      { id: 'bcrp_embig', name: 'Central bank of Peru (BCRPData, EMBIG)', group: 'free', feeds: 'USD bond spread over Treasuries (J.P. Morgan EMBI Global, monthly) for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru, Venezuela; the free stand-in for CDS, labelled a bond spread' },
+      fetchFn,
+      bcrpEmbigUrl(now, 6),
+      Math.max(T, 20000),
+      (r) => {
+        const p = parseBcrpEmbig(r.text, '');
+        const c = p?.countries.BRA || (p ? Object.values(p.countries)[0] : undefined);
+        return c ? `${c.iso3} USD bond spread ${fmt(c.bps)} bp (${formatMonth(c.period)}), ${Object.keys(p!.countries).length} countries` : null;
+      },
+      {},
+      'BCRP answered, but not with the monthly EMBIG series the app reads (PN43672XM to PN43681XM).'
     )
   );
 

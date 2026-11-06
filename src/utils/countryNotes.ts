@@ -1,3 +1,4 @@
+import { HC_SPREAD_LABEL, hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
 import type { CouncilAssessmentRun } from '../types/council';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from './dataStatus';
 import { describeOfficialYield, formatPeriod } from './officialYields';
@@ -51,6 +52,7 @@ type Kind = SourceKind;
 function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAssessmentRun['openData']): string {
   if (path === 'market.sovereign10YBondYieldPct' && status.officialYield) return `official, ${describeOfficialYield(status.officialYield).when}`;
   if (path === 'market.cds5YSpreadBps' && status.ownCds) return `your ${status.ownCds.source} data, ${formatPeriod(status.ownCds.date)}`;
+  if (path === 'market.hcBondSpreadBps' && open?.hcBondSpread) return `BCRP, J.P. Morgan EMBI Global, ${hcSpreadWhen(open.hcBondSpread.period)}; bond spread, not CDS`;
   const tag = open?.liveFields?.[path];
   if (path.startsWith('imf.')) {
     // The WEO year the figure is for, so a saved figure is read with its period ("IMF WEO, 2025").
@@ -71,6 +73,7 @@ function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAsse
 export function pathMissing(status: SnapshotDataStatus, path: string): MissingReason {
   if (path === 'market.sovereign10YBondYieldPct') return missingReason('yield', status.iso3);
   if (path === 'market.cds5YSpreadBps') return missingReason('cds', status.iso3);
+  if (path === 'market.hcBondSpreadBps') return hcSpreadMissing(status.iso3);
   if (path === 'market.policyRatePct') return missingReason('policy', status.iso3);
   if (path.startsWith('imf.'))
     return status.isFeedLive('imf')
@@ -100,6 +103,7 @@ const PATH_NAME: Record<string, string> = {
   'market.policyRatePct': 'a policy rate',
   'market.sovereign10YBondYieldPct': 'an official 10Y yield',
   'market.cds5YSpreadBps': 'your CDS',
+  'market.hcBondSpreadBps': 'a USD bond spread',
   'imf.cpiInflationPct': 'live inflation',
   'imf.debtToGdpPct': 'live debt/GDP',
   'imf.realGdpGrowthPct': 'live growth',
@@ -280,7 +284,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
       title: 'Markets',
       rows: [
         r('10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2)),
-        r('5Y CDS', 'market.cds5YSpreadBps', (v) => `${Math.round(v)} bps`),
+        r(`${HC_SPREAD_LABEL} over Treasuries (not CDS)`, 'market.hcBondSpreadBps', (v) => `${Math.round(v)} bps`),
         r('Policy rate', 'market.policyRatePct', (v) => pct(v, 2)),
         r(`Spot FX (${open.currencyCode} per USD)`, 'market.exchangeRatePerUsd', (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(v >= 10 ? 2 : 4))),
         noSourceRow('Credit rating', 'Needs a ratings feed (licensed); AI estimates are not used.'),
