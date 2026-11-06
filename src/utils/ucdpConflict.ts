@@ -69,6 +69,12 @@ export const GW_TO_ISO3: Record<number, string> = {
   732: 'KOR', 740: 'JPN', 750: 'IND', 770: 'PAK', 771: 'BGD', 775: 'MMR', 780: 'LKA', 790: 'NPL', 800: 'THA', 811: 'KHM',
   812: 'LAO', 816: 'VNM', 820: 'MYS', 830: 'SGP', 840: 'PHL', 850: 'IDN', 860: 'TLS',
   900: 'AUS', 910: 'PNG', 920: 'NZL', 940: 'SLB', 950: 'FJI',
+  // Small states that appear in UCDP rows.
+  55: 'GRD', 338: 'MLT', 581: 'COM', 760: 'BTN', 835: 'BRN',
+  // States that no longer exist, counted under the country that holds the territory now (as 260
+  // West Germany and 345 Yugoslavia above): 680 South Yemen (1967-1990), 751 Hyderabad (1948),
+  // 817 South Vietnam (1954-1975).
+  680: 'YEM', 751: 'IND', 817: 'VNM',
 };
 
 /** Countries the app shows that UCDP folds into another country. */
