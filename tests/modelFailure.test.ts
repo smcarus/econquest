@@ -84,3 +84,21 @@ test('ollamaHasModel reads the /api/tags list', () => {
   assert.equal(ollamaHasModel(tags, 'gemma4:31b'), false);
   assert.equal(ollamaHasModel(null, 'gemma4:31b'), true);
 });
+
+test('a local model is told the allowed values and which keys are lists', async () => {
+  const { schemaKeyHints } = await import('../src/server/ai.ts');
+  assert.deepEqual(
+    schemaKeyHints({
+      decisionVerdict: { type: 'STRING', enum: ['EXECUTE_TRADES', 'DEFENSIVE_HEDGE', 'HOLD_AND_MONITOR'] },
+      structuralVulnerabilities: { type: 'ARRAY', items: { type: 'STRING' } },
+      options: { type: 'ARRAY', items: { type: 'OBJECT' } },
+      executiveSummary: { type: 'STRING' },
+    }),
+    [
+      'decisionVerdict (exactly one of: EXECUTE_TRADES, DEFENSIVE_HEDGE, HOLD_AND_MONITOR)',
+      'structuralVulnerabilities (a JSON list of strings)',
+      'options (a JSON list of objects)',
+      'executiveSummary',
+    ]
+  );
+});

@@ -1298,7 +1298,7 @@ export function checkBrief(
 ): { brief: CouncilBrief; removed: string[]; contradicted: Contradiction[] } {
   const { ok, removed, contradicted } = sentenceCheck(question, answers);
   const clean = (xs: unknown): string[] =>
-    (Array.isArray(xs) ? xs : [])
+    (Array.isArray(xs) ? xs : typeof xs === 'string' ? [xs] : [])
       .filter((x): x is string => typeof x === 'string' && x.trim().length > 0)
       .map((x) => x.trim().slice(0, 600))
       .filter(ok)

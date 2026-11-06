@@ -106,6 +106,24 @@ async function endpointSays(res: Response): Promise<string> {
   }
 }
 
+/**
+ * The keys a local model must return, with what each holds. Ollama gets only this text (not the
+ * schema Gemini gets), so allowed values and lists must be spelled out here or the model writes
+ * free text (for example "Proceed with caution" instead of HOLD_AND_MONITOR).
+ */
+export function schemaKeyHints(properties: Record<string, any>): string[] {
+  return Object.entries(properties).map(([key, p]) => {
+    const type = String(p?.type || '').toUpperCase();
+    if (Array.isArray(p?.enum) && p.enum.length) return `${key} (exactly one of: ${p.enum.join(', ')})`;
+    if (type === 'ARRAY') {
+      const items = p?.items;
+      const of = String(items?.type || '').toUpperCase() === 'STRING' ? 'strings' : String(items?.type || '').toUpperCase() === 'OBJECT' ? 'objects' : 'items';
+      return `${key} (a JSON list of ${of})`;
+    }
+    return key;
+  });
+}
+
 export async function callOllamaOrOpenAICompatible(
   baseUrl: string,
   model: string,
@@ -395,9 +413,7 @@ export async function executeResilientLlmStep<T>(options: {
   // large "Referee model", never on the fast one (src/utils/refereeModel.ts).
   const isDeepCouncilStep = isRefereeStep(options.stepName) || options.thinkingLevel === ThinkingLevel.HIGH;
 
-  const schemaKeysHint = options.responseSchema?.properties
-    ? Object.keys(options.responseSchema.properties)
-    : undefined;
+  const schemaKeysHint = options.responseSchema?.properties ? schemaKeyHints(options.responseSchema.properties) : undefined;
 
   // 1. Try Local / Self-Hosted Ollama or OpenAI-Compatible Runtime first when selected (or in hybrid mode)
   if (
