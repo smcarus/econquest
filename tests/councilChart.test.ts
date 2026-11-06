@@ -146,3 +146,26 @@ test('a saved Chart Agent document keeps its chart and the request behind it, so
   assert.equal(doc.chart?.title, 'Brazil: Real policy rate');
   assert.ok(isCouncilDocument(JSON.parse(JSON.stringify(doc))));
 });
+
+test('across countries: one point per country at its latest figure, the line, and who sits furthest from it', () => {
+  const many = ['BRA', 'MEX', 'TUR', 'ZAF', 'IDN', 'POL', 'CHL', 'COL', 'EGY', 'IND'].map((c) => it(c, c));
+  const req = chartRequest('scatter government debt against bond yields across countries', many, false)!;
+  assert.ok(req.cross);
+  assert.equal(req.series.length, 20);
+  assert.equal(chartRequest('scatter Brazil debt against bond yields', [BRA], true)?.cross, undefined);
+  const fetched = many.flatMap((c, i): Array<FetchedSeries | { reason: string }> => {
+    if (c.iso3 === 'EGY') return [{ reason: 'IMF WEO has no figure' }, { reason: 'no yield feed' }];
+    const debt = 40 + 5 * i;
+    const yld = 2 + 0.1 * debt + (c.iso3 === 'TUR' ? 6 : 0) + 0.3 * Math.sin(i);
+    return [S('debt_gdp', 'Government debt', '% of GDP', [{ date: '2025', value: debt }]), S('yield_10y', '10Y yield', '%', [{ date: '2026-10', value: yld }])];
+  });
+  const res = computeChart(req, fetched);
+  assert.equal(res.lines.length, 0);
+  assert.equal(res.scatter!.pairs.length, 9);
+  assert.match(res.missing[0], /^EGY: Missing Government debt \(IMF WEO has no figure\) and 10Y government bond yield \(no yield feed\)/);
+  const reg = res.tests.find((t) => t.test === 'regression')!;
+  assert.match(reg.reading, /TUR sits furthest above the line/);
+  assert.ok(res.notes.some((n) => /dates run from 2025 to 2026-10/.test(n)));
+  const ans = chartAnswer(req, res);
+  assert.ok(ans.findings[0].figures.some((f) => f.label.startsWith('TUR: ')));
+});
