@@ -37,6 +37,7 @@ import { comtradeMissing } from './src/utils/comtradeTrade';
 import { ticHoldingFor } from './src/utils/ticHoldings';
 import { cliFor, cliTurns } from './src/utils/oecdCli';
 import { loadForecastValidation } from './src/utils/forecastEvalRun';
+import { loadSignalValidation } from './src/utils/fxFactorsRun';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
 import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
@@ -2698,6 +2699,14 @@ async function startServer() {
       p: r.pValue ?? (r.horizons?.length ? Math.max(...r.horizons.map((h) => h.pValue)) : 1),
       alpha: Number((fSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.1,
     }));
+    // Currency factor tests (npm run signals:evaluate) sit beside the forecast evaluations: same
+    // verdict shape for the register, and their p enters the same Holm family.
+    const sv = loadSignalValidation(path.join(DATA_DIR, 'local', 'validation', 'signals.json'));
+    const sSpecs = loadSpecs(path.join(APP_ROOT, 'docs', 'validation', 'signals'));
+    for (const r of Object.values(sv.results)) forecasts[r.id] = { id: r.id, status: r.status, verdict: r.verdict, specVersion: r.specVersion, specHash: r.specHash, ranAt: r.ranAt };
+    for (const r of Object.values({ ...sv.versions, ...Object.fromEntries(Object.values(sv.results).map((r) => [`${r.id} v${r.specVersion}`, r])) })) {
+      forecastTests.push({ id: r.id, version: r.specVersion, status: r.status, p: r.pValue, alpha: Number((sSpecs.find((s) => s.spec?.id === r.id && s.spec?.version === r.specVersion)?.spec as any)?.passMark?.maxPValue) || 0.05 });
+    }
     res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests });
   });
   app.post('/api/validation/run', async (req, res) => {
