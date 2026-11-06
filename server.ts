@@ -39,7 +39,9 @@ import { readXlsxSheet } from './src/utils/xlsxRead';
 import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
-import { parseQna, qnaUrl, type QnaSeries } from './src/utils/oecdQna';
+import { parseQna, qnaFor, qnaUrl, QNA_LABEL, type QnaSeries } from './src/utils/oecdQna';
+import { loadModelHistory, MODEL_HISTORY_MAX_AGE_MS, pullModelHistory, saveModelHistory, spliceInflation, type ModelHistory } from './src/utils/modelHistory';
+import { cpiNowcast, gdpNowcast, nowcastSentence } from './src/utils/nowcast';
 import { BCB_IBCBR_SA, EUROSTAT_IP_GEO, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr, type ActivitySeries } from './src/utils/monthlyActivity';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
@@ -6045,6 +6047,65 @@ async function startServer() {
     if ('error' in replay) return res.status(404).json({ error: 'NO_REPLAY', message: replay.error, ...base });
     if (!cpi && why('cpi_monthly')) replay.missing = replay.missing.map((m) => (m === 'monthly inflation' ? `monthly inflation (${why('cpi_monthly')})` : m));
     res.json({ ...base, replay, sentence: replaySentence(replay) });
+  });
+  // Nowcasts (src/utils/nowcast.ts): GDP and inflation for periods whose official figure is not out
+  // yet, from published figures only. Long histories for the fits come from data/live/model-history.json
+  // (src/utils/modelHistory.ts), pulled at most once a week; DBnomics calls go through the OECD queue.
+  let modelHistoryInFlight: Promise<ModelHistory | null> | null = null;
+  const modelFetcher = async (url: string): Promise<string> => {
+    if (url.includes('db.nomics.world')) {
+      const r = await oecdFetch(url, 60000);
+      if (!r || r.status < 200 || r.status >= 300) throw new Error(r ? `HTTP ${r.status}` : 'paused after a refusal');
+      return r.text;
+    }
+    const r = await fetchWithTimeout(url, 60000);
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    return r.text();
+  };
+  async function modelHistory(): Promise<ModelHistory | null> {
+    const saved = loadModelHistory(DATA_DIR);
+    if (saved && Date.now() - Date.parse(saved.pulledAt) < MODEL_HISTORY_MAX_AGE_MS) return saved;
+    modelHistoryInFlight ??= pullModelHistory(modelFetcher, saved)
+      .then((h) => {
+        if (h.policyMonthly || h.cli || h.cpi) saveModelHistory(DATA_DIR, h);
+        return h;
+      })
+      .catch(() => saved)
+      .finally(() => {
+        modelHistoryInFlight = null;
+      });
+    // A first pull can take a while: answer with what is saved and let it finish in the background.
+    return saved ?? (await Promise.race([modelHistoryInFlight, new Promise<null>((r) => setTimeout(() => r(null), 20000))]));
+  }
+  app.get('/api/nowcast/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const today = new Date().toISOString().slice(0, 10);
+    const asOf = parseAsOfDate(req.query.asOf) ?? today;
+    if (asOf > today) return res.status(400).json({ error: 'BAD_DATE', message: 'The As-of date cannot be in the future.' });
+    const [qna, activity, hist, nationalCpi] = await Promise.all([quick(fetchQnaPull()), quick(fetchMonthlyActivity()), modelHistory(), quick(fetchNationalCpi())]);
+    const gdpPts = qnaFor(iso3, qna?.series)?.qoq ?? [];
+    const act = activity?.series?.[iso3];
+    const cliPts = areaSeries(iso3, hist?.cli ?? undefined);
+    const cpiRun = spliceInflation(areaSeries(iso3, hist?.cpi ?? undefined)?.points, nationalCpi?.series?.[iso3]);
+    const inputs = {
+      iso3,
+      asOf,
+      live: asOf === today,
+      gdp: gdpPts.length ? { points: gdpPts.map((p) => ({ date: p.period, value: p.value })), source: QNA_LABEL, pulledAt: qna?.pulledAt } : null,
+      activity: act?.points?.length ? { points: act.points.map((p) => ({ date: p.period, value: p.value })), source: act.long, label: act.short, pulledAt: activity?.pulledAt } : null,
+      cli: cliPts?.length ? { points: cliPts.map((p) => ({ date: p.period, value: p.value })), source: 'OECD composite leading indicator via DBnomics', pulledAt: hist?.pulledAt } : null,
+      cpi: cpiRun ? { ...cpiRun, pulledAt: hist?.pulledAt } : null,
+    };
+    const gdp = gdpNowcast(inputs);
+    const cpi = cpiNowcast(inputs);
+    res.json({
+      iso3,
+      asOf,
+      gdp,
+      cpi,
+      sentences: [gdp, cpi].filter((r): r is Extract<typeof r, { ok: true }> => r.ok).map(nowcastSentence),
+      history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
+    });
   });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
