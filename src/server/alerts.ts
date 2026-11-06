@@ -29,5 +29,5 @@ export async function testAlertRoute(field: ApiKeyField, value: string, env: Rec
   }
   const [r] = await sendAlert(TEST_ALERT, route, { ...deps, secrets: alertSecrets(withValue) });
   if (!r) return { ...base, state: 'needs_setup', detail: 'Nothing to send to.' };
-  return r.ok ? { ...base, state: 'connected', detail: r.detail, sample: `Test ${webhook ? 'message' : 'email'} sent: ${r.detail}` } : { ...base, state: /could not be reached|did not answer/.test(r.detail) ? 'no_answer' : r.detail.startsWith('Not sent') ? 'needs_setup' : 'refused', detail: r.detail };
+  return r.ok ? { ...base, state: 'connected', detail: r.detail, } : { ...base, state: /could not be reached|did not answer/.test(r.detail) ? 'no_answer' : r.detail.startsWith('Not sent') ? 'needs_setup' : 'refused', detail: r.detail };
 }

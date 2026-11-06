@@ -130,7 +130,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
       <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         {k.getKeySteps}{' '}
         <a href={k.getKeyUrl} target="_blank" rel="noreferrer noopener" className="inline-flex items-center gap-0.5 text-blue-700 dark:text-blue-400 hover:underline">
-          {k.secret ? 'How to get a key' : 'Where to find it'} <ExternalLink className="w-3 h-3" aria-hidden />
+          {k.section === 'alerts' ? 'How to set it up' : k.secret ? 'How to get a key' : 'Where to find it'} <ExternalLink className="w-3 h-3" aria-hidden />
         </a>
       </p>
       {k.source === 'app' && k.envAlsoSet && (
@@ -183,7 +183,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
           </div>
         )}
         <button type="button" className="ui-btn" disabled={!canEdit || !!busy || (!value.trim() && k.source === 'none' && !k.choices)} onClick={() => call('test')}>
-          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.choices ? 'Test current setting' : k.secret ? 'Test current key' : 'Test current setting'}
+          {busy === 'test' ? 'Testing…' : value.trim() ? 'Test' : k.choices ? 'Test current setting' : k.secret && k.section !== 'alerts' ? 'Test current key' : 'Test current setting'}
         </button>
         <button type="submit" className="ui-btn ui-btn-primary" disabled={!canEdit || !!busy || !value.trim()}>
           {busy === 'save' ? 'Saving…' : 'Save'}
