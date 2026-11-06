@@ -34,7 +34,7 @@ test('with nothing pulled every figure is Missing with a reason, never a number'
   assert.equal(why.policy_rate, 'BIS has not answered yet');
   assert.match(why.cftc_lev_net, /No CFTC currency future/);
   assert.match(why.debt_gdp, /No saved pulls yet/);
-  assert.equal(set.missing.length, 5 + ARCHIVE_FIGURES.length + 4); // + output gap, overall balance, reserves in USD, short-term debt
+  assert.equal(set.missing.length, 6 + ARCHIVE_FIGURES.length + 4); // 6 feed series incl. USD bond spread; + output gap, overall balance, reserves in USD, short-term debt
 });
 
 test('monthly BIS series is used where there is no daily one', () => {

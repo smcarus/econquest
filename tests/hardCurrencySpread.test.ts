@@ -1,0 +1,72 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { BCRP_EMBIG_SERIES, bcrpEmbigUrl, describeHcSpread, hcSpreadMissing, parseBcrpEmbig, parseBcrpMonth } from '../src/utils/hardCurrencySpread.ts';
+import { countrySeries } from '../src/utils/seriesHistory.ts';
+
+const NAMES = ['Perú', 'Argentina', 'Brasil', 'Chile', 'Colombia', 'Ecuador', 'México', 'Venezuela'].map(
+  (c) => ({ name: `Diferencial de Rendimientos del Índice de Bonos de Mercados Emergentes (EMBIG) - ${c}`, dec: '0' }),
+);
+const SERIES = [...NAMES, { name: 'Latin EMBIG Países Latinoamericanos', dec: '0' }, { name: 'EMBIG Países Emergentes', dec: '0' }];
+const row = (name: string, vals: Array<number | string>) => ({ name, values: vals.map(String) });
+// Columns: PER ARG BRA CHL COL ECU MEX VEN LATAM EM
+const reply = {
+  config: { title: 'Indicadores de riesgo para países emergentes: EMBIG', series: SERIES },
+  periods: [
+    row('Sep.2025', [150, 900, 210, 120, 300, 1500, 320, 'n.d.', 400, 330]),
+    row('Jun.2026', [140, 700, 195, 110, 280, 1200, 300, 'n.d.', 380, 310]),
+    row('Aug.2026', [135, 650, 190, 105, 270, 1100, 295, 'n.d.', 370, 300]),
+    row('Sep.2026', [130, 600, 185, 100, 260, 1000, 290, 'n.d.', 360, 295]),
+    row('Oct.2026', ['n.d.', 'n.d.', 'n.d.', 'n.d.', 'n.d.', 'n.d.', 'n.d.', 'n.d.', 'n.d.', 'n.d.']),
+  ],
+};
+
+test('BCRP months in English and Spanish', () => {
+  assert.equal(parseBcrpMonth('Sep.2026'), '2026-09');
+  assert.equal(parseBcrpMonth('Set.2026'), '2026-09');
+  assert.equal(parseBcrpMonth('Dic.25'), '2025-12');
+  assert.equal(parseBcrpMonth('2026-1'), '2026-01');
+  assert.equal(parseBcrpMonth('01.Oct.26'), null);
+});
+
+test('one request for every series, monthly periods', () => {
+  const u = bcrpEmbigUrl(new Date(Date.UTC(2026, 10, 6)));
+  assert.match(u, /PN43672XM-.*-PN43681XM\/json\/2023-7\/2026-11\/ing$/);
+});
+
+test('latest real month per country, with changes and history; n.d. never a value', () => {
+  const p = parseBcrpEmbig(JSON.stringify(reply), 'u', '2026-11-06T00:00:00Z');
+  assert.ok(p);
+  assert.equal(p.countries.BRA.bps, 185);
+  assert.equal(p.countries.BRA.period, '2026-09');
+  assert.equal(p.countries.BRA.seriesId, BCRP_EMBIG_SERIES.BRA);
+  assert.equal(p.countries.BRA.change3mBps, -10);
+  assert.equal(p.countries.BRA.change12mBps, -25);
+  assert.equal(p.countries.BRA.history.length, 4);
+  assert.equal(p.countries.VEN, undefined, 'all n.d. -> no figure');
+  assert.equal(p.aggregates.em?.bps, 295);
+  assert.match(describeHcSpread(p.countries.MEX), /290 bps over US Treasuries \(Sep 2026 avg, -30 bps on a year earlier;.*not CDS\)/);
+});
+
+test('a reply whose columns do not match the countries is refused', () => {
+  const swapped = { ...reply, config: { ...reply.config, series: [SERIES[2], SERIES[0], ...SERIES.slice(1, 2), ...SERIES.slice(3)] } };
+  assert.equal(parseBcrpEmbig(swapped, 'u'), null);
+  assert.equal(parseBcrpEmbig('<html>', 'u'), null);
+  assert.equal(parseBcrpEmbig({ config: { series: SERIES.slice(0, 3) }, periods: [] }, 'u'), null);
+});
+
+test('missing reasons say whether a source exists', () => {
+  assert.equal(hcSpreadMissing('BRA').kind, 'unreachable');
+  assert.equal(hcSpreadMissing('TUR').kind, 'setup');
+  assert.match(hcSpreadMissing('TUR').help, /No free official source/);
+});
+
+test('history series is labelled a bond spread, not CDS', () => {
+  const p = parseBcrpEmbig(reply, 'u', '2026-11-06T00:00:00Z');
+  const set = countrySeries('COL', { hcSpread: p });
+  const s = set.series.find((x) => x.id === 'hc_spread');
+  assert.ok(s);
+  assert.equal(s.points.at(-1)?.value, 260);
+  assert.match(s.label, /not CDS/);
+  const tur = countrySeries('TUR', { hcSpread: p });
+  assert.match(tur.missing.find((x) => x.id === 'hc_spread')!.reason, /No free official source/);
+});
