@@ -276,13 +276,9 @@ WEOOct2018all.xls) and save them in `data/local/weo-vintages/`. Nothing is fetch
 weo:vintages` lists what it read and any file it skipped with the reason;
 `npm run weo:vintages -- --country TUR --code NGDP_RPCH --as-of 2019-06-01` shows the edition that
 was out on that date, each year tagged actual, estimate or projection. An edition counts as
-<<<<<<< HEAD
 published on the last day of its month, so a test never sees it early. The same files feed Research > History &
 data > IMF forecasts by edition: pick an indicator and a year to see every edition's figure for it,
 each marked data, IMF estimate or IMF projection at the time.
-=======
-published on the last day of its month, so a test never sees it early.
->>>>>>> origin/claude/project-thread-3w1igz
 
 **Sources.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live

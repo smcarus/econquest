@@ -211,7 +211,6 @@ export function vintageLabel(vintage: string): string {
   const [y, m] = vintage.split('-');
   return `${FULL[Number(m) - 1] ?? m} ${y}`;
 }
-<<<<<<< HEAD
 
 export const WEO_VINTAGE_LABELS: Record<string, string> = {
   NGDP_RPCH: 'Real GDP growth (%)',
@@ -255,5 +254,3 @@ export function weoVintageReply(store: WeoVintageStore | null | undefined, iso3:
   }
   return { iso3: iso, code, label, editions: store?.editions.length ?? 0, years, year: pick, releases, ...(sentence ? { sentence } : {}) };
 }
-=======
->>>>>>> origin/claude/project-thread-3w1igz
