@@ -15,6 +15,21 @@ export const SYNCED_KEYS = [
   'econquest.shareMode.v1',
 ] as const;
 
+export const ACCOUNT_KEY = 'econquest.account.v1';
+
+/**
+ * Each account has its own workspace on the server, but the browser keeps one copy per address.
+ * When a different account signs in on this browser, the previous account's copy is removed first,
+ * so it is neither shown to nor sent up as the new account's lists. Returns whether it cleared.
+ */
+export function forgetOtherAccount(storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>, accountId: string): boolean {
+  const last = storage.getItem(ACCOUNT_KEY);
+  if (last === accountId) return false;
+  for (const key of SYNCED_KEYS) storage.removeItem(key);
+  storage.setItem(ACCOUNT_KEY, accountId);
+  return true;
+}
+
 const isSynced = (key: string) => (SYNCED_KEYS as readonly string[]).includes(key);
 
 export interface SyncDeps {

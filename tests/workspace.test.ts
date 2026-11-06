@@ -105,3 +105,32 @@ test('mirrorSavesToDisk sends later saves of synced keys only, once per burst', 
   await new Promise((r) => setTimeout(r, 40));
   assert.deepEqual(sent.at(-1), '{"value":null}');
 });
+
+test('a different account signing in on this browser starts from its own lists, not the last one', async () => {
+  const { forgetOtherAccount, ACCOUNT_KEY } = await import('../src/utils/workspaceSync');
+  const store = new Map<string, string>([['sovereign_council_watchlists_v1', '[1]'], ['econquest.holdings.v1', '[2]'], ['other', 'x']]);
+  const s = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v), removeItem: (k: string) => void store.delete(k) };
+  assert.equal(forgetOtherAccount(s, 'acc-1'), true);
+  assert.equal(store.has('sovereign_council_watchlists_v1'), false);
+  assert.equal(store.get('other'), 'x', 'other storage untouched');
+  assert.equal(store.get(ACCOUNT_KEY), 'acc-1');
+  store.set('econquest.holdings.v1', '[3]');
+  assert.equal(forgetOtherAccount(s, 'acc-1'), false, 'same account keeps its copy');
+  assert.equal(store.get('econquest.holdings.v1'), '[3]');
+});
+
+test('per-account workspace files; the shared one seeds a new file once', async () => {
+  const fs = await import('fs');
+  const os = await import('os');
+  const path = await import('path');
+  const { seedWorkspace, userWorkspacePath, workspaceFilePath } = await import('../src/utils/workspaceStore');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ws-'));
+  assert.throws(() => userWorkspacePath(dir, '../etc'), /Bad account id/);
+  const shared = workspaceFilePath(dir);
+  const mine = userWorkspacePath(dir, 'acc-1');
+  assert.equal(seedWorkspace(shared, mine), false, 'nothing to copy');
+  fs.mkdirSync(path.dirname(shared), { recursive: true });
+  fs.writeFileSync(shared, '{"version":1,"values":{},"updatedAt":{}}');
+  assert.equal(seedWorkspace(shared, mine), true);
+  assert.equal(seedWorkspace(shared, mine), false, 'never overwrites');
+});
