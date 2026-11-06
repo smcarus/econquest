@@ -44,7 +44,7 @@ export function seriesRows(iso3: string, series: Series[]): Cell[][] {
 export const FIGURES_HEADER = ['iso3', 'country', 'field', 'figure', 'value', 'unit', 'status', 'period', 'source', 'reason_if_missing', 'snapshot_pulled_at'];
 
 /** Figures the country pages show, each with its value or why it is missing. */
-const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> = [
+export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> = [
   ...ARCHIVE_FIGURES.map((f) => ({ field: f.field, label: f.label, unit: f.unit })),
   { field: 'market.hcBondSpreadBps', label: 'USD bond spread over US Treasuries (not CDS)', unit: 'bp' },
   { field: 'imf.debtToGdpForecast2027Pct', label: 'Government debt, 2027 forecast', unit: '% of GDP' },

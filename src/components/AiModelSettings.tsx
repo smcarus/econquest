@@ -184,7 +184,7 @@ export const AiModelSettings: React.FC<{
             {(
               [
                 { key: 'ollamaQuickModel', label: 'Fast model: picking agents and the desk agents', hint: 'A 7-8B model answers in under a minute on most Macs.' },
-                { key: 'ollamaDeepModel', label: 'Referee model: Supreme Council, chat summaries, explanations and the debate', hint: 'Use your largest model (for example a 31B). It judges and sums up the agents, so it can take a few minutes.' },
+                { key: 'ollamaDeepModel', label: 'Referee model: Supreme Council, chat summaries, explanations, the debate and Policy review options', hint: 'Use your largest model (for example a 31B). It judges and sums up the agents, so it can take a few minutes.' },
               ] as const
             ).map((m) => (
               <label key={m.key} className="text-xs text-slate-600 dark:text-slate-400">
@@ -258,7 +258,7 @@ export const AiModelSettings: React.FC<{
           <p className={`mt-1 text-xs flex items-start gap-1.5 ${refereeReply.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400'}`} role="status" data-settings-try-referee={refereeReply.ok ? 'ok' : 'failed'}>
             {refereeReply.ok ? <CheckCircle2 className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden /> : <XCircle className="w-3.5 h-3.5 mt-px shrink-0" aria-hidden />}
             {refereeReply.ok
-              ? `Referee working: ${refereeReply.provider} answered in ${Math.max(1, Math.round(refereeReply.ms / 1000))} s. The Supreme Council, summaries, explanations and debate use it.`
+              ? `Referee working: ${refereeReply.provider} answered in ${Math.max(1, Math.round(refereeReply.ms / 1000))} s. The Supreme Council, summaries, explanations, debate and Policy review options use it.`
               : `Referee not working: ${refereeReply.reason}.`}
           </p>
         )}

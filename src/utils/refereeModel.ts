@@ -3,7 +3,9 @@
  * model set under Menu > Settings > AI model ("Referee model"), never on the small fast one:
  *   - the Supreme Council's final step (full council),
  *   - the Council chat summary and explanations,
- *   - the agent debate.
+ *   - the agent debate,
+ *   - the Policy review Options step, which ranks options (judging; Sam's rule 2026-11-06: judging
+ *     steps run on the referee model, never 8B).
  * Picking agents and the desk agents stay on the fast model. A referee model of 8B or less is
  * flagged in Settings and under each answer, so a small model never referees unnoticed.
  *
@@ -11,7 +13,7 @@
  */
 
 /** AI_MODEL_TEST_REFEREE is Settings > AI model > Test, second call: it goes through the referee model the same way. */
-export const REFEREE_STEPS = new Set(['STAGE_3_SUPREME_COUNCIL', 'COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'AI_MODEL_TEST_REFEREE']);
+export const REFEREE_STEPS = new Set(['STAGE_3_SUPREME_COUNCIL', 'COUNCIL_SYNTHESIS', 'COUNCIL_DEBATE', 'REVIEW_OPTIONS', 'AI_MODEL_TEST_REFEREE']);
 
 export const isRefereeStep = (stepName: string) => REFEREE_STEPS.has(stepName);
 

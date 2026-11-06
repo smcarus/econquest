@@ -46,8 +46,30 @@ globalThis.fetch = async (input, init = {}) => {
       watch: ['A policy rate above inflation would change this reading.'],
       gaps: [],
     };
-    const isExplain = String(init.body || '').includes('explaining a number or a pattern');
-    const content = JSON.stringify(isExplain ? explain : brief);
+    // Policy review Options (src/utils/reviewOptions.ts): one usable option resting on [1], one sentence with an invented number.
+    const options = {
+      options: [
+        {
+          title: 'Hold the policy rate and guide expectations',
+          lever: 'monetary',
+          how: 'Keep the rate where it is and say what would change it.',
+          effect: 'Inflation should drift down. It falls to 2.1% next year.',
+          timeToEffect: 'a year or two',
+          tradeoffs: 'Slower credit growth.',
+          whoBears: 'Borrowers.',
+          mustBeTrue: 'Expectations stay anchored.',
+          risks: 'A commodity shock.',
+          refs: [1, 99],
+          views: { cb: 'Supports holding.' },
+        },
+      ],
+      ranking: 'Only one option fits the constraints.',
+      gaps: ['Government debt is missing, so the fiscal lever is not assessed.'],
+    };
+    const text = String(init.body || '');
+    const isExplain = text.includes('explaining a number or a pattern');
+    const isOptions = text.includes('sovereign research council advising');
+    const content = JSON.stringify(isOptions ? options : isExplain ? explain : brief);
     if (JSON.parse(String(init.body || '{}')).stream) {
       // Streamed the way Ollama does: one JSON line per piece, then done.
       const lines = content.match(/.{1,40}/g).map((c) => JSON.stringify({ message: { role: 'assistant', content: c }, done: false }) + '\n');

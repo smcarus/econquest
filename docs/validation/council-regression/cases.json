@@ -1,6 +1,6 @@
 {
-  "about": "Council regression set: fixed agent answers (or, for kind \"supreme\", the Supreme Council's frozen inputs) and the reading a good answer must give. The figures are frozen test inputs (copied once from the app's own feeds), never shown as data. Run with `npm run council:regress` against the AI model set in the app; `npm run council:record` records it on the referee model and CI replays that recording (README.md). Change a case only by adding a new id; a case that fails is not edited to pass.",
-  "version": 2,
+  "about": "Council regression set: fixed agent answers (or, for kind \"supreme\" and \"options\", the frozen inputs of the Supreme Council and the Policy review Options step) and the reading a good answer must give. The figures are frozen test inputs (copied once from the app's own feeds), never shown as data. Run with `npm run council:regress` against the AI model set in the app; `npm run council:record` records it on the referee model and CI replays that recording (README.md). Change a case only by adding a new id; a case that fails is not edited to pass.",
+  "version": 3,
   "cases": [
     {
       "id": "brazil-tight",
@@ -293,6 +293,86 @@
         "mention": [
           "Egypt"
         ],
+        "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
+        "maxRemoved": 1
+      }
+    },
+    {
+      "id": "options-brazil-inflation",
+      "kind": "options",
+      "question": "Policy review options: bring Brazil's inflation down",
+      "options": {
+        "frame": {
+          "iso3": "BRA",
+          "problem": "Inflation is above the central bank's target and the government wants it lower without a recession.",
+          "goal": {
+            "indicator": "Inflation",
+            "direction": "lower"
+          },
+          "constraints": [
+            "No new taxes before the next election."
+          ],
+          "asOf": "2026-10-31"
+        },
+        "figures": [
+          {
+            "field": "imf.cpiInflationPct",
+            "figure": "Inflation",
+            "value": 4.4,
+            "unit": "%",
+            "period": "Sep 2026",
+            "source": "BCB IPCA (frozen test input)"
+          },
+          {
+            "field": "market.policyRatePct",
+            "figure": "Policy rate",
+            "value": 13.75,
+            "unit": "%",
+            "period": "Oct 2026",
+            "source": "BIS policy rates (frozen test input)"
+          }
+        ]
+      },
+      "answers": [],
+      "expect": {
+        "minOptions": 2,
+        "gapsMention": "(debt|growth|fiscal|missing|not (given|available)|not in)",
+        "forbid": "\\b(raise|new|higher) taxes?\\b(?![^.]*\\b(not|no|without|ruled out|excluded)\\b)",
+        "maxRemoved": 2
+      }
+    },
+    {
+      "id": "options-egypt-missing",
+      "kind": "options",
+      "question": "Policy review options: rebuild Egypt's reserves with its debt figures missing",
+      "options": {
+        "frame": {
+          "iso3": "EGY",
+          "problem": "Reserves need rebuilding before large external payments fall due.",
+          "goal": {
+            "indicator": "Reserves",
+            "direction": "higher"
+          },
+          "constraints": [
+            "Keep the exchange rate regime unchanged."
+          ],
+          "asOf": "2026-10-31"
+        },
+        "figures": [
+          {
+            "field": "wb.fxReservesMonthsImport",
+            "figure": "Reserves",
+            "value": 6.1,
+            "unit": "months of imports",
+            "period": "Aug 2026",
+            "source": "IMF IL (frozen test input)"
+          }
+        ]
+      },
+      "answers": [],
+      "expect": {
+        "minOptions": 1,
+        "gapsMention": "(debt|missing|not (given|available)|not in)",
         "forbid": "\\bdebt[^.]{0,60}?\\d+(\\.\\d+)?\\s?%|\\b(debt )?(is|looks|appears) (clearly )?sustainable\\b",
         "maxRemoved": 1
       }

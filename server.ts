@@ -59,14 +59,14 @@ import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/research
 import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
 import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
 import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
-import { buildDiagnosis, type Diagnosis } from './src/utils/reviewDiagnosis';
+import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
 import { buildMemo, parseMemoInputs, type MemoStep } from './src/utils/reviewMemo';
 import { buildOutcomes } from './src/utils/reviewOutcomes';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from './src/utils/reviewEvidence';
-import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep } from './src/utils/reviewOptions';
+import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep, type UserOption } from './src/utils/reviewOptions';
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
-import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from './src/utils/policyReview';
+import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION, type ReviewFrame } from './src/utils/policyReview';
 import { deleteReview, loadReviews, newReview, putReview, reviewFilePath, saveStep, verifyReview } from './src/utils/policyReviewStore';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
@@ -79,7 +79,7 @@ import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './s
 import { figureWatchFiles, readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
-import { FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
+import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
@@ -4440,6 +4440,67 @@ async function morningTick(): Promise<void> {
   await runMorningBrief('schedule').catch((e) => console.error('[morning-brief]', e));
 }
 
+/**
+ * Policy review step 3 (REVIEW_OPTIONS): the council proposes and ranks options from the frozen
+ * diagnosis, on the referee model at temperature 0 with a fixed seed, then the number check. Used by
+ * the review and by the regression set.
+ */
+async function reviewOptionsStep(
+  frame: ReviewFrame,
+  diagnosis: Diagnosis,
+  userOptions: UserOption[],
+  runtimeConfig: Partial<AIRuntimeConfig>
+): Promise<{ status: 502 | 503; error: string; model?: string } | { content: Pick<OptionsStep, 'model' | 'options' | 'ranking' | 'gaps' | 'removed'>; step: { model?: string; temperature?: number; seed?: number } }> {
+  const prompt = optionsPrompt(frame, diagnosis, userOptions);
+  const step = await executeResilientLlmStep<Record<string, unknown>>({
+    stepName: 'REVIEW_OPTIONS',
+    providerMode: runtimeConfig.providerMode || 'gemini',
+    runtimeConfig: { ...runtimeConfig, temperature: 0 },
+    temperature: COUNCIL_TEMPERATURE,
+    seed: COUNCIL_SEED,
+    thinkingLevel: ThinkingLevel.LOW,
+    systemInstruction: OPTIONS_INSTRUCTION,
+    prompt: prompt.slice(0, 24000),
+    responseSchema: {
+      type: Type.OBJECT,
+      properties: {
+        options: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              title: { type: Type.STRING },
+              lever: { type: Type.STRING, enum: [...LEVERS] },
+              how: { type: Type.STRING },
+              effect: { type: Type.STRING },
+              timeToEffect: { type: Type.STRING },
+              tradeoffs: { type: Type.STRING },
+              whoBears: { type: Type.STRING },
+              mustBeTrue: { type: Type.STRING },
+              risks: { type: Type.STRING },
+              refs: { type: Type.ARRAY, items: { type: Type.NUMBER } },
+              fromUser: { type: Type.BOOLEAN },
+              views: { type: Type.OBJECT, properties: { cb: { type: Type.STRING }, fiscal: { type: Type.STRING }, politics: { type: Type.STRING }, external: { type: Type.STRING } } },
+            },
+            required: ['title', 'lever', 'how', 'effect', 'tradeoffs', 'whoBears', 'mustBeTrue', 'risks', 'refs', 'views'],
+          },
+        },
+        ranking: { type: Type.STRING },
+        gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+      },
+      required: ['options', 'ranking', 'gaps'],
+    },
+    fallbackValue: { options: [], ranking: '', gaps: [] },
+    maxRetries: 1,
+  });
+  if (step.usedFallback) {
+    return { status: 503 as const, error: `No AI model answered (${step.failure || 'no model is set up'}). Set one up in Menu > Settings > AI model, or save your own options without the council.` };
+  }
+  const checked = checkOptions(step.data, frame, diagnosis, userOptions);
+  if (!checked.options.length) return { status: 502 as const, error: 'The model answered but gave no usable options (each needs a title and how it works). Try again or use another model.', model: step.model };
+  return { content: { model: step.providerUsed, ...checked }, step: { model: step.model, temperature: step.temperature, seed: step.seed } };
+}
+
 const SUPREME_INSTRUCTION =
   'You are the Supreme Council Orchestrator for an Institutional Asset Management & Sovereign Policy Research Department. Return strict JSON adhering to the SMCR-1.0 schema. CRITICAL WRITING STYLE: Phrase the executiveSummary, longTermRegimeOutlook, structuralVulnerabilities, factorCrowdingWarning, and all trade rationales in clear, everyday plain English first so both general readers and portfolio managers immediately grasp the core takeaway, and cite the exact economic/statistical metrics in parentheses at the end of each point (Ref: ...).';
 
@@ -4637,6 +4698,40 @@ ${MISSING_FIGURES_RULE}
   baseOutput = reportCheck.output;
   const promptHash = sha256(`${SUPREME_INSTRUCTION}\n\n${councilPrompt}`);
   return { targetRun, cro, finalGeo, finalSov, finalMac, compositeScore, supremeStep, councilPrompt, promptHash, output: baseOutput, reportCheck };
+}
+
+/** A regression case on Policy review step 3: a diagnosis built only from the case's frozen figures. */
+async function optionsRegressionCase(c: RegressionCase, runtimeConfig: Partial<AIRuntimeConfig>): Promise<RegressionCaseResult> {
+  const { frame, figures } = c.options!;
+  const rows: Array<Array<string | number | null>> = figures.map((f) => [frame.iso3, '', f.field, f.figure, f.value, f.unit, 'Live', f.period, f.source, '', '']);
+  // Every other diagnosis figure is Missing with a plain reason; the model readings [13]+ read the
+  // app's saved history, so they are left out to keep the case the same on every computer.
+  for (const d of DIAGNOSIS_FIELDS)
+    if (!figures.some((f) => f.field === d.field)) {
+      const f = FIGURE_LIST.find((x) => x.field === d.field);
+      rows.push([frame.iso3, '', d.field, f?.label ?? d.field, null, f?.unit ?? '', 'Missing', '', '', 'not in this test case', '']);
+    }
+  const diagnosis = buildDiagnosis(rows, { iso3: frame.iso3, asOf: frame.asOf, pullDate: frame.asOf, pulledAt: `${frame.asOf}T00:00:00.000Z`, incomplete: false });
+  const step = await reviewOptionsStep(frame, diagnosis, [], runtimeConfig);
+  // A model that answered with nothing usable is a failing answer, not a missing one.
+  if (!('content' in step)) return { ...checkRegressionCase(c, { brief: null, removed: [], reason: step.error } as SynthesisResult), model: step.model ?? null, ...(step.model ? { temperature: COUNCIL_TEMPERATURE, seed: COUNCIL_SEED, promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [])}`), outputHash: sha256('no usable options') } : {}), answer: [] };
+  const o = step.content;
+  const brief = {
+    headline: o.options[0]?.title || '',
+    points: [...o.options.map((x) => `${x.rank}. ${x.title} (${x.lever}): ${x.how} Effect: ${x.effect} Trade-offs: ${x.tradeoffs} Refs: ${x.refs.map((r) => `[${r}]`).join(' ') || 'none'}`), o.ranking].filter(Boolean),
+    disagreements: [],
+    gaps: o.gaps,
+  };
+  const answer = [brief.headline, ...brief.points, ...brief.gaps];
+  return {
+    ...checkRegressionCase(c, { brief, removed: o.removed, optionCount: o.options.length } as SynthesisResult & { optionCount: number }),
+    model: step.step.model ?? null,
+    temperature: step.step.temperature,
+    seed: step.step.seed,
+    promptHash: sha256(`${OPTIONS_INSTRUCTION}\n${optionsPrompt(frame, diagnosis, [])}`),
+    outputHash: sha256(JSON.stringify(answer)),
+    answer,
+  };
 }
 
 /** A regression case on the Supreme Council step: a run built only from the case's frozen inputs. */
@@ -5075,51 +5170,9 @@ async function startServer() {
       if (!userOptions.length) return res.status(400).json({ error: 'Add at least one option of your own, or ask the council.' });
       content = { ...base, model: null, options: unassessedOptions(userOptions), ranking: '', gaps: [], removed: [], reason: 'saved with your own options only; the council was not asked' };
     } else {
-      const step = await executeResilientLlmStep<Record<string, unknown>>({
-        stepName: 'REVIEW_OPTIONS',
-        providerMode: req.body?.runtimeConfig?.providerMode || 'gemini',
-        runtimeConfig: { ...(req.body?.runtimeConfig || {}), temperature: 0 },
-        thinkingLevel: ThinkingLevel.LOW,
-        systemInstruction: OPTIONS_INSTRUCTION,
-        prompt: prompt.slice(0, 24000),
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            options: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: { type: Type.STRING },
-                  lever: { type: Type.STRING, enum: [...LEVERS] },
-                  how: { type: Type.STRING },
-                  effect: { type: Type.STRING },
-                  timeToEffect: { type: Type.STRING },
-                  tradeoffs: { type: Type.STRING },
-                  whoBears: { type: Type.STRING },
-                  mustBeTrue: { type: Type.STRING },
-                  risks: { type: Type.STRING },
-                  refs: { type: Type.ARRAY, items: { type: Type.NUMBER } },
-                  fromUser: { type: Type.BOOLEAN },
-                  views: { type: Type.OBJECT, properties: { cb: { type: Type.STRING }, fiscal: { type: Type.STRING }, politics: { type: Type.STRING }, external: { type: Type.STRING } } },
-                },
-                required: ['title', 'lever', 'how', 'effect', 'tradeoffs', 'whoBears', 'mustBeTrue', 'risks', 'refs', 'views'],
-              },
-            },
-            ranking: { type: Type.STRING },
-            gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-          },
-          required: ['options', 'ranking', 'gaps'],
-        },
-        fallbackValue: { options: [], ranking: '', gaps: [] },
-        maxRetries: 1,
-      });
-      if (step.usedFallback) {
-        return res.status(503).json({ error: `No AI model answered (${step.failure || 'no model is set up'}). Set one up in Menu > Settings > AI model, or save your own options without the council.` });
-      }
-      const checked = checkOptions(step.data, frame, diagnosis, userOptions);
-      if (!checked.options.length) return res.status(502).json({ error: 'The model answered but gave no usable options (each needs a title and how it works). Try again or use another model.' });
-      content = { ...base, model: step.providerUsed, ...checked };
+      const step = await reviewOptionsStep(frame, diagnosis, userOptions, req.body?.runtimeConfig || {});
+      if (!('content' in step)) return res.status(step.status).json({ error: step.error });
+      content = { ...base, ...step.content };
     }
     const out = saveStep(r, 'options', content);
     if ('error' in out) return res.status(400).json({ error: out.error });
@@ -5310,6 +5363,12 @@ async function startServer() {
       const results: RegressionCaseResult[] = [];
       let model: string | null = null;
       for (const c of set.cases) {
+        if (c.kind === 'options' && c.options) {
+          const r = await optionsRegressionCase(c, runtimeConfig);
+          model = model || r.model || null;
+          results.push(r);
+          continue;
+        }
         if (c.kind === 'supreme' && c.supreme) {
           const r = await supremeRegressionCase(c, runtimeConfig);
           model = model || r.model || null;

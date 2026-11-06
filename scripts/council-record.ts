@@ -100,8 +100,11 @@ try {
   const report = (await r.json().catch(() => ({}))) as RegressionReport & { error?: string };
   if (!r.ok) throw new Error(report?.error || `The app answered HTTP ${r.status}.`);
   if (report.results.some((x) => !x.model)) throw new Error(`No model answered for ${report.results.filter((x) => !x.model).map((x) => x.id).join(', ')}; nothing saved. ${report.results.find((x) => !x.model)?.failures[0] || ''}`);
-  // The recorder saves each reply as its stream ends; give the last one a moment.
-  await new Promise((r) => setTimeout(r, 1500));
+  // The recorder saves each reply as its stream ends: wait until every answered case has one.
+  const answered = report.results.filter((x) => x.model).length;
+  const callCount = () => (existsSync(path.join(recordDir, 'calls')) ? readdirSync(path.join(recordDir, 'calls')).length : 0);
+  for (const until = Date.now() + 30_000; callCount() < answered && Date.now() < until; ) await new Promise((r) => setTimeout(r, 250));
+  await new Promise((r) => setTimeout(r, 500));
 
   let ollamaVersion: string | null = null;
   try {

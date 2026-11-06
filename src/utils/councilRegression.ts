@@ -14,6 +14,7 @@
  * Browser-safe: types and the check. The server runs the cases.
  */
 import type { AgentAnswer, SynthesisResult } from './askCouncil';
+import type { ReviewFrame } from './policyReview';
 
 export interface RegressionExpect {
   /** Pattern (case-insensitive) the headline must match. */
@@ -26,6 +27,8 @@ export interface RegressionExpect {
   gapsMention?: string;
   /** At most this many sentences removed by the number and stance checks. */
   maxRemoved?: number;
+  /** kind "options": at least this many usable options. */
+  minOptions?: number;
 }
 
 /** A frozen input for the Supreme Council's final step: the figures, desk readings and CRO scores. */
@@ -43,17 +46,26 @@ export interface SupremeCaseInput {
   cro: { geopoliticalRiskScore: number; sovereignRiskScore: number; macroRiskScore: number; croNotes: string };
 }
 
+/** A frozen input for the Policy review Options step: the frame and the diagnosis figures. */
+export interface OptionsCaseInput {
+  frame: ReviewFrame;
+  /** Diagnosis figures that are live; every other diagnosis figure is Missing ("not in this test case"). */
+  figures: Array<{ field: string; figure: string; value: number; unit: string; period: string; source: string }>;
+}
+
 export interface RegressionCase {
   id: string;
   /**
-   * Which step it checks: "summary" (Council chat summary, the default) or "supreme" (the Supreme
-   * Council's final report on the referee model).
+   * Which step it checks: "summary" (Council chat summary, the default), "supreme" (the Supreme
+   * Council's final report) or "options" (Policy review step 3), all on the referee model.
    */
-  kind?: 'summary' | 'supreme';
+  kind?: 'summary' | 'supreme' | 'options';
   question: string;
   answers: AgentAnswer[];
   /** kind "supreme": the frozen input. */
   supreme?: SupremeCaseInput;
+  /** kind "options": the frozen input. */
+  options?: OptionsCaseInput;
   expect: RegressionExpect;
 }
 
@@ -105,7 +117,11 @@ export function parseRegressionSet(raw: unknown): RegressionSet {
           typeof c.question === 'string' &&
           c.expect &&
           typeof c.expect === 'object' &&
-          (c.kind === 'supreme' ? Boolean(c.supreme && Array.isArray(c.supreme.figures)) : Array.isArray(c.answers))
+          (c.kind === 'supreme'
+            ? Boolean(c.supreme && Array.isArray(c.supreme.figures))
+            : c.kind === 'options'
+              ? Boolean(c.options && c.options.frame && Array.isArray(c.options.figures))
+              : Array.isArray(c.answers))
       )
   ).map((c) => ({ ...c, answers: Array.isArray(c.answers) ? c.answers : [] }));
   return { ...(o?.about ? { about: o.about } : {}), version: Number(o?.version) || 0, cases };
@@ -121,11 +137,19 @@ export function caseInputText(c: RegressionCase): string[] {
     const composite = Number(((cro.geopoliticalRiskScore + cro.sovereignRiskScore + cro.macroRiskScore) / 3).toFixed(2));
     out.push(JSON.stringify(c.supreme), String(composite));
   }
+  if (c.options) {
+    out.push(JSON.stringify(c.options));
+    // The diagnosis works out the real policy rate when both inputs are there (reviewDiagnosis.ts).
+    const v = (field: string) => c.options!.figures.find((f) => f.field === field)?.value;
+    const rate = v('market.policyRatePct');
+    const cpi = v('imf.cpiInflationPct');
+    if (rate !== undefined && cpi !== undefined) out.push(String(Math.round((rate - cpi) * 100) / 100));
+  }
   return out;
 }
 
 /** Checks one summary against what the case expects. */
-export function checkRegressionCase(c: RegressionCase, out: SynthesisResult): RegressionCaseResult {
+export function checkRegressionCase(c: RegressionCase, out: SynthesisResult & { optionCount?: number }): RegressionCaseResult {
   const b = out.brief;
   const failures: string[] = [];
   const removed = (out.removed?.length ?? 0) + (out.contradicted?.length ?? 0);
@@ -141,6 +165,7 @@ export function checkRegressionCase(c: RegressionCase, out: SynthesisResult): Re
       if (hit) failures.push(`The answer says something it must not ("${hit[0]}").`);
     }
     if (e.gapsMention && !re(e.gapsMention).test(b.gaps.join('\n'))) failures.push('The answer does not say what is missing.');
+    if (e.minOptions !== undefined && (out.optionCount ?? 0) < e.minOptions) failures.push(`${out.optionCount ?? 0} usable option(s); at least ${e.minOptions} expected.`);
     if (e.maxRemoved !== undefined && removed > e.maxRemoved) failures.push(`${removed} sentence(s) were removed by the checks (at most ${e.maxRemoved} allowed): the model wrote numbers or calls the agents did not give.`);
   }
   return { id: c.id, question: c.question, pass: failures.length === 0, failures, headline: b?.headline || '', removed, ...(out.snapshot ? { snapshotId: out.snapshot.id } : {}) };
