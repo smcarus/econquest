@@ -4,6 +4,8 @@ import { WatchlistWindow } from './components/WatchlistWindow';
 import { PanelBoundary } from './components/PanelBoundary';
 import './index.css';
 import { mirrorSavesToDisk, startWorkspaceSync } from './utils/workspaceSync';
+import { fetchAuthStatus, needsSignIn, watchForSignedOut } from './utils/authClient';
+import { SignInPage } from './components/SignInPage';
 
 // /?view=watchlist is the watchlist popped out into its own window or tab.
 const popOut = new URLSearchParams(window.location.search).get('view') === 'watchlist';
@@ -15,18 +17,31 @@ const draw = () =>
     <PanelBoundary page name={popOut ? 'The watchlist' : 'The app'}>{popOut ? <WatchlistWindow /> : <App />}</PanelBoundary>
   );
 
-let storage: Storage | null = null;
-try {
-  storage = window.localStorage;
-} catch {
-  storage = null; // storage blocked: the app runs for this session only
-}
-if (storage) {
-  const target = storage;
-  void startWorkspaceSync({ storage: target, fetchFn: window.fetch.bind(window) }).finally(() => {
-    mirrorSavesToDisk(Storage.prototype, target, window.fetch.bind(window));
+function start() {
+  let storage: Storage | null = null;
+  try {
+    storage = window.localStorage;
+  } catch {
+    storage = null; // storage blocked: the app runs for this session only
+  }
+  if (storage) {
+    const target = storage;
+    void startWorkspaceSync({ storage: target, fetchFn: window.fetch.bind(window) }).finally(() => {
+      mirrorSavesToDisk(Storage.prototype, target, window.fetch.bind(window));
+      draw();
+    });
+  } else {
     draw();
-  });
-} else {
-  draw();
+  }
 }
+
+// Sign-in (src/utils/auth.ts): while it applies and nobody is signed in, show only the sign-in page.
+// With sign-in off (no accounts, this computer only) the app starts exactly as before.
+void fetchAuthStatus().then((status) => {
+  if (status && needsSignIn(status)) {
+    createRoot(document.getElementById('root')!).render(<SignInPage status={status} />);
+    return;
+  }
+  if (status && status.mode !== 'off') watchForSignedOut();
+  start();
+});

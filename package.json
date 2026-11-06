@@ -22,7 +22,8 @@
     "council:record": "tsx scripts/council-record.ts",
     "docs:licences": "tsx scripts/docs-licences.ts",
     "council:time": "tsx scripts/council-time.ts",
-    "docs:methods": "tsx scripts/docs-methods.ts"
+    "docs:methods": "tsx scripts/docs-methods.ts",
+    "users": "tsx scripts/users.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
