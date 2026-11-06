@@ -57,6 +57,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:oecd_qna', kind: 'world', label: 'OECD quarterly GDP growth (via DBnomics)' },
   { id: 'world:oecd_cpi', kind: 'world', label: 'OECD monthly inflation (via DBnomics)' },
   { id: 'world:national_cpi', kind: 'world', label: 'National inflation (BCB IPCA, Eurostat HICP)' },
+  { id: 'world:activity', kind: 'world', label: 'Monthly activity indexes (BCB IBC-Br, Eurostat industrial production)' },
   { id: 'world:cftc', kind: 'world', label: 'CFTC futures positioning' },
   { id: 'world:tic', kind: 'world', label: 'US Treasury TIC holdings' },
   { id: 'world:imf_external', kind: 'world', label: 'IMF reserves and balance of payments' },
