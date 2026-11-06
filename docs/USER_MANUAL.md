@@ -288,6 +288,29 @@ response is Bohn's sufficient condition for sustainability; the panel says "resp
 "no response found", shows the years used and has Explain. A record of past behaviour, not a
 forecast.
 
+**Nowcast and forecasts.** Research > History & data shows, for GDP growth, inflation, the policy
+rate and government debt, the app's nowcast of periods not published yet and its forecast of the
+next quarters with 50, 70 and 90% bands, beside the IMF projection where the IMF makes one. Each
+model was scored out of sample before use, under a test fixed in advance
+(`docs/validation/forecasts/`, run with `npm run forecast:evaluate`). The result shows above the chart:
+*Evaluation passed*, *Evaluation failed*, *Too few cases* or *Not validated* (not run yet). A
+forecast that failed is not drawn: the panel says so and *Show it anyway* draws it, labelled "failed
+test", as an illustration. On the last run (6 November 2026) only the GDP nowcast passed; the GDP,
+inflation, policy rate and debt forecasts and the inflation nowcast failed. A failed model is never
+tuned and run again under the same name; a new method is a new test. The Nowcast and Forecast agent
+in Council chat gives the same figures with the same verdicts. `npm run forecast:worst` lists the
+series where a model missed most.
+
+**Event history.** Research > History & data shows protests and violence as a share of the
+country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
+GDELT's volume grew many times over the years). It is empty until the files are pulled with
+`npm run gdelt:daily` (below); before that it says Missing and how to fill it.
+
+**Armed conflict (UCDP).** The Uppsala Conflict Data Program's yearly files (armed conflicts,
+battle deaths, non-state and one-sided violence, CC BY 4.0) ship with the app in `datasets/ucdp/`. A
+newer release saved in `data/local/ucdp/` (CSV or zip, from ucdp.uu.se/downloads) is read in their
+place. They feed the Politics & Events agent, the full council and the Sources tab. No key is needed.
+
 **Past IMF WEO editions (real-time vintages).** To see a figure as the IMF published it at the time
 (for example the October 2018 forecast of Turkey's 2019 growth), download past editions of the WEO
 database from the IMF site (the tab-delimited "By Countries" file for each edition, named like
@@ -338,8 +361,8 @@ old on the pull day. A run of weekly pulls with the same signal counts as one ca
 followed and says when there are too few (under 5) to lean on. No odds are given. *Download log* saves
 every pull as CSV or Excel. The log starts with the archive, so it fills in week by week.
 
-With Menu > Show all tools, more tabs appear (Debt & fiscal, Markets, Politics & geo, Scenarios,
-Restructuring) holding the older desks.
+The older desks (Debt & fiscal, Markets, Politics & geo, Scenarios, Restructuring) ran on built-in
+figures, so they are switched off in this version and no menu item brings them back.
 
 ---
 
@@ -442,7 +465,11 @@ hold no figures of their own; the handout reads them from the app's series when 
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
 - **Sharing mode**: for downloads that will be passed on (a public note, a chart in a write-up). The app is free, open-source research, so the only question is whether a source's terms let its figures be passed on for free (the *Free sharing* column of the licence register). On, every table download (figures, series, Compare countries, As of; CSV and Excel) holds back each value whose source is marked *Do not pass on* or *Sharing unclear*: the row stays with its source, and the value reads *Withheld* with the reason. Figures the app works out itself without naming an outside source pass. A *Sharing mode* pill in the header shows it is on; click it to turn it off. References in briefs and notes always end with which ones cannot be passed on. Saved in `data/local/workspace.json`.
-- **Show all tools**: brings back the hidden desks and tabs. Remembered in this browser.
+- **Server alerts** (Settings > Server alerts): a webhook (Slack, Discord, Google Chat, ntfy.sh or
+  your own) and/or email for when something breaks while nobody is looking: a data source that
+  worked at the last nightly check fails now, a scheduled job fails, or a backtest that passed fails
+  on its next run. *Test* sends a real message. Nothing is sent until one is set. Details and the
+  `.env` names are in [HOME_SERVER.md](./HOME_SERVER.md#server-alerts).
 - **Morning brief** (Settings > Morning brief): at a time you set, the council answers your standing
   questions (up to four; three starting ones on policy stance, cheap or rich, and coming dates) about
   the watchlist you pick, your AI model writes each summary, and each is saved to Reports > Saved
@@ -597,6 +624,35 @@ hours is read (default 3); theme figures are then shares of the articles read, a
 so. After the first pull the app tops it up once a week by itself (only the new files). Run either
 the app's download or the terminal pull, not both at once.
 
+**Long history (GDELT 1.0 daily files).** The Event history panel and the Politics & Events agent's
+long-run reading use GDELT's older daily event files, which go back to 1979. They are pulled
+separately and kept as small monthly totals in `data/live/gdelt-daily/`:
+
+```bash
+npm run gdelt:daily -- --estimate   # files left and download size, downloads nothing
+npm run gdelt:daily                 # pull from GDELT_DAILY_FROM (default 2016-01)
+npm run gdelt:daily -- --from 1979  # the whole archive
+```
+
+From 2016 on is tens of gigabytes to download; `--estimate` says how much is left. Each zip is read
+and thrown away. Ctrl+C stops it; the next run carries on.
+
+---
+
+## Checking the council on your own AI model
+
+Two commands check that the council still answers the fixed test questions in
+`docs/validation/council-regression/cases.json` correctly on your model:
+
+- `npm run council:regress` runs the cases through the running app (Docker on port 3737, `npm run
+  dev` on 3000, or `APP_URL`) on the model under Menu > Settings > AI model, prints each case and
+  compares it with the recorded baseline. It warns when the running app is older than the folder:
+  after `git pull`, rebuild the Docker app first.
+- `npm run council:record -- --model qwen2.5:32b` records a new baseline on a private copy of the
+  server (your data is not touched), at temperature 0 and seed 42. Read the answers it prints; if
+  they are right, commit `tests/fixtures/council-recorded/` (or send `data/local/council-recording.zip`).
+  CI then replays it on every change. A model of 8B or less is refused as referee.
+
 ---
 
 ## Sharing your work
@@ -631,3 +687,19 @@ use; a few could not be confirmed and are marked so.
 - **The full council says no AI model answered.** Same check as below; nothing is filled in for it.
 - **The AI summary does not appear.** Menu > Settings > AI model: check Ollama is running, or a Gemini key is
   saved. Every figure and agent answer works without it.
+- **Ollama answers with errors, is very slow, or lacks your models.** Another Ollama, often one in
+  Docker, may be holding port 11434 in front of the Ollama app. Check with `docker ps | grep ollama`;
+  stop it (`docker stop ollama`) and open the Ollama app (`open -a Ollama` on a Mac). `ollama list`
+  should then show your models. Starting that container again puts it back in front.
+- **Ollama is running but the app cannot reach it.** Use `http://127.0.0.1:11434` rather than
+  `localhost` under Menu > Settings > AI model: on some Macs `localhost` goes to IPv6 first and fails.
+- **A change you pulled does not show in the Docker app (port 3737).** `git pull` updates the folder,
+  not the Docker image. Rebuild it: double-click `start-mac.command`, or run
+  `docker compose up -d --build econquest`. After a pull that changed `package.json`, run
+  `npm install` too (for `npm run dev` and the terminal commands). `npm run council:regress` warns when
+  the running app is older than the folder.
+- **`git pull` stops on untracked files under `tests/fixtures/recorded`.** A local feed recording is in
+  the way of the committed one. Move it aside and pull again:
+  `mv tests/fixtures/recorded ~/recorded-backup && git pull`.
+- **Gemini stops working after Google renames a model.** Set `GEMINI_MODEL` in `.env` to the new name
+  and restart.
