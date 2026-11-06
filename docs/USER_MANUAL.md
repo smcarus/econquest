@@ -345,13 +345,20 @@ place. They feed the Politics & Events agent, the full council and the Sources t
 **Past IMF WEO editions (real-time vintages).** To see a figure as the IMF published it at the time
 (for example the October 2018 forecast of Turkey's 2019 growth), download past editions of the WEO
 database from the IMF site (the tab-delimited "By Countries" file for each edition, named like
-WEOOct2018all.xls) and save them in `data/local/weo-vintages/`. Nothing is fetched. `npm run
+WEOOct2018all.xls) and save them in `data/local/weo-vintages/`. The app fetches nothing by itself;
+`npm run weo:pull` tries to download every April and October edition from 2005 into that folder
+(each URL layout the IMF has used is tried in turn, and anything that does not read as a WEO table
+is dropped), and lists any edition it could not get so you can save that one by hand. `npm run
 weo:vintages` lists what it read and any file it skipped with the reason;
 `npm run weo:vintages -- --country TUR --code NGDP_RPCH --as-of 2019-06-01` shows the edition that
 was out on that date, each year tagged actual, estimate or projection. An edition counts as
 published on the last day of its month, so a test never sees it early. The same files feed Research > History &
 data > IMF forecasts by edition: pick an indicator and a year to see every edition's figure for it,
-each marked data, IMF estimate or IMF projection at the time.
+each marked data, IMF estimate or IMF projection at the time. They also feed the pre-registered
+debt fan coverage test (`docs/validation/forecasts/debt_fan_coverage.json`, run by `npm run
+forecast:evaluate`): at each past October edition the fan is rebuilt as the panel builds it today,
+on that edition's actual years and projections, and the test checks that later debt outturns fall
+inside the 10-90 band between 70% and 90% of the time at every horizon from 1 to 5 years.
 
 **Sources.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live

@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import { defaultFetcher } from '../src/utils/backtestRun';
 import { runForecastEvaluations } from '../src/utils/forecastEvalRun';
 import { appendAudit, auditFiles } from '../src/utils/auditStore';
+import { loadWeoVintages } from '../src/utils/weoVintagesStore';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dataDir = process.env.DATA_DIR || path.join(root, 'data');
@@ -17,6 +18,7 @@ const out = await runForecastEvaluations({
   specDir: path.join(root, 'docs', 'validation', 'forecasts'),
   resultFile,
   fetcher: defaultFetcher,
+  weoStore: loadWeoVintages(dataDir, { fresh: true }),
   onResult: (r) =>
     appendAudit(auditFiles(dataDir), {
       kind: 'validation',
@@ -26,6 +28,7 @@ const out = await runForecastEvaluations({
 });
 for (const r of Object.values(out.results)) {
   console.log(`${r.id} (v${r.specVersion}, ${r.series.length} series, ${r.span.from} to ${r.span.to}): ${r.verdict}`);
+  for (const c of r.coverage || []) console.log(`  ${c.h} year(s) ahead: ${c.cases} cases over ${c.years} years, inside the 10-90 band ${c.coverage} (90% range ${c.coverageRange[0]} to ${c.coverageRange[1]})`);
   for (const h of r.horizons) console.log(`  ${h.h} ahead: ${h.cases} cases, RMSE ${h.rmseModel} vs ${h.rmseBench}; 70% band held ${h.coverage70 ?? 'n/a'}, 90% band held ${h.coverage90 ?? 'n/a'}`);
 }
 for (const p of out.problems) console.log(`Problem: ${p}`);

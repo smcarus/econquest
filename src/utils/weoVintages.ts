@@ -254,3 +254,28 @@ export function weoVintageReply(store: WeoVintageStore | null | undefined, iso3:
   }
   return { iso3: iso, code, label, editions: store?.editions.length ?? 0, years, year: pick, releases, ...(sentence ? { sentence } : {}) };
 }
+
+/**
+ * Where the IMF has put each past edition's "By Countries" file over the years, newest layout first.
+ * The IMF has moved these more than once, so each edition gets every known layout tried in turn;
+ * an edition none of them finds is downloaded by hand from the WEO database page.
+ */
+export function weoEditionUrls(vintage: string): string[] {
+  const [y, m] = vintage.split('-');
+  const mon = m === '04' ? 'Apr' : m === '09' ? 'Sep' : 'Oct';
+  const half = m === '04' ? '01' : '02';
+  const month = m === '04' ? 'April' : m === '09' ? 'September' : 'October';
+  const name = `WEO${mon}${y}all`;
+  return [
+    `https://www.imf.org/-/media/Files/Publications/WEO/WEO-Database/${y}/${month}/${name}.ashx`,
+    `https://www.imf.org/-/media/Files/Publications/WEO/WEO-Database/${y}/${name}.ashx`,
+    `https://www.imf.org/external/pubs/ft/weo/${y}/${half}/weodata/${name}.xls`,
+  ];
+}
+
+/** File name an edition is saved under (read back by vintageFromFileName). */
+export function weoEditionFileName(vintage: string): string {
+  const [y, m] = vintage.split('-');
+  return `WEO${m === '04' ? 'Apr' : m === '09' ? 'Sep' : 'Oct'}${y}all.xls`;
+}
+
