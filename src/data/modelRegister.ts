@@ -296,9 +296,9 @@ export const MODEL_REGISTER: RegisterEntry[] = [
     where: 'Country Research > History & data (Policy rules)',
     use: 'Research',
     status: 'not_validated',
-    testPlan: 'To be pre-registered (signal standard): does a reading above (below) the rule range come before a cut (hike) within 6 months more often than the base rate, from 2000, inflation lagged 2 months, whole years resampled (method 2), Holm across all tests on record.',
+    testPlan: 'Pre-registered (rule_family v1, docs/validation/preregistered/rule_family.json): does a reading above (below) every rule come before a cut (hike) within 6 months more often than after any month, from 2000, inflation lagged 2 months, targets as they stood, real-time output gap, whole years resampled (method 2); Holm across all tests on record.',
     limits: 'r* fixed; output gap revised each vintage; targets hand-entered.',
-    code: 'src/utils/ruleFamily.ts',
+    code: 'src/utils/ruleFamily.ts, src/utils/backtest.ts (ruleFamilyCases)',
     panels: [],
   },
   {

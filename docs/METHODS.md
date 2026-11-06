@@ -370,9 +370,26 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Shows in:** Country Research > History & data (Policy rules)
 - **Use:** Research
 - **Status:** Not validated
-- **How it is tested:** To be pre-registered (signal standard): does a reading above (below) the rule range come before a cut (hike) within 6 months more often than the base rate, from 2000, inflation lagged 2 months, whole years resampled (method 2), Holm across all tests on record.
+- **How it is tested:** Pre-registered (rule_family v1, docs/validation/preregistered/rule_family.json): does a reading above (below) every rule come before a cut (hike) within 6 months more often than after any month, from 2000, inflation lagged 2 months, targets as they stood, real-time output gap, whole years resampled (method 2); Holm across all tests on record.
 - **Limits:** r* fixed; output gap revised each vintage; targets hand-entered.
-- **Code:** `src/utils/ruleFamily.ts`
+- **Code:** `src/utils/ruleFamily.ts, src/utils/backtest.ts (ruleFamilyCases)`
+
+**Pre-registered tests**
+
+- Version 1 (`docs/validation/preregistered/rule_family.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2000-01). When the policy rate sits more than 1 point above every rule in the Policy rules panel (Taylor 1993, balanced approach, inflation only, inertial 0.85, first difference), the central bank cuts within 6 months more often than after any month; when it sits more than 1 point below every rule, it hikes within 6 months more often than after any month. The edge survives counting cases in the same year as one block and holds in most countries. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 9ebb90ff9fbe3b90…
+
+**Recorded verdicts**
+
+- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+
+**Known limits, stated before the run**
+
+- v1: Close to the policy rule check (taylor_gap), whose version 2 with an output gap failed; this test was written after that result. It tests the panel exactly as it reads (outside the whole range of five rules, 1-point band), with no weight or band chosen to fit.
+- v1: The inertial rule (0.85 x current rate + 0.15 x Taylor) sits close to the current rate, so 'outside every rule' needs the rate far from the Taylor rule; there may be too few cases, and that verdict would stand.
+- v1: The output gap is the app's real-time estimate (one-sided HP, lambda 100, on IMF real GDP growth outturns), year t used from April of t+1; the first-difference rule uses the gap of the year before that. GDP and inflation are today's vintages.
+- v1: Neutral real rate fixed at 2% for every country; emerging markets with higher neutral rates read loose more often.
+- v1: Same dated target table, exclusions (pegs, no numeric target) and first-month-of-run cases as the policy rule check.
+- v1: A direction-of-move test, so the benchmark is the base rate of moves after any month and there is no trading cost; the signal standard's net-of-cost rule applies to return signals.
 
 ### Debt fan chart (bootstrap of past shocks)
 
