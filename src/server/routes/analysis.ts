@@ -35,6 +35,7 @@ import { fxDailySeries } from '../../utils/fxHistory';
 import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, FACTORS, RESPONSES, type ScenarioModel } from '../../utils/scenarioEngine';
 import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../utils/grVar';
 import { gprData } from '../../utils/gprStore';
+import { storyLeads, STORY_LEADS_METHOD, type LeadSeries } from '../../utils/storyLeads';
 
 
 /**
@@ -55,6 +56,31 @@ export interface AnalysisDeps {
 
 export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   const { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom } = deps;
+  // Story leads (src/utils/storyLeads.ts): records and recent revisions in the saved yearly history, no download.
+  app.get('/api/story-leads', (req, res) => {
+    const codes = String(req.query.iso3 || '')
+      .toUpperCase()
+      .split(',')
+      .map((c) => c.replace(/[^A-Z]/g, ''))
+      .filter((c) => c.length === 3)
+      .slice(0, 80);
+    const missing: string[] = [];
+    const countries = codes.flatMap((iso3) => {
+      const file = loadOfficialHistory(iso3);
+      if (!file) {
+        missing.push(iso3);
+        return [];
+      }
+      const series: LeadSeries[] = [];
+      for (const fig of OFFICIAL_FIGURES) {
+        const s = officialSeries(file, fig);
+        if (!('points' in s)) continue;
+        series.push({ id: fig.id, label: fig.label, unit: fig.unit, source: s.source || fig.sourceName || '', points: s.points, revisions: file.revisions?.[fig.id] });
+      }
+      return [{ iso3, countryName: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3, series }];
+    });
+    res.json({ leads: storyLeads(countries), countries: countries.length, noHistory: missing, method: STORY_LEADS_METHOD });
+  });
   // Output gap (src/utils/outputGap.ts): HP and Hamilton filters on saved IMF real GDP growth.
   app.get('/api/output-gap/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

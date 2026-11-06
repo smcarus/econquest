@@ -137,6 +137,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/claimCheck.ts',
   },
   {
+    id: 'story_leads',
+    name: 'Story leads',
+    where: 'Research > Compare countries > Summary',
+    method: [
+      'Records: the latest real observation of each official yearly series (IMF WEO, World Bank; projections left out) that is the highest or lowest on record (at least 10 observations) or since a year at least 10 years earlier, for the last two calendar years only (the Historical context line\'s rules).',
+      'Revisions: values the IMF or World Bank revised in the last 30 days (Data health), by at least 0.5 points for figures in % and 5% of the old value otherwise; projections left out.',
+      'Moved: what moved since your last visit, by the rules of Since your last visit (read only; opening Compare does not reset it). Ordered records on record first, then by how far back and how large.',
+    ],
+    limits: 'Only countries with saved yearly history, and only official yearly figures for records; a record in a short series means little, and the figure may be revised again. Gaps between data and market prices are in Where data and price disagree on the same page.',
+    code: 'src/utils/storyLeads.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',

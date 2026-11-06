@@ -65,6 +65,7 @@ export function sourcesGrid(items: Array<WatchlistItem | LiveWatchlistItem>): So
 
 /** Where each Tools-page anchor lives on Compare and My holdings. */
 const ANCHOR_SECTION: Record<string, ResearchSectionId> = {
+  'tool-story-leads': 'summary',
   'tool-divergences': 'summary',
   'tool-regime': 'summary',
   'tool-marketedge': 'markets',

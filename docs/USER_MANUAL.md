@@ -350,6 +350,11 @@ much), or a different period when the sentence names another year. A ranking is 
 G20, G7 or watchlist countries the app holds a figure for; a higher figure elsewhere disproves it,
 and members with no figure are named, since the app cannot rule them out.
 
+**Story leads.** Research > Compare countries > Summary opens with a short list of places to look:
+official yearly figures at a record or their highest or lowest in ten years or more, values the IMF
+or World Bank revised by a lot in the last 30 days, and what moved since your last visit. Countries
+with no saved yearly history are named; open their History once to download it.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

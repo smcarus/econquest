@@ -56,6 +56,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Stated method, no call to test | Not applicable |
 | Historical context line | Research | Stated method, no call to test | Not applicable |
 | Claim check | Research | Stated method, no call to test | Not applicable |
+| Story leads | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -647,6 +648,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Rankings (highest, lowest, largest and so on in the G20, the G7 or the watchlist): the country's app figure is ranked against the members the app holds a figure for. A higher (or lower) figure elsewhere disproves the claim; ranking first supports it fully only when every member is covered, otherwise the uncovered members are named.
 - **Limits:** A check against the app's figures, which may be older than the claim or measure something else (monthly against annual inflation, mixed sources across countries). Stated figures are checked only when the question names one country. Targets and forecasts are left out. No other groups (EM, the world) are ranked.
 - **Code:** `src/utils/claimCheck.ts`
+
+### Story leads
+
+- **Shows in:** Research > Compare countries > Summary
+- Records: the latest real observation of each official yearly series (IMF WEO, World Bank; projections left out) that is the highest or lowest on record (at least 10 observations) or since a year at least 10 years earlier, for the last two calendar years only (the Historical context line's rules).
+- Revisions: values the IMF or World Bank revised in the last 30 days (Data health), by at least 0.5 points for figures in % and 5% of the old value otherwise; projections left out.
+- Moved: what moved since your last visit, by the rules of Since your last visit (read only; opening Compare does not reset it). Ordered records on record first, then by how far back and how large.
+- **Limits:** Only countries with saved yearly history, and only official yearly figures for records; a record in a short series means little, and the figure may be revised again. Gaps between data and market prices are in Where data and price disagree on the same page.
+- **Code:** `src/utils/storyLeads.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

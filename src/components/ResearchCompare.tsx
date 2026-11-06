@@ -7,6 +7,7 @@ import { DivergenceList } from './DivergenceList';
 import { MarketEdgeScreen, useMarketEdgeAnchors } from './MarketEdgeScreen';
 import { ScenarioExposurePanel } from './ScenarioExposurePanel';
 import { FedBalanceSheetPanel } from './FedBalanceSheetPanel';
+import { StoryLeadsPanel } from './StoryLeadsPanel';
 import { LiveCountBadge, ResearchHeader, SourcesGrid } from './ResearchSections';
 import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import type { ResearchSectionId } from '../utils/researchSections';
@@ -56,6 +57,11 @@ export const ResearchCompare: React.FC<{
 
       {section === 'summary' && (
         <>
+          <div id="tool-story-leads" className="scroll-mt-4">
+            <PanelBoundary name="Story leads">
+              <StoryLeadsPanel items={watchlistItems} onOpenCountry={open('history')} />
+            </PanelBoundary>
+          </div>
           <div id="tool-divergences" className="scroll-mt-4">
             <PanelBoundary name="Where data and price disagree">
               <DivergenceList items={edgeItems} lastLook={lastLook} onOpenCountry={open('macro')} />
