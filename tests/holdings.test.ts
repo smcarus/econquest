@@ -96,8 +96,8 @@ test('book summary: gross, net credit and DV01 by hand', () => {
     h({ iso3: 'BRA', notionalUsdMm: 5 }), // no duration
   ];
   const lookup = [
-    { iso3: 'BRA', countryName: 'Brazil', compositeRisk: 0.5, riskSource: 'live' },
-    { iso3: 'TUR', countryName: 'Turkey', compositeRisk: 0.8, riskSource: 'live' },
+    { iso3: 'BRA', countryName: 'Brazil' },
+    { iso3: 'TUR', countryName: 'Turkey' },
   ] as unknown as WatchlistItem[];
   const s = summariseBook(book, lookup);
   assert.equal(s.grossUsdMm, 48);
@@ -107,9 +107,8 @@ test('book summary: gross, net credit and DV01 by hand', () => {
   assert.deepEqual(s.uncovered, ['ZAF']);
   const bra = s.rows.find((r) => r.iso3 === 'BRA')!;
   assert.ok(Math.abs(bra.weight - 30 / 48) < 1e-9);
-  assert.ok(Math.abs(s.rows.reduce((a, r) => a + (r.riskShare ?? 0), 0) - 1) < 1e-9);
-  // A country without a live risk score gets no share, rather than a built-in one.
-  assert.equal(s.rows.find((r) => r.iso3 === 'ZAF')!.riskShare, undefined);
+  // Largest gross notional first.
+  assert.deepEqual(s.rows.map((r) => r.iso3), ['BRA', 'TUR', 'ZAF']);
 });
 
 test('holdings weights sum to 100 over covered countries only', () => {

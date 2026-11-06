@@ -64,15 +64,10 @@ export function computeEmbiPortfolioAndPairBook(
       region: activeSnapshot.region || 'Global Sovereign',
       currencyCode: activeSnapshot.currencyCode,
       focusTheme: 'Active Sovereign Telemetry',
-      geopoliticalRisk: 0.5,
-      sovereignRisk: 0.5,
-      macroRisk: 0.5,
-      compositeRisk: 0.5,
       yield10YPct: activeSnapshot.monetaryAndMarket.sovereign10YBondYieldPct,
       cds5YBps: activeSnapshot.monetaryAndMarket.cds5YSpreadBps,
       debtToGdpPct: activeSnapshot.imfIndicators.debtToGdpPct,
       fxReservesMonths: activeSnapshot.worldBankIndicators.fxReservesMonthsImport,
-      alertStatus: 'ELEVATED',
     };
   }
 

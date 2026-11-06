@@ -100,6 +100,8 @@ test('recorded replies: every country figure live at recording is still live', {
   assert.deepEqual(lost, [], `country figures no longer live from the recorded replies:\n${lost.join('\n')}\n${notRecorded()}`);
 });
 
+const RETIRED_WATCHLIST_FIELDS = new Set(['compositeRisk', 'geopoliticalRisk', 'sovereignRisk', 'macroRisk', 'alertStatus', 'riskSource']);
+
 test('recorded replies: every watchlist figure filled at recording is still filled', { skip, timeout: 300_000 }, async () => {
   // Paced background feeds (UN Comtrade, about one request every 2 s) fill the cache in their own
   // time, so ask again until every figure is back or two minutes pass.
@@ -111,7 +113,8 @@ test('recorded replies: every watchlist figure filled at recording is still fill
     lost = [];
     for (const [iso3, keys] of Object.entries(index.expected.watchlist as Record<string, string[]>)) {
       const have = new Set(rows[iso3] ? filled(rows[iso3]) : []);
-      const gone = keys.filter((k) => !have.has(k));
+      // The composite risk score was retired (never registered or tested), so its fields are no longer made.
+      const gone = keys.filter((k) => !have.has(k) && !RETIRED_WATCHLIST_FIELDS.has(k));
       if (gone.length) lost.push(`${iso3}: ${gone.join(', ')}`);
     }
     if (!lost.length || Date.now() > deadline) break;

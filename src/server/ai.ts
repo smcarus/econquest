@@ -317,8 +317,12 @@ export function clampScoreToAnchor(
   anchorScore: number,
   corridor = 0.22
 ): { rawModelScore: number; finalBoundedScore: number; anchorDriftClamped: boolean } {
-  const num = typeof rawScore === 'number' && !Number.isNaN(rawScore) ? rawScore : anchorScore;
-  const rawNormalized = Number(Math.max(0.05, Math.min(0.98, num)).toFixed(2));
+  // Only the model's own score: no score from the model stays NaN (shown as missing), and with no
+  // anchor (NaN) the score is not bounded. The anchor is always another model output, never a
+  // built-in figure.
+  if (typeof rawScore !== 'number' || !Number.isFinite(rawScore)) return { rawModelScore: NaN, finalBoundedScore: NaN, anchorDriftClamped: false };
+  const rawNormalized = Number(Math.max(0.05, Math.min(0.98, rawScore)).toFixed(2));
+  if (!Number.isFinite(anchorScore)) return { rawModelScore: rawNormalized, finalBoundedScore: rawNormalized, anchorDriftClamped: false };
   const minAllowed = Math.max(0.1, Number((anchorScore - corridor).toFixed(2)));
   const maxAllowed = Math.min(0.95, Number((anchorScore + corridor).toFixed(2)));
   const clamped = Number(Math.max(minAllowed, Math.min(maxAllowed, rawNormalized)).toFixed(2));

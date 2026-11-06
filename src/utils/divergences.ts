@@ -3,7 +3,6 @@
  *
  * Each signal is a stated rule on figures the app already shows, never a forecast:
  * - Policy: real policy rate against inflation and its target (room to cut, or behind the curve).
- * - CDS against risk peers: the MarketEdge fit of log CDS on the app's risk score.
  * - Real 10Y yield against the median of the countries on screen.
  * - Refinancing: BIS international government bonds falling due within a year.
  * - FX: BIS real exchange rate against its 10-year average, and carry over the US rate per unit
@@ -16,7 +15,7 @@
 import { formatMonth } from './oecdSdmx';
 import type { LiveWatchlistItem } from '../types/council';
 import { POLITICAL_FISCAL_CATEGORIES, upcomingOfficialEvents } from '../data/officialCalendar';
-import { INFLATION_TARGETS, cdsVsPeers, fitCdsOnRisk } from './marketsMacro';
+import { INFLATION_TARGETS } from './marketsMacro';
 import { formatPeriod } from './officialYields';
 import { carryToVol, reerLabel } from './fxValuation';
 
@@ -163,38 +162,6 @@ export function realYieldSignals(items: LiveWatchlistItem[]): Map<string, Diverg
   return out;
 }
 
-/** CDS against what peers with the same risk score pay. */
-export function cdsSignals(items: LiveWatchlistItem[]): Map<string, Divergence> {
-  const fit = fitCdsOnRisk(items);
-  const out = new Map<string, Divergence>();
-  if (!fit) return out;
-  for (const it of items) {
-    if (it.cds5YBps === undefined || it.compositeRisk === undefined) continue;
-    const rv = cdsVsPeers(it.cds5YBps, it.compositeRisk, fit);
-    if (rv.label === 'in line') continue;
-    const c = cdsTag(it);
-    out.set(
-      it.iso3,
-      make({
-        kind: 'cds',
-        label: rv.label === 'cheap' ? 'CDS wide for its risk' : 'CDS tight for its risk',
-        headline: `5Y CDS ${Math.round(it.cds5YBps)} bps, ${Math.abs(rv.gapPct).toFixed(0)}% ${rv.gapPct > 0 ? 'above' : 'below'} the ${Math.round(rv.fittedBps)} bps that peers with its risk score pay.`,
-        evidence: [
-          { text: `5Y CDS ${Math.round(it.cds5YBps)} bps`, source: c.src },
-          { text: `Risk score ${it.compositeRisk.toFixed(2)}`, source: "the app's model" },
-        ],
-        soWhat:
-          rv.label === 'cheap'
-            ? 'Either the market sees a risk the score misses, or the spread has room to tighten.'
-            : 'Priced tighter than peers with similar risk: little cushion if things go wrong.',
-        size: clamp(Math.abs(rv.gapPct) / 100),
-        quality: c.q,
-      })
-    );
-  }
-  return out;
-}
-
 /** International government bonds falling due within a year, as a share of those outstanding (BIS). */
 export function refinancingSignal(it: LiveWatchlistItem): Divergence | null {
   if (!it.intlBondsUsdBn || it.intlBondsDue1yUsdBn === undefined) return null;
@@ -265,12 +232,11 @@ function changeSince(it: LiveWatchlistItem, last: LastLook | null | undefined): 
 
 /** One line per country with at least one signal, strongest first. */
 export function rankDivergences(items: LiveWatchlistItem[], lastLook?: LastLook | null, now: Date = new Date()): CountryDivergence[] {
-  const cds = cdsSignals(items);
   const realY = realYieldSignals(items);
   const events = upcomingOfficialEvents(items.map((i) => i.iso3), 60, now);
   const out: CountryDivergence[] = [];
   for (const it of items) {
-    const all = [policySignal(it), cds.get(it.iso3), realY.get(it.iso3), refinancingSignal(it), fxValueSignal(it), carrySignal(it)]
+    const all = [policySignal(it), realY.get(it.iso3), refinancingSignal(it), fxValueSignal(it), carrySignal(it)]
       .filter((d): d is Divergence => Boolean(d) && (d as Divergence).score > 0)
       .sort((a, b) => b.score - a.score);
     if (!all.length) continue;

@@ -234,8 +234,6 @@ export interface BookCountryRow {
   /** Credit DV01 in USD thousands per bp (net), where durations are given. */
   dv01UsdK: number;
   weight: number;
-  /** Share of weight x risk score. Left out when this country's risk score is not live. */
-  riskShare?: number;
   positions: number;
 }
 
@@ -246,19 +244,6 @@ export interface BookSummary {
   missingDuration: number;
   rows: BookCountryRow[];
   uncovered: string[];
-}
-
-/**
- * Share of weight x risk score, among the rows whose risk score is live. Rows without one get no
- * share: a built-in score is never used to fill the gap.
- */
-export function setRiskShares<T extends { weight: number; riskShare?: number; item?: { compositeRisk?: number } }>(rows: T[]): T[] {
-  const total = rows.reduce((a, r) => a + (r.item?.compositeRisk !== undefined ? r.weight * r.item.compositeRisk : 0), 0);
-  for (const r of rows) {
-    if (r.item?.compositeRisk !== undefined && total > 0) r.riskShare = (r.weight * r.item.compositeRisk) / total;
-    else delete r.riskShare;
-  }
-  return rows;
 }
 
 export function summariseBook(holdings: Holding[], lookup: LiveWatchlistItem[]): BookSummary {
@@ -293,8 +278,7 @@ export function summariseBook(holdings: Holding[], lookup: LiveWatchlistItem[]):
   const rows = [...byIso.values()];
   const gross = rows.reduce((a, r) => a + r.grossUsdMm, 0) || 1;
   rows.forEach((r) => (r.weight = r.grossUsdMm / gross));
-  setRiskShares(rows);
-  rows.sort((a, b) => (b.riskShare ?? -1) - (a.riskShare ?? -1) || b.grossUsdMm - a.grossUsdMm);
+  rows.sort((a, b) => b.grossUsdMm - a.grossUsdMm);
   return {
     grossUsdMm: rows.reduce((a, r) => a + r.grossUsdMm, 0),
     netCreditUsdMm: rows.reduce((a, r) => a + r.netCreditUsdMm, 0),

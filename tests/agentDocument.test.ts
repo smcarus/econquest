@@ -17,9 +17,9 @@ import {
 import type { WatchlistItem } from '../src/types/council.ts';
 
 const it = (iso3: string, countryName: string, o: Partial<WatchlistItem> = {}): WatchlistItem =>
-  ({ iso3, countryName, compositeRisk: 0.5, cds5YBps: 150, cds5YSource: 'own', cds5YProvider: 'file', policyRateSource: 'bis', ...o }) as WatchlistItem;
+  ({ iso3, countryName, cds5YBps: 150, cds5YSource: 'own', cds5YProvider: 'file', policyRateSource: 'bis', ...o }) as WatchlistItem;
 
-const TUR = it('TUR', 'Turkey', { compositeRisk: 0.7, cpiInflationPct: 34, cpiSource: 'live', policyRatePct: 30, policyRateDate: '2026-10-27', policyRateBank: 'Central Bank of the Republic of Türkiye' });
+const TUR = it('TUR', 'Turkey', { cpiInflationPct: 34, cpiSource: 'live', policyRatePct: 30, policyRateDate: '2026-10-27', policyRateBank: 'Central Bank of the Republic of Türkiye' });
 const ZAF = it('ZAF', 'South Africa', { cpiInflationPct: 3.4, cpiSource: 'live', policyRatePct: 8 });
 const ALL = [TUR, ZAF];
 const CTX = { question: 'Which central banks look behind the curve?', askedAt: '2026-11-05T17:40:00.000Z', scope: 'your whole watchlist (2 countries)', countriesAsked: 2 };

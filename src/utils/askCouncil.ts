@@ -20,9 +20,9 @@ import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
 import { oddsMoveText } from './oddsMoves';
 import type { LiveWatchlistItem } from '../types/council';
 import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar';
-import { INFLATION_TARGETS, REAL_YIELD_BAND_PTS, cdsVsPeers, fitCdsOnRisk, fitRealYieldOnRisk, policyStance, realYield, realYieldVsPeers, targetSource } from './marketsMacro';
+import { INFLATION_TARGETS, policyStance, realYield, targetSource } from './marketsMacro';
 import { missingReason } from './liveFigures';
-import { carrySignal, cdsSignals, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
+import { carrySignal, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
 import { carryToVol, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
@@ -696,18 +696,8 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
 }
 
 function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
-  const fit = fitCdsOnRisk(all);
-  // Without CDS (your own paid data, off by default) the peer reading uses the real 10Y yield.
-  const realFit = fit ? null : fitRealYieldOnRisk(all);
-  const cdsSig = cdsSignals(all);
   const findings: AgentFinding[] = [];
-  const missing: string[] = fit
-    ? []
-    : realFit
-      ? CDS_HIDDEN
-        ? []
-        : ['CDS against peers needs 4 or more countries with a CDS figure, so the peer reading uses the real 10Y yield']
-      : [CDS_HIDDEN ? 'Peer reading needs 4 or more countries with both a 10Y yield and inflation' : 'Peer reading needs 4 or more countries with a CDS figure, or with both a 10Y yield and inflation'];
+  const missing: string[] = [];
   for (const it of countries) {
     const c = cdsTag(it);
     const y = yieldTag(it);
@@ -724,37 +714,6 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
     else if (!CDS_HIDDEN) missing.push(`${it.countryName}: 5Y CDS missing (${missingReason('cds', it.iso3).short})`);
     const parts: string[] = [];
     const stance: Stance[] = [];
-    if (fit && it.cds5YBps !== undefined && it.compositeRisk !== undefined) {
-      const rv = cdsVsPeers(it.cds5YBps, it.compositeRisk, fit);
-      stance.push({ dim: 'cds', call: rv.label });
-      figures.push(
-        { label: 'Risk score', value: it.compositeRisk.toFixed(2), source: "the app's risk model", tag: 'model' },
-        { label: 'CDS peers with this risk score pay', value: `${Math.round(rv.fittedBps)} bps`, source: `log CDS fitted on risk score, ${fit.n} countries`, tag: 'model' },
-        { label: 'CDS against risk peers', value: `${sgn(rv.gapPct, 0)}% (${rv.label})`, source: 'more than 15% above the fit = cheap, 15% below = rich', tag: 'model' }
-      );
-      parts.push(
-        rv.label === 'in line'
-          ? `5Y CDS is in line with peers that have a similar risk score.`
-          : `5Y CDS ${rv.label === 'cheap' ? 'pays more' : 'pays less'} than peers with a similar risk score (${sgn(rv.gapPct, 0)}%).`
-      );
-    }
-    const real = realYield(it);
-    if (realFit && real !== undefined && it.compositeRisk !== undefined) {
-      const rr = realYieldVsPeers(real, it.compositeRisk, realFit);
-      const ct = cpiTag(it);
-      figures.push(
-        { label: 'Inflation', value: `${(it.cpiInflationPct as number).toFixed(1)}%`, source: ct.src, tag: ct.q },
-        { label: 'Real 10Y yield', value: `${real.toFixed(1)}%`, source: '10Y yield less inflation', tag: 'model' },
-        { label: 'Risk score', value: it.compositeRisk.toFixed(2), source: "the app's risk model", tag: 'model' },
-        { label: 'Real yield peers with this risk score pay', value: `${rr.fittedPct.toFixed(1)}%`, source: `real 10Y yield fitted on risk score, ${realFit.n} countries`, tag: 'model' },
-        { label: 'Real yield against risk peers', value: `${sgn(rr.gapPts, 1)} pts (${rr.label})`, source: `more than ${REAL_YIELD_BAND_PTS} pt above the fit = cheap, ${REAL_YIELD_BAND_PTS} pt below = rich`, tag: 'model' }
-      );
-      parts.push(
-        rr.label === 'in line'
-          ? 'The real 10Y yield is in line with peers that have a similar risk score.'
-          : `The real 10Y yield ${rr.label === 'cheap' ? 'pays more' : 'pays less'} than peers with a similar risk score (${sgn(rr.gapPts, 1)} pts).`
-      );
-    }
     const cv =
       it.policyRatePct !== undefined && it.usFedFundsPct !== undefined && it.fxVol3mPct !== undefined
         ? carryToVol(it.policyRatePct, it.usFedFundsPct, it.fxVol3mPct)
@@ -767,7 +726,7 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
       parts.push(cv.ratio >= 0.5 ? 'Carry over the US pays well for the currency’s recent swings.' : 'Carry over the US is small next to the currency’s recent swings.');
     }
     if (!parts.length) {
-      missing.push(`${it.countryName}: no peer or carry reading`);
+      missing.push(`${it.countryName}: no carry reading`);
       continue;
     }
     findings.push({
@@ -775,7 +734,7 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
       countryName: it.countryName,
       reading: parts.join(' '),
       figures,
-      weight: Math.max(cdsSig.get(it.iso3)?.score ?? 0, carrySignal(it)?.score ?? 0),
+      weight: carrySignal(it)?.score ?? 0,
       ...(stance.length ? { stance } : {}),
     });
   }

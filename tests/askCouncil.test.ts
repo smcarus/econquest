@@ -21,7 +21,6 @@ const it = (iso3: string, countryName: string, o: Partial<WatchlistItem> = {}): 
   ({
     iso3,
     countryName,
-    compositeRisk: 0.5,
     cds5YBps: 150,
     cds5YSource: 'own',
     cds5YProvider: 'file',
@@ -33,7 +32,6 @@ const it = (iso3: string, countryName: string, o: Partial<WatchlistItem> = {}): 
   }) as WatchlistItem;
 
 const TUR = it('TUR', 'Turkey', {
-  compositeRisk: 0.7,
   cds5YBps: 300,
   yield10YPct: 28,
   cpiInflationPct: 34,
@@ -46,9 +44,9 @@ const TUR = it('TUR', 'Turkey', {
   reerPeriod: '2026-09',
   trade: { fuelImportsPctMerch: 15, fuelExportsPctMerch: 3, importsPctGdp: 32, exportsPctGdp: 30, wbYear: '2025', chinaExportSharePct: 2, witsYear: '2023' },
 });
-const ZAF = it('ZAF', 'South Africa', { compositeRisk: 0.5, cds5YBps: 250, cpiInflationPct: 3.4, cpiSource: 'live', policyRatePct: 8 });
-const EGY = it('EGY', 'Egypt (Red Sea Corridor)', { compositeRisk: 0.8, cds5YBps: 600 });
-const POL = it('POL', 'Poland', { compositeRisk: 0.3, cds5YBps: 70 });
+const ZAF = it('ZAF', 'South Africa', { cds5YBps: 250, cpiInflationPct: 3.4, cpiSource: 'live', policyRatePct: 8 });
+const EGY = it('EGY', 'Egypt (Red Sea Corridor)', { cds5YBps: 600 });
+const POL = it('POL', 'Poland', { cds5YBps: 70 });
 const ALL = [TUR, ZAF, EGY, POL];
 
 test('planner: countries by name, alias or ISO code; the whole watchlist when none is named', () => {
@@ -84,8 +82,8 @@ test('agents answer only from figures on hand, each figure tagged, and say what 
   assert.equal(tag('CPI inflation'), 'live');
   assert.equal(tag('Policy rate'), 'official');
   assert.equal(tag('Real policy rate'), 'model');
-  // CDS against peers needs the whole watchlist (4 countries with CDS).
-  assert.ok(by.rv.findings[0].figures.some((f) => f.label === 'CDS against risk peers'));
+  // The CDS fit against the retired composite risk score is gone.
+  assert.ok(!(by.rv?.findings ?? []).some((f) => f.figures.some((x) => /risk peers|risk score/i.test(x.label))));
   assert.match(by.fx.findings[0].reading, /weak for its history: 12% below/);
   assert.deepEqual(scenariosInQuestion(q), ['hormuz']);
   assert.match(by.spill.findings[0].reading, /Strait of Hormuz closure/);
@@ -285,16 +283,13 @@ test('"us" and "sa" in a sentence do not name the United States or South Africa;
   assert.deepEqual(countriesInQuestion('turkey and the lira', list).map((c) => c.iso3), ['TUR']);
 });
 
-test('Relative Value Agent: with CDS off it compares the real 10Y yield against risk peers', () => {
-  const noCds = (iso3: string, risk: number, y: number, cpi: number) =>
-    ({ iso3, countryName: iso3, compositeRisk: risk, yield10YPct: y, yield10YSource: 'official', yield10YPeriod: '2026-09', cpiInflationPct: cpi, cpiSource: 'live' }) as unknown as WatchlistItem;
-  const all = [noCds('AAA', 0.3, 6, 4), noCds('BBB', 0.4, 8, 5), noCds('CCC', 0.5, 7, 3), noCds('DDD', 0.6, 9, 4), noCds('EEE', 0.45, 10, 3)];
+test('Relative Value Agent: no cheap or rich call against a risk score (the score is retired)', () => {
+  const noCds = (iso3: string, y: number, cpi: number) =>
+    ({ iso3, countryName: iso3, yield10YPct: y, yield10YSource: 'official', yield10YPeriod: '2026-09', cpiInflationPct: cpi, cpiSource: 'live' }) as unknown as WatchlistItem;
+  const all = [noCds('AAA', 6, 4), noCds('BBB', 8, 5), noCds('CCC', 7, 3), noCds('DDD', 9, 4), noCds('EEE', 10, 3)];
   const plan = planCouncil('Which bonds look cheap for their risk?', all);
   const rv = runCouncil('Which bonds look cheap for their risk?', plan, all).find((a) => a.id === 'rv')!;
-  const eee = rv.findings.find((f) => f.iso3 === 'EEE')!;
-  assert.match(eee.reading, /real 10Y yield pays more than peers/);
-  assert.ok(eee.figures.some((f) => f.label === 'Real yield against risk peers' && /cheap/.test(f.value)));
-  // CDS is hidden for now (src/utils/cdsHidden.ts), so the real-yield reading is not explained as a CDS fallback.
+  for (const f of rv.findings) assert.ok(!f.figures.some((x) => /risk score|risk peers/i.test(x.label)));
   assert.ok(!rv.missing.some((m) => /CDS/.test(m)));
 });
 

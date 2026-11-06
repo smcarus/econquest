@@ -274,7 +274,7 @@ export function buildSections(
         lines: [
           `Book: $${book.grossUsdMm.toFixed(0)}mm gross, $${book.netCreditUsdMm.toFixed(0)}mm net credit, credit DV01 $${book.dv01UsdK.toFixed(1)}k per bp.`,
           row
-            ? `${run.countryName}: $${row.grossUsdMm.toFixed(1)}mm gross (${(row.weight * 100).toFixed(0)}% of the book), $${row.netCreditUsdMm.toFixed(1)}mm net credit, DV01 $${row.dv01UsdK.toFixed(1)}k per bp, ${row.riskShare !== undefined ? `${(row.riskShare * 100).toFixed(0)}% of book risk` : 'share of book risk missing (no live risk score)'}.`
+            ? `${run.countryName}: $${row.grossUsdMm.toFixed(1)}mm gross (${(row.weight * 100).toFixed(0)}% of the book), $${row.netCreditUsdMm.toFixed(1)}mm net credit, DV01 $${row.dv01UsdK.toFixed(1)}k per bp.`
             : `No current holdings in ${run.countryName}.`,
         ],
       });
@@ -361,7 +361,6 @@ function buildClientSections(p: IcMemoBuilderProps, include: Record<SectionId, b
       lines = row
         ? [
             `About ${(row.weight * 100).toFixed(0)}% of your emerging market holdings are linked to ${run.countryName} (around $${row.grossUsdMm.toFixed(1)} million).`,
-            ...(row.riskShare !== undefined ? [`It accounts for roughly ${(row.riskShare * 100).toFixed(0)}% of the risk in that part of your portfolio.`] : []),
           ]
         : [`You do not currently hold anything linked to ${run.countryName}, so this view does not change your portfolio today.`];
     }

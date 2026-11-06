@@ -24,10 +24,6 @@ export function reviveMissing<T>(value: T, template: unknown): T {
 
 /** The number fields of a watchlist row, for reviving rows read back from browser storage. */
 export const WATCHLIST_ROW_NUMBERS = {
-  geopoliticalRisk: Number.NaN,
-  sovereignRisk: Number.NaN,
-  macroRisk: Number.NaN,
-  compositeRisk: Number.NaN,
   yield10YPct: Number.NaN,
   cds5YBps: Number.NaN,
   debtToGdpPct: Number.NaN,

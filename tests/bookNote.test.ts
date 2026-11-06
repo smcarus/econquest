@@ -17,8 +17,8 @@ import { withTestFigures } from './helpers/testRows.ts';
 
 const NOW = new Date('2026-11-04T12:00:00Z');
 const cat = (iso: string) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso)!;
-/** The catalogue as if every risk score were live and every CDS your own. */
-const LIVE: WatchlistItem[] = withTestFigures(SOVEREIGN_CATALOG).map((c) => ({ ...c, riskSource: 'live', cds5YSource: 'own', cds5YProvider: 'CSV', cds5YDate: '2026-11-03' }));
+/** The catalogue as if every CDS were your own. */
+const LIVE: WatchlistItem[] = withTestFigures(SOVEREIGN_CATALOG).map((c) => ({ ...c, cds5YSource: 'own', cds5YProvider: 'CSV', cds5YDate: '2026-11-03' }));
 const h = (iso3: string, notional: number, extra: Partial<Holding> = {}): Holding => ({
   id: `${iso3}-${notional}`,
   iso3,
@@ -54,13 +54,13 @@ test('the brief never shows a holdings figure as verified, and official events a
   assert.ok(events.rows.length > 0 && events.rows.every((r) => r.verified && /Nov 2026/.test(r.value)));
 });
 
-test('portfolio review: every section, in order, and the risk list covers each country', () => {
+test('portfolio review: every section, in order, and the figures list covers each country', () => {
   const v = bookView([h('BRA', 50), h('TUR', 30), h('POL', 20)], LIVE, []);
   const s = buildBookSections(v, [], () => true, NOW);
   assert.deepEqual(s.map((x) => x.id), Object.keys(BOOK_SECTIONS));
-  const risk = s.find((x) => x.id === 'risk')!;
-  assert.equal(risk.lines.length, 3);
-  assert.ok(risk.lines.every((l) => /\(model on live inputs\)/.test(l)));
+  const figs = s.find((x) => x.id === 'figures')!;
+  assert.equal(figs.lines.length, 3);
+  assert.ok(figs.lines.every((l) => /5Y CDS \d+ bps/.test(l) && !/risk score/i.test(l)));
   assert.equal(buildBookSections(v, [], (id) => id !== 'trades', NOW).some((x) => x.id === 'trades'), false);
 });
 
@@ -68,10 +68,11 @@ test('client review is plain language: no bps, DV01, scores or trade levels', ()
   const v = bookView([h('EGY', 40), h('CHL', 60)], LIVE, []);
   const text = JSON.stringify(buildClientReviewSections(v, () => true, NOW));
   assert.doesNotMatch(text, /bps|DV01|risk score|0\.\d\d|conviction|stop/i);
-  assert.match(text, /Egypt .*higher risk/);
+  assert.match(text, /Egypt[^"]*: markets already price a real chance of difficulty/);
+  assert.doesNotMatch(text, /higher risk|lower risk|moderate risk/);
   assert.deepEqual(buildClientReviewSections(v, () => true, NOW).map((x) => x.id), Object.keys(CLIENT_REVIEW_SECTIONS));
   const brief = clientBrief(v, NOW);
-  assert.match(brief.headline, /The client’s portfolio: 2 countries, 40% in higher-risk countries/);
+  assert.match(brief.headline, /The client’s portfolio: 2 countries\./);
 });
 
 test('without holdings the client review says it is a draft from the watchlist', () => {
@@ -83,20 +84,19 @@ test('without holdings the client review says it is a draft from the watchlist',
 test('no built-in figures: without live sources the book names what is missing and fills nothing in', () => {
   // The catalogue's own numbers have no live source, so none of them may appear.
   const v = bookView([h('EGY', 60), h('MEX', 40)], SOVEREIGN_CATALOG, []);
-  assert.ok(v.lines.every((l) => l.riskShare === undefined));
   const b = pmBookBrief(v, [], NOW);
-  assert.match(b.headline, /No live risk scores yet/);
-  assert.match(b.sampleWarning || '', /Risk scores are missing for Egypt.*, Mexico/);
+  assert.match(b.headline, /Largest positions: Egypt[^;]* 60%; Mexico 40%/);
   assert.ok(!b.judgements.some((j) => /CDS at 400/.test(j)), 'no stress reading without CDS');
   const book = b.groups.find((g) => g.title === 'The book')!;
-  for (const label of ['Weighted 5Y CDS', 'Weighted 10Y yield', 'Weighted risk score']) {
+  for (const label of ['Weighted 5Y CDS', 'Weighted 10Y yield']) {
     const r = book.rows.find((x) => x.label === label)!;
     assert.equal(r.value, 'Missing', label);
     assert.ok(r.help, `${label} says how to fill it`);
   }
-  const risk = buildBookSections(v, [], (id) => id === 'risk', NOW)[0];
-  assert.ok(risk.lines.every((l) => /risk score: Missing/.test(l) && /5Y CDS: Missing/.test(l)));
+  assert.ok(!book.rows.some((x) => /risk score/i.test(x.label)));
+  const figs = buildBookSections(v, [], (id) => id === 'figures', NOW)[0];
+  assert.ok(figs.lines.every((l) => /5Y CDS: Missing/.test(l)));
   const client = clientBrief(v, NOW);
-  assert.match(client.headline, /risk levels not yet available/);
+  assert.match(client.headline, /2 countries\./);
   assert.ok(!JSON.stringify(client).includes('higher risk'));
 });
