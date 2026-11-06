@@ -121,7 +121,11 @@ test('runBacktests pulls the histories once, judges each registered test and sav
       throw new Error('HTTP 503');
     },
   });
-  assert.equal(urls.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
+  const core = urls.filter((u) => !u.includes('NGDP_RPCH'));
+  assert.equal(core.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
+  const growth = urls.filter((u) => u.includes('NGDP_RPCH'));
+  assert.equal(new Set(growth).size, growth.length, 'IMF real growth once per country (Taylor gap v2 output gap)');
+  assert.ok(out.problems.some((p) => /IMF real GDP growth did not answer/.test(p)));
   assert.ok(urls.some((u) => u.includes('startPeriod=1990-01')));
   assert.ok(urls.some((u) => u.includes('2006-06-01')));
   const r = out.results.cli_turn_policy;
@@ -262,4 +266,18 @@ test('runBacktests runs every version and keeps each verdict; the latest version
   assert.deepEqual(Object.keys(out.versions!).sort(), ['r v1', 'r v2']);
   assert.equal(out.versions!['r v1'].framework, 1);
   assert.deepEqual(Object.keys(loadValidation(resultFile).versions!).sort(), ['r v1', 'r v2']);
+});
+
+test('taylorGapCases with an output gap: uses the gap of the latest year published by then, and skips months without one', () => {
+  const months = Array.from({ length: 36 }, (_, i) => addMonths('2014-01', i));
+  const inflation = months.map((period) => ({ period, value: 2 }));
+  // Rule without a gap = 4%. Policy 4% throughout: neutral in version 1.
+  const policy = months.map((period) => ({ period, pct: 4 }));
+  const s = spec({ method: 'taylor_gap', sample: { from: '2014-01' }, params: { publicationLagMonths: 2, windowMonths: 6, bandPts: 1, outputWeight: 0.5, gapPublishMonth: 4 } });
+  // 2013 gap -4% (known from 2014-04): rule 2%, policy 4% = tight from 2014-04, not before.
+  const cases = taylorGapCases(s, 'USA', inflation, policy, [{ year: '2013', gap: -4 }]);
+  assert.equal(cases[0].when, '2014-04');
+  assert.match(cases[0].what, /tight.*output gap -4\.0% in 2013/);
+  assert.deepEqual(taylorGapCases(s, 'USA', inflation, policy), [], 'no gap series, no cases');
+  assert.deepEqual(taylorGapCases({ ...s, params: { ...s.params, outputWeight: 0 } }, 'USA', inflation, policy), [], 'version 1 rule: neutral');
 });

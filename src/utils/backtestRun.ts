@@ -16,6 +16,8 @@ import { CBPOL_AREA, CBPOL_DATASET, parseCbpolCsv } from './bisPolicyRates';
 import { CLI_LABEL, cliUrl, parseCli } from './oecdCli';
 import { CPI_LABEL, cpiUrl, parseCpi } from './oecdInflation';
 import { TARGET_HISTORY } from '../data/inflationTargetHistory';
+import { markImfProjections, parseImfYears } from './officialHistory';
+import { realTimeOutputGap } from './outputGap';
 import { areaSeries } from './oecdSdmx';
 import { CFTC_CURRENCY_CODES, CFTC_LABEL, cftcUrl, parseCftcRows } from './cftcPositioning';
 import { cftcCrowdingCases, cliTurnPolicyCases, taylorGapCases, judgeWithRobustness, sampleCases, spanOf, type BacktestCase, type BacktestResult, type BacktestSpec } from './backtest';
@@ -90,6 +92,29 @@ export const defaultFetcher: Fetcher = async (url) => {
 };
 
 /** The long histories the tests read, pulled once per run. */
+const IMF_GROWTH = 'NGDP_RPCH';
+export const imfGrowthUrl = (iso3: string) => `https://www.imf.org/external/datamapper/api/v1/${IMF_GROWTH}/${iso3}`;
+
+/** Real-time output gap by year (one-sided HP lambda 100) per country, from IMF real GDP growth. */
+async function pullOutputGaps(fetcher: Fetcher, problems: string[], now: Date): Promise<Record<string, { year: string; gap: number }[]>> {
+  const out: Record<string, { year: string; gap: number }[]> = {};
+  const failed: string[] = [];
+  await Promise.all(
+    Object.keys(TARGET_HISTORY).map(async (iso3) => {
+      try {
+        const years = parseImfYears(JSON.parse(await fetcher(imfGrowthUrl(iso3))), IMF_GROWTH, iso3);
+        if (!years?.length) return;
+        const pts = markImfProjections(years.map(({ year, value }) => ({ date: year, value })), now);
+        out[iso3] = realTimeOutputGap(pts).map((g) => ({ year: g.year, gap: g.hp100 }));
+      } catch {
+        failed.push(iso3);
+      }
+    })
+  );
+  if (failed.length) problems.push(`IMF real GDP growth did not answer for ${failed.sort().join(', ')} (no output gap there)`);
+  return out;
+}
+
 async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<string>) {
   const areas = [...new Set(Object.values(CBPOL_AREA))].sort().join('+');
   const [bis, cli, cftc, cpi] = await Promise.all([
@@ -110,6 +135,8 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
   const file = loadValidation(opts.resultFile);
   if (runnable.length) {
     const h = await pullHistory(opts.fetcher || defaultFetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
+    const needGap = runnable.some((s) => s.spec!.method === 'taylor_gap' && Number(s.spec!.params?.outputWeight) > 0);
+    const gaps = needGap ? await pullOutputGaps(opts.fetcher || defaultFetcher, problems, opts.now || new Date()) : {};
     const at = (opts.now || new Date()).toISOString();
     for (const { spec, hash } of runnable) {
       const s = spec!;
@@ -140,14 +167,16 @@ export async function runBacktests(opts: { specDir: string; resultFile: string; 
         }
       } else if (s.method === 'taylor_gap') {
         if (!h.bis || !h.cpi) continue;
-        data = `${CPI_LABEL}; BIS central bank policy rates (monthly, from 1990); inflation targets as they stood (src/data/inflationTargetHistory.ts)`;
+        const withGap = Number(s.params?.outputWeight) > 0;
+        data = `${CPI_LABEL}; BIS central bank policy rates (monthly, from 1990); inflation targets as they stood (src/data/inflationTargetHistory.ts)${withGap ? '; real-time output gap from IMF WEO real GDP growth (one-sided HP, lambda 100; year t used from April t+1)' : ''}`;
         for (const iso3 of Object.keys(TARGET_HISTORY)) {
           const area = CBPOL_AREA[iso3];
           const infl = areaSeries(iso3, h.cpi)?.points;
           const pol = area ? h.bis[area]?.points : undefined;
           if (!infl?.length || !pol?.length) continue;
+          if (withGap && !gaps[iso3]?.length) continue;
           series.push(iso3);
-          cases.push(...taylorGapCases(s, iso3, infl, pol));
+          cases.push(...taylorGapCases(s, iso3, infl, pol, withGap ? gaps[iso3] : undefined));
         }
       } else {
         problems.push(`${s.id}: unknown method ${String(s.method)}`);
