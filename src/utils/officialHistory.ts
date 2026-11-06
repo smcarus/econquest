@@ -60,6 +60,12 @@ export const OFFICIAL_FIGURES: OfficialFigure[] = [
   { id: 'terms_of_trade', source: 'wb', code: 'TT.PRI.MRCH.XD.WD', label: 'Terms of trade', unit: 'index (2015 = 100)', about: 'World Bank: net barter terms of trade, export unit values over import unit values. Used in the BEER fair value.' },
   { id: 'gdp_pc_ppp', source: 'wb', code: 'NY.GDP.PCAP.PP.KD', label: 'GDP per head, PPP', unit: 'constant 2021 international $', about: 'World Bank: GDP per head at purchasing power parity, constant prices. Used against the US as a productivity stand-in in the BEER fair value.' },
   { id: 'exports_usd', source: 'wb', code: 'NE.EXP.GNFS.CD', label: 'Exports of goods and services', unit: 'USD bn', transform: (v) => Number((v / 1e9).toFixed(2)) },
+  { id: 'wgi_voice', source: 'wb', code: 'VA.EST', label: 'Voice and accountability', unit: 'WGI estimate (world mean 0, sd 1)', sourceName: 'World Bank WGI', about: 'World Bank Worldwide Governance Indicators: voice and accountability, estimate on a scale where the world average is 0 and one standard deviation is 1 (about -2.5 to +2.5). Used in the country risk scorecard.' },
+  { id: 'wgi_stability', source: 'wb', code: 'PV.EST', label: 'Political stability and absence of violence', unit: 'WGI estimate (world mean 0, sd 1)', sourceName: 'World Bank WGI', about: 'World Bank Worldwide Governance Indicators: political stability and absence of violence or terrorism, estimate on a scale where the world average is 0 and one standard deviation is 1 (about -2.5 to +2.5). Used in the country risk scorecard.' },
+  { id: 'wgi_effectiveness', source: 'wb', code: 'GE.EST', label: 'Government effectiveness', unit: 'WGI estimate (world mean 0, sd 1)', sourceName: 'World Bank WGI', about: 'World Bank Worldwide Governance Indicators: government effectiveness, estimate on a scale where the world average is 0 and one standard deviation is 1 (about -2.5 to +2.5). Used in the country risk scorecard.' },
+  { id: 'wgi_regulatory', source: 'wb', code: 'RQ.EST', label: 'Regulatory quality', unit: 'WGI estimate (world mean 0, sd 1)', sourceName: 'World Bank WGI', about: 'World Bank Worldwide Governance Indicators: regulatory quality, estimate on a scale where the world average is 0 and one standard deviation is 1 (about -2.5 to +2.5). Used in the country risk scorecard.' },
+  { id: 'wgi_rule_of_law', source: 'wb', code: 'RL.EST', label: 'Rule of law', unit: 'WGI estimate (world mean 0, sd 1)', sourceName: 'World Bank WGI', about: 'World Bank Worldwide Governance Indicators: rule of law, estimate on a scale where the world average is 0 and one standard deviation is 1 (about -2.5 to +2.5). Used in the country risk scorecard.' },
+  { id: 'wgi_corruption', source: 'wb', code: 'CC.EST', label: 'Control of corruption', unit: 'WGI estimate (world mean 0, sd 1)', sourceName: 'World Bank WGI', about: 'World Bank Worldwide Governance Indicators: control of corruption, estimate on a scale where the world average is 0 and one standard deviation is 1 (about -2.5 to +2.5). Used in the country risk scorecard.' },
 ];
 
 export interface OfficialRun {
@@ -73,6 +79,8 @@ export interface OfficialHistoryFile {
   pulledAt: string;
   /** Series id -> observations. */
   series: Record<string, OfficialRun>;
+  /** Figure ids the last download asked for, so a figure added later triggers one new download. */
+  asked?: string[];
   /** Series id -> why it did not come back this time (a later download tries again). */
   failed?: Record<string, string>;
   /** Series id -> values the source changed between downloads, oldest first (see historyRevisions). */

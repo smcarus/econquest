@@ -36,6 +36,7 @@ const EventStudyPanel = lazyNamed(() => import('./EventStudyPanel'), 'EventStudy
 const BeerPanel = lazyNamed(() => import('./BeerPanel'), 'BeerPanel');
 const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'), 'LocalProjectionsPanel');
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
+const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
 
@@ -332,6 +333,12 @@ export const CountryPage: React.FC<{
           </React.Suspense>
           <PanelBoundary name="Event history">
             <GdeltHistoryPanel key={`gdelt-daily-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+          </PanelBoundary>
+          <div id="tool-risk-scorecard" className="scroll-mt-4" />
+          <PanelBoundary name="Country risk scorecard">
+            <React.Suspense fallback={<DeskLoading />}>
+              <RiskScorecardPanel key={`risk-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
           </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />
           <PanelBoundary name="Nowcast and forecasts">

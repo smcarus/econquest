@@ -33,6 +33,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Forecasts with fan charts (AR models) | Research | Not validated | None |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
+| Country risk scorecard | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Not validated | None |
@@ -49,6 +50,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
 | Gross financing need (lower bound) | Research | Stated method, no call to test | Not applicable |
+| Country risk scorecard | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -349,6 +351,18 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Limits:** Lower bound (no domestic amortisation); IDS covers low and middle income borrowers only.
 - **Code:** `src/utils/grossFinancingNeed.ts`
 
+### Country risk scorecard
+
+- **Says:** Governance, armed conflict, unrest and the economy side by side, each figure with its source and year.
+- **Rule:** Six World Bank WGI estimates against the world average; UCDP/PRIO conflicts and UCDP deaths for the latest coded year; GDELT 1.0 unrest spikes; IMF and World Bank debt, growth, inflation, current account, reserves and external debt. No overall score.
+- **Reads:** World Bank WGI, UCDP/PRIO and UCDP, GDELT 1.0 event files, IMF WEO, World Bank Open Data
+- **Shows in:** Country Research > History & data (Country risk scorecard)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published figures side by side, no forward call and no weights.
+- **Limits:** WGI and UCDP are yearly and lag a year or more; WGI estimates have wide margins of error; GDELT counts news reports, not events on the ground.
+- **Code:** `src/utils/countryRiskScorecard.ts`
+
 ### Reserve adequacy (IMF ARA, partial)
 
 - **Says:** Reserves against the IMF adequacy metric, with the usual months-of-imports and short-term debt cover.
@@ -567,6 +581,17 @@ These show where things stand on a stated method and make no call a backtest cou
 - Flag: a total of 15% of GDP or more, the IMF market-access DSA benchmark for emerging markets.
 - **Limits:** Domestic amortisation (local debt held by residents) has no free cross-country source, so the total is a lower bound; for countries that borrow mainly at home it can be far below the true need. IDS covers low- and middle-income countries only. IMF years from this one on and all IDS years are projections.
 - **Code:** `src/utils/grossFinancingNeed.ts`
+
+### Country risk scorecard
+
+- **Shows in:** Research > History & data
+- Governance: the six World Bank Worldwide Governance Indicators (voice and accountability, political stability, government effectiveness, regulatory quality, rule of law, control of corruption), as published estimates where 0 is the world average and 1 is one standard deviation. Within 0.25 of 0 reads as near the average; 1 or more away reads as well above or below. Change against five years earlier.
+- Armed conflict: UCDP/PRIO conflicts located in the country (and how many at war level), and UCDP best estimates of state-based, non-state and one-sided deaths, for the latest year UCDP has coded, with the three years before.
+- Unrest: protests and violence as a share of the country's GDELT 1.0 events in the latest complete month, as z-scores against the previous 24 months, and the spike episodes of the last 24 months (see Unrest spikes).
+- Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.
+- No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.
+- **Limits:** WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.
+- **Code:** `src/utils/countryRiskScorecard.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

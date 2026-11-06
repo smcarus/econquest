@@ -73,6 +73,20 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/grossFinancingNeed.ts',
   },
   {
+    id: 'risk_scorecard',
+    name: 'Country risk scorecard',
+    where: 'Research > History & data',
+    method: [
+      'Governance: the six World Bank Worldwide Governance Indicators (voice and accountability, political stability, government effectiveness, regulatory quality, rule of law, control of corruption), as published estimates where 0 is the world average and 1 is one standard deviation. Within 0.25 of 0 reads as near the average; 1 or more away reads as well above or below. Change against five years earlier.',
+      'Armed conflict: UCDP/PRIO conflicts located in the country (and how many at war level), and UCDP best estimates of state-based, non-state and one-sided deaths, for the latest year UCDP has coded, with the three years before.',
+      'Unrest: protests and violence as a share of the country\'s GDELT 1.0 events in the latest complete month, as z-scores against the previous 24 months, and the spike episodes of the last 24 months (see Unrest spikes).',
+      'Economy: government debt, real growth, inflation (IMF WEO, latest outturn year, projections left out), current account, reserves in months of imports and external debt (World Bank), against five years earlier.',
+      'No overall score: any weighting of the pillars would be a guess, and one number would look more certain than the figures are.',
+    ],
+    limits: 'WGI and UCDP are yearly and lag a year or more. WGI estimates are built from surveys and expert ratings and carry wide margins of error; small changes are within them. GDELT counts news reports, which rise with media attention. Figures not on file are listed as missing with the reason.',
+    code: 'src/utils/countryRiskScorecard.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',
