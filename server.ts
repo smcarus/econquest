@@ -1,13 +1,15 @@
-import { CDS_HIDDEN } from './src/utils/cdsHidden.ts';
+// Reads .env and the data folder before anything else (src/server/config.ts).
+import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
+import { fetchTextWithTimeout, fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, mergeRevisions, historyRevisions, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
 import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome } from './src/utils/debtSustainability';
-import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
+import { loadWorkspace, setWorkspaceValue, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
-import { dataDirProblem, installJsonConsole, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
+import { dataDirProblem, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
 import { AuthStore } from './src/utils/authStore';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
@@ -20,33 +22,19 @@ import { buildSnapshot, loadSnapshot, saveSnapshot, sha256, snapshotDir, verifyS
 import { decisionsFrom, replayDecision, replaySentence } from './src/utils/decisionReplay';
 import { TRACK_RECORD_HEADER, trackRecord, trackRecordRows, trackRecordSentence, type ArchivedDay } from './src/utils/trackRecord';
 import { INFLATION_TARGETS } from './src/utils/marketsMacro';
-import { BCB_IPCA_12M, BCB_LONG, BCB_SHORT, EUROSTAT_GEO, EUROSTAT_LONG, EUROSTAT_SHORT, bcbSgsUrl, eurostatHicpUrl, mergeNationalCpi, parseBcbSgs, parseEurostatHicp, type NationalCpiSeries } from './src/utils/nationalCpi';
-import { BIS_ISO2, BIS_LABEL, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, parseBisIntl } from './src/utils/bisDebtSecurities';
-import {
-  OWN_CDS_LABEL,
-  lsegSnapshotUrl,
-  lsegTokenRequest,
-  ownCdsSettings,
-  parseLsegSnapshot,
-  parseOwnCdsCsv,
-  type OwnCdsQuote,
-} from './src/utils/ownCds';
+import { mergeNationalCpi } from './src/utils/nationalCpi';
+import { BIS_LABEL } from './src/utils/bisDebtSecurities';
+import { OWN_CDS_LABEL } from './src/utils/ownCds';
 import { WB_TRADE_INDICATORS, enrichTrade, parseWbLatest, parseWitsShare, wbIndicatorUrl, witsUrl, type TradeExposure, type WbTradeKey, type WitsIndicator } from './src/utils/scenarioExposure';
-import { CFTC_CURRENCY_CODES, CFTC_HISTORY_WEEKS, cftcUrl, parseCftcRows, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
+import { CFTC_CURRENCY_CODES, CFTC_HISTORY_WEEKS, positioningFor, type CftcWeek } from './src/utils/cftcPositioning';
 import { cliTurnToPolicyRecord, crowdingUnwindRecord, type SignalRecord } from './src/utils/signalRecord';
-import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, buildCommodityReply, eiaSpotUrl, findPinkSheetUrl, parseEiaSpot, parsePinkSheet, type CommodityReply, type PriceSeries } from './src/utils/commodityPrices';
-import { readXlsxSheet } from './src/utils/xlsxRead';
-import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
-import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
-import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
-import { parseQna, qnaUrl, type QnaSeries } from './src/utils/oecdQna';
+import { type CommodityReply } from './src/utils/commodityPrices';
+import { comtradeMissing } from './src/utils/comtradeTrade';
+import { ticHoldingFor } from './src/utils/ticHoldings';
+import { cliFor, cliTurns } from './src/utils/oecdCli';
 import { areaSeries } from './src/utils/oecdSdmx';
-import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
-import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
-import { pullImfExternal, type ImfExternal, type ImfStructure } from './src/utils/imfReserves';
-import { pullCofer, type CoferReading } from './src/utils/imfCofer';
-import { CBPOL_AREA, cbpolDailyUrl, cbpolMissing, cbpolMonthlyUrl, parseCbpolCsv, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
-import { frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerUrl, type FxVol, type ReerGap } from './src/utils/fxValuation';
+import { cpiFor } from './src/utils/oecdInflation';
+import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { describeFailures, localStepTimeoutMs, LONG_CHAT_STEPS, ModelWaitError, ollamaHasModel, streamWaitFor, type ModelAttempt, type StreamWait } from './src/utils/modelFailure';
 import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from './src/utils/refereeModel';
@@ -60,10 +48,10 @@ import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { addBrief, addCouncilDoc, addDoc, addEpisode, addNotebook, briefId, isBrief, isDoc, removeBrief, removeCouncilDoc, removeDoc, removeEpisode, removeNotebook, summarise, updateEpisode, updateNotebook } from './src/utils/researchLibrary';
 import { episodeFileName, episodeMarkdown } from './src/utils/episodeHandout';
 import { notebookFileName, notebookMarkdown } from './src/utils/notebookExport';
-import { loadLibrary, researchFilePath, saveLibrary } from './src/utils/researchStore';
-import { appendAudit, auditFiles, rawAudit, readAudit } from './src/utils/auditStore';
-import { loadSpecs, loadValidation, runBacktests, validationFilePath } from './src/utils/backtestRun';
-import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffFilePath, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
+import { loadLibrary, saveLibrary } from './src/utils/researchStore';
+import { appendAudit, rawAudit, readAudit } from './src/utils/auditStore';
+import { loadSpecs, loadValidation, runBacktests } from './src/utils/backtestRun';
+import { loadSignOffs, recordFor, reportHash, saveSignOff, signOffView, takeStep, SIGNOFF_LABEL } from './src/utils/signoff';
 import { buildDiagnosis, DIAGNOSIS_FIELDS, type Diagnosis } from './src/utils/reviewDiagnosis';
 import { reviewModelFigures } from './src/utils/reviewModels';
 import { buildMemo, parseMemoInputs, type MemoStep } from './src/utils/reviewMemo';
@@ -72,7 +60,7 @@ import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packR
 import { checkOptions, OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, LEVERS, type OptionsStep, type UserOption } from './src/utils/reviewOptions';
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION, type ReviewFrame } from './src/utils/policyReview';
-import { deleteReview, loadReviews, newReview, putReview, reviewFilePath, saveStep, verifyReview } from './src/utils/policyReviewStore';
+import { deleteReview, loadReviews, newReview, putReview, saveStep, verifyReview } from './src/utils/policyReviewStore';
 import { AUDIT_HEADER, AUDIT_KIND_LABEL, auditRows, describeRequest, figuresFromAnswers, type AuditKind } from './src/utils/auditLog';
 import { backupFileName, parseBackup, summariseBackup } from './src/utils/backup';
 import { currentBackup, restoreBackup } from './src/utils/backupStore';
@@ -81,10 +69,10 @@ import { planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/ask
 import { pickPrevious, whatChanged } from './src/utils/whatChanged';
 import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
-import { figureWatchFiles, readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
+import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { MODEL_FIELD_MISSING } from './src/utils/councilResult';
-import { loadWatchRules, saveWatchRules, watchRulesFilePath } from './src/utils/watchRulesStore';
+import { loadWatchRules, saveWatchRules } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
 import { tableWorkbook } from './src/utils/xlsxExport';
@@ -94,29 +82,24 @@ import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, t
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
-import { IDS_LABEL, QEDS_LABEL, idsUrl, parseIds, parseQeds, qedsUrl, type DebtSchedule } from './src/utils/debtSchedule';
+import { IDS_LABEL, QEDS_LABEL } from './src/utils/debtSchedule';
 import {
   API_KEY_IDS,
   apiKeyField,
   applyKeysToEnv,
   describeKeys,
-  envKeySnapshot,
   isLocalRequest,
   keySources,
-  loadSettings,
   saveSettings,
-  settingsFilePath,
   withKey,
   withoutKey,
 } from './src/utils/userSettings';
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
-import { appendCheck, dataHealthFiles, readChecks, readState, saveState } from './src/utils/dataHealthStore';
-import dotenv from 'dotenv';
+import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI, ThinkingLevel, Type } from '@google/genai';
 import {
@@ -168,56 +151,21 @@ import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFu
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
-import { gdeltToneShift, type GdeltToneShift } from './src/utils/gdeltTone.ts';
 import { buildSeries as buildGdeltRawSeries, gdeltRawReading, type GdeltRawDay, type GdeltRawReading, type GdeltRawSeries } from './src/utils/gdeltRaw.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { polymarketMoves } from './src/utils/oddsMoves.ts';
-import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig, HC_SPREAD_FEED_LABEL, type HcSpreadPull } from './src/utils/hardCurrencySpread.ts';
-import {
-  FRED_10Y_SERIES,
-  US_10Y_SERIES,
-  evdsSeriesUrl,
-  fredApiUrl,
-  fredCsvUrl,
-  parseFredApiLatest,
-  parseFredCsvLatest,
-  parseTesouroDiretoLatest,
-  TESOURO_DIRETO_CSV_URL,
-  isValidEvdsSeriesCode,
-  officialYieldFeedLabel,
-  parseEvdsLatest,
-  type OfficialYieldObservation,
-} from './src/utils/officialYields.ts';
+import { HC_SPREAD_FEED_LABEL } from './src/utils/hardCurrencySpread.ts';
+import { US_10Y_SERIES, officialYieldFeedLabel } from './src/utils/officialYields.ts';
+import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
+import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_DAYS, GDELT_REFRESH_MS, fetchGdeltQuarterly } from './src/server/feeds/gdelt';
+import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
+import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
+import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi } from './src/server/feeds/oecd';
+import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
+import { officialYieldCache, fetchOfficial10YYield, fetchDebtSchedule, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds } from './src/server/feeds/rates';
 
-dotenv.config();
-// LOG_FORMAT=json (set in the Docker image): one JSON line per log message on stdout/stderr.
-installJsonConsole(process.env);
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Keys saved in the app (Menu > Settings > API keys) win over .env; see src/utils/userSettings.ts.
-const ENV_FILE_KEYS = envKeySnapshot(process.env);
-const SETTINGS_FILE = settingsFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-let savedSettings = loadSettings(SETTINGS_FILE);
-const RESEARCH_FILE = researchFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-// Audit log (Menu > Audit log): append-only, hash-chained. See src/utils/auditLog.ts.
-const AUDIT_FILES = auditFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
-const DATA_HEALTH_FILES = dataHealthFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
-const FIGURE_WATCH_FILES = figureWatchFiles(process.env.DATA_DIR || path.join(__dirname, 'data'));
-// Pre-registered backtests (Menu > Models & validation). See src/utils/backtest.ts.
-const VALIDATION_FILE = validationFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-const SPEC_DIR = path.join(__dirname, 'docs', 'validation', 'preregistered');
+const __dirname = APP_ROOT;
 let validationRunning = false;
-// Report sign-off (Reports > Saved research). See src/utils/signoff.ts.
-const SIGNOFF_FILE = signOffFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-// Policy reviews (Reports > Policy reviews). See src/utils/policyReview.ts and docs/POLICY_REVIEW.md.
-const REVIEW_FILE = reviewFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-const WATCH_RULES_FILE = watchRulesFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-const WORKSPACE_FILE = workspaceFilePath(process.env.DATA_DIR || path.join(__dirname, 'data'));
-// Every full council run's step timings, one JSON line each (src/utils/councilTiming.ts).
-const COUNCIL_TIMING_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'local', 'council-timing.jsonl');
-applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
 
 // Rebuilt when the Gemini key is changed in Menu > Settings.
 const makeGeminiClient = () =>
@@ -230,1180 +178,6 @@ const makeGeminiClient = () =>
     },
   });
 let ai = makeGeminiClient();
-
-async function fetchWithTimeout(url: string, timeoutMs = 4200): Promise<Response> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    return await fetch(url, {
-      signal: controller.signal,
-      headers: { Accept: 'application/json' },
-    });
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/**
- * Latest official 10Y yield (OECD via FRED, monthly average), or null if not covered or unreachable.
- * Uses the official FRED API when FRED_API_KEY is set, and falls back to the no-key CSV download.
- */
-/**
- * Brazil: the Treasury's Tesouro Direto CSV holds the whole price history. On Sam's Mac
- * (2026-11-05) it was 14.6 MB and took 60 seconds, so it gets 90 seconds, one download at a time,
- * and the parsed answer is kept 6 hours in memory and on disk (data/live/tesouro.json) so a restart
- * does not download it again. A failed download is retried after 30 minutes.
- */
-const TESOURO_TIMEOUT_MS = 90000;
-let tesouroCache: { at: number; obs: OfficialYieldObservation | null } | null = null;
-let tesouroPending: Promise<OfficialYieldObservation | null> | null = null;
-function tesouroFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'tesouro.json');
-}
-async function fetchTesouroDiretoYield(): Promise<OfficialYieldObservation | null> {
-  if (!tesouroCache) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(tesouroFile(), 'utf8'));
-      if (saved?.obs && typeof saved.at === 'number') tesouroCache = saved;
-    } catch {
-      // nothing saved yet
-    }
-  }
-  if (tesouroCache && Date.now() - tesouroCache.at < (tesouroCache.obs ? 6 * 60 : 30) * 60 * 1000) return tesouroCache.obs;
-  if (tesouroPending) return tesouroPending;
-  tesouroPending = (async () => {
-    let obs: OfficialYieldObservation | null = null;
-    try {
-      const res = await fetchWithTimeout(TESOURO_DIRETO_CSV_URL, TESOURO_TIMEOUT_MS);
-      if (res.ok) obs = parseTesouroDiretoLatest(await res.text());
-      else console.warn(`[Tesouro] Brazil yield file refused (HTTP ${res.status})`);
-    } catch (e) {
-      console.warn(`[Tesouro] Brazil yield file: ${describeNetworkError(e, TESOURO_TIMEOUT_MS)}`);
-    }
-    if (obs) {
-      tesouroCache = { at: Date.now(), obs };
-      try {
-        fs.mkdirSync(path.dirname(tesouroFile()), { recursive: true });
-        writeFileAtomic(tesouroFile(), JSON.stringify(tesouroCache));
-      } catch {
-        // keep the memory copy
-      }
-    } else {
-      // Keep serving the last good figure (it carries its own date); retry in 30 minutes.
-      tesouroCache = { at: Date.now() - (tesouroCache?.obs ? 6 * 60 - 30 : 0) * 60 * 1000, obs: tesouroCache?.obs ?? null };
-    }
-    return tesouroCache.obs;
-  })().finally(() => {
-    tesouroPending = null;
-  });
-  return tesouroPending;
-}
-
-/**
- * Official yields change at most daily (Brazil) or monthly (FRED/OECD), so results are kept for
- * 6 hours. A miss (feed down, or no series) is kept for 30 minutes so the watchlist does not
- * retry every country on each refresh.
- */
-const officialYieldCache = new Map<string, { at: number; obs: OfficialYieldObservation | null }>();
-async function fetchOfficial10YYield(iso3: string): Promise<OfficialYieldObservation | null> {
-  const hit = officialYieldCache.get(iso3);
-  if (hit && Date.now() - hit.at < (hit.obs ? 6 * 60 * 60 * 1000 : 30 * 60 * 1000)) return hit.obs;
-  const obs = await fetchOfficial10YYieldUncached(iso3);
-  officialYieldCache.set(iso3, { at: Date.now(), obs });
-  return obs;
-}
-
-/**
- * Government external debt falling due (QEDS quarterly schedule, IDS yearly projections) from the
- * World Bank API, and government debt securities outstanding from the BIS API, all with no key. These change quarterly at most, so answers are kept for 12 hours
- * and misses for an hour. Each source is tried on its own; either can be missing.
- */
-const debtScheduleCache = new Map<string, { at: number; value: DebtSchedule | null }>();
-async function fetchJsonWithTimeout(url: string, ms = 8000): Promise<unknown | null> {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch {
-    return null;
-  }
-}
-async function fetchTextWithTimeout(url: string, ms = 8000): Promise<string | null> {
-  try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(ms) });
-    if (!res.ok) return null;
-    return await res.text();
-  } catch {
-    return null;
-  }
-}
-async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | null> {
-  const hit = debtScheduleCache.get(iso3);
-  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const iso2 = BIS_ISO2[iso3];
-  const [qedsJson, idsJson, bisIntlCsv, bisAllCsv] = await Promise.all([
-    fetchJsonWithTimeout(qedsUrl(iso3)),
-    fetchJsonWithTimeout(idsUrl(iso3)),
-    iso2 ? fetchTextWithTimeout(bisIntlUrl(iso2)) : Promise.resolve(null),
-    iso2 ? fetchTextWithTimeout(bisAllMarketsUrl(iso2)) : Promise.resolve(null),
-  ]);
-  const qeds = qedsJson ? parseQeds(qedsJson) : null;
-  const ids = idsJson ? parseIds(idsJson, new Date().getUTCFullYear()) : null;
-  const intl = bisIntlCsv ? parseBisIntl(bisIntlCsv) : null;
-  const all = bisAllCsv ? parseBisAllMarkets(bisAllCsv) : null;
-  const bis = intl || all ? { ...(intl ? { intl } : {}), ...(all ? { all } : {}) } : null;
-  const value: DebtSchedule | null =
-    qeds || ids || bis
-      ? { ...(qeds ? { qeds } : {}), ...(ids ? { ids } : {}), ...(bis ? { bis } : {}), fetchedAt: new Date().toISOString() }
-      : null;
-  debtScheduleCache.set(iso3, { at: Date.now(), value });
-  return value;
-}
-
-/**
- * Own-account 5Y CDS (off unless CDS_FEED is set in .env; see src/utils/ownCds.ts). The CSV is
- * re-read when the file changes; LSEG answers are kept for 15 minutes and its token until expiry.
- * The credentials never leave the server and are never logged.
- */
-let ownCdsCache: { key: string; at: number; quotes: Map<string, OwnCdsQuote> } | null = null;
-let lsegToken: { token: string; until: number } | null = null;
-async function loadOwnCds(): Promise<Map<string, OwnCdsQuote>> {
-  // CDS is hidden for now (src/utils/cdsHidden.ts): the USD bond spread stands in for it.
-  if (CDS_HIDDEN) return new Map();
-  const cfg = ownCdsSettings(process.env);
-  if (!cfg) return new Map();
-  try {
-    if (cfg.provider === 'csv' && cfg.csvPath) {
-      const stat = fs.statSync(cfg.csvPath);
-      const key = `csv:${cfg.csvPath}:${stat.mtimeMs}`;
-      if (ownCdsCache?.key === key) return ownCdsCache.quotes;
-      const quotes = parseOwnCdsCsv(fs.readFileSync(cfg.csvPath, 'utf8'));
-      ownCdsCache = { key, at: Date.now(), quotes };
-      return quotes;
-    }
-    if (cfg.provider === 'lseg' && cfg.lseg) {
-      const key = `lseg:${Object.entries(cfg.lseg.rics).join(',')}`;
-      if (ownCdsCache?.key === key && Date.now() - ownCdsCache.at < 15 * 60 * 1000) return ownCdsCache.quotes;
-      if (!lsegToken || Date.now() > lsegToken.until) {
-        const req = lsegTokenRequest(cfg.lseg);
-        const res = await fetch(req.url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: req.body,
-          signal: AbortSignal.timeout(10000),
-        });
-        if (!res.ok) throw new Error(`LSEG sign-in refused (${res.status})`);
-        const tok = (await res.json()) as { access_token?: string; expires_in?: string | number };
-        if (!tok.access_token) throw new Error('LSEG sign-in gave no token');
-        lsegToken = { token: tok.access_token, until: Date.now() + (Number(tok.expires_in) || 300) * 1000 - 30000 };
-      }
-      const res = await fetch(lsegSnapshotUrl(cfg.lseg), {
-        headers: { Authorization: `Bearer ${lsegToken.token}` },
-        signal: AbortSignal.timeout(10000),
-      });
-      if (res.status === 401) lsegToken = null;
-      if (!res.ok) throw new Error(`LSEG pricing snapshot refused (${res.status})`);
-      const quotes = parseLsegSnapshot(await res.json(), cfg.lseg.rics, new Date().toISOString().slice(0, 10));
-      ownCdsCache = { key, at: Date.now(), quotes };
-      return quotes;
-    }
-  } catch (e) {
-    console.warn(`[own CDS] ${cfg.provider}: ${e instanceof Error ? e.message : 'failed'}`);
-  }
-  return new Map();
-}
-
-/** Turkey's EVDS feed is on only when the user has set both a key and a series code. */
-function evdsSettings(): { key: string; series: string } | null {
-  const key = (process.env.EVDS_API_KEY || '').trim();
-  const series = (process.env.EVDS_TR10Y_SERIES || '').trim();
-  return key && isValidEvdsSeriesCode(series) ? { key, series } : null;
-}
-
-async function fetchEvdsTurkeyYield(): Promise<OfficialYieldObservation | null> {
-  const cfg = evdsSettings();
-  if (!cfg) return null;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
-  try {
-    // The key goes only in the "key" header, never in the URL (EVDS returns 403 otherwise).
-    const res = await fetch(evdsSeriesUrl(cfg.series), {
-      signal: controller.signal,
-      headers: { key: cfg.key, Accept: 'application/json' },
-    });
-    if (!res.ok) {
-      console.warn(`[EVDS] Turkey 10Y request failed with HTTP ${res.status}`);
-      return null;
-    }
-    return parseEvdsLatest(await res.json(), cfg.series);
-  } catch {
-    return null;
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
-/** Countries with an official 10Y source wired in (Turkey only once EVDS is set up). */
-function hasOfficial10YSource(iso3: string): boolean {
-  return iso3 === 'BRA' || Boolean(FRED_10Y_SERIES[iso3]) || (iso3 === 'TUR' && evdsSettings() !== null);
-}
-
-async function fetchOfficial10YYieldUncached(iso3: string): Promise<OfficialYieldObservation | null> {
-  if (iso3 === 'BRA') return fetchTesouroDiretoYield();
-  if (iso3 === 'TUR') return fetchEvdsTurkeyYield();
-  const seriesId = FRED_10Y_SERIES[iso3];
-  if (!seriesId) return null;
-  return fetchFredLatest(seriesId);
-}
-
-/** Latest observation of a FRED yield series: the API when FRED_API_KEY is set, else the CSV. */
-async function fetchFredLatest(seriesId: string): Promise<OfficialYieldObservation | null> {
-  const apiKey = (process.env.FRED_API_KEY || '').trim();
-  if (apiKey) {
-    try {
-      const res = await fetchWithTimeout(fredApiUrl(seriesId, apiKey), 6000);
-      if (res.ok) {
-        const obs = parseFredApiLatest(await res.json(), seriesId);
-        if (obs) return obs;
-      }
-    } catch {
-      // fall through to the CSV download
-    }
-  }
-  try {
-    const res = await fetchWithTimeout(fredCsvUrl(seriesId), 6000);
-    if (!res.ok) return null;
-    return parseFredCsvLatest(await res.text(), seriesId);
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Market extras saved to disk (data/live/market-extras.json): the US 10Y and other FRED
- * benchmarks, the BIS real exchange rate gap and three-month FX volatility per country, and the
- * NY Fed fed funds rate. Each keeps its own source date. A good answer is saved; when a feed does
- * not answer (offline, or down) the last saved figure is used, so the screens built on them (carry,
- * spread over Treasuries, real exchange rate) keep their saved figures with their dates instead of
- * reading Missing.
- */
-type MarketExtrasFile = {
-  fred: Record<string, { at: string; value: OfficialYieldObservation }>;
-  fx: Record<string, { at: string; reer?: ReerGap; vol?: FxVol }>;
-  effr?: { at: string; value: { pct: number; date: string } };
-  /** Hard-currency bond spreads (BCRP EMBIG), the whole last good pull. */
-  hcSpread?: HcSpreadPull;
-};
-let marketExtras: MarketExtrasFile | null = null;
-function marketExtrasFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'market-extras.json');
-}
-function loadMarketExtras(): MarketExtrasFile {
-  if (marketExtras) return marketExtras;
-  let f: MarketExtrasFile = { fred: {}, fx: {} };
-  try {
-    const saved = JSON.parse(fs.readFileSync(marketExtrasFile(), 'utf8')) as Partial<MarketExtrasFile>;
-    f = { fred: saved.fred && typeof saved.fred === 'object' ? saved.fred : {}, fx: saved.fx && typeof saved.fx === 'object' ? saved.fx : {}, ...(saved.effr ? { effr: saved.effr } : {}), ...(saved.hcSpread ? { hcSpread: saved.hcSpread } : {}) };
-  } catch {
-    // never saved
-  }
-  marketExtras = f;
-  return f;
-}
-function saveMarketExtras(change: (f: MarketExtrasFile) => void) {
-  const f = loadMarketExtras();
-  change(f);
-  try {
-    fs.mkdirSync(path.dirname(marketExtrasFile()), { recursive: true });
-    writeFileAtomic(marketExtrasFile(), JSON.stringify(f));
-  } catch (err: any) {
-    console.warn(`[market extras] could not save: ${err?.message || err}`);
-  }
-}
-
-/** A FRED yield series kept for 12 hours (1 hour after a miss). Used for MarketEdge benchmarks. */
-const fredSeriesCache = new Map<string, { at: number; value: OfficialYieldObservation | null; fallback?: boolean }>();
-async function fetchFredCached(seriesId: string): Promise<OfficialYieldObservation | null> {
-  const hit = fredSeriesCache.get(seriesId);
-  if (hit && Date.now() - hit.at < (hit.value && !hit.fallback ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const got = await fetchFredLatest(seriesId);
-  if (got) saveMarketExtras((f) => (f.fred[seriesId] = { at: new Date().toISOString(), value: got }));
-  const value = got ?? loadMarketExtras().fred[seriesId]?.value ?? null;
-  // A saved figure stands in, but the feed is asked again within the hour.
-  fredSeriesCache.set(seriesId, { at: Date.now(), value, ...(got ? {} : { fallback: true }) });
-  return value;
-}
-
-/**
- * Hard-currency bond spreads for the eight countries BCRP publishes (src/utils/hardCurrencySpread.ts):
- * one request for all of them, kept 12 hours (1 hour after a miss). A good answer is saved in
- * market-extras.json; when BCRP does not answer the saved pull stands in, with its own months.
- */
-let hcSpreadCache: { at: number; value: HcSpreadPull | null; fallback?: boolean } | null = null;
-async function fetchHcSpreadUncached(): Promise<HcSpreadPull | null> {
-  const url = bcrpEmbigUrl();
-  try {
-    const res = await fetchWithTimeout(url, 20000);
-    if (!res.ok) {
-      console.warn(`[BCRP EMBIG] HTTP ${res.status}`);
-      return null;
-    }
-    const text = await res.text();
-    const got = parseBcrpEmbig(text, url);
-    if (!got) console.warn(`[BCRP EMBIG] ${describeBcrpReply(text)}`);
-    return got;
-  } catch (e) {
-    console.warn(`[BCRP EMBIG] ${describeNetworkError(e, 20000)}`);
-    return null;
-  }
-}
-async function fetchHcSpread(opts: { force?: boolean } = {}): Promise<HcSpreadPull | null> {
-  if (!opts.force && hcSpreadCache && Date.now() - hcSpreadCache.at < (hcSpreadCache.value && !hcSpreadCache.fallback ? 12 : 1) * 60 * 60 * 1000) return hcSpreadCache.value;
-  const got = await fetchHcSpreadUncached();
-  if (got) saveMarketExtras((f) => (f.hcSpread = got));
-  const value = got ?? loadMarketExtras().hcSpread ?? null;
-  hcSpreadCache = { at: Date.now(), value, ...(got ? {} : { fallback: true }) };
-  return value;
-}
-
-/** US 10Y (OECD monthly, via FRED): the benchmark for spreads over Treasuries in MarketEdge. */
-function fetchUs10YYield(): Promise<OfficialYieldObservation | null> {
-  return fetchFredCached(US_10Y_SERIES);
-}
-
-/**
- * FX valuation per currency (see src/utils/fxValuation.ts): BIS real exchange rate gap and
- * three-month realised volatility against the dollar. Kept 12 hours (1 hour after a miss).
- */
-type FxValuation = { reer: ReerGap | null; vol: FxVol | null; fromSaved?: boolean; answered?: boolean };
-const fxValuationCache = new Map<string, { at: number; value: FxValuation; pending?: Promise<FxValuation> }>();
-async function fetchFxValuationUncached(iso3: string, ccy: string): Promise<FxValuation> {
-  const iso2 = BIS_ISO2[iso3];
-  const [reerText, volRes] = await Promise.all([
-    iso2 ? fetchTextWithTimeout(reerUrl(iso2), 8000) : Promise.resolve(null),
-    fetchWithTimeout(frankfurterSeriesUrl(ccy), 6000).catch(() => null),
-  ]);
-  let vol: FxVol | null = null;
-  try {
-    if (volRes?.ok) vol = parseFxVol(await volRes.json(), ccy);
-  } catch {
-    vol = null;
-  }
-  const reer = parseReer(reerText);
-  if (reer || vol) saveMarketExtras((f) => (f.fx[iso3] = { at: new Date().toISOString(), ...(reer ? { reer } : f.fx[iso3]?.reer ? { reer: f.fx[iso3].reer } : {}), ...(vol ? { vol } : f.fx[iso3]?.vol ? { vol: f.fx[iso3].vol } : {}) }));
-  const saved = loadMarketExtras().fx[iso3];
-  return { reer: reer ?? saved?.reer ?? null, vol: vol ?? saved?.vol ?? null, ...((!reer && saved?.reer) || (!vol && saved?.vol) ? { fromSaved: true } : {}), answered: !!(reer || vol) };
-}
-async function fetchFxValuation(iso3: string, ccy: string): Promise<FxValuation> {
-  const hit = fxValuationCache.get(iso3);
-  const fresh = hit && Date.now() - hit.at < ((hit.value.reer || hit.value.vol) && !hit.value.fromSaved ? 12 : 1) * 60 * 60 * 1000;
-  if (fresh) return hit!.value;
-  if (hit?.pending) return hit.pending;
-  const pending = fetchFxValuationUncached(iso3, ccy).then((value) => {
-    fxValuationCache.set(iso3, { at: Date.now(), value });
-    return value;
-  });
-  fxValuationCache.set(iso3, { at: hit?.at ?? 0, value: hit?.value ?? { reer: null, vol: null }, pending });
-  return pending;
-}
-
-/** US effective federal funds rate (NY Fed), the dollar leg of carry. 6h cache. */
-let effrCache: { at: number; value: { pct: number; date: string } | null; fallback?: boolean } | null = null;
-async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
-  if (effrCache && Date.now() - effrCache.at < (effrCache.value && !effrCache.fallback ? 6 : 1) * 60 * 60 * 1000) return effrCache.value;
-  let value: { pct: number; date: string } | null = null;
-  try {
-    const res = await fetchWithTimeout('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json', 4000);
-    if (res.ok) value = parseEffr(await res.json());
-  } catch {
-    value = null;
-  }
-  const fallback = !value;
-  if (value) {
-    const got = value;
-    saveMarketExtras((f) => (f.effr = { at: new Date().toISOString(), value: got }));
-  } else value = loadMarketExtras().effr?.value ?? null;
-  effrCache = { at: Date.now(), value, ...(fallback ? { fallback: true } : {}) };
-  return value;
-}
-
-/**
- * CFTC currency futures positioning (src/utils/cftcPositioning.ts). Weekly: positions as of
- * Tuesday, published Friday. One request covers every currency (about three years of weeks). The
- * pull is saved to data/live/cftc.json with its pull date. It is pulled again only when a newer
- * report can exist (the latest is 7 or more days old) and the last pull is over 12 hours old;
- * a failed pull keeps the last good one and is retried after an hour.
- */
-type CftcPull = { pulledAt: string; weeks: Record<string, CftcWeek[]> };
-let cftcMemory: { pull: CftcPull | null; triedAt: number } | null = null;
-let cftcInFlight: Promise<CftcPull | null> | null = null;
-function cftcFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'cftc.json');
-}
-function cftcLatestDate(pull: CftcPull): string {
-  return Object.values(pull.weeks).map((w) => w[w.length - 1]?.date || '').sort().pop() || '';
-}
-async function fetchCftcPull(): Promise<CftcPull | null> {
-  if (!cftcMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(cftcFile(), 'utf8')) as CftcPull;
-      if (saved?.pulledAt && saved.weeks && typeof saved.weeks === 'object') cftcMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  const pull = cftcMemory?.pull;
-  if (pull) {
-    const sincePull = Date.now() - Date.parse(pull.pulledAt);
-    const reportAge = Date.now() - Date.parse(cftcLatestDate(pull));
-    if (sincePull < 12 * 60 * 60 * 1000 || reportAge < 7 * 24 * 60 * 60 * 1000) return pull;
-  }
-  if (cftcMemory && Date.now() - cftcMemory.triedAt < 60 * 60 * 1000) return cftcMemory.pull;
-  if (cftcInFlight) return cftcInFlight;
-  cftcInFlight = (async () => {
-    let weeks: Map<string, CftcWeek[]> | null = null;
-    try {
-      const res = await fetchWithTimeout(cftcUrl(), 20000);
-      if (res.ok) weeks = parseCftcRows(await res.json());
-      else console.warn(`[CFTC] positioning refused (HTTP ${res.status})`);
-    } catch (e) {
-      console.warn(`[CFTC] positioning: ${describeNetworkError(e, 20000)}`);
-    }
-    const prev = cftcMemory?.pull ?? null;
-    if (!weeks || weeks.size === 0) {
-      cftcMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: CftcPull = { pulledAt: new Date().toISOString(), weeks: Object.fromEntries(weeks) };
-    cftcMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(cftcFile()), { recursive: true });
-      writeFileAtomic(cftcFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    cftcInFlight = null;
-  });
-  return cftcInFlight;
-}
-
-/**
- * TIC foreign holdings of US Treasuries (src/utils/ticHoldings.ts). Monthly, one small text file
- * for every country. Saved to data/live/tic.json with its pull date and pulled again after a day;
- * a failed pull keeps the last good one and is retried after an hour.
- */
-type TicPull = { pulledAt: string; table: TicTable };
-let ticMemory: { pull: TicPull | null; triedAt: number } | null = null;
-let ticInFlight: Promise<TicPull | null> | null = null;
-function ticFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'tic.json');
-}
-async function fetchTicPull(): Promise<TicPull | null> {
-  if (!ticMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(ticFile(), 'utf8')) as TicPull;
-      if (saved?.pulledAt && saved.table?.months) ticMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  if (ticMemory?.pull && Date.now() - Date.parse(ticMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return ticMemory.pull;
-  if (ticMemory && Date.now() - ticMemory.triedAt < 60 * 60 * 1000) return ticMemory.pull;
-  if (ticInFlight) return ticInFlight;
-  ticInFlight = (async () => {
-    let table: TicTable | null = null;
-    try {
-      const res = await fetchWithTimeout(TIC_URL, 15000);
-      if (res.ok) table = parseTicTable(await res.text());
-      else console.warn(`[TIC] Treasury holdings refused (HTTP ${res.status})`);
-    } catch (e) {
-      console.warn(`[TIC] Treasury holdings: ${describeNetworkError(e, 15000)}`);
-    }
-    const prev = ticMemory?.pull ?? null;
-    if (!table) {
-      ticMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: TicPull = { pulledAt: new Date().toISOString(), table };
-    ticMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(ticFile()), { recursive: true });
-      writeFileAtomic(ticFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    ticInFlight = null;
-  });
-  return ticInFlight;
-}
-
-/**
- * Central bank policy rates from the BIS (src/utils/bisPolicyRates.ts). Two small requests cover
- * every country: the latest daily figure and about 25 months of month-end figures. Saved to
- * data/live/bis-policy-rates.json with its pull date and pulled again after 12 hours; a failed
- * pull keeps the last good one and is retried after an hour.
- */
-let cbpolMemory: { pull: CbpolPull | null; triedAt: number } | null = null;
-let cbpolInFlight: Promise<CbpolPull | null> | null = null;
-function cbpolFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'bis-policy-rates.json');
-}
-async function fetchCbpolPull(): Promise<CbpolPull | null> {
-  if (!cbpolMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(cbpolFile(), 'utf8')) as CbpolPull;
-      if (saved?.pulledAt && saved.daily && saved.monthly) cbpolMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  if (cbpolMemory?.pull && Date.now() - Date.parse(cbpolMemory.pull.pulledAt) < 12 * 60 * 60 * 1000) return cbpolMemory.pull;
-  if (cbpolMemory && Date.now() - cbpolMemory.triedAt < 60 * 60 * 1000) return cbpolMemory.pull;
-  if (cbpolInFlight) return cbpolInFlight;
-  cbpolInFlight = (async () => {
-    const get = async (url: string, what: string): Promise<string | null> => {
-      try {
-        const res = await fetchWithTimeout(url, 20000);
-        if (res.ok) return await res.text();
-        console.warn(`[BIS] policy rates (${what}) refused (HTTP ${res.status})`);
-      } catch (e) {
-        console.warn(`[BIS] policy rates (${what}): ${describeNetworkError(e, 20000)}`);
-      }
-      return null;
-    };
-    const [dailyCsv, monthlyCsv] = await Promise.all([get(cbpolDailyUrl(), 'daily'), get(cbpolMonthlyUrl(), 'monthly')]);
-    const daily = parseCbpolCsv(dailyCsv, 'D');
-    const monthly = parseCbpolCsv(monthlyCsv, 'M');
-    const prev = cbpolMemory?.pull ?? null;
-    if (!Object.keys(daily).length && !Object.keys(monthly).length) {
-      cbpolMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    // If only one of the two answered, keep the other from the last good pull.
-    const fresh: CbpolPull = {
-      pulledAt: new Date().toISOString(),
-      daily: Object.keys(daily).length ? daily : prev?.daily || {},
-      monthly: Object.keys(monthly).length ? monthly : prev?.monthly || {},
-    };
-    cbpolMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(cbpolFile()), { recursive: true });
-      writeFileAtomic(cbpolFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    cbpolInFlight = null;
-  });
-  return cbpolInFlight;
-}
-
-/**
- * Commodity prices (src/utils/commodityPrices.ts): World Bank Pink Sheet (monthly, no key) and EIA
- * daily Brent/WTI (free key EIA_API_KEY, optional). Both are saved to data/live/commodities.json
- * with their pull dates. The Pink Sheet is pulled again after a day, EIA after 12 hours; a failed
- * pull keeps the last good one and is retried after an hour.
- */
-type PinkPull = { url: string; pulledAt: string; series: Record<string, PriceSeries> };
-type EiaPull = { pulledAt: string; series: Record<string, PriceSeries> };
-type CommodityFile = { pink: PinkPull | null; eia: EiaPull | null };
-let commodityMemory: (CommodityFile & { pinkTried: number; eiaTried: number }) | null = null;
-let commodityInFlight: Promise<CommodityReply> | null = null;
-function commodityFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'commodities.json');
-}
-async function pullPinkSheet(): Promise<PinkPull | null> {
-  try {
-    let url = (process.env.PINK_SHEET_URL || '').trim();
-    if (!url) {
-      const page = await fetchWithTimeout(PINK_SHEET_PAGE, 15000);
-      if (!page.ok) {
-        console.warn(`[Pink Sheet] commodity markets page refused (HTTP ${page.status})`);
-        return null;
-      }
-      url = findPinkSheetUrl(await page.text()) || '';
-      if (!url) {
-        console.warn('[Pink Sheet] no "Monthly prices" workbook link on the commodity markets page; set PINK_SHEET_URL');
-        return null;
-      }
-    }
-    const res = await fetchWithTimeout(url, 45000);
-    if (!res.ok) {
-      console.warn(`[Pink Sheet] workbook refused (HTTP ${res.status})`);
-      return null;
-    }
-    const rows = await readXlsxSheet(await res.arrayBuffer(), PINK_SHEET_SHEET);
-    const series = rows ? parsePinkSheet(rows) : new Map();
-    if (series.size === 0) {
-      console.warn('[Pink Sheet] workbook read, but no commodity columns recognised');
-      return null;
-    }
-    return { url, pulledAt: new Date().toISOString(), series: Object.fromEntries(series) };
-  } catch (e) {
-    console.warn(`[Pink Sheet] ${describeNetworkError(e, 45000)}`);
-    return null;
-  }
-}
-async function pullEia(key: string): Promise<EiaPull | null> {
-  try {
-    const res = await fetchWithTimeout(eiaSpotUrl(key), 20000);
-    if (!res.ok) {
-      console.warn(`[EIA] spot prices refused (HTTP ${res.status})`);
-      return null;
-    }
-    const series = parseEiaSpot(await res.json());
-    return series.size ? { pulledAt: new Date().toISOString(), series: Object.fromEntries(series) } : null;
-  } catch (e) {
-    console.warn(`[EIA] ${describeNetworkError(e, 20000)}`);
-    return null;
-  }
-}
-async function fetchCommodities(): Promise<CommodityReply> {
-  const eiaKey = (process.env.EIA_API_KEY || '').trim();
-  if (!commodityMemory) {
-    let saved: CommodityFile = { pink: null, eia: null };
-    try {
-      const f = JSON.parse(fs.readFileSync(commodityFile(), 'utf8')) as CommodityFile;
-      saved = { pink: f?.pink?.pulledAt ? f.pink : null, eia: f?.eia?.pulledAt ? f.eia : null };
-    } catch {
-      // never pulled
-    }
-    commodityMemory = { ...saved, pinkTried: saved.pink ? Date.parse(saved.pink.pulledAt) : 0, eiaTried: saved.eia ? Date.parse(saved.eia.pulledAt) : 0 };
-  }
-  const mem = commodityMemory;
-  const hour = 60 * 60 * 1000;
-  const age = (p: { pulledAt: string } | null) => (p ? Date.now() - Date.parse(p.pulledAt) : Infinity);
-  const wantPink = age(mem.pink) > 24 * hour && Date.now() - mem.pinkTried > hour;
-  const wantEia = !!eiaKey && age(mem.eia) > 12 * hour && Date.now() - mem.eiaTried > hour;
-  if (!wantPink && !wantEia) return buildCommodityReply(mem.pink, mem.eia, !!eiaKey);
-  if (commodityInFlight) return commodityInFlight;
-  commodityInFlight = (async () => {
-    const [pink, eia] = await Promise.all([wantPink ? pullPinkSheet() : Promise.resolve(null), wantEia ? pullEia(eiaKey) : Promise.resolve(null)]);
-    if (wantPink) mem.pinkTried = Date.now();
-    if (wantEia) mem.eiaTried = Date.now();
-    if (pink) mem.pink = pink;
-    if (eia) mem.eia = eia;
-    if (pink || eia) {
-      try {
-        fs.mkdirSync(path.dirname(commodityFile()), { recursive: true });
-        writeFileAtomic(commodityFile(), JSON.stringify({ pink: mem.pink, eia: mem.eia }));
-      } catch {
-        // keep the memory copy
-      }
-    }
-    return buildCommodityReply(mem.pink, mem.eia, !!eiaKey);
-  })().finally(() => {
-    commodityInFlight = null;
-  });
-  return commodityInFlight;
-}
-
-/**
- * One way to fetch OECD data (now through DBnomics, api.db.nomics.world): named headers, one call
- * at a time at least 5 seconds apart, and nothing at all for an hour after a refusal (HTTP 429 or
- * a Cloudflare bot check).
- */
-let oecdQueue: Promise<unknown> = Promise.resolve();
-let oecdLastCallAt = 0;
-let oecdPausedUntil = 0;
-async function oecdFetch(url: string, timeoutMs: number): Promise<{ status: number; text: string } | null> {
-  const run = async () => {
-    if (Date.now() < oecdPausedUntil) {
-      console.warn(`[OECD] paused after a refusal; asking again in ${Math.ceil((oecdPausedUntil - Date.now()) / 60000)} min`);
-      return null;
-    }
-    const wait = oecdLastCallAt + 5000 - Date.now();
-    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    oecdLastCallAt = Date.now();
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, { signal: controller.signal, headers: OECD_HEADERS });
-      const text = await res.text();
-      if (res.status === 429 || isBotCheck(res.status, text)) {
-        oecdPausedUntil = Date.now() + OECD_PAUSE_MS;
-        console.warn(`[OECD via DBnomics] ${isBotCheck(res.status, text) ? 'blocked by a bot check' : 'too many requests'} (HTTP ${res.status}); pausing these calls for an hour`);
-      }
-      return { status: res.status, text };
-    } finally {
-      clearTimeout(timer);
-    }
-  };
-  const p = oecdQueue.then(run, run);
-  oecdQueue = p.catch(() => undefined);
-  return p;
-}
-
-/**
- * OECD composite leading indicators (src/utils/oecdCli.ts). Monthly; one call for every area.
- * Saved to data/live/oecd-cli.json with its pull date and pulled again after a day; a failed pull
- * keeps the last good one and is retried after an hour. If the OECD refuses the narrow query
- * (a changed layout), the whole dataflow is asked for once and read the same way.
- */
-type CliPull = { pulledAt: string; series: CliSeries };
-let cliMemory: { pull: CliPull | null; triedAt: number } | null = null;
-let cliInFlight: Promise<CliPull | null> | null = null;
-function cliFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cli.json');
-}
-async function fetchCliPull(): Promise<CliPull | null> {
-  if (!cliMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(cliFile(), 'utf8')) as CliPull;
-      if (saved?.pulledAt && saved.series) cliMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  if (cliMemory?.pull && Date.now() - Date.parse(cliMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cliMemory.pull;
-  if (cliMemory && Date.now() - cliMemory.triedAt < 60 * 60 * 1000) return cliMemory.pull;
-  if (cliInFlight) return cliInFlight;
-  cliInFlight = (async () => {
-    let series: CliSeries | null = null;
-    for (const wide of [false, true]) {
-      let res: { status: number; text: string } | null = null;
-      try {
-        res = await oecdFetch(cliUrl({ wide }), 30000);
-      } catch (e) {
-        console.warn(`[OECD via DBnomics] leading indicators: ${describeNetworkError(e, 30000)}`);
-        break;
-      }
-      if (!res) break;
-      if (res.status >= 200 && res.status < 300) series = parseCli(res.text);
-      else console.warn(`[OECD via DBnomics] leading indicators refused (HTTP ${res.status})`);
-      // Ask again without the adjustment filter only when the narrow query found nothing or was
-      // refused as unknown; never after a 429 or a bot check.
-      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
-    }
-    const prev = cliMemory?.pull ?? null;
-    if (!series) {
-      cliMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: CliPull = { pulledAt: new Date().toISOString(), series };
-    cliMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(cliFile()), { recursive: true });
-      writeFileAtomic(cliFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    cliInFlight = null;
-  });
-  return cliInFlight;
-}
-
-/**
- * OECD quarterly real GDP growth (src/utils/oecdQna.ts). One call for every area, after the other
- * OECD calls (same queue). Saved to data/live/oecd-qna.json and pulled again after a day; a failed
- * pull keeps the last good one and is retried after an hour.
- */
-type QnaPull = { pulledAt: string; series: QnaSeries };
-let qnaMemory: { pull: QnaPull | null; triedAt: number } | null = null;
-let qnaInFlight: Promise<QnaPull | null> | null = null;
-function qnaFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-qna.json');
-}
-async function fetchQnaPull(): Promise<QnaPull | null> {
-  if (!qnaMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(qnaFile(), 'utf8')) as QnaPull;
-      if (saved?.pulledAt && saved.series) qnaMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  if (qnaMemory?.pull && Date.now() - Date.parse(qnaMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return qnaMemory.pull;
-  if (qnaMemory && Date.now() - qnaMemory.triedAt < 60 * 60 * 1000) return qnaMemory.pull;
-  if (qnaInFlight) return qnaInFlight;
-  qnaInFlight = (async () => {
-    let series: QnaSeries | null = null;
-    for (const wide of [false, true]) {
-      let res: { status: number; text: string } | null = null;
-      try {
-        res = await oecdFetch(qnaUrl({ wide }), 30000);
-      } catch (e) {
-        console.warn(`[OECD via DBnomics] quarterly GDP: ${describeNetworkError(e, 30000)}`);
-        break;
-      }
-      if (!res) break;
-      if (res.status >= 200 && res.status < 300) series = parseQna(res.text);
-      else console.warn(`[OECD via DBnomics] quarterly GDP refused (HTTP ${res.status})`);
-      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
-    }
-    const prev = qnaMemory?.pull ?? null;
-    if (!series) {
-      qnaMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: QnaPull = { pulledAt: new Date().toISOString(), series };
-    qnaMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(qnaFile()), { recursive: true });
-      writeFileAtomic(qnaFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    qnaInFlight = null;
-  });
-  return qnaInFlight;
-}
-
-/**
- * OECD consumer price inflation (src/utils/oecdInflation.ts). Monthly; one call for every area.
- * Saved to data/live/oecd-cpi.json with its pull date and pulled again after a day; a failed pull
- * keeps the last good one and is retried after an hour.
- */
-type CpiPull = { pulledAt: string; series: CpiSeries };
-let cpiMemory: { pull: CpiPull | null; triedAt: number } | null = null;
-let cpiInFlight: Promise<CpiPull | null> | null = null;
-function cpiFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-cpi.json');
-}
-async function fetchCpiPull(): Promise<CpiPull | null> {
-  if (!cpiMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(cpiFile(), 'utf8')) as CpiPull;
-      if (saved?.pulledAt && saved.series) cpiMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  if (cpiMemory?.pull && Date.now() - Date.parse(cpiMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return cpiMemory.pull;
-  if (cpiMemory && Date.now() - cpiMemory.triedAt < 60 * 60 * 1000) return cpiMemory.pull;
-  if (cpiInFlight) return cpiInFlight;
-  cpiInFlight = (async () => {
-    let series: CpiSeries | null = null;
-    for (const wide of [false, true]) {
-      let res: { status: number; text: string } | null = null;
-      try {
-        res = await oecdFetch(cpiUrl({ wide }), 60000);
-      } catch (e) {
-        console.warn(`[OECD via DBnomics] consumer prices: ${describeNetworkError(e, 60000)}`);
-        break;
-      }
-      if (!res) break;
-      if (res.status >= 200 && res.status < 300) series = parseCpi(res.text);
-      else console.warn(`[OECD via DBnomics] consumer prices refused (HTTP ${res.status})`);
-      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
-    }
-    const prev = cpiMemory?.pull ?? null;
-    if (!series) {
-      cpiMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: CpiPull = { pulledAt: new Date().toISOString(), series };
-    cpiMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(cpiFile()), { recursive: true });
-      writeFileAtomic(cpiFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    cpiInFlight = null;
-  });
-  return cpiInFlight;
-}
-
-/**
- * Fresher monthly inflation (src/utils/nationalCpi.ts): Brazil's central bank (BCB SGS, IPCA 12
- * months) and Eurostat HICP for EU members on the country list. Asked once a day, kept on disk
- * (data/live/national-cpi.json); a failed pull keeps the last good series per country.
- */
-type NationalCpiPull = { pulledAt: string; series: Record<string, NationalCpiSeries> };
-let nationalCpiMemory: { pull: NationalCpiPull | null; triedAt: number } | null = null;
-let nationalCpiInFlight: Promise<NationalCpiPull | null> | null = null;
-function nationalCpiFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'national-cpi.json');
-}
-async function fetchNationalCpi(): Promise<NationalCpiPull | null> {
-  if (!nationalCpiMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(nationalCpiFile(), 'utf8')) as NationalCpiPull;
-      if (saved?.pulledAt && saved.series) nationalCpiMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  if (nationalCpiMemory?.pull && Date.now() - Date.parse(nationalCpiMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return nationalCpiMemory.pull;
-  if (nationalCpiMemory && Date.now() - nationalCpiMemory.triedAt < 60 * 60 * 1000) return nationalCpiMemory.pull;
-  if (nationalCpiInFlight) return nationalCpiInFlight;
-  nationalCpiInFlight = (async () => {
-    const prev = nationalCpiMemory?.pull ?? null;
-    const series: Record<string, NationalCpiSeries> = { ...(prev?.series || {}) };
-    let answered = 0;
-    const isoInCatalog = new Set(SOVEREIGN_CATALOG.map((c) => c.iso3));
-    await Promise.allSettled([
-      (async () => {
-        if (!isoInCatalog.has('BRA')) return;
-        try {
-          const res = await fetchWithTimeout(bcbSgsUrl(BCB_IPCA_12M), 15000);
-          if (!res.ok) return console.warn(`[BCB SGS] IPCA refused (HTTP ${res.status})`);
-          const pts = parseBcbSgs(await res.json());
-          if (pts.length) {
-            series.BRA = { points: pts, short: BCB_SHORT, long: BCB_LONG };
-            answered++;
-          }
-        } catch (e) {
-          console.warn(`[BCB SGS] IPCA: ${describeNetworkError(e, 15000)}`);
-        }
-      })(),
-      (async () => {
-        const eu = SOVEREIGN_CATALOG.filter((c) => EUROSTAT_GEO[c.iso3]);
-        if (!eu.length) return;
-        try {
-          const res = await fetchWithTimeout(eurostatHicpUrl(eu.map((c) => EUROSTAT_GEO[c.iso3])), 20000);
-          if (!res.ok) return console.warn(`[Eurostat] HICP refused (HTTP ${res.status})`);
-          const byGeo = parseEurostatHicp(await res.json());
-          for (const c of eu) {
-            const pts = byGeo[EUROSTAT_GEO[c.iso3]];
-            if (pts?.length) {
-              series[c.iso3] = { points: pts, short: EUROSTAT_SHORT, long: EUROSTAT_LONG };
-              answered++;
-            }
-          }
-        } catch (e) {
-          console.warn(`[Eurostat] HICP: ${describeNetworkError(e, 20000)}`);
-        }
-      })(),
-    ]);
-    if (!answered) {
-      nationalCpiMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: NationalCpiPull = { pulledAt: new Date().toISOString(), series };
-    nationalCpiMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(nationalCpiFile()), { recursive: true });
-      writeFileAtomic(nationalCpiFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    nationalCpiInFlight = null;
-  });
-  return nationalCpiInFlight;
-}
-
-/**
- * UN Comtrade partners and export mix (src/utils/comtradeTrade.ts). Annual, so each country is
- * pulled once every 30 days (6 hours after a miss) and saved to data/live/comtrade.json with its
- * pull date. Two requests per country, sent one at a time with a gap, because the free preview
- * allows few requests; COMTRADE_API_KEY (free) switches to the keyed route.
- */
-type ComtradeEntry = { pulledAt: string; profile: ComtradeProfile };
-type ComtradeFile = { countries: Record<string, ComtradeEntry> };
-let comtradeMemory: { file: ComtradeFile; triedAt: Record<string, number> } | null = null;
-let comtradeInFlight: Promise<ComtradeFile> | null = null;
-function comtradeFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'comtrade.json');
-}
-const COMTRADE_GAP_MS = 1500;
-async function comtradeGet(url: string, key: string): Promise<ComtradeRow[] | null> {
-  try {
-    const res = await fetch(url, { headers: key ? { 'Ocp-Apim-Subscription-Key': key } : {}, signal: AbortSignal.timeout(20000) });
-    if (!res.ok) {
-      console.warn(`[Comtrade] refused (HTTP ${res.status})`);
-      return null;
-    }
-    return parseComtrade(await res.json());
-  } catch (e) {
-    console.warn(`[Comtrade] ${describeNetworkError(e, 20000)}`);
-    return null;
-  }
-}
-async function pullComtradeCountry(iso3: string, key: string): Promise<ComtradeProfile | null> {
-  const reporter = COMTRADE_REPORTERS[iso3];
-  if (!reporter) return null;
-  const pause = () => new Promise((r) => setTimeout(r, COMTRADE_GAP_MS));
-  for (const year of comtradeYears()) {
-    const partners = await comtradeGet(comtradeUrl(reporter, year, 'partners', !!key), key);
-    await pause();
-    if (partners === null) return null; // refused or no answer: stop, try again later
-    if (!partners.length) continue; // not reported that year yet
-    const products = (await comtradeGet(comtradeUrl(reporter, year, 'products', !!key), key)) || [];
-    await pause();
-    return buildProfile(iso3, partners, products);
-  }
-  return null;
-}
-async function fetchComtrade(): Promise<ComtradeFile> {
-  if (!comtradeMemory) {
-    let file: ComtradeFile = { countries: {} };
-    try {
-      const f = JSON.parse(fs.readFileSync(comtradeFile(), 'utf8')) as ComtradeFile;
-      if (f?.countries && typeof f.countries === 'object') file = f;
-    } catch {
-      // never pulled
-    }
-    comtradeMemory = { file, triedAt: {} };
-  }
-  const mem = comtradeMemory;
-  const day = 24 * 60 * 60 * 1000;
-  const due = SOVEREIGN_CATALOG.map((c) => c.iso3).filter((iso) => {
-    if (!COMTRADE_REPORTERS[iso]) return false;
-    const e = mem.file.countries[iso];
-    const fresh = e && Date.now() - Date.parse(e.pulledAt) < 30 * day;
-    const triedRecently = Date.now() - (mem.triedAt[iso] || 0) < day / 4;
-    return !fresh && !triedRecently;
-  });
-  if (!due.length) return mem.file;
-  if (comtradeInFlight) return comtradeInFlight;
-  const key = (process.env.COMTRADE_API_KEY || '').trim();
-  comtradeInFlight = (async () => {
-    // Saved after each country: the paced pass takes minutes, and a restart or a stopped download
-    // part-way must not lose the countries already pulled.
-    for (const iso of due) {
-      mem.triedAt[iso] = Date.now();
-      const profile = await pullComtradeCountry(iso, key);
-      if (!profile) continue;
-      mem.file.countries[iso] = { pulledAt: new Date().toISOString(), profile };
-      try {
-        fs.mkdirSync(path.dirname(comtradeFile()), { recursive: true });
-        writeFileAtomic(comtradeFile(), JSON.stringify(mem.file));
-      } catch {
-        // keep the memory copy
-      }
-    }
-    return mem.file;
-  })().finally(() => {
-    comtradeInFlight = null;
-  });
-  return comtradeInFlight;
-}
-
-/**
- * IMF reserves and balance of payments (src/utils/imfReserves.ts): monthly official reserves (IL)
- * and quarterly current account and imports (BOP) for each catalog country, from api.imf.org.
- * Saved to data/live/imf_external.json with its pull date and pulled again after a day; the
- * datasets' structures (dimensions, indicator names) are kept a week. A failed pull keeps the
- * last good figures per country and is retried after an hour.
- */
-type ImfPull = { pulledAt: string; structuresAt?: string; structures?: Record<string, ImfStructure>; countries: Record<string, ImfExternal> };
-let imfMemory: { pull: ImfPull | null; triedAt: number } | null = null;
-let imfInFlight: Promise<ImfPull | null> | null = null;
-function imfFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'imf_external.json');
-}
-async function fetchImfPull(): Promise<ImfPull | null> {
-  if (!imfMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(imfFile(), 'utf8')) as ImfPull;
-      if (saved?.pulledAt && saved.countries && typeof saved.countries === 'object') imfMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  const prev = imfMemory?.pull ?? null;
-  if (prev && Date.now() - Date.parse(prev.pulledAt) < 24 * 60 * 60 * 1000) return prev;
-  if (imfMemory && Date.now() - imfMemory.triedAt < 60 * 60 * 1000) return prev;
-  if (imfInFlight) return imfInFlight;
-  imfInFlight = (async () => {
-    const weekOld = !prev?.structuresAt || Date.now() - Date.parse(prev.structuresAt) > 7 * 24 * 60 * 60 * 1000;
-    let structures: Record<string, ImfStructure> = weekOld ? {} : { ...(prev?.structures || {}) };
-    const countries: Record<string, ImfExternal> = {};
-    let any = false;
-    for (const c of SOVEREIGN_CATALOG) {
-      try {
-        const r = await pullImfExternal({ fetchFn: (u, i) => fetch(u, i), env: process.env, timeoutMs: 30000, structures }, c.iso3);
-        structures = r.structures;
-        const got = r.external.reserves || r.external.currentAccount;
-        if (got) any = true;
-        // Keep the last good figures when this pull got nothing for the country.
-        countries[c.iso3] = got || !prev?.countries[c.iso3] ? r.external : prev.countries[c.iso3];
-        const bad = r.steps.filter((s) => !s.ok);
-        if (bad.length) console.warn(`[IMF] ${c.iso3}: ${bad.map((s) => `${s.measure}: ${s.note}`).join(' | ')}`);
-      } catch (e) {
-        console.warn(`[IMF] ${c.iso3}: ${describeNetworkError(e, 30000)}`);
-        if (prev?.countries[c.iso3]) countries[c.iso3] = prev.countries[c.iso3];
-      }
-    }
-    if (!any) {
-      imfMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    const fresh: ImfPull = {
-      pulledAt: new Date().toISOString(),
-      structuresAt: weekOld ? new Date().toISOString() : prev?.structuresAt,
-      structures,
-      countries,
-    };
-    imfMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(imfFile()), { recursive: true });
-      writeFileAtomic(imfFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    imfInFlight = null;
-  });
-  return imfInFlight;
-}
-
-/**
- * IMF COFER (src/utils/imfCofer.ts): world currency shares of official FX reserves, quarterly.
- * One small request. Saved to data/live/imf_cofer.json with its pull date, pulled again after a
- * day; a failed pull keeps the last good one and is retried after an hour.
- */
-type CoferPull = { pulledAt: string; cofer: CoferReading; structures?: Record<string, ImfStructure> };
-let coferMemory: { pull: CoferPull | null; triedAt: number } | null = null;
-let coferInFlight: Promise<CoferPull | null> | null = null;
-function coferFile(): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'imf_cofer.json');
-}
-async function fetchCoferPull(): Promise<CoferPull | null> {
-  if (!coferMemory) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(coferFile(), 'utf8')) as CoferPull;
-      if (saved?.pulledAt && saved.cofer?.shares) coferMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-    } catch {
-      // never pulled
-    }
-  }
-  const prev = coferMemory?.pull ?? null;
-  if (prev && Date.now() - Date.parse(prev.pulledAt) < 24 * 60 * 60 * 1000) return prev;
-  if (coferMemory && Date.now() - coferMemory.triedAt < 60 * 60 * 1000) return prev;
-  if (coferInFlight) return coferInFlight;
-  coferInFlight = (async () => {
-    let fresh: CoferPull | null = null;
-    try {
-      const r = await pullCofer({ fetchFn: (u, i) => fetch(u, i), env: process.env, timeoutMs: 30000, structures: prev?.structures });
-      if (r.cofer) fresh = { pulledAt: new Date().toISOString(), cofer: r.cofer, structures: r.structures };
-      else console.warn(`[IMF] COFER: ${r.note}`);
-    } catch (e) {
-      console.warn(`[IMF] COFER: ${describeNetworkError(e, 30000)}`);
-    }
-    if (!fresh) {
-      coferMemory = { pull: prev, triedAt: Date.now() };
-      return prev;
-    }
-    coferMemory = { pull: fresh, triedAt: Date.now() };
-    try {
-      fs.mkdirSync(path.dirname(coferFile()), { recursive: true });
-      writeFileAtomic(coferFile(), JSON.stringify(fresh));
-    } catch {
-      // keep the memory copy
-    }
-    return fresh;
-  })().finally(() => {
-    coferInFlight = null;
-  });
-  return coferInFlight;
-}
 
 /**
  * Trade exposure for the scenario ranking (src/utils/scenarioExposure.ts): World Bank fuel and
@@ -1617,150 +391,6 @@ async function fetchGlobalLivePlumbing() {
     activeSources,
   };
   return cachedPlumbing;
-}
-
-/**
- * GDELT allows one request every 5 seconds and answers HTTP 429 otherwise (seen on Sam's Mac,
- * 2026-11-05). Every GDELT request takes the next free slot, 5.5 seconds apart. A request that
- * would wait more than 30 seconds is not sent; its figures read Missing until the next refresh.
- * After a refusal GDELT holds each further answer about 11 seconds and keeps refusing, so after any
- * 429 the app sends nothing to GDELT for 15 minutes.
- */
-const GDELT_GAP_MS = 5500;
-const GDELT_MAX_WAIT_MS = 30000;
-const GDELT_PAUSE_MS = 15 * 60 * 1000;
-let gdeltNextSlot = 0;
-let gdeltPausedUntil = 0;
-function gdeltSlot(): Promise<void> {
-  const now = Date.now();
-  if (now < gdeltPausedUntil) {
-    const mins = Math.ceil((gdeltPausedUntil - now) / 60000);
-    return Promise.reject(new Error(`GDELT refused too many requests; the app is pausing GDELT for ${mins} more minute${mins === 1 ? '' : 's'}`));
-  }
-  const slot = Math.max(now, gdeltNextSlot);
-  if (slot - now > GDELT_MAX_WAIT_MS) return Promise.reject(new Error('GDELT queue full'));
-  gdeltNextSlot = slot + GDELT_GAP_MS;
-  return new Promise((resolve) => setTimeout(resolve, slot - now));
-}
-/** Any GDELT request, from the snapshot or the connection check, goes through here. */
-async function gdeltFetch(url: string, init?: RequestInit): Promise<Response> {
-  await gdeltSlot();
-  const res = await fetch(url, init);
-  if (res.status === 429) {
-    gdeltPausedUntil = Date.now() + GDELT_PAUSE_MS;
-    console.warn('[GDELT] HTTP 429 (too many requests): pausing GDELT for 15 minutes');
-  }
-  return res;
-}
-async function fetchGdelt(url: string, timeoutMs: number): Promise<Response> {
-  // 20 s: a refusal arrives after about 11 s, and it must be seen to start the pause.
-  return gdeltFetch(url, { signal: AbortSignal.timeout(timeoutMs), headers: { Accept: 'application/json' } });
-}
-
-/**
- * GDELT on its own schedule per country: every GDELT_REFRESH_DAYS days (default 7; Sam asked about
- * quarterly on 2026-11-05, which is GDELT_REFRESH_DAYS=90). A pull is two requests (tone timeline,
- * article list). It is saved to data/live/gdelt/<ISO3>.json and reused until the interval passes;
- * it counts only when the tone came back. A failed pull is retried after an
- * hour (or after the 15-minute pause that follows a refusal). Headlines carry GDELT's own date and
- * the country's average tone: GDELT gives no tone per article, so none is made up.
- */
-const GDELT_REFRESH_DAYS = Math.max(1, Number(process.env.GDELT_REFRESH_DAYS) || 7);
-const GDELT_REFRESH_MS = GDELT_REFRESH_DAYS * 24 * 60 * 60 * 1000;
-type GdeltPull = { pulledAt: string; tone: number; headlines: OpenDataSnapshot['gdeltMetrics']['topHeadlines']; toneShift?: GdeltToneShift };
-const gdeltMemory = new Map<string, { pull: GdeltPull | null; triedAt: number }>();
-const gdeltInFlight = new Map<string, Promise<GdeltPull | null>>();
-function gdeltFile(iso3: string): string {
-  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'gdelt', `${iso3.replace(/[^A-Z0-9]/g, '')}.json`);
-}
-async function fetchGdeltQuarterly(iso3: string, countryName: string): Promise<GdeltPull | null> {
-  let mem = gdeltMemory.get(iso3);
-  if (!mem) {
-    try {
-      const saved = JSON.parse(fs.readFileSync(gdeltFile(iso3), 'utf8')) as GdeltPull;
-      if (saved?.pulledAt && typeof saved.tone === 'number') {
-        mem = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
-        gdeltMemory.set(iso3, mem);
-      }
-    } catch {
-      // never pulled
-    }
-  }
-  const fresh = mem?.pull && Date.now() - Date.parse(mem.pull.pulledAt) < GDELT_REFRESH_MS;
-  if (fresh) return mem!.pull;
-  if (mem && Date.now() - mem.triedAt < 60 * 60 * 1000) return mem.pull; // tried within the hour
-  const running = gdeltInFlight.get(iso3);
-  if (running) return running;
-  const job = (async () => {
-    const q = encodeURIComponent(`"${countryName}" (economy OR central bank OR debt OR inflation OR sanctions)`);
-    let tone: number | null = null;
-    let headlines: GdeltPull['headlines'] = [];
-    let toneShift: GdeltToneShift | null = null;
-    try {
-      const res = await fetchGdelt(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=timelinetone&format=json`, 20000);
-      if (res.ok) {
-        const series = ((await res.json()) as any)?.timeline?.[0]?.data;
-        if (Array.isArray(series) && series.length) {
-          const recent = series.slice(-7);
-          const avg = recent.reduce((a: number, pt: any) => a + Number(pt?.value || 0), 0) / recent.length;
-          if (Number.isFinite(avg) && avg !== 0) tone = Number(avg.toFixed(2));
-          toneShift = gdeltToneShift(series);
-        }
-      }
-    } catch {
-      tone = null;
-    }
-    if (tone !== null) {
-      try {
-        const res = await fetchGdelt(`https://api.gdeltproject.org/api/v2/doc/doc?query=${q}&mode=artlist&format=json&maxrecords=6`, 20000);
-        if (res.ok) {
-          const arts = ((await res.json()) as any)?.articles;
-          if (Array.isArray(arts)) {
-            headlines = arts
-              .filter((a: any) => a?.title && a?.url)
-              .slice(0, 4)
-              .map((a: any) => ({
-                title: String(a.title),
-                sourceDomain: String(a.domain || ''),
-                publishedAt: parseGdeltSeenDate(a.seendate),
-                toneScore: tone!,
-                url: String(a.url),
-              }));
-          }
-        }
-      } catch {
-        headlines = [];
-      }
-    }
-    const prev = gdeltMemory.get(iso3)?.pull ?? null;
-    if (tone === null) {
-      // Keep the last good pull (it carries its own date) and retry later.
-      gdeltMemory.set(iso3, { pull: prev, triedAt: Date.now() });
-      return prev;
-    }
-    const pull: GdeltPull = { pulledAt: new Date().toISOString(), tone, headlines, ...(toneShift ? { toneShift } : {}) };
-    gdeltMemory.set(iso3, { pull, triedAt: Date.now() });
-    try {
-      fs.mkdirSync(path.dirname(gdeltFile(iso3)), { recursive: true });
-      writeFileAtomic(gdeltFile(iso3), JSON.stringify(pull));
-    } catch {
-      // keep the memory copy
-    }
-    return pull;
-  })().finally(() => gdeltInFlight.delete(iso3));
-  gdeltInFlight.set(iso3, job);
-  return job;
-}
-
-function parseGdeltSeenDate(seenDate?: string): string {
-  if (!seenDate || typeof seenDate !== 'string') return new Date().toISOString();
-  // GDELT format: YYYYMMDDTHHMMSSZ
-  const m = seenDate.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/);
-  if (m) {
-    return `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`;
-  }
-  const d = new Date(seenDate);
-  return Number.isNaN(d.getTime()) ? new Date().toISOString() : d.toISOString();
 }
 
 function getLatestImfValue(series: Record<string, number> | undefined, targetYears: string[]): number | undefined {
@@ -2112,7 +742,6 @@ async function fetchLiveOpenDataSnapshotNetwork(
   return baseline;
 }
 
-const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
 const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
 const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 /** A pull that came back short (a feed failed, or nothing answered) is tried again after an hour. */
@@ -2450,7 +1079,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const got = await fetchHcSpreadUncached();
       if (!got) return { outcome: 'failed', note: 'BCRP (central bank of Peru) did not answer' };
       saveMarketExtras((f) => (f.hcSpread = got));
-      hcSpreadCache = null;
+      forgetHcSpread();
       const n = Object.keys(got.countries).length;
       return { outcome: 'done', note: `${n} countries saved` };
     }
@@ -2461,7 +1090,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
         return v;
       })));
       fredSeriesCache.clear();
-      effrCache = null;
+      forgetEffr();
       const effr = await fetchEffr();
       const effrNew = !!effr && !(effrCache as { fallback?: boolean } | null)?.fallback;
       let fx = 0;
@@ -3123,7 +1752,6 @@ function computeHmacSha256(payloadStr: string, secret: string): string {
     .update(payloadStr)
     .digest('hex')}`;
 }
-
 
 function buildTopLevelIntegrationPayload(
   run: CouncilAssessmentRun,
@@ -4131,7 +2759,7 @@ interface SynthesisOpts {
   trace?: SynthesisTrace;
 }
 
-const ANSWER_SNAPSHOT_DIR = snapshotDir(process.env.DATA_DIR || path.join(__dirname, 'data'));
+const ANSWER_SNAPSHOT_DIR = snapshotDir(DATA_DIR);
 
 /**
  * The summary (or explanation) plus its snapshot (src/utils/answerSnapshot.ts): the inputs, model,
@@ -4344,7 +2972,7 @@ function explainFromBody(body: any): ExplainPlan | undefined {
  * Morning brief (src/utils/morningBrief.ts): the council's standing questions on a watchlist at a
  * set time, each saved to research with what moved since the same question last ran.
  * ------------------------------------------------------------------------------------------ */
-const MORNING_FILE = path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'local', 'morning-brief.json');
+const MORNING_FILE = path.join(DATA_DIR, 'local', 'morning-brief.json');
 let morningRunning = false;
 
 function loadMorning(): MorningBriefFile {
@@ -5339,10 +3967,10 @@ async function startServer() {
       fredSeriesCache.clear();
       for (const [iso3, hit] of officialYieldCache) if (!hit.obs && iso3 !== 'BRA') officialYieldCache.delete(iso3);
     }
-    if (id === 'EIA_API_KEY') commodityMemory = null;
+    if (id === 'EIA_API_KEY') forgetCommodityPulls();
     if (id === 'COMTRADE_API_KEY' && comtradeMemory) comtradeMemory.triedAt = {};
     if (id.startsWith('EVDS_')) officialYieldCache.delete('TUR');
-    if (id.startsWith('CDS_') || id.startsWith('LSEG_')) ownCdsCache = null;
+    if (id.startsWith('CDS_') || id.startsWith('LSEG_')) forgetOwnCds();
     if (id === 'GEMINI_API_KEY') ai = makeGeminiClient();
   };
   const refuseRemote = (req: express.Request, res: express.Response): boolean => {
@@ -6181,7 +4809,7 @@ async function startServer() {
     } catch (error: any) {
       return res.status(500).json({ error: `Could not save the settings file (${error?.code || error?.message || 'unknown error'}).` });
     }
-    savedSettings = next.settings;
+    setSavedSettings(next.settings);
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
     const check = await runKeyCheck(req.params.id, process.env, keySources(ENV_FILE_KEYS, savedSettings)).catch(() => null);
@@ -6196,7 +4824,7 @@ async function startServer() {
     } catch (error: any) {
       return res.status(500).json({ error: `Could not save the settings file (${error?.code || error?.message || 'unknown error'}).` });
     }
-    savedSettings = next;
+    setSavedSettings(next);
     applyKeysToEnv(process.env, ENV_FILE_KEYS, savedSettings);
     onKeyChanged(req.params.id);
     res.json(keysReply(req, res));
