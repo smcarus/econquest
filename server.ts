@@ -2563,7 +2563,10 @@ async function startServer() {
     }
     if (id === 'EIA_API_KEY') forgetCommodityPulls();
     if (id === 'COMTRADE_API_KEY' && comtradeMemory) comtradeMemory.triedAt = {};
-    if (id.startsWith('EVDS_')) officialYieldCache.delete('TUR');
+    if (id.startsWith('EVDS_')) {
+      officialYieldCache.delete('TUR');
+      forgetNationalCpi(['TUR']);
+    }
     if (id === 'BANXICO_TOKEN') forgetNationalCpi(['MEX']);
     if (id.startsWith('CDS_') || id.startsWith('LSEG_')) forgetOwnCds();
     if (id === 'GEMINI_API_KEY') resetGeminiClient();

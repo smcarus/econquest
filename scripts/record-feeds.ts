@@ -28,7 +28,7 @@ dotenv.config();
 const root = process.cwd();
 const COUNTRIES = ['BRA', 'MEX', 'TUR', 'ZAF', 'POL'];
 /** Free keys only; paid data and AI stay off. */
-const FREE_KEYS = ['FRED_API_KEY', 'EIA_API_KEY', 'COMTRADE_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES', 'BANXICO_TOKEN'];
+const FREE_KEYS = ['FRED_API_KEY', 'EIA_API_KEY', 'COMTRADE_API_KEY', 'EVDS_API_KEY', 'EVDS_TR10Y_SERIES', 'EVDS_TR_CPI_SERIES', 'BANXICO_TOKEN'];
 
 const env: Record<string, string | undefined> = { ...process.env };
 applyKeysToEnv(env, envKeySnapshot(process.env), loadSettings(settingsFilePath(process.env.DATA_DIR || path.join(root, 'data'))));

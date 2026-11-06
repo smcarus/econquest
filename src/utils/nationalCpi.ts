@@ -12,6 +12,7 @@
  * Each reading says which source it came from.
  */
 import type { CpiBasis, CpiSeries } from './oecdInflation';
+import { evdsSeriesUrl } from './officialYields';
 
 export interface NationalCpiSeries {
   points: { period: string; value: number }[];
@@ -144,4 +145,47 @@ export function parseBanxicoMonthly(json: unknown, id: string): { period: string
     byPeriod.set(`${m[3]}-${m[2]}`, value);
   }
   return [...byPeriod.entries()].map(([period, value]) => ({ period, value })).sort((a, b) => a.period.localeCompare(b.period));
+}
+
+/**
+ * Turkey: the central bank's EVDS service, with the user's own key (EVDS_API_KEY, the same key as
+ * Turkey's 10Y yield). Reads a monthly CPI index and works out the change over 12 months. Default
+ * series TP.FG.J0 (CPI, general index, the code used across open-source EVDS clients); the user can
+ * name another index series in EVDS_TR_CPI_SERIES. If the default stops (TurkStat rebased CPI to
+ * 2025=100 in 2026), its newest month falls behind the OECD's and the OECD series is kept, so a
+ * stale series never wins. The 12-month change is only taken between two months of the same series.
+ */
+export const EVDS_CPI_DEFAULT_SERIES = 'TP.FG.J0';
+export const EVDS_CPI_SHORT = 'CBRT EVDS CPI';
+export function evdsCpiLong(series: string): string {
+  return `Central Bank of Turkey EVDS, CPI index ${series}, change over 12 months (worked out by the app)`;
+}
+
+/** Request URL for about 26 months of a monthly series. The key is NOT part of the URL. */
+export function evdsCpiUrl(series: string, now = new Date()): string {
+  return evdsSeriesUrl(series, now, 800);
+}
+
+/** EVDS reply rows of a monthly index -> 12-month % change per month, oldest first. */
+export function parseEvdsCpiYoy(json: unknown, series: string): { period: string; value: number }[] {
+  const items = (json as { items?: Array<Record<string, unknown>> })?.items;
+  if (!Array.isArray(items)) return [];
+  const column = series.trim().replace(/\./g, '_');
+  const level = new Map<string, number>();
+  for (const row of items) {
+    const raw = row?.[column];
+    if (raw === null || raw === undefined || String(raw).trim() === '') continue;
+    const v = Number(String(raw).replace(',', '.'));
+    const m = String(row?.Tarih ?? '').trim().match(/^(\d{4})-(\d{1,2})$/);
+    if (!m || !Number.isFinite(v) || v <= 0) continue;
+    level.set(`${m[1]}-${m[2].padStart(2, '0')}`, v);
+  }
+  const out: { period: string; value: number }[] = [];
+  for (const [period, v] of level) {
+    const y = Number(period.slice(0, 4));
+    const prev = level.get(`${y - 1}${period.slice(4)}`);
+    if (prev === undefined) continue;
+    out.push({ period, value: Number(((v / prev - 1) * 100).toFixed(2)) });
+  }
+  return out.sort((a, b) => a.period.localeCompare(b.period));
 }
