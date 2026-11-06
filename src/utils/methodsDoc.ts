@@ -120,6 +120,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/ruleFamily.ts',
   },
   {
+    id: 'costed_options',
+    name: 'Costed fiscal options',
+    where: 'Research > History & data > Debt sustainability',
+    method: [
+      'Four stated options against the debt sustainability baseline on IMF inputs: tighten 0.5 pt at once, 1 pt over 2 years, 2 pts over 3 years, loosen 1 pt at once. The primary balance rises by the step each year and stays up.',
+      'Real growth in a step year is lower by multiplier x step (output level loss persists; later growth as baseline). Multiplier: the IMF bucket-approach first-year range for the country\'s group in normal times (TNM 14/04 Table 6: emerging 0.1-0.3, advanced 0.4-0.6), both ends shown.',
+      'Debt from the identity d(t) = d(t-1)(1 + i)/(1 + n) - pb, so interest falls with debt. Reports debt at the horizon, the change against the baseline and the output lost; flags when debt rises above the baseline in year 1 (denominator effect).',
+    ],
+    limits: 'No cycle or lower-bound adjustment to the multiplier, no confidence or risk-premium effects, inflation and interest as in the baseline. Composition (spending or taxes) is not modelled. Stated options on stated assumptions, not a forecast or a recommendation.',
+    code: 'src/utils/costedOptions.ts',
+  },
+  {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
     where: 'Research > History & data',

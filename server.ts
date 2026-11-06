@@ -4,6 +4,8 @@ import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from './src/utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from './src/utils/grossFinancingNeed';
 import { debtFan, debtFanSentence } from './src/utils/debtFan';
+import { costedOptions } from './src/utils/costedOptions';
+import { multiplierView } from './src/utils/fiscalMultipliers';
 import { localProjections, lpSentence } from './src/utils/localProjections';
 import { ruleFamily, ruleFamilySentence, RULE_FAMILY_METHOD, type RuleFamilyInputs } from './src/utils/ruleFamily';
 import { reserveAdequacy, reserveAdequacySentence } from './src/utils/reserveAdequacy';
@@ -3221,7 +3223,10 @@ async function startServer() {
     const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
     const r = dsaFrom(file);
     const fan = r.ok ? debtFan(r) : undefined;
-    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}), ...(fan ? { fan: fan.ok ? { ...fan, sentence: debtFanSentence(fan) } : fan } : {}) });
+    // Costed options use the IMF bucket-approach first-year multiplier range for the country's group (normal times).
+    const mv = r.ok ? multiplierView({ iso3, debtPctGdp: { value: r.debtNow, year: r.lastOutturnYear } }) : undefined;
+    const options = r.ok && mv ? costedOptions(r, { low: mv.guide.low, high: mv.guide.high, source: `IMF bucket approach, ${mv.guide.bucket} bucket, normal times (TNM 14/04)` }) : undefined;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: dsaSentence(r) } : {}), ...(fan ? { fan: fan.ok ? { ...fan, sentence: debtFanSentence(fan) } : fan } : {}), ...(options ? { options } : {}) });
   });
   // Fiscal reaction (Bohn test, src/utils/bohnTest.ts): primary balance on last year's debt and the output gap.
   app.get('/api/bohn/:iso3', async (req, res) => {

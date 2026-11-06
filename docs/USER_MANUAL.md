@@ -279,6 +279,8 @@ Figures with no history yet are listed with the reason.
 
 **Policy rules.** Research > History & data sets the policy rate against five standard rules on the same inputs (Taylor 1993, balanced approach, inflation only, inertial, first difference), with each rule's formula and prescription, the range they span and whether the policy rate sits above, below or inside it. The neutral real rate is fixed at 2% (Taylor's), and the panel says how each rule shifts if it is lower.
 
+**Costed options.** Under Debt sustainability, a table shows four stated options (tighten 0.5, 1 or 2 points of GDP, or loosen 1 point) against the baseline: debt five years out, the change against the baseline and the output lost, each on the low and high end of the IMF's multiplier range for the country's group. When a tightening would push debt/GDP up in the first year because output falls faster than debt, the row says so.
+
 **Fiscal reaction (Bohn test).** Research > History & data asks whether the government has raised
 its primary balance when debt was higher: the IMF primary balance regressed on last year's IMF debt
 and the app's output gap, outturn years only, with Newey-West errors. A positive, significant

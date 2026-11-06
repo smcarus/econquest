@@ -38,6 +38,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
 | Policy rule family | Research | Stated method, no call to test | Not applicable |
+| Costed fiscal options | Research | Stated method, no call to test | Not applicable |
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
@@ -368,6 +369,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Reading: the policy rate more than 1 point above every rule = tight on all; more than 1 point below = loose on all; otherwise inside the range.
 - **Limits:** r* is a stated parameter, not data: each point lower moves the level rules one point down, the inertial rule 0.15 and the first-difference rule not at all. Rules are cross-checks of stance, not forecasts; banks also weigh the exchange rate, financial stability and expectations. Annual output gaps are revised every WEO.
 - **Code:** `src/utils/ruleFamily.ts`
+
+### Costed fiscal options
+
+- **Shows in:** Research > History & data > Debt sustainability
+- Four stated options against the debt sustainability baseline on IMF inputs: tighten 0.5 pt at once, 1 pt over 2 years, 2 pts over 3 years, loosen 1 pt at once. The primary balance rises by the step each year and stays up.
+- Real growth in a step year is lower by multiplier x step (output level loss persists; later growth as baseline). Multiplier: the IMF bucket-approach first-year range for the country's group in normal times (TNM 14/04 Table 6: emerging 0.1-0.3, advanced 0.4-0.6), both ends shown.
+- Debt from the identity d(t) = d(t-1)(1 + i)/(1 + n) - pb, so interest falls with debt. Reports debt at the horizon, the change against the baseline and the output lost; flags when debt rises above the baseline in year 1 (denominator effect).
+- **Limits:** No cycle or lower-bound adjustment to the multiplier, no confidence or risk-premium effects, inflation and interest as in the baseline. Composition (spending or taxes) is not modelled. Stated options on stated assumptions, not a forecast or a recommendation.
+- **Code:** `src/utils/costedOptions.ts`
 
 ### Fiscal reaction (Bohn test)
 
