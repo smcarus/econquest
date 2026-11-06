@@ -25,8 +25,12 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      # The runner image already has Chrome's system libraries. --with-deps also apt-installs
+      # font packages, and a slow Ubuntu mirror made that step run past the job limit twice on
+      # 6 Nov 2026 before any test ran.
       - name: Install Chromium for the UI smoke test
-        run: npx playwright install --with-deps chromium
+        timeout-minutes: 5
+        run: npx playwright install chromium
       - name: UI smoke test (every page, all feeds down)
         run: npm run test:smoke
 
