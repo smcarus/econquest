@@ -27,6 +27,7 @@ import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLim
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
+import { codeHash } from './src/utils/codeHash';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
 import { COUNCIL_SEED, COUNCIL_TEMPERATURE, compareRuns, modelFromProvider, summariseSnapshot, type AnswerSnapshot } from './src/utils/answerSnapshot';
 import { checkRegressionCase, parseRegressionSet, type RegressionCase, type RegressionCaseResult, type RegressionReport, type SupremeCaseInput } from './src/utils/councilRegression';
@@ -2215,8 +2216,10 @@ async function startServer() {
   // Liveness: answers as soon as the process serves requests. No feeds, no files, no model,
   // so a container health check every 30 seconds costs nothing. Before the host check so a
   // health probe that names the container's own address is not refused; it reveals nothing.
+  // code: fingerprint of server.ts + src/ when the app started (src/utils/codeHash.ts), so scripts can tell stale code.
+  const startupCodeHash = codeHash(__dirname);
   app.get('/healthz', (_req, res) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', ...(startupCodeHash ? { code: startupCodeHash } : {}) });
   });
   // Readiness: 200 only once listening, while not stopping, and while the data folder can be
   // written (checked at most once a minute). Send traffic only when this says ready.

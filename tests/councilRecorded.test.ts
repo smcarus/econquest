@@ -102,6 +102,9 @@ test('baseline checks: drift, newly failing cases and invented numbers are named
   assert.deepEqual(cmp.newlyFailing, ['x']);
   assert.ok(cmp.drift.some((d) => /prompt sent to the model changed/.test(d)));
   assert.ok(cmp.drift.some((d) => /answer changed.*Policy is tight.*Policy is loose/.test(d)));
+  // Same headline, a different sentence below it: the sentence is named, not the identical headline twice.
+  const body = compareToBaseline({ ...report, results: [{ ...r, outputHash: 'o3', answer: ['Policy is tight.', 'The rate is far above inflation.'] }] }, baseline);
+  assert.ok(body.drift.some((d) => /same headline, the rest of the answer changed\. Recorded: "The rate is 13\.75%\." Now: "The rate is far above inflation\."/.test(d)), body.drift.join('|'));
   assert.deepEqual(structuralProblems(r, ['13.75%'], isSmallModel), []);
   assert.match(structuralProblems({ ...r, answer: ['Reserves cover NaN months of imports.'] }, [], isSmallModel)[0], /template text \("NaN"/);
   assert.match(structuralProblems(r, ['4.4%'], isSmallModel)[0], /quotes 13.75, which no input gave/);
