@@ -333,10 +333,11 @@ export function cliTurnPolicyCases(
 /* ------------------------------------------------------------------ Taylor gap -> policy move */
 
 /**
- * Each month: rule rate = rStar + inflation + inflationWeight x (inflation - target), with the
- * inflation published by then (publicationLagMonths back) and the target in force that month
- * (src/data/inflationTargetHistory.ts). No output gap: the IMF's is annual and revised every
- * vintage. Policy more than bandPts above the rule = tight, below = loose. A call is the first
+ * Each month: rule rate = rStar + inflation + inflationWeight x (inflation - target)
+ * [+ outputWeight x output gap], with the inflation published by then (publicationLagMonths back)
+ * and the target in force that month (src/data/inflationTargetHistory.ts). Version 1 has no output
+ * gap. With outputWeight set, the gap is the real-time annual estimate for the latest year whose
+ * outturn was out by then (year t from month gapPublishMonth of t+1); months without one are skipped. Policy more than bandPts above the rule = tight, below = loose. A call is the first
  * month of a run of the same reading. Hit: tight -> a cut, loose -> a hike, within windowMonths.
  * Base rate: the share of all months in the same span followed by a cut (hike) within the window.
  */
@@ -344,10 +345,20 @@ export function taylorGapCases(
   spec: BacktestSpec,
   iso3: string,
   inflation: { period: string; value: number }[],
-  policy: { period: string; pct: number }[]
+  policy: { period: string; pct: number }[],
+  /** Real-time output gap by year (% of potential), needed when params.outputWeight > 0. */
+  outputGap?: { year: string; gap: number }[]
 ): BacktestCase[] {
-  const { publicationLagMonths = 2, windowMonths = 6, bandPts = 1, rStar = 2, inflationWeight = 0.5 } = spec.params;
+  const { publicationLagMonths = 2, windowMonths = 6, bandPts = 1, rStar = 2, inflationWeight = 0.5, outputWeight = 0, gapPublishMonth = 4 } = spec.params;
   if (!inflation.length || policy.length < 2) return [];
+  if (outputWeight && !outputGap?.length) return [];
+  /** The gap known in month m: the latest year whose outturn was out by then (year t from gapPublishMonth of t+1). */
+  const gaps = [...(outputGap || [])].sort((a, b) => a.year.localeCompare(b.year));
+  const gapKnownIn = (m: string): { year: string; gap: number } | undefined => {
+    let found: { year: string; gap: number } | undefined;
+    for (const g of gaps) if (`${Number(g.year) + 1}-${String(gapPublishMonth).padStart(2, '0')}` <= m) found = g;
+    return found;
+  };
   const pct = new Map(policy.map((p) => [p.period, p.pct]));
   const cpi = new Map(inflation.map((p) => [p.period, p.value]));
   const last = policy[policy.length - 1].period;
@@ -363,16 +374,18 @@ export function taylorGapCases(
   };
   const lo = spec.sample.from;
   const hi = spec.sample.to || '9999-12';
-  type Row = { month: string; reading: -1 | 0 | 1; gap: number; rule: number; target: number; infl: number; rate: number };
+  type Row = { month: string; reading: -1 | 0 | 1; gap: number; rule: number; target: number; infl: number; rate: number; og?: { year: string; gap: number } };
   const rows: Row[] = [];
   for (const p of policy) {
     if (p.period < lo || p.period > hi) continue;
     const t = targetIn(iso3, p.period);
     const infl = cpi.get(addMonths(p.period, -publicationLagMonths));
     if (!t || infl === undefined) continue;
-    const rule = rStar + infl + inflationWeight * (infl - t.pct);
+    const og = outputWeight ? gapKnownIn(p.period) : undefined;
+    if (outputWeight && !og) continue;
+    const rule = rStar + infl + inflationWeight * (infl - t.pct) + (og ? outputWeight * og.gap : 0);
     const gap = p.pct - rule;
-    rows.push({ month: p.period, reading: gap > bandPts ? 1 : gap < -bandPts ? -1 : 0, gap, rule, target: t.pct, infl, rate: p.pct });
+    rows.push({ month: p.period, reading: gap > bandPts ? 1 : gap < -bandPts ? -1 : 0, gap, rule, target: t.pct, infl, rate: p.pct, og });
   }
   const baseFor = (dir: number) => {
     let n = 0;
@@ -399,7 +412,7 @@ export function taylorGapCases(
     out.push({
       where: iso3,
       when: r.month,
-      what: `${r.reading === 1 ? 'tight' : 'loose'}: policy ${r.rate.toFixed(2)}% vs rule ${r.rule.toFixed(2)}% (inflation ${r.infl.toFixed(1)}%, target ${r.target}%): ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`,
+      what: `${r.reading === 1 ? 'tight' : 'loose'}: policy ${r.rate.toFixed(2)}% vs rule ${r.rule.toFixed(2)}% (inflation ${r.infl.toFixed(1)}%, target ${r.target}%${r.og ? `, output gap ${r.og.gap.toFixed(1)}% in ${r.og.year}` : ''}): ${want < 0 ? 'cut' : 'hike'} within ${windowMonths} months?`,
       hit,
       base: base[want],
     });

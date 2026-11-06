@@ -4,6 +4,7 @@
     "cftc_crowding.json": "9adbe66e570e17160d416e18b7fb6d1a2c2fb577cfb46e5acd14c869998cef9a",
     "cftc_crowding.v2.json": "f37296987185d533f40d556000c52807e9fe4b2c114b463bffe7d566c8c962df",
     "cli_turn_policy.json": "a219b147a121f02f316d33fbfb0dee01671c1eacb26eaba0239c891b137dd9e2",
-    "taylor_gap.json": "960be86bbdb1f61899576f67279347a5f76d61823c19c90b7c374f7fabbcdb92"
+    "taylor_gap.json": "960be86bbdb1f61899576f67279347a5f76d61823c19c90b7c374f7fabbcdb92",
+    "taylor_gap.v2.json": "18cb3f00401c9fdf90d191b17a0ccafab09e73b2b1bfab332e4f20fa3b9ba189"
   }
 }

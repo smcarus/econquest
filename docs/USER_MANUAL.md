@@ -376,7 +376,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   `retestOf` (the earlier version, its verdict and what changed) and is shown as a re-test.
   Later versions sit beside the first as `<id>.v2.json`, `<id>.v3.json`; every version runs, the
   badge shows the latest, and the row lists the earlier versions' verdicts. Registered so far:
-  `cftc_crowding.v2.json`, the same rule as v1 judged by method 2.
+  `cftc_crowding.v2.json`, the same rule as v1 judged by method 2, and `taylor_gap.v2.json`, a
+  re-test of the failed Taylor gap that adds the output-gap term (0.5 x the app's real-time output
+  gap from IMF real GDP growth, year t used from April of t+1), judged by method 2. The Taylor v2 run
+  also pulls IMF real GDP growth for each country with a dated target.
 - **Sign-off on saved research**: each saved council conversation (Saved research) shows Draft,
   Reviewed or Approved. *Mark reviewed*, then *Approve*, each with your name; the step records the
   SHA-256 of the report's content. If the report changes afterwards (a follow-up saved over it) it
