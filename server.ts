@@ -7315,7 +7315,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
           baseRun,
           intCfg.defaultScope || 'all_desks_bundle',
           'council.phase1_2.desks_ready'
-        );
+        ).catch((e) => console.warn(`[integrations] could not send council.phase1_2.desks_ready: ${e?.message || e}`));
       }
       res.json({ run: baseRun });
     } catch (error: any) {
@@ -7406,7 +7406,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
           updatedRun,
           intCfg.defaultScope || 'all_desks_bundle',
           'council.phase3.supreme_verdict_ready'
-        );
+        ).catch((e) => console.warn(`[integrations] could not send council.phase3.supreme_verdict_ready: ${e?.message || e}`));
       }
       res.json({ run: updatedRun });
     } catch (error: any) {
