@@ -39,6 +39,7 @@ The same register is in the app under **Menu > About & data licences**.
 | GDELT (DOC API and raw GDELT 2.0 files) | Open with attribution | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
 | Polymarket | Permission needed for client or commercial use | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
 | Kalshi | Permission needed for client or commercial use | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
+| Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads | Terms not confirmed | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
 | Banco Central do Brasil (SGS 13522, IPCA 12 months) | Terms not confirmed | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
 | Brazil Treasury (Tesouro Direto price history) | Open with attribution | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
 | Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
@@ -333,6 +334,22 @@ From the terms:
 >
 > You may access content only for your personal use for non-commercial purposes.
 
+### Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads
+
+- **Used for:** USD bond spread over Treasuries for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru, Venezuela (the free stand-in for CDS)
+- **Status:** Terms not confirmed
+- **Terms read:** [BCRPData Condiciones de Uso](https://estadisticas.bcrp.gob.pe/estadisticas/series/ayuda/condiciones-de-uso); [Example series: EMBIG Peru](https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias/resultados/PD04709XD/html) (checked 2026-11-06)
+- **Show to others:** The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read.
+- **Commercial use:** Not stated by the BCRP; J.P. Morgan index terms not confirmed.
+- **Credit:** Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global.
+- **Open question:** EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
+
+From the terms:
+
+> Puede reproducirse total o parcialmente, sin autorización expresa, siempre y cuando se cite la fuente.
+>
+> La responsabilidad sobre las estadísticas cuya fuente es externa al Banco recae en la entidad que provee el dato original.
+
 ### Banco Central do Brasil (SGS 13522, IPCA 12 months)
 
 - **Used for:** Brazil's IPCA inflation over 12 months
@@ -398,6 +415,7 @@ From the terms:
 10. **US Treasury TIC (major foreign holders)** (Terms not confirmed): Treasury does not state a licence for TIC. Its Fiscal Data site says its data is "free, without restriction" for commercial use, but that page does not cover TIC.
 11. **Polymarket** (Permission needed for client or commercial use): A desk, fund or fintech using the app professionally falls inside the restriction. Keep Polymarket odds to personal research, or agree terms with Polymarket.
 12. **Kalshi** (Permission needed for client or commercial use): The strictest terms in the app. Showing Kalshi odds to anyone else, or using them in a professional setting, needs Kalshi's written authorization.
-13. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
-14. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
-15. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+13. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
+14. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
+15. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
+16. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.

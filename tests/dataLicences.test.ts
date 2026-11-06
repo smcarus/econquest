@@ -22,7 +22,7 @@ test('every row links the terms it was read from and quotes them unless marked n
 
 test('the sources the app reads each have a row', () => {
   const ids = new Set(DATA_LICENCES.map((r) => r.id));
-  for (const id of ['worldbank', 'pinksheet', 'imf', 'comtrade', 'wits', 'bis', 'ecb', 'erapi', 'nyfed', 'fred', 'oecd', 'eurostat', 'cftc', 'tic', 'eia', 'gdelt', 'polymarket', 'kalshi', 'bcb', 'tesouro', 'evds', 'own']) {
+  for (const id of ['worldbank', 'pinksheet', 'imf', 'comtrade', 'wits', 'bis', 'ecb', 'erapi', 'nyfed', 'fred', 'oecd', 'eurostat', 'cftc', 'tic', 'eia', 'gdelt', 'polymarket', 'kalshi', 'bcb', 'tesouro', 'evds', 'bcrp', 'own']) {
     assert.ok(ids.has(id), `missing ${id}`);
   }
 });

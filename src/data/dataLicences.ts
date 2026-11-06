@@ -364,6 +364,25 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: D,
   },
   {
+    id: 'bcrp',
+    name: 'Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads',
+    usedFor: 'USD bond spread over Treasuries for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru, Venezuela (the free stand-in for CDS)',
+    terms: [
+      { label: 'BCRPData Condiciones de Uso', url: 'https://estadisticas.bcrp.gob.pe/estadisticas/series/ayuda/condiciones-de-uso' },
+      { label: 'Example series: EMBIG Peru', url: 'https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias/resultados/PD04709XD/html' },
+    ],
+    status: 'not_verified',
+    display: 'The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan\'s index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan\'s own terms were not read.',
+    commercial: 'Not stated by the BCRP; J.P. Morgan index terms not confirmed.',
+    attribution: 'Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global.',
+    quotes: [
+      'Puede reproducirse total o parcialmente, sin autorización expresa, siempre y cuando se cite la fuente.',
+      'La responsabilidad sobre las estadísticas cuya fuente es externa al Banco recae en la entidad que provee el dato original.',
+    ],
+    flag: 'EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan\'s terms for republished EMBI levels are confirmed.',
+    checked: D,
+  },
+  {
     id: 'bcb',
     name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months)',
     usedFor: 'Brazil\'s IPCA inflation over 12 months',
