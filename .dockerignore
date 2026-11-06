@@ -14,3 +14,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 bun.lock
+deploy/home-server/data
+deploy/home-server/ollama
+deploy/home-server/.env

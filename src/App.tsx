@@ -184,12 +184,15 @@ import {
   Wrench,
   MessageSquare,
   HardDriveDownload,
+  UserRound,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
 import { AuditLogDialog } from './components/AuditLogDialog';
 import { DataHealthDialog } from './components/DataHealthDialog';
 import { ModelRegisterDialog } from './components/ModelRegisterDialog';
 import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
+import { AccountDialog } from './components/AccountDialog';
+import { fetchAuthStatus } from './utils/authClient';
 import { OPEN_REGISTER_EVENT } from './components/ValidationBadge';
 import { AskCouncilPanel, CouncilChatProvider, type FullCouncilStep } from './components/AskCouncilPanel';
 import { useMarketEdgeAnchors } from './components/MarketEdgeScreen';
@@ -659,6 +662,12 @@ export default function App() {
       saveShareMode(!on);
       return !on;
     });
+  // Menu > Account: the signed-in name beside the item, or that sign-in is off.
+  const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [accountHint, setAccountHint] = useState('');
+  useEffect(() => {
+    void fetchAuthStatus().then((s) => setAccountHint(!s ? '' : s.account ? s.account.displayName : s.mode === 'off' ? 'Sign-in off' : ''));
+  }, []);
   useEffect(() => {
     const onOpen = (e: Event) => setRegisterFocus(((e as CustomEvent).detail as string | null) ?? null);
     window.addEventListener(OPEN_REGISTER_EVENT, onOpen);
@@ -2701,6 +2710,14 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'account',
+                        icon: <UserRound className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Account',
+                        hint: accountHint,
+                        onClick: () => setIsAccountOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'audit',
                         icon: <ScrollText className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
                         label: 'Audit log',
@@ -3800,6 +3817,7 @@ export default function App() {
       {isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}
       {isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}
       {registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}
+      {isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}
       {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
       {isManualModalOpen && (
         <Suspense fallback={null}>

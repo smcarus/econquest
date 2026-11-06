@@ -15,6 +15,7 @@ import { CFTC_CURRENCY_CODES, type CftcWeek } from './cftcPositioning';
 import { type PriceSeries } from './commodityPrices';
 import { areaSeries } from './oecdSdmx';
 import { type CliSeries } from './oecdCli';
+import { QNA_SOURCE, qnaFor, type QnaSeries } from './oecdQna';
 import { type CpiBasis } from './oecdInflation';
 import { type TicTable } from './ticHoldings';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './officialHistory';
@@ -69,6 +70,8 @@ export interface ArchivedSnapshot {
 export interface SeriesInputs {
   cbpol?: CbpolPull | null;
   cli?: { pulledAt: string; series: CliSeries } | null;
+  /** OECD quarterly real GDP growth (src/utils/oecdQna.ts). */
+  qna?: { pulledAt: string; series: QnaSeries } | null;
   cpi?: { pulledAt: string; series: Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }> } | null;
   cftc?: { pulledAt: string; weeks: Record<string, CftcWeek[]> } | null;
   tic?: { pulledAt: string; table: TicTable } | null;
@@ -165,6 +168,30 @@ function leadingIndicator(iso3: string, pull: SeriesInputs['cli']): Series | Ser
     points: sortByDate(pts.filter((p) => finite(p.value)).map((p) => ({ date: p.period, value: p.value }))),
     about: 'Above 100 = above trend; rising = growth picking up.',
   };
+}
+
+/** Quarterly real GDP growth from the OECD quarterly national accounts: q/q and y/y. */
+function quarterlyGdp(iso3: string, pull: SeriesInputs['qna']): Array<Series | SeriesMissing> {
+  const defs = [
+    { id: 'gdp_qoq', basis: 'qoq' as const, label: 'Real GDP growth, quarterly (q/q)', about: 'Growth on the previous quarter, seasonally adjusted, not annualised.' },
+    { id: 'gdp_yoy_q', basis: 'yoy' as const, label: 'Real GDP growth, quarterly (y/y)', about: 'Growth on the same quarter a year earlier, seasonally adjusted.' },
+  ];
+  const a = pull ? qnaFor(iso3, pull.series) : null;
+  return defs.map((d) => {
+    if (!pull) return { id: d.id, label: d.label, reason: 'OECD quarterly national accounts have not answered yet' };
+    const pts = a?.[d.basis] ?? [];
+    if (!pts.length) return { id: d.id, label: d.label, reason: 'The OECD publishes no quarterly GDP for this country' };
+    return {
+      id: d.id,
+      label: d.label,
+      unit: '%',
+      freq: 'quarterly' as const,
+      source: QNA_SOURCE,
+      pulledAt: pull.pulledAt,
+      points: sortByDate(pts.filter((p) => finite(p.value)).map((p) => ({ date: p.period, value: p.value }))),
+      about: d.about,
+    };
+  });
 }
 
 function inflation(iso3: string, pull: SeriesInputs['cpi'], oecdAnswered = true): Series | SeriesMissing {
@@ -272,6 +299,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     policyRate(code, inputs.cbpol),
     inflation(code, inputs.cpi, inputs.cpiOecdAnswered !== false),
     leadingIndicator(code, inputs.cli),
+    ...quarterlyGdp(code, inputs.qna),
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
     hcSpread(code, inputs.hcSpread),

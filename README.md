@@ -16,6 +16,7 @@ Settings.
 - [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md): what each source's terms allow (showing figures to others, commercial use, credit)
 - [docs/METHODS.md](./docs/METHODS.md): a methods note per model and signal, with its pre-registered backtests and recorded verdicts
 - [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md): audit log, model register, pre-registered backtests, report sign-off, and what a multi-user version would need
+- [docs/SECURITY.md](./docs/SECURITY.md): accounts, sign-in, sessions, and what is not protected yet
 - [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md): UI rules for contributors
 
 ---
@@ -32,6 +33,9 @@ npm run dev          # http://localhost:3000, this computer only
 On a Mac you can instead double-click `start-mac.command`, which runs the app in Docker on
 http://localhost:3737 (Windows: `scripts/start-windows.bat`). Both ways read and write the same
 `data/` folder, so keys and saved research carry over.
+
+To run it on an always-on Linux box or NAS with Ollama on the same machine, see
+[docs/HOME_SERVER.md](docs/HOME_SERVER.md).
 
 ### First run
 

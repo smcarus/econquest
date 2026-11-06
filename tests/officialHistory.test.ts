@@ -61,7 +61,7 @@ test('countrySeries prefers the full official run over saved pulls, and lists th
   assert.equal(set.series.find((s) => s.id === 'current_account')!.freq, 'per pull');
   assert.equal(set.series.find((s) => s.id === 'reserves_usd')!.points[0].value, 330);
   const extra = OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).length;
-  assert.equal(set.series.length + set.missing.length, 6 + ARCHIVE_FIGURES.length + extra); // 6 feed series incl. the USD bond spread
+  assert.equal(set.series.length + set.missing.length, 8 + ARCHIVE_FIGURES.length + extra); // 8 feed series incl. the USD bond spread and quarterly GDP q/q and y/y
 });
 
 test('summary: "latest" is the newest outturn, not an IMF projection', async () => {

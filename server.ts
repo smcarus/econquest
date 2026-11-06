@@ -8,6 +8,8 @@ import { debtSustainability, dsaRows, dsaSentence, dsaSummary, type DsaOutcome }
 import { loadWorkspace, setWorkspaceValue, workspaceFilePath, workspaceProblem, WORKSPACE_KEYS } from './src/utils/workspaceStore';
 import { hostAllowed, outboundUrlProblem, withoutSecrets, writeAllowed } from './src/utils/requestGuard';
 import { dataDirProblem, installJsonConsole, ollamaBaseUrlDefault, readiness, shutdownTimeoutMs } from './src/utils/serverRuntime';
+import { AuthStore } from './src/utils/authStore';
+import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, type Account } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
 import { asOfRows, parseAsOfDate } from './src/utils/asOf';
@@ -36,6 +38,7 @@ import { readXlsxSheet } from './src/utils/xlsxRead';
 import { COMTRADE_REPORTERS, buildProfile, comtradeMissing, comtradeUrl, comtradeYears, parseComtrade, type ComtradeProfile, type ComtradeRow } from './src/utils/comtradeTrade';
 import { TIC_URL, parseTicTable, ticHoldingFor, type TicTable } from './src/utils/ticHoldings';
 import { cliFor, cliTurns, cliUrl, parseCli, type CliSeries } from './src/utils/oecdCli';
+import { parseQna, qnaUrl, type QnaSeries } from './src/utils/oecdQna';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { OECD_HEADERS, OECD_PAUSE_MS, isBotCheck } from './src/utils/oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi, type CpiSeries } from './src/utils/oecdInflation';
@@ -994,6 +997,64 @@ async function fetchCliPull(): Promise<CliPull | null> {
     cliInFlight = null;
   });
   return cliInFlight;
+}
+
+/**
+ * OECD quarterly real GDP growth (src/utils/oecdQna.ts). One call for every area, after the other
+ * OECD calls (same queue). Saved to data/live/oecd-qna.json and pulled again after a day; a failed
+ * pull keeps the last good one and is retried after an hour.
+ */
+type QnaPull = { pulledAt: string; series: QnaSeries };
+let qnaMemory: { pull: QnaPull | null; triedAt: number } | null = null;
+let qnaInFlight: Promise<QnaPull | null> | null = null;
+function qnaFile(): string {
+  return path.join(process.env.DATA_DIR || path.join(__dirname, 'data'), 'live', 'oecd-qna.json');
+}
+async function fetchQnaPull(): Promise<QnaPull | null> {
+  if (!qnaMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(qnaFile(), 'utf8')) as QnaPull;
+      if (saved?.pulledAt && saved.series) qnaMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  if (qnaMemory?.pull && Date.now() - Date.parse(qnaMemory.pull.pulledAt) < 24 * 60 * 60 * 1000) return qnaMemory.pull;
+  if (qnaMemory && Date.now() - qnaMemory.triedAt < 60 * 60 * 1000) return qnaMemory.pull;
+  if (qnaInFlight) return qnaInFlight;
+  qnaInFlight = (async () => {
+    let series: QnaSeries | null = null;
+    for (const wide of [false, true]) {
+      let res: { status: number; text: string } | null = null;
+      try {
+        res = await oecdFetch(qnaUrl({ wide }), 30000);
+      } catch (e) {
+        console.warn(`[OECD via DBnomics] quarterly GDP: ${describeNetworkError(e, 30000)}`);
+        break;
+      }
+      if (!res) break;
+      if (res.status >= 200 && res.status < 300) series = parseQna(res.text);
+      else console.warn(`[OECD via DBnomics] quarterly GDP refused (HTTP ${res.status})`);
+      if (series || !(res.status === 400 || res.status === 404 || (res.status >= 200 && res.status < 300))) break;
+    }
+    const prev = qnaMemory?.pull ?? null;
+    if (!series) {
+      qnaMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: QnaPull = { pulledAt: new Date().toISOString(), series };
+    qnaMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(qnaFile()), { recursive: true });
+      writeFileAtomic(qnaFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    qnaInFlight = null;
+  });
+  return qnaInFlight;
 }
 
 /**
@@ -2330,6 +2391,8 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCbpolPull(), 'BIS');
     case 'world:oecd_cli':
       return had(await fetchCliPull(), 'OECD (DBnomics)');
+    case 'world:oecd_qna':
+      return had(await fetchQnaPull(), 'OECD (DBnomics)');
     case 'world:oecd_cpi':
       return had(await fetchCpiPull(), 'OECD (DBnomics)');
     case 'world:national_cpi':
@@ -4933,6 +4996,116 @@ async function startServer() {
     }
     next();
   });
+  // Accounts and sign-in (src/utils/auth.ts). With no accounts and the app on this computer only,
+  // nothing changes; once an account exists, every API call needs a signed-in account.
+  const limits = sessionLimits(process.env);
+  const auth = new AuthStore(DATA_DIR, limits);
+  const signInLimiter = new SignInLimiter();
+  let setupCode: string | null = null;
+  const currentMode = () => authMode(auth.count(), process.env);
+  const announceSetupCode = () => {
+    if (currentMode() !== 'setup' || setupCode) return;
+    setupCode = newSetupCode();
+    console.log(`[auth] No accounts yet and sign-in is required (the app is open to a network, or AUTH=on). Create the first admin account at the sign-in page with this one-time setup code: ${setupCode}`);
+  };
+  announceSetupCode();
+  const secureCookie = (req: express.Request) => req.secure || String(process.env.COOKIE_SECURE || '').trim().toLowerCase() === 'true';
+  const signedIn = (res: express.Response): Account | null => (res.locals.account as Account | undefined) ?? null;
+  const accountName = (a: Account | null) => (a ? `${a.displayName} (${a.username})` : 'nobody signed in');
+  app.use((req, res, next) => {
+    const mode = currentMode();
+    const hit = mode === 'off' ? null : auth.resolve(readCookie(req.headers.cookie, SESSION_COOKIE));
+    if (hit) {
+      res.locals.account = hit.account;
+      res.locals.sessionHash = hit.session.tokenHash;
+    }
+    if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
+    // The integration API keeps its own key check when that is switched on in Settings.
+    if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
+    res.status(401).json({ error: mode === 'setup' ? 'Create the first admin account to start using the app.' : 'Sign in to use the app.', signIn: true, mode });
+  });
+  const authStatus = (req: express.Request, res: express.Response) => {
+    const mode = currentMode();
+    const me = signedIn(res);
+    return {
+      mode,
+      account: me ? publicAccount(me) : null,
+      // In 'off' mode the person can already change everything, so the first account needs no code.
+      setupNeedsCode: mode === 'setup',
+      canCreateFirstAccount: auth.count() === 0 && (mode === 'setup' || isLocalRequest(req.socket.remoteAddress, process.env)),
+      sessionIdleHours: Math.round(limits.idleMs / 3600_000),
+    };
+  };
+  app.get('/api/auth/status', (req, res) => res.json(authStatus(req, res)));
+  app.post('/api/auth/setup', express.json({ limit: '10kb' }), (req, res) => {
+    if (auth.count() > 0) return res.status(409).json({ error: 'An admin account already exists. Sign in instead.' });
+    const mode = currentMode();
+    if (mode === 'off' && !isLocalRequest(req.socket.remoteAddress, process.env)) {
+      return res.status(403).json({ error: 'The first account can only be created from the computer running the app.' });
+    }
+    const address = req.socket.remoteAddress || '';
+    const wait = signInLimiter.waitSeconds('(setup)', address);
+    if (wait) return res.status(429).json({ error: `Too many tries. Wait ${Math.ceil(wait / 60)} minutes.` });
+    if (mode === 'setup' && !setupCodeMatches(req.body?.code, setupCode)) {
+      signInLimiter.failed('(setup)', address);
+      return res.status(403).json({ error: 'That setup code is wrong. It is printed in the server log (docker logs, or the terminal running the app).' });
+    }
+    const username = normaliseUsername(req.body?.username);
+    const displayName = typeof req.body?.displayName === 'string' ? req.body.displayName : '';
+    const problem = usernameProblem(username) || displayNameProblem(displayName) || passwordProblem(req.body?.password, username);
+    if (problem) return res.status(400).json({ error: problem });
+    const account = newAccount({ username, displayName, role: 'admin', password: req.body.password });
+    auth.add(account);
+    setupCode = null;
+    const token = auth.startSession(account.id);
+    res.setHeader('Set-Cookie', sessionCookie(token, { secure: secureCookie(req), maxAgeMs: limits.maxMs }));
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `Created the first admin account: ${accountName(account)}. Sign-in is now required for everyone.` });
+    res.json({ ok: true, account: publicAccount(account) });
+  });
+  app.post('/api/auth/sign-in', express.json({ limit: '10kb' }), (req, res) => {
+    const username = normaliseUsername(req.body?.username);
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const address = req.socket.remoteAddress || '';
+    const wait = signInLimiter.waitSeconds(username, address);
+    if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
+    const account = auth.byUsername(username);
+    const ok = verifyPassword(password, account?.passwordHash || DUMMY_HASH) && Boolean(account) && !account!.disabled;
+    if (!ok || !account) {
+      signInLimiter.failed(username, address);
+      appendAudit(AUDIT_FILES, { kind: 'access', summary: `Failed sign-in for "${username.slice(0, 40) || '(blank)'}"`, detail: { address } });
+      return res.status(401).json({ error: 'That username and password do not match an active account.' });
+    }
+    signInLimiter.succeeded(username);
+    const token = auth.startSession(account.id);
+    res.setHeader('Set-Cookie', sessionCookie(token, { secure: secureCookie(req), maxAgeMs: limits.maxMs }));
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed in: ${accountName(account)}`, detail: { address } });
+    res.json({ ok: true, account: publicAccount(account) });
+  });
+  app.post('/api/auth/sign-out', (req, res) => {
+    const me = signedIn(res);
+    auth.endSession(readCookie(req.headers.cookie, SESSION_COOKIE));
+    res.setHeader('Set-Cookie', clearedSessionCookie(secureCookie(req)));
+    if (me) appendAudit(AUDIT_FILES, { kind: 'access', summary: `Signed out: ${accountName(me)}` });
+    res.json({ ok: true });
+  });
+  app.post('/api/auth/password', express.json({ limit: '10kb' }), (req, res) => {
+    const me = signedIn(res);
+    if (!me) return res.status(401).json({ error: 'Sign in first.', signIn: true });
+    const address = req.socket.remoteAddress || '';
+    const wait = signInLimiter.waitSeconds(me.username, address);
+    if (wait) return res.status(429).json({ error: `Too many wrong passwords. Try again in ${Math.ceil(wait / 60)} minutes.` });
+    if (!verifyPassword(String(req.body?.current || ''), me.passwordHash)) {
+      signInLimiter.failed(me.username, address);
+      return res.status(403).json({ error: 'The current password is wrong.' });
+    }
+    const problem = passwordProblem(req.body?.next, me.username);
+    if (problem) return res.status(400).json({ error: problem });
+    auth.update(me.id, (a) => ({ ...a, passwordHash: hashPassword(req.body.next), passwordChangedAt: new Date().toISOString() }));
+    const ended = auth.endSessionsFor(me.id, res.locals.sessionHash as string | undefined);
+    appendAudit(AUDIT_FILES, { kind: 'access', summary: `Changed own password: ${accountName(me)}${ended ? ` (signed out ${ended} other session${ended === 1 ? '' : 's'})` : ''}` });
+    res.json({ ok: true, endedSessions: ended });
+  });
+
   // Audit log: every change, download and AI step that succeeds is written once it has answered,
   // by what it did (route), never by its body, so keys and document text stay out of the log.
   app.use((req, res, next) => {
@@ -5614,11 +5787,12 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
       quick(fetchHcSpread()).then((h) => h ?? loadMarketExtras().hcSpread ?? null),
+      quick(fetchQnaPull()),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -5628,6 +5802,7 @@ async function startServer() {
     return countrySeries(iso3, {
       cbpol,
       cli,
+      qna,
       cpiOecdAnswered: Boolean(cpi),
       cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
