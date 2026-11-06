@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { cdsSignals, policySignal, rankDivergences, realYieldSignals, refinancingSignal } from '../src/utils/divergences.ts';
+import { policySignal, rankDivergences, realYieldSignals, refinancingSignal } from '../src/utils/divergences.ts';
 import type { WatchlistItem } from '../src/types/council.ts';
 
 const it = (iso3: string, o: Partial<WatchlistItem> = {}): WatchlistItem =>
-  ({ iso3, countryName: iso3, compositeRisk: 0.5, cds5YBps: 150, yield10YPct: 8, ...o }) as WatchlistItem;
+  ({ iso3, countryName: iso3, cds5YBps: 150, yield10YPct: 8, ...o }) as WatchlistItem;
 
 test('policy: tight with inflation near target is room to cut; loose with inflation above is behind the curve', () => {
   const zaf = policySignal(it('ZAF', { policyRatePct: 8, cpiInflationPct: 3.4, cpiSource: 'live', policyRateSource: 'ai_estimate' }))!;
@@ -24,19 +24,6 @@ test('real yield: flagged only 2+ pts from the median, and needs 4 countries', (
   assert.deepEqual([...m.keys()], ['D']);
   assert.equal(m.get('D')!.label, 'High real yield');
   assert.equal(realYieldSignals(xs.slice(0, 3)).size, 0);
-});
-
-test('CDS: own quotes count as live; in-line names are not flagged', () => {
-  const xs = [
-    it('A', { compositeRisk: 0.3, cds5YBps: 100 }),
-    it('B', { compositeRisk: 0.5, cds5YBps: 300, cds5YSource: 'own', cds5YProvider: 'Bloomberg', cds5YDate: '2026-11-03' }),
-    it('C', { compositeRisk: 0.7, cds5YBps: 400 }),
-    it('D', { compositeRisk: 0.9, cds5YBps: 800 }),
-  ];
-  const m = cdsSignals(xs);
-  assert.equal(m.get('B')!.quality, 'live');
-  assert.match(m.get('B')!.evidence[0].source, /your Bloomberg, 3 Nov 2026/);
-  assert.equal(m.get('B')!.label, 'CDS wide for its risk');
 });
 
 test('refinancing: 10% or more of international bonds due within a year', () => {

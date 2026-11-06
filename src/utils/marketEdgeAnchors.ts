@@ -2,10 +2,9 @@
  * MarketEdge benchmarks: the five markets always shown on the MarketEdge screen, whatever the
  * watchlist holds (Sam, 2026-11-04): United States, China, Russia, United Kingdom, EU, India.
  *
- * Only the UK is a full country in the app (risk score, brief, CDS), so it joins the peer fit.
+ * Only the UK is a full country in the app (brief, CDS), so it joins the peer rows.
  * The other four are benchmark rows: their official 10Y yield where a free source exists, the
- * spread over US Treasuries, and your own CDS quote if your CDS file or LSEG covers them. They
- * have no risk score, so they never enter the cheap / rich fit.
+ * spread over US Treasuries, and your own CDS quote if your CDS file or LSEG covers them.
  *
  * Sources, checked on fred.stlouisfed.org on 2026-11-04:
  * - United States: IRLTLT01USM156N (OECD, monthly), the same series as the spread benchmark.

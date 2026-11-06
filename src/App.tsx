@@ -10,9 +10,6 @@ import {
   CouncilAssessmentRun,
   CustomSovereignOnboardingDraft,
   ExternalInternalConnectorMetricKey,
-  ForecastingShockInputs,
-  GeopoliticalWargameParams,
-  LiquidityStressParams,
   OpenDataSnapshot,
   UserPersonaId,
   WatchlistGroup,
@@ -37,11 +34,6 @@ import {
   loadWorkspaceSessionFromStorage,
   saveWorkspaceSessionToStorage,
 } from './utils/turnkeyReadinessAndCommandEngine';
-import { DEFAULT_WARGAME_PARAMS } from './utils/geopoliticalRiskEngine';
-import { DEFAULT_LIQUIDITY_STRESS_PARAMS } from './utils/globalLiquidityEngine';
-import {
-  DEFAULT_FORECAST_SHOCKS,
-} from './utils/portfolioAndBacktestEngine';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
@@ -471,16 +463,6 @@ export default function App() {
   );
 
   const [croDraft, setCroDraft] = useState<CROOverrideState>(() => run.croState);
-  const [forecastShocks, setForecastShocks] = useState<ForecastingShockInputs>(
-    () => savedSessionOnBoot?.forecastShocks || DEFAULT_FORECAST_SHOCKS
-  );
-  const [geopoliticalWargameParams, setGeopoliticalWargameParams] =
-    useState<GeopoliticalWargameParams>(
-      () => savedSessionOnBoot?.geopoliticalWargameParams || DEFAULT_WARGAME_PARAMS
-    );
-  const [liquidityStressParams, setLiquidityStressParams] = useState<LiquidityStressParams>(
-    () => savedSessionOnBoot?.liquidityStressParams || DEFAULT_LIQUIDITY_STRESS_PARAMS
-  );
 
   const [isTradeTicketDrawerOpen, setIsTradeTicketDrawerOpen] = useState<boolean>(false);
   const [stagedTradeTickets, setStagedTradeTickets] = useState<StagedTradeTicketSpec[]>(
@@ -658,9 +640,6 @@ export default function App() {
       layoutMode,
       darkMode,
       scenarioDirective: scenarioInput,
-      forecastShocks,
-      geopoliticalWargameParams,
-      liquidityStressParams,
       watchlists,
       activeWatchlistId,
       customOnboardedSovereigns,
@@ -673,9 +652,6 @@ export default function App() {
       layoutMode,
       darkMode,
       scenarioInput,
-      forecastShocks,
-      geopoliticalWargameParams,
-      liquidityStressParams,
       watchlists,
       activeWatchlistId,
       customOnboardedSovereigns,
@@ -762,9 +738,6 @@ export default function App() {
           }
           // Sync active sovereign metrics in watchlists
           const snap = data.snapshot;
-          const liveGeo = data.run?.croState?.geopoliticalRiskScore;
-          const liveSov = data.run?.croState?.sovereignRiskScore;
-          const liveMac = data.run?.croState?.macroRiskScore;
           setWatchlists((prev) =>
             prev.map((group) => ({
               ...group,
@@ -776,13 +749,6 @@ export default function App() {
                       cds5YBps: snap.monetaryAndMarket.cds5YSpreadBps,
                       debtToGdpPct: snap.imfIndicators.debtToGdpPct,
                       fxReservesMonths: snap.worldBankIndicators.fxReservesMonthsImport,
-                      geopoliticalRisk: typeof liveGeo === 'number' ? liveGeo : it.geopoliticalRisk,
-                      sovereignRisk: typeof liveSov === 'number' ? liveSov : it.sovereignRisk,
-                      macroRisk: typeof liveMac === 'number' ? liveMac : it.macroRisk,
-                      compositeRisk:
-                        typeof liveGeo === 'number' && typeof liveSov === 'number' && typeof liveMac === 'number'
-                          ? Number(((liveGeo + liveSov + liveMac) / 3).toFixed(2))
-                          : it.compositeRisk,
                     }
                   : it
               ),
@@ -812,7 +778,6 @@ export default function App() {
     setRun(nextRun);
     setCroDraft(nextRun.croState);
     setScenarioInput(item.focusTheme);
-    setForecastShocks(DEFAULT_FORECAST_SHOCKS);
     handlePullLiveOpenData(item.iso3, item.countryName, false);
   };
 
@@ -950,8 +915,6 @@ export default function App() {
           progressId,
           scenarioPrompt: scenarioInput,
           runtimeConfig,
-          geopoliticalWargameParams,
-          liquidityStressParams,
         }),
       });
       const data = await res.json();
@@ -995,8 +958,6 @@ export default function App() {
           croOverrideState: croDraft,
           progressId: councilProgressId,
           runtimeConfig,
-          geopoliticalWargameParams,
-          liquidityStressParams,
         }),
       });
       const data = await res.json();

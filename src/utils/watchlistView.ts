@@ -21,10 +21,9 @@ export const WATCHLIST_CHANNEL = 'econquest-watchlist';
 export type WatchlistMessage = { type: 'open-country'; iso3: string };
 
 /** What the previous visit recorded, for the change columns. */
-export type LastLook = Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; compositeRisk?: number; yieldSource?: string }>;
+export type LastLook = Record<string, { cds5YBps?: number; cdsSource?: string; yield10YPct?: number; yieldSource?: string }>;
 
 export type ColumnId =
-  | 'risk'
   | 'cds'
   | 'hcSpread'
   | 'cdsChange'
@@ -88,7 +87,6 @@ export function yieldChangeBp(it: LiveWatchlistItem, last?: LastLook): number | 
 }
 
 export const COLUMNS: ColumnDef[] = [
-  { id: 'risk', label: 'Risk', help: 'Composite risk score, 0 to 1, from the app’s model on live inputs', align: 'left', figure: 'risk', value: (it) => it.compositeRisk, text: (it) => num(it.compositeRisk, 2) },
   { id: 'cds', label: '5Y CDS (bps)', help: 'Five-year credit default swap spread', align: 'right', figure: 'cds', value: (it) => it.cds5YBps, text: (it) => num(it.cds5YBps, 0), note: (it) => (it.cds5YBps === undefined ? undefined : cdsSourceNote(it)) },
   { id: 'cdsChange', label: 'CDS change', help: 'Since your last visit', align: 'right', value: cdsChange, text: (it, l) => signed(cdsChange(it, l), 0), higherIsWorse: true, isChange: true },
   { id: 'hcSpread', label: 'USD bond spread (bps)', help: 'Extra yield on the government\'s US dollar bonds over US Treasuries, monthly average (J.P. Morgan EMBI Global via the central bank of Peru). A bond spread, not CDS.', align: 'right', figure: 'hcspread', value: (it) => it.hcSpreadBps, text: (it) => num(it.hcSpreadBps, 0), note: (it) => (it.hcSpreadPeriod ? hcSpreadWhen(it.hcSpreadPeriod) : undefined) },
@@ -232,7 +230,7 @@ export const VISIBLE_COLUMNS: ColumnDef[] = COLUMNS.filter((c) => !HIDDEN_COLUMN
 export const COLUMN_BY_ID = Object.fromEntries(COLUMNS.map((c) => [c.id, c])) as Record<ColumnId, ColumnDef>;
 
 /** The columns the Workspace table always showed, in the same order. */
-export const DEFAULT_COLUMNS: ColumnId[] = (['risk', 'cds', 'cdsChange', 'hcSpread', 'yield', 'yieldChange', 'debt', 'reserves', 'data'] as ColumnId[]).filter((c) => !HIDDEN_COLUMNS.has(c));
+export const DEFAULT_COLUMNS: ColumnId[] = (['cds', 'cdsChange', 'hcSpread', 'yield', 'yieldChange', 'debt', 'reserves', 'data'] as ColumnId[]).filter((c) => !HIDDEN_COLUMNS.has(c));
 
 export type SortKey = 'country' | ColumnId;
 export interface WatchlistView {
@@ -242,14 +240,16 @@ export interface WatchlistView {
   watchlistId?: string;
 }
 
-export const DEFAULT_VIEW: WatchlistView = { columns: DEFAULT_COLUMNS, sort: { key: 'risk', dir: 'desc' } };
+export const DEFAULT_VIEW: WatchlistView = { columns: DEFAULT_COLUMNS, sort: { key: 'country', dir: 'asc' } };
 
 /** Keeps only known columns, without repeats; falls back to the defaults when nothing usable is left. */
 export function cleanView(raw: unknown): WatchlistView {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<WatchlistView>;
   const cols = Array.isArray(r.columns) ? r.columns.filter((c, i, a): c is ColumnId => c in COLUMN_BY_ID && !HIDDEN_COLUMNS.has(c) && a.indexOf(c) === i) : [];
-  const key = r.sort?.key === 'country' || (r.sort?.key && r.sort.key in COLUMN_BY_ID && !HIDDEN_COLUMNS.has(r.sort.key as ColumnId)) ? r.sort.key : DEFAULT_VIEW.sort.key;
-  const dir = r.sort?.dir === 'asc' ? 'asc' : 'desc';
+  const keyOk = r.sort?.key === 'country' || (r.sort?.key && r.sort.key in COLUMN_BY_ID && !HIDDEN_COLUMNS.has(r.sort.key as ColumnId));
+  // A saved sort on a column that no longer exists (or is hidden) falls back to the default sort, direction included.
+  const key = keyOk ? r.sort!.key : DEFAULT_VIEW.sort.key;
+  const dir = keyOk ? (r.sort?.dir === 'asc' ? 'asc' : 'desc') : DEFAULT_VIEW.sort.dir;
   return {
     columns: cols.length ? cols : [...DEFAULT_COLUMNS],
     sort: { key, dir },

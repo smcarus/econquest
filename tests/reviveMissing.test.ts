@@ -23,7 +23,7 @@ test('watchlist rows read back from browser storage get NaN for missing figures'
 
 test('the country list carries no built-in figures', () => {
   for (const c of SOVEREIGN_CATALOG) {
-    for (const k of ['yield10YPct', 'cds5YBps', 'debtToGdpPct', 'fxReservesMonths', 'compositeRisk'] as const) {
+    for (const k of ['yield10YPct', 'cds5YBps', 'debtToGdpPct', 'fxReservesMonths'] as const) {
       assert.ok(Number.isNaN(c[k]), `${c.iso3} ${k}`);
     }
   }

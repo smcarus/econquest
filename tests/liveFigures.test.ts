@@ -6,25 +6,26 @@ import type { WatchlistItem } from '../src/types/council.ts';
 const row = (o: Partial<WatchlistItem> = {}): WatchlistItem =>
   ({
     iso3: 'MEX', countryName: 'Mexico', region: '', currencyCode: 'MXN', focusTheme: '',
-    geopoliticalRisk: 0.4, sovereignRisk: 0.5, macroRisk: 0.5, compositeRisk: 0.47, alertStatus: 'ELEVATED',
     yield10YPct: 9.1, cds5YBps: 120, debtToGdpPct: 55, fxReservesMonths: 4.6, cpiInflationPct: 4.8, policyRatePct: 9.15,
     ...o,
   }) as WatchlistItem;
 
 test('a row with no recorded sources keeps no figures at all (old saved rows, the built-in catalogue)', () => {
-  const l = toLive(row());
-  for (const k of ['compositeRisk', 'alertStatus', 'yield10YPct', 'cds5YBps', 'debtToGdpPct', 'fxReservesMonths', 'cpiInflationPct', 'policyRatePct'] as const)
+  // Old saved rows may still carry the retired composite risk score: toLive drops it.
+  const l = toLive(row({ compositeRisk: 0.47, alertStatus: 'ELEVATED' } as Partial<WatchlistItem>));
+  for (const k of ['compositeRisk', 'alertStatus', 'riskSource']) assert.equal((l as Record<string, unknown>)[k], undefined, k);
+  for (const k of ['yield10YPct', 'cds5YBps', 'debtToGdpPct', 'fxReservesMonths', 'cpiInflationPct', 'policyRatePct'] as const)
     assert.equal(l[k], undefined, k);
   assert.equal(l.countryName, 'Mexico');
 });
 
 test('figures from real sources stay: IMF, World Bank, official yield, your CDS; AI estimates do not', () => {
   const l = toLive(
-    row({ debtSource: 'live', reservesSource: 'live', cpiSource: 'live', policyRateSource: 'ai_estimate', yield10YSource: 'official', yield10YPeriod: '2026-08', cds5YSource: 'own', riskSource: 'live' })
+    row({ debtSource: 'live', reservesSource: 'live', cpiSource: 'live', policyRateSource: 'ai_estimate', yield10YSource: 'official', yield10YPeriod: '2026-08', cds5YSource: 'own' })
   );
   assert.deepEqual(
-    [l.debtToGdpPct, l.fxReservesMonths, l.cpiInflationPct, l.policyRatePct, l.yield10YPct, l.cds5YBps, l.compositeRisk],
-    [55, 4.6, 4.8, undefined, 9.1, 120, 0.47]
+    [l.debtToGdpPct, l.fxReservesMonths, l.cpiInflationPct, l.policyRatePct, l.yield10YPct, l.cds5YBps],
+    [55, 4.6, 4.8, undefined, 9.1, 120]
   );
   // Sam, 23:27Z: AI web-search estimates count as missing.
   assert.equal(toLive(row({ cds5YSource: 'ai_estimate' })).cds5YBps, undefined);

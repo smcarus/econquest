@@ -43,7 +43,7 @@ source and date. A dash or **Missing** means no source answered, and the note be
 - *kept from the <date> pull*: the latest pull failed for that source, so the last good figure is
   shown with its original date.
 
-Figures worked out by the app from live inputs (risk scores, debt paths, cheap or rich readings) are
+Figures worked out by the app from live inputs (debt paths, policy rule gaps, currency valuation) are
 labelled with the agent or rule that made them, for example "Fiscal & Debt Agent", and are never
 shown when an input is missing.
 
@@ -231,10 +231,10 @@ against peers, policy rate against inflation, carry and currency valuation. Buil
 only. Stated rules for discussion, not trade advice.
 
 **MarketEdge.** Your watchlist plus the US, China, Russia, UK, EU and India. Columns: 10Y yield,
-spread over the US 10Y, 3-month and 12-month changes, CDS (your own data only), risk score, real FX
-against its 10-year average, OECD leading indicator, last policy move, and cheap or rich against
-peers. Sort by *Cheap to rich* or *Moving most*. Without a CDS file, cheap or rich uses the real
-10Y yield against the risk score when four or more countries have both.
+spread over the US 10Y, 3-month and 12-month changes, CDS (your own data only), real FX
+against its 10-year average, OECD leading indicator and last policy move. Sort by *Widest spread*
+or *Moving most*. The screen makes no cheap or rich call: the old fit against the app's composite
+risk score was never tested and has been removed.
 
 **Growth and inflation.** Each country placed by the 6-month change in its OECD leading indicator
 (right = picking up) and the 3-month change in its monthly inflation (up = rising), with a line on what
@@ -273,7 +273,7 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   and the official 10Y yield are all live; otherwise it lists what is missing.
 
 **Markets & signals (MarketEdge).** Under three headings, *Economy and policy*, *Markets and positioning* and *Risks and
-links*. The country against its peers: CDS or real yield fitted on the risk score, policy
+links*. The country against its peers: policy
 stance (tight, neutral or loose), the cycle clock (hiking, cutting or on hold and for how long; the
 leading indicator phase and last turning point; next decision date), a policy rule check (the policy rate against a simple
 Taylor rule: r* of 2%, inflation, half the gap to the bank's own target and half the IMF output gap

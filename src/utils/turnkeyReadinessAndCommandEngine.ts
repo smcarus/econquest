@@ -3,9 +3,6 @@ import {
   CouncilAssessmentRun,
   CustomSovereignOnboardingDraft,
   DataProvenanceFeedStatus,
-  ForecastingShockInputs,
-  GeopoliticalWargameParams,
-  LiquidityStressParams,
   ModelIntegrityAuditCheck,
   ModelIntegrityAuditReport,
   NavigationCategoryGroupId,
@@ -26,7 +23,6 @@ import {
   computeGeoSanctionsChokepointSuite,
   computeNgfsClimateFiscalSuite,
 } from './restructuringMonetaryGeoEngine';
-import { computeCrossSovereignAlphaCorrelationSuite } from './institutionalQuantEngine';
 
 export const WORKSPACE_SESSION_STORAGE_KEY = 'econquest_turnkey_workspace_session_v1';
 export const CUSTOM_SOVEREIGNS_STORAGE_KEY = 'econquest_custom_sovereigns_v1';
@@ -694,33 +690,6 @@ export function runPreFlightModelIntegrityAudit(
     diagnosticDetail: `SLB Greenium = ${climateSuite.activeRow.sovereignGreeniumDiscountBps} bps; KPI miss step-up penalty = +${climateSuite.activeRow.slbCouponStepUpPenaltyBps} bps.`,
   });
 
-  // Check 11: Cross-Sovereign Alpha Correlation Matrix & EMBI Weight Optimizer Identity
-  const alphaCorrSuite = computeCrossSovereignAlphaCorrelationSuite(run, watchlistItems, {
-    spreadSeries: 'CDS_5Y_BPS',
-    rollingWindow: '90D',
-    crisisStressIntensityPct: 0,
-    pairIsoA: run.iso3,
-    pairIsoB: run.iso3 === 'BRA' ? 'MEX' : 'BRA',
-  });
-  const maxDivSum = alphaCorrSuite.embiWeightRows.reduce(
-    (acc, r) => acc + r.maxDiversificationWeightPct,
-    0
-  );
-  const weightSumDev = Math.abs(100 - maxDivSum);
-  const drValid = alphaCorrSuite.choueifatyDiversificationRatio >= 1.0;
-  checks.push({
-    checkId: 'CHK-11-ALPHA-CORR-EMBI-WEIGHTS',
-    category: 'ACCOUNTING_IDENTITY',
-    hubReference: 'Hub 5.6 · Cross-Sovereign Alpha Correlation Matrix',
-    title: 'Symmetric Correlation Bounds (ρ ∈ [-1, 1]), Choueifaty DR ≥ 1.00 & EMBI Weights = 100.0%',
-    formulaChecked: '∑ w_i = 100.0%; DR = (wᵀσ) / √(wᵀΣw) ≥ 1.00',
-    expectedInvariant: '100.0% · DR ≥ 1.00x',
-    observedReading: `${maxDivSum.toFixed(1)}% · DR ${alphaCorrSuite.choueifatyDiversificationRatio.toFixed(2)}x`,
-    residualDeviationLabel: `${weightSumDev.toFixed(2)}%`,
-    status: weightSumDev <= 0.2 && drValid ? 'PASS' : 'WARN',
-    diagnosticDetail: `${alphaCorrSuite.universeCount}×${alphaCorrSuite.universeCount} rolling correlation matrix verified (ρ̄ = ${alphaCorrSuite.averagePairwiseCorrelation.toFixed(2)}, PC1 Beta = ${alphaCorrSuite.pc1GlobalBetaVariancePct.toFixed(1)}%, Idiosyncratic Alpha = ${alphaCorrSuite.idiosyncraticAlphaVariancePct.toFixed(1)}%).`,
-  });
-
   const provenanceFeeds: DataProvenanceFeedStatus[] = [
     {
       feedId: 'FEED-IMF-WEO',
@@ -895,27 +864,6 @@ export function parseAndValidateWorkspaceSessionJson(
         layoutMode: (parsed.layoutMode as WorkspaceLayoutMode) || 'executive_brief',
         darkMode: Boolean(parsed.darkMode),
         scenarioDirective: parsed.scenarioDirective || '',
-        forecastShocks: (parsed.forecastShocks as ForecastingShockInputs) || {
-          realRateShockBps: 0,
-          realGdpGrowthShockPct: 0,
-          primaryBalanceShockPctGdp: 0,
-          fxDepreciationShockPct: 0,
-          externalVolatilityMultiplier: 1,
-        },
-        geopoliticalWargameParams:
-          (parsed.geopoliticalWargameParams as GeopoliticalWargameParams) || {
-            chokepointClosureSeverityPct: 25,
-            tariffEscalationPct: 15,
-            sanctionsAndClearingIntensity: 20,
-            electoralAndUnrestShock: 30,
-          },
-        liquidityStressParams: (parsed.liquidityStressParams as LiquidityStressParams) || {
-          presetId: 'baseline',
-          usdBasisSqueezeBps: 15,
-          interbankFraOisShockBps: 10,
-          fedQtAndTgaDrainUsdBn: 120,
-          gsibTurnWindowDressingMultiplier: 1.15,
-        },
         watchlists: parsed.watchlists,
         activeWatchlistId: parsed.activeWatchlistId || parsed.watchlists[0]?.id || 'wl_em_sovereign_core',
         customOnboardedSovereigns: Array.isArray(parsed.customOnboardedSovereigns)

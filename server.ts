@@ -118,7 +118,6 @@ import {
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
   buildOfficialCatalystCalendar,
-  computeQuantitativeAnchorScores,
 } from './src/data/presetsAndBaselines.ts';
 import {
   AIRuntimeConfig,
@@ -127,9 +126,7 @@ import {
   DeskDebateRound,
   ExternalInternalConnectorConfig,
   ExternalInternalConnectorMetricKey,
-  GeopoliticalWargameParams,
   IntegrationBroadcastScope,
-  LiquidityStressParams,
   OpenDataSnapshot,
   PipelineStageTelemetry,
   PolicyDocumentCategory,
@@ -138,16 +135,6 @@ import {
   SupremeCouncilOutput,
   WatchlistItem,
 } from './src/types/council.ts';
-import {
-  DEFAULT_WARGAME_PARAMS,
-  computeGeopoliticalRiskDeskSuite,
-} from './src/utils/geopoliticalRiskEngine.ts';
-import { computeFullEconometricForecastSuite } from './src/utils/econometricForecastingEngine.ts';
-import {
-  DEFAULT_LIQUIDITY_STRESS_PARAMS,
-  computeGlobalLiquidityFundingSuite,
-} from './src/utils/globalLiquidityEngine.ts';
-import { computeCrossCurrencyAndLegalBasis, simulateSovereignRestructuringAndRating } from './src/utils/institutionalRiskDeskEngine.ts';
 import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
@@ -940,7 +927,6 @@ async function refreshStaleSnapshots(force = false): Promise<void> {
 let cachedWatchlistLive: { timestamp: number; items: WatchlistItem[] } | null = null;
 
 /** Inputs the risk scores lean on most; without all of them live, the score is not shown. */
-const RISK_INPUTS = ['imf.debtToGdpPct', 'imf.cpiInflationPct', 'imf.realGdpGrowthPct', 'wb.fxReservesMonthsImport', 'wb.politicalStabilityPercentile', 'gdelt.averageTone'];
 
 /**
  * Live rows for every catalog country, or (with `extra`) also for countries outside the catalog,
@@ -977,11 +963,6 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
         const snap = await fetchLiveOpenDataSnapshot(catItem.iso3, catItem.countryName, {
           cacheOnly: true,
         });
-        const run = buildDefaultAssessmentRun(catItem.iso3, snap);
-        const geo = run.croState.geopoliticalRiskScore;
-        const sov = run.croState.sovereignRiskScore;
-        const mac = run.croState.macroRiskScore;
-        const comp = Number(((geo + sov + mac) / 3).toFixed(2));
         const status = getSnapshotDataStatus(snap);
         const lf = snap.liveFields || {};
         const fetchedOfficial =
@@ -1031,10 +1012,6 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
             const trade = enrichTrade(base && Object.keys(base).length ? base : undefined, comtrade?.countries[catItem.iso3]?.profile, commodities?.moves);
             return trade ? { trade } : {};
           })()),
-          geopoliticalRisk: geo,
-          sovereignRisk: sov,
-          macroRisk: mac,
-          compositeRisk: comp,
           ...watchlistYieldFields(snap, fetchedOfficial),
           ...((() => {
             const hc = hcPull?.countries[catItem.iso3];
@@ -1079,8 +1056,6 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
             : { policyRateSource: 'sample' }),
           debtSource: lf['imf.debtToGdpPct'] ? 'live' : 'sample',
           reservesSource: lf['wb.fxReservesMonthsImport'] ? 'live' : 'sample',
-          // The risk scores are a model on the snapshot; they count only when its main inputs are live.
-          riskSource: RISK_INPUTS.every((k) => lf[k]) ? 'live' : 'sample',
           ...(snap.debtSchedule?.bis?.intl
             ? {
                 intlBondsUsdBn: snap.debtSchedule.bis.intl.outstandingUsdBn,
@@ -1096,7 +1071,6 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
             const politics = politicsFromSnapshot(snap);
             return politics ? { politics } : {};
           })()),
-          alertStatus: comp >= 0.68 ? 'CRITICAL' : comp >= 0.48 ? 'ELEVATED' : 'STABLE',
           dataMode: status.mode,
           dataAsOf: status.asOf,
         } as WatchlistItem;
@@ -1138,15 +1112,10 @@ async function liveRowsFor(codes: string[]): Promise<WatchlistItem[]> {
       region: '',
       currencyCode: '',
       focusTheme: '',
-      geopoliticalRisk: Number.NaN,
-      sovereignRisk: Number.NaN,
-      macroRisk: Number.NaN,
-      compositeRisk: Number.NaN,
       yield10YPct: Number.NaN,
       cds5YBps: Number.NaN,
       debtToGdpPct: Number.NaN,
       fxReservesMonths: Number.NaN,
-      alertStatus: 'STABLE',
     }));
   return [...out, ...(extra.length ? await fetchLiveWatchlistCatalog(extra) : [])];
 }
@@ -3924,8 +3893,6 @@ async function startServer() {
         policyDocumentTitle = '',
         policyDocumentText = '',
         runtimeConfig = {} as Partial<AIRuntimeConfig>,
-        geopoliticalWargameParams = DEFAULT_WARGAME_PARAMS as GeopoliticalWargameParams,
-        liquidityStressParams = DEFAULT_LIQUIDITY_STRESS_PARAMS as LiquidityStressParams,
       } = req.body || {};
 
       // Stage 0: Refresh live institutional & grounded market data first
@@ -3945,17 +3912,6 @@ async function startServer() {
       baseRun.openData = liveSnapshot;
       baseRun.charts = buildAnnotatedChartsForSovereign(liveSnapshot);
 
-      // Execute Closed-Loop Institutional Quantitative Engines across all Desks
-      const geoDeskSuite = computeGeopoliticalRiskDeskSuite(liveSnapshot, geopoliticalWargameParams);
-      const econometricSuite = computeFullEconometricForecastSuite(
-        liveSnapshot,
-        geoDeskSuite.portfolioTransmission.propagatedForecastShocks
-      );
-      const liquiditySuite = computeGlobalLiquidityFundingSuite(liveSnapshot, liquidityStressParams);
-      const restructuringSuite = simulateSovereignRestructuringAndRating(liveSnapshot);
-      const xccyLegalSuite = computeCrossCurrencyAndLegalBasis(liveSnapshot);
-
-      const anchors = computeQuantitativeAnchorScores(liveSnapshot);
       const providerMode = runtimeConfig.providerMode || 'gemini';
       const enableSearch = runtimeConfig.enableSearchGrounding !== false;
       const maxDebateRounds = Math.min(3, Math.max(1, Number(runtimeConfig.maxDebateRounds || 2)));
@@ -3968,14 +3924,7 @@ Debate Rounds Requested: ${maxDebateRounds}
 
 Country figures (only live feeds, official series and your own data; nothing built in):
 ${councilIn.lines.join('\n')}
-${MISSING_FIGURES_RULE}
-
-${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Injected into Specialist Agents AG-1 to AG-9):
-- [AG-1 / AG-2 / AG-3 Geopolitical Engine]: Composite GPR Z-Score = ${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ | Chokepoint CPI Pass-Through = +${geoDeskSuite.portfolioTransmission.propagatedForecastShocks.realRateShockBps} bps | G7 Freeze-Exposed Reserves = ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%
-- [AG-4 Fiscal Auditor]: Monte Carlo 2030 Debt Fan P50 = ${econometricSuite.stochasticDsa.medianDebt2030PctGdp}% (P95 Tail = ${econometricSuite.stochasticDsa.p95Debt2030PctGdp}%) | IMF SRDSF Gross Financing Needs (GFN) = ${econometricSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP (${econometricSuite.imfSrdsfGfn.srdsfRiskZone}) | Sovereign-Bank Doom Loop CET1 Depletion = -${econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps
-- [AG-5 External Balance]: Blanchard-Leeper Fiscal Dominance Reversal Rate r* = ${econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}% (${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps} bps headroom) | FXI Burn Velocity = $${econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B/mo (${econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach}M to 100% ARA Floor) | 5Y XCCY Swap Basis = ${xccyLegalSuite.fiveYearXccyBasisBps} bps
-- [AG-6 Political Will & Indentures]: Eurobond Restructuring NPV Recovery = ${restructuringSuite.restructuredNpvRecoveryCents}¢ | ICMA Single-Limb 75% CAC Share = ${restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct}% (Holdout Litigation Prob = ${restructuringSuite.cacGameTheory.holdoutLitigationProbPct}%)
-- [AG-7 / AG-8 / AG-9 Macro & Plumbing]: 5pct Growth-at-Risk (GaR) = ${econometricSuite.garFarTail.gdpGar5thPercentilePct}% | Nelson-Siegel 10Y Term Premium = +${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps | Kaminsky-Reinhart EWS Z-Score = ${econometricSuite.markovEws.compositeCrisisZScore}σ (${econometricSuite.markovEws.crisisProbability12MPct}% 12M crisis odds) | Global Dollar Plumbing Z = ${liquiditySuite.globalLiquidityStressIndexZScore}σ` : `Model desk outputs left out: they would run on missing inputs (${councilIn.missingDeskInputs.join(', ')}).`}`;
+${MISSING_FIGURES_RULE}`;
 
       const deskWorkerSchema = {
         type: Type.OBJECT,
@@ -4070,12 +4019,12 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           stepName: 'STAGE_1_GEO_DESK',
           providerMode,
           runtimeConfig,
-          systemInstruction: `You are Managing Director of the Geopolitical Risk Desk overseeing AG-1 (Intelligence Scraper Analyst), AG-2 (Transmission Mapping Analyst), and AG-3 (Sanctions & Legal Analyst). Quantitative Anchor Score: ${anchors.geopolitical}. Keep risk scores anchored near empirical telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands the real-world impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Caldara-Iacoviello GPR Z-Score = +2.1σ | USD bond spread = 185 bps)".`,
+          systemInstruction: `You are Managing Director of the Geopolitical Risk Desk overseeing AG-1 (Intelligence Scraper Analyst), AG-2 (Transmission Mapping Analyst), and AG-3 (Sanctions & Legal Analyst). CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands the real-world impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Caldara-Iacoviello GPR Z-Score = +2.1σ | USD bond spread = 185 bps)".`,
           prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag1_intel_scraper', 'ag2_transmission_mapper', 'ag3_sanctions_legal'])}\n\nSynthesize individual findings for AG-1, AG-2, and AG-3, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining what is happening in the real world, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
-            deskPreCascadeScore: anchors.geopolitical,
-            consensusStance: anchors.geopolitical > 0.6 ? 'DISTRESSED' : 'CAUTIOUS',
+            deskPreCascadeScore: Number.NaN,
+            consensusStance: 'CAUTIOUS',
             consensusSummary: baseRun.deskDebates.geopolitical.consensusSummary,
             agent1Stance: baseRun.subAgents[0].stance,
             agent1RiskScore: baseRun.subAgents[0].riskScore,
@@ -4098,12 +4047,12 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           stepName: 'STAGE_1_SOV_DESK',
           providerMode,
           runtimeConfig,
-          systemInstruction: `You are Managing Director of the Sovereign Credit Desk overseeing AG-4 (Fiscal Auditor Analyst), AG-5 (External Balance Sheet Analyst), and AG-6 (Political Will & Governance Analyst). Quantitative Anchor Score: ${anchors.sovereign}. Keep risk scores anchored near empirical Debt/GDP, USD bond spread, and Reserve Adequacy telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and minority dissents in clear, everyday plain English first so any reader immediately understands the real-world budget and debt impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Debt/GDP = 78.4% | r - g = +1.8% | FX Cover = 4.2 mos)".`,
+          systemInstruction: `You are Managing Director of the Sovereign Credit Desk overseeing AG-4 (Fiscal Auditor Analyst), AG-5 (External Balance Sheet Analyst), and AG-6 (Political Will & Governance Analyst). CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and minority dissents in clear, everyday plain English first so any reader immediately understands the real-world budget and debt impact, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: Debt/GDP = 78.4% | r - g = +1.8% | FX Cover = 4.2 mos)".`,
           prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag4_fiscal_auditor', 'ag5_external_balance', 'ag6_political_will'])}\n\nSynthesize individual findings for AG-4, AG-5, and AG-6, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and formulate AG-6 Political Will's Minority Report dissent. Lead every statement with plain, everyday language explaining what is happening to government finances and foreign reserves, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
-            deskPreCascadeScore: anchors.sovereign,
-            consensusStance: anchors.sovereign > 0.6 ? 'DEFENSIVE' : 'CAUTIOUS',
+            deskPreCascadeScore: Number.NaN,
+            consensusStance: 'CAUTIOUS',
             consensusSummary: baseRun.deskDebates.sovereign.consensusSummary,
             agent1Stance: baseRun.subAgents[3].stance,
             agent1RiskScore: baseRun.subAgents[3].riskScore,
@@ -4129,11 +4078,11 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           stepName: 'STAGE_1_MACRO_DESK',
           providerMode,
           runtimeConfig,
-          systemInstruction: `You are Managing Director of the Macroeconomic Desk overseeing AG-7 (High-Frequency Nowcaster), AG-8 (Central Bank Watcher NLP), and AG-9 (Global Spillover Analyst). Quantitative Anchor Score: ${anchors.macro}. Keep risk scores anchored near empirical CPI, Policy Rate, and 10Y Yield telemetry. CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands what is happening to jobs, inflation, and interest rates, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: CPI = 4.6% | Policy Rate = 10.75% | BVAR Peak = +115 bps)".`,
+          systemInstruction: `You are Managing Director of the Macroeconomic Desk overseeing AG-7 (High-Frequency Nowcaster), AG-8 (Central Bank Watcher NLP), and AG-9 (Global Spillover Analyst). CRITICAL WRITING STYLE: Write all findings, debate arguments, resolutions, and consensus summaries in clear, everyday plain English first so any reader immediately understands what is happening to jobs, inflation, and interest rates, and cite the exact economic/statistical metrics in parentheses at the end, e.g. "(Ref: CPI = 4.6% | Policy Rate = 10.75% | BVAR Peak = +115 bps)".`,
           prompt: `${sharedContextHeader}${buildDeskAgentOverrideBlock(['ag7_hf_nowcaster', 'ag8_cb_watcher', 'ag9_global_spillover'])}\n\nSynthesize individual findings for AG-7, AG-8, and AG-9, run the adversarial Devil's Advocate debate (${maxDebateRounds} rounds), and report any formal minority dissent. Lead every statement with plain, everyday language explaining the real-world economic impact first, followed by the statistical reference metrics in parentheses (Ref: ...).`,
           responseSchema: deskWorkerSchema,
           fallbackValue: {
-            deskPreCascadeScore: anchors.macro,
+            deskPreCascadeScore: Number.NaN,
             consensusStance: 'DEFENSIVE',
             consensusSummary: baseRun.deskDebates.macro.consensusSummary,
             agent1Stance: baseRun.subAgents[6].stance,
@@ -4225,12 +4174,12 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
       const applyDeskWorkerToRun = (
         deskId: 'geopolitical' | 'sovereign' | 'macro',
         agentStartIdx: number,
-        anchorScore: number,
         workerRes: NonNullable<typeof geoResult> | null
       ) => {
         const answered = Boolean(workerRes && !workerRes.usedFallback);
         const d = answered ? workerRes?.data || {} : {};
-        const clampDesk = clampScoreToAnchor(d.deskPreCascadeScore, anchorScore, 0.22);
+        // The desk's own score from the model; nothing built in bounds it.
+        const clampDesk = clampScoreToAnchor(d.deskPreCascadeScore, Number.NaN);
 
         // Update 3 Sub-Agents under this desk
         [0, 1, 2].forEach((offset) => {
@@ -4238,7 +4187,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           if (!agent) return;
           const idxNum = offset + 1;
           const rawAgentScore = d[`agent${idxNum}RiskScore`];
-          const clampedAgent = clampScoreToAnchor(rawAgentScore, anchorScore, 0.24);
+          const clampedAgent = clampScoreToAnchor(rawAgentScore, Number.NaN);
           agent.riskScore = clampedAgent.finalBoundedScore;
           agent.stance = normalizeStance(d[`agent${idxNum}Stance`], clampedAgent.finalBoundedScore);
           // Confidence only when the model gave one; the built-in starting value is not shown.
@@ -4259,7 +4208,6 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
           const customDirective = runtimeConfig.agentPromptOverrides?.[agent.agentId];
           agent.structuredPayload = {
             ...agent.structuredPayload,
-            quantitative_anchor: anchorScore,
             bounded_risk_score: clampedAgent.finalBoundedScore,
             assigned_llm_model: assignedModel,
             ...(customDirective ? { custom_gui_directive: customDirective } : {}),
@@ -4298,7 +4246,7 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
             counterThesis: String(d.round2ChallengerCounter),
             deskLeadResolution: String(
               d.round2Resolution ||
-                'Cross-examination converged on quantitative anchor corridor; tail-risk triggers logged.'
+                'The model gave no resolution for this round.'
             ),
             riskScoreAdjustment: 0.03,
           };
@@ -4340,219 +4288,9 @@ ${councilIn.deskEnginesLive ? `Closed-Loop Quantitative Desk Engine Outputs (Inj
         return clampDesk;
       };
 
-      const geoClamp = applyDeskWorkerToRun('geopolitical', 0, anchors.geopolitical, geoResult);
-      const sovClamp = applyDeskWorkerToRun('sovereign', 3, anchors.sovereign, sovResult);
-      const macroClamp = applyDeskWorkerToRun('macro', 6, anchors.macro, macroResult);
-
-      // Hydrate all 9 Sub-Agents' keyMetrics and structuredPayloads from the Closed-Loop Quantitative Engines
-      const primaryChokepoint = geoDeskSuite.chokepoints[0];
-      const topEscalationStage =
-        geoDeskSuite.gprAndEscalation.escalationTree[0]?.stageTitle || 'Elevated GPR Regime';
-
-      if (baseRun.subAgents[0]) {
-        baseRun.subAgents[0].keyMetrics.push({
-          label: 'Caldara-Iacoviello GPR Z-Score',
-          value: `${geoDeskSuite.gprAndEscalation.compositeGprZScore >= 0 ? '+' : ''}${geoDeskSuite.gprAndEscalation.compositeGprZScore}σ`,
-          numericValue: geoDeskSuite.gprAndEscalation.compositeGprZScore,
-          unit: 'σ',
-          change: topEscalationStage,
-          source: 'Geopolitical Risk Engine',
-          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-        });
-        baseRun.subAgents[0].structuredPayload = {
-          ...baseRun.subAgents[0].structuredPayload,
-          composite_gpr_z_score: geoDeskSuite.gprAndEscalation.compositeGprZScore,
-          escalation_regime: topEscalationStage,
-        };
-      }
-      if (baseRun.subAgents[1] && primaryChokepoint) {
-        baseRun.subAgents[1].keyMetrics.push({
-          label: `${primaryChokepoint.corridorName} Shock`,
-          value: `+${primaryChokepoint.importedCpiPassThroughBps} bps CPI`,
-          numericValue: primaryChokepoint.importedCpiPassThroughBps,
-          unit: 'bps',
-          change: `+${primaryChokepoint.cds5YSpreadImpactBps} bps 5Y CDS`,
-          source: 'Maritime Chokepoint Wargame Engine',
-          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-        });
-        baseRun.subAgents[1].structuredPayload = {
-          ...baseRun.subAgents[1].structuredPayload,
-          primary_chokepoint_cpi_bps: primaryChokepoint.importedCpiPassThroughBps,
-          propagated_fx_shock_pct: geoDeskSuite.portfolioTransmission.propagatedForecastShocks.fxDepreciationShockPct,
-        };
-      }
-      if (baseRun.subAgents[2]) {
-        baseRun.subAgents[2].keyMetrics.push({
-          label: 'NY-Law Indenture Legal Premium',
-          value: `+${xccyLegalSuite.legalAndLiquidity.jurisdictionalLegalSpreadBps} bps`,
-          numericValue: xccyLegalSuite.legalAndLiquidity.jurisdictionalLegalSpreadBps,
-          unit: 'bps',
-          change: `G7 Freeze Exposure ${geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct}%`,
-          source: 'Sanctions & Indenture Engine',
-          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-        });
-        baseRun.subAgents[2].structuredPayload = {
-          ...baseRun.subAgents[2].structuredPayload,
-          g7_freeze_exposed_reserves_pct: geoDeskSuite.sanctionsAndReserves.g7FreezeExposedSharePct,
-          ny_law_indenture_spread_bps: xccyLegalSuite.legalAndLiquidity.jurisdictionalLegalSpreadBps,
-        };
-      }
-      if (baseRun.subAgents[3]) {
-        baseRun.subAgents[3].keyMetrics.push(
-          {
-            label: 'IMF SRDSF Gross Financing Needs',
-            value: `${econometricSuite.imfSrdsfGfn.totalGfnPctGdp}% GDP`,
-            numericValue: econometricSuite.imfSrdsfGfn.totalGfnPctGdp,
-            unit: '% GDP',
-            change: `vs ${econometricSuite.imfSrdsfGfn.imfEmDistressThresholdPctGdp}% IMF Threshold`,
-            source: 'IMF SRDSF GFN Engine',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          },
-          {
-            label: 'Sovereign-Bank Doom Loop CET1 Hit',
-            value: `-${econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps} bps`,
-            numericValue: -econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps,
-            unit: 'bps',
-            change: `Post-Stress CET1 ${econometricSuite.imfSrdsfGfn.postStressBankCet1RatioPct}%`,
-            source: 'Sovereign-Bank Nexus Model',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          }
-        );
-        baseRun.subAgents[3].structuredPayload = {
-          ...baseRun.subAgents[3].structuredPayload,
-          imf_srdsf_gfn_pct_gdp: econometricSuite.imfSrdsfGfn.totalGfnPctGdp,
-          doom_loop_cet1_depletion_bps: econometricSuite.imfSrdsfGfn.sovereignBankDoomLoopCet1DepletionBps,
-          monte_carlo_2030_p95_debt_pct: econometricSuite.stochasticDsa.p95Debt2030PctGdp,
-        };
-      }
-      if (baseRun.subAgents[4]) {
-        baseRun.subAgents[4].keyMetrics.push(
-          {
-            label: 'FXI Reserve Burn Clock (to 100% ARA)',
-            value: `${econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach} Months`,
-            numericValue: econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach,
-            unit: 'Months',
-            change: `-$${econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn}B/mo drain`,
-            source: 'IMF ARA & FXI Burn Engine',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          },
-          {
-            label: '5Y XCCY Swap Basis & Hedged Pick-Up',
-            value: `${xccyLegalSuite.fiveYearXccyBasisBps} bps`,
-            numericValue: xccyLegalSuite.fiveYearXccyBasisBps,
-            unit: 'bps',
-            change: `${xccyLegalSuite.fiveYearNetHedgedPickUpBps >= 0 ? '+' : ''}${xccyLegalSuite.fiveYearNetHedgedPickUpBps} bps vs Eurobond`,
-            source: 'Cross-Currency Basis Engine',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          }
-        );
-        baseRun.subAgents[4].structuredPayload = {
-          ...baseRun.subAgents[4].structuredPayload,
-          fxi_burn_usd_bn_per_month: econometricSuite.fiscalDominanceAndFxBurn.monthlyFxiBurnRateUsdBn,
-          months_to_100pct_ara_breach: econometricSuite.fiscalDominanceAndFxBurn.monthsToAraBreach,
-          five_year_xccy_basis_bps: xccyLegalSuite.fiveYearXccyBasisBps,
-        };
-      }
-      if (baseRun.subAgents[5]) {
-        baseRun.subAgents[5].keyMetrics.push(
-          {
-            label: 'ICMA Single-Limb 75% CAC Coverage',
-            value: `${restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct}% Stock`,
-            numericValue: restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct,
-            unit: '%',
-            change: `Holdout Odds ${restructuringSuite.cacGameTheory.holdoutLitigationProbPct}%`,
-            source: 'CAC Holdout Game-Theory Engine',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          },
-          {
-            label: 'Restructured NPV Recovery vs Market',
-            value: `${restructuringSuite.restructuredNpvRecoveryCents}¢`,
-            numericValue: restructuringSuite.restructuredNpvRecoveryCents,
-            unit: '¢',
-            change: `vs ${restructuringSuite.currentBenchmarkBondPriceCents}¢ spot price`,
-            source: 'Sovereign Restructuring Simulator',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          }
-        );
-        baseRun.subAgents[5].structuredPayload = {
-          ...baseRun.subAgents[5].structuredPayload,
-          icma_single_limb_cac_pct: restructuringSuite.cacGameTheory.icmaSingleLimb75SharePct,
-          holdout_litigation_prob_pct: restructuringSuite.cacGameTheory.holdoutLitigationProbPct,
-          restructured_npv_recovery_cents: restructuringSuite.restructuredNpvRecoveryCents,
-        };
-      }
-      if (baseRun.subAgents[6]) {
-        baseRun.subAgents[6].keyMetrics.push({
-          label: '5th-Pct Growth-at-Risk (GaR Tail)',
-          value: `${econometricSuite.garFarTail.gdpGar5thPercentilePct}% GDP`,
-          numericValue: econometricSuite.garFarTail.gdpGar5thPercentilePct,
-          unit: '% GDP',
-          change: `95th-Pct Deficit FaR ${econometricSuite.garFarTail.fiscalFar95thDeficitPctGdp}%`,
-          source: 'Adrian-Boyarchenko-Giannone GaR Engine',
-          provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-        });
-        baseRun.subAgents[6].structuredPayload = {
-          ...baseRun.subAgents[6].structuredPayload,
-          gar_5th_percentile_gdp_pct: econometricSuite.garFarTail.gdpGar5thPercentilePct,
-          far_95th_percentile_deficit_pct_gdp: econometricSuite.garFarTail.fiscalFar95thDeficitPctGdp,
-        };
-      }
-      if (baseRun.subAgents[7]) {
-        baseRun.subAgents[7].keyMetrics.push(
-          {
-            label: 'Blanchard-Leeper Reversal Threshold r*',
-            value: `${econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct}%`,
-            numericValue: econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct,
-            unit: '%',
-            change: `${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps >= 0 ? '+' : ''}${econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps} bps headroom`,
-            source: 'Blanchard-Leeper Fiscal Dominance Engine',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          },
-          {
-            label: 'Nelson-Siegel 10Y Term Premium',
-            value: `+${econometricSuite.nssTermStructure.tenYearTermPremiumBps} bps`,
-            numericValue: econometricSuite.nssTermStructure.tenYearTermPremiumBps,
-            unit: 'bps',
-            change: `1Y Implied Policy Δ ${econometricSuite.nssTermStructure.implied1YPolicyRateDeltaBps} bps`,
-            source: 'NSS Yield Curve Decomposition',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          }
-        );
-        baseRun.subAgents[7].structuredPayload = {
-          ...baseRun.subAgents[7].structuredPayload,
-          blanchard_leeper_threshold_rate_pct:
-            econometricSuite.fiscalDominanceAndFxBurn.blanchardLeeperThresholdRatePct,
-          policy_rate_headroom_bps: econometricSuite.fiscalDominanceAndFxBurn.policyRateHeadroomBps,
-          nss_10y_term_premium_bps: econometricSuite.nssTermStructure.tenYearTermPremiumBps,
-        };
-      }
-      if (baseRun.subAgents[8]) {
-        baseRun.subAgents[8].keyMetrics.push(
-          {
-            label: 'Kaminsky-Reinhart Composite EWS',
-            value: `${econometricSuite.markovEws.compositeCrisisZScore >= 0 ? '+' : ''}${econometricSuite.markovEws.compositeCrisisZScore}σ`,
-            numericValue: econometricSuite.markovEws.compositeCrisisZScore,
-            unit: 'σ',
-            change: `${econometricSuite.markovEws.crisisProbability12MPct}% 12M Crisis Odds`,
-            source: 'Markov Regime & EWS Engine',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          },
-          {
-            label: 'Global Dollar Funding Stress Z-Score',
-            value: `+${liquiditySuite.globalLiquidityStressIndexZScore.toFixed(2)}σ`,
-            numericValue: liquiditySuite.globalLiquidityStressIndexZScore,
-            unit: 'σ',
-            change: `Rollover Δ +${liquiditySuite.portfolioTransmission.targetSovereignExternalRolloverSpreadDeltaBps} bps`,
-            source: 'Global Liquidity & XCCY Plumbing Desk',
-            provenanceTier: 'TIER_4_MODEL_ESTIMATE',
-          }
-        );
-        baseRun.subAgents[8].structuredPayload = {
-          ...baseRun.subAgents[8].structuredPayload,
-          kaminsky_reinhart_ews_z_score: econometricSuite.markovEws.compositeCrisisZScore,
-          global_dollar_liquidity_z_score: liquiditySuite.globalLiquidityStressIndexZScore,
-        };
-      }
+      const geoClamp = applyDeskWorkerToRun('geopolitical', 0, geoResult);
+      const sovClamp = applyDeskWorkerToRun('sovereign', 3, sovResult);
+      const macroClamp = applyDeskWorkerToRun('macro', 6, macroResult);
 
       // Stage 2: Dedicated Cross-Desk Contagion Cascade Pass (Geopolitical -> Macro -> Sovereign)
       progress.start('cascade');
@@ -4722,7 +4460,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
           latencyMs: stage0Latency,
           retriesUsed: 0,
           schemaVerified: true,
-          diagnosticNote: `Verified ${liveSnapshot.liveApiSourcesActive.length} live data feeds; computed empirical anchors (Geo ${anchors.geopolitical.toFixed(2)}, Sov ${anchors.sovereign.toFixed(2)}, Macro ${anchors.macro.toFixed(2)}).`,
+          diagnosticNote: `Verified ${liveSnapshot.liveApiSourcesActive.length} live data feeds.`,
         },
         {
           nodeId: 'STAGE_1_GEO_DESK',
@@ -4732,13 +4470,10 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
           latencyMs: geoResult?.latencyMs ?? 0,
           retriesUsed: geoResult?.retriesUsed ?? 0,
           schemaVerified: geoResult?.schemaVerified ?? true,
-          quantitativeAnchorScore: anchors.geopolitical,
           rawModelScore: geoClamp.rawModelScore,
           finalBoundedScore: geoClamp.finalBoundedScore,
           anchorDriftClamped: geoClamp.anchorDriftClamped,
-          diagnosticNote: geoClamp.anchorDriftClamped
-            ? `Clamped raw model score (${geoClamp.rawModelScore.toFixed(2)}) to ${geoClamp.finalBoundedScore.toFixed(2)} within ±0.22 corridor of GDELT/Chokepoint anchor (${anchors.geopolitical.toFixed(2)}).`
-            : `3/3 Geopolitical sub-agents & ${maxDebateRounds}-round debate verified within ±0.22 corridor of anchor (${anchors.geopolitical.toFixed(2)}).`,
+          diagnosticNote: Number.isFinite(geoClamp.finalBoundedScore) ? `Desk score ${geoClamp.finalBoundedScore.toFixed(2)} from the model.` : 'The model gave no desk score.',
         },
         {
           nodeId: 'STAGE_1_SOV_DESK',
@@ -4748,13 +4483,10 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
           latencyMs: sovResult?.latencyMs ?? 0,
           retriesUsed: sovResult?.retriesUsed ?? 0,
           schemaVerified: sovResult?.schemaVerified ?? true,
-          quantitativeAnchorScore: anchors.sovereign,
           rawModelScore: sovClamp.rawModelScore,
           finalBoundedScore: sovClamp.finalBoundedScore,
           anchorDriftClamped: sovClamp.anchorDriftClamped,
-          diagnosticNote: sovClamp.anchorDriftClamped
-            ? `Clamped raw model score (${sovClamp.rawModelScore.toFixed(2)}) to ${sovClamp.finalBoundedScore.toFixed(2)} within ±0.22 corridor of 5Y CDS & Debt/GDP anchor (${anchors.sovereign.toFixed(2)}).`
-            : `3/3 Sovereign sub-agents & Minority Dissent report verified within ±0.22 corridor of anchor (${anchors.sovereign.toFixed(2)}).`,
+          diagnosticNote: Number.isFinite(sovClamp.finalBoundedScore) ? `Desk score ${sovClamp.finalBoundedScore.toFixed(2)} from the model.` : 'The model gave no desk score.',
         },
         {
           nodeId: 'STAGE_1_MACRO_DESK',
@@ -4764,13 +4496,10 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
           latencyMs: macroResult?.latencyMs ?? 0,
           retriesUsed: macroResult?.retriesUsed ?? 0,
           schemaVerified: macroResult?.schemaVerified ?? true,
-          quantitativeAnchorScore: anchors.macro,
           rawModelScore: macroClamp.rawModelScore,
           finalBoundedScore: macroClamp.finalBoundedScore,
           anchorDriftClamped: macroClamp.anchorDriftClamped,
-          diagnosticNote: macroClamp.anchorDriftClamped
-            ? `Clamped raw model score (${macroClamp.rawModelScore.toFixed(2)}) to ${macroClamp.finalBoundedScore.toFixed(2)} within ±0.22 corridor of CPI & Policy Rate anchor (${anchors.macro.toFixed(2)}).`
-            : `3/3 Macro sub-agents & monetary reaction function verified within ±0.22 corridor of anchor (${anchors.macro.toFixed(2)}).`,
+          diagnosticNote: Number.isFinite(macroClamp.finalBoundedScore) ? `Desk score ${macroClamp.finalBoundedScore.toFixed(2)} from the model.` : 'The model gave no desk score.',
         },
         {
           nodeId: 'STAGE_2_CONTAGION_CASCADE',
@@ -4816,7 +4545,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       progress.finish('cascade', cascadeRes.usedFallback);
       // Number check: desk and cascade text may quote only figures the council was given.
       baseRun.figureCheck = {
-        desks: checkDeskText(baseRun, [sharedContextHeader, String(scenarioPrompt || ''), String(policyDocumentText || ''), JSON.stringify(anchors)]),
+        desks: checkDeskText(baseRun, [sharedContextHeader, String(scenarioPrompt || ''), String(policyDocumentText || '')]),
       };
       // Pause at Human-in-the-Loop CRO Checkpoint before Supreme Council
       baseRun.stage = 'AWAITING_CRO_APPROVAL';

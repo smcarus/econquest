@@ -21,7 +21,6 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Policy rule check (Taylor gap) | Decision input | Backtest failed | v2, 2026-11-06, method 2 |
 | Leading-indicator turn to policy move | Decision input | Backtest failed | v1, 2026-11-05, method 1 |
 | Crowded futures positioning to unwind | Decision input | Backtest passed | v2, 2026-11-06, method 2 |
-| CDS cheap or rich against risk peers | Decision input | Not validated | None |
 | Real exchange rate gap and carry-to-volatility | Decision input | Not validated | None |
 | Shock early warning | Decision input | Not validated | None |
 | Where data and price disagree (ranking) | Decision input | Not validated | None |
@@ -164,24 +163,12 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - v2: An unwind is measured in positioning, not in the exchange rate: it says crowding eases, not that the currency moves.
 - v2: Six USD crosses move together; resampling whole years covers cases in the same year, not the size of the common dollar factor within a year.
 
-### CDS cheap or rich against risk peers
-
-- **Says:** A country’s CDS is cheap, in line or rich against peers with a similar risk score.
-- **Rule:** Fit of log CDS on the app’s risk score across the watchlist; the residual sets the call.
-- **Reads:** CDS (your own file or LSEG only), the app’s risk score
-- **Shows in:** Research > Markets & signals (Relative Value Agent), Compare, MarketEdge disagreements
-- **Use:** Decision input
-- **Status:** Not validated
-- **How it is tested:** Needs a CDS history, which is paid data. Stays Not validated unless your own CDS file holds enough history to test convergence of the residual.
-- **Limits:** Off unless you load your own CDS; few peers make the fit unstable.
-- **Code:** `src/utils/marketsMacro.ts, src/utils/marketEdgeAnchors.ts`
-
 ### Real exchange rate gap and carry-to-volatility
 
 - **Says:** The currency is strong (dear) or weak (cheap) against its own 10-year average, and whether carry pays for its swings.
 - **Rule:** BIS real broad effective rate against its 10-year average; policy-rate gap over the US divided by 3-month realised volatility.
 - **Reads:** BIS real effective exchange rates (monthly), BIS policy rates, ECB reference rates (Frankfurter)
-- **Shows in:** Research > Markets & signals (FX Valuation Agent), Council chat
+- **Shows in:** Research > Markets & signals (FX Valuation Agent, carry in the Relative Value Agent), Council chat
 - **Use:** Decision input
 - **Status:** Not validated
 - **How it is tested:** Does a gap beyond one standard deviation narrow over the next 12 months more often than not, on BIS REER history since 1994, using only the average known at the time?

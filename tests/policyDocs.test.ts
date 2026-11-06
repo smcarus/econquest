@@ -58,7 +58,7 @@ test('Policy Document Agent quotes passages word for word, so their numbers pass
 });
 
 test('runCouncil adds the document agent only when documents are added; follow-up suggestions skip it', () => {
-  const it = (iso3: string, countryName: string): WatchlistItem => ({ iso3, countryName, compositeRisk: 0.5, cds5YBps: 150, yield10YPct: 8 }) as WatchlistItem;
+  const it = (iso3: string, countryName: string): WatchlistItem => ({ iso3, countryName, cds5YBps: 150, yield10YPct: 8 }) as WatchlistItem;
   const ALL = [it('TUR', 'Turkey'), it('ZAF', 'South Africa')];
   const q = 'Is Turkey policy tight?';
   const plan = planCouncil(q, ALL);

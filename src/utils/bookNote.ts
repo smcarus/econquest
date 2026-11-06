@@ -1,6 +1,6 @@
 import type { LiveWatchlistItem } from '../types/council';
 import type { StagedTradeTicketSpec } from './nssYieldCurveAndCatalystEngine';
-import { setRiskShares, summariseBook, type Holding } from './holdings';
+import { summariseBook, type Holding } from './holdings';
 import { missingReason, toLive, type FigureKey } from './liveFigures';
 import { cdsSourceNote, yieldSourceNote } from './watchlistYield';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
@@ -12,7 +12,7 @@ import { missingRow, when, type BriefGroup, type BriefRow, type CountryBrief, ty
  * at equal weight when nothing is imported, and say which.
  *
  * Every judgement is a stated rule on the figures shown. Rows come in with built-in figures already
- * removed (toLive), so a country without a live risk score, your own CDS or an official yield simply
+ * removed (toLive), so a country without your own CDS or an official yield simply
  * has no value for it: averages use only the countries that have one and say what share of the book
  * that is, and nothing is filled in (Sam, 2026-11-04).
  */
@@ -25,8 +25,6 @@ export interface BookLine {
   item?: Item;
   /** Share of the book, 0..1 (gross notional, or equal weight). */
   weight: number;
-  /** Share of weight x risk score, 0..1. Left out when the country's risk score is not live. */
-  riskShare?: number;
   grossUsdMm?: number;
   netCreditUsdMm?: number;
   dv01UsdK?: number;
@@ -39,7 +37,7 @@ export interface BookView {
   netCreditUsdMm?: number;
   dv01UsdK?: number;
   missingDuration?: number;
-  /** Held countries the app has no risk data for. */
+  /** Held countries the app does not cover. */
   uncovered: string[];
 }
 
@@ -57,10 +55,10 @@ export function bookView(holdings: Holding[], riskLookup: Item[], watchlist: Ite
     };
   }
   const n = watchlist.length || 1;
-  const lines: BookLine[] = setRiskShares(watchlist.map((i) => ({ iso3: i.iso3, countryName: i.countryName, item: toLive(i), weight: 1 / n })));
+  const lines: BookLine[] = watchlist.map((i) => ({ iso3: i.iso3, countryName: i.countryName, item: toLive(i), weight: 1 / n }));
   return {
     fromHoldings: false,
-    lines: lines.sort((a, b) => (b.riskShare ?? -1) - (a.riskShare ?? -1)),
+    lines: lines.sort((a, b) => a.countryName.localeCompare(b.countryName)),
     uncovered: [],
   };
 }
@@ -97,7 +95,6 @@ interface BookFacts {
   top: BookLine | undefined;
   top3Weight: number;
   eff: number;
-  overweightRisk: BookLine[];
   stressedWeight: number;
   officialYieldWeight: number;
   ownCdsWeight: number;
@@ -124,8 +121,6 @@ function facts(v: BookView, now: Date): BookFacts {
     top: byWeight[0],
     top3Weight: byWeight.slice(0, 3).reduce((a, l) => a + l.weight, 0),
     eff: effectiveNames(v.lines),
-    // A country carries much more of the risk than of the money.
-    overweightRisk: covered.filter((l) => l.riskShare !== undefined && l.riskShare > l.weight * 1.3 && l.riskShare >= 0.1),
     stressedWeight: covered.filter((l) => (l.item!.cds5YBps ?? 0) >= 400).reduce((a, l) => a + l.weight, 0),
     officialYieldWeight: covered.filter((l) => l.item!.yield10YSource === 'official').reduce((a, l) => a + l.weight, 0),
     ownCdsWeight: covered.filter((l) => l.item!.cds5YSource === 'own').reduce((a, l) => a + l.weight, 0),
@@ -150,8 +145,6 @@ function bookRow(f: BookFacts, label: string, key: FigureKey, get: (i: Item) => 
   return { label, value: fmt(c.value), source: `${source}, ${pctOfBook(c)}`, verified: false };
 }
 
-const hasRisk = (l: BookLine) => l.item?.compositeRisk !== undefined;
-
 const basisNote = (v: BookView) =>
   v.fromHoldings ? 'Weights are your imported holdings by gross notional.' : 'No holdings imported: this is your watchlist at equal weight.';
 
@@ -162,8 +155,7 @@ const basisNote = (v: BookView) =>
 export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: Date = new Date()): CountryBrief {
   if (!v.lines.length) return { headline: 'No holdings and an empty watchlist.', judgements: [], groups: [] };
   const f = facts(v, now);
-  const ranked = v.lines.filter((l) => l.riskShare !== undefined);
-  const top3 = ranked.slice(0, 3).map((l) => `${l.countryName} ${pct0(l.riskShare!)}`);
+  const top3 = [...v.lines].sort((a, b) => b.weight - a.weight).slice(0, 3).map((l) => `${l.countryName} ${pct0(l.weight)}`);
   const j: string[] = [];
 
   j.push(
@@ -171,12 +163,6 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
       ? `Concentrated: ${f.top.countryName} is ${pct0(f.top.weight)} of the book, and the three largest positions are ${pct0(f.top3Weight)}.`
       : `Spread out: the weights are equivalent to about ${f.eff.toFixed(1)} equal positions, and the largest is ${f.top ? `${f.top.countryName} at ${pct0(f.top.weight)}` : 'none'}.`
   );
-  if (f.overweightRisk.length)
-    j.push(
-      `Risk is heavier than money in ${f.overweightRisk
-        .map((l) => `${l.countryName} (${pct0(l.weight)} of the book, ${pct0(l.riskShare!)} of the risk)`)
-        .join(', ')}.`
-    );
   // Only your own CDS counts; without it there is no statement about stress either way.
   const noCds = f.missingOf((i) => i.cds5YBps);
   if (noCds.length < f.covered.length)
@@ -201,7 +187,7 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
     const names = [...new Set(tickets.map((t) => t.countryName))];
     j.push(`${tickets.length} staged trade ${tickets.length === 1 ? 'idea' : 'ideas'}, in ${names.join(', ')}; they are not in the weights above until booked.`);
   }
-  if (v.uncovered.length) j.push(`No risk data for ${v.uncovered.join(', ')}: these count in notional but not in the risk shares.`);
+  if (v.uncovered.length) j.push(`The app does not cover ${v.uncovered.join(', ')}: these count in notional but have no figures.`);
 
   const book: BriefRow[] = [
     { label: 'Basis', value: v.fromHoldings ? 'Your holdings' : 'Watchlist, equal weight', source: basisNote(v), verified: false },
@@ -221,10 +207,9 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
     { label: 'Three largest positions', value: pct0(f.top3Weight), source: 'share of the book', verified: false },
     bookRow(f, 'Weighted 5Y CDS', 'cds', (i) => i.cds5YBps, (x) => `${x.toFixed(0)} bps`, 'your CDS data'),
     bookRow(f, 'Weighted 10Y yield', 'yield', (i) => i.yield10YPct, (x) => `${x.toFixed(2)}%`, 'official yields'),
-    bookRow(f, 'Weighted risk score', 'risk', (i) => i.compositeRisk, (x) => x.toFixed(2), 'model on live inputs'),
   ];
 
-  // The Portfolio page already lists each country's weight, risk share and the staged ideas,
+  // The Portfolio page already lists each country's weight and the staged ideas,
   // so the brief shows the book-level figures and the calendar; the review covers the rest.
   const groups: BriefGroup[] = [
     { title: 'The book', rows: book },
@@ -236,23 +221,17 @@ export function pmBookBrief(v: BookView, tickets: StagedTradeTicketSpec[], now: 
     },
   ];
 
-  const noRisk = f.covered.filter((l) => !hasRisk(l)).map((l) => l.countryName);
   return {
-    headline: `${v.fromHoldings ? 'Your book' : 'Your watchlist'}: ${v.lines.length} ${v.lines.length === 1 ? 'country' : 'countries'}. ${
-      top3.length ? `Largest shares of risk: ${top3.join('; ')}.` : 'No live risk scores yet, so risk shares are missing.'
-    }`,
+    headline: `${v.fromHoldings ? 'Your book' : 'Your watchlist'}: ${v.lines.length} ${v.lines.length === 1 ? 'country' : 'countries'}. Largest positions: ${top3.join('; ')}.`,
     judgements: j,
     groups,
-    sampleWarning: noRisk.length
-      ? `Risk scores are missing for ${noRisk.join(', ')}: they need live IMF, World Bank and GDELT inputs. Press Refresh now under Research > One country. Built-in scores are not used.`
-      : undefined,
   };
 }
 
 export const BOOK_SECTIONS: Record<string, string> = {
   summary: 'Summary',
   concentration: 'Concentration',
-  risk: 'Where the risk sits',
+  figures: 'Figures by country',
   events: 'Next 30 days',
   trades: 'Staged trade ideas',
   method: 'Method and sources',
@@ -280,14 +259,11 @@ export function buildBookSections(
       : []),
   ]);
   add(
-    'risk',
-    v.lines.map((l) => {
+    'figures',
+    [...v.lines].sort((a, b) => b.weight - a.weight).map((l) => {
       const i = l.item;
       if (!i) return `- ${l.countryName}: ${pct0(l.weight)} of the book, not a country the app covers.`;
       const parts = [
-        i.compositeRisk !== undefined && l.riskShare !== undefined
-          ? `${pct0(l.riskShare)} of the risk. Risk score ${i.compositeRisk.toFixed(2)} (model on live inputs)`
-          : 'risk score: Missing (needs live inputs)',
         i.cds5YBps !== undefined ? `5Y CDS ${Math.round(i.cds5YBps)} bps (${cdsNote(i)}, ${cdsBand(i.cds5YBps)})` : '5Y CDS: Missing (needs your CDS data)',
         i.yield10YPct !== undefined ? `10Y ${i.yield10YPct.toFixed(2)}% (${yieldSourceNote(i)})` : `10Y yield: Missing (${missingReason('yield', i.iso3).short.toLowerCase()})`,
       ];
@@ -307,7 +283,6 @@ export function buildBookSections(
       : ['No staged trade tickets.']
   );
   add('method', [
-    'Share of risk = weight × the country’s composite risk score, as a share of the book total, among countries with a live score. The risk score is the app’s model on live IMF, World Bank and GDELT inputs, not a rating.',
     'CDS bands: under 200 bps investment grade-like, 200 to 400 high yield, 400 to 1,000 stressed, 1,000 and over distressed.',
     'Only real figures are used: your own CDS data, official or uploaded 10Y yields, and live feeds. A missing figure is named, never filled in; averages say what share of the book they cover. Official dates come from the central bank and statistics calendars on file.',
     'Model output for discussion. Not investment advice, and not validated for client use.',
@@ -319,37 +294,24 @@ export function buildBookSections(
  * Private wealth: the client's portfolio in plain language. No trade levels, scores or DV01.
  * ------------------------------------------------------------------------------------------ */
 
-const plainRisk = (i: Item) =>
-  i.alertStatus === undefined ? 'risk level not yet available' : i.alertStatus === 'CRITICAL' ? 'higher risk' : i.alertStatus === 'ELEVATED' ? 'moderate risk' : 'lower risk';
+const stressed = (l: BookLine) => (l.item?.cds5YBps ?? 0) >= 400;
 
 export function clientBrief(v: BookView, now: Date = new Date()): CountryBrief {
   if (!v.lines.length) return { headline: 'No holdings to describe yet.', judgements: [], groups: [] };
   const f = facts(v, now);
-  const higher = f.covered.filter((l) => l.item!.alertStatus === 'CRITICAL');
-  const unrated = f.covered.filter((l) => l.item!.alertStatus === undefined);
-  const higherW = higher.reduce((a, l) => a + l.weight, 0);
   const j: string[] = [];
   j.push(
     f.top && f.top.weight > 0.25
       ? `A large part of the portfolio, about ${pct0(f.top.weight)}, is linked to one country, ${f.top.countryName}. Spreading this more widely would reduce the effect of bad news there.`
       : `The portfolio is spread across ${v.lines.length} countries; the largest, ${f.top?.countryName}, is about ${pct0(f.top?.weight ?? 0)}.`
   );
-  if (unrated.length < f.covered.length)
-    j.push(
-      higher.length
-        ? `About ${pct0(higherW)} is in ${higher.map((l) => l.countryName).join(', ')}, which we currently rate as higher risk.`
-        : 'None of the rated holdings is in a country we currently rate as higher risk.'
-    );
-  if (unrated.length) j.push(`We do not yet have a risk level for ${unrated.map((l) => l.countryName).join(', ')}, because the live data behind it has not come in.`);
   if (f.stressedWeight > 0)
-    j.push(`Markets charge ${f.covered.filter((l) => (l.item!.cds5YBps ?? 0) >= 400).map((l) => l.countryName).join(', ')} a lot more to borrow than most governments, which is a sign of strain.`);
+    j.push(`Markets charge ${f.covered.filter(stressed).map((l) => l.countryName).join(', ')} a lot more to borrow than most governments, which is a sign of strain.`);
   const soon = f.events.filter((e) => e.daysUntil <= 30);
   if (soon.length) j.push(`There ${soon.length === 1 ? 'is one official date' : `are ${soon.length} official dates`} in the next month that could move prices; the first is ${soon[0].title} (${when(soon[0])}).`);
 
   return {
-    headline: `${v.fromHoldings ? 'The client’s portfolio' : 'The watchlist (no client holdings imported)'}: ${v.lines.length} ${v.lines.length === 1 ? 'country' : 'countries'}, ${
-      unrated.length === f.covered.length ? 'risk levels not yet available' : `${pct0(higherW)} in higher-risk countries`
-    }.`,
+    headline: `${v.fromHoldings ? 'The client’s portfolio' : 'The watchlist (no client holdings imported)'}: ${v.lines.length} ${v.lines.length === 1 ? 'country' : 'countries'}.`,
     judgements: j,
     groups: [
       {
@@ -360,7 +322,7 @@ export function clientBrief(v: BookView, now: Date = new Date()): CountryBrief {
           .map((l) => ({
             label: l.countryName,
             value: `${pct0(l.weight)} of the portfolio`,
-            source: l.item ? (l.item.alertStatus === undefined ? 'Risk level missing' : `${plainRisk(l.item)} (model)`) : 'not covered',
+            source: l.item ? (l.item.yield10YPct !== undefined ? `10-year government bond yield ${l.item.yield10YPct.toFixed(1)}%` : 'covered') : 'not covered',
             verified: false,
           })),
       },
@@ -371,9 +333,6 @@ export function clientBrief(v: BookView, now: Date = new Date()): CountryBrief {
           : [{ label: 'Official dates', value: 'None in the next month', source: 'official calendar', verified: false }],
       },
     ],
-    sampleWarning: unrated.length
-      ? `Risk levels are missing for ${unrated.map((l) => l.countryName).join(', ')} until the live data comes in. Press Refresh now under Research > One country before sharing anything with a client.`
-      : undefined,
   };
 }
 
@@ -395,30 +354,20 @@ export function buildClientReviewSections(v: BookView, include: (id: string) => 
   add('holdings', [
     ...[...v.lines]
       .sort((a, b) => b.weight - a.weight)
-      .map((l) => `- ${l.countryName}: about ${pct0(l.weight)} of your emerging market holdings${l.item ? `, ${plainRisk(l.item)}` : ''}.`),
+      .map((l) => `- ${l.countryName}: about ${pct0(l.weight)} of your emerging market holdings.`),
     ...(v.fromHoldings ? [] : ['(Draft based on the adviser’s watchlist; import the client’s holdings for their real weights.)']),
   ]);
-  const unrated = f.covered.filter((l) => l.item!.alertStatus === undefined);
-  const higher = f.covered
-    .filter((l) => l.item!.alertStatus === 'CRITICAL' || l.item!.alertStatus === 'ELEVATED')
-    .sort((a, b) => (b.riskShare ?? 0) - (a.riskShare ?? 0));
-  add(
-    'risks',
-    higher.length
-      ? [
-          'Bond prices fall when investors worry about a government’s finances or when interest rates rise. Emerging market bonds can also be hard to sell quickly in a stressed market, and currency moves can add to losses.',
-          ...higher.slice(0, 4).map((l) => `- ${l.countryName}: ${plainRisk(l.item!)}.${(l.item!.cds5YBps ?? 0) >= 400 ? ' Markets already price a real chance of difficulty here.' : ''}`),
-        ]
-      : unrated.length
-        ? ['Bond prices fall when investors worry about a government’s finances or when interest rates rise. We do not yet have live risk levels for every holding, so this section will say more once the data comes in.']
-        : ['All holdings are currently rated lower risk. Bond prices can still fall when interest rates rise or when markets are stressed.']
-  );
+  const strained = f.covered.filter(stressed).sort((a, b) => b.weight - a.weight);
+  add('risks', [
+    'Bond prices fall when investors worry about a government’s finances or when interest rates rise. Emerging market bonds can also be hard to sell quickly in a stressed market, and currency moves can add to losses.',
+    ...strained.slice(0, 4).map((l) => `- ${l.countryName}: markets already price a real chance of difficulty here.`),
+  ]);
   add(
     'dates',
     f.events.length ? f.events.slice(0, 6).map((e) => `- ${when(e)}: ${e.title}`) : ['No scheduled official dates for these countries in the next month.']
   );
   add('important', [
-    'Risk levels are our own model on live data, not credit ratings. Where the data has not come in, the level is left out rather than estimated.',
+    'Figures come from official sources and live market data. Where a figure has not come in, it is left out rather than estimated. We do not give countries a risk rating.',
     'This note is for discussion with your adviser. It is not a personal recommendation to buy or sell, and the value of investments can go down as well as up.',
   ]);
   return out;

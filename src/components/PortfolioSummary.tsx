@@ -1,7 +1,7 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
 import React, { useMemo } from 'react';
 import { Upload } from 'lucide-react';
-import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
+import type { LiveWatchlistItem } from '../types/council';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
 import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { summariseBook, type Holding } from '../utils/holdings';
@@ -9,7 +9,7 @@ import { bookView, type BookLine } from '../utils/bookNote';
 import { missingReason, type FigureKey } from '../utils/liveFigures';
 
 /**
- * Top of the Portfolio page: what the book holds and where the risk sits.
+ * Top of the Portfolio page: what the book holds, with weights and live figures by country.
  * With holdings imported, weights are by gross notional. Without them, the book is the
  * watchlist at equal weight, and the page says so. Rows arrive with built-in figures removed
  * (toLive): a figure without a real source reads Missing with the reason, and averages use only the
@@ -18,24 +18,13 @@ import { missingReason, type FigureKey } from '../utils/liveFigures';
 
 interface PortfolioSummaryProps {
   watchlistItems: LiveWatchlistItem[];
-  /** Watchlist plus the full catalogue, for risk scores of held countries. */
+  /** Watchlist plus the full catalogue, for the figures of held countries. */
   riskLookup: LiveWatchlistItem[];
   holdings: Holding[];
   stagedTickets: StagedTradeTicketSpec[];
   onOpenCountry: (item: LiveWatchlistItem) => void;
   onManageHoldings: () => void;
 }
-
-const ALERT_BADGE: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'ui-badge ui-badge-negative',
-  ELEVATED: 'ui-badge ui-badge-warning',
-  STABLE: 'ui-badge ui-badge-positive',
-};
-const ALERT_LABEL: Record<WatchlistItem['alertStatus'], string> = {
-  CRITICAL: 'High',
-  ELEVATED: 'Elevated',
-  STABLE: 'Stable',
-};
 
 const Stat: React.FC<{ label: string; value: string; note?: string; missing?: boolean; help?: string }> = ({ label, value, note, missing, help }) => (
   <div className="min-w-0" title={help}>
@@ -60,15 +49,6 @@ const MissingCell: React.FC<{ k: FigureKey; iso3: string }> = ({ k, iso3 }) => {
     </span>
   );
 };
-
-const RiskBadge: React.FC<{ item: LiveWatchlistItem }> = ({ item }) =>
-  item.alertStatus && item.compositeRisk !== undefined ? (
-    <span className={ALERT_BADGE[item.alertStatus]}>
-      {ALERT_LABEL[item.alertStatus]} · {item.compositeRisk.toFixed(2)}
-    </span>
-  ) : (
-    <MissingCell k="risk" iso3={item.iso3} />
-  );
 
 /** Weighted average of a figure over the rows that have it, with the share of weight covered. */
 function coveredAvg(rows: Row[], get: (i: LiveWatchlistItem) => number | undefined): { value: number; share: number } | undefined {
@@ -150,7 +130,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
 
       {s.book && s.book.uncovered.length > 0 && (
         <p className="ui-label">
-          {s.book.uncovered.join(', ')} {s.book.uncovered.length === 1 ? 'is' : 'are'} not covered by the app. These positions count in notional and DV01 but not in the risk share.
+          {s.book.uncovered.join(', ')} {s.book.uncovered.length === 1 ? 'is' : 'are'} not covered by the app. These positions count in notional and DV01 but have no figures.
         </p>
       )}
 
@@ -163,20 +143,12 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                 <>
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-sm font-medium text-slate-900 dark:text-white">{r.countryName}</span>
-                    {r.item ? (
-                      <RiskBadge item={r.item} />
-                    ) : (
-                      <span className="ui-badge">No data</span>
-                    )}
+                    {!r.item && <span className="ui-badge">No data</span>}
                   </div>
-                  <dl className="mt-1 grid grid-cols-3 gap-x-3 text-sm ui-num">
+                  <dl className="mt-1 grid grid-cols-2 gap-x-3 text-sm ui-num">
                     <div>
                       <dt className="ui-label">Weight</dt>
                       <dd>{(r.weight * 100).toFixed(0)}%</dd>
-                    </div>
-                    <div>
-                      <dt className="ui-label">Share of risk</dt>
-                      <dd>{r.riskShare !== undefined ? `${(r.riskShare * 100).toFixed(0)}%` : '–'}</dd>
                     </div>
                     <div title={r.item?.yield10YPct !== undefined ? yieldSourceHelp(r.item) : undefined}>
                       <dt className="ui-label">10Y yield</dt>
@@ -227,16 +199,14 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
           </ul>
           <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
-            <caption className="sr-only">Where the book's risk sits</caption>
+            <caption className="sr-only">The book by country</caption>
             <thead>
               <tr className="ui-label text-left border-b border-slate-100 dark:border-slate-800">
                 <th className="py-1.5 pr-3 font-normal">Country</th>
-                <th className="py-1.5 pr-3 font-normal">Risk</th>
                 {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">Net credit</th>}
                 {hasHoldings && <th className="py-1.5 pr-3 font-normal text-right">DV01 ($k/bp)</th>}
                 <th className="py-1.5 pr-3 font-normal text-right">10Y yield</th>
                 <th className="py-1.5 pr-3 font-normal text-right">Weight</th>
-                <th className="py-1.5 pr-3 font-normal text-right">Share of risk</th>
                 <th className="py-1.5 font-normal w-1/4 hidden sm:table-cell" aria-hidden="true" />
               </tr>
             </thead>
@@ -247,13 +217,9 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                   className={`border-b border-slate-50 dark:border-slate-800/60 ${r.item ? 'hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer' : ''}`}
                   onClick={() => r.item && onOpenCountry(r.item)}
                 >
-                  <td className="py-1.5 pr-3 text-slate-900 dark:text-white whitespace-nowrap">{r.countryName}</td>
-                  <td className="py-1.5 pr-3">
-                    {r.item ? (
-                      <RiskBadge item={r.item} />
-                    ) : (
-                      <span className="ui-badge">No data</span>
-                    )}
+                  <td className="py-1.5 pr-3 text-slate-900 dark:text-white whitespace-nowrap">
+                    {r.countryName}
+                    {!r.item && <span className="ui-badge ml-2">No data</span>}
                   </td>
                   {hasHoldings && (
                     <td className="py-1.5 pr-3 text-right ui-num whitespace-nowrap">{signed(r.netCreditUsdMm ?? 0, fmtMm)}</td>
@@ -282,14 +248,11 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
                     )}
                   </td>
                   <td className="py-1.5 pr-3 text-right ui-num">{(r.weight * 100).toFixed(0)}%</td>
-                  <td className="py-1.5 pr-3 text-right ui-num">{r.riskShare !== undefined ? `${(r.riskShare * 100).toFixed(0)}%` : '–'}</td>
                   <td className="py-1.5 hidden sm:table-cell">
                     <div className="h-1.5 bg-slate-100 dark:bg-slate-800">
                       <div
-                        className={`h-1.5 ${
-                          r.item?.alertStatus === 'CRITICAL' ? 'bg-rose-500' : r.item?.alertStatus === 'ELEVATED' ? 'bg-amber-500' : 'bg-emerald-500'
-                        }`}
-                        style={{ width: `${Math.round((r.riskShare ?? 0) * 100)}%` }}
+                        className="h-1.5 bg-slate-500 dark:bg-slate-400"
+                        style={{ width: `${Math.round(r.weight * 100)}%` }}
                       />
                     </div>
                   </td>
@@ -299,7 +262,6 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
           </table>
           </div>
           <p className="ui-label mt-1">
-            Share of risk = weight × the country's risk score, as a share of the book total, among countries with a live score.{' '}
             {(() => {
               const items = s.rows.filter((r) => r.item);
               const have = items.filter((r) => r.item!.yield10YPct !== undefined).length;

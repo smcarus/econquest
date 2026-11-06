@@ -18,14 +18,6 @@ import {
   type WatchlistView,
 } from '../utils/watchlistView';
 
-type Alert = NonNullable<LiveWatchlistItem['alertStatus']>;
-const RISK_CLASS: Record<Alert, string> = {
-  CRITICAL: 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-900',
-  ELEVATED: 'bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-900',
-  STABLE: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900',
-};
-const RISK_LABEL: Record<Alert, string> = { CRITICAL: 'High', ELEVATED: 'Elevated', STABLE: 'Stable' };
-
 // Published or your own data shows green; sample and AI estimates stay grey.
 const GOOD_NOTE = /^(Official|Own|Your|Live|BIS|ECB)/;
 
@@ -36,12 +28,6 @@ function Cell({ col, it, last }: { col: ColumnDef; it: LiveWatchlistItem; last?:
       <span title={missing.help} className="inline-block text-left" data-missing={missing.kind}>
         <div className="text-slate-400 dark:text-slate-500">Missing</div>
         <div className={`text-xs whitespace-nowrap ${missing.kind === 'setup' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>{missing.short}</div>
-      </span>
-    );
-  if (col.id === 'risk' && it.alertStatus && it.compositeRisk !== undefined)
-    return (
-      <span className={`inline-block whitespace-nowrap px-1.5 py-0.5 text-xs font-medium border ${RISK_CLASS[it.alertStatus]}`}>
-        {RISK_LABEL[it.alertStatus]} · {it.compositeRisk.toFixed(2)}
       </span>
     );
   const text = col.text(it, last);
