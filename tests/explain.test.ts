@@ -202,3 +202,13 @@ test('chart focus: title, each line\'s latest point with source, test readings; 
   assert.deepEqual(f.detail, ['Brazil: Policy rate: latest 13.75% (2026-11) [BIS policy rates]', 'Stationarity (ADF test): Not stationary.']);
   assert.match(focusQuestion(f), /^Explain this chart \(Brazil: Real policy rate\)/);
 });
+
+test('Explain on a figure gives the model the plain definition of its term, with no digits in it', async () => {
+  const { focusAsText, plainDefinitions, EXPLAIN_INSTRUCTION } = await import('../src/utils/explain.ts');
+  const text = focusAsText({ kind: 'figure', label: 'Primary balance', value: '-1.2% of GDP', source: 'IMF WEO', countryName: 'Brazil', iso3: 'BRA' });
+  assert.match(text, /Plain definitions of the terms above/);
+  assert.match(text, /Primary balance: The government's budget result before interest payments/);
+  for (const d of plainDefinitions(['Primary balance', 'Real policy rate', 'FX reserves', 'CPI inflation', 'Debt / GDP'])) assert.doesNotMatch(d, /\d/);
+  assert.match(EXPLAIN_INSTRUCTION, /no training in economics/);
+  assert.match(EXPLAIN_INSTRUCTION, /explaining a number or a pattern/, 'the stand-in model in the tests keys on this phrase');
+});
