@@ -89,3 +89,18 @@ test('country view, sentence and plain-text search', () => {
   assert.deepEqual(searchSanctions(d, ''), []);
   assert.equal(sanctionsSentence('X', countrySanctions(emptySanctionsData(), 'X'), emptySanctionsData()), 'X: no sanctions list files read.');
 });
+
+test('names as the 6 Nov 2026 files spell them: regions, inverted names, small states', () => {
+  const by = (n: string) => iso3ForName(n);
+  assert.equal(by('Region: Gaza'), 'PSE');
+  assert.equal(by('Region: Northern Mali'), 'MLI');
+  assert.equal(by('Man, Isle of'), 'IMN');
+  assert.equal(by('North Macedonia, The Republic of'), 'MKD');
+  assert.equal(by("Korea, Democratic People's Republic of"), 'PRK');
+  assert.equal(by('Korea, Republic of'), 'KOR');
+  assert.equal(by('China, Hong Kong Special Administrative Region'), 'HKG');
+  assert.equal(by('Cote d Ivoire'), 'CIV');
+  for (const [n, iso] of [['Barbados', 'BRB'], ['Dominica', 'DMA'], ['Palau', 'PLW'], ['Bermuda', 'BMU']]) assert.equal(by(n), iso);
+  // Disputed areas and groupings stay unmatched (counted under "Country names not matched").
+  for (const n of ['Region: Kashmir', 'Kafia Kingi', 'Commonwealth of Independent States', 'former Soviet Union']) assert.equal(by(n), null);
+});

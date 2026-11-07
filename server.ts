@@ -315,6 +315,8 @@ async function downloadOfficialHistory(iso3: string): Promise<OfficialHistoryFil
   return file;
 }
 /** The saved history, downloading it first when there is none or (with force / a week old) it is due. */
+const historyNoAnswer = new Map<string, number>();
+const HISTORY_NO_ANSWER_WAIT_MS = 60_000;
 function fetchOfficialHistory(iso3: string, opts: { force?: boolean } = {}): Promise<OfficialHistoryFile | null> {
   const key = String(iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   const saved = loadOfficialHistory(key);
@@ -324,9 +326,19 @@ function fetchOfficialHistory(iso3: string, opts: { force?: boolean } = {}): Pro
   if (!due) return Promise.resolve(saved);
   const existing = historyInFlight.get(key);
   if (existing) return existing;
+  // A download where no source answered (offline) is not tried again for a minute: each panel asks
+  // for the history, and every retry is one request per official figure.
+  const quiet = historyNoAnswer.get(key);
+  if (!opts.force && quiet && Date.now() - quiet < HISTORY_NO_ANSWER_WAIT_MS) return Promise.resolve(saved);
   const job = downloadOfficialHistory(key)
+    .then((file) => {
+      if (file === saved || !file) historyNoAnswer.set(key, Date.now());
+      else historyNoAnswer.delete(key);
+      return file;
+    })
     .catch((err) => {
       console.warn(`[history] ${key}: ${err?.message || err}`);
+      historyNoAnswer.set(key, Date.now());
       return saved;
     })
     .finally(() => historyInFlight.delete(key));

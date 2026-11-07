@@ -338,6 +338,33 @@ tuned and run again under the same name; a new method is a new test. The Nowcast
 in Council chat gives the same figures with the same verdicts. `npm run forecast:worst` lists the
 series where a model missed most.
 
+**Historical context.** Under each History chart a line puts the latest figure in its own
+history: a record or "highest since" (only when that date is far enough back to matter), where it
+sits among all the saved observations, and the change on a year earlier. IMF projections are left
+out.
+
+**Claim check.** Type a sentence with a figure or a ranking into Council chat, such as "Turkey's
+inflation is 33%" or "Is it true Turkey's inflation is the highest in the G20?", and the Claim Check
+answer puts it next to the app's own figure, with the source and date: matches, differs (by how
+much), or a different period when the sentence names another year. A ranking is ranked among the
+G20, G7 or watchlist countries the app holds a figure for; a higher figure elsewhere disproves it,
+and members with no figure are named, since the app cannot rule them out.
+
+**Story leads.** Research > Compare countries > Summary opens with a short list of places to look:
+official yearly figures at a record or their highest or lowest in ten years or more, values the IMF
+or World Bank revised by a lot in the last 30 days, and what moved since your last visit. Countries
+with no saved yearly history are named; open their History once to download it.
+
+**Publish a chart.** Under each History chart, Publish chart downloads it as PNG or SVG with
+the title, source, period, the date and a credit line taken from the licence register (you can edit
+it). Sources whose terms restrict free sharing, such as Kalshi or OECD yields served through FRED,
+block the download until you tick that you hold permission.
+
+**Unit converters.** Research > One country > History & data turns an amount in the country's
+currency into real terms (prices of another year), US dollars, purchasing power parity and per
+head, each line with the World Bank figure it used and its year. A year with no figure reads
+Missing; the nearest year is never put in its place.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

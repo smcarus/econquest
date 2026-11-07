@@ -54,6 +54,11 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Country risk scorecard | Research | Stated method, no call to test | Not applicable |
 | Sanctions lists | Research | Stated method, no call to test | Not applicable |
 | Geopolitical risk VaR | Research | Stated method, no call to test | Not applicable |
+| Historical context line | Research | Stated method, no call to test | Not applicable |
+| Claim check | Research | Stated method, no call to test | Not applicable |
+| Story leads | Research | Stated method, no call to test | Not applicable |
+| Publication export | Research | Stated method, no call to test | Not applicable |
+| Unit converters | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -627,6 +632,51 @@ These show where things stand on a stated method and make no call a backtest cou
 - Global channels: the mean US policy rate and dollar moves of the stress months, put through the country's fitted scenario model (Global shock scenarios), with its 90% band from Newey-West coefficient errors.
 - **Limits:** Past co-movement with a news-based index, not a forecast. GPR stays high for months at a time, so the stress months are fewer independent episodes than their count, and a 95% tail read from 20 to 40 months is rough. Currency only; no bond or equity prices. Built fresh, not ported from another tool.
 - **Code:** `src/utils/grVar.ts`
+
+### Historical context line
+
+- **Shows in:** Research > History & data > History (under the chart)
+- The latest real observation of the figure (IMF projections left out) against all earlier observations: a record high or low, or "highest/lowest since" the most recent earlier date at least as extreme, whichever run is longer.
+- A "since" date is shown only when it is far enough back to matter: at least 3 years (yearly), 4 quarters, 12 months, 26 weeks or 60 days.
+- Where it sits: the share of all observations at or below it. Change on the observation one year earlier, in points for shares and rates.
+- **Limits:** Only the history the app has saved for that figure; a short series makes "on record" weak, so the first date is always given. No rank among peers yet.
+- **Code:** `src/utils/historicalContext.ts`
+
+### Claim check
+
+- **Shows in:** Today > Council chat (the Claim Check answer, when a question states a figure or a ranking)
+- Figures stated in the question (policy rate, inflation, government debt, primary balance, official reserves, real GDP growth) are found by the rules of the document figure check and compared with the app figure for the one watchlist country the question names, within the same tolerances (0.05 to 1 point; 2% for reserves).
+- A year in the question that differs from the year of the app figure is reported as a different period, neither a match nor a difference.
+- Rankings (highest, lowest, largest and so on in the G20, the G7 or the watchlist): the country's app figure is ranked against the members the app holds a figure for. A higher (or lower) figure elsewhere disproves the claim; ranking first supports it fully only when every member is covered, otherwise the uncovered members are named.
+- **Limits:** A check against the app's figures, which may be older than the claim or measure something else (monthly against annual inflation, mixed sources across countries). Stated figures are checked only when the question names one country. Targets and forecasts are left out. No other groups (EM, the world) are ranked.
+- **Code:** `src/utils/claimCheck.ts`
+
+### Story leads
+
+- **Shows in:** Research > Compare countries > Summary
+- Records: the latest real observation of each official yearly series (IMF WEO, World Bank; projections left out) that is the highest or lowest on record (at least 10 observations) or since a year at least 10 years earlier, for the last two calendar years only (the Historical context line's rules).
+- Revisions: values the IMF or World Bank revised in the last 30 days (Data health), by at least 0.5 points for figures in % and 5% of the old value otherwise; projections left out.
+- Moved: what moved since your last visit, by the rules of Since your last visit (read only; opening Compare does not reset it). Ordered records on record first, then by how far back and how large.
+- **Limits:** Only countries with saved yearly history, and only official yearly figures for records; a record in a short series means little, and the figure may be revised again. Gaps between data and market prices are in Where data and price disagree on the same page.
+- **Code:** `src/utils/storyLeads.ts`
+
+### Publication export
+
+- **Shows in:** Research > One country > History & data > History (Publish chart, under the chart)
+- The chart is redrawn on white as SVG, or PNG at twice screen size, with its title, unit and frequency, the figure's source, the period shown, the export date and a credit line.
+- The credit line is the attribution each source asks for in the licence register (src/data/dataLicences.ts), with its placeholder filled from the figure's source text; it can be edited before export.
+- A source whose terms restrict free sharing, or need permission where free sharing is not settled, blocks the export until you tick that you hold permission. Sources with unclear terms, or not named in the register, are listed.
+- **Limits:** The register reflects terms as read on its check date and is not legal advice; you are responsible for what you publish. Only the History chart has the button so far.
+- **Code:** `src/utils/publicationExport.ts`
+
+### Unit converters
+
+- **Shows in:** Research > One country > History & data
+- Real terms: amount x CPI(target year) / CPI(year of the amount), World Bank consumer price index (2010 = 100).
+- US dollars: amount / official exchange rate, local currency per US$, average of the year (World Bank, from IMF IFS). Purchasing power parity: amount / World Bank ICP conversion factor for GDP. Per head: amount / mid-year population (World Bank).
+- Only the year asked for is used; a year with no figure reads Missing with the years on file. IMF projections are never used.
+- **Limits:** Yearly averages: a single day's amount converts only roughly, and in high inflation the year's average rate can be far from the rate on the day. The GDP PPP factor suits economy-wide amounts, not one household's basket.
+- **Code:** `src/utils/unitConverters.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

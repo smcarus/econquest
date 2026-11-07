@@ -77,6 +77,12 @@ const ALIASES: Record<string, string> = {
   'timor leste': 'TLS', 'fiji': 'FJI', 'samoa': 'WSM', 'vanuatu': 'VUT', 'panama': 'PAN', 'sierra leone': 'SLE', 'guinea bissau': 'GNB',
   'equatorial guinea': 'GNQ', 'togo': 'TGO', 'benin': 'BEN', 'malawi': 'MWI', 'lesotho': 'LSO', 'mauritius': 'MUS', 'gibraltar': 'GIB',
   'isle of man': 'IMN', 'jersey': 'JEY', 'guernsey': 'GGY', 'curacao': 'CUW', 'aruba': 'ABW', 'andorra': 'AND', 'san marino': 'SMR',
+  // Spellings seen in the 6 Nov 2026 OFAC and UN files.
+  'barbados': 'BRB', 'dominica': 'DMA', 'palau': 'PLW', 'bermuda': 'BMU', 'cote d ivoire': 'CIV',
+  'china hong kong special administrative region': 'HKG', 'hong kong special administrative region': 'HKG',
+  'northern gaza': 'PSE', 'north gaza': 'PSE', 'northern mali': 'MLI',
+  // Left unmatched on purpose: disputed areas (Kashmir, Jammu and Kashmir, Kafia Kingi) and groupings
+  // that are not one country (Commonwealth of Independent States, former Soviet Union).
 };
 
 export function normCountry(s: string): string {
@@ -100,9 +106,18 @@ const NAME_TO_ISO3: Map<string, string> = (() => {
 
 /** ISO3 for a country name as a list spells it; null when the app has no match. */
 export function iso3ForName(name: string): string | null {
-  const n = normCountry(name);
+  // OFAC writes regions as "Region: Gaza"; inverted names as "Man, Isle of" or "North Macedonia, The Republic of".
+  const raw = String(name ?? '').replace(/^\s*region\s*:\s*/i, '');
+  const n = normCountry(raw);
   if (!n) return null;
-  return NAME_TO_ISO3.get(n) ?? null;
+  const hit = NAME_TO_ISO3.get(n);
+  if (hit) return hit;
+  const comma = raw.indexOf(',');
+  if (comma > 0) {
+    const [a, b] = [raw.slice(0, comma), raw.slice(comma + 1)];
+    return NAME_TO_ISO3.get(normCountry(`${b} ${a}`)) ?? NAME_TO_ISO3.get(normCountry(a)) ?? null;
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------------------------------

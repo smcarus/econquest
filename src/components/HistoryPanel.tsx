@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
+import { contextSentence, historicalContext } from '../utils/historicalContext';
+import { PublishChartButton } from './PublishChartButton';
 
 /**
  * Country Research > History: every figure that has a run of real observations, as a chart with
@@ -83,6 +85,8 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
   }, [iso3, current?.id]);
 
   const gaps = useMemo(() => (series ? seriesGaps(series) : []), [series]);
+  const chartRef = useRef<HTMLDivElement>(null);
+  const context = useMemo(() => (series ? historicalContext(series.points, series.freq) : null), [series]);
 
   if (failed) {
     return (
@@ -121,7 +125,12 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
           {series && (
             <>
               {series.about && <p className="text-xs text-slate-500 dark:text-slate-400">{series.about}</p>}
-              <div className="h-64" data-history-chart="true">
+              {context && (
+                <p className="text-sm text-slate-900 dark:text-white" data-history-context="true">
+                  {contextSentence(series.label, series.unit, context)}
+                </p>
+              )}
+              <div className="h-64" data-history-chart="true" ref={chartRef}>
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={series.points} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
                     <CartesianGrid stroke="currentColor" strokeOpacity={0.1} vertical={false} />
@@ -163,6 +172,14 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                   Excel
                 </a>
               </div>
+              <PublishChartButton
+                chartRef={chartRef}
+                title={`${series.label}, ${countryName}`}
+                subtitle={`${series.unit}, ${FREQ_LABEL[series.freq].toLowerCase()}`}
+                source={series.source || current?.source || ''}
+                period={`${series.points[0]?.date} to ${series.points[series.points.length - 1]?.date}`}
+                fileName={`${iso3}-${series.id}`}
+              />
               <details>
                 <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">Show the numbers</summary>
                 <div className="mt-2 max-h-64 overflow-auto">

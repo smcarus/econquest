@@ -93,6 +93,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'today', anchor: 'tool-digest' },
   },
   {
+    id: 'story-leads',
+    category: 'screen',
+    title: 'Story leads',
+    what: 'Official yearly figures at a record or a ten-year high or low, large recent IMF or World Bank revisions, and what moved since your last visit.',
+    sources: 'Saved IMF WEO and World Bank history, Data health revisions',
+    target: { area: 'compare', anchor: 'tool-story-leads' },
+  },
+  {
     id: 'divergences',
     category: 'screen',
     title: 'Where data and price disagree',
