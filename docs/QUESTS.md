@@ -24,7 +24,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Quests tab on Menu > Track record | Not built (added when Quests go live, so nothing shows while they are off) |
 | Public entries by pull request (`quests/entries/<id>/<login>.<n>.json`): Prepare entry in the app opens GitHub's prefilled page; the entry checker (`npm run quests:entries`, CI job `Quest entries`); replacements numbered and kept; emailed entries posted by a maintainer; entries hidden in the app until close, then shown with scores and the spread | Built and tested, switched off |
 | Contributor statistics and scoreboard: skill with a 90% range, beat no change, calibration, sharpness, record against the crowd, fields, streak, each shown only above its minimum; rankings after 12 settled forecasts and a 90-day-old GitHub account; seasons, all-time and field tables (`npm run quests:stats`, Scoreboard tab) | Built and tested, switched off |
-| Quest generator and digests | Not built |
+| Quest generator (`npm run quests:generate`: weekly Brent and currency Quests, monthly policy-rate Quests, as drafts), batch approval (`npm run quests:approve`), weekly digest (`npm run quests:digest`) and "This week" on the Quests page | Built and tested, switched off |
 | Debate, signal and replication workflows | Not built |
 | Preference profiles | Not built |
 | Health page and yearly dataset | Not built |
@@ -83,6 +83,22 @@ For the maintainer:
 - A pull request that only adds entries skips the full CI and runs only the short `Quest entries` job.
 - Set `QUESTS_REPO` (owner/name of the public repository) for Prepare entry to work; without it the app offers only Log privately.
 
+## Making new Quests
+
+A steady flow of Quests keeps people coming back, so the app drafts routine ones for the maintainer to approve in a batch (`src/utils/questGenerator.ts`):
+
+- **Weekly**: Brent crude, and seven currencies against the US dollar (Brazilian real, Mexican peso, South African rand, Turkish lira, Indian rupee, Indonesian rupiah, Japanese yen): higher or lower one week after entries close. Entries open a week before they close, on a Friday.
+- **Monthly**: whether eleven central banks (the United States, Brazil, Mexico, Chile, Colombia, South Africa, Turkey, Poland, Hungary, India, Indonesia) will have cut their policy rate by the end of the next month. Entries open two weeks before the end of the month.
+
+Every generated Quest asks "higher or lower than on the day entries close", so no figure is ever written into a Quest file, and each passes the same checker as a hand-written Quest. The app has no calendar of data releases or central-bank meetings yet; when it gets one, Quests dated to those events can be added here.
+
+1. `npm run quests:generate -- --weeks 4` lists what it would draft; add `--write` to write the drafts into `quests/drafts/`.
+2. Read them, edit or delete any you do not want.
+3. `npm run quests:approve -- --by <your login> <id> <id> ...` moves each to `quests/`, sets you as approver and records its fingerprint in `quests/manifest.json`. It refuses a draft that fails the checker or whose entries have already closed.
+4. Commit `quests/` in a pull request.
+
+Each week, `npm run quests:digest` prints a short post for the Quests category in GitHub Discussions: what closes and opens in the next 7 days, results recorded in the last 7, and results still due. The same list shows as **This week** at the top of the Quests page.
+
 ## Contributor statistics
 
 Statistics come only from the public entries and the recorded results, so anyone can recompute them. The app works them out each time the Scoreboard tab opens; `npm run quests:stats` writes the same figures to `quests/stats.json` for the public record and a future public board, and looks up each new contributor's GitHub account creation date (kept in `quests/accounts.json`, which is public data). Commit both files after a run.
@@ -107,7 +123,8 @@ Rankings use skill only. To be ranked a person needs 12 settled forecasts with a
 Working properly:
 
 - [ ] `npm run quests:check` passes on every Quest file
-- [ ] At least 10 Quests approved by the maintainer, with real dates, moved from `quests/drafts/` to `quests/` and hashed
+- [ ] At least 10 Quests approved by the maintainer, with real dates, moved from `quests/drafts/` to `quests/` and hashed (`npm run quests:generate` and `quests:approve` help)
+- [ ] Someone posts the weekly digest (`npm run quests:digest`) in Discussions, or a scheduled job does
 - [ ] Every approved Forecast Quest shows a live figure (or Missing with a reason) for each series it reads, checked on the maintainer's computer with all keys set
 - [ ] The resolver settles a past test Quest correctly from each source used (BIS, ECB, CFTC, EIA, IMF, World Bank), and a missing value gives Unresolvable
 - [ ] Entries can be made and are checked (opened before close, one per GitHub login): one test entry by pull request on the public repository passes, one after close fails

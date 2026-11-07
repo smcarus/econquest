@@ -27,6 +27,9 @@
  *
  * Contributor statistics (step 7), recomputed from the files on every call:
  *   GET  /api/quests/stats            the scoreboard and every contributor's statistics
+ *
+ * Digest (step 8):
+ *   GET  /api/quests/digest           this week: closing soon, opening, results recorded, results due
  */
 import type express from 'express';
 import crypto from 'crypto';
@@ -49,6 +52,7 @@ import { countedPublicEntries, entryFileText, entryPath, entrySpread, isEntrantN
 import { loadPublicEntries } from '../../utils/questPublicEntryStore';
 import { computeStats } from '../../utils/questStats';
 import { readAccounts } from '../../utils/questStatsStore';
+import { questDigest } from '../../utils/questGenerator';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -248,6 +252,11 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (rec.brokenAt !== -1) return res.json({ enabled: true, error: `The results record is broken at line ${rec.brokenAt + 1}, so no statistics are shown until it is restored` });
     const quests = loadQuests(dir).filter((x) => x.quest.type === 'forecast').map((x) => ({ quest: x.quest as ForecastQuest, approved: x.approved }));
     res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir) }) });
+  });
+
+  app.get('/api/quests/digest', (_req, res) => {
+    if (!enabled()) return off(res);
+    res.json({ enabled: true, ...questDigest(loadQuests(dir), loadResolutions(resultsFile).lines, todayIso()) });
   });
 
   app.get('/api/quests/due', async (req, res) => {
