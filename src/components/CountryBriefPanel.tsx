@@ -7,6 +7,7 @@ import { bankerBrief } from '../utils/bankerNote';
 import { officialBrief } from '../utils/officialNote';
 import { explainInChat } from '../utils/explainHandoff';
 import type { BriefGroup } from '../utils/countryNotes';
+import { figureHelp, panelIntro, type GlossaryEntry } from '../data/glossary';
 
 export type BriefView = 'economist' | 'banker' | 'official';
 
@@ -116,6 +117,29 @@ const EXPLAIN_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline s
 const EXPLAIN_ROW_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover/row:opacity-100 focus:opacity-100';
 
 /**
+ * "What is this?" under a figure label: the plain-words glossary entry for the figure (what it is,
+ * why it matters, how to read it). Closed by default so the table stays short; tap to open.
+ */
+export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => (
+  <details className="mt-0.5 text-xs font-normal" data-figure-help={entry.id}>
+    <summary className="cursor-pointer text-blue-700 dark:text-blue-300 hover:underline w-fit">What is this?</summary>
+    <div className="mt-1 space-y-1 text-slate-600 dark:text-slate-300 max-w-prose text-left">
+      <p>
+        <strong className="font-medium text-slate-800 dark:text-slate-100">{entry.term}.</strong> {entry.what}
+      </p>
+      <p>{entry.why}</p>
+      {entry.read && (
+        <p>
+          <span className="font-medium text-slate-800 dark:text-slate-100">How to read it: </span>
+          {entry.read}
+        </p>
+      )}
+      {entry.limits && <p className="text-slate-500 dark:text-slate-400">{entry.limits}</p>}
+    </div>
+  </details>
+);
+
+/**
  * The figure tables of a brief, each row with its source under the label. With a country, each
  * figure and each panel gets an Explain link (shown on hover on a wide screen) into Council chat.
  */
@@ -134,6 +158,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
             </button>
           )}
         </header>
+        {panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{panelIntro(g.title)}</p>}
         <table className="w-full text-sm">
           <caption className="sr-only">{g.title}</caption>
           <tbody>
@@ -145,6 +170,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                     <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
                     <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
+                    {figureHelp(r.label) && <FigureHelp entry={figureHelp(r.label)!} />}
                   </td>
                 </tr>
               ) : (
@@ -158,6 +184,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                   >
                     {r.source}
                   </span>
+                  {figureHelp(r.label) && <FigureHelp entry={figureHelp(r.label)!} />}
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
                   {r.value}

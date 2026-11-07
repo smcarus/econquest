@@ -52,6 +52,7 @@ import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/u
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './src/utils/refereeModel';
 import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type CouncilTiming, type StepTiming } from './src/utils/councilTiming';
+import { glossaryMarkdown } from './src/data/glossary';
 import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
@@ -5176,6 +5177,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     try {
       const readmePath = path.join(__dirname, 'README.md');
       const manualPath = path.join(__dirname, 'docs', 'USER_MANUAL.md');
+      const glossaryContent = glossaryMarkdown();
       const logoPath = path.join(
         __dirname,
         'src',
@@ -5210,6 +5212,12 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
             content: manualContent,
             lines: manualContent.split('\n').length,
             bytes: Buffer.byteLength(manualContent, 'utf-8'),
+          },
+          glossary: {
+            path: 'docs/GLOSSARY.md',
+            content: glossaryContent,
+            lines: glossaryContent.split('\n').length,
+            bytes: Buffer.byteLength(glossaryContent, 'utf-8'),
           },
         },
       });

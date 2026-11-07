@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toDisplayCase } from '../utils/displayCase';
+import { GLOSSARY_GROUPS, glossaryMarkdown } from '../data/glossary';
 import {
   AIRuntimeConfig,
   DockerSelfHostGuiConfig,
@@ -41,31 +42,53 @@ interface SovereignManualAndGithubModalProps {
   onClose: () => void;
 }
 
+type DocFile = { path: string; content: string; lines: number; bytes: number };
+type DocId = 'userManual' | 'glossary' | 'readme';
+
 interface ManualDocsPayload {
   status: string;
   fetchedAt: string;
-  gitReady: boolean;
-  hasLogoAsset: boolean;
-  files: {
-    readme: { path: string; content: string; lines: number; bytes: number };
-    userManual: { path: string; content: string; lines: number; bytes: number };
-  };
+  files: { readme: DocFile; userManual: DocFile; glossary?: DocFile };
 }
 
-const CHAPTER_SHORTCUTS = [
-  { id: 'all', label: 'Full Document', query: '' },
-  { id: 'pillars', label: '1. 10 Hubs & 3 Activity Pillars', query: 'Analytical Hubs' },
-  { id: 'council', label: '2. 9-Agent Council & CRO Gate', query: '9-Agent' },
-  { id: 'csv', label: '3. CSV Backtesting & Personas', query: 'CSV Backtesting' },
-  { id: 'smcr', label: '4. SMCR-1.0 Report Exports', query: 'SMCR-1.0' },
-  { id: 'integration', label: '5. Top-Level App Integration & APIs', query: 'Top-Level' },
+/** The documents in the manual window, in tab order, with jump links to their main sections. */
+const DOCS: Array<{ id: DocId; label: string; file: string; note: string; jumps: Array<{ label: string; query: string }> }> = [
+  {
+    id: 'userManual',
+    label: 'User manual',
+    file: 'USER_MANUAL.md',
+    note: 'How to use each part of the app, step by step.',
+    jumps: [
+      { label: 'Start here', query: 'Start here' },
+      { label: 'Workspace', query: '1. Workspace' },
+      { label: 'Research', query: '2. Research' },
+      { label: 'Reports', query: '3. Reports' },
+      { label: 'Tools', query: '4. Tools' },
+      { label: 'Menu', query: '5. Menu' },
+      { label: 'When something looks wrong', query: 'When something looks wrong' },
+    ],
+  },
+  {
+    id: 'glossary',
+    label: 'Glossary',
+    file: 'GLOSSARY.md',
+    note: 'Every economic and market term in the app, explained in plain words: what it is, why it matters and how to read it.',
+    jumps: Object.values(GLOSSARY_GROUPS).map((g) => ({ label: g, query: g })),
+  },
+  {
+    id: 'readme',
+    label: 'About the project',
+    file: 'README.md',
+    note: 'What EconQuest is, how to install it and where the data comes from.',
+    jumps: [],
+  },
 ];
 
 export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [activeDoc, setActiveDoc] = useState<'userManual' | 'readme'>('userManual');
+  const [activeDoc, setActiveDoc] = useState<DocId>('userManual');
   const [docsPayload, setDocsPayload] = useState<ManualDocsPayload | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [searchFilter, setSearchFilter] = useState<string>('');
@@ -95,29 +118,24 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
 
   if (!isOpen) return null;
 
-  const activeFile =
-    activeDoc === 'userManual'
-      ? docsPayload?.files.userManual || {
-          path: 'docs/USER_MANUAL.md',
-          content: '# Sovereign Council Orchestrator User Manual\nLoading documentation...',
-          lines: 0,
-          bytes: 0,
-        }
-      : docsPayload?.files.readme || {
-          path: 'README.md',
-          content: '# EconQuest — Sovereign Council Orchestrator\nLoading README.md...',
-          lines: 0,
-          bytes: 0,
-        };
+  const doc = DOCS.find((d) => d.id === activeDoc) || DOCS[0];
+  // The glossary is built into the app, so it shows even before the server answers.
+  const builtIn = activeDoc === 'glossary' ? glossaryMarkdown() : '';
+  const activeFile: DocFile = docsPayload?.files[activeDoc] || {
+    path: `docs/${doc.file}`,
+    content: builtIn || (isLoading ? 'Loading…' : `${doc.file} could not be loaded. Check that the server is running.`),
+    lines: builtIn ? builtIn.split('\n').length : 0,
+    bytes: builtIn.length,
+  };
 
   const filteredContent = (() => {
     const q = searchFilter.trim().toLowerCase();
     if (!q) return activeFile.content;
-    const sections = activeFile.content.split(/\n(?=##?\s)/);
+    const sections = activeFile.content.split(/\n(?=#{1,3}\s)/);
     const matching = sections.filter((sec) => sec.toLowerCase().includes(q));
     return matching.length > 0
       ? matching.join('\n\n---\n\n')
-      : `No section matched filter "${searchFilter}". Clear the filter to view all ${activeFile.lines} lines.`;
+      : `No section matches "${searchFilter}". Clear the search to see the whole ${doc.label.toLowerCase()}.`;
   })();
 
   const handleCopyMarkdown = () => {
@@ -131,7 +149,7 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = activeDoc === 'userManual' ? 'USER_MANUAL.md' : 'README.md';
+    a.download = doc.file;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -140,133 +158,89 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
-      <div className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950">
+      <div role="dialog" aria-label="User manual and glossary" className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 bg-slate-50 dark:bg-slate-950">
           <div className="flex items-center gap-3">
             <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-                Sovereign Council Orchestrator — User Manual & GitHub Repository Docs
-              </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                Committed files: <span className="text-blue-600 dark:text-blue-400">README.md</span> &{' '}
-                <span className="text-emerald-600 dark:text-emerald-400">docs/USER_MANUAL.md</span> · Ready for GitHub Sync
-              </p>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">User manual and glossary</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{doc.note}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyMarkdown}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition-colors"
-            >
+            <button type="button" onClick={handleCopyMarkdown} className="ui-btn inline-flex">
               {copiedId === activeDoc ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Copied .md!</span>
+                  <span>Copied</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copy Raw Markdown</span>
+                  <span>Copy text</span>
                 </>
               )}
             </button>
-            <button
-              type="button"
-              onClick={handleDownloadMarkdown}
-              className="ui-btn ui-btn-primary inline-flex"
-            >
+            <button type="button" onClick={handleDownloadMarkdown} className="ui-btn ui-btn-primary inline-flex">
               <Download className="w-3.5 h-3.5" />
-              <span>Download {activeDoc === 'userManual' ? 'USER_MANUAL.md' : 'README.md'}</span>
+              <span>Download {doc.file}</span>
             </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-            >
+            <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* GitHub Repository Readiness Bar */}
-        <div className="px-6 py-2.5 bg-slate-100/80 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 tabular-nums text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-              <GitBranch className="w-3 h-3" />
-              {docsPayload?.gitReady ? 'Git repo initialised (main)' : 'Git sync ready'}
-            </span>
-            <span className="text-slate-600 dark:text-slate-400 tabular-nums text-xs">
-              Active File: <strong className="text-slate-900 dark:text-white">{activeFile.path}</strong> ({activeFile.lines} lines · {(activeFile.bytes / 1024).toFixed(1)} KB)
-            </span>
-          </div>
-
-          {/* Document Switcher */}
-          <div className="flex items-center gap-1">
+        <div className="px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950/90 flex flex-wrap items-center gap-1" role="tablist" aria-label="Document">
+          {DOCS.map((d) => (
             <button
+              key={d.id}
               type="button"
+              role="tab"
+              aria-selected={activeDoc === d.id}
               onClick={() => {
-                setActiveDoc('userManual');
+                setActiveDoc(d.id);
                 setSearchFilter('');
               }}
-              aria-pressed={activeDoc === 'userManual'}
               className="ui-pill inline-flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>docs/USER_MANUAL.md (Full Manual)</span>
+              <span>{d.label}</span>
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveDoc('readme');
-                setSearchFilter('');
-              }}
-              aria-pressed={activeDoc === 'readme'}
-              className="ui-pill inline-flex items-center gap-1.5"
-            >
-              <FileText className="w-3.5 h-3.5" />
-              <span>README.md (Root Overview)</span>
-            </button>
-          </div>
+          ))}
         </div>
 
-        {/* Chapter Quick-Jump & Search Bar */}
         <div className="px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap items-center gap-1.5">
-            {CHAPTER_SHORTCUTS.map((chap) => (
-              <button
-                key={chap.id}
-                type="button"
-                onClick={() => setSearchFilter(chap.query)}
-                aria-pressed={searchFilter === chap.query}
-                className="ui-pill"
-              >
+            {doc.jumps.length > 0 && (
+              <button type="button" onClick={() => setSearchFilter('')} aria-pressed={searchFilter === ''} className="ui-pill">
+                All
+              </button>
+            )}
+            {doc.jumps.map((chap) => (
+              <button key={chap.query} type="button" onClick={() => setSearchFilter(chap.query)} aria-pressed={searchFilter === chap.query} className="ui-pill">
                 {chap.label}
               </button>
             ))}
           </div>
-          <div className="relative w-64">
+          <div className="relative w-64 max-w-full">
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
             <input
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder="Filter manual sections..."
+              placeholder={activeDoc === 'glossary' ? 'Find a term, e.g. inflation' : 'Search this document'}
+              aria-label="Search this document"
               className="w-full pl-8 pr-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
             />
           </div>
         </div>
 
-        {/* Markdown Content Viewer */}
         <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-950/60">
-          {isLoading ? (
-            <div className="py-12 text-center text-xs tabular-nums text-slate-500">
-              Loading committed documentation from workspace repository...
-            </div>
+          {isLoading && !builtIn ? (
+            <div className="py-12 text-center text-xs text-slate-500">Loading…</div>
           ) : (
-            <pre className="whitespace-pre-wrap tabular-nums text-xs leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-5 border border-slate-200 dark:border-slate-800 select-text">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-5 border border-slate-200 dark:border-slate-800 select-text">
               {filteredContent}
             </pre>
           )}

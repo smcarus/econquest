@@ -1,0 +1,698 @@
+/**
+ * Plain-language glossary (Sam, 2026-11-07: "I want a lay person to be conveyed complex economic
+ * and policy issues as simply as possible within the bounds of the data").
+ *
+ * One entry per term the app shows. Each says what the thing is, why it matters, and how to read
+ * it (what a higher or lower value means), in words someone with no economics training can follow.
+ * Entries describe the measure, never a country: there are no figures in this file, and nothing
+ * here replaces a missing value. The `match` patterns tie an entry to the figure labels in the
+ * Research tables (figureHelp), so each row can say "What is this?".
+ *
+ * docs/GLOSSARY.md is written from this file (npm run docs:glossary); a test checks it is current.
+ */
+
+export type GlossaryGroup = 'economy' | 'prices' | 'policy' | 'budget' | 'external' | 'markets' | 'risk' | 'methods';
+
+export const GLOSSARY_GROUPS: Record<GlossaryGroup, string> = {
+  economy: 'Growth and jobs',
+  prices: 'Prices and inflation',
+  policy: 'Central banks and interest rates',
+  budget: 'Government budget and debt',
+  external: 'Trade, the currency and money from abroad',
+  markets: 'Financial markets',
+  risk: 'Politics, conflict and news',
+  methods: 'How the app tests and labels things',
+};
+
+export interface GlossaryEntry {
+  id: string;
+  term: string;
+  group: GlossaryGroup;
+  /** What it is, in plain words. */
+  what: string;
+  /** Why it matters to a country, its people or its lenders. */
+  why: string;
+  /** How to read it: what a higher or lower value means. */
+  read?: string;
+  /** What it does not tell you, or where the figure comes from and its limits. */
+  limits?: string;
+  /** Figure labels in the Research tables that this entry explains (first match wins, in file order). */
+  match?: RegExp[];
+}
+
+export const GLOSSARY: GlossaryEntry[] = [
+  // ---- Growth and jobs ------------------------------------------------------------------
+  {
+    id: 'gdp',
+    term: 'GDP (gross domestic product)',
+    group: 'economy',
+    what: 'The value of everything a country produces in a year: goods, services and buildings, added up in money terms.',
+    why: 'It is the standard measure of the size of an economy. Many other figures (debt, the budget, the current account) are shown as a share of GDP so countries of different sizes can be compared.',
+    limits: 'GDP measures output, not well-being. It says nothing about how income is shared, and it is revised for years after first release.',
+  },
+  {
+    id: 'real_gdp_growth',
+    term: 'Real GDP growth',
+    group: 'economy',
+    what: 'How much more (or less) the economy produced this year than last year, after removing the effect of rising prices.',
+    why: 'Growth drives jobs, wages and tax revenue. When growth is strong a government can carry more debt; when it falls, unemployment usually rises and budgets weaken.',
+    read: 'Above zero means the economy grew; below zero means it shrank. Two quarters of shrinking in a row are often called a recession. For fast-growing emerging economies, 4 to 6% a year is common; for rich economies, 1 to 2% is normal.',
+    limits: 'The app shows the IMF World Economic Outlook figure, which is a yearly number published twice a year and partly a forecast for the current year.',
+    match: [/^Real GDP growth/],
+  },
+  {
+    id: 'unemployment',
+    term: 'Unemployment rate',
+    group: 'economy',
+    what: 'The share of people who want a job and are looking for one but do not have one.',
+    why: 'It is the most direct sign of hardship in the economy. Rising unemployment cuts spending, lowers tax revenue and often raises political pressure on the government.',
+    read: 'Higher is worse. What counts as normal differs a lot by country, so compare a country with its own past rather than with others.',
+    limits: 'People who have given up looking, or work informally, are not counted, so in many emerging economies the rate understates how many people lack decent work.',
+    match: [/^Unemployment rate/],
+  },
+  {
+    id: 'output_gap',
+    term: 'Output gap',
+    group: 'economy',
+    what: 'The difference between what the economy is producing and what it could produce over time without pushing up inflation, as a share of that potential.',
+    why: 'A positive gap means the economy is running hot (firms and workers are stretched, prices tend to rise faster). A negative gap means spare capacity (idle workers and machines, inflation tends to ease).',
+    read: 'Above zero: running above its sustainable pace. Below zero: slack. It feeds the policy rule check (Taylor rule).',
+    limits: 'Potential output cannot be observed, only estimated, so the gap is uncertain and is often revised a lot. The app uses the IMF estimate and says so.',
+    match: [/output gap/i],
+  },
+  {
+    id: 'nowcast',
+    term: 'Nowcast',
+    group: 'economy',
+    what: 'An estimate of growth for the current quarter, made from monthly figures that come out before the official GDP number.',
+    why: 'Official GDP arrives weeks or months after the quarter ends. A nowcast gives an early read.',
+    limits: 'It is a model estimate, labelled "model" in the app, and its track record is shown under Menu > Models & validation.',
+    match: [/nowcast/i],
+  },
+
+  // ---- Prices and inflation ---------------------------------------------------------------
+  {
+    id: 'cpi_inflation',
+    term: 'CPI inflation',
+    group: 'prices',
+    what: 'How fast the prices people pay for a typical basket of goods and services (food, rent, fuel, transport and so on) are rising, compared with a year earlier.',
+    why: 'Inflation eats into wages and savings. It hits poorer households hardest because more of their income goes on food and energy. Central banks raise interest rates to bring it down.',
+    read: 'Higher means prices are rising faster. Most central banks aim for about 2 to 4% a year. Below zero (deflation) is also a warning sign, because it can mean weak demand.',
+    limits: 'The headline figure includes volatile food and energy prices, so a single month can jump for reasons that fade.',
+    match: [/^CPI inflation/, /^Inflation( rate)?$/i],
+  },
+  {
+    id: 'inflation_target',
+    term: 'Inflation target',
+    group: 'prices',
+    what: 'The inflation rate a central bank has publicly promised to aim for, for example 3% with a band of 1 point either side.',
+    why: 'It is the yardstick for judging whether inflation is a problem and whether interest rates are likely to go up or down.',
+    match: [/inflation target/i],
+  },
+  {
+    id: 'inflation_expectations',
+    term: 'Inflation expectations',
+    group: 'prices',
+    what: 'What households, firms, forecasters or markets think inflation will be in the future, from surveys or from bond prices.',
+    why: 'If people expect high inflation they ask for higher wages and set higher prices, which can make inflation stick. Central banks watch expectations closely.',
+    read: 'Expectations close to the target mean people trust the central bank. Expectations drifting above the target are a warning sign.',
+    match: [/expectation/i, /\bSPF\b/, /Focus survey/i],
+  },
+  {
+    id: 'cpi_release',
+    term: 'CPI release',
+    group: 'prices',
+    what: 'The day the national statistics office publishes the latest inflation figure.',
+    why: 'A surprise in either direction can move interest-rate expectations, the currency and bond prices on the day.',
+    match: [/^Next CPI release/],
+  },
+
+  // ---- Central banks and interest rates ----------------------------------------------------------
+  {
+    id: 'policy_rate',
+    term: 'Policy rate',
+    group: 'policy',
+    what: 'The interest rate the central bank sets. It is the anchor for what banks charge each other overnight, and through that for loans, mortgages and savings rates across the economy.',
+    why: 'Raising it makes borrowing dearer, which slows spending and inflation and tends to support the currency. Cutting it does the opposite.',
+    read: 'Compare it with inflation: a rate well above inflation is tight (holding the economy back), a rate below inflation is loose (supporting it).',
+    match: [/^Policy rate/],
+  },
+  {
+    id: 'real_rate',
+    term: 'Real interest rate',
+    group: 'policy',
+    what: 'An interest rate minus inflation. It shows what borrowing really costs, or what saving really earns, once rising prices are taken into account.',
+    why: 'It is a better guide to how tight policy is than the headline rate. A 10% rate with 12% inflation is still cheap money; a 5% rate with 1% inflation is expensive.',
+    read: 'Positive and high: tight, borrowing is costly, the currency tends to be supported. Negative: loose, savers lose money in real terms.',
+    limits: 'The app subtracts the latest inflation figure, which looks backwards; markets care about expected inflation, which is not always available. The row is labelled "model" because it is calculated here.',
+    match: [/^Real policy rate/, /^Real interest rate/],
+  },
+  {
+    id: 'taylor_rule',
+    term: 'Taylor rule (policy rule check)',
+    group: 'policy',
+    what: 'A simple formula, proposed by the economist John Taylor in 1993, for where a central bank\'s interest rate "should" be given inflation, the inflation target and the output gap.',
+    why: 'Comparing the actual rate with the formula gives a quick, transparent reading of whether policy looks tight, neutral or loose.',
+    read: 'Actual rate well above the rule: tight. Well below: loose. Within the band: neutral.',
+    limits: 'It is a rule of thumb, not a forecast of what the central bank will do. Central banks weigh many things the formula leaves out, such as the currency or financial stability. The app labels it "not validated".',
+    match: [/Taylor/i, /policy rule/i],
+  },
+  {
+    id: 'rate_decision',
+    term: 'Rate decision',
+    group: 'policy',
+    what: 'A scheduled meeting where the central bank announces whether it is raising, cutting or holding its policy rate.',
+    why: 'Markets often move sharply on the day, especially when the decision differs from what was expected.',
+    match: [/^Next rate decision/, /rate decision/i],
+  },
+  {
+    id: 'yield',
+    term: 'Bond yield (10-year government yield)',
+    group: 'markets',
+    what: 'The yearly return an investor gets from lending to the government for ten years at today\'s market price. It is the market interest rate on government debt.',
+    why: 'It is what new borrowing costs the government, and it sets the floor for many loan and mortgage rates in the country. When investors worry about a country, they demand a higher yield.',
+    read: 'Higher means borrowing is dearer and, often, that investors see more risk or expect more inflation. Compare it with the country\'s own history and with similar countries.',
+    limits: 'A local-currency yield mixes three things: expected inflation, expected policy rates, and a premium for risk. A high yield is not by itself a sign of trouble in a high-inflation country.',
+    match: [/10Y government yield/, /10Y yield/, /^Peers$/],
+  },
+  {
+    id: 'yield_curve',
+    term: 'Yield curve and 2s10s slope',
+    group: 'markets',
+    what: 'The line joining interest rates on government bonds of different lengths. The "2s10s" slope is the 10-year yield minus the 2-year yield.',
+    why: 'Normally longer loans pay more, so the curve slopes up. When short rates rise above long rates (an "inverted" curve), it has often come before a slowdown, because markets expect rates to be cut later.',
+    read: 'Positive: normal. Near zero: flat. Negative: inverted.',
+    match: [/2s10s/, /curve slope/i, /yield curve/i],
+  },
+  {
+    id: 'bps',
+    term: 'Basis point (bp, bps)',
+    group: 'markets',
+    what: 'One hundredth of a percentage point. 100 basis points = 1 percentage point.',
+    why: 'Spreads and small rate changes are quoted in basis points to avoid long decimals: "the spread rose 25 bps" means it rose by 0.25 percentage points.',
+  },
+  {
+    id: 'percentage_point',
+    term: 'Percentage point (pt, pts)',
+    group: 'methods',
+    what: 'The plain difference between two percentages. Going from 4% to 6% is a rise of 2 percentage points (and a 50% rise in relative terms).',
+    why: 'The app writes "pts" for differences so they are not confused with percentage changes.',
+  },
+  {
+    id: 'fed_balance_sheet',
+    term: 'Fed balance sheet and net liquidity',
+    group: 'policy',
+    what: 'Everything the US Federal Reserve owns (mainly government bonds) and owes (mainly bank reserves and the US Treasury\'s cash account). "Net liquidity" is total assets minus the Treasury\'s account and the money parked at the Fed overnight (reverse repos).',
+    why: 'When the Fed buys bonds it adds money to the financial system; when it shrinks its holdings it drains money. Because the dollar is the world\'s main currency, these changes can affect borrowing conditions everywhere, including emerging markets.',
+    read: 'Rising net liquidity: more money in the system. Falling: less.',
+    limits: 'Net liquidity is a popular market shorthand, not an official Fed measure. The app shows it only when all its parts are for the same Wednesday.',
+    match: [/Fed balance sheet/i, /net liquidity/i, /reverse repo/i, /Treasury General Account/i],
+  },
+
+  // ---- Government budget and debt -------------------------------------------------------------
+  {
+    id: 'debt_gdp',
+    term: 'Government debt to GDP',
+    group: 'budget',
+    what: 'Everything the government owes, divided by the size of the economy in a year.',
+    why: 'It shows how heavy the debt is compared with the income the country can tax to repay it. A higher ratio leaves less room to respond to a crisis and can make lenders nervous.',
+    read: 'Higher is a heavier burden. The IMF looks more closely at emerging economies above about 70% of GDP, but many rich countries carry more than 100% without trouble, because who lends, in which currency and at what rate matters as much as the level.',
+    limits: 'The IMF figure is general government gross debt: it does not subtract the government\'s own savings, and it may not include debts of state companies.',
+    match: [/^Debt \/ GDP/, /^Debt path/, /^Projection to/],
+  },
+  {
+    id: 'primary_balance',
+    term: 'Primary balance',
+    group: 'budget',
+    what: 'The government\'s budget result before interest payments on its debt: revenue minus spending, leaving interest out.',
+    why: 'It shows whether the government\'s day-to-day policies (taxes and spending) are adding to the debt or paying it down, separate from the cost of past borrowing.',
+    read: 'A surplus (positive) means taxes cover spending other than interest. A deficit (negative) means the government borrows even before paying interest.',
+    match: [/^Primary balance/],
+  },
+  {
+    id: 'overall_balance',
+    term: 'Overall budget balance',
+    group: 'budget',
+    what: 'The government\'s full budget result in a year: all revenue minus all spending, interest included.',
+    why: 'A deficit has to be borrowed, so it adds to the debt. A surplus can pay debt down.',
+    read: 'Negative is a deficit. Deficits of a few percent of GDP are common; persistent large deficits push debt up quickly.',
+    match: [/^Overall balance/],
+  },
+  {
+    id: 'revenue_spending',
+    term: 'Revenue and expenditure',
+    group: 'budget',
+    what: 'Revenue is what the government takes in (taxes, fees, grants, income from state assets). Expenditure is what it spends (wages, pensions, investment, subsidies, interest).',
+    why: 'Shown as a share of GDP, they reveal the size of the state and where a budget gap comes from.',
+    match: [/^Revenue/, /^Expenditure/],
+  },
+  {
+    id: 'net_interest',
+    term: 'Net interest paid',
+    group: 'budget',
+    what: 'How much of the economy\'s yearly output goes on interest on government debt, after interest the government earns. The app works it out as the primary balance minus the overall balance for the same year.',
+    why: 'Interest is money that cannot go on schools, hospitals or investment. When it climbs, budgets get squeezed and debt can start to feed on itself.',
+    read: 'Higher is a heavier burden: a bigger slice of what the economy produces goes to lenders each year.',
+    limits: 'Calculated here (labelled "model") and only shown when both IMF balances are for the same year.',
+    match: [/^Net interest paid/],
+  },
+  {
+    id: 'r_minus_g',
+    term: 'Interest rate minus growth (r minus g)',
+    group: 'budget',
+    what: 'The real interest rate the government pays on its debt minus the real growth rate of the economy.',
+    why: 'It decides whether debt grows on its own. If the interest rate is below growth, the debt ratio tends to fall even with a small deficit; if interest is above growth, the government must run a surplus just to stop the ratio rising.',
+    read: 'Negative helps; positive hurts, and the bigger the debt, the more it hurts.',
+    limits: 'The app approximates the interest rate from the 10-year yield and inflation, because the average rate actually paid on all government debt is not in a free feed.',
+    match: [/Interest rate minus growth/, /r minus g/],
+  },
+  {
+    id: 'stabilising_balance',
+    term: 'Balance that keeps debt stable',
+    group: 'budget',
+    what: 'The primary balance (budget before interest) the government would need each year to keep debt from rising as a share of GDP, given today\'s interest rate, growth and debt level.',
+    why: 'Comparing it with the actual primary balance shows how much the budget would have to change for debt to stop growing: the size of the adjustment.',
+    read: 'If the actual balance is below this figure, debt is on a rising path at today\'s rates.',
+    limits: 'A simple textbook calculation (labelled "model"), not an IMF or World Bank assessment.',
+    match: [/^Balance that keeps debt stable/],
+  },
+  {
+    id: 'dsa',
+    term: 'Debt sustainability and stress tests',
+    group: 'budget',
+    what: 'A check of whether the government can keep paying its debts without a crisis. The app projects debt five years ahead with today\'s figures held still, then again with standard shocks: lower growth, higher interest rates, a weaker budget, and all three together.',
+    why: 'It shows how fragile the debt path is. If one plausible shock sends debt sharply higher, the country has little room for bad luck.',
+    read: 'Compare the shocked paths with the baseline. A wide spread means the debt is sensitive to things the government does not control.',
+    limits: 'The projection holds today\'s figures fixed, so it is a "what if" exercise, not a forecast. The shock sizes are fixed and stated. It is much simpler than an IMF debt sustainability analysis and is not one.',
+    match: [/^Baseline$/, /^Lower growth$/, /^Higher interest rates$/, /^Weaker budget$/, /^Combined$/, /^Projection and stress tests/, /sustainability/i],
+  },
+  {
+    id: 'gross_financing_need',
+    term: 'Gross financing need',
+    group: 'budget',
+    what: 'How much the government must raise in a year: the budget deficit plus all debt that falls due and has to be repaid or rolled over.',
+    why: 'Even a country with moderate debt can get into trouble if a lot falls due at once and lenders are nervous. The IMF treats above about 15% of GDP a year as a warning level for emerging economies.',
+    read: 'Higher means more dependence on lenders being willing to lend again each year.',
+    match: [/financing need/i, /\bGFN\b/],
+  },
+  {
+    id: 'debt_due',
+    term: 'Debt falling due',
+    group: 'budget',
+    what: 'Loans and bonds that must be repaid within a period, usually the next 12 months, by the government or the whole country.',
+    why: 'These repayments must be paid from savings or new borrowing. A large amount falling due when markets are closed is a classic path to a debt crisis.',
+    read: 'Compare with FX reserves: if reserves cover the debt falling due, the country can pay even if lenders stop lending for a while.',
+    limits: 'QEDS (World Bank and IMF quarterly external debt statistics) and IDS (World Bank international debt statistics) cover debt owed to foreigners. Debt owed to local lenders in local currency is mostly not in a free feed.',
+    match: [/debt due/i, /due within a year/i, /^Of which /, /debt service/i, /maturity profile/i, /^Government bonds/],
+  },
+  {
+    id: 'debt_securities',
+    term: 'Government debt securities',
+    group: 'budget',
+    what: 'Bonds and bills the government has sold to investors and not yet repaid. "International markets" means bonds sold abroad, usually in dollars or euros; "all markets" adds bonds sold at home.',
+    why: 'Foreign-currency bonds are riskier for the borrower: if the local currency falls, the debt gets bigger in local money.',
+    limits: 'From the Bank for International Settlements (BIS), quarterly.',
+    match: [/debt securities/i],
+  },
+  {
+    id: 'credit_rating',
+    term: 'Credit rating',
+    group: 'budget',
+    what: 'A grade (such as AAA, BBB or B) that agencies like S&P, Moody\'s and Fitch give to a borrower for how likely it is to repay.',
+    why: 'Many investors may only buy bonds rated BBB- or higher ("investment grade"), so a downgrade below that line can force selling and raise borrowing costs.',
+    limits: 'Ratings are licensed data. The app shows them as Missing rather than guessing, because no free feed provides them.',
+    match: [/Credit rating/i],
+  },
+
+  // ---- External ------------------------------------------------------------------------------
+  {
+    id: 'current_account',
+    term: 'Current account',
+    group: 'external',
+    what: 'The country\'s balance with the rest of the world: what it earns from exports, income from abroad and money sent home by workers, minus what it pays for imports and to foreign investors.',
+    why: 'A deficit has to be paid for by borrowing from or selling assets to foreigners. A large deficit makes a country depend on foreign money continuing to arrive, which can stop suddenly.',
+    read: 'Positive (surplus): the country earns more than it spends abroad. Negative (deficit): it relies on money from abroad. A deficit above about 4 to 5% of GDP is often seen as a vulnerability.',
+    match: [/^Current account/],
+  },
+  {
+    id: 'fx_reserves',
+    term: 'FX reserves (foreign exchange reserves)',
+    group: 'external',
+    what: 'Foreign currency and gold held by the central bank, mostly in dollars.',
+    why: 'Reserves are the country\'s savings for a rainy day. They pay for imports and debt if foreign money stops arriving, and let the central bank steady the currency.',
+    read: '"Months of imports" says how long reserves could pay for imports with no other income. Three months is the traditional minimum; more is safer.',
+    limits: 'Months of imports ignores debt falling due and money that could leave the country; the reserve adequacy panel looks at those too where data allow.',
+    match: [/^FX reserves/, /^Reserves \//, /reserve adequacy/i, /\bARA\b/],
+  },
+  {
+    id: 'external_debt',
+    term: 'External debt',
+    group: 'external',
+    what: 'Everything the country (government, banks and companies together) owes to lenders abroad.',
+    why: 'Most external debt is in foreign currency, so a fall in the local currency makes it heavier, and it has to be repaid with export earnings or reserves.',
+    read: 'Shown as a share of GNI (gross national income, which is GDP plus net income from abroad). Higher is a heavier burden.',
+    match: [/^External debt$/, /^External debt\b(?! due)/],
+  },
+  {
+    id: 'exchange_rate',
+    term: 'Exchange rate (spot FX)',
+    group: 'external',
+    what: 'How many units of the local currency one US dollar buys today.',
+    why: 'A weaker currency makes imports (fuel, food, machines) dearer, which pushes up inflation, and makes foreign-currency debt heavier. It also makes exports cheaper for foreign buyers.',
+    read: 'In the app it is local currency per US dollar, so a higher number means the local currency is weaker.',
+    match: [/^Spot FX/, /per USD/],
+  },
+  {
+    id: 'real_exchange_rate',
+    term: 'Real exchange rate (real FX)',
+    group: 'external',
+    what: 'The exchange rate adjusted for differences in inflation between the country and its trading partners, averaged across those partners. It shows whether the country\'s goods are getting dearer or cheaper for foreigners.',
+    why: 'A currency that is strong in real terms makes exports harder to sell and imports cheaper, which can widen the current account deficit. A weak one does the opposite.',
+    read: 'The app compares it with its own long-run average: well above average means strong (possibly overvalued), well below means weak (possibly undervalued).',
+    limits: 'From the BIS. Being far from average is not proof that a currency will move back; the related signal is labelled with its test result.',
+    match: [/real exchange rate/i, /real FX/i, /\bREER\b/, /\bBEER\b/],
+  },
+  {
+    id: 'capital_flows',
+    term: 'Capital flows',
+    group: 'external',
+    what: 'Money moving into or out of the country to buy or sell shares, bonds, companies and loans.',
+    why: 'Inflows can fund growth; sudden outflows can force the currency down and rates up. "Hot money" in bonds and shares can leave faster than direct investment in factories.',
+    match: [/capital flow/i, /portfolio flow/i],
+  },
+  {
+    id: 'carry',
+    term: 'Carry (FX carry)',
+    group: 'markets',
+    what: 'Borrowing in a currency with low interest rates and lending in one with high interest rates, to earn the difference.',
+    why: 'Carry trades bring money into high-rate emerging markets, but they can unwind fast when fear rises, pushing those currencies down together.',
+    limits: 'The app tests a carry signal against its standard; its result (including that it does not survive the multiple-testing correction) is under Menu > Models & validation.',
+    match: [/carry/i],
+  },
+
+  // ---- Markets ------------------------------------------------------------------------------
+  {
+    id: 'spread',
+    term: 'Spread',
+    group: 'markets',
+    what: 'The extra interest a borrower pays over a safer benchmark. For a country\'s dollar bonds, it is the yield above US Treasury bonds of similar length.',
+    why: 'It is the price markets put on the risk of not being repaid. Spreads widen when investors worry and narrow when they relax.',
+    read: 'Higher means investors see more risk. Under about 200 basis points is typical of strong borrowers; above 1,000 usually means markets fear a default.',
+    match: [/USD bond spread/, /spread over/i, /bond spread/i],
+  },
+  {
+    id: 'cds',
+    term: 'CDS (credit default swap)',
+    group: 'markets',
+    what: 'A contract that works like insurance against a government not paying its debts. Its price, in basis points a year, is what it costs to insure 10,000 units of debt for five years.',
+    why: 'It is a direct market price of default risk.',
+    read: 'Higher means markets see more risk. The bands the app uses to describe market access: under 200 bps strong, 200 to 400 high-yield, 400 to 1,000 stressed, above 1,000 distressed.',
+    limits: 'CDS prices are licensed data. The app hides CDS unless you load your own file, and never uses estimates.',
+    match: [/\bCDS\b/, /^Market access/, /^open, /, /^stressed:/, /^distressed:/],
+  },
+  {
+    id: 'market_access',
+    term: 'Market access',
+    group: 'markets',
+    what: 'Whether a government can sell new bonds to investors at a price it can bear.',
+    why: 'A government that loses market access must cut spending, use reserves, or turn to the IMF or other official lenders.',
+    match: [/market access/i],
+  },
+  {
+    id: 'execution_window',
+    term: 'Execution window',
+    group: 'markets',
+    what: 'The coming weeks in which a government could sell bonds, with the official dates (rate decisions, inflation releases) that might move the market.',
+    why: 'Issuers usually avoid selling bonds right before a big announcement, when prices can swing.',
+    match: [/^Execution window/, /^Official events/],
+  },
+  {
+    id: 'positioning',
+    term: 'Positioning (CFTC)',
+    group: 'markets',
+    what: 'How many bets on a currency rising versus falling are held by speculators on US futures exchanges, published weekly by the US Commodity Futures Trading Commission.',
+    why: 'When almost everyone is on the same side ("crowded"), a surprise can make many people rush out at once, causing a sharp move the other way.',
+    match: [/CFTC/i, /positioning/i, /crowd/i],
+  },
+  {
+    id: 'prediction_markets',
+    term: 'Prediction markets (Kalshi, Polymarket)',
+    group: 'markets',
+    what: 'Exchanges where people bet money on whether an event will happen, such as an election result or a rate decision. The price reads as the crowd\'s probability.',
+    why: 'They give a quick, market-based reading of how likely an event is seen to be, and how that changes day to day.',
+    limits: 'Crowds can be wrong, thin markets can be moved by a few bets, and the odds are not a forecast by the app.',
+    match: [/Kalshi/i, /Polymarket/i, /odds/i],
+  },
+  {
+    id: 'stress_index',
+    term: 'Financial stress indices (STLFSI, NFCI, GSCPI)',
+    group: 'markets',
+    what: 'Single numbers that combine many market prices to show how strained the financial system is: the St. Louis Fed Financial Stress Index (STLFSI), the Chicago Fed National Financial Conditions Index (NFCI), and the New York Fed Global Supply Chain Pressure Index (GSCPI).',
+    why: 'Stress in US markets tends to spill over into emerging markets as investors pull back from risk.',
+    read: 'Zero is about average. Above zero means more stress or tighter conditions than usual; below zero means calmer than usual.',
+    match: [/STLFSI/, /NFCI/, /GSCPI/, /stress ind/i, /financial conditions/i, /supply chain/i],
+  },
+  {
+    id: 'commodity_prices',
+    term: 'Commodity prices',
+    group: 'markets',
+    what: 'World prices of raw materials such as oil, gas, copper, wheat and gold, from the World Bank Pink Sheet.',
+    why: 'For a country that exports a commodity, a higher price means more export income and tax revenue; for one that imports it, a higher price raises inflation and the import bill.',
+    match: [/commodit/i, /Pink Sheet/i],
+  },
+
+  // ---- Politics, conflict, news ----------------------------------------------------------------
+  {
+    id: 'political_stability',
+    term: 'Political stability (WGI)',
+    group: 'risk',
+    what: 'The World Bank\'s Worldwide Governance Indicators score for how likely it is that the government is destabilised by unrest, violence or terrorism, ranked against all countries.',
+    why: 'Instability can disrupt policy, scare off investors and make debt harder to repay.',
+    read: 'A percentile: 80th means more stable than 80% of countries. Higher is more stable.',
+    limits: 'Built from surveys and expert opinions, published yearly with a lag of about a year, so it moves slowly.',
+    match: [/Political stability/i, /\bWGI\b/],
+  },
+  {
+    id: 'news_tone',
+    term: 'News tone (GDELT)',
+    group: 'risk',
+    what: 'The average mood of news articles about the country, scored by the GDELT project from the words used, across many news sites worldwide.',
+    why: 'A sharp turn negative can be an early sign of unrest, a crisis or a policy shock, before it shows up in official figures.',
+    read: 'Below zero means the coverage is more negative than positive. Most countries sit a little below zero, so look at changes over time rather than the level.',
+    limits: 'It measures words, not facts, and is noisy. Big stories in a few outlets can move it.',
+    match: [/News tone/i, /\bGDELT\b/, /^News$/],
+  },
+  {
+    id: 'conflict',
+    term: 'Armed conflict (UCDP)',
+    group: 'risk',
+    what: 'Counts of organised violence and deaths from the Uppsala Conflict Data Program (UCDP) at Uppsala University, which records conflicts worldwide from news and other sources.',
+    why: 'Conflict destroys output, drives people from their homes, strains budgets and scares off investment.',
+    limits: 'The app uses UCDP files you download, with the date they cover. "Candidate" data is preliminary and can change.',
+    match: [/UCDP/i, /conflict/i, /battle/i],
+  },
+  {
+    id: 'gpr',
+    term: 'Geopolitical risk index (GPR)',
+    group: 'risk',
+    what: 'An index by economists Dario Caldara and Matteo Iacoviello that counts how often major newspapers write about wars, terrorism and military tensions.',
+    why: 'Higher readings have tended to come with lower investment and more market stress.',
+    read: 'Higher means more press coverage of geopolitical threats than usual.',
+    match: [/\bGPR\b/, /geopolitical risk/i],
+  },
+  {
+    id: 'sanctions',
+    term: 'Sanctions',
+    group: 'risk',
+    what: 'Restrictions a government (such as the US, EU or UK) or the UN places on dealing with named countries, companies or people.',
+    why: 'Sanctions can cut a country off from markets, trade and payments, and dealing with a listed party can be illegal.',
+    limits: 'The app reads the official lists you download; it does not decide whether a particular deal is allowed.',
+    match: [/sanction/i],
+  },
+
+  // ---- Methods ----------------------------------------------------------------------------
+  {
+    id: 'missing',
+    term: 'Missing',
+    group: 'methods',
+    what: 'No live feed, official series or file of yours provided this figure, so the app shows nothing rather than a guess.',
+    why: 'A made-up or sample number can look just as convincing as a real one. Showing "Missing" with the reason keeps every figure on screen traceable to a real source.',
+    read: 'Hover or tap a Missing figure to see why it is missing and what would fill it.',
+  },
+  {
+    id: 'model_figure',
+    term: '"model" figure',
+    group: 'methods',
+    what: 'A number the app calculated from other live figures (for example the real policy rate, which is the policy rate minus inflation), rather than one read directly from a source.',
+    why: 'It tells you the figure is only as good as its inputs and the formula, which is named next to it.',
+  },
+  {
+    id: 'source_tag',
+    term: 'Source label',
+    group: 'methods',
+    what: 'The small line under each figure that names where it came from (IMF, World Bank, BIS, a central bank, your file) and, where known, the date.',
+    why: 'It lets you check any number against the original.',
+  },
+  {
+    id: 'real_time',
+    term: 'Real-time data and publication lags',
+    group: 'methods',
+    what: 'Using only the figures that had actually been published on a given past date. Official figures come out weeks or months after the period they describe, and are often revised later.',
+    why: 'Testing a signal with today\'s revised figures, or with figures that were not yet published at the time, makes it look better than it could really have been. The app applies the delay before a figure could be used.',
+    match: [/vintage/i, /ALFRED/],
+  },
+  {
+    id: 'backtest',
+    term: 'Backtest',
+    group: 'methods',
+    what: 'Checking how a rule or signal would have done in the past, using the data that was available at the time.',
+    why: 'It is the first test of whether a signal has any value. A signal that did not work in the past is unlikely to work in future.',
+    limits: 'Passing a backtest does not guarantee future results. Testing many ideas and keeping the best ones produces false winners, which is why the app pre-registers tests and corrects for multiple testing.',
+  },
+  {
+    id: 'preregistration',
+    term: 'Pre-registration',
+    group: 'methods',
+    what: 'Writing down a test\'s rules, data, and pass mark before running it, and recording a fingerprint (hash) of that plan so it cannot be changed afterwards without it showing.',
+    why: 'It stops the rules being adjusted after seeing the results until something "works".',
+  },
+  {
+    id: 'naive_benchmark',
+    term: 'Naive benchmark',
+    group: 'methods',
+    what: 'The simplest possible forecast to beat, such as "next year will be the same as this year".',
+    why: 'A model is only useful if it does better than this. Many sophisticated forecasts do not.',
+  },
+  {
+    id: 'p_value',
+    term: 'p-value',
+    group: 'methods',
+    what: 'The chance of seeing a result at least this good by pure luck if the signal actually had no value.',
+    why: 'A small p-value (the app\'s usual pass mark is 0.05, a 5% chance) suggests the result is not just luck.',
+    limits: 'If you test 20 ideas, one will usually pass at 0.05 by luck alone. That is why the app also applies the Holm correction.',
+  },
+  {
+    id: 'holm',
+    term: 'Holm correction (multiple testing)',
+    group: 'methods',
+    what: 'A standard way to raise the bar when many tests are run at once, so that lucky passes are weeded out. The smallest p-value must clear a stricter mark, the next a slightly less strict one, and so on.',
+    why: 'Without it, running many tests guarantees some false passes. The track record shows which passes survive it across every test on record.',
+  },
+  {
+    id: 'bootstrap',
+    term: 'Bootstrap',
+    group: 'methods',
+    what: 'Re-running a calculation thousands of times on random re-samples of the data to see how much the answer could vary by chance.',
+    why: 'It gives an honest range for a result when the usual textbook formulas do not apply.',
+  },
+  {
+    id: 'rmse',
+    term: 'RMSE and relative RMSE',
+    group: 'methods',
+    what: 'Root mean squared error: the typical size of a forecast\'s miss. Relative RMSE divides a model\'s RMSE by the naive benchmark\'s.',
+    why: 'It is how forecasts are scored.',
+    read: 'Relative RMSE below 1 means the model missed by less than the naive forecast; above 1 means it did worse.',
+  },
+  {
+    id: 'credit_gap',
+    term: 'Credit-to-GDP gap',
+    group: 'methods',
+    what: 'How far lending to households and companies, as a share of GDP, sits above or below its long-run trend. Published by the BIS.',
+    why: 'Credit growing much faster than the economy has often come before banking crises. Bank regulators use the gap to decide whether banks should hold extra capital.',
+    read: 'Above zero: credit is running ahead of its trend. International bank rules (Basel III) start to consider extra capital for banks above about 2 points and call for the full extra buffer at about 10 points. Below zero: credit is weak relative to trend.',
+    match: [/credit gap/i, /credit-to-GDP/i, /credit cycle/i],
+  },
+  {
+    id: 'z_score',
+    term: 'z-score (standard deviations from average)',
+    group: 'methods',
+    what: 'How unusual a value is compared with its own history, measured in standard deviations (the typical distance from the average).',
+    why: 'It puts very different figures on one scale, so a jump in a yield and a jump in news tone can be compared by how rare each is.',
+    read: 'Zero is average. Plus or minus 1 is common; beyond plus or minus 2 is unusual and happens only about 5% of the time.',
+    match: [/z-score/i, /standard deviation/i],
+  },
+  {
+    id: 'evidence_badges',
+    term: 'Test labels and evidence grades',
+    group: 'methods',
+    what: 'Labels on each model and signal saying how far it has been tested. Not validated: never tested against a pre-registered standard. Backtest passed or failed: the result of its one pre-registered test on past data. Too few cases to test: not enough history to tell. A test that passed also gets a grade. Validated: it still holds after the correction for testing many rules, or a long enough live record has confirmed it. Provisional pass: it passed on its own but not after that correction. Under review: since the test, its live calls are doing worse than chance would suggest. Withdrawn: its live calls have done clearly worse, so it is no longer relied on until a new version passes. Review due: its test last ran more than a year ago.',
+    why: 'They tell you how much weight a reading can bear. A recorded verdict is never changed after the fact. "Validated" is a research label with this defined meaning, not an independent or regulatory sign-off.',
+  },
+  {
+    id: 'council',
+    term: 'Council of agents',
+    group: 'methods',
+    what: 'A set of specialist AI agents, each covering one area (for example the central bank, the budget, politics), that read the live figures for a country and write findings. A synthesis agent then writes the answer, and may quote only figures the agents had.',
+    why: 'Splitting the work keeps each answer tied to named figures and sources, and makes it clear which agent said what.',
+    limits: 'Answers are written by an AI model and are labelled so. They are interpretation of the figures shown, not advice, and the app checks that every number they quote appears in the source figures.',
+  },
+];
+
+/** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */
+export const PANEL_INTROS: Array<{ title: RegExp; intro: string }> = [
+  { title: /^Growth and inflation/, intro: 'How fast the economy is growing, how fast prices are rising, and how many people are out of work. Together they show whether ordinary living standards are improving and whether the central bank is likely to act.' },
+  { title: /^Monetary policy/, intro: 'What the central bank is doing with interest rates, how that compares with inflation, and when it next decides. A rate well above inflation holds the economy back to cool prices; a rate below inflation gives it a push.' },
+  { title: /^Fiscal and debt/, intro: 'The government\'s budget and how much it owes. A deficit adds to debt; interest payments take money away from other spending. The question is whether the debt can keep being paid without a crisis.' },
+  { title: /^External position/, intro: 'How the country pays its way with the rest of the world: whether it earns more abroad than it spends, how much foreign currency the central bank holds for emergencies, and how much the country owes abroad.' },
+  { title: /^External sustainability/, intro: 'Whether the country can keep paying what it owes to the rest of the world: what it earns abroad, its savings in foreign currency, and its debts to foreigners.' },
+  { title: /^Market access/, intro: 'Whether the government can borrow from investors at a price it can bear, judged from what markets charge it now.' },
+  { title: /^Financing need/, intro: 'How much debt owed to foreigners falls due soon and must be repaid or borrowed again. Large amounts falling due when markets are nervous are a classic route into a debt crisis.' },
+  { title: /^Execution window/, intro: 'Official dates in the next 60 days that could move markets, such as rate decisions and inflation releases. Governments selling bonds usually avoid the days around them.' },
+  { title: /^Peers by 10Y yield/, intro: 'What similar governments pay to borrow for ten years. A country paying much more than its peers is seen by markets as riskier, or has higher inflation.' },
+  { title: /^Debt path/, intro: 'Where government debt stands, what drives it up or down, and the budget balance that would hold it steady at today\'s interest rates and growth.' },
+  { title: /^Projection to/, intro: 'A five-year "what if" for government debt: first with today\'s figures held still, then with standard shocks. It shows how fragile the path is, not what will happen.' },
+  { title: /^IMF \(free/, intro: 'Figures from the International Monetary Fund\'s World Economic Outlook and Fiscal Monitor, published about twice a year. Recent years may be IMF estimates or forecasts.' },
+  { title: /^World Bank \(free/, intro: 'Figures from the World Bank\'s development indicators and debt statistics, usually yearly and published with a lag.' },
+  { title: /^Markets$/, intro: 'Prices set in financial markets every day: what the government pays to borrow, the central bank rate and the exchange rate.' },
+  { title: /^News$/, intro: 'A reading of the mood of worldwide news coverage about the country.' },
+  { title: /^Conflict/, intro: 'Recorded organised violence and deaths, from the files you have downloaded from the Uppsala Conflict Data Program.' },
+];
+
+const byLabel = GLOSSARY.filter((e) => e.match?.length);
+
+/** The glossary entry that explains a figure label, or undefined when none does. */
+export function figureHelp(label: string): GlossaryEntry | undefined {
+  return byLabel.find((e) => e.match!.some((m) => m.test(label)));
+}
+
+/** The plain-words introduction for a panel title, or undefined. */
+export function panelIntro(title: string): string | undefined {
+  return PANEL_INTROS.find((p) => p.title.test(title))?.intro;
+}
+
+/** One entry by id (throws on a typo, so a missing definition is caught by the tests). */
+export function glossaryEntry(id: string): GlossaryEntry {
+  const e = GLOSSARY.find((g) => g.id === id);
+  if (!e) throw new Error(`No glossary entry "${id}"`);
+  return e;
+}
+
+/** An entry as one short paragraph: what it is, then how to read it. */
+export function entryText(e: GlossaryEntry): string {
+  return [e.what, e.read].filter(Boolean).join(' ');
+}
+
+/** docs/GLOSSARY.md, written from GLOSSARY. */
+export function glossaryMarkdown(): string {
+  const out: string[] = [
+    '# Glossary',
+    '',
+    'Plain-language explanations of the terms and figures EconQuest shows. Each entry says what the thing is, why it matters, and how to read it. The same text appears in the app under "What is this?" next to each figure, and in Menu > User manual > Glossary.',
+    '',
+    'Nothing here is a figure for any country. Where the app has no live or official value it shows "Missing" with the reason, never a number from this page.',
+    '',
+    '_Written from src/data/glossary.ts by `npm run docs:glossary`. Edit that file, not this one._',
+    '',
+  ];
+  for (const [g, title] of Object.entries(GLOSSARY_GROUPS) as Array<[GlossaryGroup, string]>) {
+    const entries = GLOSSARY.filter((e) => e.group === g);
+    if (!entries.length) continue;
+    out.push(`## ${title}`, '');
+    for (const e of entries) {
+      out.push(`### ${e.term}`, '', e.what, '', `**Why it matters.** ${e.why}`, '');
+      if (e.read) out.push(`**How to read it.** ${e.read}`, '');
+      if (e.limits) out.push(`**Limits.** ${e.limits}`, '');
+    }
+  }
+  return out.join('\n');
+}
