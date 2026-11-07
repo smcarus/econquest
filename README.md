@@ -28,6 +28,9 @@ Settings.
 
 ## Start it
 
+**New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install Docker
+Desktop, download one file, run the ready-made app. No building and no programming needed.
+
 You need Node.js 20 or later. Everything else is optional.
 
 ```bash

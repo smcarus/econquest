@@ -1,0 +1,66 @@
+# EconQuest from the ready-made image: nothing to build. Guide: docs/INSTALL.md.
+#
+#   docker compose up -d          # download the image (first time) and start
+#   open http://localhost:3737
+#   docker compose pull && docker compose up -d     # update to the newest release
+#   docker compose down           # stop (your saved data stays)
+#
+# Settings are optional: copy env.example to .env next to this file and edit.
+# To build from the code instead, use the docker-compose.yml at the top of the repository.
+
+name: econquest
+
+services:
+  econquest:
+    image: ${ECONQUEST_IMAGE:-ghcr.io/e-conquest/econquest:latest}
+    restart: unless-stopped
+    # This computer only. Other machines on your network cannot reach the app or the keys saved in
+    # Menu > Settings. To share it on a home network, follow docs/HOME_SERVER.md instead.
+    ports:
+      - "127.0.0.1:${PORT:-3737}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      PORT: "3000"
+      DATA_DIR: /app/data
+      # The port above is published on this computer only, so Settings may accept key changes.
+      SETTINGS_ALLOW_REMOTE: "true"
+      DEFAULT_AI_PROVIDER: ${DEFAULT_AI_PROVIDER:-ollama}
+      # Default: the Ollama app on this computer (best on a Mac, where it can use the graphics chip).
+      # With the bundled Ollama below, set OLLAMA_BASE_URL=http://ollama:11434 in .env.
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_QUICK_MODEL: ${OLLAMA_QUICK_MODEL:-qwen2.5:7b}
+      # Referee steps: a 32B model, never an 8B one.
+      OLLAMA_DEEP_MODEL: ${OLLAMA_DEEP_MODEL:-qwen2.5:32b}
+      TZ: ${TZ:-UTC}
+    # Everything the app saves (settings, keys, downloaded data, reports) lives in this Docker
+    # volume and survives updates and restarts. Menu > Settings > Backup saves a copy as one file.
+    volumes:
+      - econquest_data:/app/data
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks: [econquest]
+
+  # Optional: Ollama inside Docker, for a Linux machine or a PC without the Ollama app.
+  # Start with: docker compose --profile ollama up -d
+  # then:       docker compose exec ollama ollama pull qwen2.5:7b
+  #             docker compose exec ollama ollama pull qwen2.5:32b
+  ollama:
+    image: ${OLLAMA_IMAGE:-ollama/ollama:latest}
+    profiles: [ollama]
+    restart: unless-stopped
+    environment:
+      OLLAMA_KEEP_ALIVE: 30m
+    volumes:
+      - ollama_models:/root/.ollama
+    networks: [econquest]
+
+volumes:
+  econquest_data:
+    name: econquest_quickstart_data
+  ollama_models:
+    name: econquest_quickstart_ollama
+
+networks:
+  econquest: {}
