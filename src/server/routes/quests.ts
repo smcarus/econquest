@@ -12,6 +12,12 @@
  *   GET  /api/quests/class/:code   the class table for a class code (this server only)
  *   GET  /api/quests/:id/practice  a past window of the Quest's own length, answer hidden
  *   POST /api/quests/practice/:token  score a practice answer at once (kept in memory only)
+ *
+ * Results (step 5), kept in quests/resolutions.jsonl and written only by `npm run quests:resolve`:
+ *   GET  /api/quests/results       every recorded line, whether the chain holds, each Quest's state
+ *   GET  /api/quests/due           approved forecast Quests past their settle date with no result
+ *                                  yet, each with the result the feeds give now (?drafts=1 also
+ *                                  previews drafts, which are never recorded)
  */
 import type express from 'express';
 import crypto from 'crypto';
@@ -25,7 +31,11 @@ import { questSeriesDef } from '../../utils/questSeries';
 import { loadQuests } from '../../utils/questStore';
 import { classTable, countedEntries, entryProblems, practiceWindow, scoreEntry, scorePractice, type QuestEntry, type QuestEntryInput } from '../../utils/questEntries';
 import { appendEntry, entryFilePath, loadEntries } from '../../utils/questEntryStore';
-import type { Point } from '../../utils/questScoring';
+import { scoreLevel, scoreProbability, type Point } from '../../utils/questScoring';
+import type { OfficialHistoryFile } from '../../utils/officialHistory';
+import { resolveForecast, resultState, type ResolutionLine, type SeriesData } from '../../utils/questResolve';
+import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore';
+import type { EntryScore } from '../../utils/questEntries';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -40,6 +50,27 @@ export interface QuestDeps {
   signedIn?: (res: express.Response) => Account | null;
   /** Random number in [0, 1) for practice windows; Math.random by default. */
   random?: () => number;
+  /** The saved World Bank / IMF history for a country, with the revisions between downloads. */
+  loadOfficialHistory?: (iso3: string) => OfficialHistoryFile | null;
+  /** Where results are kept; defaults to quests/resolutions.jsonl. */
+  resolutionsFile?: string;
+  /** Today's date (YYYY-MM-DD); the clock by default. For tests. */
+  today?: () => string;
+}
+
+/** An entry's score from a recorded result (the record wins over today's feeds). */
+export function scoreFromRecord(entry: QuestEntry, lines: ResolutionLine[]): EntryScore | null {
+  const st = resultState(lines, entry.questId, entry.questVersion);
+  if (st.state === 'none') return null;
+  if (st.state === 'withdrawn') return { status: 'unresolvable', note: `Withdrawn: ${st.line.reason || 'no reason given'}` };
+  if (st.state === 'unresolvable') return { status: 'unresolvable', note: st.decision?.decision === 'unresolvable' ? `Unresolvable after a dispute: ${st.decision.reason || ''}`.trim() : st.line.reason || 'Unresolvable' };
+  const o = st.line.outcome;
+  const readings = (st.line.readings || []).map((r) => ({ date: r.date, value: r.value }));
+  const via = st.line.via || 'rule';
+  const a = entry.answer as { probability?: number; level?: number };
+  if (!o) return null;
+  if (o.answer === 'level') return typeof a.level === 'number' ? { status: 'settled', via, readings, ...scoreLevel(a.level, o.value, o.noChange) } : null;
+  return typeof a.probability === 'number' ? { status: 'settled', via, readings, ...scoreProbability(a.probability, o.happened, o.baseRate) } : null;
 }
 
 const PRACTICE_TTL_MS = 60 * 60 * 1000;
@@ -47,6 +78,7 @@ const PRACTICE_MAX = 2000;
 
 /** World series (Brent, WTI) are in every country's set; read them from this one. */
 const WORLD_SET = 'USA';
+const FEED_DOWN = 'The feed did not answer';
 
 function summary(q: Quest, approved: boolean, today: string) {
   return {
@@ -72,10 +104,12 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
   const enabled = deps.enabled ?? (() => questsEnabled(process.env.QUESTS_ENABLED));
   const dir = deps.dir ?? QUESTS_DIR;
   const off = (res: express.Response) => res.json({ enabled: false, reason: QUESTS_OFF_REASON });
+  const todayIso = deps.today ?? (() => new Date().toISOString().slice(0, 10));
+  const resultsFile = deps.resolutionsFile ?? resolutionsPath(dir);
 
   app.get('/api/quests', (_req, res) => {
     if (!enabled()) return off(res);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const quests = loadQuests(dir).map((x) => summary(x.quest, x.approved, today));
     res.json({ enabled: true, quests });
   });
@@ -93,7 +127,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       if (!s || !s.points.length) return { reason: set.missing.find((m) => m.id === ref.series)?.reason || 'No published values' };
       return s.points.map((p) => ({ date: p.date, value: p.value }));
     } catch {
-      return { reason: 'The feed did not answer' };
+      return { reason: FEED_DOWN };
     }
   };
   const forecastById = (id: string) => {
@@ -102,6 +136,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
   };
   const scoreAll = async (entries: QuestEntry[], today: string) => {
     const quests = new Map(loadQuests(dir).filter((x) => x.quest.type === 'forecast').map((x) => [x.quest.id, x.quest as ForecastQuest]));
+    const recorded = loadResolutions(resultsFile).lines;
     const cache = new Map<string, Promise<Point[] | { reason: string }>>();
     const get = (ref: QuestSeriesRefLike) => {
       const k = `${ref.country}|${ref.series}`;
@@ -111,7 +146,9 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     return Promise.all(
       entries.map(async (entry) => {
         const quest = quests.get(entry.questId);
-        if (!quest) return { entry, title: entry.questId, score: { status: 'unresolvable' as const, note: 'The Quest is no longer on file' } };
+        if (!quest) return { entry, title: entry.questId, score: { status: 'unresolvable' as const, note: 'The Quest is no longer on file' } as EntryScore };
+        const fromRecord = scoreFromRecord(entry, recorded);
+        if (fromRecord) return { entry, title: quest.title, score: fromRecord, recorded: true };
         const pts = new Map<string, Point[] | { reason: string }>();
         for (const r of [quest.rule, ...(quest.fallback !== 'unresolvable' ? [quest.fallback.rule] : [])]) pts.set(`${r.ref.country}|${r.ref.series}`, await get(r.ref));
         const score = scoreEntry(entry, quest, (rule) => pts.get(`${rule.ref.country}|${rule.ref.series}`) ?? { reason: 'No series' }, today);
@@ -122,7 +159,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
 
   app.get('/api/quests/private', async (req, res) => {
     if (!enabled()) return off(res);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const { entries, badLines } = loadEntries(entryFile);
     const me = authorOf(res);
     const mine = entries.filter((x) => x.entry.author === me);
@@ -146,7 +183,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (!enabled()) return off(res);
     const code = String(req.params.code || '');
     if (!/^[A-Za-z0-9_-]{1,40}$/.test(code)) return res.status(400).json({ enabled: true, error: 'Class code: letters, digits, - or _, up to 40' });
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const all = loadEntries(entryFile).entries.map((x) => x.entry).filter((e) => e.group === code);
     const counted = [...new Set(all.map((e) => e.questId))].flatMap((qid) => {
       const q = forecastById(qid)?.quest;
@@ -154,6 +191,53 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     });
     const scored = await scoreAll(counted, today);
     res.json({ enabled: true, code, rows: classTable(scored), note: 'Private to this server. Skill is against the base rate (probabilities) or no change (numbers); positive is better.' });
+  });
+
+  /** What the resolver reads for one series: daily/weekly points, or the annual run with its revisions. */
+  const seriesData = async (ref: QuestSeriesRefLike): Promise<SeriesData> => {
+    if (questSeriesDef(ref.series)?.freq === 'annual') {
+      const file = deps.loadOfficialHistory?.(ref.country) ?? null;
+      if (!file) return { kind: 'missing', reason: 'Full World Bank / IMF history not downloaded yet' };
+      const run = file.series?.[ref.series];
+      if (!run?.points?.length) return { kind: 'missing', reason: file.failed?.[ref.series] || 'The source publishes no figures for this country' };
+      return { kind: 'annual', points: run.points.map((p) => ({ date: p.date, value: p.value })), revisions: file.revisions?.[ref.series], pulledAt: file.pulledAt };
+    }
+    const pts = await pointsFor(ref);
+    return 'reason' in pts ? { kind: 'missing', reason: pts.reason, ...(pts.reason === FEED_DOWN ? { retry: true } : {}) } : { kind: 'points', points: pts };
+  };
+
+  app.get('/api/quests/results', (_req, res) => {
+    if (!enabled()) return off(res);
+    const rec = loadResolutions(resultsFile);
+    const titles = new Map(loadQuests(dir).map((x) => [x.quest.id, x.quest.title]));
+    const keys = [...new Map(rec.lines.map((l) => [`${l.questId}@${l.questVersion}`, l])).values()];
+    res.json({
+      enabled: true,
+      file: 'quests/resolutions.jsonl',
+      chain: rec.brokenAt === -1 ? 'holds' : `broken at line ${rec.brokenAt + 1}`,
+      badLines: rec.badLines,
+      lines: rec.lines,
+      quests: keys.map((l) => ({ questId: l.questId, questVersion: l.questVersion, title: titles.get(l.questId) ?? l.questId, ...resultState(rec.lines, l.questId, l.questVersion) })),
+    });
+  });
+
+  app.get('/api/quests/due', async (req, res) => {
+    if (!enabled()) return off(res);
+    const today = todayIso();
+    const withDrafts = req.query.drafts === '1';
+    const lines = loadResolutions(resultsFile).lines;
+    const due = loadQuests(dir).filter((x) => x.quest.type === 'forecast' && (x.approved || withDrafts) && questSettlesOn(x.quest) <= today && resultState(lines, x.quest.id, x.quest.version).state === 'none');
+    const at = new Date().toISOString();
+    const out = await Promise.all(
+      due.map(async (x) => {
+        const q = x.quest as ForecastQuest;
+        const data = new Map<string, SeriesData>();
+        for (const ref of questSeriesRefs(q)) data.set(`${ref.country}|${ref.series}`, await seriesData(ref));
+        const draft = resolveForecast(q, x.hash, (ref) => data.get(`${ref.country}|${ref.series}`) ?? { kind: 'missing', reason: 'No series' }, at, 'resolver');
+        return { questId: q.id, title: q.title, approved: x.approved, settlesOn: questSettlesOn(q), result: draft, waiting: draft ? undefined : 'The value is not published yet; try again later' };
+      }),
+    );
+    res.json({ enabled: true, today, due: out });
   });
 
   const practice = new Map<string, { at: number; questId: string; op: 'higher' | 'lower'; start: Point; endDate: string; days: number; points: Point[] }>();
@@ -174,7 +258,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const found = forecastById(req.params.id);
     if (!found) return res.status(404).json({ enabled: true, error: 'No forecast Quest with that id' });
     const q = found.quest;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const pts = await pointsFor(q.rule.ref);
     if ('reason' in pts) return res.json({ enabled: true, error: pts.reason });
     const w = practiceWindow(q.rule, q.closesOn, pts, today, deps.random ?? Math.random);
@@ -199,7 +283,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (deps.refuseRemoteChange?.(req, res)) return;
     const found = forecastById(req.params.id);
     if (!found) return res.status(404).json({ enabled: true, error: 'Only forecast Quests take entries' });
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const body = (req.body || {}) as Partial<QuestEntryInput>;
     const input: Partial<QuestEntryInput> = {
       answer: body.answer,
@@ -225,7 +309,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
 
   app.get('/api/quests/:id', async (req, res) => {
     if (!enabled()) return off(res);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     const found = loadQuests(dir).find((x) => x.quest.id === req.params.id);
     if (!found) return res.status(404).json({ enabled: true, error: 'No Quest with that id' });
     const q = found.quest;
@@ -255,6 +339,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       rule: q.type === 'forecast' ? describeRule(q.rule) : undefined,
       fallback: q.type === 'forecast' ? (q.fallback === 'unresolvable' ? 'If the series has no value, the Quest is Unresolvable.' : `If the series has no value: ${describeRule(q.fallback.rule)}`) : undefined,
       figures,
+      result: resultState(loadResolutions(resultsFile).lines, q.id, q.version),
     });
   });
 }

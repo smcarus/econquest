@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Compass, X } from 'lucide-react';
 import type { Quest, QuestHorizon, QuestStatus, QuestType } from '../utils/quests';
+import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 
 type Summary = {
   id: string;
@@ -26,7 +27,7 @@ type Summary = {
 };
 type Figure = { country: string; series: string; label: string; value?: number; date?: string; unit?: string; source?: string; missing?: string };
 type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[] };
-type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[] };
+type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState };
 
 const TYPE_LABEL: Record<QuestType, string> = { forecast: 'Forecast', signal: 'Signal', replication: 'Replication', debate: 'Debate' };
 const STATUS_LABEL: Record<QuestStatus, string> = { draft: 'Draft', upcoming: 'Opens soon', open: 'Open', closed: 'Closed to entries', due: 'Result due' };
@@ -46,7 +47,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class'>('quests');
+  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results'>('quests');
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -100,6 +101,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
                   ['quests', 'Quests'],
                   ['mine', 'My entries'],
                   ['class', 'Class table'],
+                  ['results', 'Results'],
                 ] as const
               ).map(([k, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -110,6 +112,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
           )}
           {list && list.enabled && !openId && view === 'mine' && <MyEntries />}
           {list && list.enabled && !openId && view === 'class' && <ClassTable />}
+          {list && list.enabled && !openId && view === 'results' && <Results />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -226,6 +229,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
                       </ul>
                     </div>
                   )}
+                  {detail.result && detail.result.state !== 'none' && <ResultBox state={detail.result} />}
                   {detail.quest.type === 'forecast' && (
                     <>
                       <LogPrivately quest={detail.quest} />
@@ -455,6 +459,94 @@ function ClassTable() {
         </table>
       ))}
       {data && <p className="text-xs text-slate-500">{data.note}</p>}
+    </div>
+  );
+}
+
+const STATE_LABEL: Record<Exclude<QuestResultState['state'], 'none'>, string> = { settled: 'Settled', unresolvable: 'Unresolvable', withdrawn: 'Withdrawn' };
+
+/** One Quest's recorded result, with the decision on a dispute when there was one. */
+function ResultBox({ state }: { state: Exclude<QuestResultState, { state: 'none' }> }) {
+  const decision = 'decision' in state ? state.decision : undefined;
+  return (
+    <Box title={`Result: ${STATE_LABEL[state.state]}`}>
+      <p className="text-sm" data-quest-result={state.state}>
+        {describeOutcome(state.line)}
+      </p>
+      {decision && <p className="text-sm">{describeOutcome(decision)}</p>}
+      <p className="text-xs text-slate-500">
+        Recorded {state.line.at.slice(0, 10)} by {state.line.by}, line {state.line.seq} of quests/resolutions.jsonl. A recorded result is never changed; a dispute adds a decision below it.
+      </p>
+    </Box>
+  );
+}
+
+type ResultsReply = { chain: string; badLines: number; lines: ResolutionLine[]; quests: Array<{ questId: string; title: string } & QuestResultState> };
+type DueReply = { today: string; due: Array<{ questId: string; title: string; approved: boolean; settlesOn: string; result: ResolutionDraft | null; waiting?: string }> };
+
+/** The public record of results, and a preview of what the feeds give for Quests now due. */
+function Results() {
+  const [data, setData] = useState<ResultsReply | null>(null);
+  const [due, setDue] = useState<DueReply | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send('/api/quests/results').then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, []);
+  const check = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      setDue(await send('/api/quests/due?drafts=1'));
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="space-y-3" data-quest-results>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        When a Quest's date has passed, its answer is read from the feed exactly as its rule says and written to a public file, quests/resolutions.jsonl, one line per result. Each line carries a fingerprint (a SHA-256 hash) of the line before it, so if anyone changes or deletes an old line, the check below fails. A result is never edited: if someone disputes it, a maintainer adds a decision underneath, and both stay visible. Yearly figures such as government debt are read as the source first published them after the date, because sources often revise them later.
+      </p>
+      {err && <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>}
+      {data && (
+        <p className={`text-sm ${data.chain === 'holds' ? '' : 'text-rose-700 dark:text-rose-400'}`} data-quest-chain>
+          Check of the record: {data.chain === 'holds' ? `every line is intact (${data.lines.length} line${data.lines.length === 1 ? '' : 's'})` : `the record is ${data.chain}; results after that line cannot be trusted until it is restored`}
+          {data.badLines ? `; ${data.badLines} unreadable line(s)` : ''}.
+        </p>
+      )}
+      {data && data.quests.length === 0 && <p className="text-sm text-slate-500">No results recorded yet.</p>}
+      {data && data.quests.length > 0 && (
+        <ul className="space-y-2">
+          {data.quests.map((q) => (
+            <li key={`${q.questId}-${q.state}`} className="border-t border-slate-200 dark:border-slate-800 pt-2 text-sm">
+              <div className="font-medium">{q.title}</div>
+              {q.state !== 'none' && <div>{describeOutcome(q.line)}</div>}
+              {q.state !== 'none' && 'decision' in q && q.decision && <div>{describeOutcome(q.decision)}</div>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="space-y-2">
+        <button type="button" className="ui-btn" onClick={check} disabled={busy} data-quest-check-due>
+          {busy ? 'Reading the feeds…' : 'Preview what is due now'}
+        </button>
+        <p className="text-xs text-slate-500">
+          A preview only: it shows what the feeds give today for Quests past their date. Nothing is recorded until a maintainer runs npm run quests:resolve, and drafts are never recorded.
+        </p>
+        {due && due.due.length === 0 && <p className="text-sm text-slate-500">No Quest is past its date without a result.</p>}
+        {due && due.due.length > 0 && (
+          <ul className="space-y-1 text-sm">
+            {due.due.map((d) => (
+              <li key={d.questId}>
+                <span className="font-medium">{d.title}</span>
+                {d.approved ? '' : ' (draft)'}: {d.result ? describeOutcome(d.result) : d.waiting}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }

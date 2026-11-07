@@ -5,7 +5,7 @@
  * the last entry logged by the close date is the one that counts, and every earlier one is kept.
  *
  * Scored from the same feeds once the Quest's date has passed (daily and weekly series). Annual
- * series wait for the resolver, which reads the value as first published (a later step), because
+ * series wait for the resolver, which reads the value as first published (src/utils/questResolve.ts), because
  * today's download may already hold a revised figure. Scoring, not a signal. Browser-safe, pure.
  */
 import { questSettlesOn, type ForecastQuest } from './quests';
@@ -79,7 +79,7 @@ type Outcome = { happened: boolean; readings: Point[]; baseRate: number | null }
 
 function decide(rule: QuestRule, closesOn: string, points: Point[] | { reason: string }, today: string): Outcome {
   const def = questSeriesDef(rule.ref.series);
-  if (def?.freq === 'annual') return { resolver: 'An annual figure is scored by the resolver, from the value as first published, not from today\'s download.' };
+  if (def?.freq === 'annual') return { resolver: 'An annual figure is scored once its result is recorded, from the value as first published, not from today\'s download.' };
   const end: QuestObservation = rule.kind === 'direction' ? rule.to : rule.at;
   if (today < end.on) return { wait: `Scored after ${end.on}` };
   if ('reason' in points) return { reason: points.reason };
