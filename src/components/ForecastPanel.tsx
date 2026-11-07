@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { TrendingUp } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { ForecastOutcome, ForecastId } from '../utils/forecasts';
@@ -143,6 +144,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
           )}
         </h2>
         <p className="ui-label">Nowcast: the app's estimate of periods not published yet. Forecast: the next quarters, with 50/70/90% bands. App estimates, not validated advice.</p>
+        <ChartGuide id="forecast" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         <div className="flex flex-wrap gap-2" role="group" aria-label="Measure">

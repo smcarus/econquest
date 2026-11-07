@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { ValidationBadge } from './ValidationBadge';
 import { ChartNumbers } from './ChartNumbers';
 import { Activity } from 'lucide-react';
@@ -62,6 +63,7 @@ export const LocalProjectionsPanel: React.FC<{ iso3: string; countryName: string
           )}
         </h2>
         <p className="ui-label">How inflation has moved in the months after a one-point policy rate change, in this country's own history. Co-movement, not the effect of policy.</p>
+        <ChartGuide id="local_projections" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}

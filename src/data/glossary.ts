@@ -36,6 +36,8 @@ export interface GlossaryEntry {
   read?: string;
   /** What it does not tell you, or where the figure comes from and its limits. */
   limits?: string;
+  /** A main figure: its "What is this?" shows at the default help level, not only at Full help (src/utils/helpLevel.ts). */
+  key?: boolean;
   /** Figure labels in the Research tables that this entry explains (first match wins, in file order). */
   match?: RegExp[];
 }
@@ -52,6 +54,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'real_gdp_growth',
+    key: true,
     term: 'Real GDP growth',
     group: 'economy',
     what: 'How much more (or less) the economy produced this year than last year, after removing the effect of rising prices.',
@@ -62,6 +65,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'unemployment',
+    key: true,
     term: 'Unemployment rate',
     group: 'economy',
     what: 'The share of people who want a job and are looking for one but do not have one.',
@@ -93,6 +97,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   // ---- Prices and inflation ---------------------------------------------------------------
   {
     id: 'cpi_inflation',
+    key: true,
     term: 'CPI inflation',
     group: 'prices',
     what: 'How fast the prices people pay for a typical basket of goods and services (food, rent, fuel, transport and so on) are rising, compared with a year earlier.',
@@ -130,6 +135,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   // ---- Central banks and interest rates ----------------------------------------------------------
   {
     id: 'policy_rate',
+    key: true,
     term: 'Policy rate',
     group: 'policy',
     what: 'The interest rate the central bank sets. It is the anchor for what banks charge each other overnight, and through that for loans, mortgages and savings rates across the economy.',
@@ -139,6 +145,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'real_rate',
+    key: true,
     term: 'Real interest rate',
     group: 'policy',
     what: 'An interest rate minus inflation. It shows what borrowing really costs, or what saving really earns, once rising prices are taken into account.',
@@ -167,6 +174,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'yield',
+    key: true,
     term: 'Bond yield (10-year government yield)',
     group: 'markets',
     what: 'The yearly return an investor gets from lending to the government for ten years at today\'s market price. It is the market interest rate on government debt.',
@@ -212,6 +220,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   // ---- Government budget and debt -------------------------------------------------------------
   {
     id: 'debt_gdp',
+    key: true,
     term: 'Government debt to GDP',
     group: 'budget',
     what: 'Everything the government owes, divided by the size of the economy in a year.',
@@ -222,6 +231,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'primary_balance',
+    key: true,
     term: 'Primary balance',
     group: 'budget',
     what: 'The government\'s budget result before interest payments on its debt: revenue minus spending, leaving interest out.',
@@ -248,6 +258,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'net_interest',
+    key: true,
     term: 'Net interest paid',
     group: 'budget',
     what: 'How much of the economy\'s yearly output goes on interest on government debt, after interest the government earns. The app works it out as the primary balance minus the overall balance for the same year.',
@@ -268,6 +279,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'stabilising_balance',
+    key: true,
     term: 'Balance that keeps debt stable',
     group: 'budget',
     what: 'The primary balance (budget before interest) the government would need each year to keep debt from rising as a share of GDP, given today\'s interest rate, growth and debt level.',
@@ -278,6 +290,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'dsa',
+    key: true,
     term: 'Debt sustainability and stress tests',
     group: 'budget',
     what: 'A check of whether the government can keep paying its debts without a crisis. The app projects debt five years ahead with today\'s figures held still, then again with standard shocks: lower growth, higher interest rates, a weaker budget, and all three together.',
@@ -297,6 +310,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'debt_due',
+    key: true,
     term: 'Debt falling due',
     group: 'budget',
     what: 'Loans and bonds that must be repaid within a period, usually the next 12 months, by the government or the whole country.',
@@ -327,6 +341,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   // ---- External ------------------------------------------------------------------------------
   {
     id: 'current_account',
+    key: true,
     term: 'Current account',
     group: 'external',
     what: 'The country\'s balance with the rest of the world: what it earns from exports, income from abroad and money sent home by workers, minus what it pays for imports and to foreign investors.',
@@ -336,6 +351,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'fx_reserves',
+    key: true,
     term: 'FX reserves (foreign exchange reserves)',
     group: 'external',
     what: 'Foreign currency and gold held by the central bank, mostly in dollars.',
@@ -355,6 +371,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'exchange_rate',
+    key: true,
     term: 'Exchange rate (spot FX)',
     group: 'external',
     what: 'How many units of the local currency one US dollar buys today.',
@@ -393,6 +410,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   // ---- Markets ------------------------------------------------------------------------------
   {
     id: 'spread',
+    key: true,
     term: 'Spread',
     group: 'markets',
     what: 'The extra interest a borrower pays over a safer benchmark. For a country\'s dollar bonds, it is the yield above US Treasury bonds of similar length.',
@@ -402,6 +420,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'cds',
+    key: true,
     term: 'CDS (credit default swap)',
     group: 'markets',
     what: 'A contract that works like insurance against a government not paying its debts. Its price, in basis points a year, is what it costs to insure 10,000 units of debt for five years.',
@@ -464,6 +483,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   // ---- Politics, conflict, news ----------------------------------------------------------------
   {
     id: 'political_stability',
+    key: true,
     term: 'Political stability (WGI)',
     group: 'risk',
     what: 'The World Bank\'s Worldwide Governance Indicators score for how likely it is that the government is destabilised by unrest, violence or terrorism, ranked against all countries.',
@@ -474,6 +494,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'news_tone',
+    key: true,
     term: 'News tone (GDELT)',
     group: 'risk',
     what: 'The average mood of news articles about the country, scored by the GDELT project from the words used, across many news sites worldwide.',
@@ -484,6 +505,7 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'conflict',
+    key: true,
     term: 'Armed conflict (UCDP)',
     group: 'risk',
     what: 'Counts of organised violence and deaths from the Uppsala Conflict Data Program (UCDP) at Uppsala University, which records conflicts worldwide from news and other sources.',

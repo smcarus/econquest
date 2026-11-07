@@ -12,6 +12,18 @@ means). Each panel opens with a sentence or two on what it tells you. The full l
 Menu > User manual > *Glossary*, and *Explain* on any figure asks the council what it means for that
 country.
 
+**How much is explained.** The help button at the top of the page (next to the light and dark
+switch) sets the level, and each press moves to the next:
+
+- *Key help* (the default): a guide on every chart (how to read it, and what it means in real life),
+  a short introduction on each panel, a "What it means" line under each brief observation, and
+  *What is this?* on the main figures, about half of them.
+- *Full help*: everything in Key help, plus *What is this?* on every figure and term.
+- *Help off*: figures, sources and observations only; the reason a figure is missing stays as hover
+  text. Explain answers are then written for a reader who knows the terms.
+
+The level is kept in this browser.
+
 **Research, not validated advice.** The app is a research workspace. No model in it has been
 independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &
 validation), and nothing in it is a recommendation to buy or sell. Every export ends with that line.

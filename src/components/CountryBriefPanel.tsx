@@ -8,6 +8,9 @@ import { officialBrief } from '../utils/officialNote';
 import { explainInChat } from '../utils/explainHandoff';
 import type { BriefGroup } from '../utils/countryNotes';
 import { figureHelp, panelIntro, type GlossaryEntry } from '../data/glossary';
+import { splitMeaning } from '../utils/countryNotes';
+import { useHelpLevel } from './HelpLevel';
+import { showFigureHelp, showGuides, showMissingHelp } from '../utils/helpLevel';
 
 export type BriefView = 'economist' | 'banker' | 'official';
 
@@ -79,7 +82,9 @@ export const CountryBriefPanel: React.FC<{
 };
 
 /** Headline, sample warning and observations, inside a brief panel. */
-export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
+export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => {
+  const level = useHelpLevel();
+  return (
   <div className="p-4 space-y-2">
     <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
     {brief.sampleWarning && (
@@ -88,13 +93,28 @@ export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
       </p>
     )}
     <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
-      {brief.judgements.map((j) => (
-        <li key={j}>{j}</li>
-      ))}
+      {brief.judgements.map((j) => {
+        const { fact, meaning } = splitMeaning(j);
+        return (
+          <li key={j}>
+            {fact}
+            {meaning && showGuides(level) && (
+              <span className="block text-slate-600 dark:text-slate-400" data-meaning="true">
+                <span className="font-medium">What it means: </span>
+                {meaning}
+              </span>
+            )}
+          </li>
+        );
+      })}
     </ul>
-    <p className="ui-label">These observations are simple rules applied to the live figures below, not a forecast and not advice. Missing figures are left out of them. Under each figure, "What is this?" explains it in plain words, and "Why missing?" says why a figure is absent and what would fill it.</p>
+    <p className="ui-label">
+      These observations are simple rules applied to the live figures below, not a forecast and not advice. Missing figures are left out of them.
+      {showGuides(level) ? ' "What is this?" explains a figure in plain words, and "Why missing?" says why a figure is absent and what would fill it. The help button at the top sets how much is explained.' : ' Hover a missing figure for the reason.'}
+    </p>
   </div>
-);
+  );
+};
 
 type BriefRow = BriefGroup['rows'][number];
 
@@ -152,7 +172,13 @@ export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => (
  * The figure tables of a brief, each row with its source under the label. With a country, each
  * figure and each panel gets an Explain link (shown on hover on a wide screen) into Council chat.
  */
-export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => (
+export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => {
+  const level = useHelpLevel();
+  const help = (label: string) => {
+    const e = figureHelp(label);
+    return e && showFigureHelp(e, level) ? <FigureHelp entry={e} /> : null;
+  };
+  return (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {brief.groups.map((g) => (
       <section key={g.title} className="ui-panel group">
@@ -167,7 +193,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
             </button>
           )}
         </header>
-        {panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{panelIntro(g.title)}</p>}
+        {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{panelIntro(g.title)}</p>}
         <table className="w-full text-sm">
           <caption className="sr-only">{g.title}</caption>
           <tbody>
@@ -179,8 +205,8 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                     <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
                     <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
-                    {r.missing && <MissingHelp help={r.help} />}
-                    {figureHelp(r.label) && <FigureHelp entry={figureHelp(r.label)!} />}
+                    {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
+                    {help(r.label)}
                   </td>
                 </tr>
               ) : (
@@ -194,11 +220,11 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                   >
                     {r.source}
                   </span>
-                  {figureHelp(r.label) && <FigureHelp entry={figureHelp(r.label)!} />}
+                  {help(r.label)}
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
                   {r.value}
-                  {r.missing && <MissingHelp help={r.help} />}
+                  {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
                   {country && !r.missing && (
                     <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title="Ask the council what this figure means and why it is where it is" data-explain-row={r.label}>
                       Explain
@@ -214,3 +240,4 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
     ))}
   </div>
 );
+};
