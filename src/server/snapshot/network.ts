@@ -16,6 +16,7 @@ import { fetchGdeltQuarterly, GDELT_REFRESH_DAYS } from '../feeds/gdelt';
 import { fetchWithTimeout } from '../http';
 import { officialYieldFeedLabel } from '../../utils/officialYields.ts';
 import { polymarketMoves } from '../../utils/oddsMoves.ts';
+import { IMF_EXTRA } from '../../utils/imfFiscal';
 
 function getLatestImfValue(series: Record<string, number> | undefined, targetYears: string[]): number | undefined {
   if (!series || typeof series !== 'object') return undefined;
@@ -108,7 +109,7 @@ export async function fetchLiveOpenDataSnapshotNetwork(
     (async () => {
       // Primary balance is the Fiscal Monitor series on DataMapper (GGXONLB_G01_GDP_PT); the WEO code
       // GGXONLB_NGDP comes back empty there. NGAP_NPGDP is asked for in case the IMF adds it.
-      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_G01_GDP_PT', 'NGAP_NPGDP'];
+      const imfMetrics = ['GGXWDG_NGDP', 'PCPIPCH', 'NGDP_RPCH', 'GGXONLB_G01_GDP_PT', 'NGAP_NPGDP', ...Object.keys(IMF_EXTRA)];
       const results = await Promise.allSettled(
         imfMetrics.map(async (metric) => {
           const res = await fetchWithTimeout(
@@ -156,6 +157,16 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           if (typeof gap === 'number') {
             baseline.imfIndicators.outputGapPct = Number(gap.toFixed(2)); markLive('imf.outputGapPct', 'IMF WEO');
             (baseline.imfIndicators.years ||= {})['imf.outputGapPct'] = latestImfYear(series, ['2025', '2026', '2024']) || '';
+          }
+        } else if (IMF_EXTRA[metric]) {
+          // Fiscal Monitor revenue, expenditure and overall balance; WEO unemployment and current
+          // account (codes checked against the DataMapper indicator list, 2026-11-07).
+          const { field, dp } = IMF_EXTRA[metric];
+          const val = getLatestImfValue(series, ['2025', '2026', '2024']);
+          if (typeof val === 'number') {
+            (baseline.imfIndicators as Record<string, unknown>)[field] = Number(val.toFixed(dp));
+            markLive(`imf.${field}`, `IMF ${IMF_EXTRA[metric].dataset}`);
+            (baseline.imfIndicators.years ||= {})[`imf.${field}`] = latestImfYear(series, ['2025', '2026', '2024']) || '';
           }
         } else if (metric === 'GGXONLB_G01_GDP_PT') {
           const pb = getLatestImfValue(series, ['2025', '2026', '2024']);

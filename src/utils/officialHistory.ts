@@ -37,6 +37,10 @@ export const OFFICIAL_FIGURES: OfficialFigure[] = [
   // IMF Fiscal Monitor series on DataMapper: the WEO codes GGXONLB_NGDP / GGXCNL_NGDP answer empty there.
   { id: 'primary_balance', source: 'imf', code: 'GGXONLB_G01_GDP_PT', label: 'Primary balance', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government primary net lending/borrowing.' },
   { id: 'overall_balance', source: 'imf', code: 'GGXCNL_G01_GDP_PT', label: 'Overall fiscal balance', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government net lending/borrowing. Primary minus overall balance = net interest paid.' },
+  { id: 'revenue', source: 'imf', code: 'GGR_G01_GDP_PT', label: 'Government revenue', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government revenue.' },
+  { id: 'expenditure', source: 'imf', code: 'G_X_G01_GDP_PT', label: 'Government expenditure', unit: '% of GDP', sourceName: 'IMF Fiscal Monitor', about: 'IMF Fiscal Monitor: general government total expenditure, interest included.' },
+  { id: 'unemployment', source: 'imf', code: 'LUR', label: 'Unemployment rate', unit: '%', about: 'IMF WEO: unemployment rate, national definitions (they differ between countries).' },
+  { id: 'current_account_usd', source: 'imf', code: 'BCA', label: 'Current account, US dollars', unit: 'USD bn', about: 'IMF WEO: current account balance in billions of US dollars.' },
   { id: 'gdp_usd', source: 'imf', code: 'NGDPD', label: 'GDP, US dollars', unit: 'USD bn', about: 'IMF WEO: GDP at current prices in US dollars. Used to turn dollar debt flows into % of GDP.' },
   { id: 'gdp_growth', source: 'imf', code: 'NGDP_RPCH', label: 'Real GDP growth', unit: '%' },
   { id: 'cpi_imf', source: 'imf', code: 'PCPIPCH', label: 'Inflation (IMF WEO)', unit: '%' },
