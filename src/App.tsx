@@ -91,6 +91,7 @@ import {
   Activity,
   ShieldQuestion,
   NotebookPen,
+  Compass,
   Info,
   ChevronDown,
   BookOpen,
@@ -126,6 +127,7 @@ const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes')
 const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
+const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
 const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
 const UsersDialog = lazyNamed(() => import('./components/UsersDialog'), 'UsersDialog');
@@ -257,6 +259,20 @@ export default function App() {
     const go = () => setIsIdeasOpen(true);
     window.addEventListener(OPEN_IDEAS_EVENT, go);
     return () => window.removeEventListener(OPEN_IDEAS_EVENT, go);
+  }, []);
+  // Menu > Quests: switched off (greyed out, "Not yet available") unless the server has
+  // QUESTS_ENABLED=on (docs/QUESTS.md). null = not known yet, shown as off.
+  const [isQuestsOpen, setIsQuestsOpen] = useState(false);
+  const [questsOn, setQuestsOn] = useState<boolean | null>(null);
+  useEffect(() => {
+    let live = true;
+    fetch('/api/quests')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => live && setQuestsOn(Boolean(j?.enabled)))
+      .catch(() => live && setQuestsOn(false));
+    return () => {
+      live = false;
+    };
   }, []);
   // Menu > About & data licences (undefined = closed; a string opens it on that source's licence).
   const [aboutFocus, setAboutFocus] = useState<string | null | undefined>(undefined);
@@ -1362,6 +1378,16 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'quests',
+                        icon: <Compass className={`w-3.5 h-3.5 ${questsOn ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />,
+                        label: 'Quests',
+                        hint: questsOn ? '' : 'Not yet available',
+                        title: questsOn ? 'Open questions anyone can answer, argue and check.' : 'Quests are switched off until they have been checked and documented.',
+                        disabled: !questsOn,
+                        onClick: () => setIsQuestsOpen(true),
+                        className: questsOn ? '' : 'opacity-60 cursor-not-allowed',
+                      },
+                      {
                         key: 'share',
                         icon: <ShieldCheck className={`w-3.5 h-3.5 ${shareMode ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
                         label: 'Sharing mode',
@@ -1405,6 +1431,8 @@ export default function App() {
                       type="button"
                       role="menuitem"
                       title={'title' in item ? (item as { title?: string }).title : undefined}
+                      disabled={'disabled' in item ? Boolean((item as { disabled?: boolean }).disabled) : undefined}
+                      aria-disabled={'disabled' in item ? Boolean((item as { disabled?: boolean }).disabled) : undefined}
                       onClick={() => {
                         setIsHeaderMenuOpen(false);
                         item.onClick();
@@ -1794,6 +1822,7 @@ export default function App() {
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>

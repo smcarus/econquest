@@ -237,3 +237,20 @@ export function collectionProblems(
   for (const name of Object.keys(manifest)) if (!approvedNames.has(name)) out.push(`quests/manifest.json lists ${name}, which is missing; an approved Quest is withdrawn by a resolution line, never deleted`);
   return out;
 }
+
+/** The series a Quest reads (rule and fallback), for its live figures. */
+export function questSeriesRefs(q: Quest): Array<{ country: string; series: string }> {
+  if (q.type !== 'forecast') return [];
+  const refs = [q.rule.ref, ...(q.fallback !== 'unresolvable' ? [q.fallback.rule.ref] : [])];
+  return refs.filter((r, i) => refs.findIndex((x) => x.country === r.country && x.series === r.series) === i);
+}
+
+/**
+ * Whether Quests are switched on. Off unless QUESTS_ENABLED is "on" (or "true", "1", "yes"):
+ * Quests stay out of sight until they have been verified and documented (docs/QUESTS.md).
+ */
+export function questsEnabled(value: string | undefined): boolean {
+  return ['on', 'true', '1', 'yes'].includes(String(value ?? '').trim().toLowerCase());
+}
+
+export const QUESTS_OFF_REASON = 'Quests are not yet available. They stay switched off until they have been checked and documented (docs/QUESTS.md).';

@@ -4,6 +4,7 @@ import { geminiModel } from './src/utils/geminiModel';
 import { registerAnalysisRoutes } from './src/server/routes/analysis';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
 import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
@@ -3066,6 +3067,7 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerQuestRoutes(app, { seriesFor });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');

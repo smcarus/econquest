@@ -40,6 +40,7 @@ COPY --chown=node:node src ./src
 COPY --chown=node:node scripts ./scripts
 COPY --chown=node:node docs ./docs
 COPY --chown=node:node datasets ./datasets
+COPY --chown=node:node quests ./quests
 
 # The one state folder. A volume mounted here keeps settings, saved data and logs across
 # upgrades; the image itself holds no state.
