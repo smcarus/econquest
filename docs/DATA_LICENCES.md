@@ -329,7 +329,7 @@ From the terms:
 
 ### UCDP (Uppsala Conflict Data Program) downloaded files
 
-- **Used for:** Armed conflicts, battle deaths, non-state and one-sided violence per country and year (files you put in data/local/ucdp/)
+- **Used for:** Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (files you put in data/local/ucdp/)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with a citation of the dataset publications.
 - **Terms read:** [UCDP downloads (licence and citations)](https://ucdp.uu.se/downloads/) (checked 2026-11-06)

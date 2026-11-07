@@ -142,6 +142,12 @@ export function parseCsv(text: string): string[][] {
 
 type Row = Record<string, string>;
 
+/** A UCDP event file (Candidate monthly, or the yearly GED in the same format): read as candidate events. */
+export function isCandidateHeader(header: string[]): boolean {
+  const h = new Set(header.map((x) => x.trim().toLowerCase()));
+  return ['id', 'type_of_violence', 'country_id', 'date_start', 'best'].every((k) => h.has(k));
+}
+
 /** Which UCDP dataset a header belongs to, from its columns. */
 export function detectDataset(header: string[]): UcdpDatasetId | null {
   const h = new Set(header.map((x) => x.trim().toLowerCase()));
@@ -197,9 +203,137 @@ export interface UcdpData {
   unknownCodes: Record<string, number>;
   /** Files in the folder that were not read, with why. */
   skipped: Array<{ file: string; reason: string }>;
+  /** UCDP Candidate Events (monthly, preliminary), kept apart from the yearly totals. */
+  candidate?: CandidateStore;
 }
 
 export const emptyUcdpData = (): UcdpData => ({ files: {}, countries: {}, unknownCodes: {}, skipped: [] });
+
+/* ------------------------------------------------------------------------------------------
+ * UCDP Candidate Events (gap analysis D8): the monthly, preliminary event files UCDP publishes
+ * between yearly releases (GEDEvent_v26_0_9.csv for September 2026, or the cumulative
+ * GEDEvent_v26_01_26_09.csv), same columns as the yearly GED. Columns read: id, type_of_violence
+ * (1 state-based, 2 non-state, 3 one-sided), country_id (Gleditsch-Ward), date_start, best, low,
+ * high, code_status ("Clear", or a "Check ..." flag for events kept with higher uncertainty). An
+ * event can sit in two monthly files and in the cumulative one: it is counted once, by id, the
+ * later file name winning. Each event counts in the month of date_start. Only months after the
+ * latest year of the yearly files are shown, labelled preliminary; they never enter the yearly
+ * totals, the tests or the scorecard. Codebook: ucdp.uu.se/downloads/candidateged/ (v1.5).
+ * ------------------------------------------------------------------------------------------ */
+
+export const UCDP_CANDIDATE_NAME = 'UCDP Candidate Events (monthly, preliminary)';
+export const UCDP_CANDIDATE_FILE = 'GEDEvent_v<yy>_0_<m>.csv';
+
+interface CandidateEvent {
+  iso3: string;
+  month: string;
+  type: 1 | 2 | 3;
+  best: number;
+  low: number;
+  high: number;
+  check: boolean;
+}
+
+export interface CandidateStore {
+  files: string[];
+  /** Release labels from the file names, e.g. "26.0.9". */
+  versions: string[];
+  events: Map<string, CandidateEvent>;
+}
+
+/** "GEDEvent_v26_0_9.csv" -> "26.0.9"; "GEDEvent_v26_01_26_09.csv" -> "26.01.26.09". */
+export function candidateVersion(file: string): string {
+  const m = file.match(/v(\d+(?:_\d+)+)/i);
+  return m ? m[1].replace(/_/g, '.') : '';
+}
+
+function addCandidate(data: UcdpData, file: string, header: string[], rows: string[][]): boolean {
+  const at = (k: string) => header.indexOf(k);
+  const [iId, iType, iCountry, iStart, iBest, iLow, iHigh, iStatus] = ['id', 'type_of_violence', 'country_id', 'date_start', 'best', 'low', 'high', 'code_status'].map(at);
+  const store: CandidateStore = (data.candidate ||= { files: [], versions: [], events: new Map() });
+  let read = 0;
+  for (const r of rows) {
+    const id = (r[iId] || '').trim();
+    const month = (r[iStart] || '').trim().slice(0, 7);
+    const type = Number((r[iType] || '').trim());
+    if (!id || !/^\d{4}-\d{2}$/.test(month) || ![1, 2, 3].includes(type)) continue;
+    const loc = gwCell(r[iCountry]);
+    for (const c of loc.unknown) data.unknownCodes[String(c)] = (data.unknownCodes[String(c)] || 0) + 1;
+    const iso3 = loc.iso3[0];
+    if (!iso3) continue;
+    read++;
+    store.events.set(id, {
+      iso3,
+      month,
+      type: type as 1 | 2 | 3,
+      best: num(r[iBest]),
+      low: num(r[iLow]),
+      high: num(r[iHigh]),
+      check: iStatus >= 0 && !/^clear$/i.test((r[iStatus] || '').trim()),
+    });
+  }
+  if (!read) {
+    data.skipped.push({ file, reason: 'no candidate events with a date and a known country' });
+    return false;
+  }
+  store.files.push(file);
+  const v = candidateVersion(file);
+  if (v && !store.versions.includes(v)) store.versions.push(v);
+  return true;
+}
+
+export interface CandidateMonth {
+  month: string;
+  stateBased: number;
+  nonState: number;
+  oneSided: number;
+  total: number;
+  low: number;
+  high: number;
+  events: number;
+  /** Events UCDP flags "Check ..." (kept with higher uncertainty). */
+  flagged: number;
+}
+
+export interface CandidateReading {
+  versions: string[];
+  /** Months after the yearly release, oldest first. Months with no event in the country are zeros up to the last month in the files. */
+  months: CandidateMonth[];
+  from: string;
+  to: string;
+}
+
+/** Candidate months for one country after `afterYear` (the yearly release's last year). */
+export function candidateReading(data: UcdpData | null | undefined, iso3: string, afterYear: number | null): CandidateReading | null {
+  const store = data?.candidate;
+  if (!store || !store.events.size) return null;
+  const iso = String(iso3 || '').toUpperCase();
+  const firstMonth = afterYear === null ? '' : `${afterYear + 1}-01`;
+  let last = '';
+  for (const e of store.events.values()) if (e.month >= firstMonth && e.month > last) last = e.month;
+  if (!last) return null;
+  let first = last;
+  for (const e of store.events.values()) if (e.month >= firstMonth && e.month < first) first = e.month;
+  const byMonth = new Map<string, CandidateMonth>();
+  const blank = (month: string): CandidateMonth => ({ month, stateBased: 0, nonState: 0, oneSided: 0, total: 0, low: 0, high: 0, events: 0, flagged: 0 });
+  for (let [y, m] = first.split('-').map(Number); `${y}-${String(m).padStart(2, '0')}` <= last; m === 12 ? ((y += 1), (m = 1)) : (m += 1)) {
+    const k = `${y}-${String(m).padStart(2, '0')}`;
+    byMonth.set(k, blank(k));
+  }
+  for (const e of store.events.values()) {
+    if (e.iso3 !== iso || !byMonth.has(e.month)) continue;
+    const b = byMonth.get(e.month)!;
+    if (e.type === 1) b.stateBased += e.best;
+    else if (e.type === 2) b.nonState += e.best;
+    else b.oneSided += e.best;
+    b.total += e.best;
+    b.low += e.low;
+    b.high += e.high;
+    b.events++;
+    if (e.check) b.flagged++;
+  }
+  return { versions: [...store.versions], months: [...byMonth.values()], from: first, to: last };
+}
 
 const num = (v: string | undefined) => {
   const n = Number(String(v ?? '').trim());
@@ -210,16 +344,17 @@ const num = (v: string | undefined) => {
  * Adds one CSV file to the totals. Returns the dataset it was, or null (with the reason in
  * data.skipped) when it is not a UCDP file the app reads.
  */
-export function addUcdpCsv(data: UcdpData, file: string, text: string): UcdpDatasetId | null {
+export function addUcdpCsv(data: UcdpData, file: string, text: string): UcdpDatasetId | 'candidate' | null {
   const rows = parseCsv(text);
   if (!rows.length) {
     data.skipped.push({ file, reason: 'empty file' });
     return null;
   }
   const header = rows[0].map((x) => x.trim().toLowerCase());
+  if (isCandidateHeader(header)) return addCandidate(data, file, header, rows.slice(1)) ? 'candidate' : null;
   const dataset = detectDataset(header);
   if (!dataset) {
-    data.skipped.push({ file, reason: 'not one of the UCDP files the app reads (armed conflict, battle deaths, non-state, one-sided, dyadic)' });
+    data.skipped.push({ file, reason: 'not one of the UCDP files the app reads (armed conflict, battle deaths, non-state, one-sided, dyadic, candidate events)' });
     return null;
   }
   const prior = data.files[dataset];
@@ -347,6 +482,8 @@ export interface UcdpReading {
   prior: UcdpYearFigures[];
   /** Datasets not on disk, so their figures are missing. */
   missingDatasets: UcdpDatasetId[];
+  /** Preliminary months after the yearly release, when Candidate event files are added. */
+  candidate?: CandidateReading;
 }
 
 function yearFigures(data: UcdpData, iso: string, year: number): UcdpYearFigures {
@@ -386,6 +523,10 @@ export function ucdpReading(data: UcdpData | null | undefined, iso3: string): Uc
     latest: yearFigures(data, iso, latest),
     prior: [1, 2, 3].map((k) => yearFigures(data, iso, latest - k)),
     missingDatasets: UCDP_DATASET_IDS.filter((d) => !data.files[d]),
+    ...(() => {
+      const c = candidateReading(data, iso, latest);
+      return c ? { candidate: c } : {};
+    })(),
   };
 }
 
@@ -494,6 +635,20 @@ export function ucdpFigures(r: UcdpReading): { figures: UcdpFigure[]; sentences:
       if (avg !== undefined && L.totalBest >= 100 && L.totalBest >= 2 * Math.max(avg, 1)) weight = Math.max(weight, 0.6);
     } else sentences.push(`UCDP counts no deaths from organised violence in ${y}.`);
   }
+  if (r.candidate) {
+    const c = r.candidate;
+    const sum = (k: keyof CandidateMonth) => c.months.reduce((a, m) => a + (m[k] as number), 0);
+    const total = sum('total');
+    const flagged = sum('flagged');
+    const last3 = c.months.slice(-3).map((m) => `${m.month}: ${n0(m.total)}`).join(', ');
+    figures.push({
+      label: `Deaths from organised violence since the yearly release, ${c.from} to ${c.to} (preliminary)`,
+      value: `${n0(total)} (range ${n0(sum('low'))} to ${n0(sum('high'))}; state-based ${n0(sum('stateBased'))}, non-state ${n0(sum('nonState'))}, one-sided ${n0(sum('oneSided'))}); last months ${last3}${flagged ? `; ${flagged} events flagged for checking` : ''}`,
+      source: `${UCDP_CANDIDATE_NAME} ${c.versions.join(', ')}; events not yet checked against the 25-death threshold for the year; revised in the next yearly release`,
+      tag: 'official',
+    });
+    sentences.push(`Preliminary UCDP Candidate events count ${n0(total)} deaths from organised violence from ${c.from} to ${c.to}.`);
+  }
   if (L.dyads) figures.push({ label: `Warring pairs of sides, ${y}`, value: String(L.dyads), source: `${versionText(r, 'dyadic')}; pairs in conflicts located in the country`, tag: 'official' });
   return { figures, sentences, weight, missing };
 }
@@ -510,6 +665,7 @@ export function ucdpInputLine(r: UcdpReading | null, missing: { short: string })
   if (L.oneSided) parts.push(`one-sided violence deaths ${deathsText(L.oneSided)}`);
   const prior = r.prior.filter((p) => p.totalBest !== undefined).map((p) => `${p.year}: ${n0(p.totalBest!)}`);
   if (L.totalBest !== undefined) parts.push(`total ${n0(L.totalBest)}${prior.length ? ` (${prior.join(', ')})` : ''}`);
+  if (r.candidate) parts.push(`preliminary ${r.candidate.from} to ${r.candidate.to}: ${n0(r.candidate.months.reduce((a, m) => a + m.total, 0))} deaths (UCDP Candidate ${r.candidate.versions.join(', ')})`);
   const missingNote = r.missingDatasets.length ? `; not added: ${r.missingDatasets.map((d) => UCDP_DATASETS[d].name).join(', ')}` : '';
   return `- UCDP conflict, ${L.year}: ${parts.join('; ') || 'no figures'} (UCDP ${[...new Set(Object.values(r.versions))].join('/')} downloaded files${missingNote})`;
 }

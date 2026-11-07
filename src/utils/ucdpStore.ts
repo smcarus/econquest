@@ -42,7 +42,7 @@ export function loadUcdpFolder(...dirs: string[]): UcdpData | null {
       data.skipped.push({ file: name, reason: `could not be read (${err?.message || err})` });
     }
   }
-  return Object.keys(data.files).length || data.skipped.length ? data : null;
+  return Object.keys(data.files).length || data.skipped.length || data.candidate ? data : null;
 }
 
 /** Stamp of the folders: file names, sizes and times. */

@@ -294,6 +294,13 @@ and again whenever a file changes; a newer release of a dataset wins over an old
   has no UCDP code (it counts under China).
 - UCDP counts organised violence only, where a conflict or actor reached 25 deaths in a calendar year.
   A conflict fought in more than one country counts in each of them.
+- **Months since the yearly release (preliminary).** UCDP also publishes Candidate Events each month
+  (`GEDEvent_v26_0_9.csv` for September 2026, or the cumulative `GEDEvent_v26_01_26_09.csv`, from
+  <https://ucdp.uu.se/downloads/>, CC BY 4.0). Put them in `data/local/ucdp/`; the app reads them by
+  their columns, counts each event once by its id (the later file wins), by the month it started, and
+  shows the months after the yearly files' last year as a separate preliminary line: deaths by type,
+  the low-high range and how many events UCDP flags "Check". They never enter the yearly totals, the
+  backtests or the scorecard. Not shipped: download the latest month yourself.
 - Countries are Gleditsch-Ward numbers in the files, mapped to ISO3 in `src/utils/ucdpConflict.ts`.
   `npm run check:data` shows the files read, the releases and any codes the app has no country for.
 
