@@ -3,66 +3,33 @@ import { MODEL_FIELD_MISSING } from '../utils/councilResult';
 import {
   AnnotatedChartSpec,
   CouncilAssessmentRun,
-  CustomSovereignOnboardingDraft,
+  AddedCountry,
   InstitutionalCatalystEvent,
   OpenDataSnapshot,
   WatchlistGroup,
   WatchlistItem,
 } from '../types/council';
 
-export const CUSTOM_SOVEREIGN_OVERRIDES: Record<string, Partial<OpenDataSnapshot>> = {};
-
-export function registerCustomSovereignInCatalog(
-  draft: CustomSovereignOnboardingDraft
-): WatchlistItem {
-  const cleanIso3 = draft.iso3.trim().toUpperCase().slice(0, 3);
+/**
+ * Puts a country the user added into the catalog. Names only: every figure is NaN (Missing) until a
+ * feed fills it, as for the built-in countries.
+ */
+export function registerCustomSovereignInCatalog(country: AddedCountry): WatchlistItem {
   const newItem: WatchlistItem = {
-    iso3: cleanIso3,
-    countryName: draft.countryName.trim(),
-    region: draft.region.trim(),
-    currencyCode: draft.currencyCode.trim().toUpperCase(),
-    focusTheme: draft.focusTheme.trim(),
-    yield10YPct: Number(draft.sovereign10YBondYieldPct.toFixed(2)),
-    cds5YBps: Math.round(draft.cds5YSpreadBps),
-    debtToGdpPct: Number(draft.debtToGdpPct.toFixed(1)),
-    fxReservesMonths: Number(draft.fxReservesMonthsImport.toFixed(1)),
+    iso3: country.iso3,
+    countryName: country.countryName,
+    region: country.region,
+    currencyCode: country.currencyCode,
+    focusTheme: '',
+    yield10YPct: Number.NaN,
+    cds5YBps: Number.NaN,
+    debtToGdpPct: Number.NaN,
+    fxReservesMonths: Number.NaN,
   };
-
-  const existingIdx = SOVEREIGN_CATALOG.findIndex((c) => c.iso3 === cleanIso3);
-  if (existingIdx >= 0) {
-    SOVEREIGN_CATALOG[existingIdx] = newItem;
-  } else {
-    SOVEREIGN_CATALOG.push(newItem);
-  }
-
-  CUSTOM_SOVEREIGN_OVERRIDES[cleanIso3] = {
-    imfIndicators: {
-      debtToGdpPct: Number(draft.debtToGdpPct.toFixed(1)),
-      debtToGdpForecast2027Pct: Number((draft.debtToGdpPct - draft.primaryFiscalBalancePct * 1.1).toFixed(1)),
-      primaryFiscalBalancePct: Number(draft.primaryFiscalBalancePct.toFixed(2)),
-      realGdpGrowthPct: Number(draft.realGdpGrowthPct.toFixed(2)),
-      cpiInflationPct: Number(draft.cpiInflationPct.toFixed(2)),
-      sourceUrl: `https://www.imf.org/external/datamapper/GGXWDG_NGDP@WEO/${cleanIso3}`,
-    },
-    worldBankIndicators: {
-      fxReservesMonthsImport: Number(draft.fxReservesMonthsImport.toFixed(1)),
-      externalDebtPctGni: Number(draft.externalDebtPctGni.toFixed(1)),
-      currentAccountPctGdp: Number(draft.currentAccountPctGdp.toFixed(2)),
-      politicalStabilityPercentile: Number(draft.politicalStabilityPercentile.toFixed(1)),
-      sourceUrl: `https://api.worldbank.org/v2/country/${cleanIso3}`,
-    },
-    monetaryAndMarket: {
-      policyRatePct: Number(draft.policyRatePct.toFixed(2)),
-      realPolicyRatePct: Number((draft.policyRatePct - draft.cpiInflationPct).toFixed(2)),
-      sovereign10YBondYieldPct: Number(draft.sovereign10YBondYieldPct.toFixed(2)),
-      cds5YSpreadBps: Math.round(draft.cds5YSpreadBps),
-      exchangeRatePerUsd: Number(draft.exchangeRatePerUsd.toFixed(2)),
-      fxYtdChangePct: -4.2,
-      chokepointExposureIndex: Math.round(draft.chokepointExposureIndex),
-    },
-  };
-
-  return newItem;
+  const existingIdx = SOVEREIGN_CATALOG.findIndex((c) => c.iso3 === country.iso3);
+  // A built-in country keeps its catalog entry; adding it again only puts it on the watchlist.
+  if (existingIdx < 0) SOVEREIGN_CATALOG.push(newItem);
+  return existingIdx >= 0 ? SOVEREIGN_CATALOG[existingIdx] : newItem;
 }
 
 // Countries the app knows. No built-in figures: every number is NaN (Missing) until a feed fills it.
@@ -287,13 +254,11 @@ export function noNewsMetrics(geopoliticalRisk: number): OpenDataSnapshot['gdelt
  */
 export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
   const item = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3) || SOVEREIGN_CATALOG[0];
-  // A country the user added by hand carries the figures they typed in (see registerCustomSovereignInCatalog).
-  const specific = CUSTOM_SOVEREIGN_OVERRIDES[item.iso3] || {};
   const N = Number.NaN;
   const missing = 'Missing: needs live figures from the data feeds.';
   const now = new Date().toISOString();
 
-  const imf = specific.imfIndicators || {
+  const imf = {
     debtToGdpPct: N,
     debtToGdpForecast2027Pct: N,
     primaryFiscalBalancePct: N,
@@ -301,14 +266,14 @@ export function buildBaselineOpenData(iso3: string): OpenDataSnapshot {
     cpiInflationPct: N,
     sourceUrl: `https://www.imf.org/external/datamapper/GGXWDG_NGDP@WEO/${item.iso3}`,
   };
-  const wb = specific.worldBankIndicators || {
+  const wb = {
     fxReservesMonthsImport: N,
     externalDebtPctGni: N,
     currentAccountPctGdp: N,
     politicalStabilityPercentile: N,
     sourceUrl: `https://api.worldbank.org/v2/country/${item.iso3}`,
   };
-  const mkt = specific.monetaryAndMarket || {
+  const mkt = {
     policyRatePct: N,
     realPolicyRatePct: N,
     sovereign10YBondYieldPct: N,
