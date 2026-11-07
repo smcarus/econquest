@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react';
 import type { ForwardSummary } from '../utils/forwardRecord';
 import type { BacktestResult } from '../utils/backtest';
 import type { ValidationStatus } from '../data/modelRegister';
-import { forecastRegisterStatus, type ForecastVerdict } from '../utils/forecastRegister';
+import { forecastRegisterStatus, forecastVerdicts, type ForecastVerdict } from '../utils/forecastRegister';
+import { evidenceGrade, type EvidenceGrade, type GradeReading } from '../utils/evidenceGrade';
 import { holmReadings, testsOnRecord, type HolmReading } from '../utils/multipleTesting';
 
 export interface ValidationSpecInfo {
@@ -104,4 +105,22 @@ export function validationHolm(v: ValidationReply | null): Map<string, HolmReadi
   if (!v) return new Map();
   const alphaFor = (id: string, version: number) => v.specs.find((s) => s.id === id && s.version === version)?.passMark?.maxPValue;
   return holmReadings(testsOnRecord({ ...(v.versions || {}), ...Object.fromEntries(Object.values(v.results || {}).map((r) => [`${r.id} v${r.specVersion}`, r])) }, alphaFor, v.forecastTests || []));
+}
+
+const GRADE_ORDER: EvidenceGrade[] = ['withdrawn', 'under_review', 'review_due', 'provisional', 'validated'];
+
+/**
+ * The evidence grade for a register entry whose tests passed (src/utils/evidenceGrade.ts): the
+ * Holm reading and forward record of each test behind it; the weakest grade wins when several
+ * tests stand behind one entry. Null for any other status.
+ */
+export function entryGrade(id: string, registerStatus: ValidationStatus, v: ValidationReply | null, holmMap = validationHolm(v)): GradeReading | null {
+  if (effectiveStatus(id, registerStatus, v) !== 'passed' || !v) return null;
+  const r = v.results?.[id];
+  const tests = r
+    ? [{ ranAt: r.ranAt, holm: holmMap.get(`${r.id} v${r.specVersion}`), forward: v.forward?.[`${r.id} v${r.specVersion}`], netOfCosts: false }]
+    : forecastVerdicts(id, v.forecasts).map((x) => ({ ranAt: x.ranAt, holm: holmMap.get(`forecast ${x.id} v${x.specVersion}`), forward: v.forward?.[`${x.id} v${x.specVersion}`], netOfCosts: x.id.startsWith('fx_') }));
+  const grades = tests.map((t) => evidenceGrade({ status: 'passed', ...t })).filter((g): g is GradeReading => Boolean(g));
+  if (!grades.length) return null;
+  return grades.sort((a, b) => GRADE_ORDER.indexOf(a.grade) - GRADE_ORDER.indexOf(b.grade))[0];
 }

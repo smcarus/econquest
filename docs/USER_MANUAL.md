@@ -621,7 +621,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   run, and its SHA-256 is listed in `manifest.json`; a file that no longer matches its hash is refused.
   The tests pull the long free histories (BIS policy rates since 1990, the OECD leading indicator,
   CFTC since 2006, OECD consumer prices), so they need a connection. A verdict (passed, failed, too few cases) replaces the
-  badge and is saved in `data/local/validation/results.json` and in the audit log. Tests: leading-
+  badge and is saved in `data/local/validation/results.json` and in the audit log. A pass shows an
+  evidence grade instead of plain *passed*: *Validated* (still holds after correcting for every test on
+  record, or 24 months of forward record that beat its base rate), *Provisional pass* (passed alone,
+  not after the correction), *Under review* or *Withdrawn* (the forward record falls below the base
+  rate, Withdrawn when significantly below), or *Review due* (last run more than 12 months ago). The
+  rules and the practice they follow are in `docs/METHODS.md` under Evidence grades. Tests: leading-
   indicator turn to policy move, CFTC crowding to unwind, and the policy rule check (Taylor gap:
   does a tight reading come before a cut, and a loose one before a hike, within 6 months, judged
   against each bank's inflation target as it stood at the time, from `src/data/inflationTargetHistory.ts`).

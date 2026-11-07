@@ -9,6 +9,7 @@
  */
 import { MODEL_REGISTER, STATUS_LABEL, type RegisterEntry } from '../data/modelRegister';
 import { RESEARCH_NOTICE } from './disclaimer';
+import { GRADE_POLICY } from './evidenceGrade';
 
 export interface PreregisteredSpec {
   file: string;
@@ -428,6 +429,25 @@ function entrySection(e: RegisterEntry, specs: PreregisteredSpec[], verdicts: Re
   return out;
 }
 
+/** How a pass becomes the label users see (src/utils/evidenceGrade.ts). */
+function gradeSection(): string[] {
+  const P = GRADE_POLICY;
+  return [
+    '## Evidence grades',
+    '',
+    'A recorded verdict is never changed. A test that passed also carries an evidence grade in the app (the badge beside the panel and Menu > Models & validation), read from the correction across all tests on record and the forward record on the computer that runs the app:',
+    '',
+    `- **Validated** (green): passed its pre-registered test and still holds after the Holm correction across every test on record; or, failing that, ${P.promoteMonths} months of forward record with at least ${P.minForwardScored} scored calls beat the test's own base rate (one-sided binomial p at or under ${P.alpha}).`,
+    '- **Provisional pass** (amber): passed alone but not after the correction. A single-test p of 0.05 is too lax once many rules have been tried (Harvey, Liu and Zhu 2016).',
+    `- **Under review** (amber): once ${P.minForwardScored} or more forward calls are scored, the forward hit rate is below the base rate.`,
+    `- **Withdrawn** (red): the forward hit rate is significantly below the base rate (one-sided binomial p at or under ${P.alpha}). It stays withdrawn until a new pre-registered version passes.`,
+    `- **Review due** (amber): the test last ran more than ${P.reviewMonths} months ago.`,
+    '',
+    'The grades follow the practice of model-validation teams: pre-registration and no re-tuning after a fail; correction for multiple testing; out-of-sample confirmation; ongoing monitoring with green, amber and red zones (as in the Basel Committee\'s 1996 backtesting framework); and periodic revalidation and outcomes analysis (the Federal Reserve and OCC guidance on model risk management, SR 11-7, 2011). Backtest figures are hypothetical results and are labelled so, net of the registered costs where a test has costs, in the way the SEC marketing rule and the GIPS standards treat hypothetical performance. The grade is a research label, not investment advice.',
+    '',
+  ];
+}
+
 export function methodsMarkdown(specs: PreregisteredSpec[], verdicts: RecordedVerdict[]): string {
   const latestFor = (id: string) =>
     verdicts.filter(verdictFor({ id })).sort((a, b) => a.version - b.version || a.ranAt.localeCompare(b.ranAt)).pop();
@@ -458,6 +478,7 @@ export function methodsMarkdown(specs: PreregisteredSpec[], verdicts: RecordedVe
     }),
     ...STATED_METHODS.map((m) => `| ${m.name} | Research | Stated method, no call to test | Not applicable |`),
     '',
+    ...gradeSection(),
     '## Models and signals',
     '',
   ];
