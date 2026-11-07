@@ -185,6 +185,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/exercises.ts',
   },
   {
+    id: 'model_sandboxes',
+    name: 'Model sandboxes',
+    where: 'Research > One country > History & data',
+    method: [
+      'Debt dynamics: d(t) = d(t-1) x (1 + i) / (1 + n) - pb, with n = (1 + g)(1 + inflation) - 1, and the debt-stabilising primary balance d x (i - n) / (1 + n), the same identity as Debt sustainability. Starting values are the latest year of that panel\'s history (IMF WEO debt, growth, inflation, primary balance; effective interest rate where the app has one).',
+      'Taylor rule: neutral real rate + inflation + a x (inflation - target) + b x output gap, starting from Taylor (1993): 2, 0.5 and 0.5, the latest IMF WEO inflation outturn, the bank\'s current published target and the app\'s output gap.',
+      'Output gap: log real GDP chained from IMF WEO growth outturns less an HP trend with any lambda (100 yearly, 6.25 Ravn-Uhlig), against the Hamilton (2018) regression residual with any horizon h; at least 15 unbroken years.',
+    ],
+    limits: 'Illustration of the formulas, not a forecast: every term is held constant over the horizon and nothing feeds back. A starting value the app does not have reads Missing and the sandbox waits until it is set. IMF projections are never used for the filters.',
+    code: 'src/utils/modelSandboxes.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',

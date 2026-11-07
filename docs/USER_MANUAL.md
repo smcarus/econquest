@@ -371,6 +371,13 @@ worked out from the app's own figures. Type an answer and press Check; it counts
 the stated tolerance. The answer key shows the workings and every figure used with its source. In
 exam mode the key is held back and answers are only marked right or not.
 
+**Model sandboxes.** Research > One country > History & data has sliders on three of the app's
+formulas, starting from the country's latest figures: the debt identity (debt, interest rate,
+growth, inflation, primary balance and years ahead give the debt path and the balance that holds
+debt steady), the Taylor rule (neutral rate, inflation, target, output gap and both weights) and
+the output-gap filters (HP with any lambda against Hamilton with any horizon). A figure the app
+does not have reads Missing until you type one. Illustration of the formulas, not a forecast.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with
