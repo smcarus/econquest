@@ -29,6 +29,7 @@ const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
 const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
+const UsVintagesPanel = lazyNamed(() => import('./UsVintagesPanel'), 'UsVintagesPanel');
 const BohnPanel = lazyNamed(() => import('./BohnPanel'), 'BohnPanel');
 const GfnPanel = lazyNamed(() => import('./GfnPanel'), 'GfnPanel');
 const RuleFamilyPanel = lazyNamed(() => import('./RuleFamilyPanel'), 'RuleFamilyPanel');
@@ -431,6 +432,16 @@ export const CountryPage: React.FC<{
               <WeoVintagesPanel key={`weo-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
+          {run.iso3 === 'USA' && (
+            <>
+              <div id="tool-us-vintages" className="scroll-mt-4" />
+              <PanelBoundary name="US data as first published">
+                <React.Suspense fallback={<DeskLoading />}>
+                  <UsVintagesPanel />
+                </React.Suspense>
+              </PanelBoundary>
+            </>
+          )}
           <div id="tool-as-of" className="scroll-mt-4" />
           <PanelBoundary name="As of a past day">
             <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
