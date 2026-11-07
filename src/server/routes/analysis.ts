@@ -28,7 +28,7 @@ import { countrySeries } from '../../utils/seriesHistory';
 import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
-import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, loadFxHistory } from '../feeds/rates';
+import { fetchDebtSchedule, fetchFredHistory, fetchFxHistory, fetchPolicyDaily, fetchReerLong, FRED_STRESS_SERIES, loadFxHistory } from '../feeds/rates';
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
@@ -374,16 +374,18 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   });
   app.get('/api/scenario/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const [set, hist, fxFile] = await Promise.all([seriesFor(iso3), modelHistory(), quick(fetchFxHistory()).then((h) => h ?? loadFxHistory())]);
+    const [set, hist, fxFile, stress] = await Promise.all([seriesFor(iso3), modelHistory(), quick(fetchFxHistory()).then((h) => h ?? loadFxHistory()), quick(fetchFredHistory(FRED_STRESS_SERIES))]);
     const eur = fxDailySeries(fxFile, 'EUR');
     const usPts = hist?.policyMonthly?.['US']?.points || [];
     const factors = {
       ...(usPts.length ? { us_rate: monthlyChanges(monthEnd(usPts.map((p) => ({ date: p.period, value: p.pct }))), 'diff') } : {}),
       ...('points' in eur ? { dollar: monthlyChanges(monthEnd(eur.points), 'log') } : {}),
+      ...(stress?.length ? { fin_stress: monthlyChanges(monthEnd(stress), 'diff') } : {}),
     };
     const missingFactors = [
       ...(usPts.length ? [] : ['US policy rate history (BIS, weekly download not done yet)']),
       ...('points' in eur ? [] : [`euro per dollar history (${eur.reason})`]),
+      ...(stress?.length ? [] : ['St. Louis Fed Financial Stress Index (FRED did not answer)']),
     ];
     const fx = set.series.find((x) => x.id === 'fx_per_usd');
     const area = CBPOL_AREA[iso3];
@@ -422,7 +424,7 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       responses: RESPONSES,
       missingFactors,
       method: SCENARIO_METHOD,
-      sources: ['ECB euro reference rates (via Frankfurter)', 'BIS central bank policy rates, monthly'],
+      sources: ['ECB euro reference rates (via Frankfurter)', 'BIS central bank policy rates, monthly', 'St. Louis Fed Financial Stress Index (STLFSI4), retrieved from FRED, Federal Reserve Bank of St. Louis'],
     });
   });
   app.get('/api/nowcast/:iso3', async (req, res) => {

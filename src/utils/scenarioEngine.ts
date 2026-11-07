@@ -5,13 +5,21 @@
  * For each country response (its currency against the US dollar, its policy rate), the engine fits
  * one OLS on monthly changes over the last 15 years (at least 60 months):
  *
- *   response change(t) = a + b_us x US policy rate change(t) + b_usd x dollar change(t) + e(t)
+ *   response change(t) = a + b_us x US policy rate change(t) + b_usd x dollar change(t)
+ *                        + b_fs x financial stress change(t) + e(t)
  *
  * - Currency: 100 x log change of units per US dollar, month-end (ECB reference rates); up = weaker.
  * - Policy rate: change in the BIS month-end rate, points.
  * - US policy rate: the Fed funds target as the BIS publishes it (month-end), change in points.
  * - Dollar: 100 x log change of euros per US dollar (ECB), the broadest daily dollar rate the app
  *   holds free from 1999; up = stronger dollar. Not a trade-weighted index, and stated so.
+ * - Financial stress (gap analysis D12): the St. Louis Fed Financial Stress Index (STLFSI4, weekly,
+ *   FRED, from 1993-12-31; zero = average stress, units roughly standard deviations), last reading
+ *   of the month, change in index points; up = more stress. The Chicago Fed NFCI tracks the same
+ *   conditions and would only split the coefficient between two near-identical factors, so it is
+ *   left out. The NY Fed supply chain pressure index is left out too: no download link could be
+ *   read from its page, so it is not added on an unchecked URL. A factor with no history saved is
+ *   left out of the fit and named under Missing factors.
  *
  * A scenario is a set of stated factor moves. The implied response is b'x shock (the intercept, a
  * monthly drift, is left out), with a 90% band from the Newey-West covariance of the coefficients.
@@ -32,12 +40,13 @@ export const SCENARIO_WINDOW_MONTHS = 180;
 export const SCENARIO_MIN_MONTHS = 60;
 export const Z90 = 1.645;
 
-export type FactorId = 'us_rate' | 'dollar';
+export type FactorId = 'us_rate' | 'dollar' | 'fin_stress';
 export type ResponseId = 'fx' | 'policy';
 
 export const FACTORS: Array<{ id: FactorId; label: string; unit: string }> = [
   { id: 'us_rate', label: 'US policy rate', unit: 'pts' },
   { id: 'dollar', label: 'US dollar against the euro', unit: '%' },
+  { id: 'fin_stress', label: 'US financial stress (St. Louis Fed index)', unit: 'index pts' },
 ];
 
 export const RESPONSES: Record<ResponseId, { label: string; unit: string; note: string }> = {
@@ -71,9 +80,11 @@ export const PRESETS: Array<{ id: string; label: string; shock: Partial<Record<F
   { id: 'usd5', label: 'Dollar 5% stronger', shock: { dollar: 5 } },
   { id: 'tight', label: 'Fed +1 point and dollar +5%', shock: { us_rate: 1, dollar: 5 } },
   { id: 'ease', label: 'Fed cuts 1 point, dollar 5% weaker', shock: { us_rate: -1, dollar: -5 } },
+  { id: 'stress', label: 'Financial stress up 1 point', shock: { fin_stress: 1 } },
+  { id: 'riskoff', label: 'Stress up 1 point, dollar 5% stronger', shock: { fin_stress: 1, dollar: 5 } },
 ];
 
-export const SCENARIO_METHOD = `OLS on monthly changes, last ${SCENARIO_WINDOW_MONTHS / 12} years (at least ${SCENARIO_MIN_MONTHS} months): response on the US policy rate change (BIS) and the dollar's log change against the euro (ECB). Implied move = coefficients x stated shock; 90% band from Newey-West coefficient errors. Co-movement, linear; not causal.`;
+export const SCENARIO_METHOD = `OLS on monthly changes, last ${SCENARIO_WINDOW_MONTHS / 12} years (at least ${SCENARIO_MIN_MONTHS} months): response on the US policy rate change (BIS), the dollar's log change against the euro (ECB) and the change in the St. Louis Fed Financial Stress Index (FRED STLFSI4, month's last weekly reading). Implied move = coefficients x stated shock; 90% band from Newey-West coefficient errors. Co-movement, linear; not causal.`;
 
 const r3 = (v: number) => Number(v.toFixed(3));
 
