@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
@@ -324,6 +325,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
         <div className="min-w-0">
           <div className="ui-label">Chart Agent</div>
           <h3 className="text-sm font-medium text-slate-900 dark:text-white">{result.title}</h3>
+          <ChartGuide id="council_chart" className="pt-1" />
         </div>
         <div className="flex items-center gap-1">
           <button

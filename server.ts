@@ -53,7 +53,7 @@ import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './src/utils/refereeModel';
 import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type CouncilTiming, type StepTiming } from './src/utils/councilTiming';
 import { glossaryMarkdown } from './src/data/glossary';
-import { EXPLAIN_INSTRUCTION, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
+import { EXPLAIN_INSTRUCTION, explainInstruction, checkExplain, cleanFocus, explainTask, focusAsText, lensCoverage, LENS_ORDER, type ExplainPlan, type LensId, type RawExplain } from './src/utils/explain';
 import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocument, type CouncilDocument } from './src/utils/agentDocument';
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
@@ -1404,13 +1404,14 @@ async function explainAnswers(
   const coverage = lensCoverage(opts.explain.lenses, answers);
   try {
     const prompt = (earlierAsText(opts.earlier || []) + focusAsText(opts.explain.focus) + councilDocsText(question, answers, opts)).slice(0, 22000) + explainTask(question, coverage);
-    if (opts.trace) Object.assign(opts.trace, { system: EXPLAIN_INSTRUCTION, prompt, template: EXPLAIN_INSTRUCTION + '\n' + explainTask('{question}', []) });
+    const system = explainInstruction(opts.explain.helpLevel ?? 1);
+    if (opts.trace) Object.assign(opts.trace, { system, prompt, template: system + '\n' + explainTask('{question}', []) });
     const step = await executeResilientLlmStep<RawExplain>({
       stepName: 'COUNCIL_SYNTHESIS',
       providerMode: opts.runtimeConfig?.providerMode || 'gemini',
       runtimeConfig: opts.runtimeConfig || {},
       thinkingLevel: ThinkingLevel.LOW,
-      systemInstruction: EXPLAIN_INSTRUCTION,
+      systemInstruction: system,
       prompt,
       temperature: COUNCIL_TEMPERATURE,
       seed: COUNCIL_SEED,
@@ -1464,7 +1465,8 @@ function explainFromBody(body: any): ExplainPlan | undefined {
   if (!e || typeof e !== 'object') return undefined;
   const lenses: LensId[] = (Array.isArray(e.lenses) ? (e.lenses as unknown[]) : []).filter((l): l is LensId => LENS_ORDER.includes(l as LensId));
   const focus = cleanFocus(e.focus);
-  return { lenses: lenses.length ? [...new Set(lenses)] : LENS_ORDER, named: Boolean(e.named) && lenses.length > 0, ...(focus ? { focus } : {}) };
+  const helpLevel = e.helpLevel === 0 || e.helpLevel === 2 ? e.helpLevel : undefined;
+  return { lenses: lenses.length ? [...new Set(lenses)] : LENS_ORDER, named: Boolean(e.named) && lenses.length > 0, ...(focus ? { focus } : {}), ...(helpLevel !== undefined ? { helpLevel } : {}) };
 }
 
 /* ------------------------------------------------------------------------------------------

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { Scale3d } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ValidationBadge } from './ValidationBadge';
@@ -64,6 +65,7 @@ export const BeerPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
           )}
         </h2>
         <p className="ui-label">Is the real exchange rate where its terms of trade, productivity and foreign assets have put it in the past? A yardstick fitted on this country's own history, not a forecast.</p>
+        <ChartGuide id="beer" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}

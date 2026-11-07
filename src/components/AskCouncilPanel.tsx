@@ -1,4 +1,5 @@
 import { SettingsText } from './SettingsText';
+import { readHelpLevel } from '../utils/helpLevel';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardList, Copy, Download, FileText, NotebookPen, X } from 'lucide-react';
 import { startPolicyReview } from '../utils/reviewHandoff';
@@ -231,7 +232,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: plan.explain } : {}), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: readHelpLevel() } } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {

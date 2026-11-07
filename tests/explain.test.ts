@@ -212,3 +212,16 @@ test('Explain on a figure gives the model the plain definition of its term, with
   assert.match(EXPLAIN_INSTRUCTION, /no training in economics/);
   assert.match(EXPLAIN_INSTRUCTION, /explaining a number or a pattern/, 'the stand-in model in the tests keys on this phrase');
 });
+
+test('the Explain instruction follows the help level, with the same data rules at every level', async () => {
+  const { explainInstruction, EXPLAIN_INSTRUCTION } = await import('../src/utils/explain.ts');
+  assert.equal(explainInstruction(1), EXPLAIN_INSTRUCTION);
+  assert.match(explainInstruction(0), /economist or market professional/);
+  assert.match(explainInstruction(0), /do not define them/);
+  assert.doesNotMatch(explainInstruction(0), /no training in economics/);
+  assert.match(explainInstruction(2), /Define every technical term/);
+  for (const l of [0, 1, 2] as const) {
+    assert.match(explainInstruction(l), /Use ONLY the figures in the documents/);
+    assert.match(explainInstruction(l), /explaining a number or a pattern/);
+  }
+});

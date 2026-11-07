@@ -71,6 +71,17 @@ function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAsse
   return tag || 'live feed';
 }
 
+/**
+ * Marks where an observation's plain "what it means" sentence starts (an invisible separator), so
+ * the brief can hide it when help is off (src/utils/helpLevel.ts). Reports join the two.
+ */
+export const MEANS = '\u2063';
+export function splitMeaning(j: string): { fact: string; meaning?: string } {
+  const i = j.indexOf(MEANS);
+  return i < 0 ? { fact: j } : { fact: j.slice(0, i), meaning: j.slice(i + 1) };
+}
+export const joinMeaning = (j: string): string => j.split(MEANS).join(' ');
+
 /** Why a figure path is missing, and what would fill it. */
 export function pathMissing(status: SnapshotDataStatus, path: string): MissingReason {
   if (path === 'market.sovereign10YBondYieldPct') return missingReason('yield', status.iso3);
@@ -207,28 +218,28 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
           : g >= 0
             ? 'Slow growth adds few jobs and little tax revenue, so living standards and the budget improve slowly.'
             : 'The economy is shrinking, which usually means job losses and falling tax revenue.';
-    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}. ${meaning}`);
+    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}.${MEANS}${meaning}`);
   } else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}: prices are ${cpi < 0 ? 'falling' : 'rising'} by that much a year.`);
   if (realRate !== undefined)
     j.push(
       realRate > 2
-        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation. Borrowing is expensive once rising prices are allowed for, which slows lending and spending, usually brings inflation down and tends to support the currency.`
+        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.${MEANS}Borrowing is expensive once rising prices are allowed for, which slows lending and spending, usually brings inflation down and tends to support the currency.`
         : realRate >= 0
-          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation. Borrowing costs a little more than prices rise, a gentle brake on spending.`
-          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation. Borrowing costs less than prices rise, which supports spending but leaves savers losing ground and can let inflation persist.`
+          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.${MEANS}Borrowing costs a little more than prices rise, a gentle brake on spending.`
+          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.${MEANS}Borrowing costs less than prices rise, which supports spending but leaves savers losing ground and can let inflation persist.`
     );
   if (debt !== undefined)
     j.push(
       `Government debt is ${pct(debt, 0)} of GDP${
         debtChange === undefined ? '' : ` and is forecast to ${Math.abs(debtChange) < 1 ? 'stay roughly flat' : debtChange > 0 ? `rise by ${debtChange.toFixed(0)} pts` : `fall by ${Math.abs(debtChange).toFixed(0)} pts`} by 2027`
-      }. That is ${debt > 70 ? 'above' : 'below'} the 70% level at which the IMF looks more closely at emerging economies' debt; who holds the debt and at what interest rate matters as much as the level.`
+      }.${MEANS}That is ${debt > 70 ? 'above' : 'below'} the 70% level at which the IMF looks more closely at emerging economies' debt; who holds the debt and at what interest rate matters as much as the level.`
     );
   if (pb !== undefined)
     j.push(
-      `The primary balance is ${pct(pb)} of GDP: ${
+      `The primary balance is ${pct(pb)} of GDP.${MEANS}${
         pb >= 0
-          ? 'taxes and other revenue cover spending before interest, so the government is not adding to its debt except to pay interest.'
-          : 'the government borrows even before paying interest on its debt, which adds to the debt each year.'
+          ? 'Taxes and other revenue cover spending before interest, so the government is not adding to its debt except to pay interest.'
+          : 'The government borrows even before paying interest on its debt, which adds to the debt each year.'
       }`
     );
   const ext: string[] = [];
@@ -428,7 +439,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
   const byTitle = (t: string) => b.groups.find((g) => g.title === t)!;
   const out: NoteSection[] = [];
   if (include('summary')) {
-    out.push({ id: 'summary', heading: ECONOMIST_SECTIONS.summary, lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${x}`)] });
+    out.push({ id: 'summary', heading: ECONOMIST_SECTIONS.summary, lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${joinMeaning(x)}`)] });
   }
   const groups: Array<[string, string]> = [
     ['growth', 'Growth and inflation'],

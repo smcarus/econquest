@@ -7,6 +7,8 @@ import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { quarterLabel } from './debtSchedule';
 import {
   calendarSection,
+  joinMeaning,
+  MEANS,
   groupLines,
   pct,
   pts,
@@ -119,7 +121,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   const j: string[] = [];
   if (band && cds !== undefined)
     j.push(
-      `Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}). CDS is what markets charge to insure against this government not paying; ${
+      `Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}).${MEANS}CDS is what markets charge to insure against this government not paying; ${
         band.open ? 'at this level it can usually still sell new bonds, at a cost that rises with the CDS price.' : 'at this level markets are pricing a real chance of default, and new bonds are hard to sell at any bearable price.'
       }`
     );
@@ -128,7 +130,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
     j.push(
       `Government external debt due in the 12 months from the end of ${quarterLabel(qeds.asOf)} is $${qeds.next12mUsdBn.toFixed(1)} bn (QEDS); the heaviest quarter is ${
         qedsPeak.label === 'Next 3 months' ? 'the first three months' : `${qedsPeak.label} ahead`
-      } ($${qedsPeak.usdBn.toFixed(1)} bn). This is what must be repaid to foreign lenders, or borrowed again, over the year.`
+      } ($${qedsPeak.usdBn.toFixed(1)} bn).${MEANS}This is what must be repaid to foreign lenders, or borrowed again, over the year.`
     );
   }
   if (idsYear?.debtServiceUsdBn !== undefined)
@@ -146,7 +148,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
       `The BIS counts ${bn(bis.intl.outstandingUsdBn)} of government bonds in international markets at the end of ${quarterLabel(bis.intl.asOf)}${
         parts.length ? `, ${parts.join(' and ')}` : ''
       }${bis.all ? `; all government debt securities, domestic included, come to ${bn(bis.all.outstandingUsdBn)}` : ''}.${
-        fxShare !== undefined && fxShare > 0 ? ' Bonds in foreign currency get heavier to repay if the local currency falls.' : ''
+        fxShare !== undefined && fxShare > 0 ? `${MEANS}Bonds in foreign currency get heavier to repay if the local currency falls.` : ''
       }`
     );
   } else if (bis?.all) {
@@ -160,7 +162,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
           .join(', ')}: announcements on those days can move bond prices, so new bonds are usually not sold just before them.`
       : 'No official rate decisions or data releases on file in the next 60 days.'
   );
-  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield. Paying more than similar governments usually means markets see more risk, or expect higher inflation, in this country.`);
+  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield.${MEANS}Paying more than similar governments usually means markets see more risk, or expect higher inflation, in this country.`);
   j.push(
     signals.length
       ? `Signs of distress: ${signals.join('; ')}.${unchecked.length ? ` Not checked, figures missing: ${unchecked.join(', ')}.` : ''}`
@@ -261,7 +263,7 @@ export function buildBankerSections(
     out.push({
       id: 'summary',
       heading: BANKER_SECTIONS.summary,
-      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${x}`)],
+      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${joinMeaning(x)}`)],
     });
   }
   const groups: Array<[string, string]> = [

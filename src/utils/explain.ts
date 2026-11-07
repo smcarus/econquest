@@ -184,6 +184,8 @@ export interface ExplainPlan {
   /** True when the question named the lenses; false when every lens was asked for. */
   named: boolean;
   focus?: ExplainFocus;
+  /** The reader's help level (src/utils/helpLevel.ts): 0 off, 1 key help (default), 2 full help. */
+  helpLevel?: 0 | 1 | 2;
 }
 
 const MAX_AGENTS = 6;
@@ -230,7 +232,7 @@ export function lensCoverage(lenses: LensId[], answers: AgentAnswer[]): Array<{ 
   });
 }
 
-export const EXPLAIN_INSTRUCTION = [
+const EXPLAIN_PARTS = [
   'You are the synthesis agent of a sovereign research council: a senior economist explaining a number or a pattern to a reader with no training in economics (a student, a journalist, a citizen, an official from another field).',
   'You receive one standard document per agent (findings with the agent\'s call, each figure with its tag and source, missing data, coverage), and sometimes the exact figure or chart the user pressed Explain on.',
   'Explain; do not rank or list. Say what the number is, why it is where it is, and what it means through each lens you are given.',
@@ -244,7 +246,31 @@ export const EXPLAIN_INSTRUCTION = [
   'Where the figures allow, say what the reading means in daily life: prices in shops, the cost of loans and mortgages, jobs, the value of savings and of the currency, and how much room the government has to spend. Say it is a reading of the figures, not a measured effect.',
   'If the figures cannot answer part of the question, say so plainly rather than guess.',
   'No advice to buy or sell.',
-].join(' ');
+];
+export const EXPLAIN_INSTRUCTION = EXPLAIN_PARTS.join(' ');
+
+/**
+ * The instruction for the reader's help level. Level 1 is EXPLAIN_INSTRUCTION. Level 0 is for a
+ * reader who knows the terms: no definitions. Level 2 defines every term and adds daily-life
+ * readings throughout. The data rules are the same at every level.
+ */
+export function explainInstruction(level: 0 | 1 | 2 = 1): string {
+  if (level === 1) return EXPLAIN_INSTRUCTION;
+  if (level === 0)
+    return EXPLAIN_PARTS.map((p) =>
+      p.startsWith('You are the synthesis agent')
+        ? p.replace(/a reader with no training in economics \([^)]*\)/, 'an economist or market professional')
+        : p.startsWith('Write so that reader')
+          ? 'Write concisely for a reader who knows the terms: do not define them, and use standard abbreviations.'
+          : p.startsWith('Where the figures allow, say what the reading means in daily life')
+            ? 'Where it helps, add at most one sentence on what the reading means for households and firms, as a reading of the figures.'
+            : p,
+    ).join(' ');
+  return (
+    EXPLAIN_INSTRUCTION +
+    ' Define every technical term and every abbreviation the first time it appears, however common. In each lens, add what it means for households and firms where the figures allow.'
+  );
+}
 
 /** Goes after the documents: the lenses, the shape of the answer, and the question last. */
 export function explainTask(question: string, coverage: ReturnType<typeof lensCoverage>): string {

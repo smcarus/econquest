@@ -4,6 +4,7 @@
  */
 
 import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { HelpLevelButton } from './components/HelpLevel';
 import {
   AIRuntimeConfig,
   CROOverrideState,
@@ -1217,6 +1218,8 @@ export default function App() {
             <span className="hidden sm:inline">Council chat</span>
           </button>
           )}
+
+          <HelpLevelButton />
 
           <button
             type="button"
