@@ -24,6 +24,9 @@
  *                                     with its score, and the spread of answers
  *   GET  /api/quests/:id/draft-entry  ?login=&probability= (or level=) &rationale=: the entry file
  *                                     and GitHub's prefilled "new file" page on QUESTS_REPO
+ *
+ * Contributor statistics (step 7), recomputed from the files on every call:
+ *   GET  /api/quests/stats            the scoreboard and every contributor's statistics
  */
 import type express from 'express';
 import crypto from 'crypto';
@@ -44,6 +47,8 @@ import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore'
 import type { EntryScore } from '../../utils/questEntries';
 import { countedPublicEntries, entryFileText, entryPath, entrySpread, isEntrantName, newFileUrl, publicEntryProblems, type PublicEntry } from '../../utils/questPublicEntries';
 import { loadPublicEntries } from '../../utils/questPublicEntryStore';
+import { computeStats } from '../../utils/questStats';
+import { readAccounts } from '../../utils/questStatsStore';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -235,6 +240,14 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       lines: rec.lines,
       quests: keys.map((l) => ({ questId: l.questId, questVersion: l.questVersion, title: titles.get(l.questId) ?? l.questId, ...resultState(rec.lines, l.questId, l.questVersion) })),
     });
+  });
+
+  app.get('/api/quests/stats', (_req, res) => {
+    if (!enabled()) return off(res);
+    const rec = loadResolutions(resultsFile);
+    if (rec.brokenAt !== -1) return res.json({ enabled: true, error: `The results record is broken at line ${rec.brokenAt + 1}, so no statistics are shown until it is restored` });
+    const quests = loadQuests(dir).filter((x) => x.quest.type === 'forecast').map((x) => ({ quest: x.quest as ForecastQuest, approved: x.approved }));
+    res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir) }) });
   });
 
   app.get('/api/quests/due', async (req, res) => {

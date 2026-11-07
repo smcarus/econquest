@@ -8,6 +8,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Compass, X } from 'lucide-react';
 import type { Quest, QuestHorizon, QuestStatus, QuestType } from '../utils/quests';
 import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
+import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
 
 type Summary = {
   id: string;
@@ -47,7 +48,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results'>('quests');
+  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board'>('quests');
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -102,6 +103,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
                   ['mine', 'My entries'],
                   ['class', 'Class table'],
                   ['results', 'Results'],
+                  ['board', 'Scoreboard'],
                 ] as const
               ).map(([k, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -113,6 +115,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
           {list && list.enabled && !openId && view === 'mine' && <MyEntries />}
           {list && list.enabled && !openId && view === 'class' && <ClassTable />}
           {list && list.enabled && !openId && view === 'results' && <Results />}
+          {list && list.enabled && !openId && view === 'board' && <Scoreboard />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -685,5 +688,203 @@ function PublicEntries({ questId }: { questId: string }) {
         </>
       )}
     </Box>
+  );
+}
+
+const fmt = (x: number) => (x > 0 ? `+${x.toFixed(3)}` : x.toFixed(3));
+const pct = (x: number) => `${Math.round(x * 100)}%`;
+
+/** A gated figure: the value, or how many more cases it needs. */
+function G<T>({ g, show }: { g: Gated<T>; show: (v: T) => ReactNode }) {
+  return 'value' in g ? <>{show(g.value)} <span className="text-xs text-slate-500">({g.n})</span></> : <span className="text-xs text-slate-500">needs {g.needs} more ({g.n} so far)</span>;
+}
+
+function BoardTable({ rows, onPick }: { rows: BoardRow[]; onPick: (login: string) => void }) {
+  if (!rows.length) return <p className="text-sm text-slate-500">Nobody has enough settled forecasts to be ranked yet.</p>;
+  return (
+    <table className="w-full text-sm" data-quest-board>
+      <thead>
+        <tr className="text-xs text-slate-500 text-left">
+          <th className="py-1 pr-2 font-normal">#</th>
+          <th className="py-1 pr-2 font-normal">Who</th>
+          <th className="py-1 pr-2 font-normal">Skill</th>
+          <th className="py-1 pr-2 font-normal">90% range</th>
+          <th className="py-1 font-normal">Forecasts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.login} className="border-t border-slate-200 dark:border-slate-800 tabular-nums">
+            <td className="py-1 pr-2">{r.rank}</td>
+            <td className="py-1 pr-2">
+              <button type="button" className="underline" onClick={() => onPick(r.login)}>
+                {r.login}
+              </button>
+            </td>
+            <td className="py-1 pr-2">{fmt(r.score)}</td>
+            <td className="py-1 pr-2 text-xs">
+              {fmt(r.low)} to {fmt(r.high)}
+            </td>
+            <td className="py-1">{r.n}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+/** The public scoreboard and each contributor's page, recomputed from entries and recorded results. */
+function Scoreboard() {
+  const [data, setData] = useState<QuestStats | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [table, setTable] = useState('all');
+  const [who, setWho] = useState<string | null>(null);
+  useEffect(() => {
+    send('/api/quests/stats').then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, []);
+  if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
+  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
+  const person = who ? data.contributors.find((c) => c.login === who) : null;
+  if (person) return <Contributor c={person} onBack={() => setWho(null)} />;
+  const rows = table === 'all' ? data.board.allTime : table.startsWith('season:') ? data.board.seasons[table.slice(7)] ?? [] : data.board.fields[table.slice(6)] ?? [];
+  return (
+    <div className="space-y-3" data-quest-scoreboard>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        People are ranked on one thing: skill, meaning how much better their probabilities were than simply using the base rate (how often the same thing happened in the past). Plus means better than the base rate, minus means worse, and 0 means no better. The 90% range shows how sure we can be: if two people's ranges overlap, they may not really differ. To be ranked, a person needs at least {data.minimums.skill} settled forecasts, so one lucky call cannot top the table, and a GitHub account that was at least {data.accountDays} days old when the first Quest they entered closed. Nobody is ranked on how many Quests they enter. Everything here is worked out from the public entries and the recorded results, so anyone can check it.
+      </p>
+      <label className="text-xs inline-flex items-center gap-1">
+        <span>Table</span>
+        <select className={fieldCls} value={table} onChange={(e) => setTable(e.target.value)} data-quest-board-table>
+          <option value="all">All time</option>
+          {Object.keys(data.board.seasons).map((y) => (
+            <option key={y} value={`season:${y}`}>
+              Season {y}
+            </option>
+          ))}
+          {Object.keys(data.board.fields).map((f) => (
+            <option key={f} value={`field:${f}`}>
+              {f} only (needs {data.minimums.field} in the field)
+            </option>
+          ))}
+        </select>
+      </label>
+      <BoardTable rows={rows} onPick={setWho} />
+      <p className="text-sm">
+        The crowd (the middle answer on each Quest) against the base rate: <G g={data.crowd} show={(v) => fmt(v)} />
+      </p>
+      {data.contributors.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-xs text-slate-500">Everyone who has entered</div>
+          <ul className="text-sm flex flex-wrap gap-x-3 gap-y-1">
+            {data.contributors.map((c) => (
+              <li key={c.login}>
+                <button type="button" className="underline" onClick={() => setWho(c.login)} data-quest-contributor={c.login}>
+                  {c.login}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {data.contributors.length === 0 && <p className="text-sm text-slate-500">No public entries yet.</p>}
+    </div>
+  );
+}
+
+function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void }) {
+  const row = (label: string, value: ReactNode, help: string) => (
+    <tr className="border-t border-slate-200 dark:border-slate-800 align-top">
+      <td className="py-1 pr-2">
+        {label}
+        <div className="text-xs text-slate-500">{help}</div>
+      </td>
+      <td className="py-1 tabular-nums">{value}</td>
+    </tr>
+  );
+  return (
+    <div className="space-y-3" data-quest-contributor-page>
+      <button type="button" className="ui-btn ui-btn-ghost" onClick={onBack}>
+        Back to the scoreboard
+      </button>
+      <h3 className="ui-title">
+        {c.login}
+        {c.emailed ? <span className="text-xs text-slate-500"> (entries emailed to a maintainer)</span> : null}
+      </h3>
+      <p className="text-sm">
+        {c.entered} Quest{c.entered === 1 ? '' : 's'} entered: {c.settled} settled, {c.unresolvable} unresolvable or withdrawn, {c.waiting} waiting for a result.
+      </p>
+      {c.unranked && <p className="text-xs text-slate-500">Not on the scoreboard: {c.unranked}.</p>}
+      <table className="w-full text-sm">
+        <tbody>
+          {row('Skill', <G g={c.skill} show={(v) => `${fmt(v.score)} (90% range ${fmt(v.low)} to ${fmt(v.high)})`} />, 'Better (+) or worse (-) than the base rate, averaged over settled probability forecasts.')}
+          {row('Beat no change', <G g={c.beatNoChange} show={(v) => pct(v)} />, 'Share of number forecasts that were closer than assuming nothing moves.')}
+          {row('Sharpness', <G g={c.sharpness} show={(v) => v.toFixed(2)} />, '0 = always said 50%; 1 = always said 0% or 100%. Being sharp only helps if you are also right.')}
+          {row('Calibration gap', <G g={c.calibration} show={(v) => pct(v.gap)} />, 'How far, on average, what was said was from what happened (0% = when they said 70%, it happened 70% of the time).')}
+          {row('Against the crowd', <G g={c.contrarian} show={(v) => fmt(v)} />, 'Skill on Quests where they called the other outcome from the crowd\'s middle answer.')}
+          {row('Streak', <G g={c.streak} show={(v) => String(v)} />, 'Settled Quests in a row with positive skill, latest first. Shown, never ranked.')}
+        </tbody>
+      </table>
+      {'value' in c.calibration && (
+        <table className="w-full text-xs" data-quest-calibration>
+          <thead>
+            <tr className="text-slate-500 text-left">
+              <th className="py-1 pr-2 font-normal">They said</th>
+              <th className="py-1 pr-2 font-normal">On average</th>
+              <th className="py-1 pr-2 font-normal">It happened</th>
+              <th className="py-1 font-normal">Forecasts</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.calibration.value.bins.map((b) => (
+              <tr key={b.from} className="border-t border-slate-200 dark:border-slate-800 tabular-nums">
+                <td className="py-1 pr-2">
+                  {pct(b.from)} to {pct(b.to)}
+                </td>
+                <td className="py-1 pr-2">{pct(b.said)}</td>
+                <td className="py-1 pr-2">{pct(b.happened)}</td>
+                <td className="py-1">{b.n}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+      {c.fields.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-xs text-slate-500">Skill by field (each needs 8 settled forecasts in the field)</div>
+          <ul className="text-sm">
+            {c.fields.map((f) => (
+              <li key={`${f.kind}-${f.field}`}>
+                {f.field}: <G g={f.stat} show={(v) => fmt(v)} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {c.proposed.length > 0 && (
+        <p className="text-sm">
+          Quests proposed: {c.proposed.map((p) => `${p.questId} (${p.entries} entr${p.entries === 1 ? 'y' : 'ies'})`).join(', ')}
+        </p>
+      )}
+      {c.entries.length > 0 && (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs text-slate-500 text-left">
+              <th className="py-1 pr-2 font-normal">Settled Quest</th>
+              <th className="py-1 pr-2 font-normal">Answer</th>
+              <th className="py-1 font-normal">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            {c.entries.map((e) => (
+              <tr key={e.questId} className="border-t border-slate-200 dark:border-slate-800 align-top">
+                <td className="py-1 pr-2">{e.title}</td>
+                <td className="py-1 pr-2 tabular-nums">{e.answer === 'probability' ? `${pct(e.p ?? 0)}, ${e.happened ? 'it happened' : 'it did not'}` : ''}</td>
+                <td className="py-1 text-xs">{e.answer === 'probability' ? `Brier ${e.brier?.toFixed(3)}; skill ${e.skill === null || e.skill === undefined ? 'no base rate' : fmt(e.skill)}` : `Error ${e.error}; ${e.beatNoChange === null ? 'no no-change baseline' : e.beatNoChange ? 'beat no change' : 'did not beat no change'}`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
   );
 }

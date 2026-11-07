@@ -33,6 +33,7 @@
     "quests:check": "tsx scripts/quests-check.ts",
     "quests:resolve": "tsx scripts/quests-resolve.ts",
     "quests:entries": "tsx scripts/quests-entries.ts",
+    "quests:stats": "tsx scripts/quests-stats.ts",
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",
