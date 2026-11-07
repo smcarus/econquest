@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- docs/METHODOLOGY.md: the methodology document (version 1.0) for the website and the public release.
+
 ## [0.1.0] - 2026-11-07
 
 First public release.
