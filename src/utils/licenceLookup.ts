@@ -35,6 +35,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['kalshi', /Kalshi/i],
   ['bcrp', /\bBCRP\b|\bEMBI|Banco Central de Reserva del Per/i],
   ['trm_colombia', /\bTRM\b|Superintendencia Financiera|datos\.gov\.co/i],
+  ['boc_boe', /BoC-BoE|Sovereign Default Database/i],
   ['bcra', /\bBCRA\b|Banco Central de la Rep[uú]blica Argentina/i],
   ['bcb', /Banco Central do Brasil|\bBCB\b|\bSGS\b|\bIPCA\b/],
   ['tesouro', /Tesouro/i],

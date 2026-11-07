@@ -48,7 +48,7 @@ test('every register row except the paid-data catch-all is reachable from some s
     worldbank: 'World Bank, 2024', pinksheet: 'pink_sheet', imf: 'IMF WEO', comtrade: 'UN Comtrade', wits: 'WITS',
     bis: 'BIS', ecb: 'ECB', erapi: 'ExchangeRate-API', nyfed: 'NY Fed', fred: 'FRED', oecd: 'OECD via DBnomics',
     eurostat: 'Eurostat HICP', cftc: 'CFTC', tic: 'TIC', eia: 'EIA', gdelt: 'GDELT', ucdp: 'UCDP/PRIO Armed Conflict Dataset 26.1', polymarket: 'Polymarket',
-    kalshi: 'Kalshi', bcrp: 'BCRP', trm_colombia: 'TRM (Superintendencia Financiera de Colombia), datos.gov.co', bcra: 'Banco Central de la República Argentina, official quote', bcb: 'BCB SGS 13522', tesouro: 'Tesouro Direto', evds: 'EVDS', banxico: 'Banxico INPC', acled: 'ACLED conflict events', own: 'your own CDS data', ofac: 'OFAC SDN', gpr: 'Caldara and Iacoviello Geopolitical Risk index', unsc: 'UN Security Council Consolidated List',
+    kalshi: 'Kalshi', bcrp: 'BCRP', trm_colombia: 'TRM (Superintendencia Financiera de Colombia), datos.gov.co', bcra: 'Banco Central de la República Argentina, official quote', boc_boe: 'BoC-BoE Sovereign Default Database, 2026 edition', bcb: 'BCB SGS 13522', tesouro: 'Tesouro Direto', evds: 'EVDS', banxico: 'Banxico INPC', acled: 'ACLED conflict events', own: 'your own CDS data', ofac: 'OFAC SDN', gpr: 'Caldara and Iacoviello Geopolitical Risk index', unsc: 'UN Security Council Consolidated List',
   };
   for (const row of DATA_LICENCES) {
     assert.ok(samples[row.id], `no sample for register row ${row.id}`);
