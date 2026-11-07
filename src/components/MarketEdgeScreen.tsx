@@ -68,7 +68,7 @@ export const MarketEdgeScreen: React.FC<{
   const anchorIso = new Set((anchors?.anchors || []).map((a) => a.iso3));
 
   return (
-    <section className="ui-panel" data-market-edge="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-market-edge="true">
       <header className="ui-panel-header">
         <h3 className="ui-section-title">{title}</h3>
         <p className="ui-label">

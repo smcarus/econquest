@@ -123,7 +123,7 @@ export const SourcesGrid: React.FC<{
   const rows = sourcesGrid(items);
   const byIso = new Map(items.map((w) => [w.iso3, w]));
   return (
-    <section className="ui-panel" data-sources-grid="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-sources-grid="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title">{title}</h2>
         <p className="ui-label">Live means a feed, an official series or your own file filled it. Anything else reads Missing with the reason; no built-in values are shown. Open a country for every figure and its source.</p>

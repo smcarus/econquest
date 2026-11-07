@@ -35,7 +35,7 @@ export const BeerPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
   const ok = reply && reply.ok ? reply : null;
 
   return (
-    <section className="ui-panel" data-beer="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-beer="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Scale3d className="w-4 h-4 text-blue-600 dark:text-blue-400" />

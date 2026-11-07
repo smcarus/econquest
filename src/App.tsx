@@ -23,7 +23,6 @@ import {
   addNewDefaultWatchlists,
   loadSeenDefaultWatchlists,
   saveSeenDefaultWatchlists,
-  buildAnnotatedChartsForSovereign,
   buildDefaultAssessmentRun,
   buildBaselineOpenData,
   recomputeDerivedOpenDataAnalytics,
@@ -120,7 +119,6 @@ import { loadShareMode, saveShareMode } from './utils/shareMode';
 
 // Desks load on first use, so the first screen does not download all 41 of them.
 // The menu dialogs load when first opened, keeping them out of the first download.
-const GlobalTerminalProvenanceAndStatRefController = lazyNamed(() => import('./components/RealTimeDataProvenanceOverlay'), 'GlobalTerminalProvenanceAndStatRefController');
 const IcMemoBuilder = lazyNamed(() => import('./components/IcMemoBuilder'), 'IcMemoBuilder');
 const ResearchNotebooks = lazyNamed(() => import('./components/ResearchNotebooks'), 'ResearchNotebooks');
 const PolicyReviews = lazyNamed(() => import('./components/PolicyReviews'), 'PolicyReviews');
@@ -816,12 +814,10 @@ export default function App() {
       new Set([...(nextOpenData.liveApiSourcesActive || []), `${connectorName} (GUI Connector)`])
     );
     recomputeDerivedOpenDataAnalytics(nextOpenData);
-    const updatedCharts = buildAnnotatedChartsForSovereign(nextOpenData);
 
     setRun((prev) => ({
       ...prev,
       openData: nextOpenData,
-      charts: updatedCharts,
     }));
     setStatusBanner({
       type: 'success',
@@ -1789,16 +1785,6 @@ export default function App() {
 
         </section>
       </main>
-
-      {/* GLOBAL REAL-TIME DATA PROVENANCE OVERLAY & INTERACTIVE STATISTICAL REFERENCE TOOLTIP CONTROLLER */}
-      <Suspense fallback={null}>
-      <GlobalTerminalProvenanceAndStatRefController
-        run={run}
-        activeNavSection={activeNavSection}
-        onRefreshLiveOpenData={() => handlePullLiveOpenData(run.iso3, run.countryName, false)}
-        isFetchingData={isFetchingOpenData}
-      />
-      </Suspense>
 
       {isCustomSovereignModalOpen && (
         <AddCountryDialog onClose={() => setIsCustomSovereignModalOpen(false)} onAdd={handleOnboardCustomSovereign} />

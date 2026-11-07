@@ -287,7 +287,7 @@ export const TodayPage: React.FC<{
   );
 
   return (
-    <div className="space-y-4" data-no-stat-ref="true">
+    <div className="space-y-4">
       {/* Workspace is a chat page: the conversation fills the screen, input box at the bottom. Everything else sits in Briefing. */}
       <div className="flex gap-4 h-[calc(100dvh-9.5rem)] lg:h-[calc(100dvh-7.5rem)]">
         {agentsOpen && (

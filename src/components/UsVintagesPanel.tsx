@@ -34,7 +34,7 @@ export const UsVintagesPanel: React.FC = () => {
   const label = (d: string) => (series === 'GDPC1' ? `${d.slice(0, 4)} Q${Math.floor((Number(d.slice(5, 7)) - 1) / 3) + 1}` : d.slice(0, 7));
 
   return (
-    <section className="ui-panel" data-us-vintages="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-us-vintages="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <History className="w-4 h-4 text-blue-600 dark:text-blue-400" />

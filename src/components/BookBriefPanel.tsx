@@ -42,7 +42,7 @@ export const BookBriefPanel: React.FC<{
   const info = VIEW_INFO[view];
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <section className="ui-panel">
         <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
           <div>

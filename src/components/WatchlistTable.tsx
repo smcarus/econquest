@@ -163,7 +163,7 @@ export const WatchlistTable: React.FC<{
 
   if (compact)
     return (
-      <table className="w-full text-xs [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true" data-watchlist-table="compact">
+      <table className="w-full text-xs [font-variant-numeric:tabular-nums]" data-watchlist-table="compact">
         <thead>
           <tr className="text-left text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
             {header('country', 'Country', 'left')}
@@ -206,7 +206,7 @@ export const WatchlistTable: React.FC<{
 
   return (
     <>
-      <ul className="sm:hidden -mx-4 divide-y divide-slate-100 dark:divide-slate-800 [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true">
+      <ul className="sm:hidden -mx-4 divide-y divide-slate-100 dark:divide-slate-800 [font-variant-numeric:tabular-nums]">
         {rows.map((it) => (
           <li key={it.iso3} className={it.iso3 === highlightIso3 ? 'bg-blue-50/50 dark:bg-blue-950/20' : ''}>
             <button type="button" onClick={() => onOpen(it)} className="w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/60">
@@ -239,7 +239,7 @@ export const WatchlistTable: React.FC<{
         ))}
       </ul>
       <div className="hidden sm:block overflow-x-auto -mx-4 px-4">
-        <table className="w-full text-sm [font-variant-numeric:tabular-nums]" data-no-provenance-overlay="true" data-watchlist-table="true">
+        <table className="w-full text-sm [font-variant-numeric:tabular-nums]" data-watchlist-table="true">
           <thead>
             <tr className="text-left text-xs text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
               {header('country', 'Country', 'left')}

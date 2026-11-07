@@ -363,11 +363,15 @@ export async function fetchLiveOpenDataSnapshotNetwork(
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
   await applyGuiMacroConnectorsToSnapshot(baseline, normalizedIso, activeSources);
 
-  // Dynamically recompute DSA (r - g), Greenspan-Guidotti Debt Rollover, Yield Curve & Real Policy Rate
-  recomputeDerivedOpenDataAnalytics(baseline, {
-    liquidReservesUsdBn: liveReservesUsdBn,
-    shortTermDebtPctReserves: liveShortTermDebtPctReserves,
-  });
+  // Reserve cover from the World Bank figures only (Greenspan-Guidotti: reserves over short-term
+  // external debt); without both figures it stays Missing.
+  if (liveReservesUsdBn !== undefined) baseline.debtRollover.liquidFxReservesUsdBn = liveReservesUsdBn;
+  if (liveReservesUsdBn !== undefined && liveShortTermDebtPctReserves !== undefined) {
+    baseline.debtRollover.shortTermExternalDebtUsdBn = Number(((liveReservesUsdBn * liveShortTermDebtPctReserves) / 100).toFixed(1));
+    baseline.debtRollover.greenspanGuidottiRatioPct = Number((10000 / liveShortTermDebtPctReserves).toFixed(0));
+  }
+  // Real policy rate and the official calendar, from the figures above only.
+  recomputeDerivedOpenDataAnalytics(baseline);
 
   // Only feeds that actually answered count as live; never inherit the sample list.
   const verifiedLiveSources = Array.from(new Set(activeSources));

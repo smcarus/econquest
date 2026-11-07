@@ -97,8 +97,8 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-history-panel="true" data-no-stat-ref="true">
-      <section className="ui-panel xl:col-span-2" data-no-provenance-overlay="true">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-history-panel="true">
+      <section className="ui-panel xl:col-span-2">
         <header className="ui-panel-header">
           <h2 className="ui-section-title">{current ? `${current.label}, ${countryName}` : `History for ${countryName}`}</h2>
           {current && (

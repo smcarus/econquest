@@ -33,7 +33,7 @@ export const LocalProjectionsPanel: React.FC<{ iso3: string; countryName: string
   }, [iso3]);
 
   return (
-    <section className="ui-panel" data-local-projections="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-local-projections="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />

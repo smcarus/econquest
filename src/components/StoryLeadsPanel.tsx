@@ -42,7 +42,7 @@ export const StoryLeadsPanel: React.FC<{ items: LiveWatchlistItem[]; onOpenCount
   ];
 
   return (
-    <section className="ui-panel" data-story-leads="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-story-leads="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-blue-600 dark:text-blue-400" />

@@ -91,7 +91,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   }
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="ui-label">
           {hasHoldings

@@ -87,7 +87,7 @@ export const HoldingsPanel: React.FC<HoldingsPanelProps> = ({ holdings, countrie
   };
 
   return (
-    <section className="ui-panel" aria-label="Holdings" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" aria-label="Holdings">
       <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 className="ui-section-title">Holdings</h2>

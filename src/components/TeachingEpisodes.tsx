@@ -110,7 +110,7 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
   const ready = title.trim() && /^[A-Z]{3}$/.test(iso3) && /^\d{4}-\d{2}-\d{2}$/.test(date);
 
   return (
-    <section className="ui-panel" data-teaching-episodes="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-teaching-episodes="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />

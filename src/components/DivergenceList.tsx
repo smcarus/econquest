@@ -26,7 +26,7 @@ export const DivergenceList: React.FC<{
   const shown = ranked.slice(0, limit);
 
   return (
-    <section className="ui-panel" data-divergences="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-divergences="true">
       <header className="ui-panel-header">
         <h3 className="ui-section-title flex flex-wrap items-center gap-2">
           Where data and price disagree
