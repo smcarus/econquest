@@ -40,5 +40,5 @@ in and out is posted every quarter.
 
 ## Contact
 
-Project contact: TO FILL project email address before the repository is made public.
+Project contact: sam.m.carus@gmail.com
 Security problems: see [SECURITY.md](SECURITY.md).

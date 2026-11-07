@@ -5,7 +5,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [0.1.0] - TO FILL date of the first public release
+## [0.1.0] - 2026-11-07
 
 First public release.
 
