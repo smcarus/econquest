@@ -16,6 +16,38 @@ generated from the code; this document explains the framework those entries sit 
 
 ---
 
+## The short version, in plain words
+
+EconQuest is a free research tool. It gathers public figures about countries (growth, prices,
+interest rates, government debt, trade, politics and conflict), helps people understand them, and
+tests whether simple rules built on them say anything useful about what comes next.
+
+- **Every number has a source.** Each figure on screen names where it came from and when. If no real
+  source provided it, the app shows "Missing" and says why. It never fills a gap with a guess, a
+  sample number or an estimate from an AI model.
+- **The AI explains; it does not invent figures.** The council of agents is a set of AI models, each
+  covering one area (the central bank, the budget, politics and so on), that read the figures and
+  write an answer. The app checks that every number in an answer appears in the figures the agents
+  were given, and labels the answer as written by an AI model. It is an interpretation, not advice.
+- **Rules are tested before they are trusted.** A signal is a rule that claims to say something
+  about the future, for example that currencies paying high interest tend to earn more than they
+  lose. Before a rule is tested, its details and pass mark are written down and locked with a digital
+  fingerprint, so they cannot be quietly changed after seeing the result. The test uses only figures
+  that had been published at the time, counts trading costs, and the rule must beat the simplest
+  possible guess.
+- **Luck is counted.** When many rules are tested, some pass by chance. The app applies a standard
+  correction (the Holm method) across every test on record and says which passes survive it.
+- **Failures are kept.** Most rules tested so far failed. Their results stay on the record,
+  unchanged, beside the few that passed, in the [Track record](./TRACK_RECORD.md).
+- **Labels say how much weight a reading can bear:** Validated, Provisional, Under review,
+  Withdrawn and Review due (section 9).
+- **What it does not do.** It does not give investment advice, does not promise any forecast, and
+  does not replace assessments by the IMF, the World Bank or credit rating agencies.
+
+Every technical term used here and in the app is explained in the [Glossary](./GLOSSARY.md).
+
+---
+
 ## Contents
 
 1. [What the terminal is](#1-what-the-terminal-is)
