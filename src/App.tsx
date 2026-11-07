@@ -79,14 +79,6 @@ import { EconQuestLogo } from './components/EconQuestLogo';
 import { lazyNamed, DeskLoading } from './components/LazyDesk';
 import { SavedCouncilDocuments } from './components/CouncilDocuments';
 import { describeSnapshotSync } from './utils/syncMessages';
-import {
-  ExecutiveTearSheetAndTradeTicketDrawer,
-} from './components/MultiSovereignComparatorAndTicketDrawers';
-import {
-  computeSovereignNssYieldCurveSuite,
-  DEFAULT_NSS_SHOCK_INPUTS,
-  StagedTradeTicketSpec,
-} from './utils/nssYieldCurveAndCatalystEngine';
 import { watchlistYieldFields } from './utils/watchlistYield';
 import {
   Sun,
@@ -480,32 +472,6 @@ export default function App() {
   );
 
   const [croDraft, setCroDraft] = useState<CROOverrideState>(() => run.croState);
-
-  const [isTradeTicketDrawerOpen, setIsTradeTicketDrawerOpen] = useState<boolean>(false);
-  const [stagedTradeTickets, setStagedTradeTickets] = useState<StagedTradeTicketSpec[]>(
-    () =>
-      computeSovereignNssYieldCurveSuite(
-        buildDefaultAssessmentRun(savedSessionOnBoot?.activeIso3 || 'BRA'),
-        DEFAULT_NSS_SHOCK_INPUTS
-      ).recommendedCurveTickets.slice(0, 2)
-  );
-
-  const handleStageTradeTicket = (ticket: StagedTradeTicketSpec) => {
-    setStagedTradeTickets((prev) => {
-      const exists = prev.some((t) => t.ticketId === ticket.ticketId);
-      if (exists) return prev;
-      return [ticket, ...prev];
-    });
-    setIsTradeTicketDrawerOpen(true);
-    setStatusBanner({
-      type: 'success',
-      message: `Staged IC Trade Ticket: "${ticket.strategyTitle}" (${ticket.iso3} · +${ticket.expected12MCarryRollBps} bps/yr Carry+Roll).`,
-    });
-  };
-
-  const handleRemoveTradeTicket = (ticketId: string) => {
-    setStagedTradeTickets((prev) => prev.filter((t) => t.ticketId !== ticketId));
-  };
 
   const [runtimeConfig, setRuntimeConfig] = useState<AIRuntimeConfig>(() => {
     try {
@@ -1614,15 +1580,12 @@ export default function App() {
               watchlistName={watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}
               watchlistId={activeWatchlistId}
               watchlistItems={liveWatchlistItems}
-              stagedTickets={stagedTradeTickets}
               onOpenCountry={(item, sectionId) => {
                 // Select the stored row (the live view drops built-in figures but keeps the country).
                 const stored = activeWatchlistItems.find((w) => w.iso3 === item.iso3) || SOVEREIGN_CATALOG.find((c) => c.iso3 === item.iso3);
                 if (stored && item.iso3 !== run.iso3) handleSelectSovereign(stored);
                 openCountryPage(sectionId);
               }}
-              onStageTicket={handleStageTradeTicket}
-              onOpenTickets={() => setIsTradeTicketDrawerOpen(true)}
               onOpenWatchlistManager={() => setIsWatchlistCollapsed(false)}
               fullCouncil={fullCouncilStep}
               onSendCouncilToReports={sendCouncilToReports}
@@ -1693,7 +1656,6 @@ export default function App() {
                       holdings={holdings}
                       riskLookup={liveRiskLookup}
                       watchlist={liveWatchlistItems}
-                      stagedTickets={[]}
                       view="pm"
                       onWriteReport={(view) => {
                         setRequestedReport(view === 'client' ? 'client_review' : 'book');
@@ -1707,7 +1669,6 @@ export default function App() {
                       riskLookup={liveRiskLookup}
                       holdings={holdings}
                       onManageHoldings={openHoldingsEditor}
-                      stagedTickets={[]}
                       onOpenCountry={(live) => {
                         const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                         if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
@@ -1795,7 +1756,6 @@ export default function App() {
                   <IcMemoBuilder
                     key={`${d}-${requestedReport || openingReport}-${reportNonce}`}
                     run={run}
-                    stagedTickets={[]}
                     holdings={holdings}
                     riskLookup={liveRiskLookup}
                     peers={liveWatchlistItems}
@@ -1903,21 +1863,6 @@ export default function App() {
       />
         </Suspense>
       )}
-
-      {/* 1-CLICK EXECUTIVE TEAR-SHEET & IC TRADE TICKET QUICK-DRAWER */}
-      <ExecutiveTearSheetAndTradeTicketDrawer
-        isOpen={isTradeTicketDrawerOpen}
-        onClose={() => setIsTradeTicketDrawerOpen(false)}
-        activeRun={run}
-        stagedTickets={stagedTradeTickets}
-        onAddTicket={handleStageTradeTicket}
-        onRemoveTicket={handleRemoveTradeTicket}
-        onNavigateToSection={(sec) => {
-          setLayoutMode('executive_brief');
-    setAppArea('desks');
-          setActiveNavSection(sec as NavSectionId);
-        }}
-      />
 
       {/* Council chat side panel on Research and Reports: the same conversation as on Workspace. */}
       {chatDocked && (
