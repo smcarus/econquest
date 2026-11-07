@@ -21,6 +21,8 @@ export interface ForecastVerdict {
   specVersion: number;
   specHash: string;
   ranAt: string;
+  /** Currency factor tests: how the strategy lost when it lost (src/utils/fxFactors.ts crashSentence). */
+  crash?: string;
 }
 
 /** Passed only when every evaluation behind the entry passed; failed when any failed; else none. */

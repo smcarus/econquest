@@ -24,6 +24,7 @@ import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 import { fxDailySeries, type FxHistoryFile } from './fxHistory';
 import type { FxExtraFile } from './fxExtra';
 import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
+import { impliedDefaultSeries } from './impliedDefault';
 import { BIS_ISO2 } from './bisDebtSecurities';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
 
@@ -344,6 +345,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
     hcSpread(code, inputs.hcSpread),
+    impliedDefaultSeries(hcSpread(code, inputs.hcSpread)),
     ...bisCreditSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
