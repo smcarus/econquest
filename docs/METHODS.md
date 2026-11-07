@@ -28,8 +28,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Cycle clock | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Timing Agent | Research | Backtest passed | v1, 2026-11-06, method 2 |
 | Council summary (AI synthesis) | Decision input | Model-assisted, not validated | None |
-| GDP nowcast (bridge equation) | Research | Not validated | None |
-| Forecasts with fan charts (AR models) | Research | Not validated | None |
+| GDP nowcast (bridge equation) | Research | Forecast evaluation passed | v1, 2026-11-07 |
+| Forecasts with fan charts (AR models) | Research | Forecast evaluation failed | debt_forecast v2, 2026-11-07 |
 | Fiscal reaction (Bohn test) | Research | Description, not a tested signal | None |
 | Gross financing need | Research | Description, not a tested signal | None |
 | Country risk scorecard | Research | Description, not a tested signal | None |
@@ -37,16 +37,16 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
-| Policy rule family | Research | Not validated | None |
-| Debt fan chart (bootstrap of past shocks) | Research | Not validated | None |
+| Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
+| Debt fan chart (bootstrap of past shocks) | Research | Forecast evaluation too few cases | debt_fan_coverage v1, 2026-11-07 |
 | Costed fiscal options | Research | Description, not a tested signal | None |
 | Global shock scenarios | Research | Description, not a tested signal | None |
-| Currency carry | Research | Not validated | None |
-| Currency value (five-year real depreciation) | Research | Not validated | None |
-| Currency momentum (12-1) | Research | Not validated | None |
+| Currency carry | Research | Signal test passed | v1, 2026-11-07 |
+| Currency value (five-year real depreciation) | Research | Signal test failed | v1, 2026-11-07 |
+| Currency momentum (12-1) | Research | Signal test failed | v1, 2026-11-07 |
 | Currency around rate decisions (event study) | Research | Description, not a tested signal | None |
 | BEER fair value of the real exchange rate | Research | Not validated | None |
-| Unrest spikes (GDELT) and conflict onset | Research | Not validated | None |
+| Unrest spikes (GDELT) and conflict onset | Research | Backtest failed | v1, 2026-11-07, method 2 |
 | Trade idea journal | Research | Description, not a tested signal | None |
 | Output gap (app estimate) | Research | Stated method, no call to test | Not applicable |
 | Debt sustainability view | Research | Stated method, no call to test | Not applicable |
@@ -309,10 +309,14 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** OECD quarterly national accounts (via DBnomics), BCB IBC-Br, Eurostat industrial production, OECD composite leading indicator
 - **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation passed (version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/gdp_nowcast.json): nowcast made 30 days after each quarter from 2008 against the historical mean; relative RMSE at most 0.9, year-block p at most 0.10, better in half the countries.
 - **Limits:** Fixed release lags, today's data vintage; OECD figures via DBnomics run about five months behind.
 - **Code:** `src/utils/nowcast.ts`
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-07T00:24Z: **Passed** (forecast evaluation). Against the historical mean, 1 quarter ahead: relative RMSE 0.896 (90% range 0.876 to 0.924), better in 28 of 35 series; 2007-Q4 to 2025-Q4.
 
 ### Forecasts with fan charts (AR models)
 
@@ -321,10 +325,18 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** OECD quarterly national accounts and CPI (via DBnomics), BCB IPCA, Eurostat HICP, BIS policy rates, IMF WEO debt
 - **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation failed (debt_forecast version 2, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/*_forecast.json): rolling-origin RMSE against the historical mean (GDP) or no change (inflation, policy rate, debt) from 2008, at the stated horizons. Inflation (last 10 years) and debt (no drift) are re-tested as version 2 after version 1 failed; version 1 stays on record.
 - **Limits:** Bands leave out parameter uncertainty; today's data vintage; not compared with past IMF forecasts yet.
 - **Code:** `src/utils/forecasts.ts`
+
+**Recorded verdicts**
+
+- gdp_forecast, version 1, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the historical mean: 1 quarter ahead relative RMSE 1.178 (p 0.97), better in 9 of 46 series; 4 quarters ahead 1.117 (p 0.98), better in 11 of 46. 2008-Q1 to 2025-Q4.
+- policy_rate_forecast, version 1, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 0.99 (p 0.318), better in 19 of 24 series; 12 months ahead 1.092 (p 0.994), better in 12 of 24. 2008-01 to 2026-07.
+- cpi_nowcast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 month ahead relative RMSE 0.83 (p 0.001) but better in only 23 of 46 series; 2 months ahead 1.201 (p 0.719), better in 17 of 46. 2008-01 to 2026-04.
+- cpi_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 3 months ahead relative RMSE 1.5 (p 0.999), better in 15 of 46 series; 12 months ahead 4.321 (p 1), better in 11 of 46. 2008-01 to 2026-02.
+- debt_forecast, version 2, 2026-11-07T00:24Z: **Failed** (forecast evaluation). Against the last value carried on: 1 year ahead relative RMSE 1.903 (p 0.975), better in 21 of 128 series; 2 years ahead 2.477 (p 0.971), better in 18 of 115. 184 series, 2008 to 2024.
 
 ### Fiscal reaction (Bohn test)
 
@@ -417,7 +429,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** BIS policy rate, monthly inflation, central bank target, output gap
 - **Shows in:** Country Research > History & data (Policy rules)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest too few cases (version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (rule_family v1, docs/validation/preregistered/rule_family.json): does a reading above (below) every rule come before a cut (hike) within 6 months more often than after any month, from 2000, inflation lagged 2 months, targets as they stood, real-time output gap, whole years resampled (method 2); Holm across all tests on record.
 - **Limits:** r* fixed; output gap revised each vintage; targets hand-entered.
 - **Code:** `src/utils/ruleFamily.ts, src/utils/backtest.ts (ruleFamilyCases)`
@@ -428,7 +440,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-07T00:24Z: **Too few cases** (method 2). 23 cases in 10 years; method 2 needs 30 cases in 8 years. 12 series, 2000-02 to 2023-02.
 
 **Known limits, stated before the run**
 
@@ -446,10 +458,14 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** IMF WEO history and projections
 - **Shows in:** Country Research > History & data (Debt sustainability, fan chart)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Forecast evaluation too few cases (debt_fan_coverage version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/forecasts/debt_fan_coverage.json): the fan rebuilt at each past October IMF WEO edition (its actual years and its projections, saved in data/local/weo-vintages/) must hold the later debt outturn inside the 10-90 band 70-90% of the time at every horizon 1-5 years, whole target years resampled. Run with npm run forecast:evaluate.
 - **Limits:** Past shocks only; no fiscal reaction; IMF baseline as given.
 - **Code:** `src/utils/debtFan.ts, src/utils/fanCoverage.ts`
+
+**Recorded verdicts**
+
+- debt_fan_coverage, version 1, 2026-11-07T00:24Z: **Too few cases** (forecast evaluation). Too few cases at 4 and 5 years ahead (needs 100 cases over 8 target years; 8 October editions saved). Outturns inside the 10-90 band (80% if calibrated): 1y 66%, 2y 64%, 3y 60%, 4y 55%, 5y 48%; misses mostly above the band. 179 series, 2009 to 2018.
 
 ### Costed fiscal options
 
@@ -482,10 +498,14 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** ECB reference rates (month-end, per USD), BIS policy rates
 - **Shows in:** Models & validation (pre-registered test); no panel yet
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Signal test passed (version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/signals/fx_carry.json): mean monthly return net of a flat 0.25% cost per unit traded above zero (holding dollars), whole years resampled, p at most 0.05, at least 120 months over 10 years; Holm across every test on record.
 - **Limits:** Policy rates stand in for money-market rates; crash risk in sell-offs; month-end fixings, not tradable prices.
 - **Code:** `src/utils/fxFactors.ts`
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-07T00:24Z: **Passed** (signal test). Carry long-short, 321 months: 3.341% a year net of a 0.25% cost per side (gross 3.646%), 90% range 0.581 to 6.036%, Sharpe 0.451, p 0.0257 with whole years resampled; 25 currencies, 2000-01 to 2026-09. Not adjusted for the other tests run (Holm), which it may not survive.
 
 ### Currency value (five-year real depreciation)
 
@@ -494,10 +514,14 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** ECB reference rates, BIS policy rates (for the return), OECD consumer prices
 - **Shows in:** Models & validation (pre-registered test); no panel yet
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Signal test failed (version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/signals/fx_value.json): as carry, mean monthly net return above zero, whole years resampled, p at most 0.05; Holm across every test on record.
 - **Limits:** Consumer prices only; currencies without OECD prices drop out; value pays slowly and can lose for years.
 - **Code:** `src/utils/fxFactors.ts`
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-07T00:24Z: **Failed** (signal test). Value long-short, 265 months: -1.96% a year net (gross -0.47%), 90% range -3.905 to 0.121%, Sharpe -0.321, p 0.941; 20 currencies, 2004-01 to 2026-02.
 
 ### Currency momentum (12-1)
 
@@ -506,10 +530,14 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** ECB reference rates, BIS policy rates
 - **Shows in:** Models & validation (pre-registered test); no panel yet
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Signal test failed (version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/signals/fx_momentum.json): as carry, mean monthly net return above zero, whole years resampled, p at most 0.05; Holm across every test on record.
 - **Limits:** Highest turnover of the three, so the flat cost weighs most; prone to sharp reversals.
 - **Code:** `src/utils/fxFactors.ts`
+
+**Recorded verdicts**
+
+- Version 1, 2026-11-07T00:24Z: **Failed** (signal test). Momentum long-short, 321 months: -0.868% a year net (gross 1.46%), 90% range -3.386 to 1.541%, Sharpe -0.127, p 0.716; 25 currencies, 2000-01 to 2026-09.
 
 ### Currency around rate decisions (event study)
 
@@ -542,7 +570,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 - **Reads:** GDELT 1.0 event files on disk, UCDP/PRIO Armed Conflict Dataset
 - **Shows in:** Country Research > History & data (Event history)
 - **Use:** Research
-- **Status:** Not validated
+- **Status:** Backtest failed (version 1, recorded 2026-11-07)
 - **How it is tested:** Pre-registered (docs/validation/preregistered/unrest_onset.json): among country-years with no armed conflict, is a year with a spike episode followed by conflict located in the country the next year more often than quiet years in general (pooled base rate), from 2018, whole years resampled; Holm across every test on record.
 - **Limits:** UCDP is yearly, so the outcome is next-year conflict, not within months; about seven recent years; pooled base rate; machine-coded news events.
 - **Code:** `src/utils/unrestSpikes.ts`
@@ -553,7 +581,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 
 **Recorded verdicts**
 
-- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).
+- Version 1, 2026-11-07T00:24Z: **Failed** (method 2). Lift 0.1 points, 90% range -1.8 to 2.1, p 0.49 with whole years resampled (7 years); positive in 0 of 8 series with 5 or more cases; 113 series, 2018 to 2024. Pass mark was a lift of 3 points.
 
 **Known limits, stated before the run**
 

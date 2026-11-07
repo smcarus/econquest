@@ -25,13 +25,29 @@ export interface PreregisteredSpec {
 }
 
 export interface RecordedVerdict {
+  /** The test's own id (its file name in docs/validation/<kind folder>/). */
   id: string;
+  /** The register entry it tests, when that differs from the test id (debt_fan_coverage tests debt_fan). */
+  registerId?: string;
+  /** Backtest (docs/validation/preregistered/, the default), forecast evaluation (forecasts/) or currency signal test (signals/). */
+  kind?: VerdictKind;
   version: number;
   ranAt: string;
   verdict: 'passed' | 'failed' | 'too_few_cases';
-  method: number;
+  /** Backtest method (1 or 2); forecast evaluations and signal tests have one method each. */
+  method?: number;
   summary: string;
 }
+
+export type VerdictKind = 'backtest' | 'forecast' | 'signal';
+
+/** Where each kind of pre-registered test lives, under docs/validation/. */
+export const VERDICT_FOLDER: Record<VerdictKind, string> = { backtest: 'preregistered', forecast: 'forecasts', signal: 'signals' };
+
+const KIND_LABEL: Record<VerdictKind, string> = { backtest: 'Backtest', forecast: 'Forecast evaluation', signal: 'Signal test' };
+
+const verdictFor = (e: { id: string }) => (v: RecordedVerdict) => (v.registerId ?? v.id) === e.id;
+const statusText = (v: RecordedVerdict) => `${KIND_LABEL[v.kind ?? 'backtest']} ${VERDICT_LABEL[v.verdict].toLowerCase()}`;
 
 const VERDICT_LABEL: Record<RecordedVerdict['verdict'], string> = { passed: 'Passed', failed: 'Failed', too_few_cases: 'Too few cases' };
 
@@ -362,7 +378,7 @@ function passMarkText(s: PreregisteredSpec): string {
 
 function entrySection(e: RegisterEntry, specs: PreregisteredSpec[], verdicts: RecordedVerdict[]): string[] {
   const mine = specs.filter((s) => s.id === e.id).sort((a, b) => a.version - b.version);
-  const ran = verdicts.filter((v) => v.id === e.id).sort((a, b) => a.version - b.version || a.ranAt.localeCompare(b.ranAt));
+  const ran = verdicts.filter(verdictFor(e)).sort((a, b) => a.version - b.version || a.ranAt.localeCompare(b.ranAt));
   const latest = ran[ran.length - 1];
   const out = [`### ${e.name}`, ''];
   out.push(`- **Says:** ${e.says}`);
@@ -370,7 +386,7 @@ function entrySection(e: RegisterEntry, specs: PreregisteredSpec[], verdicts: Re
   out.push(`- **Reads:** ${e.inputs}`);
   out.push(`- **Shows in:** ${e.where}`);
   out.push(`- **Use:** ${e.use}`);
-  out.push(`- **Status:** ${latest ? `Backtest ${VERDICT_LABEL[latest.verdict].toLowerCase()} (version ${latest.version}, recorded ${latest.ranAt.slice(0, 10)})` : STATUS_LABEL[e.status]}`);
+  out.push(`- **Status:** ${latest ? `${statusText(latest)} (${latest.id !== e.id ? `${latest.id} ` : ''}version ${latest.version}, recorded ${latest.ranAt.slice(0, 10)})` : STATUS_LABEL[e.status]}`);
   out.push(`- **How it is tested:** ${e.testPlan}`);
   out.push(`- **Limits:** ${e.limits}`);
   out.push(`- **Code:** \`${e.code}\``);
@@ -385,7 +401,10 @@ function entrySection(e: RegisterEntry, specs: PreregisteredSpec[], verdicts: Re
   }
   if (ran.length) {
     out.push('', '**Recorded verdicts**', '');
-    for (const v of ran) out.push(`- Version ${v.version}, ${v.ranAt}: **${VERDICT_LABEL[v.verdict]}** (method ${v.method}). ${v.summary}`);
+    for (const v of ran)
+      out.push(
+        `- ${v.id !== e.id ? `${v.id}, version` : 'Version'} ${v.version}, ${v.ranAt}: **${VERDICT_LABEL[v.verdict]}** (${v.method ? `method ${v.method}` : KIND_LABEL[v.kind ?? 'backtest'].toLowerCase()}). ${v.summary}`
+      );
   } else if (mine.length) {
     out.push('', '**Recorded verdicts**', '', '- None recorded yet. Run `npm run backtest` (or Menu > Models & validation > Run backtests).');
   }
@@ -397,7 +416,7 @@ function entrySection(e: RegisterEntry, specs: PreregisteredSpec[], verdicts: Re
 
 export function methodsMarkdown(specs: PreregisteredSpec[], verdicts: RecordedVerdict[]): string {
   const latestFor = (id: string) =>
-    verdicts.filter((v) => v.id === id).sort((a, b) => a.version - b.version || a.ranAt.localeCompare(b.ranAt)).pop();
+    verdicts.filter(verdictFor({ id })).sort((a, b) => a.version - b.version || a.ranAt.localeCompare(b.ranAt)).pop();
   const out: string[] = [
     '# Methods',
     '',
@@ -421,7 +440,7 @@ export function methodsMarkdown(specs: PreregisteredSpec[], verdicts: RecordedVe
     '| --- | --- | --- | --- |',
     ...MODEL_REGISTER.map((e) => {
       const v = latestFor(e.id);
-      return `| ${e.name} | ${e.use} | ${v ? `Backtest ${VERDICT_LABEL[v.verdict].toLowerCase()}` : STATUS_LABEL[e.status]} | ${v ? `v${v.version}, ${v.ranAt.slice(0, 10)}, method ${v.method}` : 'None'} |`;
+      return `| ${e.name} | ${e.use} | ${v ? statusText(v) : STATUS_LABEL[e.status]} | ${v ? `${v.id !== e.id ? `${v.id} ` : ''}v${v.version}, ${v.ranAt.slice(0, 10)}${v.method ? `, method ${v.method}` : ''}` : 'None'} |`;
     }),
     ...STATED_METHODS.map((m) => `| ${m.name} | Research | Stated method, no call to test | Not applicable |`),
     '',
