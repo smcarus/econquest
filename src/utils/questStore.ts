@@ -20,12 +20,15 @@ export interface QuestFile {
   parseError?: string;
 }
 
+/** JSON files in quests/ that are not Quests: the manifest, contributor statistics and account ages. */
+export const NOT_QUESTS = new Set(['manifest.json', 'stats.json', 'accounts.json']);
+
 const sha256 = (buf: Buffer) => createHash('sha256').update(buf).digest('hex');
 
 function readDir(dir: string, approved: boolean, relBase: string): QuestFile[] {
   let names: string[] = [];
   try {
-    names = fs.readdirSync(dir).filter((n) => n.endsWith('.json') && n !== 'manifest.json').sort();
+    names = fs.readdirSync(dir).filter((n) => n.endsWith('.json') && !NOT_QUESTS.has(n)).sort();
   } catch {
     return [];
   }

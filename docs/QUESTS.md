@@ -23,7 +23,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Resolver: results worked out from the feeds, recorded by `npm run quests:resolve` in the hash-chained `quests/resolutions.jsonl`; yearly figures read as first published; disputes, withdrawals and notes; Results tab and result on each Quest page; recorded results used for scores | Built and tested, switched off |
 | Quests tab on Menu > Track record | Not built (added when Quests go live, so nothing shows while they are off) |
 | Public entries by pull request (`quests/entries/<id>/<login>.<n>.json`): Prepare entry in the app opens GitHub's prefilled page; the entry checker (`npm run quests:entries`, CI job `Quest entries`); replacements numbered and kept; emailed entries posted by a maintainer; entries hidden in the app until close, then shown with scores and the spread | Built and tested, switched off |
-| Contributor statistics and scoreboard | Not built |
+| Contributor statistics and scoreboard: skill with a 90% range, beat no change, calibration, sharpness, record against the crowd, fields, streak, each shown only above its minimum; rankings after 12 settled forecasts and a 90-day-old GitHub account; seasons, all-time and field tables (`npm run quests:stats`, Scoreboard tab) | Built and tested, switched off |
 | Quest generator and digests | Not built |
 | Debate, signal and replication workflows | Not built |
 | Preference profiles | Not built |
@@ -83,6 +83,25 @@ For the maintainer:
 - A pull request that only adds entries skips the full CI and runs only the short `Quest entries` job.
 - Set `QUESTS_REPO` (owner/name of the public repository) for Prepare entry to work; without it the app offers only Log privately.
 
+## Contributor statistics
+
+Statistics come only from the public entries and the recorded results, so anyone can recompute them. The app works them out each time the Scoreboard tab opens; `npm run quests:stats` writes the same figures to `quests/stats.json` for the public record and a future public board, and looks up each new contributor's GitHub account creation date (kept in `quests/accounts.json`, which is public data). Commit both files after a run.
+
+What is shown, and when (a figure resting on too few cases says how many more it needs instead of showing a number):
+
+| Figure | What it means | Shown after |
+| --- | --- | --- |
+| Skill | How much better (+) or worse (-) the person's probabilities were than the base rate, averaged: base-rate Brier score minus their Brier score | 12 settled forecasts with a base rate |
+| 90% range | A bootstrap range around the skill score; if two people's ranges overlap, they may not really differ | with skill |
+| Beat no change | Share of number forecasts closer than assuming nothing moves | 12 settled |
+| Calibration | When they said 70%, how often it happened, in 10% steps, and the average gap | 30 settled |
+| Sharpness | How far from 50% their probabilities sit (0 to 1); only useful with skill | 12 settled |
+| Against the crowd | Skill on Quests where they called the other outcome from the crowd's middle answer | 12 such Quests |
+| Fields | Skill by topic and by region | 8 settled in the field |
+| Streak | Settled Quests in a row with positive skill; shown, never ranked | 5 settled |
+
+Rankings use skill only. To be ranked a person needs 12 settled forecasts with a base rate and a GitHub account that was at least 90 days old when the first Quest they entered closed, which makes throwaway accounts useless. Emailed entries, checked by a maintainer, need no account. Seasons run by the calendar year a Quest settles in, with an all-time table that never resets; field tables rank only within a field. Nobody is ranked on how many Quests they enter.
+
 ## Checklist before Quests are switched on
 
 Working properly:
@@ -100,12 +119,13 @@ Working properly:
 - [ ] The UI smoke and journey tests cover the Quests page with Quests on and off
 - [ ] A test Quest of each kind settled with `npm run quests:resolve` on the maintainer's computer, and the record checked with `--verify`
 - [ ] A Quests tab on Menu > Track record shows the recorded results and the chain check
+- [ ] `npm run quests:stats` run on the maintainer's computer: account dates looked up, figures checked by hand for one contributor with test entries
 
 Documented:
 
 - [ ] This page lists what works and what does not, with no "Not built" item that users can reach
 - [ ] `CONTRIBUTING.md` has the Quests section: how to propose, enter, dispute, and access from countries GitHub blocks
-- [ ] A privacy notice says what is public (login, entries, rationales, scores) and that git history is permanent
+- [ ] A privacy notice says what is public (login, entries, rationales, scores, the GitHub account's creation date) and that git history is permanent
 - [ ] The user manual has a Quests section
 - [ ] The public repository has a Quests category in GitHub Discussions, linked from each approved Quest
 
