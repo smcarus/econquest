@@ -20,6 +20,7 @@ import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../u
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
+import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
 /**
@@ -140,6 +141,20 @@ export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle 
       ? { fetchedAt: new Date().toISOString(), ...parseBisCreditGap(gapCsv), ...parseBisDsr(dsrCsv), ...parseBisProperty(sppCsv) }
       : null;
   bisCreditCache.set(iso3, { at: Date.now(), value });
+  return value;
+}
+
+/**
+ * Who holds public external debt and on what terms (src/utils/idsCreditors.ts), World Bank IDS,
+ * yearly, no key. Kept 12 hours, misses an hour.
+ */
+const idsCreditorsCache = new Map<string, { at: number; value: IdsCreditors | null }>();
+export async function fetchIdsCreditors(iso3: string): Promise<IdsCreditors | null> {
+  const hit = idsCreditorsCache.get(iso3);
+  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  const [world, china] = await Promise.all([fetchJsonWithTimeout(idsCreditorsUrl(iso3), 15000), fetchJsonWithTimeout(idsChinaUrl(iso3), 15000)]);
+  const value = world ? parseIdsCreditors(world, china, new Date().toISOString()) : null;
+  idsCreditorsCache.set(iso3, { at: Date.now(), value });
   return value;
 }
 

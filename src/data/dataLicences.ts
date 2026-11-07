@@ -64,7 +64,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'worldbank',
     name: 'World Bank indicators and debt statistics (IDS, QEDS)',
-    usedFor: 'Reserves, current account, external debt, political stability, trade shares; external debt falling due',
+    usedFor: 'Reserves, current account, external debt, political stability, trade shares; external debt falling due; who holds public external debt and terms of new loans (IDS)',
     terms: [{ label: 'Terms of Use for Datasets', url: 'https://www.worldbank.org/ext/en/legal/terms-conditions/datasets' }],
     status: 'open',
     display: 'Allowed: the data may be shared with third parties under CC BY 4.0.',
