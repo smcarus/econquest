@@ -124,7 +124,7 @@ export const ToolsPage: React.FC<{
   };
 
   return (
-    <div className="space-y-5" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           {inDialog ? (

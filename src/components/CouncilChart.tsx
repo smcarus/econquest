@@ -319,7 +319,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
     }
   };
   return (
-    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true" data-no-provenance-overlay="true">
+    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="ui-label">Chart Agent</div>

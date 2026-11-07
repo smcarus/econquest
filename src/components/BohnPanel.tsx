@@ -33,7 +33,7 @@ export const BohnPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
   }, [iso3]);
 
   return (
-    <section className="ui-panel" data-bohn="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-bohn="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />

@@ -502,7 +502,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
       <section className="ui-panel" aria-label="Memo settings">
         <header className="ui-panel-header">
           <h2 className="ui-section-title">Build the report</h2>

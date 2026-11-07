@@ -69,7 +69,7 @@ export const MarketsMacroPanel: React.FC<{
   }, [sections]);
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true" data-markets-macro="true">
+    <div className="space-y-3" data-markets-macro="true">
       <section className="ui-panel">
         <header className="ui-panel-header">
           <h2 className="ui-section-title">MarketEdge</h2>

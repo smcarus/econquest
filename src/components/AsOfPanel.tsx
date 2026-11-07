@@ -65,7 +65,7 @@ export const AsOfPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso
   const last = days?.[days.length - 1];
 
   return (
-    <section className="ui-panel" data-as-of-panel="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-as-of-panel="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <CalendarClock className="w-4 h-4 text-blue-600 dark:text-blue-400" />

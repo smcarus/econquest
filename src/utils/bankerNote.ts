@@ -265,16 +265,22 @@ export function buildBankerSections(
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: BANKER_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('restructuring')) {
-    const dsa = run.openData.dsaAnalytics;
+    // The debt sustainability view on IMF history (src/utils/debtSustainability.ts), when it has run.
+    const dsa = peers.find((p) => p.iso3 === run.iso3)?.debtSustainability;
+    const gap = dsa?.stabilisingPb !== undefined && dsa.projectedPb !== undefined ? dsa.stabilisingPb - dsa.projectedPb : undefined;
     out.push({
       id: 'restructuring',
       heading: BANKER_SECTIONS.restructuring,
       lines: [
         b.judgements[b.judgements.length - 1],
-        `- Interest rate minus growth: ${pts(dsa.rMinusGDifferentialPct)} (model, from figures above)`,
-        `- Fiscal gap to stabilise debt: ${dsa.fiscalConsolidationGapPct.toFixed(1)} pts of GDP (model, from figures above)`,
+        dsa?.rMinusG !== undefined
+          ? `- Interest rate minus growth: ${pts(dsa.rMinusG)} (debt sustainability view on IMF figures, ${dsa.year})`
+          : '- Interest rate minus growth: Missing (the debt sustainability view needs the saved IMF history: Menu > Offline data > Download all)',
+        gap !== undefined
+          ? `- Primary balance gap to hold debt steady: ${gap.toFixed(1)} pts of GDP (needed ${dsa!.stabilisingPb!.toFixed(1)}, IMF projection ${dsa!.projectedPb!.toFixed(1)})`
+          : '- Primary balance gap to hold debt steady: Missing (needs the debt sustainability view)',
         ...(run.openData.monetaryAndMarket.cds5YSpreadBps >= 400
-          ? ['The Restructuring tab on the Country page has the NPV and collective action clause tools for this credit.']
+          ? ['The restructuring calculator under Model sandboxes on the country page values a deal on terms you enter.']
           : []),
       ],
     });

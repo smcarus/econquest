@@ -61,7 +61,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
   }, [reply]);
 
   return (
-    <section className="ui-panel" data-dsa="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-dsa="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />

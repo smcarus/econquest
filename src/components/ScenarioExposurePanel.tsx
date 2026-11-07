@@ -15,7 +15,7 @@ export const ScenarioExposurePanel: React.FC<{
   const fmt = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}%`;
 
   return (
-    <section className="ui-panel" data-scenarios="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-scenarios="true">
       <header className="ui-panel-header">
         <h3 className="ui-section-title">Global Spillover Agent: scenario exposure</h3>
         <p className="ui-label">

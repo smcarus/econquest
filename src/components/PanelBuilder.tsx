@@ -58,7 +58,7 @@ export const PanelBuilder: React.FC<{ countries: Country[] }> = ({ countries }) 
   const cell = (iso3: string, id: string) => cells?.find((c) => c.iso3 === iso3 && c.figureId === id);
 
   return (
-    <section className="ui-panel" data-panel-builder="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-panel-builder="true">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">

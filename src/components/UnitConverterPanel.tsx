@@ -45,7 +45,7 @@ export const UnitConverterPanel: React.FC<{ iso3: string; countryName: string }>
   const input = 'px-2 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white';
 
   return (
-    <section className="ui-panel" data-unit-converter="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-unit-converter="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Calculator className="w-4 h-4 text-blue-600 dark:text-blue-400" />

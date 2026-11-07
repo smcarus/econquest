@@ -118,7 +118,6 @@ import { createServer as createViteServer } from 'vite';
 import { ThinkingLevel, Type } from '@google/genai';
 import {
   SOVEREIGN_CATALOG,
-  buildAnnotatedChartsForSovereign,
   buildBaselineOpenData,
   buildDefaultAssessmentRun,
   buildOfficialCatalystCalendar,
@@ -1902,7 +1901,7 @@ Country figures (only those a live feed, an official series or your own data fil
 ${councilInputs(targetRun.openData).lines.join('\n')}
 ${MISSING_FIGURES_RULE}
 - Counterfactual Shocks Applied: Brent +$${cro.counterfactualShocks?.brentCrudeShockUsd || 0}/bbl, Fed +${cro.counterfactualShocks?.fedTerminalRateShockBps || 0}bps, Chokepoint -${cro.counterfactualShocks?.chokepointTransitDropPct || 0}%, Fiscal Slippage +${cro.counterfactualShocks?.domesticFiscalSlippagePctGdp || 0}% GDP
-- Chief Risk Officer Directives: "${cro.croNotes}"`;
+- Chief Risk Officer Directives: ${cro.croNotes?.trim() ? `"${cro.croNotes}"` : "none given"}`;
 
   let baseOutput: SupremeCouncilOutput =
     targetRun.supremeCouncil || buildDefaultAssessmentRun(targetRun.iso3).supremeCouncil!;
@@ -2564,9 +2563,8 @@ async function startServer() {
       const snapshot = await fetchLiveOpenDataSnapshot(iso3, countryName, {
         forceRefresh: req.query.refresh === '1',
       });
-      const charts = buildAnnotatedChartsForSovereign(snapshot);
       const run = buildDefaultAssessmentRun(iso3, snapshot);
-      res.json({ snapshot, charts, run });
+      res.json({ snapshot, charts: [], run });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to fetch open data snapshot' });
     }
@@ -2577,9 +2575,8 @@ async function startServer() {
     try {
       const iso3 = String(req.params.iso3 || req.query.iso3 || 'BRA').toUpperCase();
       const snapshot = await fetchLiveOpenDataSnapshot(iso3);
-      const charts = buildAnnotatedChartsForSovereign(snapshot);
       const run = buildDefaultAssessmentRun(iso3, snapshot);
-      res.json({ snapshot, charts, run });
+      res.json({ snapshot, charts: [], run });
     } catch (error: any) {
       res.status(500).json({ error: error?.message || 'Failed to fetch open data snapshot' });
     }
@@ -3977,7 +3974,6 @@ async function startServer() {
       baseRun.policyDocumentTitle = policyDocumentText ? policyDocumentTitle || 'Document added by the user' : undefined;
       baseRun.policyDocumentSnippet = policyDocumentText ? policyDocumentText.slice(0, 600) : undefined;
       baseRun.openData = liveSnapshot;
-      baseRun.charts = buildAnnotatedChartsForSovereign(liveSnapshot);
 
       const providerMode = runtimeConfig.providerMode || 'gemini';
       const enableSearch = runtimeConfig.enableSearchGrounding !== false;

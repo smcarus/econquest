@@ -721,8 +721,8 @@ export const AskCouncilPanel: React.FC<{
       className={`flex flex-col ${page ? 'h-full' : 'ui-panel'} ${onClose ? 'h-full' : ''}`}
       data-ask-council="true"
       data-council-layout={page ? 'page' : onClose ? 'dock' : 'card'}
-      data-no-provenance-overlay="true"
-      data-no-stat-ref="true"
+     
+     
     >
       <header className={`flex items-center justify-between gap-2 ${page ? 'pb-2' : 'ui-panel-header'}`}>
         <div className="min-w-0">

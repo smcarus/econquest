@@ -20,7 +20,7 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
   }, [points]);
 
   return (
-    <section className="ui-panel" data-regime-quadrant="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-regime-quadrant="true">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">

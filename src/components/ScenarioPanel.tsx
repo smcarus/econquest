@@ -53,7 +53,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const label = reply?.presets.find((p) => p.id === preset)?.label || 'Your scenario';
 
   return (
-    <section className="ui-panel" data-scenario="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-scenario="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Globe2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />

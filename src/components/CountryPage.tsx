@@ -234,8 +234,8 @@ export const CountryPage: React.FC<{
       </div>
 
       {tab.id === 'overview' && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-no-stat-ref="true">
-          <div className="xl:col-span-2 space-y-2" data-no-provenance-overlay="true">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
+          <div className="xl:col-span-2 space-y-2">
             <section className="ui-panel">
               <header className="ui-panel-header">
                 <h2 className="ui-section-title">{offline ? `What is saved for ${run.countryName}` : `What is live for ${run.countryName}`}</h2>
