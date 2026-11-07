@@ -120,7 +120,7 @@ npm run build        # production bundle
 npm run test:smoke   # opens every page of the built app in Chromium with all feeds down
 npm run check:data   # live check of every source from this computer
 npm run check:imf    # prints the IMF series codes the app matches
-npm run record:feeds # records every free feed's real reply for the tests (run where the feeds answer)
+npm run record:feeds # records every free feed's real reply for the tests (run where the feeds answer), then the shareable subset
 npm run preload      # downloads every free feed for every country, for fast offline use
 ```
 
@@ -135,6 +135,10 @@ every URL, own paid data and AI switched off) in `tests/fixtures/recorded/`, wit
 it. `tests/recorded.test.ts` replays those replies through the real server with the clock set back to
 the recording, and fails, naming the source, if a source connected then no longer is or a figure
 filled then is now Missing. It is skipped until a recording exists. Record again after adding a feed.
+The same run builds `tests/fixtures/recorded-public/` (`npm run record:public`): only the replies from
+sources whose terms allow passing data on (`tests/helpers/publicFeeds.mjs`), replayed once to save
+what the app reads from them. That folder ships in the public repository, so
+`tests/recordedPublic.test.ts` gives outside contributors the same check without a key.
 
 Layout: `server.ts` (Express API, data pulls and caches), `src/utils/` (one module per source or
 calculation, each with a test in `tests/`), `src/components/` (React pages and panels),

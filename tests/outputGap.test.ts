@@ -10,7 +10,9 @@ import { countrySeries } from '../src/utils/seriesHistory';
 import { taylorCheck, taylorMethod } from '../src/utils/taylorRule';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const rec = path.join(root, 'tests', 'fixtures', 'recorded');
+// The full private recording where it exists, else the replies anyone may use (IMF DataMapper is in both).
+const full = path.join(root, 'tests', 'fixtures', 'recorded');
+const rec = existsSync(path.join(full, 'index.json')) ? full : path.join(root, 'tests', 'fixtures', 'recorded-public');
 
 /** IMF real growth for a country from the recorded feed replies, as yearly points. */
 function recordedGrowth(iso3: string) {

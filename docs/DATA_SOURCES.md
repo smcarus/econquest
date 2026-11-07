@@ -249,6 +249,8 @@ Notes from the first check on Sam's Mac (2026-11-05):
   of imports from the Gulf producers, and a fourth line, "Commodity prices, last 12 months",
   applies each commodity's actual 12-month Pink Sheet move to the country's export mix and its
   fuel imports. Each line reads Missing when a figure it needs did not load.
+  The World Bank trade shares and WITS partner shares are kept on disk after each pull that
+  returned any figure (`data/live/trade-exposure.json`) and shown from there when no feed answers.
 
 ## Free, downloaded files (nothing fetched)
 

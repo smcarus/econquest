@@ -16,9 +16,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const recDir = path.join(root, 'tests', 'fixtures', 'recorded');
+// The full private recording where it exists, else the replies anyone may use (public repository).
+const full = path.join(root, 'tests', 'fixtures', 'recorded');
+const recDir = existsSync(path.join(full, 'index.json')) ? full : path.join(root, 'tests', 'fixtures', 'recorded-public');
 const indexFile = path.join(recDir, 'index.json');
-const skip = existsSync(indexFile) ? false : 'no recorded feed replies yet: run `npm run record:feeds`';
+const skip = existsSync(indexFile) ? false : 'no recorded feed replies yet: run `npm run record:feeds` (then `npm run record:public`)';
 
 /** Figures allowed to be Missing offline, each with its reason. */
 const NOT_SAVED = new Set<string>([]);

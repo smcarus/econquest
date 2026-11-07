@@ -4,4 +4,6 @@
 # Raw replies recorded from live feeds. Several sources (Kalshi, UN Comtrade/WITS, ExchangeRate-API,
 # Polymarket, OECD yields via FRED, IMF bulk downloads) do not allow their data to be passed on.
 # tests/recorded.test.ts and tests/offlineSaved.test.ts skip when these are absent.
+# tests/fixtures/recorded-public (replies from sources whose terms allow passing data on, built by
+# npm run record:public) ships instead: tests/recordedPublic.test.ts and offlineSaved.test.ts use it.
 tests/fixtures/recorded
