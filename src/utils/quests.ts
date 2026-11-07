@@ -11,6 +11,7 @@
  *   signal       contributors propose pre-registered tests; each is run once and badged as usual
  *   replication  reproduce a figure the app shows, within a stated tolerance
  *   debate       not scored; closes with an evidence map of the positions and the figures cited
+ *                (src/utils/questDebate.ts)
  *
  * A Quest file never holds a data figure: every number shown with it is read live from a feed. The
  * numbers it may hold are question parameters (a threshold, a tolerance).
@@ -90,6 +91,8 @@ export interface DebateQuest extends QuestBase {
   /** Two to four positions an entry can take. */
   positions: string[];
   settlesOn: string;
+  /** Ids of Forecast Quests whose results bear on the debate; their results are shown on the evidence map. */
+  related?: string[];
 }
 
 export type Quest = ForecastQuest | SignalQuest | ReplicationQuest | DebateQuest;
@@ -154,7 +157,7 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
   const q = raw as Partial<Quest> & Record<string, unknown>;
   const out: string[] = [];
   if (typeof q.id !== 'string' || !ID.test(q.id) || q.id.length > 60) out.push('id: lower-case words joined by hyphens, at most 60 characters');
-  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
+  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
   if (!Number.isInteger(q.version) || (q.version as number) < 1) out.push('version: a whole number from 1');
   if (opts.fileName && typeof q.id === 'string' && Number.isInteger(q.version) && opts.fileName !== questFileName(q as Quest)) out.push(`file name: must be ${questFileName(q as Quest)}`);
   if (!QUEST_TYPES.includes(q.type as QuestType)) out.push(`type: one of ${QUEST_TYPES.join(', ')}`);
@@ -201,6 +204,8 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
     case 'debate':
       if (!Array.isArray(base.positions) || base.positions.length < 2 || base.positions.length > 4 || !base.positions.every((p) => str(p, POSITION_MAX))) out.push(`positions: 2 to 4 short positions (up to ${POSITION_MAX} characters each)`);
       else if (new Set(base.positions.map((p) => p.trim().toLowerCase())).size !== base.positions.length) out.push('positions: must differ');
+      if (base.related !== undefined && (!Array.isArray(base.related) || base.related.length > 10 || !base.related.every((r) => typeof r === 'string' && ID.test(r)) || base.related.includes(base.id)))
+        out.push('related: up to 10 ids of other (Forecast) Quests');
       break;
   }
   if (base.type !== 'forecast') {

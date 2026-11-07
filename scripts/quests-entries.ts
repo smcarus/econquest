@@ -8,7 +8,8 @@
  *       and, optionally, QUESTS_MAINTAINERS from the workflow; the time is the time it runs). It runs
  *       from the base branch and reads the entry files from the pull request's head commit.
  *   npm run quests:entries -- --by <login> --email ~name --quest <id> --received <ISO time>
- *                              (--probability 0.6 | --level 41.5) [--rationale "..."]
+ *                              (--probability 0.6 | --level 41.5 | --position 2) [--rationale "..."]
+ *       (a Debate Quest takes --position, 1 for the first listed, and needs --rationale: the argument)
  *       write an entry someone emailed because GitHub blocks them; commit it in a pull request
  *       of its own within 7 days of close
  */
@@ -19,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { loadQuests } from '../src/utils/questStore.ts';
 import { checkEntryChange, entryFileText, entryPath, parseEntryPath, publicEntryProblems, type PublicEntry } from '../src/utils/questPublicEntries.ts';
 import { readPublicEntryFiles } from '../src/utils/questPublicEntryStore.ts';
-import type { ForecastQuest } from '../src/utils/quests.ts';
+import type { EntryQuest } from '../src/utils/questEntries.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'quests');
@@ -34,8 +35,8 @@ const fail = (msg: string): never => {
 };
 const quests = loadQuests(dir);
 const questFor = (id: string) => {
-  const x = quests.find((q) => q.quest.id === id && q.quest.type === 'forecast');
-  return x ? { quest: x.quest as ForecastQuest, hash: x.hash, approved: x.approved } : undefined;
+  const x = quests.find((q) => q.quest.id === id && (q.quest.type === 'forecast' || q.quest.type === 'debate'));
+  return x ? { quest: x.quest as EntryQuest, hash: x.hash, approved: x.approved } : undefined;
 };
 const maintainers = (process.env.QUESTS_MAINTAINERS || 'smcarus').split(/[\s,]+/).filter(Boolean);
 const git = (...args: string[]) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
@@ -78,10 +79,9 @@ if (emailName) {
   const received = opt('--received');
   if (!by || !id || !received) fail('--email ~name needs --by <your login>, --quest <id> and --received <ISO time>');
   const q = questFor(id!);
-  if (!q) fail(`No forecast Quest with id ${id}`);
-  const probability = opt('--probability');
-  const level = opt('--level');
-  const answer = q!.quest.rule.kind === 'level' ? { level: Number(level) } : { probability: Number(probability) };
+  if (!q) fail(`No forecast or debate Quest with id ${id}`);
+  const quest = q!.quest;
+  const answer = quest.type === 'debate' ? { position: Number(opt('--position')) } : quest.rule.kind === 'level' ? { level: Number(opt('--level')) } : { probability: Number(opt('--probability')) };
   const existing = readPublicEntryFiles(dir).map((f) => parseEntryPath(f.rel)).filter((x) => x && x.questId === id && x.login === emailName);
   const n = existing.reduce((m, x) => Math.max(m, x!.n), 0) + 1;
   const rationale = opt('--rationale');

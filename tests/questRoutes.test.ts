@@ -98,7 +98,11 @@ test('private entries: logged, hashed, listed as counted, and refused when the a
     const cls = await (await fetch(`${s.base}/api/quests/class/econ101`)).json();
     assert.deepEqual(cls.rows.map((r: { author: string; entries: number }) => [r.author, r.entries]), [['local user', 1]]);
     assert.equal((await fetch(`${s.base}/api/quests/class/bad%20code`)).status, 400);
-    assert.equal((await fetch(`${s.base}/api/quests/egy-reserves-debate/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
+    // A Debate Quest takes entries from step 9: a position and an argument (tests/questDebate.test.ts).
+    const debateReply = await fetch(`${s.base}/api/quests/egy-reserves-debate/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(debateReply.status, 400);
+    assert.match((await debateReply.json()).error, /pick a position/);
+    assert.equal((await fetch(`${s.base}/api/quests/bra-bohn-replication/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
   } finally {
     await s.close();
   }

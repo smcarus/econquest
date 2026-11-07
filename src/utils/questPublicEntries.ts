@@ -1,5 +1,5 @@
 /**
- * Public Quest entries (Quests step 6): a forecast entered on the public repository by pull request,
+ * Public Quest entries (Quests step 6): a forecast (or, from step 9, a Debate position and its argument) entered on the public repository by pull request,
  * one small file per entry at quests/entries/<quest id>/<login>.<n>.json.
  *
  * Rules the entry checker enforces (CI runs it on every pull request that adds entries):
@@ -15,8 +15,7 @@
  * Entries are not shown in the app until entries close, so nobody copies the crowd from there. Pull
  * requests on GitHub are public, which the docs say plainly. Browser-safe, pure.
  */
-import { entryProblems, type EntryAnswer } from './questEntries';
-import type { ForecastQuest } from './quests';
+import { entryProblems, type EntryAnswer, type EntryQuest } from './questEntries';
 
 export interface PublicEntry {
   questId: string;
@@ -72,7 +71,7 @@ export function entryFileText(e: PublicEntry): string {
 }
 
 /** Problems with one entry file's contents, against its path and the Quest it answers. */
-export function publicEntryProblems(raw: unknown, filePath: string, quest: { quest: ForecastQuest; hash: string; approved: boolean } | undefined): string[] {
+export function publicEntryProblems(raw: unknown, filePath: string, quest: { quest: EntryQuest; hash: string; approved: boolean } | undefined): string[] {
   const at = parseEntryPath(filePath);
   if (!at) return [`${filePath}: entries go in ${ENTRIES_DIR}/<quest id>/<login>.<n>.json`];
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return ['not a JSON object'];
@@ -113,7 +112,7 @@ export interface EntryChange {
   maintainers: string[];
   /** When the check runs (ISO), set by CI. */
   now: string;
-  questFor: (id: string) => { quest: ForecastQuest; hash: string; approved: boolean } | undefined;
+  questFor: (id: string) => { quest: EntryQuest; hash: string; approved: boolean } | undefined;
 }
 
 /**

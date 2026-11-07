@@ -2,13 +2,19 @@
  * Menu > Quests (read only): open questions anyone can answer, argue and check, each with the rule
  * that settles it and the latest value of the series it reads. Shown only when Quests are switched
  * on (QUESTS_ENABLED=on, docs/QUESTS.md). Forecasts can be logged privately on this computer,
- * practised on past data, and compared in a class table; nothing here is published.
+ * practised on past data, and compared in a class table; nothing here is published. Debate Quests
+ * show their recorded opening brief, take a position and an argument (checked by Claim Check as it
+ * is written), and close with an evidence map that exports as Markdown.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Compass, X } from 'lucide-react';
-import type { Quest, QuestHorizon, QuestStatus, QuestType } from '../utils/quests';
+import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType } from '../utils/quests';
 import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
+import type { LiveWatchlistItem } from '../types/council';
+import type { PublicEntry } from '../utils/questPublicEntries';
+import { ARGUMENT_MIN } from '../utils/questEntries';
+import { checkArgument, evidenceMap, evidenceMarkdown, type ArgumentCheck, type DebateBrief, type EvidenceMap } from '../utils/questDebate';
 
 type Summary = {
   id: string;
@@ -28,7 +34,7 @@ type Summary = {
 };
 type Figure = { country: string; series: string; label: string; value?: number; date?: string; unit?: string; source?: string; missing?: string };
 type ListReply = { enabled: false; reason: string } | { enabled: true; quests: Summary[] };
-type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState };
+type Detail = { enabled: true; quest: Quest; summary: Summary; file: string; rule?: string; fallback?: string; figures: Figure[]; result?: QuestResultState; brief?: { brief: DebateBrief; hashOk: boolean } | null; related?: EvidenceMap['related'] };
 
 const TYPE_LABEL: Record<QuestType, string> = { forecast: 'Forecast', signal: 'Signal', replication: 'Replication', debate: 'Debate' };
 const STATUS_LABEL: Record<QuestStatus, string> = { draft: 'Draft', upcoming: 'Opens soon', open: 'Open', closed: 'Closed to entries', due: 'Result due' };
@@ -39,7 +45,7 @@ const HOW_IT_ENDS: Record<QuestType, string> = {
   debate: 'Debate, not a tested signal. Not scored; it closes with an evidence map of the positions and the figures each cites.',
 };
 
-export function QuestsDialog({ onClose }: { onClose: () => void }) {
+export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; items?: LiveWatchlistItem[] }) {
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [list, setList] = useState<ListReply | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -242,6 +248,13 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
                       <Practice questId={detail.quest.id} />
                     </>
                   )}
+                  {detail.quest.type === 'debate' && (
+                    <>
+                      <BriefBox brief={detail.brief ?? null} quest={detail.quest} />
+                      <EvidenceMapBox quest={detail.quest} items={items} brief={detail.brief?.brief ?? null} related={detail.related ?? []} />
+                      <Argue quest={detail.quest} items={items} />
+                    </>
+                  )}
                   <p className="text-xs text-slate-500">
                     File: {detail.file}
                     {detail.quest.discussion ? (
@@ -375,7 +388,7 @@ function Practice({ questId }: { questId: string }) {
   );
 }
 
-type ScoredEntry = { entry: { id: string; questId: string; loggedAt: string; answer: { probability?: number; level?: number }; group?: string }; title: string; counted: boolean; hashOk: boolean; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } };
+type ScoredEntry = { entry: { id: string; questId: string; loggedAt: string; answer: { probability?: number; level?: number; position?: number }; group?: string }; title: string; counted: boolean; hashOk: boolean; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } };
 
 function MyEntries() {
   const [data, setData] = useState<{ author: string; entries: ScoredEntry[] } | null>(null);
@@ -385,7 +398,7 @@ function MyEntries() {
   }, []);
   if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
   if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
-  if (!data.entries.length) return <p className="text-sm text-slate-500">No entries logged on this computer yet. Open a forecast Quest and use Log privately.</p>;
+  if (!data.entries.length) return <p className="text-sm text-slate-500">No entries logged on this computer yet. Open a forecast Quest and use Log privately, or argue a Debate Quest.</p>;
   return (
     <table className="w-full text-sm" data-quest-mine>
       <thead>
@@ -405,7 +418,7 @@ function MyEntries() {
                 {e.hashOk ? '' : ' · hash does not match'}
               </div>
             </td>
-            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
+            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.position !== undefined ? `Position ${e.entry.answer.position}` : e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
             <td className="py-1 text-xs">
               {e.score.status === 'settled'
                 ? `${e.score.brier !== undefined ? `Brier ${e.score.brier.toFixed(3)}` : `Error ${e.score.error}`}; skill ${e.score.skill === null || e.score.skill === undefined ? 'no baseline' : e.score.skill.toFixed(3)}`
@@ -866,6 +879,11 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
           Quests proposed: {c.proposed.map((p) => `${p.questId} (${p.entries} entr${p.entries === 1 ? 'y' : 'ies'})`).join(', ')}
         </p>
       )}
+      {c.debates?.length > 0 && (
+        <p className="text-sm" data-quest-debates>
+          Debates argued (never scored or ranked): {c.debates.map((d) => d.title).join('; ')}
+        </p>
+      )}
       {c.entries.length > 0 && (
         <table className="w-full text-sm">
           <thead>
@@ -929,6 +947,251 @@ function ThisWeek({ onOpen }: { onOpen: (id: string) => void }) {
           </div>
         )}
       </div>
+    </Box>
+  );
+}
+
+// ---------------------------------------------------------------- Debate Quests (step 9)
+
+const VERDICT_TONE: Record<string, string> = {
+  matches: 'text-emerald-700 dark:text-emerald-400',
+  holds: 'text-emerald-700 dark:text-emerald-400',
+  differs: 'text-rose-700 dark:text-rose-400',
+  'does not hold': 'text-rose-700 dark:text-rose-400',
+};
+
+function Checks({ checks, empty }: { checks: ArgumentCheck[]; empty: string }) {
+  if (!checks.length) return <p className="text-xs text-slate-500">{empty}</p>;
+  return (
+    <ul className="space-y-1 text-xs" data-quest-claims>
+      {checks.map((c, i) => (
+        <li key={i}>
+          <span className={`font-medium ${VERDICT_TONE[c.verdict] ?? 'text-slate-600 dark:text-slate-300'}`}>{c.verdict}</span>: {c.reading}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The opening brief written once by the app's AI model, or why there is none. */
+function BriefBox({ brief, quest }: { brief: { brief: DebateBrief; hashOk: boolean } | null; quest: DebateQuest }) {
+  if (!brief)
+    return (
+      <Box title="Opening brief">
+        <p className="text-xs text-slate-500">No opening brief has been recorded for this Debate yet. A maintainer writes it once, before entries open, with the app's AI model.</p>
+      </Box>
+    );
+  const b = brief.brief;
+  return (
+    <Box title="Opening brief">
+      <p className="text-xs text-amber-800 dark:text-amber-300" data-quest-brief-label>
+        {b.label} Model: {b.model}, written {b.writtenAt.slice(0, 10)}.
+        {!brief.hashOk && ' Warning: the file no longer matches the hash it was saved with, so it may have been edited.'}
+      </p>
+      {b.positions.map((p) => (
+        <div key={p.position} className="space-y-1">
+          <div className="text-sm font-medium">
+            {p.position}. {quest.positions[p.position - 1]}
+          </div>
+          <p className="text-xs">
+            <span className="text-slate-500">Strongest case: </span>
+            {p.strongest}
+          </p>
+          <p className="text-xs">
+            <span className="text-slate-500">Weakest point: </span>
+            {p.weakest}
+          </p>
+          <p className="text-xs">
+            <span className="text-slate-500">Figures to check: </span>
+            {p.check}
+          </p>
+        </div>
+      ))}
+    </Box>
+  );
+}
+
+/** Pick a position and argue it; Claim Check reads the argument as it is written. */
+function Argue({ quest, items }: { quest: DebateQuest; items: LiveWatchlistItem[] }) {
+  const [position, setPosition] = useState(0);
+  const [argument, setArgument] = useState('');
+  const [login, setLogin] = useState(readLogin);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ url: string; path: string; text: string; note: string; replaces?: number } | null>(null);
+  const checks = argument.trim().length >= ARGUMENT_MIN ? checkArgument(argument, quest, items) : [];
+  const ready = position > 0 && argument.trim().length >= ARGUMENT_MIN;
+  const logPrivately = async () => {
+    setMsg(null);
+    try {
+      const j = await send(`/api/quests/${encodeURIComponent(quest.id)}/private`, { answer: { position }, rationale: argument });
+      setMsg(`Logged on this computer at ${String(j.entry.loggedAt).slice(0, 16).replace('T', ' ')} UTC. You can log again until entries close; the last one counts.`);
+    } catch (e: any) {
+      setMsg(e?.message || String(e));
+    }
+  };
+  const preparePublic = async () => {
+    setMsg(null);
+    setDraft(null);
+    try {
+      localStorage.setItem(LOGIN_KEY, login.trim());
+    } catch {
+      /* not remembered; fine */
+    }
+    try {
+      const qs = new URLSearchParams({ login: login.trim(), position: String(position), rationale: argument.trim() });
+      setDraft(await send(`/api/quests/${encodeURIComponent(quest.id)}/draft-entry?${qs}`));
+    } catch (e: any) {
+      setMsg(e?.message || String(e));
+    }
+  };
+  return (
+    <Box title="Argue a position">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Pick the position you find most convincing and say why in your own words, using the figures the app shows. Nobody is scored: the Debate ends with an evidence map of every argument. Claim Check reads your argument as you type and compares each figure you state with the app's figure, so you can fix a figure before you send it.
+      </p>
+      <div className="space-y-1" role="radiogroup" aria-label="Position">
+        {quest.positions.map((p, i) => (
+          <label key={p} className="flex items-start gap-2 text-sm">
+            <input type="radio" name={`pos-${quest.id}`} checked={position === i + 1} onChange={() => setPosition(i + 1)} data-quest-position={i + 1} />
+            <span>
+              {i + 1}. {p}
+            </span>
+          </label>
+        ))}
+      </div>
+      <label className="text-xs space-y-1 block">
+        <span className="block">Your argument (at least {ARGUMENT_MIN} characters; public if you enter publicly)</span>
+        <textarea className={`${fieldCls} w-full`} rows={4} maxLength={2000} value={argument} onChange={(e) => setArgument(e.target.value)} data-quest-argument />
+      </label>
+      {argument.trim().length >= ARGUMENT_MIN && (
+        <div className="space-y-1">
+          <div className="text-xs text-slate-500">Claim Check</div>
+          <Checks checks={checks} empty="No figure or ranking found that Claim Check can compare with the app's figures (it reads the policy rate, inflation, government debt, primary balance, reserves and growth)." />
+        </div>
+      )}
+      <div className="flex flex-wrap gap-2 items-end">
+        <button type="button" className="ui-btn" onClick={logPrivately} disabled={!ready} data-quest-argue-log>
+          Log on this computer
+        </button>
+        <label className="text-xs space-y-1">
+          <span className="block">GitHub name</span>
+          <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
+        </label>
+        <button type="button" className="ui-btn" onClick={preparePublic} disabled={!ready || !login.trim()} data-quest-argue-public>
+          Prepare public entry
+        </button>
+      </div>
+      {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
+      {draft && (
+        <div className="space-y-1 text-xs" data-quest-draft>
+          <p>
+            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept. ` : ''}File: {draft.path}
+          </p>
+          <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{draft.text}</pre>
+          <p>{draft.note}</p>
+          <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
+            Open on GitHub
+          </a>
+        </div>
+      )}
+    </Box>
+  );
+}
+
+type DebateReply = { open: true; count: number; note: string } | { open: false; count: number; entries: Array<Pick<PublicEntry, 'login' | 'n' | 'via' | 'answer' | 'rationale'>> };
+
+/** After close: who argued what, each argument with its Claim Check readings, and related results. */
+function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; items: LiveWatchlistItem[]; brief: DebateBrief | null; related: EvidenceMap['related'] }) {
+  const [data, setData] = useState<DebateReply | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send(`/api/quests/${encodeURIComponent(quest.id)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, [quest.id]);
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Entries did not load: {err}</p>;
+  if (!data) return null;
+  if (data.open)
+    return (
+      <Box title={`Evidence map (${data.count} ${data.count === 1 ? 'argument' : 'arguments'} so far)`}>
+        <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden>
+          {data.note} The evidence map appears here once entries close.
+        </p>
+      </Box>
+    );
+  const entries = data.entries.map((e) => ({ ...e, questId: quest.id, questVersion: quest.version, questHash: '' }) as PublicEntry);
+  const map = evidenceMap(quest, entries, { check: (t) => checkArgument(t, quest, items), related });
+  const exportMd = () => {
+    const md = evidenceMarkdown(map, brief, new Date().toISOString().slice(0, 10));
+    const url = URL.createObjectURL(new Blob([md], { type: 'text/markdown' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `evidence-map-${quest.id}.md`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+  return (
+    <Box title={`Evidence map (${map.total} ${map.total === 1 ? 'argument' : 'arguments'})`}>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Not scored: no position is marked right or wrong. For each position, how many people argued it, and how many of the figures they stated match or differ from the app's figures today. Read the arguments and the related results and judge for yourself.
+      </p>
+      <table className="w-full text-sm" data-quest-map>
+        <thead>
+          <tr className="text-xs text-slate-500 text-left">
+            <th className="py-1 pr-2 font-normal">Position</th>
+            <th className="py-1 pr-2 font-normal">Argued by</th>
+            <th className="py-1 pr-2 font-normal">Figures that match</th>
+            <th className="py-1 font-normal">Figures that differ</th>
+          </tr>
+        </thead>
+        <tbody>
+          {map.positions.map((p) => (
+            <tr key={p.position} className="border-t border-slate-200 dark:border-slate-800">
+              <td className="py-1 pr-2">
+                {p.position}. {p.text}
+              </td>
+              <td className="py-1 pr-2 tabular-nums">{p.count}</td>
+              <td className="py-1 pr-2 tabular-nums">{p.matches}</td>
+              <td className="py-1 tabular-nums">{p.differs}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {map.positions
+        .filter((p) => p.arguments.length)
+        .map((p) => (
+          <details key={p.position} className="text-sm">
+            <summary className="cursor-pointer">
+              {p.position}. {p.text} ({p.count})
+            </summary>
+            <div className="space-y-2 pl-3 pt-1">
+              {p.arguments.map((a) => (
+                <div key={a.login} className="space-y-1">
+                  <div className="text-xs text-slate-500">
+                    {a.login}
+                    {a.via === 'email' ? ' (emailed)' : ''}
+                  </div>
+                  <p className="text-sm whitespace-pre-wrap">{a.argument}</p>
+                  <Checks checks={a.checks} empty="Claim Check found no figure or ranking it could compare." />
+                </div>
+              ))}
+            </div>
+          </details>
+        ))}
+      {map.related.length > 0 && (
+        <div className="space-y-1">
+          <div className="text-xs text-slate-500">What related Forecast Quests found</div>
+          <ul className="list-disc pl-5 text-xs">
+            {map.related.map((r) => (
+              <li key={r.questId}>
+                {r.title}: {r.result}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <button type="button" className="ui-btn" onClick={exportMd} disabled={!map.total} data-quest-map-export>
+        Export evidence map (Markdown)
+      </button>
+      <p className="text-xs text-slate-500">Claim Check compares figures with the app's figures as they are today, which may be newer than when an argument was written. It is a check against the app, not a verdict on the truth.</p>
     </Box>
   );
 }

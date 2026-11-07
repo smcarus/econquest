@@ -1825,7 +1825,7 @@ export default function App() {
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
-      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog onClose={() => setIsQuestsOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
