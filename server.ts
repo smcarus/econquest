@@ -10,6 +10,7 @@ import { forwardFilePath, loadForward } from './src/utils/forwardRecordStore';
 import { fetchWithTimeout } from './src/server/http';
 import crypto from 'crypto';
 import { writeFileAtomic } from './src/utils/atomicWrite';
+import { EXAM_CHOICE_REASON, EXAM_DEBATE_REASON, EXAM_REASON, examOpenedSummary, parseExamMode, type ExamModeState } from './src/utils/examMode';
 import { EMPTY_PRELOAD_STATE, NO_TIME_LIMIT_STEPS, estimateRemainingBytes, formatBytes, planPreload, progressLine, stepsToRun, summarisePreload, type PreloadState, type PreloadStep, type PreloadStepResult } from './src/utils/preload';
 import { OFFICIAL_FIGURES, officialPoints, mergeRevisions, historyRevisions, officialSeries, parseImfYears, parseWorldBankYears, type OfficialHistoryFile } from './src/utils/officialHistory';
 import { outputGapFromGrowth, type OutputGapResult } from './src/utils/outputGap';
@@ -1469,6 +1470,15 @@ function explainFromBody(body: any): ExplainPlan | undefined {
  * set time, each saved to research with what moved since the same question last ran.
  * ------------------------------------------------------------------------------------------ */
 const MORNING_FILE = path.join(DATA_DIR, 'local', 'morning-brief.json');
+// Exam mode (src/utils/examMode.ts): one server-wide switch; no AI step writes while it is on.
+const EXAM_MODE_FILE = path.join(DATA_DIR, 'local', 'exam-mode.json');
+function loadExamMode(): ExamModeState {
+  try {
+    return parseExamMode(JSON.parse(fs.readFileSync(EXAM_MODE_FILE, 'utf8')));
+  } catch {
+    return { on: false };
+  }
+}
 let morningRunning = false;
 
 function loadMorning(): MorningBriefFile {
@@ -1516,7 +1526,7 @@ function savedAiConfig(): any {
 }
 
 async function runMorningBrief(trigger: MorningBriefRun['trigger']): Promise<MorningBriefRun | null> {
-  if (morningRunning) return null;
+  if (morningRunning || loadExamMode().on) return null;
   morningRunning = true;
   try {
     const file = loadMorning();
@@ -2684,6 +2694,34 @@ async function startServer() {
     return true;
   };
   app.get('/api/settings/keys', (req, res) => res.json(keysReply(req, res)));
+  // Exam mode: anyone can read it; only this computer, or an admin when sign-in is on, can switch it.
+  const canSwitchExam = (req: express.Request, res: express.Response) => trusted(req, res) && (!signedIn(res) || signedIn(res)!.role === 'admin');
+  app.get('/api/exam-mode', (req, res) => res.json({ ...loadExamMode(), canChange: canSwitchExam(req, res) }));
+  app.put('/api/exam-mode', (req, res) => {
+    if (!canSwitchExam(req, res)) return res.status(403).json({ error: 'Only the computer running the app, or an admin when sign-in is on, can switch exam mode.' });
+    const on = req.body?.on === true;
+    const by = signedIn(res) ? accountName(signedIn(res)) : 'this computer';
+    const state: ExamModeState = { on, since: new Date().toISOString(), by };
+    fs.mkdirSync(path.dirname(EXAM_MODE_FILE), { recursive: true });
+    writeFileAtomic(EXAM_MODE_FILE, JSON.stringify(state));
+    appendAudit(AUDIT_FILES, { kind: 'settings', summary: `Exam mode turned ${on ? 'on' : 'off'} by ${by}.` });
+    res.json({ ...state, canChange: true });
+  });
+  // Every other step that calls an AI model is refused while exam mode is on.
+  const EXAM_BLOCKED = /^\/api\/(council\/(phase1-and-cascade|rerun|analyze-policy-document)|ai\/try-model|morning-brief\/run|reviews\/[^/]+\/(diagnose|options|memo))$/;
+  app.use((req, res, next) => {
+    if (req.method === 'POST' && EXAM_BLOCKED.test(req.path) && loadExamMode().on) return res.status(409).json({ error: 'Exam mode is on: steps that use an AI model are switched off (Menu > Exam mode).' });
+    next();
+  });
+  // What was opened in exam mode, for the teacher (audit log, kind "research").
+  app.post('/api/exam-mode/opened', (req, res) => {
+    if (!loadExamMode().on) return res.json({ recorded: false });
+    const what = req.body?.what === 'country' ? 'country' : 'page';
+    const label = typeof req.body?.label === 'string' ? req.body.label.slice(0, 200) : '';
+    if (!label) return res.status(400).json({ error: 'A label is needed.' });
+    appendAudit(AUDIT_FILES, { kind: 'research', summary: examOpenedSummary(what, label), detail: { examMode: true, by: accountName(signedIn(res)) } });
+    res.json({ recorded: true });
+  });
   // Settings, connector tests and webhooks can only be used from the computer running the app.
   const refuseRemoteChange = (req: express.Request, res: express.Response): boolean => {
     if (trusted(req, res)) return false;
@@ -4764,6 +4802,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
   app.post('/api/council/choose-agents', async (req, res) => {
     const question = typeof req.body?.question === 'string' ? req.body.question.trim().slice(0, 500) : '';
     if (!question) return res.status(400).json({ error: 'A question is needed.' });
+    if (loadExamMode().on) return res.json({ agents: null, reason: EXAM_CHOICE_REASON });
     const earlier = Array.isArray(req.body?.earlier) ? req.body.earlier.filter((t: any) => t && typeof t.question === 'string') : [];
     try {
       const step = await executeResilientLlmStep<{ agents: Array<{ id: string; why: string }> }>({
@@ -4808,6 +4847,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
     }
     // Challenges are rebuilt here from the answers, never taken from the request.
     const challenges = findChallenges(answers);
+    if (loadExamMode().on) return res.json({ challenges, replies: null, reason: EXAM_DEBATE_REASON } as DebateResult);
     if (!challenges.length) {
       const out: DebateResult = { challenges, replies: null, reason: 'the agents do not pull different ways on these countries' };
       return res.json(out);
@@ -4898,6 +4938,12 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       return res.status(400).json({ error: 'A question and the agents\' answers are needed.' });
     }
     const scope = typeof req.body?.scope === 'string' ? req.body.scope.slice(0, 200) : undefined;
+    if (loadExamMode().on) {
+      // No model is called; the question and the figures shown are still recorded for the teacher.
+      const out: SynthesisResult = { brief: null, removed: [], reason: EXAM_REASON };
+      auditCouncilAnswer(question, answers, out, scope, 'Council chat (exam mode)');
+      return res.json(out);
+    }
     const askedAt = typeof req.body?.askedAt === 'string' && !Number.isNaN(Date.parse(req.body.askedAt)) ? new Date(req.body.askedAt).toISOString() : undefined;
     const out = await answerAndRecord(
       question,

@@ -1,5 +1,6 @@
 import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { noteExamOpened } from '../utils/examMode';
 import { openDataLicences } from './AboutDialog';
 import { Plus, RefreshCw } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
@@ -125,6 +126,8 @@ export const CountryPage: React.FC<{
 }) => {
   const net = useOnlineStatus();
   const offline = !!net && !net.online;
+  // Exam mode: what was opened goes to the audit log for the teacher.
+  useEffect(() => noteExamOpened('country', `${run.countryName}, ${activeTab}`), [run.countryName, activeTab]);
   const item = watchlistItems.find((w) => w.iso3 === run.iso3);
   const tabs = COUNTRY_TABS;
   const tab = tabs.find((t) => t.id === activeTab) || DEFAULT_COUNTRY_TAB;

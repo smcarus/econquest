@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { publicationCheck, publicationSvg, PUBLICATION_METHOD } from '../utils/publicationExport';
+import { loadShareMode } from '../utils/shareMode';
 
 /**
  * "Publish chart": downloads the chart in `chartRef` as SVG or PNG with title, source, period,
@@ -14,7 +15,11 @@ export const PublishChartButton: React.FC<{
   period: string;
   fileName: string;
 }> = ({ chartRef, title, subtitle, source, period, fileName }) => {
-  const check = useMemo(() => publicationCheck([source]), [source]);
+  // Sharing mode (Menu > Sharing mode) also holds back sources whose sharing terms are unclear.
+  const check = useMemo(() => {
+    const c = publicationCheck([source]);
+    return loadShareMode() ? { ...c, blocked: [...c.blocked, ...c.unclear], unclear: [] } : c;
+  }, [source]);
   const [credit, setCredit] = useState(() => check.credits.join(' '));
   const [hold, setHold] = useState(false);
   const [note, setNote] = useState<string | null>(null);
