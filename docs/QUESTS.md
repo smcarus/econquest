@@ -17,7 +17,9 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | --- | --- |
 | Quest file format, settle rules, licence check (`npm run quests:check`) | Built and tested |
 | Menu > Quests, read only: list, filters, Quest page with rule, live figures and known limits | Built and tested, switched off |
-| Log privately, practice mode | Not built |
+| Log privately (hashed, append-only, `data/local/quest-entries.jsonl`), My entries, scoring of daily and weekly series against base rate or no change | Built and tested, switched off |
+| Practice on past data (answer hidden, scored at once, not saved) | Built and tested, switched off |
+| Class table for a class code (private to the server it runs on) | Built and tested, switched off |
 | Resolver, results, disputes, Track record tab | Not built |
 | Public entries, anti-gaming checks | Not built |
 | Contributor statistics and scoreboard | Not built |
@@ -36,6 +38,8 @@ Working properly:
 - [ ] The resolver settles a past test Quest correctly from each source used (BIS, ECB, CFTC, EIA, IMF, World Bank), and a missing value gives Unresolvable
 - [ ] Entries can be made and are checked (opened before close, one per GitHub login)
 - [ ] Scores match a hand calculation for at least three settled test Quests
+- [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
+- [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
 - [ ] The UI smoke and journey tests cover the Quests page with Quests on and off
 
 Documented:
