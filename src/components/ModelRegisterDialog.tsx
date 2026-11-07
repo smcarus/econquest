@@ -7,7 +7,8 @@ import { useEffect, useRef, useState } from 'react';
 import { Download, Play, ShieldQuestion, X } from 'lucide-react';
 import { MODEL_REGISTER, REGISTER_HEADER, registerRows, STATUS_LABEL, type ValidationStatus } from '../data/modelRegister';
 import { ValidationBadge } from './ValidationBadge';
-import { effectiveStatus, runValidation, useValidation, validationHolm, type ValidationReply } from './useValidation';
+import { effectiveStatus, entryGrade, runValidation, useValidation, validationHolm, type ValidationReply } from './useValidation';
+import { GRADE_POLICY } from '../utils/evidenceGrade';
 import { holmSentence } from '../utils/multipleTesting';
 import { forwardSentence } from '../utils/forwardRecord';
 import { EXPORT_NOTICE } from '../utils/disclaimer';
@@ -19,9 +20,11 @@ function downloadCsv(v: ValidationReply | null) {
   const holmMap = validationHolm(v);
   const rows = registerRows(MODEL_REGISTER, (id) => {
     const r = v?.results?.[id];
-    if (r) return { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}. ${holmSentence(holmMap.get(`${r.id} v${r.specVersion}`))}`.trim() };
+    const g = entryGrade(id, MODEL_REGISTER.find((e) => e.id === id)?.status ?? 'not_validated', v, holmMap);
+    const gradeText = g ? ` Evidence grade: ${g.label}. ${g.why}` : '';
+    if (r) return { status: r.status, text: `${r.verdict} Test v${r.specVersion}, hash ${r.specHash}, run ${r.ranAt}. ${holmSentence(holmMap.get(`${r.id} v${r.specVersion}`))}${gradeText}`.trim() };
     const fs = forecastRegisterStatus(id, v?.forecasts);
-    return fs ? { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}. ${holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}`.trim()).join(' ') } : undefined;
+    return fs ? { status: fs, text: forecastVerdicts(id, v?.forecasts).map((x) => `${x.id} v${x.specVersion}: ${x.verdict} Hash ${x.specHash}, run ${x.ranAt}. ${holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}`.trim()).join(' ') + gradeText } : undefined;
   });
   const text = '\uFEFF' + [REGISTER_HEADER, ...rows, [EXPORT_NOTICE]].map((r) => r.map(csvCell).join(',')).join('\r\n') + '\r\n';
   const url = URL.createObjectURL(new Blob([text], { type: 'text/csv;charset=utf-8' }));
@@ -102,6 +105,9 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
               {holmMap.size} pre-registered tests on record (every version run, failed ones too). Each verdict below shows its Holm-adjusted p across all of them; {[...holmMap.values()].filter((h) => h.holds).length} hold after the correction. The recorded verdicts are not changed.
             </p>
           )}
+          <p className="text-xs text-slate-500 dark:text-slate-400" data-grade-policy>
+            A pass carries an evidence grade. Validated: it still holds after the correction for every test on record, or {GRADE_POLICY.promoteMonths} months of forward record beat its base rate. Provisional pass: it passed alone but not after the correction. Under review or Withdrawn: once {GRADE_POLICY.minForwardScored} forward calls are scored, a hit rate below the base rate (Withdrawn when significantly below). Review due: the test last ran more than {GRADE_POLICY.reviewMonths} months ago. Backtest figures are hypothetical. Details in docs/METHODS.md.
+          </p>
           {runError && <p className="text-rose-600 dark:text-rose-400">{runError}</p>}
           {v?.lastRun?.problems?.length ? <p className="text-amber-700 dark:text-amber-300">Last run: {v.lastRun.problems.join(' · ')}</p> : null}
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -124,6 +130,17 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                     <dd>{e.inputs}</dd>
                     <dt className="text-slate-500 dark:text-slate-400">Shows in</dt>
                     <dd>{e.where}</dd>
+                    {(() => {
+                      const g = entryGrade(e.id, e.status, v, holmMap);
+                      return g ? (
+                        <>
+                          <dt className="text-slate-500 dark:text-slate-400">Evidence grade</dt>
+                          <dd data-evidence-grade-text={g.grade}>
+                            {g.label}. {g.why}
+                          </dd>
+                        </>
+                      ) : null;
+                    })()}
                     <dt className="text-slate-500 dark:text-slate-400">How it is tested</dt>
                     <dd>{e.testPlan}</dd>
                     <dt className="text-slate-500 dark:text-slate-400">Limits</dt>

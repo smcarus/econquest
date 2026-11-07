@@ -76,6 +76,18 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Fiscal reaction (Bohn test) | Research | Stated method, no call to test | Not applicable |
 | Fiscal multipliers (cited reference view) | Research | Stated method, no call to test | Not applicable |
 
+## Evidence grades
+
+A recorded verdict is never changed. A test that passed also carries an evidence grade in the app (the badge beside the panel and Menu > Models & validation), read from the correction across all tests on record and the forward record on the computer that runs the app:
+
+- **Validated** (green): passed its pre-registered test and still holds after the Holm correction across every test on record; or, failing that, 24 months of forward record with at least 12 scored calls beat the test's own base rate (one-sided binomial p at or under 0.05).
+- **Provisional pass** (amber): passed alone but not after the correction. A single-test p of 0.05 is too lax once many rules have been tried (Harvey, Liu and Zhu 2016).
+- **Under review** (amber): once 12 or more forward calls are scored, the forward hit rate is below the base rate.
+- **Withdrawn** (red): the forward hit rate is significantly below the base rate (one-sided binomial p at or under 0.05). It stays withdrawn until a new pre-registered version passes.
+- **Review due** (amber): the test last ran more than 12 months ago.
+
+The grades follow the practice of model-validation teams: pre-registration and no re-tuning after a fail; correction for multiple testing; out-of-sample confirmation; ongoing monitoring with green, amber and red zones (as in the Basel Committee's 1996 backtesting framework); and periodic revalidation and outcomes analysis (the Federal Reserve and OCC guidance on model risk management, SR 11-7, 2011). Backtest figures are hypothetical results and are labelled so, net of the registered costs where a test has costs, in the way the SEC marketing rule and the GIPS standards treat hypothetical performance. The grade is a research label, not investment advice.
+
 ## Models and signals
 
 ### Policy rule check (Taylor gap)
