@@ -48,7 +48,7 @@ import { crashSentence } from './src/utils/fxFactors';
 import { loadWeoVintages } from './src/utils/weoVintagesStore';
 import { areaSeries } from './src/utils/oecdSdmx';
 import { cpiFor } from './src/utils/oecdInflation';
-import { CBPOL_AREA, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
+import { CBPOL_AREA, CBPOL_NOT_PULLED, cbpolMissing, policyRateFor, type CbpolPull } from './src/utils/bisPolicyRates';
 import { DEBATE_INSTRUCTION, challengesAsText, findChallenges, type DebateResult } from './src/utils/agentDebate';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './src/utils/refereeModel';
 import { formatDuration, isCouncilTiming, stepTiming, timingTable, totalMs, type CouncilTiming, type StepTiming } from './src/utils/councilTiming';
@@ -3496,7 +3496,7 @@ async function startServer() {
     try {
       const pull = await fetchCbpolPull();
       const now = new Date();
-      const rows = Object.keys(CBPOL_AREA).map((iso3) => {
+      const rows = [...Object.keys(CBPOL_AREA), ...CBPOL_NOT_PULLED].map((iso3) => {
         const rate = policyRateFor(iso3, pull, now);
         return rate ? { iso3, rate } : { iso3, missing: cbpolMissing(iso3, !!pull) };
       });

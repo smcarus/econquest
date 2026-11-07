@@ -54,6 +54,10 @@ export const BIS_ISO2: Record<string, string> = {
   HUN: 'HU',
   ROU: 'RO',
   SAU: 'SA',
+  // The rest of the G20 (2026-11-07).
+  AUS: 'AU',
+  CAN: 'CA',
+  RUS: 'RU',
 };
 
 export interface BisDebtSecurities {

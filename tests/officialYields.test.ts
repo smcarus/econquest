@@ -52,7 +52,7 @@ test('URLs and labels', () => {
 });
 
 test('series map covers only verified OECD members', () => {
-  assert.deepEqual(Object.keys(FRED_10Y_SERIES).sort(), ['AUS', 'AUT', 'BEL', 'CAN', 'CHE', 'CHL', 'CZE', 'DEU', 'DNK', 'ESP', 'FIN', 'FRA', 'GBR', 'GRC', 'HUN', 'IND', 'IRL', 'ISR', 'ITA', 'JPN', 'KOR', 'MEX', 'NLD', 'NOR', 'NZL', 'POL', 'PRT', 'SVK', 'SWE', 'ZAF']);
+  assert.deepEqual(Object.keys(FRED_10Y_SERIES).sort(), ['AUS', 'AUT', 'BEL', 'CAN', 'CHE', 'CHL', 'CZE', 'DEU', 'DNK', 'ESP', 'FIN', 'FRA', 'GBR', 'GRC', 'HUN', 'IND', 'IRL', 'ISR', 'ITA', 'JPN', 'KOR', 'MEX', 'NLD', 'NOR', 'NZL', 'POL', 'PRT', 'SVK', 'SWE', 'USA', 'ZAF']);
   for (const [iso3, id] of Object.entries(FRED_10Y_SERIES)) assert.match(id, iso3 === 'IND' ? /^INDIRLTLT01STM$/ : /^IRLTLT01[A-Z]{2}M156N$/);
   assert.equal(FRED_10Y_SERIES.COL, undefined); // FRED page gave no data on 2026-11-07
 });

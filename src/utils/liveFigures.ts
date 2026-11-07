@@ -7,7 +7,7 @@ import { hcSpreadMissing } from './hardCurrencySpread';
 import { CDS_HIDDEN } from './cdsHidden';
 import type { LiveWatchlistItem, WatchlistItem } from '../types/council';
 import { FRED_10Y_SERIES } from './officialYields';
-import { CBPOL_AREA, CBPOL_NOT_COVERED } from './bisPolicyRates';
+import { CBPOL_AREA, CBPOL_NOT_COVERED, CBPOL_NOT_PULLED, cbpolMissing } from './bisPolicyRates';
 
 export type FigureKey = 'cds' | 'hcspread' | 'yield' | 'debt' | 'reserves' | 'cpi' | 'policy';
 
@@ -58,6 +58,7 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
     case 'reserves':
       return { kind: 'unreachable', short: 'World Bank did not answer', help: 'This figure comes from the World Bank\'s free development data, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. If it keeps happening, check the internet connection under Menu > Tools > Data connections.' };
     case 'policy':
+      if (CBPOL_NOT_PULLED.has(iso3)) return { kind: 'setup', ...cbpolMissing(iso3, true) };
       if (!CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3))
         return { kind: 'setup', short: 'Not in BIS policy rates', help: 'Policy rates come from the Bank for International Settlements (BIS, the bank that central banks use), which collects them from about 40 central banks. This country is not one of them, so the app has no official figure. You can add the central bank\'s published rate through a data connector.' };
       return { kind: 'unreachable', short: 'BIS did not answer', help: 'Policy rates come from the Bank for International Settlements (BIS) free data service, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. If it keeps happening, check Menu > Tools > Data connections.' };

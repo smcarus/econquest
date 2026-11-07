@@ -100,6 +100,8 @@ export const FRED_10Y_SERIES: Record<string, string> = {
   SVK: 'IRLTLT01SKM156N',
   // India is an OECD partner; FRED files it under a different id pattern.
   IND: 'INDIRLTLT01STM',
+  // The US itself (G20 watchlist, 2026-11-07): the same series as the Treasury benchmark below.
+  USA: 'IRLTLT01USM156N',
 };
 
 /** US 10Y Treasury, OECD monthly average on FRED: the benchmark for spreads over Treasuries. */

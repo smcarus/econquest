@@ -205,8 +205,9 @@ test('MarketEdge benchmarks: US, China, Russia, UK, EU, India, with sources or r
   assert.equal(by.CHN.yield, undefined);
   assert.match(by.RUS.noYieldReason, /2018/);
   assert.equal(body.us10Y.seriesId, 'IRLTLT01USM156N');
-  // The UK is a full country, so it comes with its live watchlist figures for the peer fit.
-  assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR']);
+  // Benchmarks that are full catalog countries (the UK, and since the G20 group China, India,
+  // Russia and the US) come with their live watchlist figures for the peer fit.
+  assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR', 'CHN', 'IND', 'RUS', 'USA']);
 });
 
 test('scheduled jobs: a bad setting says why, "off" turns the default off, and no run is invented', async () => {
