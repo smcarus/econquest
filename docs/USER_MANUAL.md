@@ -148,7 +148,13 @@ full council and saved research.
   frequency, and runs the tests asked for: correlation, regression (scatter with the line), lead/lag
   (which moves first), Granger (does one help predict the other), stationarity (ADF) and trend and
   cycle (HP filter). Each test comes with a plain-English reading and a caution when the sample is
-  short. Ask for "year-on-year", "changes", "indexed" or "z-scores" to show the lines another way.
+  short.
+  - *Econometrics lab*: on two series, also ask for "Newey-West errors" (the regression with
+    errors robust to autocorrelation), "a VAR" or "impulse responses" (lag by AIC, the first
+    series ordered first, 90% bootstrap band), "local projections", "cointegration" (Johansen
+    trace test) or "structural breaks" (the largest Chow statistic over dates, then Bai-Perron's
+    break dates by BIC). They are also switches in *Open larger*. The larger view draws the
+    response paths. All are descriptions of the sample, not forecasts or causal estimates. Ask for "year-on-year", "changes", "indexed" or "z-scores" to show the lines another way.
   - *Ready-made charts*, asked for by name or from *Charts and statistical tests* under the welcome
     line: Phillips curve, Taylor rule gap (the policy rate against r* 2% + inflation + 0.5 x
     inflation gap + 0.5 x output gap, with the central bank's own target), real policy rate, real 10Y

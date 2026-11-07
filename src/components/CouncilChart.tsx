@@ -3,7 +3,7 @@ import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
-import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
+import { computeChart, fetchChartSeries, PAIR_TESTS, TEST_ORDER, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
 import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
 import { csvNoticeLine, EXPORT_NOTICE } from '../utils/disclaimer';
 import { creditsFor, framedSvg, shareModeBlock } from '../utils/creditLines';
@@ -202,6 +202,22 @@ const SmallRolling: React.FC<{ points: NonNullable<ChartResult['tests'][number][
   </div>
 );
 
+const SmallIrf: React.FC<{ irf: NonNullable<ChartResult['tests'][number]['irf']> }> = ({ irf }) => (
+  <div className="h-32" data-council-chart-irf={irf.steps.length} aria-label={irf.label}>
+    <ResponsiveContainer width="100%" height="100%">
+      <LineChart data={irf.steps} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
+        <XAxis dataKey="h" tick={{ fontSize: 10 }} />
+        <YAxis tick={{ fontSize: 10 }} width={40} />
+        <ReferenceLine y={0} stroke="currentColor" strokeOpacity={0.3} />
+        <Tooltip formatter={(v, n) => [fmt(Number(v)), n === 'value' ? 'response' : n === 'lo' ? '90% band, low' : '90% band, high']} labelFormatter={(l) => `after ${l}`} />
+        <Line dataKey="hi" stroke="#2563eb" strokeOpacity={0.4} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+        <Line dataKey="value" stroke="#2563eb" dot={false} isAnimationActive={false} />
+        <Line dataKey="lo" stroke="#2563eb" strokeOpacity={0.4} strokeDasharray="3 3" dot={false} isAnimationActive={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  </div>
+);
+
 /** Notes, then each line's source, then the frequency and dates. */
 function footnote(result: ChartResult): string {
   const parts = [...result.notes];
@@ -226,6 +242,7 @@ const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big })
             {t.caution && <p className="text-xs text-amber-700 dark:text-amber-400">{t.caution}</p>}
             {big && t.lags && <SmallLags lags={t.lags} />}
             {big && t.rolling && <SmallRolling points={t.rolling} />}
+            {big && t.irf && <SmallIrf irf={t.irf} />}
           </li>
         ))}
       </ul>
@@ -242,8 +259,7 @@ const Body: React.FC<{ result: ChartResult; big?: boolean }> = ({ result, big })
 );
 
 const SHOW_AS: Transform[] = ['level', 'change', 'yoy', 'index100', 'zscore'];
-const PAIR_TESTS: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling'];
-const ALL_TESTS: ChartTest[] = ['summary', 'correlation', 'regression', 'leadlag', 'granger', 'rolling', 'adf', 'hp'];
+const ALL_TESTS: ChartTest[] = TEST_ORDER;
 
 /**
  * The larger view's controls: show the lines another way and switch tests on or off. The series are

@@ -8,6 +8,7 @@
  */
 import type { LiveWatchlistItem } from '../types/council';
 import { INFLATION_TARGETS } from './marketsMacro';
+import { breaksTest, hacRegression, JOHANSEN_CRIT, johansenTest, lpTest, SUPF_CRIT_5, varTest, type LabStep } from './econometricsLab';
 import { TAYLOR_R_STAR, TAYLOR_WEIGHTS } from './taylorRule';
 import {
   adf,
@@ -33,7 +34,12 @@ import {
   type Transform,
 } from './stats';
 
-export type ChartTest = 'summary' | 'correlation' | 'regression' | 'leadlag' | 'granger' | 'adf' | 'hp' | 'rolling';
+export type ChartTest = 'summary' | 'correlation' | 'regression' | 'leadlag' | 'granger' | 'adf' | 'hp' | 'rolling' | 'hac' | 'var' | 'lp' | 'coint' | 'breaks';
+
+/** Tests that need two series (the econometrics lab's included). */
+export const PAIR_TESTS: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling', 'hac', 'var', 'lp', 'coint', 'breaks'];
+/** Every test, in the order they are run and shown. */
+export const TEST_ORDER: ChartTest[] = ['summary', 'correlation', 'regression', 'hac', 'leadlag', 'granger', 'rolling', 'var', 'lp', 'coint', 'breaks', 'adf', 'hp'];
 
 export const TEST_TITLE: Record<ChartTest, string> = {
   summary: 'Where it stands',
@@ -44,6 +50,11 @@ export const TEST_TITLE: Record<ChartTest, string> = {
   adf: 'Stationarity (ADF test)',
   hp: 'Trend and cycle (HP filter)',
   rolling: 'Is the relationship stable? (rolling correlation)',
+  hac: 'Regression with Newey-West errors',
+  var: 'VAR with impulse responses',
+  lp: 'Local projections',
+  coint: 'Cointegration (Johansen)',
+  breaks: 'Structural breaks (Chow and Bai-Perron)',
 };
 
 export interface ChartSeriesRef {
@@ -115,6 +126,8 @@ export interface ChartTestResult {
   /** Lead/lag table or rolling correlation, for the small chart under the test. */
   lags?: Array<{ lag: number; r: number; p: number }>;
   rolling?: Point[];
+  /** Impulse responses (VAR, local projections): horizon in periods, response and 90% band. */
+  irf?: { label: string; steps: LabStep[] };
 }
 
 export interface ChartResult {
@@ -171,7 +184,12 @@ const TEST_WORDS: Array<[RegExp, ChartTest]> = [
   [/granger|helps? (?:to )?predict|predictive/i, 'granger'],
   [/stationar|unit root|\badf\b|dickey/i, 'adf'],
   [/\bhp\b|hodrick|prescott|trend and cycle|cycle and trend|(?:gap from|against|above|below) (?:its )?trend|detrend/i, 'hp'],
-  [/\bstable\b|rolling|still hold|over time|structural break/i, 'rolling'],
+  [/\bstable\b|rolling|still hold|over time/i, 'rolling'],
+  [/newey|west errors|\bhac\b|robust (?:standard )?errors|autocorrelation[- ]robust/i, 'hac'],
+  [/\bVAR\b|vector autoregress|impulse respons/, 'var'],
+  [/local projection|jord[aà]/i, 'lp'],
+  [/cointegrat|johansen|long[- ]run relationship/i, 'coint'],
+  [/structural break|\bchow\b|bai[- ]?perron|break ?points?|regime (?:change|shift)/i, 'breaks'],
 ];
 const TRANSFORM_WORDS: Array<[RegExp, Transform]> = [
   [/year[- ]on[- ]year|\by\/y\b|\byoy\b|annual change/i, 'yoy'],
@@ -488,15 +506,14 @@ function computeCross(req: ChartRequest, fetched: Array<FetchedSeries | { reason
 
 /** With two series, correlation and lead/lag come by default; tests that need two series drop with one. */
 function defaultTests(asked: ChartTest[], lines: number): ChartTest[] {
-  const pairTests: ChartTest[] = ['correlation', 'regression', 'leadlag', 'granger', 'rolling'];
+  const pairTests = PAIR_TESTS;
   const set = new Set<ChartTest>(asked);
   if (lines >= 2 && !asked.some((t) => pairTests.includes(t))) {
     set.add('correlation');
     set.add('leadlag');
   }
   if (lines < 2) for (const t of pairTests) set.delete(t);
-  const order: ChartTest[] = ['summary', 'correlation', 'regression', 'leadlag', 'granger', 'rolling', 'adf', 'hp'];
-  return order.filter((t) => set.has(t));
+  return TEST_ORDER.filter((t) => set.has(t));
 }
 
 /** A follow-up about the last chart keeps its series and adds any tests it asks for. */
@@ -620,7 +637,7 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
   const fail = (test: ChartTest, why: string) => out.tests.push({ test, title: TEST_TITLE[test], reading: `Not run: ${why}`, figures: [] });
 
   for (const test of req.tests) {
-    if (['correlation', 'regression', 'leadlag', 'granger', 'rolling'].includes(test) && (!a || !b)) {
+    if (PAIR_TESTS.includes(test) && (!a || !b)) {
       fail(test, 'it needs two series and the chart has fewer');
       continue;
     }
@@ -725,6 +742,109 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
             { label: 'Window', value: String(window) },
           ],
           rolling: roll,
+        });
+      }
+    }
+    if (test === 'hac') {
+      const r = hacRegression(pairs);
+      if ('error' in r) fail(test, r.error);
+      else
+        out.tests.push({
+          test,
+          title: TEST_TITLE[test],
+          reading: `Regressing ${b.label} on ${a.label} with Newey-West errors (lag ${r.lag}): slope ${fmt(r.slope)} ${b.unit} per ${a.unit}, standard error ${fmt(r.seHac)} against ${fmt(r.seOls)} for plain OLS, so t = ${r2(r.t)} (${fmtP(r.p)}, ${r.n} points). Errors that run on from one period to the next make plain OLS too confident; this keeps the slope and widens the error. Still an association, not a cause.`,
+          figures: [
+            { label: 'Slope', value: fmt(r.slope) },
+            { label: 'Newey-West standard error', value: fmt(r.seHac) },
+            { label: 'OLS standard error', value: fmt(r.seOls) },
+            { label: 't-statistic (Newey-West)', value: r2(r.t) },
+            { label: 'Newey-West lag', value: String(r.lag) },
+          ],
+          caution,
+        });
+    }
+    if (test === 'var') {
+      const r = varTest(pairs, freq);
+      if ('error' in r) fail(test, r.error);
+      else {
+        const s = r.bToA;
+        const peak = s.reduce((x, y) => (Math.abs(y.value) > Math.abs(x.value) ? y : x));
+        const clear = s.filter((x) => x.lo > 0 || x.hi < 0).length;
+        const back = r.aToB.reduce((x, y) => (Math.abs(y.value) > Math.abs(x.value) ? y : x));
+        out.tests.push({
+          test,
+          title: TEST_TITLE[test],
+          reading: `VAR with ${r.lags} lag(s) (chosen by AIC from up to ${r.maxLag}), ${r.n} points. After a one-standard-deviation surprise in ${a.label} (${fmt(r.shockA)} ${a.unit}), ${b.label} moves ${fmt(s[0].value)} ${b.unit} at once, ${peak.h === r.horizon ? `and is still growing at ${fmt(peak.value)} after ${unitWord(freq, r.horizon)}` : `most (${fmt(peak.value)}) after ${unitWord(freq, peak.h)}, and ${fmt(s[s.length - 1].value)} after ${unitWord(freq, r.horizon)}`}; the 90% band leaves out zero at ${clear} of ${s.length} horizons. A surprise in ${b.label} (${fmt(r.shockB)} ${b.unit}) moves ${a.label} by at most ${fmt(back.value)} ${a.unit}. ${a.label} is ordered first, so its surprise can move ${b.label} in the same period but not the other way round. Reduced form: the surprises are not identified policy shocks.`,
+          figures: [
+            { label: 'Lags (AIC)', value: String(r.lags) },
+            { label: `${b.label}, on impact`, value: fmt(s[0].value) },
+            { label: `${b.label}, largest response`, value: `${fmt(peak.value)} at ${peak.h}` },
+            { label: `${b.label}, after ${r.horizon} periods`, value: fmt(s[s.length - 1].value) },
+            { label: 'Band', value: `90%, bootstrap of ${r.draws} draws` },
+          ],
+          caution: caution ?? 'A VAR in levels of series that wander (see the ADF test) can mislead; show the chart as changes to check.',
+          irf: { label: `${b.label} after a surprise in ${a.label}`, steps: s },
+        });
+      }
+    }
+    if (test === 'lp') {
+      const r = lpTest(pairs, freq);
+      if ('error' in r) fail(test, r.error);
+      else {
+        const s = r.steps;
+        const last = s[s.length - 1];
+        out.tests.push({
+          test,
+          title: TEST_TITLE[test],
+          reading: `Local projections (Jordà 2005), ${r.lags} lag(s) of both changes, ${r.n} points: after a rise of 1 ${a.unit} in ${a.label}, ${b.label} has moved ${s.map((x) => `${fmt(x.value)} after ${x.h}`).join(', ')} periods (90% band at ${last.h}: ${fmt(last.lo)} to ${fmt(last.hi)}). Newey-West errors. Co-movement in the sample, not the effect of one on the other.`,
+          figures: s.map((x) => ({ label: `After ${x.h}`, value: `${fmt(x.value)} (${fmt(x.lo)} to ${fmt(x.hi)})` })),
+          caution,
+          irf: { label: `${b.label} after a 1 ${a.unit} rise in ${a.label}`, steps: s.map(({ h, value, lo, hi }) => ({ h, value, lo, hi })) },
+        });
+      }
+    }
+    if (test === 'coint') {
+      const v = varTest(pairs, freq, { draws: 0 });
+      const lags = 'error' in v ? 2 : v.lags;
+      const r = johansenTest(pairs, lags);
+      if ('error' in r) fail(test, r.error);
+      else {
+        const say =
+          r.rank === 0
+            ? `no long-run relationship is found: the two can drift apart for good`
+            : r.rank === 1
+              ? `the two share one long-run relationship${r.beta !== undefined ? ` (${a.label} + ${fmt(r.beta)} x ${b.label} stays near its mean)` : ''}, so they do not drift apart for good`
+              : `both look stationary on their own, so the test's premise (both wander) fails; see the ADF test`;
+        out.tests.push({
+          test,
+          title: TEST_TITLE[test],
+          reading: `Johansen trace test (VAR lag ${r.lags}, ${r.n} points): trace ${r2(r.trace[0])} against a 5% value of ${r2(JOHANSEN_CRIT.r0[1])} for no relationship, and ${r2(r.trace[1])} against ${r2(JOHANSEN_CRIT.r1[1])} for at most one. At 5%, ${say}.`,
+          figures: [
+            { label: 'Trace, rank 0', value: r2(r.trace[0]) },
+            { label: 'Trace, rank at most 1', value: r2(r.trace[1]) },
+            { label: 'Rank at 5%', value: String(r.rank) },
+            { label: 'VAR lag', value: String(r.lags) },
+          ],
+          caution: caution ?? 'Meant for series that wander (unit roots); run it on levels, not changes.',
+        });
+      }
+    }
+    if (test === 'breaks') {
+      const r = breaksTest(pairs);
+      if ('error' in r) fail(test, r.error);
+      else {
+        const regimes = r.regimes.map((g) => `${g.from} to ${g.to}: slope ${fmt(g.slope)}, intercept ${fmt(g.intercept)}`).join('; ');
+        out.tests.push({
+          test,
+          title: TEST_TITLE[test],
+          reading: `Regression of ${b.label} on ${a.label}: the largest Chow statistic over break dates (sup-F) is ${r2(r.supF)} at ${r.supFDate}, against a 5% value of ${SUPF_CRIT_5}, so ${r.significant ? `the relationship did change. Bai-Perron finds ${r.breaks.length} break(s) by BIC, at ${r.dates.join(', ')}: ${regimes}` : `no break is found (slope ${fmt(r.regimes[0].slope)} throughout)`}. Each regime is at least ${r.minSize} points long; break dates are estimates.`,
+          figures: [
+            { label: 'sup-F', value: r2(r.supF) },
+            { label: '5% critical value', value: String(SUPF_CRIT_5) },
+            { label: 'Breaks (BIC)', value: String(r.breaks.length) },
+            ...(r.dates.length ? [{ label: 'Break dates', value: r.dates.join(', ') }] : []),
+          ],
+          caution,
         });
       }
     }

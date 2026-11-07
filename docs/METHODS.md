@@ -61,6 +61,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Unit converters | Research | Stated method, no call to test | Not applicable |
 | Exercises with answer keys | Research | Stated method, no call to test | Not applicable |
 | Model sandboxes | Research | Stated method, no call to test | Not applicable |
+| Econometrics lab | Research | Stated method, no call to test | Not applicable |
 | Replication pack | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
@@ -698,6 +699,17 @@ These show where things stand on a stated method and make no call a backtest cou
 - Output gap: log real GDP chained from IMF WEO growth outturns less an HP trend with any lambda (100 yearly, 6.25 Ravn-Uhlig), against the Hamilton (2018) regression residual with any horizon h; at least 15 unbroken years.
 - **Limits:** Illustration of the formulas, not a forecast: every term is held constant over the horizon and nothing feeds back. A starting value the app does not have reads Missing and the sandbox waits until it is set. IMF projections are never used for the filters.
 - **Code:** `src/utils/modelSandboxes.ts`
+
+### Econometrics lab
+
+- **Shows in:** Council chat > a Chart Agent chart (ask in words, or Open larger > Tests)
+- All on the rows where both of the first two series have a value, in order. Newey-West: OLS of the second series on the first with Bartlett-kernel HAC errors, lag floor(4 (n/100)^(2/9)).
+- VAR: both series in the chart's units, constant, lag by AIC (ln|Sigma| + 2pK^2/T) from 1 to 12 (monthly), 8 (quarterly) or 3 (yearly) on one sample; orthogonalised responses with the first series ordered first (Cholesky), over 24, 12 or 8 periods; 90% band from a seeded residual bootstrap (300 draws, 100 on samples over 1,500 points).
+- Local projections (Jordà 2005): y(t+h) - y(t-1) on dx(t) and 3, 2 or 1 lags of both changes, one OLS per horizon, Newey-West errors with lag at least h + 1, 90% bands.
+- Johansen (1991) trace test, unrestricted constant, VECM with the VAR's lag less one in differences; 5% critical values 15.49 (rank 0) and 3.84 (rank at most 1), MacKinnon, Haug and Michelis (1999).
+- Breaks: regression of the second series on the first; sup-F, the largest Chow (1960) statistic over break dates with 15% trimming, against Bai and Perron's (2003) 5% value of 11.47; when it rejects, Bai-Perron (1998) global least squares with up to 3 breaks, the number chosen by BIC.
+- **Limits:** Description, not a tested signal: none of these is a forecast or a causal estimate. VAR surprises are reduced-form, not identified shocks, and the Cholesky order matters. A VAR or regression in levels of series that wander can mislead; Johansen assumes they do wander. Break dates are estimates. Checked against statsmodels (Newey-West, VAR, local projections, Johansen) and a brute-force search (breaks).
+- **Code:** `src/utils/econometricsLab.ts`
 
 ### Replication pack
 

@@ -197,6 +197,20 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/modelSandboxes.ts',
   },
   {
+    id: 'econometrics_lab',
+    name: 'Econometrics lab',
+    where: 'Council chat > a Chart Agent chart (ask in words, or Open larger > Tests)',
+    method: [
+      'All on the rows where both of the first two series have a value, in order. Newey-West: OLS of the second series on the first with Bartlett-kernel HAC errors, lag floor(4 (n/100)^(2/9)).',
+      'VAR: both series in the chart\'s units, constant, lag by AIC (ln|Sigma| + 2pK^2/T) from 1 to 12 (monthly), 8 (quarterly) or 3 (yearly) on one sample; orthogonalised responses with the first series ordered first (Cholesky), over 24, 12 or 8 periods; 90% band from a seeded residual bootstrap (300 draws, 100 on samples over 1,500 points).',
+      'Local projections (Jordà 2005): y(t+h) - y(t-1) on dx(t) and 3, 2 or 1 lags of both changes, one OLS per horizon, Newey-West errors with lag at least h + 1, 90% bands.',
+      'Johansen (1991) trace test, unrestricted constant, VECM with the VAR\'s lag less one in differences; 5% critical values 15.49 (rank 0) and 3.84 (rank at most 1), MacKinnon, Haug and Michelis (1999).',
+      'Breaks: regression of the second series on the first; sup-F, the largest Chow (1960) statistic over break dates with 15% trimming, against Bai and Perron\'s (2003) 5% value of 11.47; when it rejects, Bai-Perron (1998) global least squares with up to 3 breaks, the number chosen by BIC.',
+    ],
+    limits: 'Description, not a tested signal: none of these is a forecast or a causal estimate. VAR surprises are reduced-form, not identified shocks, and the Cholesky order matters. A VAR or regression in levels of series that wander can mislead; Johansen assumes they do wander. Break dates are estimates. Checked against statsmodels (Newey-West, VAR, local projections, Johansen) and a brute-force search (breaks).',
+    code: 'src/utils/econometricsLab.ts',
+  },
+  {
     id: 'replication_pack',
     name: 'Replication pack',
     where: 'Council chat > a Chart Agent chart > Replication pack',

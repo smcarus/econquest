@@ -123,7 +123,7 @@ export const synthesisDocId = (askedAt: string) => `doc-synthesis-${stamp(askedA
 
 const DOC_AGENT_COVERS = 'passages from documents you added that match the question, and each figure a document states checked against the app’s figure for the same country';
 
-const CHART_AGENT_COVERS = 'charts the series the question names from the app’s own history, on their common frequency, and runs the statistical tests asked for (correlation, regression, lead/lag, Granger, ADF, HP filter, rolling correlation)';
+const CHART_AGENT_COVERS = 'charts the series the question names from the app’s own history, on their common frequency, and runs the statistical tests asked for (correlation, regression, lead/lag, Granger, ADF, HP filter, rolling correlation, and the econometrics lab: Newey-West errors, VAR impulse responses, local projections, Johansen cointegration, Chow and Bai-Perron breaks)';
 
 export function agentCovers(id: AgentId): string {
   if (id === 'chart') return CHART_AGENT_COVERS;
