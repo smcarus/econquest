@@ -1,0 +1,76 @@
+name: Ready-made image
+
+# Builds the app image and publishes it to GitHub's image store (GitHub Container Registry) so
+# people can install EconQuest without building it themselves (docs/INSTALL.md).
+#
+# Runs only in the public repository (e-conquest/econquest), where Sam pushes each public release.
+# In any other copy it does nothing unless the repository variable PUBLISH_IMAGE is set to "on".
+#
+# Tags published:
+#   latest          the newest public release (each push to main)
+#   0.1.0 and 0.1   when a version tag such as v0.1.0 is pushed
+#   sha-<commit>    every build, so an older image can always be found again
+#
+# Both Intel/AMD (amd64) and Apple Silicon/ARM (arm64) machines are covered.
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.repository == 'e-conquest/econquest' || vars.PUBLISH_IMAGE == 'on'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      # The registry wants the image name in lower case.
+      - name: Image name
+        id: name
+        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.name.outputs.image }}
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,format=short
+          labels: |
+            org.opencontainers.image.title=EconQuest
+            org.opencontainers.image.description=Open-source research terminal for sovereign and macro risk on free official data
+            org.opencontainers.image.licenses=Apache-2.0
+
+      - name: Build and publish
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
