@@ -22,6 +22,7 @@ import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
+import { type InflationExpectations, parseFredApiObservations, US_INFLATION_EXPECTATION_IDS } from '../../utils/inflationExpectations';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
 /**
@@ -186,7 +187,8 @@ export async function fetchSovereignDefaults(): Promise<SovereignDefaults | null
 }
 
 /**
- * A FRED series' full history as CSV (no key), for the scenario engine's financial stress factor.
+ * A FRED series' full history (the official API with the user's key, else the no-key CSV), for the
+ * scenario engine's financial stress factor and the US inflation expectations.
  * Kept 12 hours in memory (an hour after a miss); when FRED does not answer the factor is left out and named.
  */
 export const FRED_STRESS_SERIES = 'STLFSI4';
@@ -194,11 +196,33 @@ const fredHistoryCache = new Map<string, { at: number; value: Obs[] | null }>();
 export async function fetchFredHistory(seriesId: string, from = '1993-12-01'): Promise<Obs[] | null> {
   const hit = fredHistoryCache.get(seriesId);
   if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
-  const csv = await fetchTextWithTimeout(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(seriesId)}&cosd=${from}`, 15000);
-  const obs = csv ? parseFredCsvSeries(csv) : [];
+  let obs: Obs[] = [];
+  // The user's own FRED key (Menu > Settings > API keys) when set: the official API; else the CSV download.
+  const apiKey = (process.env.FRED_API_KEY || '').trim();
+  if (apiKey) {
+    try {
+      const q = new URLSearchParams({ series_id: seriesId, api_key: apiKey, file_type: 'json', observation_start: from });
+      const res = await fetchWithTimeout(`https://api.stlouisfed.org/fred/series/observations?${q.toString()}`, 15000);
+      if (res.ok) obs = parseFredApiObservations(await res.json());
+    } catch {
+      // fall through to the CSV download
+    }
+  }
+  if (!obs.length) {
+    const csv = await fetchTextWithTimeout(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(seriesId)}&cosd=${from}`, 15000);
+    obs = csv ? parseFredCsvSeries(csv) : [];
+  }
   const value = obs.length ? obs : null;
   fredHistoryCache.set(seriesId, { at: Date.now(), value });
   return value;
+}
+
+/** US inflation expectations (src/utils/inflationExpectations.ts): five FRED series from 2003, or null when none answered. */
+export async function fetchInflationExpectations(): Promise<InflationExpectations | null> {
+  const got = await Promise.all(US_INFLATION_EXPECTATION_IDS.map(async (id) => [id, await fetchFredHistory(id, '2003-01-01')] as const));
+  const series: InflationExpectations['series'] = {};
+  for (const [id, obs] of got) if (obs?.length) series[id] = obs;
+  return Object.keys(series).length ? { fetchedAt: new Date().toISOString(), series } : null;
 }
 
 /**

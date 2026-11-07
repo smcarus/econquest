@@ -244,8 +244,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'fred',
-    name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed Financial Stress Index',
-    usedFor: 'St. Louis Fed Financial Stress Index (STLFSI4, a factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
+    name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed Financial Stress Index; US inflation expectations',
+    usedFor: 'US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, a factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
     terms: [
       { label: 'FRED legal', url: 'https://fred.stlouisfed.org/legal/' },
       { label: 'FRED API terms', url: 'https://fred.stlouisfed.org/docs/api/terms_of_use.html' },

@@ -81,6 +81,7 @@ own-data switch in Settings).
 | Central bank of Peru (BCRPData, EMBIG) | USD bond spread over US Treasuries: J.P. Morgan EMBI Global spread, monthly average, for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela, plus the Latin American and emerging-market aggregates. The free stand-in for 5Y CDS: labelled a bond spread, never CDS. Other countries read Missing ("No free source"). Published about three weeks after the month | estadisticas.bcrp.gob.pe | 12 h, on disk (`data/live/market-extras.json`) |
 | FRED download | 10Y yields (OECD monthly): US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries | fred.stlouisfed.org | 6 h |
 | FRED download | Fed balance sheet (H.4.1): WALCL total assets, WRESBAL reserves, WTREGEN Treasury General Account; NY Fed RRPONTSYD overnight reverse repos | fred.stlouisfed.org | 12 h (1 h after a miss); saved to data/live/fed-balance-sheet.json |
+| FRED download (API with your key) | US inflation expectations: T5YIE, T10YIE, T5YIFR breakevens (daily, shown at month-end); Cleveland Fed EXPINF1YR, EXPINF10YR (monthly). US country page only | fred.stlouisfed.org | 12 h (1 h after a miss) |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 
 Notes from the first check on Sam's Mac (2026-11-05):
@@ -347,7 +348,7 @@ folder, so a key saved while the app runs in Docker also works with `npm run dev
 
 | Source | Fills | Settings |
 | --- | --- | --- |
-| FRED API | The same yields as the FRED download, through the official API | Settings or .env: `FRED_API_KEY` (optional; the download is used without it) |
+| FRED API | The same yields as the FRED download, plus the full histories (financial stress index, US inflation expectations), through the official API | Settings or .env: `FRED_API_KEY` (optional; the download is used without it) |
 | Turkey central bank (EVDS) | Turkey 10Y yield | Settings or .env: `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` (both needed) |
 | US EIA open data | Daily Brent and WTI spot prices | Settings or .env: `EIA_API_KEY` (optional; free at eia.gov/opendata > Register; without it oil comes monthly from the Pink Sheet). Pulled every 12 h, on disk with the Pink Sheet |
 
