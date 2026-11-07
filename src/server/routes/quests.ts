@@ -18,6 +18,12 @@
  *   GET  /api/quests/due           approved forecast Quests past their settle date with no result
  *                                  yet, each with the result the feeds give now (?drafts=1 also
  *                                  previews drafts, which are never recorded)
+ *
+ * Public entries (step 6), files in quests/entries/ entered by pull request:
+ *   GET  /api/quests/:id/entries      before close only how many; after close each counted entry
+ *                                     with its score, and the spread of answers
+ *   GET  /api/quests/:id/draft-entry  ?login=&probability= (or level=) &rationale=: the entry file
+ *                                     and GitHub's prefilled "new file" page on QUESTS_REPO
  */
 import type express from 'express';
 import crypto from 'crypto';
@@ -36,6 +42,8 @@ import type { OfficialHistoryFile } from '../../utils/officialHistory';
 import { resolveForecast, resultState, type ResolutionLine, type SeriesData } from '../../utils/questResolve';
 import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore';
 import type { EntryScore } from '../../utils/questEntries';
+import { countedPublicEntries, entryFileText, entryPath, entrySpread, isEntrantName, newFileUrl, publicEntryProblems, type PublicEntry } from '../../utils/questPublicEntries';
+import { loadPublicEntries } from '../../utils/questPublicEntryStore';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -56,6 +64,14 @@ export interface QuestDeps {
   resolutionsFile?: string;
   /** Today's date (YYYY-MM-DD); the clock by default. For tests. */
   today?: () => string;
+  /** owner/name of the public repository that takes entries; defaults to process.env.QUESTS_REPO. */
+  repo?: () => string;
+}
+
+/** The public repository for entries: owner/name, or '' when not set. */
+export function questsRepo(value: string | undefined): string {
+  const v = (value || '').trim();
+  return /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test(v) ? v : '';
 }
 
 /** An entry's score from a recorded result (the record wins over today's feeds). */
@@ -238,6 +254,57 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       }),
     );
     res.json({ enabled: true, today, due: out });
+  });
+
+  const repoOf = deps.repo ?? (() => questsRepo(process.env.QUESTS_REPO));
+  /** A public entry as the private scorer sees it (only the answer and the Quest matter). */
+  const asEntry = (e: PublicEntry): QuestEntry => ({ id: `${e.login}.${e.n}`, questId: e.questId, questVersion: e.questVersion, questHash: e.questHash, author: e.login, loggedAt: '', answer: e.answer, hash: '' });
+
+  app.get('/api/quests/:id/entries', async (req, res) => {
+    if (!enabled()) return off(res);
+    const found = forecastById(req.params.id);
+    if (!found) return res.status(404).json({ enabled: true, error: 'No forecast Quest with that id' });
+    const q = found.quest;
+    const today = todayIso();
+    const counted = countedPublicEntries(loadPublicEntries(dir), q.id, q.version);
+    if (today <= q.closesOn) {
+      return res.json({ enabled: true, open: true, count: counted.length, note: `Entries are not shown until they close on ${q.closesOn}, so nobody can copy the crowd here. (Pull requests on GitHub are public.)` });
+    }
+    const scored = (await scoreAll(counted.map(asEntry), today)).map((x, i) => ({ login: counted[i].login, n: counted[i].n, via: counted[i].via, answer: counted[i].answer, rationale: counted[i].rationale, score: x.score }));
+    const values = counted.map((e) => ('level' in e.answer ? e.answer.level : e.answer.probability));
+    res.json({ enabled: true, open: false, count: counted.length, entries: scored, spread: entrySpread(values), answer: q.rule.kind === 'level' ? 'level' : 'probability' });
+  });
+
+  app.get('/api/quests/:id/draft-entry', (req, res) => {
+    if (!enabled()) return off(res);
+    const found = loadQuests(dir).find((x) => x.quest.id === req.params.id && x.quest.type === 'forecast');
+    if (!found) return res.status(404).json({ enabled: true, error: 'No forecast Quest with that id' });
+    const q = found.quest as ForecastQuest;
+    const repo = repoOf();
+    if (!repo) return res.json({ enabled: true, error: 'Public entries are not set up on this copy: QUESTS_REPO (the public repository, owner/name) is not set. Use Log privately instead.' });
+    const login = String(req.query.login || '').trim();
+    if (!isEntrantName(login) || login.startsWith('~')) return res.status(400).json({ enabled: true, error: 'Your GitHub login (letters, digits and -)' });
+    const today = todayIso();
+    if (!found.approved) return res.json({ enabled: true, error: 'Only approved Quests take public entries; this one is a draft' });
+    if (today < q.opensOn) return res.json({ enabled: true, error: `Entries open on ${q.opensOn}` });
+    if (today > q.closesOn) return res.json({ enabled: true, error: `Entries closed on ${q.closesOn}` });
+    const mine = loadPublicEntries(dir).filter((e) => e.questId === q.id && e.login === login);
+    const n = mine.reduce((m, e) => Math.max(m, e.n), 0) + 1;
+    const rationale = typeof req.query.rationale === 'string' && req.query.rationale.trim() ? req.query.rationale.trim() : undefined;
+    const answer = q.rule.kind === 'level' ? { level: Number(req.query.level) } : { probability: Number(req.query.probability) };
+    const entry: PublicEntry = { questId: q.id, questVersion: q.version, questHash: found.hash, login, n, answer, ...(rationale ? { rationale } : {}), via: 'pull-request' };
+    const rel = entryPath(q.id, login, n);
+    const problems = publicEntryProblems(entry, rel, { quest: q, hash: found.hash, approved: true });
+    if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
+    const text = entryFileText(entry);
+    res.json({
+      enabled: true,
+      path: rel,
+      text,
+      url: newFileUrl(repo, 'main', rel, text),
+      replaces: n > 1 ? n - 1 : undefined,
+      note: `GitHub opens a new file, already filled in. Press "Commit changes" (GitHub makes a copy of the repository for you if needed), then "Create pull request". A check runs within a few minutes. Your entry counts only if the pull request is opened before ${q.closesOn} ends (UTC), and you must not push to it after that.`,
+    });
   });
 
   const practice = new Map<string, { at: number; questId: string; op: 'higher' | 'lower'; start: Point; endDate: string; days: number; points: Point[] }>();

@@ -22,7 +22,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Class table for a class code (private to the server it runs on) | Built and tested, switched off |
 | Resolver: results worked out from the feeds, recorded by `npm run quests:resolve` in the hash-chained `quests/resolutions.jsonl`; yearly figures read as first published; disputes, withdrawals and notes; Results tab and result on each Quest page; recorded results used for scores | Built and tested, switched off |
 | Quests tab on Menu > Track record | Not built (added when Quests go live, so nothing shows while they are off) |
-| Public entries, anti-gaming checks | Not built |
+| Public entries by pull request (`quests/entries/<id>/<login>.<n>.json`): Prepare entry in the app opens GitHub's prefilled page; the entry checker (`npm run quests:entries`, CI job `Quest entries`); replacements numbered and kept; emailed entries posted by a maintainer; entries hidden in the app until close, then shown with scores and the spread | Built and tested, switched off |
 | Contributor statistics and scoreboard | Not built |
 | Quest generator and digests | Not built |
 | Debate, signal and replication workflows | Not built |
@@ -53,6 +53,36 @@ The record, `quests/resolutions.jsonl`, has one line per event, and lines are ne
 - **Withdrawal.** A Quest with no result yet can be withdrawn, for example because its source stopped publishing: `--withdraw <id> "reason"`. Entries on it are not scored.
 - **Note.** `--note <id> "text"` adds information, for example that the source later revised the figure.
 
+## Public entries
+
+A public entry is a small file in the public repository, `quests/entries/<quest id>/<GitHub name>.<n>.json`, added by a pull request. It holds the Quest's id, version and file fingerprint, the person's GitHub name, the answer (a probability from 0 to 1, or a number), an optional reason of up to 2,000 characters, and how it came in.
+
+How someone enters, in plain steps:
+
+1. Open the Quest in Menu > Quests, type a GitHub name and an answer under **Enter publicly**, and press **Prepare entry**.
+2. The app shows the file and opens GitHub's "new file" page with it already filled in. GitHub makes a personal copy of the repository for anyone who cannot write to it.
+3. Press "Commit changes", then "Create pull request". Within a few minutes the **Quest entries** check says pass, or gives the exact problem.
+
+What the check enforces (`src/utils/questPublicEntries.ts`):
+
+- **Before close only.** The time is when GitHub runs the check, which nobody can set. A push to the pull request after entries close runs it again, and it fails.
+- **Only for yourself.** The name in the file must be the GitHub account that opened the pull request.
+- **One counted entry per person.** A replacement is the next number (`alice.2.json`); earlier entries are never changed or removed, and the highest number counts.
+- **Entries only.** A pull request with entries holds nothing else, and one entry per Quest.
+- **Approved Quests only**, and the answer must be in range.
+- **The checker cannot be changed by the pull request it checks:** it runs from the base branch and only reads the entry files from the pull request.
+
+Hidden until close: the app shows only how many entries there are until entries close; after that it lists each counted entry with its score, and the middle answer and middle half of the answers. Pull requests on GitHub are public, so someone determined could read open entries there; the docs and the app say so. Copying gains little, because scores are against the base rate and rankings need many settled Quests.
+
+Emailed entries: GitHub blocks some countries. Someone there can email their entry to a maintainer before entries close; the maintainer posts it within 7 days of close with `npm run quests:entries -- --by <login> --email ~name --quest <id> --received <time the email arrived> --probability 0.6`, in a pull request of its own. It shows as "(emailed)" under a ~name, which can never be a GitHub account. Only logins in the repository variable `QUESTS_MAINTAINERS` (default `smcarus`) may post them.
+
+For the maintainer:
+
+- Merge entry pull requests as soon as their check passes, so a replacement finds the earlier entry and takes the next number.
+- Never press "Re-run" or "Update branch" on an entry pull request after entries close: that runs the check again with today's time, and it fails.
+- A pull request that only adds entries skips the full CI and runs only the short `Quest entries` job.
+- Set `QUESTS_REPO` (owner/name of the public repository) for Prepare entry to work; without it the app offers only Log privately.
+
 ## Checklist before Quests are switched on
 
 Working properly:
@@ -61,7 +91,9 @@ Working properly:
 - [ ] At least 10 Quests approved by the maintainer, with real dates, moved from `quests/drafts/` to `quests/` and hashed
 - [ ] Every approved Forecast Quest shows a live figure (or Missing with a reason) for each series it reads, checked on the maintainer's computer with all keys set
 - [ ] The resolver settles a past test Quest correctly from each source used (BIS, ECB, CFTC, EIA, IMF, World Bank), and a missing value gives Unresolvable
-- [ ] Entries can be made and are checked (opened before close, one per GitHub login)
+- [ ] Entries can be made and are checked (opened before close, one per GitHub login): one test entry by pull request on the public repository passes, one after close fails
+- [ ] `QUESTS_REPO` set in `.env.example`, and on the public repository: Actions on, branch protection requiring the `Quest entries` check, the `QUESTS_MAINTAINERS` variable set
+- [ ] CONTRIBUTING gives the address for emailed entries
 - [ ] Scores match a hand calculation for at least three settled test Quests
 - [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
 - [ ] Practice questions checked on the maintainer's computer for every daily and weekly series

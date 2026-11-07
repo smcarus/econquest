@@ -27,4 +27,6 @@ Check every file with `npm run quests:check`. When a Quest is approved, move it 
 
 Results are kept in `resolutions.jsonl`, one line per result, dispute decision, withdrawal or note, each linked to the line before by its SHA-256 so no line can be changed unnoticed. Only `npm run quests:resolve` writes it (see [docs/QUESTS.md](../docs/QUESTS.md#how-a-quest-is-settled)); never edit it by hand.
 
+Public forecast entries go in `entries/<quest id>/<GitHub name>.<n>.json`, one file per entry, added by pull request and checked by `npm run quests:entries` (see [docs/QUESTS.md](../docs/QUESTS.md#public-entries)). An entry is never changed or removed; a replacement is the next number.
+
 Quest text, entries and evidence maps are licensed under CC BY 4.0.

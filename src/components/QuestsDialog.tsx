@@ -232,6 +232,8 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
                   {detail.result && detail.result.state !== 'none' && <ResultBox state={detail.result} />}
                   {detail.quest.type === 'forecast' && (
                     <>
+                      <PublicEntries questId={detail.quest.id} />
+                      <EnterPublicly quest={detail.quest} />
                       <LogPrivately quest={detail.quest} />
                       <Practice questId={detail.quest.id} />
                     </>
@@ -548,5 +550,140 @@ function Results() {
         )}
       </div>
     </div>
+  );
+}
+
+const LOGIN_KEY = 'econquest.questsLogin.v1';
+const readLogin = () => {
+  try {
+    return localStorage.getItem(LOGIN_KEY) || '';
+  } catch {
+    return '';
+  }
+};
+
+/** Enter on the public repository: the app fills in the entry file and opens GitHub's prefilled page. */
+function EnterPublicly({ quest }: { quest: Quest }) {
+  const level = quest.type === 'forecast' && quest.rule.kind === 'level';
+  const [login, setLogin] = useState(readLogin);
+  const [value, setValue] = useState('');
+  const [rationale, setRationale] = useState('');
+  const [draft, setDraft] = useState<{ url: string; path: string; text: string; note: string; replaces?: number } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const make = async () => {
+    setErr(null);
+    setDraft(null);
+    try {
+      localStorage.setItem(LOGIN_KEY, login.trim());
+    } catch {
+      /* not remembered; fine */
+    }
+    try {
+      const n = Number(value);
+      const qs = new URLSearchParams({ login: login.trim(), ...(level ? { level: String(n) } : { probability: String(n / 100) }), ...(rationale.trim() ? { rationale: rationale.trim() } : {}) });
+      setDraft(await send(`/api/quests/${encodeURIComponent(quest.id)}/draft-entry?${qs}`));
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    }
+  };
+  return (
+    <Box title="Enter publicly">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        A public entry goes on the project's GitHub page under your GitHub name, so your score can count on the public tables. You need a free GitHub account. Your forecast, your reason and your name are public and stay in the project's history for good. You can replace your entry until entries close; every entry is kept, and the last one counts.
+      </p>
+      <div className="flex flex-wrap gap-2 items-end">
+        <label className="text-xs space-y-1">
+          <span className="block">GitHub name</span>
+          <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" data-quest-login />
+        </label>
+        <label className="text-xs space-y-1">
+          <span className="block">{level ? 'Your forecast (number)' : 'Probability of yes (%)'}</span>
+          <input className={`${fieldCls} w-32`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} data-quest-public-answer />
+        </label>
+      </div>
+      <label className="text-xs space-y-1 block">
+        <span className="block">Why (optional, public)</span>
+        <textarea className={`${fieldCls} w-full`} rows={2} maxLength={2000} value={rationale} onChange={(e) => setRationale(e.target.value)} />
+      </label>
+      <button type="button" className="ui-btn" onClick={make} disabled={!value.trim() || !login.trim()} data-quest-draft-entry>
+        Prepare entry
+      </button>
+      {err && <p className="text-xs text-rose-700 dark:text-rose-400">{err}</p>}
+      {draft && (
+        <div className="space-y-1 text-xs" data-quest-draft>
+          <p>
+            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept. ` : ''}File: {draft.path}
+          </p>
+          <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto">{draft.text}</pre>
+          <p>{draft.note}</p>
+          <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
+            Open on GitHub
+          </a>
+        </div>
+      )}
+      <p className="text-xs text-slate-500">No GitHub, or GitHub is blocked where you are? See the project's contributing guide: a maintainer can post an entry you email before entries close.</p>
+    </Box>
+  );
+}
+
+type PublicReply =
+  | { open: true; count: number; note: string }
+  | { open: false; count: number; answer: 'probability' | 'level'; spread: { n: number; low: number; median: number; high: number } | null; entries: Array<{ login: string; n: number; via: string; answer: { probability?: number; level?: number }; rationale?: string; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } }> };
+
+/** Public entries: hidden until close, then each counted entry with its score and the spread. */
+function PublicEntries({ questId }: { questId: string }) {
+  const [data, setData] = useState<PublicReply | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send(`/api/quests/${encodeURIComponent(questId)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, [questId]);
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Public entries did not load: {err}</p>;
+  if (!data) return null;
+  const show = (a: { probability?: number; level?: number }) => (a.level !== undefined ? String(a.level) : `${Math.round((a.probability ?? 0) * 100)}%`);
+  return (
+    <Box title={`Public entries (${data.count})`}>
+      {data.open ? (
+        <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden>
+          {data.note}
+        </p>
+      ) : data.entries.length === 0 ? (
+        <p className="text-xs text-slate-500">No public entries.</p>
+      ) : (
+        <>
+          {data.spread && (
+            <p className="text-sm" data-quest-spread>
+              The middle answer was {data.answer === 'level' ? data.spread.median : `${Math.round(data.spread.median * 100)}%`}; half of the {data.spread.n} entries were between {data.answer === 'level' ? data.spread.low : `${Math.round(data.spread.low * 100)}%`} and {data.answer === 'level' ? data.spread.high : `${Math.round(data.spread.high * 100)}%`}.
+            </p>
+          )}
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-xs text-slate-500 text-left">
+                <th className="py-1 pr-2 font-normal">Who</th>
+                <th className="py-1 pr-2 font-normal">Answer</th>
+                <th className="py-1 font-normal">Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.entries.map((e) => (
+                <tr key={e.login} className="border-t border-slate-200 dark:border-slate-800 align-top">
+                  <td className="py-1 pr-2">
+                    {e.login}
+                    {e.n > 1 ? <span className="text-xs text-slate-500"> (entry {e.n})</span> : null}
+                    {e.via === 'email' ? <span className="text-xs text-slate-500"> (emailed)</span> : null}
+                    {e.rationale && <div className="text-xs text-slate-500">{e.rationale}</div>}
+                  </td>
+                  <td className="py-1 pr-2 tabular-nums">{show(e.answer)}</td>
+                  <td className="py-1 text-xs">
+                    {e.score.status === 'settled'
+                      ? `${e.score.brier !== undefined ? `Brier ${e.score.brier.toFixed(3)}` : `Error ${e.score.error}`}; skill ${e.score.skill === null || e.score.skill === undefined ? 'no baseline' : e.score.skill.toFixed(3)}`
+                      : e.score.note}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </>
+      )}
+    </Box>
   );
 }

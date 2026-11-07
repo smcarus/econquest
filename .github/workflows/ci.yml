@@ -2,6 +2,9 @@ name: CI
 
 on:
   pull_request:
+    # A pull request that only adds Quest entries runs quests.yml instead.
+    paths-ignore:
+      - 'quests/entries/**'
   push:
     branches: [main]
 
