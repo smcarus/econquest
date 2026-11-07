@@ -19,6 +19,7 @@ import { lsegSnapshotUrl, lsegTokenRequest, type OwnCdsQuote, ownCdsSettings, pa
 import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../utils/debtSchedule';
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
+import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
 /**
@@ -116,6 +117,29 @@ export async function fetchDebtSchedule(iso3: string): Promise<DebtSchedule | nu
       ? { ...(qeds ? { qeds } : {}), ...(ids ? { ids } : {}), ...(bis ? { bis } : {}), fetchedAt: new Date().toISOString() }
       : null;
   debtScheduleCache.set(iso3, { at: Date.now(), value });
+  return value;
+}
+
+/**
+ * The credit cycle (src/utils/bisCreditCycle.ts): credit-to-GDP gap, debt service ratio and real
+ * house prices from the BIS, full quarterly history, no key. Kept 12 hours, misses an hour.
+ */
+const bisCreditCache = new Map<string, { at: number; value: BisCreditCycle | null }>();
+export async function fetchBisCreditCycle(iso3: string): Promise<BisCreditCycle | null> {
+  const iso2 = BIS_ISO2[iso3];
+  if (!iso2) return null;
+  const hit = bisCreditCache.get(iso3);
+  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  const [gapCsv, dsrCsv, sppCsv] = await Promise.all([
+    fetchTextWithTimeout(bisCreditGapUrl(iso2)),
+    fetchTextWithTimeout(bisDsrUrl(iso2)),
+    fetchTextWithTimeout(bisPropertyUrl(iso2)),
+  ]);
+  const value: BisCreditCycle | null =
+    gapCsv || dsrCsv || sppCsv
+      ? { fetchedAt: new Date().toISOString(), ...parseBisCreditGap(gapCsv), ...parseBisDsr(dsrCsv), ...parseBisProperty(sppCsv) }
+      : null;
+  bisCreditCache.set(iso3, { at: Date.now(), value });
   return value;
 }
 

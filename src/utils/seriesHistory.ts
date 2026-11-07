@@ -23,6 +23,8 @@ import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './of
 import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 import { fxDailySeries, type FxHistoryFile } from './fxHistory';
 import type { FxExtraFile } from './fxExtra';
+import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
+import { BIS_ISO2 } from './bisDebtSecurities';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
@@ -92,6 +94,8 @@ export interface SeriesInputs {
   fxHistory?: FxHistoryFile | null;
   /** Daily central-bank rates for PEN, COP and ARS (src/utils/fxExtra.ts), when pulled. */
   fxExtra?: FxExtraFile | null;
+  /** BIS credit-to-GDP gap, debt service ratio and real house prices (src/utils/bisCreditCycle.ts), when pulled. */
+  bisCredit?: BisCreditCycle | null;
   /** The country's currency (ISO 4217), for the daily exchange rate. */
   currency?: string;
 }
@@ -340,6 +344,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     positioning(code, inputs.cftc),
     ticHoldings(code, inputs.tic),
     hcSpread(code, inputs.hcSpread),
+    ...bisCreditSeries(inputs.bisCredit, Boolean(BIS_ISO2[code])),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];
