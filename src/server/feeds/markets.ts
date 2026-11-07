@@ -3,6 +3,10 @@
  * the global plumbing panel (funding, liquidity, prediction markets).
  */
 
+import fs from 'fs';
+import path from 'path';
+import { writeFileAtomic } from '../../utils/atomicWrite';
+import { DATA_DIR } from '../config';
 import { fetchWithTimeout, fetchTextWithTimeout } from '../http';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { parseWbLatest, parseWitsShare, type TradeExposure, WB_TRADE_INDICATORS, wbIndicatorUrl, type WbTradeKey, type WitsIndicator, witsUrl } from '../../utils/scenarioExposure';
@@ -189,14 +193,39 @@ async function fetchTradeExposureUncached(iso3s: string[]): Promise<Map<string, 
   );
   return out;
 }
+/** The last pull with any figure, so the trade figures stay shown offline (data/live/trade-exposure.json). */
+function tradeExposureFile(): string {
+  return path.join(DATA_DIR, 'live', 'trade-exposure.json');
+}
+const hasTradeFigures = (m: Map<string, TradeExposure>) => [...m.values()].some((t) => Object.keys(t).length > 0);
+function savedTradeExposure(): Map<string, TradeExposure> | null {
+  try {
+    const saved = JSON.parse(fs.readFileSync(tradeExposureFile(), 'utf8'));
+    return saved?.countries && typeof saved.countries === 'object' ? new Map(Object.entries(saved.countries as Record<string, TradeExposure>)) : null;
+  } catch {
+    return null;
+  }
+}
 export async function fetchTradeExposure(): Promise<Map<string, TradeExposure>> {
   const c = tradeExposureCache;
-  const hasAny = c ? [...c.value.values()].some((t) => Object.keys(t).length > 0) : false;
+  const hasAny = c ? hasTradeFigures(c.value) : false;
   if (c && Date.now() - c.at < (hasAny ? 24 : 1) * 60 * 60 * 1000) return c.value;
   if (c?.pending) return c.pending;
   const pending = fetchTradeExposureUncached(SOVEREIGN_CATALOG.map((x) => x.iso3)).then((value) => {
-    tradeExposureCache = { at: Date.now(), value };
-    return value;
+    if (hasTradeFigures(value)) {
+      try {
+        writeFileAtomic(tradeExposureFile(), JSON.stringify({ pulledAt: new Date().toISOString(), countries: Object.fromEntries(value) }));
+      } catch {
+        // kept in memory only
+      }
+      tradeExposureCache = { at: Date.now(), value };
+      return value;
+    }
+    // Nothing answered (offline): show the last pull that had figures, and try again within the hour.
+    const saved = savedTradeExposure();
+    const shown = saved && hasTradeFigures(saved) ? saved : value;
+    tradeExposureCache = { at: Date.now() - (shown === saved ? 23 : 0) * 60 * 60 * 1000, value: shown };
+    return shown;
   });
   tradeExposureCache = { at: c?.at ?? 0, value: c?.value ?? new Map(), pending };
   return pending;
