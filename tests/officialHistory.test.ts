@@ -86,3 +86,15 @@ test('fiscal balances come from the IMF Fiscal Monitor codes DataMapper serves (
   assert.ok('points' in s);
   assert.match((s as { source: string }).source, /IMF Fiscal Monitor \(GGXONLB_G01_GDP_PT\)/);
 });
+
+test('capital flows (D4): World Bank BoP codes checked against the indicator list on 2026-11-07', () => {
+  const code = (id: string) => OFFICIAL_FIGURES.find((f) => f.id === id)?.code;
+  assert.equal(code('fdi_in_gdp'), 'BX.KLT.DINV.WD.GD.ZS');
+  assert.equal(code('fdi_out_gdp'), 'BM.KLT.DINV.WD.GD.ZS');
+  assert.equal(code('fdi_net_usd'), 'BN.KLT.DINV.CD');
+  assert.equal(code('portfolio_net_usd'), 'BN.KLT.PTXL.CD');
+  assert.equal(code('financial_account_usd'), 'BN.FIN.TOTL.CD');
+  const fin = OFFICIAL_FIGURES.find((f) => f.id === 'financial_account_usd')!;
+  assert.equal(fin.transform?.(-61_300_000_000), -61.3);
+  assert.match(fin.about || '', /negative number means more came in than went out/);
+});
