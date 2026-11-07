@@ -399,7 +399,9 @@ function readme(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
   } else md.push('- Correlation and OLS regression of y on x across countries.');
   md.push('', "## The app's results, to check against", '');
   const shown = result.tests.filter((t) => tests.includes(t.test));
-  if (!shown.length) md.push('_The chart had no tests; the scripts only read the data._');
+  const left = result.tests.filter((t) => !tests.includes(t.test)).map((t) => t.title);
+  if (left.length) md.push(`Not written out in the scripts (see the app's Methods page): ${[...new Set(left)].join('; ')}.`, '');
+  if (!shown.length) md.push('_The scripts only read the data; none of the chart\'s tests is written out._');
   for (const t of shown) {
     md.push(`### ${t.title}`, '', t.reading, '');
     for (const f of t.figures) md.push(`- ${f.label}: ${f.value}`);
