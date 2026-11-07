@@ -1,0 +1,34 @@
+{
+  "id": "tur-policy-2027h1",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will Turkey's policy rate be lower on 30 June 2027 than when entries close?",
+  "summary": "Give the probability that the BIS daily policy rate for Turkey on 30 June 2027 is below its value on the day entries close.",
+  "countries": [
+    "TUR"
+  ],
+  "topics": [
+    "monetary"
+  ],
+  "region": "EMEA",
+  "closesOn": "2026-12-31",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "TUR",
+      "series": "policy_rate"
+    },
+    "from": "closesOn",
+    "to": {
+      "on": "2027-06-30"
+    },
+    "op": "lower"
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "BIS daily data can lag a decision by a few days."
+  ]
+}

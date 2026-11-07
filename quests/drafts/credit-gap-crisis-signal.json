@@ -1,0 +1,24 @@
+{
+  "id": "credit-gap-crisis-signal",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "signal",
+  "title": "Does a large BIS credit gap warn of a currency crisis?",
+  "summary": "Propose a pre-registered test of whether a BIS credit-to-GDP gap well above trend comes before a large currency fall. Entries are test files that follow the signal standard: fixed before any run, real-time lags, net of a naive base rate, multiple-test correction.",
+  "hypothesis": "Countries whose BIS credit-to-GDP gap is above a stated threshold see a currency fall of a stated size within a stated window more often than the base rate.",
+  "countries": [
+    "WLD"
+  ],
+  "topics": [
+    "external",
+    "fx"
+  ],
+  "region": "Global",
+  "closesOn": "2027-03-31",
+  "settlesOn": "2027-04-30",
+  "knownLimits": [
+    "Each proposed test is run once after it is merged and joins the family of tests corrected for multiple testing; a failed test is recorded and never re-tuned."
+  ]
+}

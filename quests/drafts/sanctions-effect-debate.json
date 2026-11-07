@@ -1,0 +1,31 @@
+{
+  "id": "sanctions-effect-debate",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "debate",
+  "title": "Do financial sanctions change a target country's macro path, or only its routes?",
+  "summary": "Argue whether broad financial sanctions measurably change a target economy's growth, inflation and reserves, or mainly reroute trade and payments. Use the app's sanctions tools, official series and cited studies.",
+  "positions": [
+    "They change the macro path",
+    "They mostly reroute trade and payments",
+    "It depends on the target's commodity exports"
+  ],
+  "countries": [
+    "RUS",
+    "IRN",
+    "VEN"
+  ],
+  "topics": [
+    "geopolitics",
+    "external"
+  ],
+  "region": "Global",
+  "closesOn": "2027-02-28",
+  "settlesOn": "2027-03-15",
+  "knownLimits": [
+    "Debate, not a tested signal.",
+    "Official data for sanctioned countries are sparse and sometimes withheld; say when a figure is Missing."
+  ]
+}
