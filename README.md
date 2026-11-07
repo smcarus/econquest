@@ -18,6 +18,7 @@ Settings.
 - [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md): audit log, model register, pre-registered backtests, report sign-off, and what a multi-user version would need
 - [docs/SECURITY.md](./docs/SECURITY.md): accounts, sign-in, sessions, and what is not protected yet
 - [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md): UI rules for contributors
+- [CONTRIBUTING.md](./CONTRIBUTING.md): how to contribute, the research rules, and signing off commits
 
 ---
 
@@ -157,3 +158,16 @@ it by pointing its own domain at this computer, and it refuses changes sent from
 sites. If you open it to your network, list the names it may be reached by in `ALLOWED_HOSTS`. The
 connector test and webhook buttons work only from this computer and cannot be pointed at the app
 itself or at cloud metadata addresses.
+
+---
+
+## Licence
+
+Code: [Apache License 2.0](./LICENSE). Documentation, methods notes, validation records and Quest
+content: [CC BY 4.0](./LICENSE-docs.md). Figures fetched from outside sources keep their own terms
+([docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md)); the bundled UCDP datasets are CC BY 4.0 ([NOTICE](./NOTICE)).
+
+This is research and teaching software, not investment advice. Contributions are welcome: see
+[CONTRIBUTING.md](./CONTRIBUTING.md), the [code of conduct](./CODE_OF_CONDUCT.md),
+[GOVERNANCE.md](./GOVERNANCE.md) and, for security problems, [SECURITY.md](./SECURITY.md). To cite
+the software, use [CITATION.cff](./CITATION.cff).

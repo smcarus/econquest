@@ -1,7 +1,8 @@
 {
   "name": "econquest-terminal",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -34,7 +35,8 @@
     "backup:drill": "tsx scripts/backup-drill.ts",
     "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",
     "forecast:worst": "tsx scripts/forecast-worst.ts",
-    "mac:validate": "tsx scripts/mac-validate.ts"
+    "mac:validate": "tsx scripts/mac-validate.ts",
+    "public:export": "bash scripts/public-export.sh"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",
