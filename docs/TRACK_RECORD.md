@@ -8,6 +8,15 @@ re-tuned after a fail; a changed test is a new version and counts as a new test.
 from the owner's real runs and never edited. Backtest and evaluation results are hypothetical: they
 show how a rule would have done on past data, not money made.
 
+**In plain words.** Each test asks one question: would this rule have done better than the simplest
+possible guess, using only the figures that had actually been published at the time and after
+trading costs? *Passed* means it did, by more than luck would usually explain. *Failed* means it did
+not. *Too few cases* means there was not enough history to tell. The *p* column is the chance of a
+result at least this good by luck alone if the rule had no value (smaller is stronger). The *Holm p*
+column raises the bar because many rules were tried, and some would pass by luck. Doing well on past
+data does not mean a rule will work in future, which is why passes are also tracked forward (below).
+Terms are explained in the [Glossary](./GLOSSARY.md).
+
 **20 tests on record: 6 passed, 12 failed, 2 too few cases.**
 
 Because 20 tests were tried, a single p under 0.05 is not enough. The Holm correction across all 20
