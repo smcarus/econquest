@@ -186,6 +186,22 @@ export async function fetchSovereignDefaults(): Promise<SovereignDefaults | null
 }
 
 /**
+ * A FRED series' full history as CSV (no key), for the scenario engine's financial stress factor.
+ * Kept 12 hours in memory (an hour after a miss); when FRED does not answer the factor is left out and named.
+ */
+export const FRED_STRESS_SERIES = 'STLFSI4';
+const fredHistoryCache = new Map<string, { at: number; value: Obs[] | null }>();
+export async function fetchFredHistory(seriesId: string, from = '1993-12-01'): Promise<Obs[] | null> {
+  const hit = fredHistoryCache.get(seriesId);
+  if (hit && Date.now() - hit.at < (hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  const csv = await fetchTextWithTimeout(`https://fred.stlouisfed.org/graph/fredgraph.csv?id=${encodeURIComponent(seriesId)}&cosd=${from}`, 15000);
+  const obs = csv ? parseFredCsvSeries(csv) : [];
+  const value = obs.length ? obs : null;
+  fredHistoryCache.set(seriesId, { at: Date.now(), value });
+  return value;
+}
+
+/**
  * Own-account 5Y CDS (off unless CDS_FEED is set in .env; see src/utils/ownCds.ts). The CSV is
  * re-read when the file changes; LSEG answers are kept for 15 minutes and its token until expiry.
  * The credentials never leave the server and are never logged.

@@ -78,7 +78,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
             </button>
           )}
         </h2>
-        <p className="ui-label">If the Fed moves or the dollar swings, how have this country's currency and policy rate moved with it? Fitted on the last 15 years of monthly moves; co-movement, not a forecast.</p>
+        <p className="ui-label">If the Fed moves, the dollar swings or US financial stress rises, how have this country's currency and policy rate moved with it? Fitted on the last 15 years of monthly moves; co-movement, not a forecast.</p>
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}
@@ -164,7 +164,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
               </p>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Method: {reply.method} The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet: only five years of monthly prices are saved. Sources: {reply.sources.join('; ')}.
+              Method: {reply.method} The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet: only five years of monthly prices are saved. Financial stress is the St. Louis Fed index (zero = average stress, up = more stress). Sources: {reply.sources.join('; ')}.
             </p>
             {reply.grVar && (
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2" data-gr-var="true">

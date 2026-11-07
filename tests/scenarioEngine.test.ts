@@ -50,3 +50,32 @@ test('scenario engine: Missing on short samples and on a pegged currency; month-
   assert.ok(Math.abs(c.get('2026-02')! - 1) < 1e-9);
   assert.equal(monthlyChanges(new Map([['2026-01', 5], ['2026-02', 5.25]]), 'diff').get('2026-02'), 0.25);
 });
+
+test('scenario engine: financial stress as a third factor (D12), weekly readings to month-end changes', () => {
+  let seed = 7;
+  const rand = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) - 0.5;
+  const us = new Map<string, number>();
+  const usd = new Map<string, number>();
+  const fs = new Map<string, number>();
+  const fx = new Map<string, number>();
+  for (let k = 0; k < 200; k++) {
+    const [a, b, c] = [rand() * 0.5, rand() * 4, rand() * 1];
+    us.set(ym(k), a);
+    usd.set(ym(k), b);
+    fs.set(ym(k), c);
+    fx.set(ym(k), 2 * a + 0.8 * b + 1.5 * c + rand() * 0.5);
+  }
+  const m = fitScenarioModel('fx', fx, { us_rate: us, dollar: usd, fin_stress: fs });
+  assert.ok(m.ok);
+  if (!m.ok) return;
+  assert.deepEqual(m.factors, ['us_rate', 'dollar', 'fin_stress']);
+  assert.ok(Math.abs(m.beta[2] - 1.5) < 0.15, `stress beta ${m.beta[2]}`);
+  const r = applyScenario(m, { fin_stress: 1 });
+  assert.ok(Math.abs(r.value - 1.5) < 0.15);
+  // Without the stress history the model still fits on the other two factors.
+  const two = fitScenarioModel('fx', fx, { us_rate: us, dollar: usd });
+  assert.ok(two.ok && two.factors.length === 2);
+  // Weekly STLFSI4 readings: the month's last reading, differenced.
+  const weekly = monthEnd([{ date: '2026-09-25', value: -0.6 }, { date: '2026-10-02', value: -0.55 }, { date: '2026-10-30', value: -0.5224 }]);
+  assert.ok(Math.abs(monthlyChanges(weekly, 'diff').get('2026-10')! - 0.0776) < 1e-9);
+});
