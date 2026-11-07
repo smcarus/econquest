@@ -1,6 +1,7 @@
 import type { Express } from 'express';
 import { DATA_DIR } from '../config';
 import { loadWeoVintages } from '../../utils/weoVintagesStore';
+import { ALFRED_SERIES, ALFRED_SOURCE, alfredReply } from '../../utils/alfredVintages';
 import { BOHN_REFERENCES, bohnSentence, bohnTest } from '../../utils/bohnTest';
 import { grossFinancingNeed, gfnSentence } from '../../utils/grossFinancingNeed';
 import { debtFan, debtFanSentence } from '../../utils/debtFan';
@@ -29,7 +30,7 @@ import path from 'path';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { oecdFetch, fetchQnaPull, fetchNationalCpi, fetchMonthlyActivity } from '../feeds/oecd';
 import { GSCPI_SOURCE, STRESS_INDICES, stressIndex } from '../../utils/stressIndices';
-import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, loadFxHistory } from '../feeds/rates';
+import { fetchDebtSchedule, fetchFxHistory, fetchPolicyDaily, fetchReerLong, fetchStressPulls, fetchAlfred, loadFxHistory } from '../feeds/rates';
 import { beer, beerSentence } from '../../utils/beer';
 import { EVENT_METHOD, eventSentence, eventStudy } from '../../utils/eventStudy';
 import { fxDailySeries } from '../../utils/fxHistory';
@@ -504,6 +505,15 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       sentences: out.filter((r): r is Extract<ForecastOutcome, { ok: true }> => r.ok).map((r) => forecastSentence(r)),
       history: hist ? { pulledAt: hist.pulledAt, problems: hist.problems } : { pulledAt: null, problems: ['Long histories not downloaded yet; the first download runs in the background.'] },
     });
+  });
+  // US data as first published and as known on a date (ALFRED vintages, src/utils/alfredVintages.ts).
+  app.get('/api/us-vintages', async (req, res) => {
+    const def = ALFRED_SERIES.find((d) => d.id === req.query.series) || ALFRED_SERIES[0];
+    const got = await fetchAlfred(def.id);
+    if ('reason' in got) return res.json({ ok: false, series: def.id, reason: got.reason, source: ALFRED_SOURCE, choices: ALFRED_SERIES.map((d) => ({ id: d.id, label: d.label })) });
+    const period = typeof req.query.period === 'string' ? req.query.period : undefined;
+    const asOf = typeof req.query.asOf === 'string' ? req.query.asOf : undefined;
+    res.json({ ...alfredReply(def, got, period, asOf), choices: ALFRED_SERIES.map((d) => ({ id: d.id, label: d.label })) });
   });
   // Past IMF WEO editions you saved in data/local/weo-vintages/ (src/utils/weoVintages.ts). Read again
   // when ?fresh=1, so files added while the app runs are picked up.

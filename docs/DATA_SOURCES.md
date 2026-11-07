@@ -352,7 +352,7 @@ folder, so a key saved while the app runs in Docker also works with `npm run dev
 
 | Source | Fills | Settings |
 | --- | --- | --- |
-| FRED API | The same yields as the FRED download, plus the full histories (financial stress index, US inflation expectations), through the official API | Settings or .env: `FRED_API_KEY` (optional; the download is used without it) |
+| FRED API | The same yields as the FRED download, plus the full histories (stress indices, US inflation expectations), through the official API; and US data as first published (ALFRED vintages of real GDP, CPI and unemployment, US page only, needs the key) | Settings or .env: `FRED_API_KEY` (optional; the download is used without it) |
 | Turkey central bank (EVDS) | Turkey 10Y yield | Settings or .env: `EVDS_API_KEY` and `EVDS_TR10Y_SERIES` (both needed) |
 | US EIA open data | Daily Brent and WTI spot prices | Settings or .env: `EIA_API_KEY` (optional; free at eia.gov/opendata > Register; without it oil comes monthly from the Pink Sheet). Pulled every 12 h, on disk with the Pink Sheet |
 

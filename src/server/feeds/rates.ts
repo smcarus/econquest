@@ -22,6 +22,7 @@ import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
+import { type AlfredSeries, alfredUrl, parseAlfred } from '../../utils/alfredVintages';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, type InflationSurveys, parseEcbCsv, parseFocus12m } from '../../utils/inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS, STRESS_INDICES, type StressPulls } from '../../utils/stressIndices';
 import { type InflationExpectations, parseFredApiObservations, US_INFLATION_EXPECTATION_IDS } from '../../utils/inflationExpectations';
@@ -290,6 +291,31 @@ export async function fetchInflationSurveys(): Promise<InflationSurveys> {
     ...(focusReason ? { focusReason } : {}),
   };
   surveysCache = { at: Date.now(), value };
+  return value;
+}
+
+/**
+ * ALFRED real-time vintages (src/utils/alfredVintages.ts) for one US series, with the user's FRED
+ * key. Kept 12 hours (an hour after a miss); no key gives a reason, never a number.
+ */
+const alfredCache = new Map<string, { at: number; value: AlfredSeries | { reason: string } }>();
+export async function fetchAlfred(seriesId: string): Promise<AlfredSeries | { reason: string }> {
+  const apiKey = (process.env.FRED_API_KEY || '').trim();
+  if (!apiKey) return { reason: 'US data as first published needs your free FRED API key (Menu > Settings > API keys)' };
+  const hit = alfredCache.get(seriesId);
+  if (hit && Date.now() - hit.at < ('rows' in hit.value ? 12 : 1) * 60 * 60 * 1000) return hit.value;
+  let value: AlfredSeries | { reason: string } = { reason: 'ALFRED (FRED API) did not answer' };
+  try {
+    const res = await fetchWithTimeout(alfredUrl(seriesId, apiKey, '1999-01-01'), 30000);
+    if (res.status === 400 || res.status === 403) value = { reason: `FRED did not accept the API key (HTTP ${res.status})` };
+    else if (res.ok) {
+      const rows = parseAlfred(await res.json());
+      value = rows.length ? { id: seriesId, rows } : { reason: `ALFRED gave no vintages for ${seriesId}` };
+    } else value = { reason: `ALFRED answered HTTP ${res.status}` };
+  } catch {
+    // keep the reason above
+  }
+  alfredCache.set(seriesId, { at: Date.now(), value });
   return value;
 }
 
