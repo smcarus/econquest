@@ -82,7 +82,7 @@ export function bisAllMarketsUrl(iso2: string): string {
 }
 
 /** One CSV line; fields may be quoted (the BIS quotes TITLE, which holds commas). */
-function splitCsvLine(line: string): string[] {
+export function splitCsvLine(line: string): string[] {
   const out: string[] = [];
   let cur = '';
   let quoted = false;

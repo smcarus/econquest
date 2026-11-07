@@ -20,6 +20,7 @@ import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../u
 import { writeFileAtomic } from '../../utils/atomicWrite';
 import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
+import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
@@ -156,6 +157,32 @@ export async function fetchIdsCreditors(iso3: string): Promise<IdsCreditors | nu
   const value = world ? parseIdsCreditors(world, china, new Date().toISOString()) : null;
   idsCreditorsCache.set(iso3, { at: Date.now(), value });
   return value;
+}
+
+/**
+ * Sovereign default history (src/utils/sovereignDefaults.ts): the BoC-BoE database for every
+ * country in one CSV from the Bank of Canada Valet API, newest edition that answers. One request a
+ * day at most (the Valet terms bar going round its request limits); misses retried after an hour.
+ */
+let sovereignDefaultsCache: { at: number; value: SovereignDefaults | null } | null = null;
+let sovereignDefaultsInFlight: Promise<SovereignDefaults | null> | null = null;
+export async function fetchSovereignDefaults(): Promise<SovereignDefaults | null> {
+  const hit = sovereignDefaultsCache;
+  if (hit && Date.now() - hit.at < (hit.value ? 24 : 1) * 60 * 60 * 1000) return hit.value;
+  if (sovereignDefaultsInFlight) return sovereignDefaultsInFlight;
+  sovereignDefaultsInFlight = (async () => {
+    let value: SovereignDefaults | null = null;
+    for (const edition of bocBoeEditions()) {
+      const csv = await fetchTextWithTimeout(bocBoeUrl(edition), 20000);
+      value = csv ? parseBocBoeCsv(csv, edition, new Date().toISOString()) : null;
+      if (value) break;
+    }
+    sovereignDefaultsCache = { at: Date.now(), value };
+    return value;
+  })().finally(() => {
+    sovereignDefaultsInFlight = null;
+  });
+  return sovereignDefaultsInFlight;
 }
 
 /**

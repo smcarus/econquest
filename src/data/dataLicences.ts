@@ -608,6 +608,28 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-06',
   },
   {
+    id: 'boc_boe',
+    name: 'Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE)',
+    usedFor: 'Government debt in default each year since 1960, by creditor (IMF, Paris Club, China, foreign-currency bonds and bank loans, local-currency debt)',
+    terms: [
+      { label: 'Bank of Canada Terms of Use, Disclosures and Disclaimers', url: 'https://www.bankofcanada.ca/terms/' },
+      { label: 'BoC-BoE Sovereign Default Database: What\'s new in 2026? (Staff Analytical Paper 2026-48)', url: 'https://www.bankofcanada.ca/2026/10/staff-analytical-paper-2026-48/' },
+    ],
+    status: 'conditions',
+    display: 'Allowed: the Bank lets anyone use, copy and distribute its website content, crediting the Bank and saying if anything was changed, without suggesting the Bank endorses the use.',
+    commercial: 'Not limited by the terms for the Bank\'s own content; a paid product that includes it must tell buyers the content is free on the Bank\'s website.',
+    attribution: 'Source: Bank of Canada and Bank of England, BoC-BoE Sovereign Default Database (<edition>), Bank of Canada Valet API; figures as published, US$ millions.',
+    quotes: [
+      'You must attribute the Bank of Canada as the source of the content, and indicate if changes were made. You may do so in any reasonable manner, but not in any way that suggests that the Bank endorses you or your use of the content.',
+      'You must exercise due diligence in ensuring the accuracy of any content you reproduce.',
+      'The Bank does not grant You permission to re-use such third-party content unless it expressly indicates that You may do so.',
+    ],
+    flag: 'The database is compiled from published sources (IMF, World Bank, Paris Club and others); the Bank\'s terms withhold permission for third-party content unless stated, and no database-specific licence was found. The Valet API must not be queried around its request limits: the app reads the file at most once a day.',
+    share: 'allowed',
+    shareNote: 'The Bank\'s terms allow free use and distribution with credit; the third-party caveat is noted above.',
+    checked: '2026-11-07',
+  },
+  {
     id: 'own',
     name: 'Your own paid data (CDS file, LSEG account)',
     usedFor: '5Y sovereign CDS (hidden for now)',
