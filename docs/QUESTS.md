@@ -20,13 +20,38 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Log privately (hashed, append-only, `data/local/quest-entries.jsonl`), My entries, scoring of daily and weekly series against base rate or no change | Built and tested, switched off |
 | Practice on past data (answer hidden, scored at once, not saved) | Built and tested, switched off |
 | Class table for a class code (private to the server it runs on) | Built and tested, switched off |
-| Resolver, results, disputes, Track record tab | Not built |
+| Resolver: results worked out from the feeds, recorded by `npm run quests:resolve` in the hash-chained `quests/resolutions.jsonl`; yearly figures read as first published; disputes, withdrawals and notes; Results tab and result on each Quest page; recorded results used for scores | Built and tested, switched off |
+| Quests tab on Menu > Track record | Not built (added when Quests go live, so nothing shows while they are off) |
 | Public entries, anti-gaming checks | Not built |
 | Contributor statistics and scoreboard | Not built |
 | Quest generator and digests | Not built |
 | Debate, signal and replication workflows | Not built |
 | Preference profiles | Not built |
 | Health page and yearly dataset | Not built |
+
+## How a Quest is settled
+
+When a Forecast Quest's date has passed, the app reads the answer from the feed exactly as the Quest's rule says, and the maintainer records it.
+
+1. Start the app with `QUESTS_ENABLED=on` (Docker on port 3737, or `npm run dev` on 3000).
+2. Run `npm run quests:resolve -- --by <your GitHub login> --dry-run` to see what is due. Each Quest shows one of:
+   - a result in plain words, for example "Yes, it happened (74.1 on 2026-12-11, then 75.3 on 2026-12-18)";
+   - "wait": the value is not published yet, or the feed did not answer; run it again later;
+   - "check": the feeds give Unresolvable (the series has no value and the fallback, if any, has none either). This is never recorded automatically, because a missing value can be a passing fault. If it is right, run again with `--unresolvable <id>`.
+3. Run it again without `--dry-run` to write the results, then commit `quests/resolutions.jsonl` in a pull request.
+
+How values are read:
+
+- **Daily and weekly series** (policy rates, exchange rates, oil prices, CFTC positions): the first value published on or after the date in the rule.
+- **Yearly figures** (IMF and World Bank): the value as the source first published it in the first download on or after the date. Sources often revise these figures months later; the app keeps a list of every change it sees between downloads (`data/history/<country>.json`), and the resolver undoes changes made after that first download. A later revision can be added as a note; it never changes the result.
+
+The record, `quests/resolutions.jsonl`, has one line per event, and lines are never edited. Each line holds the SHA-256 fingerprint of the line before it, so if any old line is changed, removed or moved, the check fails from that line on (`npm run quests:resolve -- --verify`, and the Results tab in the app) and the script refuses to write until the file is restored from git. The script also skips a Quest whose file in the running app differs from the one in this folder.
+
+### Disputes, withdrawals and notes
+
+- **Dispute.** Anyone may dispute a result within 7 days of it being recorded, in the Quest's Discussion thread, saying which part of the rule was not followed. The maintainer answers there and records the decision: `npm run quests:resolve -- --by <login> --decide <id> stands "reason"`, or `... --decide <id> unresolvable "reason"` when the result was wrong and the Quest is Unresolvable after all. The original result stays visible, with the decision below it. A wrong result is never replaced by a different answer: it can only stand or become Unresolvable.
+- **Withdrawal.** A Quest with no result yet can be withdrawn, for example because its source stopped publishing: `--withdraw <id> "reason"`. Entries on it are not scored.
+- **Note.** `--note <id> "text"` adds information, for example that the source later revised the figure.
 
 ## Checklist before Quests are switched on
 
@@ -41,6 +66,8 @@ Working properly:
 - [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
 - [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
 - [ ] The UI smoke and journey tests cover the Quests page with Quests on and off
+- [ ] A test Quest of each kind settled with `npm run quests:resolve` on the maintainer's computer, and the record checked with `--verify`
+- [ ] A Quests tab on Menu > Track record shows the recorded results and the chain check
 
 Documented:
 
