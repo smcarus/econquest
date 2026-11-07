@@ -8,7 +8,7 @@ import {
   AIRuntimeConfig,
   CROOverrideState,
   CouncilAssessmentRun,
-  CustomSovereignOnboardingDraft,
+  AddedCountry,
   ExternalInternalConnectorMetricKey,
   OpenDataSnapshot,
   UserPersonaId,
@@ -30,10 +30,11 @@ import {
   registerCustomSovereignInCatalog,
 } from './data/presetsAndBaselines';
 import {
-  loadCustomSovereignsFromStorage,
+  loadAddedCountriesFromStorage,
   loadWorkspaceSessionFromStorage,
   saveWorkspaceSessionToStorage,
-} from './utils/turnkeyReadinessAndCommandEngine';
+} from './utils/workspaceSession';
+import { AddCountryDialog } from './components/AddCountryDialog';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
@@ -130,9 +131,8 @@ const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
 const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
 const UsersDialog = lazyNamed(() => import('./components/UsersDialog'), 'UsersDialog');
-const CustomSovereignOnboardingModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'CustomSovereignOnboardingModal');
-const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SelfHostAndOllamaRuntimeModal');
-const SovereignManualAndGithubModal = lazyNamed(() => import('./components/TurnkeyCommandAndIntegrityModals'), 'SovereignManualAndGithubModal');
+const SelfHostAndOllamaRuntimeModal = lazyNamed(() => import('./components/ManualAndAiModelDialogs'), 'SelfHostAndOllamaRuntimeModal');
+const SovereignManualAndGithubModal = lazyNamed(() => import('./components/ManualAndAiModelDialogs'), 'SovereignManualAndGithubModal');
 
 
 const THEME_STORAGE_KEY = 'econquest_theme_dark_v1';
@@ -190,11 +190,9 @@ type NavSectionId =
 const CORE_REPORTS_TABS: WorkspaceTab[] = [{ id: 'ic', label: 'Notes', hint: '', desks: ['ic_memo_builder'] }];
 
 export default function App() {
-  // Hydrate any previously onboarded custom ISO-3 sovereigns into SOVEREIGN_CATALOG on boot
-  const [customOnboardedSovereigns, setCustomOnboardedSovereigns] = useState<
-    CustomSovereignOnboardingDraft[]
-  >(() => {
-    const savedCustom = loadCustomSovereignsFromStorage();
+  // Countries the user added (names only) go into SOVEREIGN_CATALOG on boot.
+  const [customOnboardedSovereigns, setCustomOnboardedSovereigns] = useState<AddedCountry[]>(() => {
+    const savedCustom = loadAddedCountriesFromStorage();
     savedCustom.forEach((draft) => registerCustomSovereignInCatalog(draft));
     return savedCustom;
   });
@@ -1010,7 +1008,7 @@ export default function App() {
 
 
 
-  const handleOnboardCustomSovereign = (draft: CustomSovereignOnboardingDraft) => {
+  const handleOnboardCustomSovereign = (draft: AddedCountry) => {
     const newItem = registerCustomSovereignInCatalog(draft);
     setCustomOnboardedSovereigns((prev) => {
       const filtered = prev.filter((c) => c.iso3 !== newItem.iso3);
@@ -1035,8 +1033,9 @@ export default function App() {
     setScenarioInput(newItem.focusTheme);
     setStatusBanner({
       type: 'success',
-      message: `Onboarded ${newItem.countryName} (${newItem.iso3} · ${newItem.currencyCode}) into active watchlist and all 10 analytical hubs (Debt/GDP ${newItem.debtToGdpPct.toFixed(1)}%, 10Y Yield ${newItem.yield10YPct.toFixed(2)}%, 5Y CDS ${newItem.cds5YBps} bps).`,
+      message: `Added ${newItem.countryName} to the watchlist. Its figures come from the feeds and read Missing until a feed answers.`,
     });
+    void handlePullLiveOpenData(newItem.iso3, newItem.countryName, false);
   };
 
 
@@ -1802,13 +1801,7 @@ export default function App() {
       </Suspense>
 
       {isCustomSovereignModalOpen && (
-        <Suspense fallback={null}>
-      <CustomSovereignOnboardingModal
-        isOpen={isCustomSovereignModalOpen}
-        onClose={() => setIsCustomSovereignModalOpen(false)}
-        onOnboardSovereign={handleOnboardCustomSovereign}
-      />
-        </Suspense>
+        <AddCountryDialog onClose={() => setIsCustomSovereignModalOpen(false)} onAdd={handleOnboardCustomSovereign} />
       )}
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}

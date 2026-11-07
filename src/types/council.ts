@@ -884,25 +884,12 @@ export interface ModelIntegrityAuditReport {
   provenanceFeeds: DataProvenanceFeedStatus[];
 }
 
-export interface CustomSovereignOnboardingDraft {
+/** A country the user added under Research > One country > Add a country. Names only: its figures come from the feeds. */
+export interface AddedCountry {
   iso3: string;
   countryName: string;
   region: string;
   currencyCode: string;
-  focusTheme: string;
-  debtToGdpPct: number;
-  primaryFiscalBalancePct: number;
-  realGdpGrowthPct: number;
-  cpiInflationPct: number;
-  policyRatePct: number;
-  sovereign10YBondYieldPct: number;
-  cds5YSpreadBps: number;
-  fxReservesMonthsImport: number;
-  externalDebtPctGni: number;
-  currentAccountPctGdp: number;
-  politicalStabilityPercentile: number;
-  exchangeRatePerUsd: number;
-  chokepointExposureIndex: number;
 }
 
 export interface WorkspaceSessionSnapshot {
@@ -920,7 +907,7 @@ export interface WorkspaceSessionSnapshot {
   // (inputs of the retired model desk engines); they are ignored.
   watchlists: WatchlistGroup[];
   activeWatchlistId: string;
-  customOnboardedSovereigns: CustomSovereignOnboardingDraft[];
+  customOnboardedSovereigns: AddedCountry[];
 }
 
 /** The few debt-sustainability figures the council and the watchlist carry (src/utils/debtSustainability.ts). */
