@@ -30,6 +30,7 @@
     "council:regress": "tsx scripts/council-regress.ts",
     "council:record": "tsx scripts/council-record.ts",
     "docs:licences": "tsx scripts/docs-licences.ts",
+    "quests:check": "tsx scripts/quests-check.ts",
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",

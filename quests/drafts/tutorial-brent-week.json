@@ -1,0 +1,49 @@
+{
+  "id": "tutorial-brent-week",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "tutorial": true,
+  "title": "Tutorial: will Brent crude be higher a week after entries close?",
+  "summary": "A first Quest to learn how entries, scoring and results work. Give the probability that the EIA daily Brent spot price one week after entries close is higher than on the day they close. It settles within a week, so you see your first score quickly.",
+  "countries": [
+    "WLD"
+  ],
+  "topics": [
+    "commodities"
+  ],
+  "region": "Global",
+  "closesOn": "2026-12-11",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "WLD",
+      "series": "commodity_eia_rbrte"
+    },
+    "from": "closesOn",
+    "to": {
+      "on": "2026-12-18"
+    },
+    "op": "higher"
+  },
+  "fallback": {
+    "rule": {
+      "kind": "direction",
+      "ref": {
+        "country": "WLD",
+        "series": "commodity_eia_rwtc"
+      },
+      "from": "closesOn",
+      "to": {
+        "on": "2026-12-18"
+      },
+      "op": "higher"
+    }
+  },
+  "knownLimits": [
+    "EIA publishes daily spot prices with a lag of a few days; the Quest settles when the value for the date is out.",
+    "If Brent is missing, WTI decides the Quest instead."
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "ind-inflation-2026",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "What will India's 2026 inflation be, as the IMF first reports it after the year?",
+  "summary": "Forecast IMF WEO average consumer price inflation for India for 2026, in percent, as first read on or after 1 May 2027.",
+  "countries": [
+    "IND"
+  ],
+  "topics": [
+    "inflation"
+  ],
+  "region": "Asia-Pacific",
+  "closesOn": "2027-01-31",
+  "rule": {
+    "kind": "level",
+    "ref": {
+      "country": "IND",
+      "series": "cpi_imf"
+    },
+    "at": {
+      "period": "2026",
+      "on": "2027-05-01"
+    }
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "The IMF reports India on a fiscal-year basis (April to March) for some series; the WEO figure as published is used."
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "note": "SHA-256 of each approved Quest file. An approved Quest is fixed: a changed file fails the check, so a change is a new version (a new file), and a Quest is withdrawn by a resolution line, never deleted.",
+  "files": {}
+}

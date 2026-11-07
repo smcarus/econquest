@@ -1,0 +1,31 @@
+{
+  "id": "egy-reserves-debate",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "debate",
+  "title": "What would most reliably rebuild Egypt's foreign reserves?",
+  "summary": "Argue which route would rebuild Egypt's reserves most reliably over the next two years. Cite the app's figures (reserves, current account, external debt, short-term debt) for every claim; Claim Check marks figures that do not match.",
+  "positions": [
+    "A more flexible exchange rate",
+    "Gulf and IFI financing, with privatisation receipts",
+    "Export and tourism growth",
+    "None of these without debt relief"
+  ],
+  "countries": [
+    "EGY"
+  ],
+  "topics": [
+    "external",
+    "fx",
+    "debt"
+  ],
+  "region": "EMEA",
+  "closesOn": "2027-02-28",
+  "settlesOn": "2027-03-15",
+  "knownLimits": [
+    "Debate, not a tested signal: no position is scored right or wrong.",
+    "BIS has no daily policy rate for Egypt."
+  ]
+}
