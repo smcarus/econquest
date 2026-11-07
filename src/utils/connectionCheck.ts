@@ -138,6 +138,8 @@ interface ProbeReply {
   status?: number;
   latencyMs: number;
   text?: string;
+  /** The address that finally answered, when redirects were followed. */
+  finalUrl?: string;
   /** Set when there was no HTTP answer at all. */
   networkError?: string;
 }
@@ -172,7 +174,7 @@ async function probe(fetchFn: FetchFn, url: string, timeoutMs: number, init: Req
   try {
     const res = await fetchFn(url, { ...init, signal: controller.signal });
     const text = await res.text();
-    return { ok: res.ok, status: res.status, latencyMs: Date.now() - t0, text };
+    return { ok: res.ok, status: res.status, latencyMs: Date.now() - t0, text, ...(res.url && res.url !== url ? { finalUrl: res.url } : {}) };
   } catch (err) {
     return { ok: false, latencyMs: Date.now() - t0, networkError: describeNetworkError(err, timeoutMs) };
   } finally {
@@ -205,6 +207,20 @@ function parseJson(text: string | undefined): unknown {
   }
 }
 
+/**
+ * True when a request was redirected to the site's own error page (for example the New York Fed
+ * sends a 302 to www.newyorkfed.org/errors/500 during an outage). That is a fault on the source's
+ * side, not a format change.
+ */
+export function isErrorPageRedirect(finalUrl: string | undefined): boolean {
+  if (!finalUrl) return false;
+  try {
+    return /\/(errors?|error-pages?)(\/\d{3}|\.html?|\/?$)/i.test(new URL(finalUrl).pathname);
+  } catch {
+    return false;
+  }
+}
+
 type Def = Omit<ConnectionResult, 'state' | 'detail' | 'host'> & { url?: string };
 
 /** One HTTP check: probe, then read with the app's own parser. `read` returns a sample, or null if unreadable. */
@@ -221,6 +237,8 @@ async function httpCheck(
   const r = await probe(fetchFn, url, timeoutMs, init);
   const base = { ...rest, host: hostOf(url), latencyMs: r.latencyMs, ...(r.status ? { httpStatus: r.status } : {}) };
   if (r.networkError) return { ...base, state: 'no_answer', detail: r.networkError };
+  if (isErrorPageRedirect(r.finalUrl))
+    return { ...base, state: 'refused', detail: `Site error: the source sent its own error page (redirected to ${r.finalUrl}). A problem on its side, usually temporary; not a format change.` };
   if (!r.ok) return { ...base, state: 'refused', detail: httpRefusal(r.status, r.text) };
   let sample: string | null = null;
   try {
@@ -489,7 +507,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
 
   add('nyfed', () =>
     httpCheck(
-      { id: 'nyfed', name: 'New York Fed rates', group: 'free', feeds: 'Fed funds, SOFR, reverse repo (dollar leg of carry)' },
+      { id: 'nyfed', name: 'New York Fed rates', group: 'free', feeds: 'Fed funds, SOFR, reverse repo (dollar leg of carry). When it is down the app reads the same rate from FRED (DFF)' },
       fetchFn,
       'https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json',
       T,

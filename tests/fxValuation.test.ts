@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { carryToVol, frankfurterSeriesUrl, parseEffr, parseFxVol, parseReer, reerLabel, reerUrl } from '../src/utils/fxValuation.ts';
+import { carryToVol, effrSourceText, frankfurterSeriesUrl, parseEffr, parseFredDff, parseFxVol, parseReer, reerLabel, reerUrl } from '../src/utils/fxValuation.ts';
 import { carrySignal, fxValueSignal } from '../src/utils/divergences.ts';
 import type { WatchlistItem } from '../src/types/council.ts';
 
@@ -36,10 +36,20 @@ test('three-month volatility from daily rates, annualised; too few days gives no
 });
 
 test('EFFR and carry-to-volatility', () => {
-  assert.deepEqual(parseEffr({ refRates: [{ effectiveDate: '2026-11-03', percentRate: 3.83 }] }), { pct: 3.83, date: '2026-11-03' });
+  assert.deepEqual(parseEffr({ refRates: [{ effectiveDate: '2026-11-03', percentRate: 3.83 }] }), { pct: 3.83, date: '2026-11-03', source: 'nyfed' });
   assert.equal(parseEffr({}), null);
   assert.deepEqual(carryToVol(11.75, 3.83, 12), { carryPts: 7.92, ratio: 0.66 });
   assert.equal(carryToVol(5, 3.83, 0), null);
+});
+
+test('fed funds from FRED (DFF) when the New York Fed is down: latest dated value, labelled as such', () => {
+  const csv = 'observation_date,DFF\n2026-11-03,3.83\n2026-11-04,3.84\n2026-11-05,.\n';
+  assert.deepEqual(parseFredDff(csv), { pct: 3.84, date: '2026-11-04', source: 'fred' });
+  assert.equal(parseFredDff('<html>error</html>'), null);
+  assert.equal(parseFredDff('observation_date,DFF\n2026-11-04,99\n'), null);
+  assert.equal(effrSourceText({ source: 'fred', date: '2026-11-04' }), 'NY Fed via FRED (DFF), 2026-11-04');
+  assert.equal(effrSourceText({ source: 'nyfed', date: '2026-11-04' }), 'NY Fed, 2026-11-04');
+  assert.equal(effrSourceText({}), 'NY Fed');
 });
 
 test('ranked list: currency far from its average, and carry that pays for its swings', () => {

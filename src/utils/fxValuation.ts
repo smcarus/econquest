@@ -93,11 +93,39 @@ export function parseFxVol(json: unknown, ccy: string): FxVol | null {
   return { volPct: Number((Math.sqrt(variance * 252) * 100).toFixed(1)), days: pts.length, from: pts[0].d, to: pts[pts.length - 1].d };
 }
 
+/** Where the effective fed funds rate came from: the NY Fed itself, or the same NY Fed rate as FRED republishes it (DFF). */
+export type EffrSource = 'nyfed' | 'fred';
+export interface Effr {
+  pct: number;
+  date: string;
+  /** Absent on figures saved before the FRED fallback existed: those came from the NY Fed. */
+  source?: EffrSource;
+}
+
 /** NY Fed EFFR reply ({ refRates: [{ effectiveDate, percentRate }] }). */
-export function parseEffr(json: unknown): { pct: number; date: string } | null {
+export function parseEffr(json: unknown): Effr | null {
   const r = (json as { refRates?: Array<{ effectiveDate?: string; percentRate?: number }> })?.refRates?.[0];
   if (!r || typeof r.percentRate !== 'number' || !r.effectiveDate) return null;
-  return { pct: r.percentRate, date: r.effectiveDate };
+  return { pct: r.percentRate, date: r.effectiveDate, source: 'nyfed' };
+}
+
+/** FRED series DFF (the NY Fed's effective fed funds rate, daily), as the graph CSV: the latest dated value. */
+export function parseFredDff(csv: string): Effr | null {
+  const lines = csv.trim().split(/\r?\n/);
+  if (lines.length < 2 || !/date/i.test(lines[0])) return null;
+  for (let i = lines.length - 1; i > 0; i--) {
+    const [d, v] = lines[i].split(',');
+    const pct = Number(v);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test((d || '').trim()) || !v || v.trim() === '.' || !Number.isFinite(pct)) continue;
+    if (pct < -5 || pct > 40) return null;
+    return { pct, date: d.trim(), source: 'fred' };
+  }
+  return null;
+}
+
+/** The source line for the fed funds rate, with its date. */
+export function effrSourceText(e: { source?: EffrSource; date?: string }): string {
+  return `${e.source === 'fred' ? 'NY Fed via FRED (DFF)' : 'NY Fed'}${e.date ? `, ${e.date}` : ''}`;
 }
 
 export type ReerLabel = 'strong' | 'weak' | 'near average';

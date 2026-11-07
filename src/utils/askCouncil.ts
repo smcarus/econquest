@@ -23,7 +23,7 @@ import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar'
 import { INFLATION_TARGETS, policyStance, realYield, targetSource } from './marketsMacro';
 import { missingReason } from './liveFigures';
 import { carrySignal, cdsTag, cpiTag, fxValueSignal, policySignal, policyTag, yieldTag, type Quality } from './divergences';
-import { carryToVol, reerLabel } from './fxValuation';
+import { carryToVol, effrSourceText, reerLabel } from './fxValuation';
 import { TIC_LABEL, formatMonth, ticSentence, ticTrend } from './ticHoldings';
 import { CLI_LABEL, cliMissing, cliSentence } from './oecdCli';
 import { IMF_BOP_LABEL, IMF_RESERVES_LABEL, formatImfPeriod, imfSentence, reserveCover } from './imfReserves';
@@ -721,7 +721,7 @@ function rvAgent(countries: LiveWatchlistItem[], all: LiveWatchlistItem[]): Omit
         : null;
     if (cv && it.usFedFundsPct !== undefined) {
       figures.push(
-        { label: 'US fed funds rate', value: p2(it.usFedFundsPct), source: `NY Fed${it.usFedFundsDate ? `, ${it.usFedFundsDate}` : ''}`, tag: 'live' },
+        { label: 'US fed funds rate', value: p2(it.usFedFundsPct), source: effrSourceText({ source: it.usFedFundsSource, date: it.usFedFundsDate }), tag: 'live' },
         { label: 'Carry over US per unit of FX volatility', value: cv.ratio.toFixed(2), source: `policy rate ${cv.carryPts.toFixed(1)} pts over fed funds, over 3-month volatility`, tag: 'model' }
       );
       parts.push(cv.ratio >= 0.5 ? 'Carry over the US pays well for the currency’s recent swings.' : 'Carry over the US is small next to the currency’s recent swings.');
