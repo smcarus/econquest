@@ -32,6 +32,7 @@
     "docs:licences": "tsx scripts/docs-licences.ts",
     "quests:check": "tsx scripts/quests-check.ts",
     "quests:resolve": "tsx scripts/quests-resolve.ts",
+    "quests:entries": "tsx scripts/quests-entries.ts",
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",
