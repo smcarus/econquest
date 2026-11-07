@@ -45,7 +45,9 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Caldara-Iacoviello Geopolitical Risk index | Terms not confirmed | Sharing unclear | Not confirmed: the data page could not be read from where this register was written. | Not confirmed. | Caldara, Dario and Matteo Iacoviello (2022), "Measuring Geopolitical Risk", American Economic Review 112(4), 1194-1225. |
 | Polymarket | Permission needed for client or commercial use | Sharing unclear | Personal, limited licence only. Redistribution to capital-markets firms or data distributors needs written agreement. | Professional capital-markets users (including investment managers and financial technology companies) may not access the data through an API without written agreement. | None stated. |
 | Kalshi | Permission needed for client or commercial use | Do not pass on | Not allowed without Kalshi's written authorization. | Not allowed: personal, non-commercial use only; API use is limited to a member's own trading. | None stated. |
-| Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads | Terms not confirmed | Sharing unclear | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
+| Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads; interbank PEN rate | Terms not confirmed | Sharing unclear | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
+| Colombia TRM (Superintendencia Financiera) on datos.gov.co | Terms not confirmed | Sharing unclear | The dataset's licence was not read. | Not confirmed. | Fuente: Superintendencia Financiera de Colombia, TRM (datos.gov.co). |
+| Banco Central de la República Argentina (Cotizaciones API) | Terms not confirmed | Sharing unclear | The API terms were not read. | Not confirmed. | Fuente: Banco Central de la República Argentina. |
 | Banco Central do Brasil (SGS 13522, IPCA 12 months) | Terms not confirmed | Sharing unclear | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
 | Banco de México (SIE API, INPC), with your token | Terms not confirmed | Sharing unclear | Not confirmed. The terms are shown on the token page, which could not be read from the build machine. | Not stated here. | Fuente: Banco de México, SIE (serie SP30578). |
 | Brazil Treasury (Tesouro Direto price history) | Open with attribution | Free sharing allowed | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
@@ -407,9 +409,9 @@ From the terms:
 >
 > You may access content only for your personal use for non-commercial purposes.
 
-### Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads
+### Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads; interbank PEN rate
 
-- **Used for:** USD bond spread over Treasuries for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru, Venezuela (the free stand-in for CDS)
+- **Used for:** USD bond spread over Treasuries for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru, Venezuela (the free stand-in for CDS); daily soles per US dollar (PD04638PD), the BCRP's own series
 - **Status:** Terms not confirmed
 - **Free non-commercial sharing:** Sharing unclear. The BCRP allows reproduction with citation, but J.P. Morgan's terms for the EMBI levels were not read.
 - **Terms read:** [BCRPData Condiciones de Uso](https://estadisticas.bcrp.gob.pe/estadisticas/series/ayuda/condiciones-de-uso); [Example series: EMBIG Peru](https://estadisticas.bcrp.gob.pe/estadisticas/series/diarias/resultados/PD04709XD/html) (checked 2026-11-06)
@@ -423,6 +425,28 @@ From the terms:
 > Puede reproducirse total o parcialmente, sin autorización expresa, siempre y cuando se cite la fuente.
 >
 > La responsabilidad sobre las estadísticas cuya fuente es externa al Banco recae en la entidad que provee el dato original.
+
+### Colombia TRM (Superintendencia Financiera) on datos.gov.co
+
+- **Used for:** Daily pesos per US dollar (Tasa Representativa del Mercado), dataset 32sa-8pi3
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Licence not read yet.
+- **Terms read:** [Dataset 32sa-8pi3 on datos.gov.co](https://www.datos.gov.co/d/32sa-8pi3) (checked 2026-11-07)
+- **Show to others:** The dataset's licence was not read.
+- **Commercial use:** Not confirmed.
+- **Credit:** Fuente: Superintendencia Financiera de Colombia, TRM (datos.gov.co).
+- **Open question:** Read the licence shown on the datos.gov.co dataset page for 32sa-8pi3 and update this row.
+
+### Banco Central de la República Argentina (Cotizaciones API)
+
+- **Used for:** Daily pesos per US dollar, the BCRA official quote
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Terms not read yet.
+- **Terms read:** [BCRA website (API terms still to find)](https://www.bcra.gob.ar/) (checked 2026-11-07)
+- **Show to others:** The API terms were not read.
+- **Commercial use:** Not confirmed.
+- **Credit:** Fuente: Banco Central de la República Argentina.
+- **Open question:** Find and read the terms for the BCRA public APIs (api.bcra.gob.ar) and update this row.
 
 ### Banco Central do Brasil (SGS 13522, IPCA 12 months)
 
@@ -528,9 +552,11 @@ From the terms:
 13. **Caldara-Iacoviello Geopolitical Risk index** (Terms not confirmed): Read the terms and citation request on the GPR data page and update this row before showing the index to others.
 14. **Polymarket** (Permission needed for client or commercial use): A desk, fund or fintech using the app professionally falls inside the restriction. Keep Polymarket odds to personal research, or agree terms with Polymarket.
 15. **Kalshi** (Permission needed for client or commercial use): The strictest terms in the app. Showing Kalshi odds to anyone else, or using them in a professional setting, needs Kalshi's written authorization.
-16. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
-17. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
-18. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
-19. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
-20. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
-21. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+16. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads; interbank PEN rate** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
+17. **Colombia TRM (Superintendencia Financiera) on datos.gov.co** (Terms not confirmed): Read the licence shown on the datos.gov.co dataset page for 32sa-8pi3 and update this row.
+18. **Banco Central de la República Argentina (Cotizaciones API)** (Terms not confirmed): Find and read the terms for the BCRA public APIs (api.bcra.gob.ar) and update this row.
+19. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
+20. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
+21. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
+22. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
+23. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.

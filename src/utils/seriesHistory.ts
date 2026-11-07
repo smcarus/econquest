@@ -22,6 +22,7 @@ import { type TicTable } from './ticHoldings';
 import { OFFICIAL_FIGURES, officialSeries, type OfficialHistoryFile } from './officialHistory';
 import { outputGapFromGrowth, outputGapSeries } from './outputGap';
 import { fxDailySeries, type FxHistoryFile } from './fxHistory';
+import type { FxExtraFile } from './fxExtra';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
@@ -89,6 +90,8 @@ export interface SeriesInputs {
   hcSpread?: HcSpreadPull | null;
   /** Daily ECB reference rates per US dollar (src/utils/fxHistory.ts), when pulled. */
   fxHistory?: FxHistoryFile | null;
+  /** Daily central-bank rates for PEN, COP and ARS (src/utils/fxExtra.ts), when pulled. */
+  fxExtra?: FxExtraFile | null;
   /** The country's currency (ISO 4217), for the daily exchange rate. */
   currency?: string;
 }
@@ -311,7 +314,7 @@ const isSeries = (x: Series | SeriesMissing): x is Series => 'points' in x;
 function figureHistory(fig: (typeof ARCHIVE_FIGURES)[number], inputs: SeriesInputs): Series | SeriesMissing {
   if (fig.id === 'fx_per_usd') {
     // The published daily run when the ECB has the currency; the saved pulls otherwise.
-    const daily = fxDailySeries(inputs.fxHistory, inputs.currency);
+    const daily = fxDailySeries(inputs.fxHistory, inputs.currency, inputs.fxExtra);
     if (isSeries(daily)) return daily;
     const archived = archiveSeries(inputs.archive, fig);
     if (isSeries(archived)) return { ...archived, about: `${archived.about} No daily history: ${daily.reason.charAt(0).toLowerCase()}${daily.reason.slice(1)}.` };

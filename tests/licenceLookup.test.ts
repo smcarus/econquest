@@ -14,6 +14,7 @@ test('source text maps to the register rows it names', () => {
   assert.deepEqual(ids('OECD CLI via DBnomics, Aug 2026'), ['oecd']);
   assert.deepEqual(ids('J.P. Morgan EMBI Global via BCRP, Sep 2026'), ['bcrp']);
   assert.deepEqual(ids('official, ECB reference rates'), ['ecb']);
+  assert.deepEqual(ids('Banco Central de Reserva del Perú, interbank rate (sell), PD04638PD'), ['bcrp']);
   assert.deepEqual(ids('US Treasury TIC, Aug 2026'), ['tic']);
   assert.deepEqual(ids('your holdings'), ['own']);
   assert.deepEqual(ids('Your connector: Desk CSV'), ['own']);
@@ -47,7 +48,7 @@ test('every register row except the paid-data catch-all is reachable from some s
     worldbank: 'World Bank, 2024', pinksheet: 'pink_sheet', imf: 'IMF WEO', comtrade: 'UN Comtrade', wits: 'WITS',
     bis: 'BIS', ecb: 'ECB', erapi: 'ExchangeRate-API', nyfed: 'NY Fed', fred: 'FRED', oecd: 'OECD via DBnomics',
     eurostat: 'Eurostat HICP', cftc: 'CFTC', tic: 'TIC', eia: 'EIA', gdelt: 'GDELT', ucdp: 'UCDP/PRIO Armed Conflict Dataset 26.1', polymarket: 'Polymarket',
-    kalshi: 'Kalshi', bcrp: 'BCRP', bcb: 'BCB SGS 13522', tesouro: 'Tesouro Direto', evds: 'EVDS', banxico: 'Banxico INPC', acled: 'ACLED conflict events', own: 'your own CDS data', ofac: 'OFAC SDN', gpr: 'Caldara and Iacoviello Geopolitical Risk index', unsc: 'UN Security Council Consolidated List',
+    kalshi: 'Kalshi', bcrp: 'BCRP', trm_colombia: 'TRM (Superintendencia Financiera de Colombia), datos.gov.co', bcra: 'Banco Central de la República Argentina, official quote', bcb: 'BCB SGS 13522', tesouro: 'Tesouro Direto', evds: 'EVDS', banxico: 'Banxico INPC', acled: 'ACLED conflict events', own: 'your own CDS data', ofac: 'OFAC SDN', gpr: 'Caldara and Iacoviello Geopolitical Risk index', unsc: 'UN Security Council Consolidated List',
   };
   for (const row of DATA_LICENCES) {
     assert.ok(samples[row.id], `no sample for register row ${row.id}`);

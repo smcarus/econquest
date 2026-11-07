@@ -18,6 +18,7 @@
  * Browser-safe (no fs).
  */
 import type { Series, SeriesMissing, SeriesPoint } from './seriesHistory';
+import { extraFxDailySeries, EXTRA_FX, type FxExtraFile } from './fxExtra';
 
 export const FX_HISTORY_SOURCE = 'ECB euro reference rates (via Frankfurter), per US dollar';
 export const FX_HISTORY_FIRST_YEAR = 1999;
@@ -157,15 +158,16 @@ export function fxHistoryCurrencies(file: FxHistoryFile | null | undefined): str
 const LABEL = 'Exchange rate';
 
 /**
- * Daily units of `ccy` per US dollar, oldest first. Missing with the reason when the ECB does not
- * publish the currency or nothing has been pulled yet.
+ * Daily units of `ccy` per US dollar, oldest first. The ECB run when the ECB publishes the
+ * currency; for PEN, COP and ARS the central bank's own daily rate (src/utils/fxExtra.ts) when
+ * `extra` holds it. Missing with the reason otherwise.
  */
-export function fxDailySeries(file: FxHistoryFile | null | undefined, ccy: string | undefined): Series | SeriesMissing {
+export function fxDailySeries(file: FxHistoryFile | null | undefined, ccy: string | undefined, extra?: FxExtraFile | null): Series | SeriesMissing {
   const code = String(ccy || '').trim().toUpperCase();
   if (!code) return { id: 'fx_per_usd', label: LABEL, reason: 'No currency set for this country' };
   if (code === 'USD') return { id: 'fx_per_usd', label: LABEL, reason: 'The US dollar is the base currency' };
   const chunks = Object.values(file?.chunks || {});
-  if (!chunks.length) return { id: 'fx_per_usd', label: LABEL, reason: 'ECB reference rates not downloaded yet' };
+  if (!chunks.length) return extraFxDailySeries(extra, code) ?? { id: 'fx_per_usd', label: LABEL, reason: 'ECB reference rates not downloaded yet' };
   const points: SeriesPoint[] = [];
   for (const c of chunks) {
     for (const [day, row] of Object.entries(c.rates)) {
@@ -173,7 +175,12 @@ export function fxDailySeries(file: FxHistoryFile | null | undefined, ccy: strin
       if (typeof v === 'number' && Number.isFinite(v) && v > 0) points.push({ date: day, value: v });
     }
   }
-  if (!points.length) return { id: 'fx_per_usd', label: LABEL, reason: `The ECB publishes no reference rate for ${code}` };
+  if (!points.length) {
+    const own = extraFxDailySeries(extra, code);
+    if (own) return own;
+    const def = EXTRA_FX[code as keyof typeof EXTRA_FX];
+    return { id: 'fx_per_usd', label: LABEL, reason: def ? `The ECB publishes no reference rate for ${code}, and the ${def.source.split(',')[0]} daily rate has not been downloaded yet` : `The ECB publishes no reference rate for ${code}` };
+  }
   points.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   return {
     id: 'fx_per_usd',
