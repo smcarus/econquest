@@ -613,10 +613,10 @@ export const GLOSSARY: GlossaryEntry[] = [
   },
   {
     id: 'evidence_badges',
-    term: 'Validation badges (Validated, Provisional, Under review, Withdrawn, Review due)',
+    term: 'Test labels and evidence grades',
     group: 'methods',
-    what: 'Labels on each model and signal saying how well it has been tested. Validated: passed its pre-registered test. Provisional: passed but with a caveat (for example it fails the multiple-testing correction). Under review: not yet tested, or being re-tested. Withdrawn: failed and no longer used. Review due: its scheduled re-check is overdue.',
-    why: 'They tell you how much weight a reading can bear. A recorded verdict is never changed after the fact.',
+    what: 'Labels on each model and signal saying how far it has been tested. Not validated: never tested against a pre-registered standard. Backtest passed or failed: the result of its one pre-registered test on past data. Too few cases to test: not enough history to tell. A test that passed also gets a grade. Validated: it still holds after the correction for testing many rules, or a long enough live record has confirmed it. Provisional pass: it passed on its own but not after that correction. Under review: since the test, its live calls are doing worse than chance would suggest. Withdrawn: its live calls have done clearly worse, so it is no longer relied on until a new version passes. Review due: its test last ran more than a year ago.',
+    why: 'They tell you how much weight a reading can bear. A recorded verdict is never changed after the fact. "Validated" is a research label with this defined meaning, not an independent or regulatory sign-off.',
   },
   {
     id: 'council',
