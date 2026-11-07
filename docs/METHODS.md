@@ -60,6 +60,8 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Publication export | Research | Stated method, no call to test | Not applicable |
 | Unit converters | Research | Stated method, no call to test | Not applicable |
 | Exercises with answer keys | Research | Stated method, no call to test | Not applicable |
+| Model sandboxes | Research | Stated method, no call to test | Not applicable |
+| Replication pack | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -687,6 +689,24 @@ These show where things stand on a stated method and make no call a backtest cou
 - r minus g: the December 10Y government bond yield less nominal GDP growth, (1 + real growth)(1 + inflation) - 1 from the IMF WEO; tolerance 0.2. Debt change: the IMF WEO government debt ratio this year less last year; tolerance 0.2.
 - **Limits:** Only questions whose inputs are all on file are set; others are listed with why. IMF projections are never used. The current inflation target is used for past years. In exam mode the answer key stays on the server and answers are only marked right or not.
 - **Code:** `src/utils/exercises.ts`
+
+### Model sandboxes
+
+- **Shows in:** Research > One country > History & data
+- Debt dynamics: d(t) = d(t-1) x (1 + i) / (1 + n) - pb, with n = (1 + g)(1 + inflation) - 1, and the debt-stabilising primary balance d x (i - n) / (1 + n), the same identity as Debt sustainability. Starting values are the latest year of that panel's history (IMF WEO debt, growth, inflation, primary balance; effective interest rate where the app has one).
+- Taylor rule: neutral real rate + inflation + a x (inflation - target) + b x output gap, starting from Taylor (1993): 2, 0.5 and 0.5, the latest IMF WEO inflation outturn, the bank's current published target and the app's output gap.
+- Output gap: log real GDP chained from IMF WEO growth outturns less an HP trend with any lambda (100 yearly, 6.25 Ravn-Uhlig), against the Hamilton (2018) regression residual with any horizon h; at least 15 unbroken years.
+- **Limits:** Illustration of the formulas, not a forecast: every term is held constant over the horizon and nothing feeds back. A starting value the app does not have reads Missing and the sandbox waits until it is set. IMF projections are never used for the filters.
+- **Code:** `src/utils/modelSandboxes.ts`
+
+### Replication pack
+
+- **Shows in:** Council chat > a Chart Agent chart > Replication pack
+- data.csv holds the lines the chart drew, one row per date (or country, x, y for a chart across countries); trend lines the HP test adds are left out and recomputed.
+- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant and its lag chosen by AIC on one sample (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
+- The README lists each column with its label, unit, source and credit, the settings, and the app's readings and figures to check against.
+- **Limits:** A saved chart keeps its latest 600 points per line; the app ran its tests on every point, so a longer sample can give slightly different figures (the README says so when it applies). The Python and R scripts were checked against the app's figures; the Stata script follows the same steps.
+- **Code:** `src/utils/replicationPack.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 

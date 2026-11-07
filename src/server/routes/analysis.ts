@@ -108,6 +108,39 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const correct = checkAnswer(ex, given);
     res.json({ correct, tolerance: ex.tolerance, unit: ex.unit, ...(examOn() ? {} : { answer: ex.answer, workings: ex.workings, inputs: ex.inputs }) });
   });
+  // Model sandboxes (src/utils/modelSandboxes.ts): starting values from the saved yearly history, one request.
+  app.get('/api/sandboxes/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3));
+    const missing: string[] = [];
+    const dsa = dsaFrom(file);
+    const last = dsa.ok ? dsa.history[dsa.history.length - 1] : undefined;
+    const debt = last
+      ? { year: last.year, debt: last.debt, ...(last.interestPct !== undefined ? { i: last.interestPct } : {}), g: last.realGrowthPct, pi: last.inflationPct, pb: last.primaryBalance }
+      : null;
+    if (!debt) missing.push(`Debt dynamics: ${dsa.ok ? 'no outturn year' : dsa.reason}`);
+    else if (debt.i === undefined) missing.push('Debt dynamics: no effective interest rate on file (IMF overall less primary balance), so set i yourself');
+    const fig = (id: string) => OFFICIAL_FIGURES.find((f) => f.id === id)!;
+    const cpi = officialSeries(file, fig('cpi_imf'));
+    const cpiLast = 'points' in cpi ? cpi.points.filter((p) => p.note !== 'IMF projection').slice(-1)[0] : undefined;
+    const gap = outputGapFrom(file);
+    const t = INFLATION_TARGETS[iso3];
+    if (!cpiLast) missing.push('Taylor rule: no IMF inflation outturn on file');
+    if (!gap.ok) missing.push(`Taylor rule: no output gap (${gap.reason})`);
+    if (!t) missing.push('Taylor rule: the app has no inflation target for this country, so set it yourself');
+    const growth = officialSeries(file, fig('gdp_growth'));
+    res.json({
+      iso3,
+      debt,
+      taylor: {
+        ...(cpiLast ? { pi: { value: cpiLast.value, year: String(cpiLast.date) } } : {}),
+        ...(gap.ok ? { gap: { value: gap.latest.central, year: gap.latest.year } } : {}),
+        ...(t ? { target: { value: t.pct, bank: t.bank } } : {}),
+      },
+      growth: 'points' in growth ? growth.points : [],
+      missing,
+    });
+  });
   // Story leads (src/utils/storyLeads.ts): records and recent revisions in the saved yearly history, no download.
   app.get('/api/story-leads', (req, res) => {
     const codes = String(req.query.iso3 || '')

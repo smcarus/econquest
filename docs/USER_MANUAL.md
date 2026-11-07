@@ -130,6 +130,12 @@ full council and saved research.
   research notice, so it keeps them wherever it is pasted. The CSV lists the same credits as `#`
   lines. With Sharing mode on, both buttons are off for a chart that uses a source whose terms do
   not let its figures be passed on, and the card says which.
+- *Chat charts: Replication pack*: a zip with the chart's data (`data.csv`), the same tests written
+  out in Python (`replicate.py`, numpy, pandas and scipy), R (`replicate.R`, base R) and Stata
+  (`replicate.do`) with the settings the app used, and a README listing each column with its
+  source and credit and the app's own figures to check against. The scripts do the arithmetic by
+  hand (OLS, the Granger F test, the ADF lag search, the HP filter), so they match the app rather
+  than a package default. Sharing mode turns it off like the CSV.
 - *Suggested questions*: the empty chat offers up to four questions picked from your own data, no
   AI: one on your largest holding (asked the way its asset class is judged), up to two on what moved
   on your watchlist (a BIS policy-rate move in the last three months, a 10Y yield change of half a
@@ -370,6 +376,13 @@ pick (the real policy rate, the Taylor rule, r minus g and the change in the deb
 worked out from the app's own figures. Type an answer and press Check; it counts as right within
 the stated tolerance. The answer key shows the workings and every figure used with its source. In
 exam mode the key is held back and answers are only marked right or not.
+
+**Model sandboxes.** Research > One country > History & data has sliders on three of the app's
+formulas, starting from the country's latest figures: the debt identity (debt, interest rate,
+growth, inflation, primary balance and years ahead give the debt path and the balance that holds
+debt steady), the Taylor rule (neutral rate, inflation, target, output gap and both weights) and
+the output-gap filters (HP with any lambda against Hamilton with any horizon). A figure the app
+does not have reads Missing until you type one. Illustration of the formulas, not a forecast.
 
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
