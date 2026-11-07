@@ -11,6 +11,7 @@ not answer", "No source yet"). There are no built-in, sample or AI-estimated fig
 LSEG, EPFR, ratings, consensus) is used only from your own account or file, behind a switch in
 Settings.
 
+- [docs/METHODOLOGY.md](./docs/METHODOLOGY.md): how data is sourced, how the council is checked, and how models and signals are tested and graded
 - [docs/USER_MANUAL.md](./docs/USER_MANUAL.md): how to use each page
 - [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md): every source, what it fills, how to set it up
 - [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md): what each source's terms allow (showing figures to others, commercial use, credit)
