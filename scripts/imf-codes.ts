@@ -14,7 +14,7 @@ import { WORLD_IDS, coferKey, findWorldCode, describeSeries } from '../src/utils
 const fetchFn = (u: string, i?: RequestInit) => fetch(u, i);
 const LOOK: Record<string, RegExp> = {
   IL: /reserve/i,
-  BOP: /current account|goods and services|^goods\b|^services\b/i,
+  BOP: /current account|goods and services|^goods\b|^services\b|direct investment|portfolio investment|other investment|financial account/i,
   COFER: /./,
 };
 
