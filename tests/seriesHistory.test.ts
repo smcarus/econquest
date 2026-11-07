@@ -34,7 +34,7 @@ test('with nothing pulled every figure is Missing with a reason, never a number'
   assert.equal(why.policy_rate, 'BIS has not answered yet');
   assert.match(why.cftc_lev_net, /No CFTC currency future/);
   assert.match(why.debt_gdp, /No saved pulls yet/);
-  assert.equal(set.missing.length, 14 + ARCHIVE_FIGURES.length + 29); // 9 feed series + spread-implied default probability + 4 BIS credit cycle (credit gap, private credit, debt service ratio, real house prices), incl. USD bond spread, quarterly GDP q/q, y/y, monthly activity; + output gap, overall balance, revenue, expenditure, unemployment, current account in USD, GDP in USD, reserves in USD, short-term debt (% reserves and US$), broad money, exports, terms of trade, GDP per head PPP, six WGI estimates, CPI index, population, exchange rate, PPP factor, FDI in and out (% of GDP), direct, portfolio and financial account net (US$)
+  assert.equal(set.missing.length, 25 + ARCHIVE_FIGURES.length + 29); // 9 feed series + spread-implied default probability + 4 BIS credit cycle (credit gap, private credit, debt service ratio, real house prices) + 11 World Bank IDS creditor mix and new-loan terms, incl. USD bond spread, quarterly GDP q/q, y/y, monthly activity; + output gap, overall balance, revenue, expenditure, unemployment, current account in USD, GDP in USD, reserves in USD, short-term debt (% reserves and US$), broad money, exports, terms of trade, GDP per head PPP, six WGI estimates, CPI index, population, exchange rate, PPP factor, FDI in and out (% of GDP), direct, portfolio and financial account net (US$)
 });
 
 test('monthly BIS series is used where there is no daily one', () => {
