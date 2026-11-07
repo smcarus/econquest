@@ -10,13 +10,16 @@
  *     GSCPI    Global Supply Chain Pressure Index (standard deviations from its average)
  *
  * FRED series pages checked 2026-11-07 (titles, weekly ending Friday, units index). The GSCPI file
- * exists at the NY Fed address below (HTTP 200, served as Excel) but its layout could not be read
- * from this project's cloud session, so the parser looks for any sheet or CSV with a date column
- * and a number column and shows Missing with the reason when it finds none.
+ * is an Excel 97 workbook (.xls, OLE2), even at its .csv address: Sam's check:data run of
+ * 2026-11-07 showed the OLE2 signature. It is read with src/utils/xlsRead.ts; an .xlsx or a real CSV
+ * is read too, should the NY Fed change the file. The parser looks for a date column and a number
+ * column on any sheet, and the app shows Missing with the reason when it finds none.
  *
  * Browser-safe, pure.
  */
 import type { Series, SeriesMissing, SeriesPoint } from './seriesHistory';
+import { isOleFile, readXlsSheets } from './xlsRead';
+import { readXlsxSheet, xlsxSheetNames } from './xlsxRead';
 
 export type IdxObs = { date: string; value: number };
 
@@ -147,4 +150,28 @@ export function stressWorldSeries(p: StressPulls | null | undefined): Array<Seri
     out.push({ id: 'gscpi', label: 'NY Fed Global Supply Chain Pressure Index', unit: 'std dev', freq: 'monthly', source: GSCPI_SOURCE, pulledAt: g.fetchedAt, points: toPoints(g.obs).map((x) => ({ ...x, date: x.date.slice(0, 7) })), about: 'Monthly, from data on the transportation and manufacturing sectors (NY Fed). Zero = average pressure; values are standard deviations from the average.' });
   } else out.push({ id: 'gscpi', label: 'NY Fed Global Supply Chain Pressure Index', reason: g && 'reason' in g ? g.reason : 'The New York Fed file has not answered yet' });
   return out;
+}
+
+/** The GSCPI from the downloaded bytes: .xls (OLE2), .xlsx (zip) or CSV text, whichever it is. */
+export async function gscpiFromBytes(buf: Uint8Array, now = new Date()): Promise<{ obs: IdxObs[]; fetchedAt: string } | { reason: string }> {
+  const best = (sheets: string[][][]) => sheets.map(parseGscpiRows).reduce((a, b) => (b.length > a.length ? b : a), [] as IdxObs[]);
+  let obs: IdxObs[] = [];
+  let kind = 'CSV';
+  try {
+    if (isOleFile(buf)) {
+      kind = '.xls workbook';
+      obs = best(readXlsSheets(buf) || []);
+    } else if (buf[0] === 0x50 && buf[1] === 0x4b) {
+      kind = '.xlsx workbook';
+      const sheets: string[][][] = [];
+      for (const name of await xlsxSheetNames(buf)) {
+        const rows = await readXlsxSheet(buf, name);
+        if (rows) sheets.push(rows);
+      }
+      obs = best(sheets);
+    } else obs = parseGscpiRows(csvRows(new TextDecoder().decode(buf)));
+  } catch {
+    return { reason: `The New York Fed GSCPI file (${kind}) could not be read` };
+  }
+  return obs.length ? { obs, fetchedAt: now.toISOString() } : { reason: `The New York Fed GSCPI file (${kind}) had no sheet with a date column and index values` };
 }
