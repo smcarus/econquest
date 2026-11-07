@@ -27,6 +27,7 @@ import { bisCreditSeries, type BisCreditCycle } from './bisCreditCycle';
 import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
 import { sovereignDefaultSeries, type SovereignDefaults } from './sovereignDefaults';
 import { inflationExpectationSeries, type InflationExpectations } from './inflationExpectations';
+import { focusSeries, type InflationSurveys } from './inflationSurveys';
 import { impliedDefaultSeries } from './impliedDefault';
 import { BIS_ISO2 } from './bisDebtSecurities';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
@@ -106,6 +107,8 @@ export interface SeriesInputs {
   sovereignDefaults?: SovereignDefaults | null;
   /** US inflation expectations from FRED (src/utils/inflationExpectations.ts), US only. */
   inflationExpectations?: InflationExpectations | null;
+  /** Survey expectations (src/utils/inflationSurveys.ts): the Focus series on Brazil's page. */
+  inflationSurveys?: InflationSurveys | null;
   /** The country's currency (ISO 4217), for the daily exchange rate. */
   currency?: string;
 }
@@ -359,6 +362,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...idsCreditorSeries(inputs.idsCreditors),
     ...sovereignDefaultSeries(code, inputs.sovereignDefaults),
     ...inflationExpectationSeries(code, inputs.inflationExpectations),
+    ...focusSeries(code, inputs.inflationSurveys),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];

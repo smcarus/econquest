@@ -83,6 +83,8 @@ own-data switch in Settings).
 | FRED download | Fed balance sheet (H.4.1): WALCL total assets, WRESBAL reserves, WTREGEN Treasury General Account; NY Fed RRPONTSYD overnight reverse repos | fred.stlouisfed.org | 12 h (1 h after a miss); saved to data/live/fed-balance-sheet.json |
 | FRED download (API with your key) | Stress indices: St. Louis Fed STLFSI4, Chicago Fed NFCI and ANFCI (weekly; scenario factor of your choice and world series) | fred.stlouisfed.org | 12 h (1 h after a miss) |
 | NY Fed download | Global Supply Chain Pressure Index (monthly; scenario factor and world series), gscpi_data.csv then .xlsx | newyorkfed.org | 12 h (1 h after a miss) |
+| ECB Data Portal | Survey of Professional Forecasters: euro-area HICP expected 1 year, 2 years and longer term ahead (quarterly world series). Series keys not yet verified live; see `npm run check:data` | data-api.ecb.europa.eu | 12 h (1 h after a miss) |
+| BCB Olinda (Focus) | Focus survey median IPCA expected over the next 12 months, Brazil page. Field names not yet verified live; see `npm run check:data` | olinda.bcb.gov.br | 12 h (1 h after a miss) |
 | FRED download (API with your key) | US inflation expectations: T5YIE, T10YIE, T5YIFR breakevens (daily, shown at month-end); Cleveland Fed EXPINF1YR, EXPINF10YR (monthly). US country page only | fred.stlouisfed.org | 12 h (1 h after a miss) |
 | Brazil Treasury (Tesouro Direto) | Brazil 10Y yield (NTN-F) | www.tesourotransparente.gov.br | 6 h, also on disk |
 

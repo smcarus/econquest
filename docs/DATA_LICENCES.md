@@ -29,7 +29,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | UN Comtrade | Permission needed for client or commercial use | Free sharing allowed | Internal use only. Free, not-for-profit visualisation is exempt; a paid report or dashboard is exempt only below 100,000 original records. | Paid, subscription or otherwise monetised use counts as commercial; commercial APIs need a premium subscription. | Source: UN Comtrade. |
 | WITS (World Integrated Trade Solution) | Permission needed for client or commercial use | Do not pass on | The trade shares come from UN Comtrade data, which WITS says is for internal use only. | Needs UNSD's written permission (see UN Comtrade). | Source: UN Comtrade via WITS (World Bank). |
 | BIS statistics (policy rates, real exchange rates, debt securities, credit cycle) | Allowed with conditions | Free sharing allowed | Allowed if the BIS is cited as the source. | Allowed, provided including the statistics adds no extra charge for subscribers or users. | Source: BIS (Bank for International Settlements), <dataset>, e.g. "Source: BIS central bank policy rates". |
-| ECB euro reference rates (through Frankfurter) | Open with attribution | Free sharing allowed | Allowed, free of charge, if the source is quoted and the statistics are not modified. | Allowed ("irrespective of any subsequent commercial or non-commercial use"). | Source: ECB statistics (via Frankfurter). Volatility and year-to-date moves are the app's own calculations from them. |
+| ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters | Open with attribution | Free sharing allowed | Allowed, free of charge, if the source is quoted and the statistics are not modified. | Allowed ("irrespective of any subsequent commercial or non-commercial use"). | Source: ECB statistics (via Frankfurter). Volatility and year-to-date moves are the app's own calculations from them. |
 | ExchangeRate-API open access (open.er-api.com) | Permission needed for client or commercial use | Do not pass on | Not allowed to redistribute; rates may be used for your own end purposes with a credit link on the page. | Allowed for your own currency conversion, not in a product that passes rates on to others. | Rates By Exchange Rate API (linked to https://www.exchangerate-api.com) on every page that uses the rates. |
 | New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
@@ -48,7 +48,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads; interbank PEN rate | Terms not confirmed | Sharing unclear | The BCRP allows reproduction without permission if it is cited, but the spreads are J.P. Morgan's index and the BCRP says responsibility for outside data rests with the original provider. J.P. Morgan's own terms were not read. | Not stated by the BCRP; J.P. Morgan index terms not confirmed. | Fuente: BCRP (BCRPData), from J.P. Morgan EMBI Global. |
 | Colombia TRM (Superintendencia Financiera) on datos.gov.co | Terms not confirmed | Sharing unclear | The dataset's licence was not read. | Not confirmed. | Fuente: Superintendencia Financiera de Colombia, TRM (datos.gov.co). |
 | Banco Central de la República Argentina (Cotizaciones API) | Terms not confirmed | Sharing unclear | The API terms were not read. | Not confirmed. | Fuente: Banco Central de la República Argentina. |
-| Banco Central do Brasil (SGS 13522, IPCA 12 months) | Terms not confirmed | Sharing unclear | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
+| Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations) | Terms not confirmed | Sharing unclear | The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read. | Not stated. | Fonte: Banco Central do Brasil, SGS série 13522. |
 | Banco de México (SIE API, INPC), with your token | Terms not confirmed | Sharing unclear | Not confirmed. The terms are shown on the token page, which could not be read from the build machine. | Not stated here. | Fuente: Banco de México, SIE (serie SP30578). |
 | Brazil Treasury (Tesouro Direto price history) | Open with attribution | Free sharing allowed | Allowed under the Open Database License (ODbL). | Allowed under ODbL (attribution; a shared derived database stays under ODbL). | Fonte: Tesouro Transparente, Taxas dos Títulos Ofertados pelo Tesouro Direto (ODbL). |
 | Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | Free sharing allowed | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
@@ -166,9 +166,9 @@ From the terms:
 >
 > if the statistics will be used in a commercial publication or product, their inclusion in the publication or product will not result in any additional charge to subscribers or other users;
 
-### ECB euro reference rates (through Frankfurter)
+### ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters
 
-- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move
+- **Used for:** Daily exchange rate history per US dollar since 1999; FX volatility; last year's closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with the source quoted and the figures unmodified.
 - **Terms read:** [ECB statistics reuse policy](https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html); [Frankfurter licence](https://frankfurter.dev/license/) (checked 2026-11-06)
@@ -449,16 +449,16 @@ From the terms:
 - **Credit:** Fuente: Banco Central de la República Argentina.
 - **Open question:** Find and read the terms for the BCRA public APIs (api.bcra.gob.ar) and update this row.
 
-### Banco Central do Brasil (SGS 13522, IPCA 12 months)
+### Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)
 
-- **Used for:** Brazil's IPCA inflation over 12 months
+- **Used for:** Brazil's IPCA inflation over 12 months; Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)
 - **Status:** Terms not confirmed
 - **Free non-commercial sharing:** Sharing unclear. No licence stated; the footer reads all rights reserved.
-- **Terms read:** [Open data portal: about](https://dadosabertos.bcb.gov.br/pages/sobre-o-portal) (checked 2026-11-06)
+- **Terms read:** [Open data portal: about](https://dadosabertos.bcb.gov.br/pages/sobre-o-portal); [Focus dataset page (licence: ODbL)](https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado) (checked 2026-11-06)
 - **Show to others:** The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read.
 - **Commercial use:** Not stated.
 - **Credit:** Fonte: Banco Central do Brasil, SGS série 13522.
-- **Open question:** Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
+- **Open question:** The Focus dataset page names the Open Data Commons Open Database License (ODbL), read 2026-11-07, while the site footer reads all rights reserved. Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
 
 From the terms:
 
@@ -575,7 +575,7 @@ From the terms:
 16. **Central Reserve Bank of Peru (BCRPData): J.P. Morgan EMBI spreads; interbank PEN rate** (Terms not confirmed): EMBI is a J.P. Morgan index, usually licensed. Keep the spreads to your own research until J.P. Morgan's terms for republished EMBI levels are confirmed.
 17. **Colombia TRM (Superintendencia Financiera) on datos.gov.co** (Terms not confirmed): Read the licence shown on the datos.gov.co dataset page for 32sa-8pi3 and update this row.
 18. **Banco Central de la República Argentina (Cotizaciones API)** (Terms not confirmed): Find and read the terms for the BCRA public APIs (api.bcra.gob.ar) and update this row.
-19. **Banco Central do Brasil (SGS 13522, IPCA 12 months)** (Terms not confirmed): Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
+19. **Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)** (Terms not confirmed): The Focus dataset page names the Open Data Commons Open Database License (ODbL), read 2026-11-07, while the site footer reads all rights reserved. Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.
 20. **Banco de México (SIE API, INPC), with your token** (Terms not confirmed): Read the terms on the token page when you request the token and update this row.
 21. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
 22. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.

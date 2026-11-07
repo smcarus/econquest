@@ -11,6 +11,8 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
+import { csvRows, GSCPI_URLS, parseGscpiRows } from './stressIndices';
 import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig } from './hardCurrencySpread';
 import { geminiModel } from './geminiModel';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
@@ -289,6 +291,9 @@ export const SOURCE_IDS = [
   'fred_csv',
   'fred_api',
   'tesouro',
+  'ecb_spf',
+  'bcb_focus',
+  'nyfed_gscpi',
   'evds',
   'banxico',
   'ucdp',
@@ -897,6 +902,67 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       }
     )
   );
+
+  // Layout probes (not verified from the cloud session): on a bad reply the start of the reply is
+  // shown, so the format can be confirmed from one run of npm run check:data.
+  const replyStart = (t: string | undefined) => (t ? ` Start of the reply: ${t.replace(/\s+/g, ' ').slice(0, 300)}` : '');
+  add('ecb_spf', async () => {
+    let lastText: string | undefined;
+    const key = ECB_SPF_SERIES[2].key;
+    const res = await httpCheck(
+      { id: 'ecb_spf', name: 'ECB Survey of Professional Forecasters', group: 'free', feeds: 'Euro-area HICP inflation expected one year, two years and longer term ahead (quarterly)' },
+      fetchFn,
+      ecbSpfUrl(key),
+      Math.max(T, 15000),
+      (r) => {
+        lastText = r.text;
+        const obs = parseEcbCsv(r.text || '');
+        const last = obs[obs.length - 1];
+        return last ? `SPF longer-term HICP ${fmt(last.value, 2)}% (${last.date}), ${obs.length} quarters` : null;
+      },
+      {},
+      `The ECB answered, but not with TIME_PERIOD and OBS_VALUE columns for SPF.${key}.`
+    );
+    return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
+  });
+
+  add('bcb_focus', async () => {
+    let lastText: string | undefined;
+    const res = await httpCheck(
+      { id: 'bcb_focus', name: 'Banco Central do Brasil Focus survey (Olinda)', group: 'free', feeds: "Brazil's market median for IPCA inflation over the next 12 months" },
+      fetchFn,
+      FOCUS_URL,
+      Math.max(T, 30000),
+      (r) => {
+        lastText = r.text;
+        const obs = parseFocus12m(parseJson(r.text));
+        const last = obs[obs.length - 1];
+        return last ? `Focus IPCA 12 months ahead ${fmt(last.value, 2)}% (${last.date}), ${obs.length} survey dates` : null;
+      },
+      {},
+      'The BCB answered, but without the IPCA medians (Indicador, Data, Mediana) the app reads.'
+    );
+    return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
+  });
+
+  add('nyfed_gscpi', async () => {
+    let lastText: string | undefined;
+    const res = await httpCheck(
+      { id: 'nyfed_gscpi', name: 'NY Fed Global Supply Chain Pressure Index', group: 'free', feeds: 'Monthly supply chain pressure index (scenario factor and world series); the app also tries the .xlsx file' },
+      fetchFn,
+      GSCPI_URLS.csv,
+      Math.max(T, 15000),
+      (r) => {
+        lastText = r.text;
+        const obs = r.text && !r.text.startsWith('PK') ? parseGscpiRows(csvRows(r.text)) : [];
+        const last = obs[obs.length - 1];
+        return last ? `GSCPI ${fmt(last.value, 2)} (${last.date.slice(0, 7)}), ${obs.length} months` : null;
+      },
+      {},
+      'The NY Fed answered, but the CSV had no date and index columns the app reads (the app then tries the .xlsx file).'
+    );
+    return res.state === 'bad_reply' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
+  });
 
   // ---- Free with your own key -----------------------------------------------------------------
   add('fred_api', async () => {

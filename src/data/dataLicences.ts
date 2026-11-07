@@ -183,8 +183,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'ecb',
-    name: 'ECB euro reference rates (through Frankfurter)',
-    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move',
+    name: 'ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters',
+    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series)',
     terms: [
       { label: 'ECB statistics reuse policy', url: 'https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html' },
       { label: 'Frankfurter licence', url: 'https://frankfurter.dev/license/' },
@@ -526,15 +526,18 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'bcb',
-    name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months)',
-    usedFor: 'Brazil\'s IPCA inflation over 12 months',
-    terms: [{ label: 'Open data portal: about', url: 'https://dadosabertos.bcb.gov.br/pages/sobre-o-portal' }],
+    name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)',
+    usedFor: 'Brazil\'s IPCA inflation over 12 months; Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)',
+    terms: [
+      { label: 'Open data portal: about', url: 'https://dadosabertos.bcb.gov.br/pages/sobre-o-portal' },
+      { label: 'Focus dataset page (licence: ODbL)', url: 'https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado' },
+    ],
     status: 'not_verified',
     display: 'The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read.',
     commercial: 'Not stated.',
     attribution: 'Fonte: Banco Central do Brasil, SGS série 13522.',
     quotes: ['© Banco Central do Brasil - Todos os direitos reservados'],
-    flag: 'Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.',
+    flag: 'The Focus dataset page names the Open Data Commons Open Database License (ODbL), read 2026-11-07, while the site footer reads all rights reserved. Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.',
     share: 'unclear',
     shareNote: 'No licence stated; the footer reads all rights reserved.',
     checked: D,

@@ -22,6 +22,7 @@ import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
+import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, type InflationSurveys, parseEcbCsv, parseFocus12m } from '../../utils/inflationSurveys';
 import { readXlsxSheet, xlsxSheetNames } from '../../utils/xlsxRead';
 import { csvRows, GSCPI_URLS, type IdxObs, parseGscpiRows, STRESS_INDICES, type StressPulls } from '../../utils/stressIndices';
 import { type InflationExpectations, parseFredApiObservations, US_INFLATION_EXPECTATION_IDS } from '../../utils/inflationExpectations';
@@ -267,6 +268,44 @@ export async function fetchStressPulls(): Promise<StressPulls> {
   const out: StressPulls['fred'] = {};
   for (const [id, obs] of fred) if (obs?.length) out[id] = obs;
   return { fred: out, gscpi, fetchedAt: new Date().toISOString() };
+}
+
+/**
+ * Survey inflation expectations (src/utils/inflationSurveys.ts): ECB SPF (three quarterly series)
+ * and the BCB Focus 12-month IPCA median. Kept 12 hours (an hour when either missed).
+ */
+let surveysCache: { at: number; value: InflationSurveys } | null = null;
+export async function fetchInflationSurveys(): Promise<InflationSurveys> {
+  if (surveysCache && Date.now() - surveysCache.at < (surveysCache.value.focus.length && Object.keys(surveysCache.value.spf).length ? 12 : 1) * 60 * 60 * 1000) return surveysCache.value;
+  const spf: InflationSurveys['spf'] = {};
+  await Promise.all(
+    ECB_SPF_SERIES.map(async (d) => {
+      const csv = await fetchTextWithTimeout(ecbSpfUrl(d.key), 15000);
+      const obs = csv ? parseEcbCsv(csv) : [];
+      if (obs.length) spf[d.key] = obs;
+    }),
+  );
+  let focus: InflationSurveys['focus'] = [];
+  let focusReason: string | undefined;
+  try {
+    const res = await fetchWithTimeout(FOCUS_URL, 30000);
+    if (!res.ok) focusReason = `The BCB Focus service answered HTTP ${res.status}`;
+    else {
+      focus = parseFocus12m(await res.json());
+      if (!focus.length) focusReason = 'The BCB Focus reply had no IPCA medians in the fields the app reads (layout not verified yet; see npm run check:data)';
+    }
+  } catch {
+    focusReason = 'The BCB Focus service did not answer';
+  }
+  const value: InflationSurveys = {
+    fetchedAt: new Date().toISOString(),
+    spf,
+    ...(Object.keys(spf).length ? {} : { spfReason: 'The ECB Data Portal gave no SPF observations the app could read (series keys not verified yet; see npm run check:data)' }),
+    focus,
+    ...(focusReason ? { focusReason } : {}),
+  };
+  surveysCache = { at: Date.now(), value };
+  return value;
 }
 
 /** US inflation expectations (src/utils/inflationExpectations.ts): five FRED series from 2003, or null when none answered. */
