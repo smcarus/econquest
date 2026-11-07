@@ -1,9 +1,10 @@
 /**
  * Menu > Quests (read only): open questions anyone can answer, argue and check, each with the rule
  * that settles it and the latest value of the series it reads. Shown only when Quests are switched
- * on (QUESTS_ENABLED=on, docs/QUESTS.md); entries, results and scores come in later steps.
+ * on (QUESTS_ENABLED=on, docs/QUESTS.md). Forecasts can be logged privately on this computer,
+ * practised on past data, and compared in a class table; nothing here is published.
  */
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Compass, X } from 'lucide-react';
 import type { Quest, QuestHorizon, QuestStatus, QuestType } from '../utils/quests';
 
@@ -45,6 +46,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
+  const [view, setView] = useState<'quests' | 'mine' | 'class'>('quests');
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -92,9 +94,26 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
           {error && <p className="text-sm text-rose-700 dark:text-rose-400">Quests did not load: {error}</p>}
           {list && !list.enabled && <p className="text-sm text-slate-600 dark:text-slate-300">{list.reason}</p>}
           {list && list.enabled && !openId && (
+            <div className="flex gap-1 border-b border-slate-200 dark:border-slate-800" role="tablist">
+              {(
+                [
+                  ['quests', 'Quests'],
+                  ['mine', 'My entries'],
+                  ['class', 'Class table'],
+                ] as const
+              ).map(([k, label]) => (
+                <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {list && list.enabled && !openId && view === 'mine' && <MyEntries />}
+          {list && list.enabled && !openId && view === 'class' && <ClassTable />}
+          {list && list.enabled && !openId && view === 'quests' && (
             <>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Open questions anyone can answer, argue and check. Each Quest states the rule that settles it, and every figure shown is read live from a feed. Entries and results are not open yet.
+                Open questions anyone can answer, argue and check. Each Quest states the rule that settles it, and every figure shown is read live from a feed. Forecasts you log here stay on this computer; nothing is published.
               </p>
               <div className="flex flex-wrap gap-2">
                 <label className="text-xs inline-flex items-center gap-1">
@@ -207,6 +226,12 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
                       </ul>
                     </div>
                   )}
+                  {detail.quest.type === 'forecast' && (
+                    <>
+                      <LogPrivately quest={detail.quest} />
+                      <Practice questId={detail.quest.id} />
+                    </>
+                  )}
                   <p className="text-xs text-slate-500">
                     File: {detail.file}
                     {detail.quest.discussion ? (
@@ -224,6 +249,212 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+const fieldCls = 'px-2 py-1.5 text-sm border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
+
+function Box({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <fieldset className="space-y-2 border border-slate-200 dark:border-slate-800 p-3">
+      <legend className="text-sm px-1">{title}</legend>
+      {children}
+    </fieldset>
+  );
+}
+
+async function send(url: string, body?: unknown) {
+  const r = await fetch(url, body === undefined ? undefined : { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || j.error) throw new Error(j?.error || `HTTP ${r.status}`);
+  return j;
+}
+
+function LogPrivately({ quest }: { quest: Quest }) {
+  const level = quest.type === 'forecast' && quest.rule.kind === 'level';
+  const [value, setValue] = useState('');
+  const [rationale, setRationale] = useState('');
+  const [group, setGroup] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+  const submit = async () => {
+    setMsg(null);
+    try {
+      const n = Number(value);
+      const answer = level ? { level: n } : { probability: n / 100 };
+      const j = await send(`/api/quests/${encodeURIComponent(quest.id)}/private`, { answer, rationale, ...(group ? { group } : {}) });
+      setMsg(`Logged on this computer at ${String(j.entry.loggedAt).slice(0, 16).replace('T', ' ')} UTC. Hash ${String(j.entry.hash).slice(0, 12)}…. You can log again until entries close; the last one counts.`);
+    } catch (e: any) {
+      setMsg(e?.message || String(e));
+    }
+  };
+  return (
+    <Box title="Log privately">
+      <div className="flex flex-wrap gap-2 items-end">
+        <label className="text-xs space-y-1">
+          <span className="block">{level ? 'Your forecast (number)' : 'Probability of yes (%)'}</span>
+          <input className={`${fieldCls} w-32`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} data-quest-answer />
+        </label>
+        <label className="text-xs space-y-1">
+          <span className="block">Class code (optional)</span>
+          <input className={`${fieldCls} w-36`} value={group} onChange={(e) => setGroup(e.target.value)} />
+        </label>
+      </div>
+      <label className="text-xs space-y-1 block">
+        <span className="block">Why (optional)</span>
+        <textarea className={`${fieldCls} w-full`} rows={2} maxLength={2000} value={rationale} onChange={(e) => setRationale(e.target.value)} />
+      </label>
+      <button type="button" className="ui-btn" onClick={submit} disabled={!value.trim()} data-quest-log>
+        Log on this computer
+      </button>
+      {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
+    </Box>
+  );
+}
+
+function Practice({ questId }: { questId: string }) {
+  const [q, setQ] = useState<{ token: string; question: string } | null>(null);
+  const [p, setP] = useState('50');
+  const [result, setResult] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const ask = async () => {
+    setErr(null);
+    setResult(null);
+    try {
+      setQ(await send(`/api/quests/${encodeURIComponent(questId)}/practice`));
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    }
+  };
+  const answer = async () => {
+    if (!q) return;
+    try {
+      const r = await send(`/api/quests/practice/${q.token}`, { probability: Number(p) / 100 });
+      setResult(
+        `It ${r.happened ? 'did' : 'did not'} happen: ${r.start.value} on ${r.start.date}, ${r.end.value} on ${r.end.date}. Your Brier score ${r.brier.toFixed(3)}` +
+          (r.baseBrier === null ? ' (too little earlier history for a base rate).' : `; base rate ${(r.baseRate * 100).toFixed(0)}% scores ${r.baseBrier.toFixed(3)}, so your skill is ${r.skill.toFixed(3)}.`) +
+          ' Practice only: not saved.',
+      );
+      setQ(null);
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    }
+  };
+  return (
+    <Box title="Practise on the past">
+      {!q && (
+        <button type="button" className="ui-btn ui-btn-ghost" onClick={ask} data-quest-practice>
+          New practice question
+        </button>
+      )}
+      {q && (
+        <div className="space-y-2">
+          <p className="text-sm">{q.question}</p>
+          <label className="text-xs inline-flex items-center gap-2">
+            <span>Probability (%)</span>
+            <input className={`${fieldCls} w-24`} inputMode="decimal" value={p} onChange={(e) => setP(e.target.value)} />
+          </label>
+          <button type="button" className="ui-btn" onClick={answer}>
+            Check
+          </button>
+        </div>
+      )}
+      {result && <p className="text-xs text-slate-600 dark:text-slate-300">{result}</p>}
+      {err && <p className="text-xs text-rose-700 dark:text-rose-400">{err}</p>}
+    </Box>
+  );
+}
+
+type ScoredEntry = { entry: { id: string; questId: string; loggedAt: string; answer: { probability?: number; level?: number }; group?: string }; title: string; counted: boolean; hashOk: boolean; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } };
+
+function MyEntries() {
+  const [data, setData] = useState<{ author: string; entries: ScoredEntry[] } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send('/api/quests/private').then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, []);
+  if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
+  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
+  if (!data.entries.length) return <p className="text-sm text-slate-500">No entries logged on this computer yet. Open a forecast Quest and use Log privately.</p>;
+  return (
+    <table className="w-full text-sm" data-quest-mine>
+      <thead>
+        <tr className="text-xs text-slate-500 text-left">
+          <th className="py-1 pr-2 font-normal">Quest</th>
+          <th className="py-1 pr-2 font-normal">Answer</th>
+          <th className="py-1 font-normal">Result</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.entries.map((e) => (
+          <tr key={e.entry.id} className="border-t border-slate-200 dark:border-slate-800 align-top">
+            <td className="py-1 pr-2">
+              {e.title}
+              <div className="text-xs text-slate-500">
+                {e.entry.loggedAt.slice(0, 10)} · {e.counted ? 'counts' : 'replaced by a later entry'}
+                {e.hashOk ? '' : ' · hash does not match'}
+              </div>
+            </td>
+            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
+            <td className="py-1 text-xs">
+              {e.score.status === 'settled'
+                ? `${e.score.brier !== undefined ? `Brier ${e.score.brier.toFixed(3)}` : `Error ${e.score.error}`}; skill ${e.score.skill === null || e.score.skill === undefined ? 'no baseline' : e.score.skill.toFixed(3)}`
+                : e.score.note}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+function ClassTable() {
+  const [code, setCode] = useState('');
+  const [data, setData] = useState<{ rows: Array<{ author: string; entries: number; settled: number; probabilitySkill: number | null; levelSkill: number | null }>; note: string } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const load = async () => {
+    setErr(null);
+    try {
+      setData(await send(`/api/quests/class/${encodeURIComponent(code)}`));
+    } catch (e: any) {
+      setErr(e?.message || String(e));
+    }
+  };
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-slate-500 dark:text-slate-400">For a class running its own server: everyone logs privately with the same class code, and the table shows each person's counted entries. It never leaves this server.</p>
+      <div className="flex gap-2">
+        <input className={`${fieldCls} w-40`} placeholder="Class code" value={code} onChange={(e) => setCode(e.target.value)} data-quest-class-code />
+        <button type="button" className="ui-btn" onClick={load} disabled={!code.trim()}>
+          Show
+        </button>
+      </div>
+      {err && <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>}
+      {data && (data.rows.length === 0 ? <p className="text-sm text-slate-500">No entries with that code.</p> : (
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-xs text-slate-500 text-left">
+              <th className="py-1 pr-2 font-normal">Person</th>
+              <th className="py-1 pr-2 font-normal">Entries</th>
+              <th className="py-1 pr-2 font-normal">Settled</th>
+              <th className="py-1 pr-2 font-normal">Skill vs base rate</th>
+              <th className="py-1 font-normal">Skill vs no change</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.rows.map((r) => (
+              <tr key={r.author} className="border-t border-slate-200 dark:border-slate-800 tabular-nums">
+                <td className="py-1 pr-2">{r.author}</td>
+                <td className="py-1 pr-2">{r.entries}</td>
+                <td className="py-1 pr-2">{r.settled}</td>
+                <td className="py-1 pr-2">{r.probabilitySkill ?? 'none yet'}</td>
+                <td className="py-1">{r.levelSkill ?? 'none yet'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ))}
+      {data && <p className="text-xs text-slate-500">{data.note}</p>}
     </div>
   );
 }
