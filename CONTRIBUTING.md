@@ -54,7 +54,12 @@ npm run test:smoke   # every page with all feeds down
   Tests must not reach the network; use `tests/helpers/offline-fetch.mjs`.
 - New UI follows [docs/DESIGN_SYSTEM.md](docs/DESIGN_SYSTEM.md) and sits inside a `PanelBoundary`.
 - Never commit keys, `.env`, or anything from `data/`.
-- Recorded feed replies (`npm run record:feeds`) stay on your computer: several sources do not allow
+- Real feed replies to test against ship in `tests/fixtures/recorded-public/`: World Bank, IMF
+  DataMapper, BIS, ECB, New York Fed, Eurostat, CFTC, GDELT and Brazil Treasury replies, kept
+  unchanged, from sources whose terms allow passing them on (see its README for each credit).
+  `npm test` replays them through the server (`tests/recordedPublic.test.ts`) with no key and no
+  connection; a change that stops the app reading one of those sources or figures fails there.
+- A full recording (`npm run record:feeds`) stays on your computer: several sources do not allow
   their data to be passed on, so `tests/fixtures/recorded/` is not part of the public repository.
 
 ## Sign off your commits (DCO)
