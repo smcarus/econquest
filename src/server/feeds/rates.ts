@@ -9,6 +9,7 @@ import { BIS_API, BIS_ISO2, bisAllMarketsUrl, bisIntlUrl, parseBisAllMarkets, pa
 import { CDS_HIDDEN } from '../../utils/cdsHidden.ts';
 import { DATA_DIR } from '../config';
 import { EMPTY_FX_HISTORY, type FxHistoryFile, fxQuarterUrl, parseFxQuarter, quartersToPull, readFxHistoryFile } from '../../utils/fxHistory';
+import { EXTRA_FX, type ExtraFxCode, extraFxNeedsPull, extraFxUrl, extraFxWindows, type FxExtraFile, parseExtraFx, readFxExtraFile } from '../../utils/fxExtra';
 import { bcrpEmbigUrl, describeBcrpReply, type HcSpreadPull, parseBcrpEmbig } from '../../utils/hardCurrencySpread.ts';
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { evdsSeriesUrl, FRED_10Y_SERIES, fredApiUrl, fredCsvUrl, isValidEvdsSeriesCode, type OfficialYieldObservation, parseEvdsLatest, parseFredApiLatest, parseFredCsvLatest, parseTesouroDiretoLatest, TESOURO_DIRETO_CSV_URL, US_10Y_SERIES } from '../../utils/officialYields.ts';
@@ -395,6 +396,69 @@ export async function pullFxHistory(): Promise<{ file: FxHistoryFile; read: numb
 }
 export async function fetchFxHistory(): Promise<FxHistoryFile> {
   return quartersToPull(loadFxHistory()).length ? (await pullFxHistory()).file : loadFxHistory();
+}
+
+/**
+ * Daily central-bank rates for currencies the ECB does not publish (src/utils/fxExtra.ts): PEN
+ * from the BCRP, COP (TRM) from datos.gov.co, ARS from the BCRA. The full history once, then the
+ * last 45 days again every 12 hours. Saved to data/live/fx-extra.json; one pull at a time.
+ */
+let fxExtraMemory: FxExtraFile | null = null;
+let fxExtraPending: Promise<FxExtraFile> | null = null;
+function fxExtraPath(): string {
+  return path.join(DATA_DIR, 'live', 'fx-extra.json');
+}
+export function loadFxExtra(): FxExtraFile {
+  if (fxExtraMemory) return fxExtraMemory;
+  try {
+    fxExtraMemory = readFxExtraFile(JSON.parse(fs.readFileSync(fxExtraPath(), 'utf8')));
+  } catch {
+    fxExtraMemory = { version: 1, currencies: {} };
+  }
+  return fxExtraMemory;
+}
+export async function fetchFxExtra(): Promise<FxExtraFile> {
+  const file = loadFxExtra();
+  const due = (Object.keys(EXTRA_FX) as ExtraFxCode[]).filter((c) => extraFxNeedsPull(file.currencies[c]));
+  if (!due.length) return file;
+  if (fxExtraPending) return fxExtraPending;
+  fxExtraPending = (async () => {
+    await Promise.all(
+      due.map(async (code) => {
+        const saved = file.currencies[code];
+        const rates: Record<string, number> = { ...(saved?.rates || {}) };
+        let through = saved?.through;
+        let read = 0;
+        for (const [from, to] of extraFxWindows(code, saved)) {
+          try {
+            const res = await fetchWithTimeout(extraFxUrl(code, from, to), 15000);
+            if (!res.ok) break;
+            const got = parseExtraFx(code, await res.json().catch(() => null));
+            if (got) Object.assign(rates, got);
+            through = to;
+            read++;
+          } catch {
+            break;
+          }
+        }
+        if (!read) {
+          console.warn(`[FX extra] ${code}: ${EXTRA_FX[code].source.split(',')[0]} did not answer`);
+          return;
+        }
+        file.currencies[code] = { pulledAt: new Date().toISOString(), through: through || new Date().toISOString().slice(0, 10), rates };
+      })
+    );
+    try {
+      fs.mkdirSync(path.dirname(fxExtraPath()), { recursive: true });
+      writeFileAtomic(fxExtraPath(), JSON.stringify(file));
+    } catch (err: any) {
+      console.warn(`[FX extra] could not save: ${err?.message || err}`);
+    }
+    return file;
+  })().finally(() => {
+    fxExtraPending = null;
+  });
+  return fxExtraPending;
 }
 
 /** US 10Y (OECD monthly, via FRED): the benchmark for spreads over Treasuries in MarketEdge. */

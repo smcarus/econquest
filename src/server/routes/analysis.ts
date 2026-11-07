@@ -367,10 +367,10 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     if (!area || CBPOL_NOT_COVERED.has(iso3)) return res.json({ iso3, name, ok: false, reason: 'This central bank is not in the BIS policy rate data' });
     const [set, policy] = await Promise.all([seriesFor(iso3), quick(fetchPolicyDaily(area))]);
     const fx = set.series.find((x) => x.id === 'fx_per_usd');
-    if (!fx || fx.freq !== 'daily') return res.json({ iso3, name, ok: false, reason: 'No daily ECB exchange rate history for this currency' });
+    if (!fx || fx.freq !== 'daily') return res.json({ iso3, name, ok: false, reason: 'No daily exchange rate history for this currency' });
     if (!policy?.length) return res.json({ iso3, name, ok: false, reason: 'The BIS daily policy rate history did not answer' });
     const study = eventStudy(bank, policy, fx.points);
-    res.json({ iso3, name, ok: true, ...study, sentence: eventSentence(name, study), method: EVENT_METHOD, sources: ['BIS central bank policy rates, daily', 'ECB euro reference rates (via Frankfurter)'] });
+    res.json({ iso3, name, ok: true, ...study, sentence: eventSentence(name, study), method: EVENT_METHOD, sources: ['BIS central bank policy rates, daily', fx.source || 'ECB euro reference rates (via Frankfurter)'] });
   });
   app.get('/api/scenario/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
