@@ -18,7 +18,7 @@
  * Browser-safe, pure.
  */
 import type { Series, SeriesMissing, SeriesPoint } from './seriesHistory';
-import { isOleFile, readXlsSheets } from './xlsRead';
+import { describeXls, isOleFile, readXlsSheets } from './xlsRead';
 import { readXlsxSheet, xlsxSheetNames } from './xlsxRead';
 
 export type IdxObs = { date: string; value: number };
@@ -77,8 +77,8 @@ export function cellDate(cell: string): string | null {
 export function parseGscpiRows(rows: string[][]): IdxObs[] {
   let best: IdxObs[] = [];
   const width = Math.max(0, ...rows.map((r) => r.length));
-  for (let dc = 0; dc < Math.min(width, 4); dc++) {
-    for (let vc = dc + 1; vc < Math.min(width, dc + 4); vc++) {
+  for (let dc = 0; dc < Math.min(width, 12); dc++) {
+    for (let vc = dc + 1; vc < Math.min(width, dc + 12); vc++) {
       const byMonth = new Map<string, number>();
       let bad = 0;
       for (const r of rows) {
@@ -173,5 +173,7 @@ export async function gscpiFromBytes(buf: Uint8Array, now = new Date()): Promise
   } catch {
     return { reason: `The New York Fed GSCPI file (${kind}) could not be read` };
   }
-  return obs.length ? { obs, fetchedAt: now.toISOString() } : { reason: `The New York Fed GSCPI file (${kind}) had no sheet with a date column and index values` };
+  if (obs.length) return { obs, fetchedAt: now.toISOString() };
+  const layout = isOleFile(buf) ? ` (layout: ${describeXls(buf).slice(0, 400)})` : '';
+  return { reason: `The New York Fed GSCPI file (${kind}) had no sheet with a date column and index values${layout}` };
 }

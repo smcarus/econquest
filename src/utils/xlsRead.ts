@@ -3,9 +3,9 @@
  * for plain data sheets such as the NY Fed GSCPI download, which is served as .xls even at its .csv
  * address. No new package.
  *
- * Reads numbers only: NUMBER, RK, MULRK and cached FORMULA results. Text cells (shared strings) come
- * back empty, so a sheet's header row is blank; dates in .xls are numbers (Excel serial days), which
- * is what data columns need. Ignores styles, merged cells and everything else.
+ * Reads numbers (NUMBER, RK, MULRK, cached FORMULA results) and text (shared strings via LABELSST,
+ * and LABEL). Dates stored as dates come back as Excel serial days; dates typed as text come back as
+ * text. Ignores styles, merged cells and everything else.
  *
  * Browser-safe, pure.
  */
@@ -102,6 +102,76 @@ export function rkValue(rk: number): number {
   return rk & 0x01 ? v / 100 : v;
 }
 
+
+/** The shared string table: an SST record and the CONTINUE records after it, as one list of strings. */
+export function parseSst(segments: Uint8Array[]): string[] {
+  const out: string[] = [];
+  if (!segments.length || segments[0].length < 8) return out;
+  let seg = 0;
+  let pos = 8;
+  const total = u32(segments[0], 4);
+  const avail = () => segments[seg].length - pos;
+  const next = () => {
+    seg++;
+    pos = 0;
+    return seg < segments.length;
+  };
+  const byte = () => {
+    while (avail() <= 0) if (!next()) throw new Error('end');
+    return segments[seg][pos++];
+  };
+  const word = () => byte() | (byte() << 8);
+  const dword = () => (word() | (word() << 16)) >>> 0;
+  const skip = (n: number) => {
+    while (n > 0) {
+      if (avail() <= 0 && !next()) throw new Error('end');
+      const k = Math.min(n, avail());
+      pos += k;
+      n -= k;
+    }
+  };
+  try {
+    for (let i = 0; i < total; i++) {
+      const cch = word();
+      let flags = byte();
+      const runs = flags & 0x08 ? word() : 0;
+      const ext = flags & 0x04 ? dword() : 0;
+      let str = '';
+      let left = cch;
+      while (left > 0) {
+        if (avail() <= 0) {
+          if (!next()) throw new Error('end');
+          flags = segments[seg][pos++]; // a CONTINUE inside the characters starts with a new flags byte
+        }
+        const high = flags & 0x01;
+        const n = Math.min(left, high ? Math.floor(avail() / 2) : avail());
+        if (n <= 0) {
+          if (!next()) throw new Error('end');
+          flags = segments[seg][pos++];
+          continue;
+        }
+        for (let k = 0; k < n; k++) str += String.fromCharCode(high ? u16(segments[seg], pos + k * 2) : segments[seg][pos + k]);
+        pos += n * (high ? 2 : 1);
+        left -= n;
+      }
+      skip(runs * 4 + ext);
+      out.push(str);
+    }
+  } catch {
+    // a short table: keep what was read
+  }
+  return out;
+}
+
+/** A BIFF8 LABEL cell's string (XLUnicodeString at `o`). */
+function labelText(b: Uint8Array, o: number, end: number): string {
+  const cch = u16(b, o);
+  const high = b[o + 2] & 0x01;
+  let s = '';
+  for (let k = 0, p = o + 3; k < cch && p < end; k++, p += high ? 2 : 1) s += String.fromCharCode(high ? u16(b, p) : b[p]);
+  return s;
+}
+
 /** Every worksheet of a .xls file as rows of cell text (numbers only; text cells empty). Null if not a .xls. */
 export function readXlsSheets(data: ArrayBuffer | Uint8Array): string[][][] | null {
   const buf = data instanceof Uint8Array ? data : new Uint8Array(data);
@@ -110,12 +180,29 @@ export function readXlsSheets(data: ArrayBuffer | Uint8Array): string[][][] | nu
   const view = new DataView(wb.buffer, wb.byteOffset, wb.byteLength);
   const sheets: string[][][] = [];
   let cur: string[][] | null = null;
-  const put = (row: number, col: number, v: number) => {
-    if (!cur || !Number.isFinite(v)) return;
+  // Shared strings first: the SST record and its CONTINUE records, in the workbook globals.
+  const sstSegs: Uint8Array[] = [];
+  for (let p = 0, inSst = false; p + 4 <= wb.length; ) {
+    const type = u16(wb, p);
+    const len = u16(wb, p + 2);
+    if (p + 4 + len > wb.length) break;
+    if (type === 0x00fc) {
+      inSst = true;
+      sstSegs.push(wb.subarray(p + 4, p + 4 + len));
+    } else if (inSst && type === 0x003c) sstSegs.push(wb.subarray(p + 4, p + 4 + len));
+    else if (inSst) break;
+    p += 4 + len;
+  }
+  const sst = parseSst(sstSegs);
+  const set = (row: number, col: number, text: string) => {
+    if (!cur) return;
     while (cur.length <= row) cur.push([]);
     const r = cur[row];
     while (r.length < col) r.push('');
-    r[col] = String(v);
+    r[col] = text;
+  };
+  const put = (row: number, col: number, v: number) => {
+    if (Number.isFinite(v)) set(row, col, String(v));
   };
   for (let p = 0; p + 4 <= wb.length; ) {
     const type = u16(wb, p);
@@ -135,7 +222,22 @@ export function readXlsSheets(data: ArrayBuffer | Uint8Array): string[][][] | nu
       const n = (len - 6) / 6;
       for (let k = 0; k < n; k++) put(row, first + k, rkValue(u32(wb, d + 4 + k * 6 + 2)));
     } else if (cur && type === 0x0006 && len >= 14 && u16(wb, d + 12) !== 0xffff) put(u16(wb, d), u16(wb, d + 2), view.getFloat64(d + 6, true));
+    else if (cur && type === 0x00fd && len >= 10) set(u16(wb, d), u16(wb, d + 2), sst[u32(wb, d + 6)] ?? '');
+    else if (cur && type === 0x0204 && len >= 9) set(u16(wb, d), u16(wb, d + 2), labelText(wb, d + 6, d + len));
     p = d + len;
   }
   return sheets;
+}
+
+/** A short description of a workbook's sheets, for a check that could not read it: sizes and first rows. */
+export function describeXls(data: ArrayBuffer | Uint8Array): string {
+  const sheets = readXlsSheets(data);
+  if (!sheets) return 'not an Excel 97 workbook';
+  return sheets
+    .map((rows, k) => {
+      const filled = rows.filter((r) => r.some((c) => c !== ''));
+      const first = filled.slice(0, 4).map((r) => r.slice(0, 5).join(' | ')).join(' / ');
+      return `sheet ${k + 1}: ${filled.length} rows; ${first || 'no cells'}`;
+    })
+    .join('; ');
 }
