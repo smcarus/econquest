@@ -1014,6 +1014,9 @@ test('exam mode: switched from this computer, AI steps answer with figures only,
     assert.match(choice.reason, /exam mode/);
     const blocked = await fetch(`${base}/api/ai/try-model`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(blocked.status, 409);
+    const ex = await (await fetch(`${base}/api/exercises/MEX?month=2024-12`)).json();
+    assert.equal(ex.examMode, true);
+    assert.ok(ex.exercises.every((e: Record<string, unknown>) => !('answer' in e) && !('workings' in e)));
     const opened = await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'Turkey, overview' }) })).json();
     assert.equal(opened.recorded, true);
     const audit = await (await fetch(`${base}/api/audit?q=exam`)).text();

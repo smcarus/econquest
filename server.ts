@@ -3053,7 +3053,7 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
-  registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom });
+  registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const set = await seriesFor(iso3);

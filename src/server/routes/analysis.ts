@@ -36,6 +36,7 @@ import { fitScenarioModel, monthEnd, monthlyChanges, PRESETS, SCENARIO_METHOD, F
 import { grVar, grVarSentence, GRVAR_METHOD, type GrVarOutcome } from '../../utils/grVar';
 import { gprData } from '../../utils/gprStore';
 import { storyLeads, STORY_LEADS_METHOD, type LeadSeries } from '../../utils/storyLeads';
+import { buildExercises, checkAnswer, EXERCISES_METHOD, type ExerciseArgs } from '../../utils/exercises';
 
 
 /**
@@ -52,10 +53,13 @@ export interface AnalysisDeps {
   loadOfficialHistory: (iso3: string) => OfficialHistoryFile | null;
   outputGapFrom: (file: OfficialHistoryFile | null | undefined) => OutputGapResult;
   dsaFrom: (file: OfficialHistoryFile | null | undefined) => DsaOutcome;
+  /** Exam mode (src/utils/examMode.ts): answer keys are held back while it is on. */
+  examOn?: () => boolean;
 }
 
 export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   const { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom } = deps;
+  const examOn = deps.examOn ?? (() => false);
   // Unit converters (src/utils/unitConverters.ts): the four World Bank series in one reply, so the panel holds one connection.
   app.get('/api/unit-converters/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
@@ -69,6 +73,40 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
       else missing.push(`${fig.label}: Missing. ${s.reason}.`);
     }
     res.json({ iso3, series, missing });
+  });
+  // Exercises with answer keys (src/utils/exercises.ts): worked out from the app's series at a month.
+  const exerciseSet = async (iso3: string, month: string) => {
+    const set = await seriesFor(iso3);
+    const pick = (id: string) => set.series.find((x) => x.id === id);
+    const series: ExerciseArgs['series'] = {};
+    for (const id of ['policy_rate', 'cpi_monthly', 'cpi_imf', 'output_gap', 'yield_10y', 'gdp_growth', 'debt_gdp'] as const) {
+      const x = pick(id);
+      if (x) series[id] = x;
+    }
+    const t = INFLATION_TARGETS[iso3];
+    const countryName = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    return buildExercises({ countryName, month, series, ...(t ? { target: { pct: t.pct, bank: t.bank } } : {}) });
+  };
+  const monthOf = (v: unknown) => (typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v) ? v : '');
+  app.get('/api/exercises/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+    const month = monthOf(req.query.month);
+    if (!month) return res.status(400).json({ error: 'A month as YYYY-MM is needed.' });
+    const r = await exerciseSet(iso3, month);
+    const exam = examOn();
+    // In exam mode the key stays on the server; answers are checked one at a time.
+    const exercises = exam ? r.exercises.map(({ id, question, hint, unit, tolerance }) => ({ id, question, hint, unit, tolerance })) : r.exercises;
+    res.json({ iso3, month, exercises, notSet: r.notSet, examMode: exam, method: EXERCISES_METHOD });
+  });
+  app.post('/api/exercises/:iso3/check', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3);
+    const month = monthOf(req.body?.month);
+    const given = Number(req.body?.answer);
+    if (!month || !Number.isFinite(given)) return res.status(400).json({ error: 'A month (YYYY-MM) and a number are needed.' });
+    const ex = (await exerciseSet(iso3, month)).exercises.find((e) => e.id === req.body?.id);
+    if (!ex) return res.status(404).json({ error: 'That exercise is not set for this month.' });
+    const correct = checkAnswer(ex, given);
+    res.json({ correct, tolerance: ex.tolerance, unit: ex.unit, ...(examOn() ? {} : { answer: ex.answer, workings: ex.workings, inputs: ex.inputs }) });
   });
   // Story leads (src/utils/storyLeads.ts): records and recent revisions in the saved yearly history, no download.
   app.get('/api/story-leads', (req, res) => {

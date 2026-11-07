@@ -365,6 +365,12 @@ currency into real terms (prices of another year), US dollars, purchasing power 
 head, each line with the World Bank figure it used and its year. A year with no figure reads
 Missing; the nearest year is never put in its place.
 
+**Exercises.** Research > One country > History & data sets up to four questions for the month you
+pick (the real policy rate, the Taylor rule, r minus g and the change in the debt ratio), each
+worked out from the app's own figures. Type an answer and press Check; it counts as right within
+the stated tolerance. The answer key shows the workings and every figure used with its source. In
+exam mode the key is held back and answers are only marked right or not.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with
