@@ -92,7 +92,7 @@ export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
         <li key={j}>{j}</li>
       ))}
     </ul>
-    <p className="ui-label">These observations are simple rules on the live figures below, not a forecast. Missing figures are left out of them. Hover a missing figure for what would fill it.</p>
+    <p className="ui-label">These observations are simple rules applied to the live figures below, not a forecast and not advice. Missing figures are left out of them. Under each figure, "What is this?" explains it in plain words, and "Why missing?" says why a figure is absent and what would fill it.</p>
   </div>
 );
 
@@ -120,6 +120,15 @@ const EXPLAIN_ROW_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underli
  * "What is this?" under a figure label: the plain-words glossary entry for the figure (what it is,
  * why it matters, how to read it). Closed by default so the table stays short; tap to open.
  */
+/** "Why missing?" under a Missing value: the reason in full, visible on a phone as well as on hover. */
+export const MissingHelp: React.FC<{ help?: string }> = ({ help }) =>
+  help ? (
+    <details className="mt-0.5 text-xs font-normal text-left" data-missing-help="true">
+      <summary className="cursor-pointer text-amber-700 dark:text-amber-400 hover:underline w-fit ml-auto">Why missing?</summary>
+      <p className="mt-1 max-w-prose text-slate-600 dark:text-slate-300">{help}</p>
+    </details>
+  ) : null;
+
 export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => (
   <details className="mt-0.5 text-xs font-normal" data-figure-help={entry.id}>
     <summary className="cursor-pointer text-blue-700 dark:text-blue-300 hover:underline w-fit">What is this?</summary>
@@ -170,6 +179,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                     <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
                     <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
+                    {r.missing && <MissingHelp help={r.help} />}
                     {figureHelp(r.label) && <FigureHelp entry={figureHelp(r.label)!} />}
                   </td>
                 </tr>
@@ -188,6 +198,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
                   {r.value}
+                  {r.missing && <MissingHelp help={r.help} />}
                   {country && !r.missing && (
                     <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title="Ask the council what this figure means and why it is where it is" data-explain-row={r.label}>
                       Explain

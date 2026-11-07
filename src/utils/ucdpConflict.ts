@@ -534,13 +534,13 @@ export function ucdpReading(data: UcdpData | null | undefined, iso3: string): Uc
 export function ucdpMissing(data: UcdpData | null | undefined, iso3: string): { short: string; help: string } {
   const iso = String(iso3 || '').toUpperCase();
   if (UCDP_NOT_SEPARATE[iso]) return { short: 'not a separate country in UCDP', help: UCDP_NOT_SEPARATE[iso] };
-  if (!ISO3_IN_UCDP.has(iso)) return { short: 'no UCDP country code for this country in the app', help: 'The app maps UCDP Gleditsch-Ward codes to countries; this one is not in its table.' };
+  if (!ISO3_IN_UCDP.has(iso)) return { short: 'no UCDP country code for this country in the app', help: 'UCDP numbers countries with its own codes (Gleditsch-Ward codes), and the app\'s table that links them to country names has no entry for this one, so its conflict figures cannot be matched.' };
   if (!data || latestUcdpYear(data) === null)
     return {
       short: 'UCDP files not added',
       help: `The UCDP files shipped in datasets/ucdp/ were not found. Download the UCDP CSV files from ${UCDP_DOWNLOADS_PAGE} and put them (zipped or not) in ${UCDP_FOLDER}.`,
     };
-  return { short: 'UCDP figures not read', help: 'The UCDP files were read but did not fill this country.' };
+  return { short: 'UCDP figures not read', help: 'The UCDP files were read, but they hold no rows for this country. That can mean UCDP recorded no organised violence there in the years covered, or that the files are older than the period you are looking at.' };
 }
 
 /** One line on what a missing dataset leaves out. */
