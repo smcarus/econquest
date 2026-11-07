@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { SlidersHorizontal } from 'lucide-react';
 import type { SeriesPoint } from '../utils/seriesHistory';
 import { debtSandbox, filterSandbox, taylorSandbox, SANDBOX_METHOD } from '../utils/modelSandboxes';
+import { restructuring, RESTRUCTURING_METHOD } from '../utils/restructuring';
 
 /**
  * Country Research > History & data > Model sandboxes (src/utils/modelSandboxes.ts): debt
@@ -46,6 +47,8 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
   const [t, setT] = useState<Record<'rStar' | 'pi' | 'target' | 'gap' | 'aPi' | 'aGap', Num>>({ rStar: 2, pi: null, target: null, gap: null, aPi: 0.5, aGap: 0.5 });
   const [lambda, setLambda] = useState(100);
   const [h, setH] = useState(2);
+  // Restructuring calculator: every term is the user's; these are blank until typed (no example deal is assumed).
+  const [rs, setRs] = useState<Record<'oldCoupon' | 'oldYears' | 'newFace' | 'newCoupon' | 'newYears' | 'newGrace' | 'exitYield', Num>>({ oldCoupon: null, oldYears: null, newFace: null, newCoupon: null, newYears: null, newGrace: null, exitYield: null });
 
   useEffect(() => {
     let live = true;
@@ -69,6 +72,17 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
   const taylorOut = useMemo(() => (Object.values(t).every((v) => v !== null) ? taylorSandbox({ rStar: t.rStar!, pi: t.pi!, target: t.target!, gap: t.gap!, aPi: t.aPi!, aGap: t.aGap! }) : null), [t]);
   const filterOut = useMemo(() => (reply ? filterSandbox(reply.growth, lambda, h) : null), [reply, lambda, h]);
   const y = reply?.debt?.year;
+  const rsOut = useMemo(
+    () =>
+      Object.values(rs).every((v) => v !== null)
+        ? restructuring({
+            oldBond: { face: 100, couponPct: rs.oldCoupon!, years: rs.oldYears!, graceYears: rs.oldYears! - 1 },
+            newBond: { face: rs.newFace!, couponPct: rs.newCoupon!, years: rs.newYears!, graceYears: rs.newGrace! },
+            exitYieldPct: rs.exitYield!,
+          })
+        : null,
+    [rs]
+  );
 
   return (
     <section className="ui-panel" data-model-sandbox="true" data-no-provenance-overlay="true">
@@ -132,6 +146,24 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
                   .
                 </p>
               ) : null}
+            </div>
+            <div data-sandbox="restructuring" className="space-y-1">
+              <h3 className="text-sm font-medium text-slate-900 dark:text-white">Restructuring calculator (terms you enter)</h3>
+              <Slider label="Old bond coupon, %" value={rs.oldCoupon} set={(v) => setRs({ ...rs, oldCoupon: v })} min={0} max={15} step={0.125} start="bullet, face 100" />
+              <Slider label="Old bond years left" value={rs.oldYears} set={(v) => setRs({ ...rs, oldYears: v === null ? null : Math.max(1, Math.round(v)) })} min={1} max={40} step={1} />
+              <Slider label="New face per 100 old" value={rs.newFace} set={(v) => setRs({ ...rs, newFace: v })} min={1} max={100} step={0.5} />
+              <Slider label="New coupon, %" value={rs.newCoupon} set={(v) => setRs({ ...rs, newCoupon: v })} min={0} max={15} step={0.125} />
+              <Slider label="New bond years" value={rs.newYears} set={(v) => setRs({ ...rs, newYears: v === null ? null : Math.max(1, Math.round(v)) })} min={1} max={40} step={1} />
+              <Slider label="New bond grace years" value={rs.newGrace} set={(v) => setRs({ ...rs, newGrace: v === null ? null : Math.max(0, Math.round(v)) })} min={0} max={39} step={1} start="coupons only" />
+              <Slider label="Exit yield, %" value={rs.exitYield} set={(v) => setRs({ ...rs, exitYield: v })} min={0} max={30} step={0.25} />
+              {rsOut ? (
+                <p className="text-slate-900 dark:text-white" data-sandbox-result="restructuring">
+                  At a {rs.exitYield}% exit yield the old bond is worth {rsOut.pvOld} and the new one {rsOut.pvNew} per 100 of old face: an NPV haircut of {rsOut.npvHaircutPct}% and a market haircut of {rsOut.marketHaircutPct}% (face cut {rsOut.faceHaircutPct}%).
+                </p>
+              ) : (
+                <p className="text-amber-700 dark:text-amber-400">Missing: enter every term to run the calculator. Nothing is filled in.</p>
+              )}
+              <p className="text-slate-500 dark:text-slate-400">Method: {RESTRUCTURING_METHOD}</p>
             </div>
             {reply.missing.length > 0 && <p className="text-amber-700 dark:text-amber-400" data-missing="true">Missing: {reply.missing.join('; ')}.</p>}
             <p className="text-slate-500 dark:text-slate-400">Method: {SANDBOX_METHOD}</p>

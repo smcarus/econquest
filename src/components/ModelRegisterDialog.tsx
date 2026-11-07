@@ -162,6 +162,11 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
                                 {fv.map((x) => (
                                   <span key={x.id} className="block" data-forecast-verdict={x.id} data-status={x.status}>
                                     <span className="font-medium">{x.id.replace(/_/g, ' ')}</span> (test v{x.specVersion}, run {when(x.ranAt)}): {x.verdict} <span data-holm={`forecast ${x.id} v${x.specVersion}`}>{holmSentence(holmMap.get(`forecast ${x.id} v${x.specVersion}`))}</span>
+                                    {x.crash && (
+                                      <span className="block text-slate-500 dark:text-slate-400" data-crash-stats={x.id}>
+                                        {x.crash}
+                                      </span>
+                                    )}
                                     {v?.forward?.[`${x.id} v${x.specVersion}`] && (
                                       <span className="block" data-forward-record={x.id}>
                                         {forwardSentence(v.forward[`${x.id} v${x.specVersion}`])}

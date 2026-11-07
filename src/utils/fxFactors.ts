@@ -207,6 +207,84 @@ export interface FxFactorResult {
   currencies: string[];
   /** Latest months, newest first, so a reader can check them. */
   recent: FxMonth[];
+  /** Crash statistics of the net monthly returns: a description, not part of the verdict. */
+  crash?: CrashStats;
+}
+
+export interface CrashStats {
+  /** Largest fall from a peak of the compounded net return, %, with the months it ran between. */
+  maxDrawdownPct: number;
+  drawdownFrom: string;
+  drawdownTo: string;
+  worstMonth: { month: string; netPct: number };
+  /** Worst three consecutive months, compounded, %. */
+  worst3mPct: number;
+  worst3mTo: string;
+  /** Sample skewness and excess kurtosis of the monthly net returns. */
+  skew: number;
+  excessKurtosis: number;
+  /** Share of months with a negative net return, %. */
+  negativeMonthsPct: number;
+}
+
+/**
+ * Crash statistics (seven-groups plan, group 4; gap analysis A3): how carry loses when it loses.
+ * Returns are monthly net %, compounded for the drawdown and the three-month figure. Null under 12 months.
+ */
+export function crashStats(rows: FxMonth[]): CrashStats | null {
+  const n = rows.length;
+  if (n < 12) return null;
+  const r = rows.map((x) => x.net);
+  let level = 1;
+  let peak = 1;
+  let peakAt = rows[0].month;
+  let dd = 0;
+  let ddFrom = peakAt;
+  let ddTo = peakAt;
+  for (const x of rows) {
+    level *= 1 + x.net / 100;
+    if (level > peak) {
+      peak = level;
+      peakAt = x.month;
+    }
+    const fall = level / peak - 1;
+    if (fall < dd) {
+      dd = fall;
+      ddFrom = peakAt;
+      ddTo = x.month;
+    }
+  }
+  let worst = 0;
+  for (let i = 1; i < n; i++) if (r[i] < r[worst]) worst = i;
+  let w3 = Infinity;
+  let w3To = rows[2].month;
+  for (let i = 2; i < n; i++) {
+    const c = ((1 + r[i - 2] / 100) * (1 + r[i - 1] / 100) * (1 + r[i] / 100) - 1) * 100;
+    if (c < w3) {
+      w3 = c;
+      w3To = rows[i].month;
+    }
+  }
+  const m = r.reduce((a, v) => a + v, 0) / n;
+  const m2 = r.reduce((a, v) => a + (v - m) ** 2, 0) / n;
+  const m3 = r.reduce((a, v) => a + (v - m) ** 3, 0) / n;
+  const m4 = r.reduce((a, v) => a + (v - m) ** 4, 0) / n;
+  return {
+    maxDrawdownPct: r3(dd * 100),
+    drawdownFrom: ddFrom,
+    drawdownTo: ddTo,
+    worstMonth: { month: rows[worst].month, netPct: r3(r[worst]) },
+    worst3mPct: r3(w3),
+    worst3mTo: w3To,
+    skew: m2 > 0 ? r3(m3 / m2 ** 1.5) : 0,
+    excessKurtosis: m2 > 0 ? r3(m4 / m2 ** 2 - 3) : 0,
+    negativeMonthsPct: r3((r.filter((v) => v < 0).length / n) * 100),
+  };
+}
+
+/** One sentence for the register: labelled as a description. */
+export function crashSentence(c: CrashStats): string {
+  return `Crash statistics (description, not part of the test): largest drawdown ${c.maxDrawdownPct}% (${c.drawdownFrom} to ${c.drawdownTo}), worst month ${c.worstMonth.netPct}% (${c.worstMonth.month}), worst three months ${c.worst3mPct}% (to ${c.worst3mTo}), skew ${c.skew}, excess kurtosis ${c.excessKurtosis}, ${c.negativeMonthsPct}% of months negative.`;
 }
 
 const r3 = (v: number) => Number(v.toFixed(3));
@@ -268,6 +346,7 @@ export function judgeFxFactor(spec: FxFactorSpec, rows: FxMonth[]): FxFactorResu
     span: { from: rows[0]?.month || '', to: rows[n - 1]?.month || '' },
     currencies: [...new Set(rows.flatMap((r) => [...r.long, ...r.short]))].sort(),
     recent: rows.slice(-12).reverse(),
+    ...(crashStats(rows) ? { crash: crashStats(rows)! } : {}),
   };
 }
 
