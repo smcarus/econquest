@@ -75,7 +75,7 @@ function downloadImage(result: ChartResult, box: HTMLElement | null) {
   clone.setAttribute('height', String(height));
   const { credits } = creditsFor(result.lines.map((l) => l.source));
   const footer = [footnote(result), ...credits.map((c) => `Credit: ${c}`), `Made with EconQuest on ${new Date().toISOString().slice(0, 10)}. ${EXPORT_NOTICE}`].filter(Boolean);
-  const blob = new Blob([framedSvg(new XMLSerializer().serializeToString(clone), width, height, result.title, footer)], { type: 'image/svg+xml;charset=utf-8' });
+  const blob = new Blob([framedSvg(new XMLSerializer().serializeToString(clone), width, height, { title: result.title, footer })], { type: 'image/svg+xml;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${fileStem(result.title)}.svg`;

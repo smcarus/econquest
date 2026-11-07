@@ -55,6 +55,12 @@ test('the pack holds the data without trend lines, three scripts and the app fig
     assert.match(p.files[f], /\b36\b/, `${f} carries the rolling window`);
     assert.match(p.files[f], /129600/, `${f} carries the HP lambda`);
   }
+  // Stata syntax the script relies on: operator ranges written L(1/p)D.x, negative lags inside the string, scalars by scalar().
+  const doFile = p.files['replicate.do'];
+  assert.match(doFile, /L\(1\/`p'\)D\.s0/);
+  assert.doesNotMatch(doFile, /\)\.D\./);
+  assert.match(doFile, /display "lag `k': r = "/);
+  assert.match(doFile, /scalar\(T\)/);
   assert.match(p.files['README.md'], /Source: BIS policy rates/);
   assert.match(p.files['README.md'], /Correlation \(r\): 0\.95/);
   assert.match(p.files['README.md'], /2026-11-07/);

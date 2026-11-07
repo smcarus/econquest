@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { publicationCheck, publicationSvg, PUBLICATION_METHOD } from '../utils/publicationExport';
+import { framedSvg, publicationCheck, publicationFooter, PUBLICATION_METHOD } from '../utils/creditLines';
 import { loadShareMode } from '../utils/shareMode';
 
 /**
  * "Publish chart": downloads the chart in `chartRef` as SVG or PNG with title, source, period,
- * as-of date and a credit line from the licence register (src/utils/publicationExport.ts).
+ * as-of date and a credit line from the licence register (src/utils/creditLines.ts).
  * Sources that restrict sharing block the download until the user ticks they hold permission.
  */
 export const PublishChartButton: React.FC<{
@@ -39,7 +39,7 @@ export const PublishChartButton: React.FC<{
     clone.setAttribute('height', String(height));
     const chart = new XMLSerializer().serializeToString(clone);
     const asOf = new Date().toISOString().slice(0, 10);
-    return { svg: publicationSvg(chart, width, height, { title, subtitle, source, period, asOf, credit }), width, height };
+    return { svg: framedSvg(chart, width, height, { title, subtitle, footer: publicationFooter({ source, period, asOf, credit }) }), width, height };
   };
 
   const save = (blob: Blob, ext: string) => {

@@ -158,7 +158,7 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
       'A source whose terms restrict free sharing, or need permission where free sharing is not settled, blocks the export until you tick that you hold permission. Sources with unclear terms, or not named in the register, are listed.',
     ],
     limits: 'The register reflects terms as read on its check date and is not legal advice; you are responsible for what you publish. Only the History chart has the button so far.',
-    code: 'src/utils/publicationExport.ts',
+    code: 'src/utils/creditLines.ts',
   },
   {
     id: 'unit_converters',
