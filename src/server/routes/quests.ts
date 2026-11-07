@@ -22,11 +22,17 @@
  * Public entries (step 6), files in quests/entries/ entered by pull request:
  *   GET  /api/quests/:id/entries      before close only how many; after close each counted entry
  *                                     with its score, and the spread of answers
- *   GET  /api/quests/:id/draft-entry  ?login=&probability= (or level=) &rationale=: the entry file
- *                                     and GitHub's prefilled "new file" page on QUESTS_REPO
+ *   GET  /api/quests/:id/draft-entry  ?login=&probability= (or level=, or position= for a Debate)
+ *                                     &rationale=: the entry file and GitHub's prefilled "new file"
+ *                                     page on QUESTS_REPO
  *
  * Contributor statistics (step 7), recomputed from the files on every call:
  *   GET  /api/quests/stats            the scoreboard and every contributor's statistics
+ *
+ * Debate Quests (step 9) take entries the same ways (a position and an argument, never scored). After
+ * close, /:id/entries gives each argument; the app builds the evidence map with Claim Check
+ * (src/utils/questDebate.ts). GET /api/quests/:id also gives a Debate's recorded opening brief
+ * (quests/briefs/) and the results of the Forecast Quests it names as related.
  *
  * Digest (step 8):
  *   GET  /api/quests/digest           this week: closing soon, opening, results recorded, results due
@@ -37,7 +43,7 @@ import path from 'path';
 import type { Account } from '../../utils/auth';
 import { APP_ROOT, DATA_DIR } from '../config';
 import type { SeriesSet } from '../../utils/seriesHistory';
-import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type ForecastQuest, type Quest } from '../../utils/quests';
+import { questHorizon, questSeriesRefs, questSettlesOn, questStatus, questsEnabled, QUESTS_OFF_REASON, HORIZON_LABEL, type DebateQuest, type ForecastQuest, type Quest } from '../../utils/quests';
 import { describeRule, type QuestSeriesRef as QuestSeriesRefLike } from '../../utils/questRules';
 import { questSeriesDef } from '../../utils/questSeries';
 import { loadQuests } from '../../utils/questStore';
@@ -45,9 +51,10 @@ import { classTable, countedEntries, entryProblems, practiceWindow, scoreEntry, 
 import { appendEntry, entryFilePath, loadEntries } from '../../utils/questEntryStore';
 import { scoreLevel, scoreProbability, type Point } from '../../utils/questScoring';
 import type { OfficialHistoryFile } from '../../utils/officialHistory';
-import { resolveForecast, resultState, type ResolutionLine, type SeriesData } from '../../utils/questResolve';
+import { describeOutcome, resolveForecast, resultState, type ResolutionLine, type SeriesData } from '../../utils/questResolve';
 import { loadResolutions, resolutionsPath } from '../../utils/questResolveStore';
-import type { EntryScore } from '../../utils/questEntries';
+import type { EntryQuest, EntryScore } from '../../utils/questEntries';
+import { readBrief } from '../../utils/questBriefStore';
 import { countedPublicEntries, entryFileText, entryPath, entrySpread, isEntrantName, newFileUrl, publicEntryProblems, type PublicEntry } from '../../utils/questPublicEntries';
 import { loadPublicEntries } from '../../utils/questPublicEntryStore';
 import { computeStats } from '../../utils/questStats';
@@ -159,8 +166,15 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const found = loadQuests(dir).find((x) => x.quest.id === id);
     return found && found.quest.type === 'forecast' ? { quest: found.quest as ForecastQuest, hash: found.hash } : null;
   };
+  /** A Quest that takes entries: Forecast or Debate. */
+  const entryQuestById = (id: string) => {
+    const found = loadQuests(dir).find((x) => x.quest.id === id);
+    return found && (found.quest.type === 'forecast' || found.quest.type === 'debate') ? { quest: found.quest as EntryQuest, hash: found.hash, approved: found.approved } : null;
+  };
   const scoreAll = async (entries: QuestEntry[], today: string) => {
-    const quests = new Map(loadQuests(dir).filter((x) => x.quest.type === 'forecast').map((x) => [x.quest.id, x.quest as ForecastQuest]));
+    const all = loadQuests(dir);
+    const quests = new Map(all.filter((x) => x.quest.type === 'forecast').map((x) => [x.quest.id, x.quest as ForecastQuest]));
+    const debates = new Map(all.filter((x) => x.quest.type === 'debate').map((x) => [x.quest.id, x.quest]));
     const recorded = loadResolutions(resultsFile).lines;
     const cache = new Map<string, Promise<Point[] | { reason: string }>>();
     const get = (ref: QuestSeriesRefLike) => {
@@ -170,6 +184,8 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     };
     return Promise.all(
       entries.map(async (entry) => {
+        const debate = debates.get(entry.questId);
+        if (debate) return { entry, title: debate.title, score: { status: 'debate' as const, note: 'Debate Quests are argued, not scored' } as EntryScore };
         const quest = quests.get(entry.questId);
         if (!quest) return { entry, title: entry.questId, score: { status: 'unresolvable' as const, note: 'The Quest is no longer on file' } as EntryScore };
         const fromRecord = scoreFromRecord(entry, recorded);
@@ -191,7 +207,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const scored = await scoreAll(mine.map((x) => x.entry), today);
     const counted = new Set(
       [...new Set(mine.map((x) => x.entry.questId))].flatMap((qid) => {
-        const q = forecastById(qid)?.quest;
+        const q = entryQuestById(qid)?.quest;
         return q ? countedEntries(mine.map((x) => x.entry), q).map((e) => e.id) : [];
       }),
     );
@@ -211,7 +227,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const today = todayIso();
     const all = loadEntries(entryFile).entries.map((x) => x.entry).filter((e) => e.group === code);
     const counted = [...new Set(all.map((e) => e.questId))].flatMap((qid) => {
-      const q = forecastById(qid)?.quest;
+      const q = entryQuestById(qid)?.quest;
       return q ? countedEntries(all, q) : [];
     });
     const scored = await scoreAll(counted, today);
@@ -250,7 +266,9 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (!enabled()) return off(res);
     const rec = loadResolutions(resultsFile);
     if (rec.brokenAt !== -1) return res.json({ enabled: true, error: `The results record is broken at line ${rec.brokenAt + 1}, so no statistics are shown until it is restored` });
-    const quests = loadQuests(dir).filter((x) => x.quest.type === 'forecast').map((x) => ({ quest: x.quest as ForecastQuest, approved: x.approved }));
+    const quests = loadQuests(dir)
+      .filter((x) => x.quest.type === 'forecast' || x.quest.type === 'debate')
+      .map((x) => ({ quest: x.quest as ForecastQuest | DebateQuest, approved: x.approved }));
     res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir) }) });
   });
 
@@ -284,24 +302,27 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
 
   app.get('/api/quests/:id/entries', async (req, res) => {
     if (!enabled()) return off(res);
-    const found = forecastById(req.params.id);
-    if (!found) return res.status(404).json({ enabled: true, error: 'No forecast Quest with that id' });
+    const found = entryQuestById(req.params.id);
+    if (!found) return res.status(404).json({ enabled: true, error: 'No forecast or debate Quest with that id' });
     const q = found.quest;
     const today = todayIso();
     const counted = countedPublicEntries(loadPublicEntries(dir), q.id, q.version);
     if (today <= q.closesOn) {
       return res.json({ enabled: true, open: true, count: counted.length, note: `Entries are not shown until they close on ${q.closesOn}, so nobody can copy the crowd here. (Pull requests on GitHub are public.)` });
     }
+    if (q.type === 'debate') {
+      return res.json({ enabled: true, open: false, count: counted.length, answer: 'position', entries: counted.map((e) => ({ login: e.login, n: e.n, via: e.via, answer: e.answer, rationale: e.rationale })) });
+    }
     const scored = (await scoreAll(counted.map(asEntry), today)).map((x, i) => ({ login: counted[i].login, n: counted[i].n, via: counted[i].via, answer: counted[i].answer, rationale: counted[i].rationale, score: x.score }));
-    const values = counted.map((e) => ('level' in e.answer ? e.answer.level : e.answer.probability));
+    const values = counted.map((e) => ('level' in e.answer ? e.answer.level : 'probability' in e.answer ? e.answer.probability : NaN)).filter((v) => Number.isFinite(v));
     res.json({ enabled: true, open: false, count: counted.length, entries: scored, spread: entrySpread(values), answer: q.rule.kind === 'level' ? 'level' : 'probability' });
   });
 
   app.get('/api/quests/:id/draft-entry', (req, res) => {
     if (!enabled()) return off(res);
-    const found = loadQuests(dir).find((x) => x.quest.id === req.params.id && x.quest.type === 'forecast');
-    if (!found) return res.status(404).json({ enabled: true, error: 'No forecast Quest with that id' });
-    const q = found.quest as ForecastQuest;
+    const found = entryQuestById(req.params.id);
+    if (!found) return res.status(404).json({ enabled: true, error: 'No forecast or debate Quest with that id' });
+    const q = found.quest;
     const repo = repoOf();
     if (!repo) return res.json({ enabled: true, error: 'Public entries are not set up on this copy: QUESTS_REPO (the public repository, owner/name) is not set. Use Log privately instead.' });
     const login = String(req.query.login || '').trim();
@@ -313,7 +334,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const mine = loadPublicEntries(dir).filter((e) => e.questId === q.id && e.login === login);
     const n = mine.reduce((m, e) => Math.max(m, e.n), 0) + 1;
     const rationale = typeof req.query.rationale === 'string' && req.query.rationale.trim() ? req.query.rationale.trim() : undefined;
-    const answer = q.rule.kind === 'level' ? { level: Number(req.query.level) } : { probability: Number(req.query.probability) };
+    const answer = q.type === 'debate' ? { position: Number(req.query.position) } : q.rule.kind === 'level' ? { level: Number(req.query.level) } : { probability: Number(req.query.probability) };
     const entry: PublicEntry = { questId: q.id, questVersion: q.version, questHash: found.hash, login, n, answer, ...(rationale ? { rationale } : {}), via: 'pull-request' };
     const rel = entryPath(q.id, login, n);
     const problems = publicEntryProblems(entry, rel, { quest: q, hash: found.hash, approved: true });
@@ -370,8 +391,8 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
   app.post('/api/quests/:id/private', (req, res) => {
     if (!enabled()) return off(res);
     if (deps.refuseRemoteChange?.(req, res)) return;
-    const found = forecastById(req.params.id);
-    if (!found) return res.status(404).json({ enabled: true, error: 'Only forecast Quests take entries' });
+    const found = entryQuestById(req.params.id);
+    if (!found) return res.status(404).json({ enabled: true, error: 'Only forecast and debate Quests take entries' });
     const today = todayIso();
     const body = (req.body || {}) as Partial<QuestEntryInput>;
     const input: Partial<QuestEntryInput> = {
@@ -381,7 +402,8 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     };
     const problems = entryProblems(input, found.quest, today);
     if (problems.length) return res.status(400).json({ enabled: true, error: problems.join('; ') });
-    const a = input.answer as { probability?: number; level?: number };
+    const a = input.answer as { probability?: number; level?: number; position?: number };
+    const q = found.quest;
     const entry = appendEntry(entryFile, {
       id: crypto.randomUUID(),
       questId: found.quest.id,
@@ -389,12 +411,25 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       questHash: found.hash,
       author: authorOf(res),
       loggedAt: new Date().toISOString(),
-      answer: found.quest.rule.kind === 'level' ? { level: Number(a.level) } : { probability: Number(a.probability) },
+      answer: q.type === 'debate' ? { position: Number(a.position) } : q.rule.kind === 'level' ? { level: Number(a.level) } : { probability: Number(a.probability) },
       ...(input.rationale ? { rationale: input.rationale } : {}),
       ...(input.group ? { group: input.group } : {}),
     });
     res.json({ enabled: true, entry });
   });
+
+  /** A Debate's recorded opening brief and the results of the Forecast Quests it names as related. */
+  const debateExtras = (q: DebateQuest) => {
+    const all = loadQuests(dir);
+    const lines = loadResolutions(resultsFile).lines;
+    const related = (q.related ?? []).map((rid) => {
+      const r = all.find((x) => x.quest.id === rid && x.approved);
+      if (!r) return { questId: rid, title: rid, result: 'Not an approved Quest on file' };
+      const st = resultState(lines, r.quest.id, r.quest.version);
+      return { questId: rid, title: r.quest.title, result: st.state === 'none' ? `No result yet (due ${questSettlesOn(r.quest)})` : describeOutcome(st.line) };
+    });
+    return { brief: readBrief(dir, q.id, q.version), related };
+  };
 
   app.get('/api/quests/:id', async (req, res) => {
     if (!enabled()) return off(res);
@@ -429,6 +464,7 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
       fallback: q.type === 'forecast' ? (q.fallback === 'unresolvable' ? 'If the series has no value, the Quest is Unresolvable.' : `If the series has no value: ${describeRule(q.fallback.rule)}`) : undefined,
       figures,
       result: resultState(loadResolutions(resultsFile).lines, q.id, q.version),
+      ...(q.type === 'debate' ? debateExtras(q) : {}),
     });
   });
 }

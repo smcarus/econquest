@@ -12,6 +12,7 @@
  *   contrarian record  skill where the entry called the other outcome from the crowd's middle answer 12 such
  *   field strengths    skill by topic and by region                                                   8 in that field
  *   forward streak     settled Quests in a row with positive skill; shown, never ranked               5 settled
+ *   debates argued     the Debate Quests a person argued (step 9); listed, never scored or ranked     none
  *
  * Rankings: by skill score only, among people with 12 or more settled forecasts with a base rate,
  * whose GitHub account was at least 90 days old when their first Quest closed (emailed entries,
@@ -21,7 +22,7 @@
  *
  * Browser-safe, pure.
  */
-import { questSettlesOn, type ForecastQuest } from './quests';
+import { questSettlesOn, type DebateQuest, type ForecastQuest } from './quests';
 import { countedPublicEntries, entrySpread, type PublicEntry } from './questPublicEntries';
 import { resultState, type ResolutionLine } from './questResolve';
 import { brier, mean, scoreLevel, scoreProbability } from './questScoring';
@@ -79,6 +80,8 @@ export interface ContributorStats {
   fields: Array<{ field: string; kind: 'topic' | 'region'; stat: Gated<number> }>;
   streak: Gated<number>;
   proposed: Array<{ questId: string; entries: number }>;
+  /** Debate Quests argued: listed, never scored or ranked. */
+  debates: Array<{ questId: string; title: string }>;
   /** Why the person is not on the scoreboard, when they are not. */
   unranked?: string;
   entries: ScoredEntry[];
@@ -152,7 +155,7 @@ function rankRows(rows: Array<{ login: string; skills: number[] }>, min: number,
 }
 
 export interface StatsInput {
-  quests: Array<{ quest: ForecastQuest; approved: boolean }>;
+  quests: Array<{ quest: ForecastQuest | DebateQuest; approved: boolean }>;
   entries: PublicEntry[];
   lines: ResolutionLine[];
   /** GitHub login -> account creation time (ISO), as looked up by npm run quests:stats. */
@@ -161,11 +164,20 @@ export interface StatsInput {
 
 export function computeStats({ quests, entries, lines, accounts }: StatsInput): QuestStats {
   const approved = quests.filter((q) => q.approved);
-  const byPerson = new Map<string, { entered: number; unresolvable: number; waiting: number; byTopic: Record<string, number>; byRegion: Record<string, number>; scored: ScoredEntry[]; firstClose: string }>();
+  const byPerson = new Map<string, { entered: number; unresolvable: number; waiting: number; byTopic: Record<string, number>; byRegion: Record<string, number>; scored: ScoredEntry[]; firstClose: string; debates: Array<{ questId: string; title: string }> }>();
+  const person = (login: string) => byPerson.get(login) || { entered: 0, unresolvable: 0, waiting: 0, byTopic: {}, byRegion: {}, scored: [], firstClose: '9999-12-31', debates: [] };
   let crowdSkills: number[] = [];
   for (const { quest } of approved) {
     const counted = countedPublicEntries(entries, quest.id, quest.version);
     if (!counted.length) continue;
+    if (quest.type === 'debate') {
+      for (const e of counted) {
+        const p = person(e.login);
+        p.debates.push({ questId: quest.id, title: quest.title });
+        byPerson.set(e.login, p);
+      }
+      continue;
+    }
     const st = resultState(lines, quest.id, quest.version);
     const probs = counted.filter((e) => 'probability' in e.answer).map((e) => (e.answer as { probability: number }).probability);
     const median = entrySpread(probs)?.median;
@@ -173,7 +185,7 @@ export function computeStats({ quests, entries, lines, accounts }: StatsInput): 
       crowdSkills.push(brier(st.line.outcome.baseRate, st.line.outcome.happened) - brier(median, st.line.outcome.happened));
     }
     for (const e of counted) {
-      const p = byPerson.get(e.login) || { entered: 0, unresolvable: 0, waiting: 0, byTopic: {}, byRegion: {}, scored: [], firstClose: quest.closesOn };
+      const p = person(e.login);
       p.entered++;
       if (quest.closesOn < p.firstClose) p.firstClose = quest.closesOn;
       for (const t of quest.topics) p.byTopic[t] = (p.byTopic[t] || 0) + 1;
@@ -238,6 +250,7 @@ export function computeStats({ quests, entries, lines, accounts }: StatsInput): 
       fields: fields.map((f) => ({ field: f.field, kind: f.kind, stat: gate(f.xs.length, MIN.field, () => mean(f.xs) as number) })),
       streak: gate(scored.length, MIN.streak, () => streak),
       proposed: approved.filter((q) => q.quest.author === login).map((q) => ({ questId: q.quest.id, entries: countedPublicEntries(entries, q.quest.id, q.quest.version).length })),
+      debates: p.debates,
       ...(unranked ? { unranked } : {}),
       entries: scored,
     });

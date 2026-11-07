@@ -25,7 +25,8 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Public entries by pull request (`quests/entries/<id>/<login>.<n>.json`): Prepare entry in the app opens GitHub's prefilled page; the entry checker (`npm run quests:entries`, CI job `Quest entries`); replacements numbered and kept; emailed entries posted by a maintainer; entries hidden in the app until close, then shown with scores and the spread | Built and tested, switched off |
 | Contributor statistics and scoreboard: skill with a 90% range, beat no change, calibration, sharpness, record against the crowd, fields, streak, each shown only above its minimum; rankings after 12 settled forecasts and a 90-day-old GitHub account; seasons, all-time and field tables (`npm run quests:stats`, Scoreboard tab) | Built and tested, switched off |
 | Quest generator (`npm run quests:generate`: weekly Brent and currency Quests, monthly policy-rate Quests, as drafts), batch approval (`npm run quests:approve`), weekly digest (`npm run quests:digest`) and "This week" on the Quests page | Built and tested, switched off |
-| Debate, signal and replication workflows | Not built |
+| Debate Quests: pick a position and argue it (privately, by pull request or by email); Claim Check reads each argument as it is written; an opening brief written once by the app's AI model (`npm run quests:brief`), which may state no figures of its own; an evidence map after close with the results of related Forecast Quests, exported as Markdown; debates argued listed on each contributor's page, never scored | Built and tested, switched off |
+| Signal and replication workflows | Not built |
 | Preference profiles | Not built |
 | Health page and yearly dataset | Not built |
 
@@ -83,6 +84,21 @@ For the maintainer:
 - A pull request that only adds entries skips the full CI and runs only the short `Quest entries` job.
 - Set `QUESTS_REPO` (owner/name of the public repository) for Prepare entry to work; without it the app offers only Log privately.
 
+## Debate Quests
+
+Some questions have no single figure that settles them: "What would most reliably rebuild Egypt's foreign reserves?" A Debate Quest lists two to four positions. Nobody is scored and no position is ever called right. The point is to argue in public with the evidence, and to see afterwards what the figures showed.
+
+How it works, step by step:
+
+1. **The question.** A maintainer approves the Debate Quest like any other (`npm run quests:approve`). It can name related Forecast Quests in a `related` list, for example a Quest on whether reserves rise by a date; their results are shown with the debate later.
+2. **The opening brief.** Before entries open, the maintainer runs `npm run quests:brief -- --by <login> <id>` on the computer with Ollama. The app's own AI model (the referee model, 32B or larger, at temperature 0 and seed 42) writes, for each position, its strongest case, its weakest point and which figures in the app to check. The brief may not state any number of its own (a word with a digit that is not already in the Quest's own words makes the script refuse it, and nothing is written), because every figure in the app comes from a feed, never from a model. The brief is saved in `quests/briefs/<id>.<version>.json` with its model, settings, date and fingerprint, labelled as written by the model, and never replaced. Commit it in a pull request.
+3. **Entries.** Anyone picks a position and writes an argument of at least 40 characters, citing the app's figures: privately in the app, by pull request (the entry file holds `"answer": { "position": 2 }` and the argument as `rationale`), or by email through a maintainer (`npm run quests:entries -- --email ~name ... --position 2 --rationale "..."`). The rules for public entries (above) apply unchanged: replacements are numbered and kept, the last one counts, entries are checked by CI.
+4. **Claim Check while writing.** As the argument is typed, Claim Check compares every figure it states (policy rate, inflation, government debt, primary balance, reserves, growth) and every ranking ("the highest in the G20") with the app's figure for the Quest's country, by fixed rules and no AI, so a wrong figure can be fixed before it is sent.
+5. **The evidence map.** Arguments are hidden in the app until entries close. Then the Quest page shows how many argued each position, each argument with its Claim Check readings, how many stated figures match or differ from the app's, and the results of the related Forecast Quests. **Export evidence map** downloads it as Markdown with the app's standing notice. Claim Check uses the app's figures on the day the map is opened, which may be newer than the argument.
+6. **Contributor pages** list the Debates a person argued. Debates never count towards any score or ranking.
+
+Conflict, unrest and casualty questions run only as Debate Quests.
+
 ## Making new Quests
 
 A steady flow of Quests keeps people coming back, so the app drafts routine ones for the maintainer to approve in a batch (`src/utils/questGenerator.ts`):
@@ -131,6 +147,7 @@ Working properly:
 - [ ] `QUESTS_REPO` set in `.env.example`, and on the public repository: Actions on, branch protection requiring the `Quest entries` check, the `QUESTS_MAINTAINERS` variable set
 - [ ] CONTRIBUTING gives the address for emailed entries
 - [ ] Scores match a hand calculation for at least three settled test Quests
+- [ ] An opening brief written with `npm run quests:brief` on the maintainer's computer for a test Debate Quest, read by the maintainer, and an evidence map exported after a test close
 - [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
 - [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
 - [ ] The UI smoke and journey tests cover the Quests page with Quests on and off
