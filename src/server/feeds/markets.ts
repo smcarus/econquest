@@ -155,10 +155,14 @@ export async function fetchGlobalLivePlumbing() {
 let tradeExposureCache: { at: number; value: Map<string, TradeExposure>; pending?: Promise<Map<string, TradeExposure>> } | null = null;
 async function fetchTradeExposureUncached(iso3s: string[]): Promise<Map<string, TradeExposure>> {
   const out = new Map<string, TradeExposure>(iso3s.map((i) => [i, {} as TradeExposure]));
+  // Ten countries per World Bank request, in catalog order, so each reply stays well inside one
+  // page and the first request is the same as before the G20 countries were added.
+  const batches: string[][] = [];
+  for (let i = 0; i < iso3s.length; i += 10) batches.push(iso3s.slice(i, i + 10));
   await Promise.all(
-    (Object.entries(WB_TRADE_INDICATORS) as Array<[WbTradeKey, string]>).map(async ([key, code]) => {
+    (Object.entries(WB_TRADE_INDICATORS) as Array<[WbTradeKey, string]>).flatMap(([key, code]) => batches.map(async (batch) => {
       try {
-        const res = await fetchWithTimeout(wbIndicatorUrl(iso3s, code), 8000);
+        const res = await fetchWithTimeout(wbIndicatorUrl(batch, code), 8000);
         if (!res.ok) return;
         for (const [iso, v] of parseWbLatest(await res.json())) {
           const t = out.get(iso);
@@ -169,7 +173,7 @@ async function fetchTradeExposureUncached(iso3s: string[]): Promise<Map<string, 
       } catch {
         // leave the figure missing
       }
-    })
+    }))
   );
   const thisYear = new Date().getUTCFullYear();
   const share = async (iso: string, partner: string, ind: WitsIndicator) => {

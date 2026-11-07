@@ -59,6 +59,12 @@ export const CBPOL_AREA: Record<string, string> = {
 /** In the list above but with no series in the BIS dataset (checked 2026-11-05). */
 export const CBPOL_NOT_COVERED = new Set(['EGY']);
 
+/**
+ * On the watchlist and published by the BIS, but kept out of CBPOL_AREA on purpose: the
+ * pre-registered policy-rate tests were fixed on that list, and adding countries would change them.
+ */
+export const CBPOL_NOT_PULLED = new Set(['AUS', 'CAN']);
+
 /** A rate older than this many days is shown with its date and flagged as stale. */
 export const CBPOL_STALE_DAYS = 45;
 /** Months of monthly history asked for. */
@@ -213,6 +219,12 @@ export function policyRateFor(iso3: string, pull: CbpolPull | null | undefined, 
 
 /** Why a country has no BIS policy rate: not in the dataset, or the feed did not answer. */
 export function cbpolMissing(iso3: string, pulled: boolean): { short: string; help: string } {
+  if (CBPOL_NOT_PULLED.has(iso3)) {
+    return {
+      short: 'Not pulled yet',
+      help: "Policy rates come from the Bank for International Settlements (BIS, the bank that central banks use). The BIS does publish this country's central bank rate, but the app does not download it yet: the app's tests of interest-rate signals were set up in advance on a fixed list of countries, and adding countries to that download would change those tests after the fact. You can add the central bank's published rate yourself through a data connector.",
+    };
+  }
   if (!CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3)) {
     return { short: 'Not in BIS policy rates', help: 'The BIS central bank policy rates dataset has no series for this country, so there is no free official policy-rate figure.' };
   }

@@ -36,6 +36,16 @@ export const COMTRADE_REPORTERS: Record<string, number> = {
   GBR: 826,
   USA: 842,
   CHN: 156,
+  // The rest of the G20 (2026-11-07). Comtrade files France as 251 and Italy as 381, not 250 and 380.
+  ARG: 32,
+  AUS: 36,
+  CAN: 124,
+  FRA: 251,
+  DEU: 276,
+  ITA: 381,
+  KOR: 410,
+  RUS: 643,
+  SAU: 682,
 };
 
 /** Partners the scenarios ask about. Comtrade files Taiwan as "Other Asia, nes" (490). */
