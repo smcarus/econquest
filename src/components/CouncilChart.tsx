@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
-import { Download, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
+import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
 import { TRANSFORM_LABEL, type Transform } from '../utils/stats';
@@ -44,6 +44,16 @@ function downloadCsv(result: ChartResult) {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `${result.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 60) || 'chart'}.csv`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/** Data plus Python, R and Stata scripts that redo the chart's tests (src/utils/replicationPack.ts); loaded on demand. */
+async function downloadPack(result: ChartResult) {
+  const { replicationZip } = await import('../utils/replicationPack');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([replicationZip(result) as BlobPart], { type: 'application/zip' }));
+  a.download = `${fileStem(result.title)}-replication.zip`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
@@ -326,6 +336,16 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(result)} disabled={(!result.lines.length && !result.scatter?.pairs.length) || Boolean(blocked)} title={blocked ?? undefined}>
             <Download className="w-3.5 h-3.5" /> CSV
           </button>
+          <button
+            type="button"
+            className="ui-btn ui-btn-ghost"
+            onClick={() => void downloadPack(result)}
+            disabled={(!result.lines.length && !result.scatter?.pairs.length) || Boolean(blocked)}
+            title={blocked ?? 'Download the data with Python, R and Stata scripts that redo these tests, and the app\'s figures to check against'}
+            data-council-chart-pack="true"
+          >
+            <FileArchive className="w-3.5 h-3.5" /> Replication pack
+          </button>
         </div>
       </header>
       {blocked && <p className="text-xs text-amber-700 dark:text-amber-400" data-council-chart-blocked="true">{blocked}</p>}
@@ -343,6 +363,9 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
               <div className="flex items-center gap-1">
                 <button type="button" className="ui-btn ui-btn-ghost" onClick={() => downloadCsv(view)} disabled={!view.lines.length && !view.scatter?.pairs.length}>
                   <Download className="w-3.5 h-3.5" /> CSV
+                </button>
+                <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void downloadPack(view)} disabled={(!view.lines.length && !view.scatter?.pairs.length) || Boolean(blocked)} title={blocked ?? undefined}>
+                  <FileArchive className="w-3.5 h-3.5" /> Replication pack
                 </button>
                 <button type="button" className="ui-btn" onClick={() => setOpen(false)} aria-label="Close chart">
                   <X className="w-3.5 h-3.5" />

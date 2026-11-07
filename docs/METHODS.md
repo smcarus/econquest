@@ -61,6 +61,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Unit converters | Research | Stated method, no call to test | Not applicable |
 | Exercises with answer keys | Research | Stated method, no call to test | Not applicable |
 | Model sandboxes | Research | Stated method, no call to test | Not applicable |
+| Replication pack | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -697,6 +698,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Output gap: log real GDP chained from IMF WEO growth outturns less an HP trend with any lambda (100 yearly, 6.25 Ravn-Uhlig), against the Hamilton (2018) regression residual with any horizon h; at least 15 unbroken years.
 - **Limits:** Illustration of the formulas, not a forecast: every term is held constant over the horizon and nothing feeds back. A starting value the app does not have reads Missing and the sandbox waits until it is set. IMF projections are never used for the filters.
 - **Code:** `src/utils/modelSandboxes.ts`
+
+### Replication pack
+
+- **Shows in:** Council chat > a Chart Agent chart > Replication pack
+- data.csv holds the lines the chart drew, one row per date (or country, x, y for a chart across countries); trend lines the HP test adds are left out and recomputed.
+- replicate.py, replicate.R and replicate.do run the tests the chart ran on the first two columns, on the rows where both have a value: correlation, OLS regression, lead/lag (up to 1.5 years of rows either way), Granger F test, rolling correlation (3 years of rows, at least 8), ADF with a constant and its lag chosen by AIC on one sample (MacKinnon 2010 critical values), the HP filter as a linear solve with the app's lambda, and where the first line stands.
+- The README lists each column with its label, unit, source and credit, the settings, and the app's readings and figures to check against.
+- **Limits:** A saved chart keeps its latest 600 points per line; the app ran its tests on every point, so a longer sample can give slightly different figures (the README says so when it applies). The Python and R scripts were checked against the app's figures; the Stata script follows the same steps.
+- **Code:** `src/utils/replicationPack.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 
