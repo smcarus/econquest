@@ -220,7 +220,7 @@ From the terms:
 
 ### FRED (St. Louis Fed): 10Y government yields from the OECD
 
-- **Used for:** 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, Germany, India (all OECD series on FRED)
+- **Used for:** 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Sharing unclear. The OECD owns the series; FRED says to ask the owner before any use beyond personal use.
 - **Terms read:** [FRED legal](https://fred.stlouisfed.org/legal/); [FRED API terms](https://fred.stlouisfed.org/docs/api/terms_of_use.html); [Example series: Mexico 10Y](https://fred.stlouisfed.org/series/IRLTLT01MXM156N) (checked 2026-11-06)

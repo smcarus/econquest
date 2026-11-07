@@ -8,7 +8,8 @@
  * Two routes to the same data: the official FRED API when FRED_API_KEY is set (free key from
  * fred.stlouisfed.org), otherwise the website's no-key CSV download.
  *
- * Coverage is OECD members only. Brazil comes from the Treasury's own Tesouro Direto file
+ * Coverage is OECD members plus India (an OECD partner). Colombia and Slovenia are left out: their
+ * FRED pages gave no data when checked on 2026-11-07. Brazil comes from the Treasury's own Tesouro Direto file
  * (see `parseTesouroDiretoLatest`). Countries with no verified free source (for example Turkey,
  * Indonesia, Egypt) keep the AI estimate or sample value, and are labelled as such.
  */
@@ -73,6 +74,32 @@ export const FRED_10Y_SERIES: Record<string, string> = {
   GBR: 'IRLTLT01GBM156N',
   POL: 'IRLTLT01PLM156N',
   CHL: 'IRLTLT01CLM156N',
+  // Added 2026-11-07 (gap analysis D2); each series page checked live that day, latest month Jun to Sep 2026.
+  DEU: 'IRLTLT01DEM156N',
+  FRA: 'IRLTLT01FRM156N',
+  ITA: 'IRLTLT01ITM156N',
+  ESP: 'IRLTLT01ESM156N',
+  NLD: 'IRLTLT01NLM156N',
+  BEL: 'IRLTLT01BEM156N',
+  AUT: 'IRLTLT01ATM156N',
+  PRT: 'IRLTLT01PTM156N',
+  IRL: 'IRLTLT01IEM156N',
+  GRC: 'IRLTLT01GRM156N',
+  FIN: 'IRLTLT01FIM156N',
+  CAN: 'IRLTLT01CAM156N',
+  AUS: 'IRLTLT01AUM156N',
+  NZL: 'IRLTLT01NZM156N',
+  CHE: 'IRLTLT01CHM156N',
+  SWE: 'IRLTLT01SEM156N',
+  NOR: 'IRLTLT01NOM156N',
+  DNK: 'IRLTLT01DKM156N',
+  CZE: 'IRLTLT01CZM156N',
+  HUN: 'IRLTLT01HUM156N',
+  ISR: 'IRLTLT01ILM156N',
+  KOR: 'IRLTLT01KRM156N',
+  SVK: 'IRLTLT01SKM156N',
+  // India is an OECD partner; FRED files it under a different id pattern.
+  IND: 'INDIRLTLT01STM',
 };
 
 /** US 10Y Treasury, OECD monthly average on FRED: the benchmark for spreads over Treasuries. */

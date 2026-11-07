@@ -245,7 +245,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'fred',
     name: 'FRED (St. Louis Fed): 10Y government yields from the OECD',
-    usedFor: '10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, Germany, India (all OECD series on FRED)',
+    usedFor: '10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
     terms: [
       { label: 'FRED legal', url: 'https://fred.stlouisfed.org/legal/' },
       { label: 'FRED API terms', url: 'https://fred.stlouisfed.org/docs/api/terms_of_use.html' },
