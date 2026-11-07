@@ -13,7 +13,7 @@ import { bcrpEmbigUrl, describeBcrpReply, type HcSpreadPull, parseBcrpEmbig } fr
 import { describeNetworkError } from '../../utils/connectionCheck';
 import { evdsSeriesUrl, FRED_10Y_SERIES, fredApiUrl, fredCsvUrl, isValidEvdsSeriesCode, type OfficialYieldObservation, parseEvdsLatest, parseFredApiLatest, parseFredCsvLatest, parseTesouroDiretoLatest, TESOURO_DIRETO_CSV_URL, US_10Y_SERIES } from '../../utils/officialYields.ts';
 import { fetchJsonWithTimeout, fetchTextWithTimeout, fetchWithTimeout } from '../http';
-import { frankfurterSeriesUrl, type FxVol, parseEffr, parseFxVol, parseReer, parseReerMonthly, type ReerGap, reerLongUrl, reerUrl } from '../../utils/fxValuation';
+import { type Effr, frankfurterSeriesUrl, type FxVol, parseEffr, parseFredDff, parseFxVol, parseReer, parseReerMonthly, type ReerGap, reerLongUrl, reerUrl } from '../../utils/fxValuation';
 import { lsegSnapshotUrl, lsegTokenRequest, type OwnCdsQuote, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from '../../utils/ownCds';
 import { type DebtSchedule, idsUrl, parseIds, parseQeds, qedsUrl } from '../../utils/debtSchedule';
 import { writeFileAtomic } from '../../utils/atomicWrite';
@@ -438,16 +438,29 @@ export async function fetchFxValuation(iso3: string, ccy: string): Promise<FxVal
   return pending;
 }
 
-/** US effective federal funds rate (NY Fed), the dollar leg of carry. 6h cache. */
-export let effrCache: { at: number; value: { pct: number; date: string } | null; fallback?: boolean } | null = null;
-export async function fetchEffr(): Promise<{ pct: number; date: string } | null> {
+/**
+ * US effective federal funds rate, the dollar leg of carry. 6h cache. From the NY Fed; when the NY
+ * Fed does not answer (its API sometimes redirects every call to an error page), the same rate as
+ * FRED republishes it (series DFF, no key), labelled as such. Only when both fail is the saved
+ * figure used.
+ */
+export let effrCache: { at: number; value: Effr | null; fallback?: boolean } | null = null;
+export async function fetchEffr(): Promise<Effr | null> {
   if (effrCache && Date.now() - effrCache.at < (effrCache.value && !effrCache.fallback ? 6 : 1) * 60 * 60 * 1000) return effrCache.value;
-  let value: { pct: number; date: string } | null = null;
+  let value: Effr | null = null;
   try {
     const res = await fetchWithTimeout('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json', 4000);
-    if (res.ok) value = parseEffr(await res.json());
+    if (res.ok) value = parseEffr(await res.json().catch(() => null));
   } catch {
     value = null;
+  }
+  if (!value) {
+    try {
+      const res = await fetchWithTimeout(fredCsvUrl('DFF'), 6000);
+      if (res.ok) value = parseFredDff(await res.text());
+    } catch {
+      value = null;
+    }
   }
   const fallback = !value;
   if (value) {

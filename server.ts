@@ -1011,7 +1011,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...catItem,
           ...(fx.reer ? { reerGapPct: fx.reer.gapPct, reerPeriod: fx.reer.period } : {}),
           ...(fx.vol ? { fxVol3mPct: fx.vol.volPct, fxVolTo: fx.vol.to } : {}),
-          ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date } : {}),
+          ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date, ...(effr.source ? { usFedFundsSource: effr.source } : {}) } : {}),
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),

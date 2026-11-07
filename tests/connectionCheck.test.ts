@@ -4,7 +4,7 @@
  */
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { checkConnections, describeNetworkError, formatReport, type FetchFn } from '../src/utils/connectionCheck.ts';
+import { checkConnections, describeNetworkError, formatReport, isErrorPageRedirect, type FetchFn } from '../src/utils/connectionCheck.ts';
 import { imfFetch } from './helpers/imfFixtures.ts';
 import { makeXlsx, pinkSheetRows } from './helpers/makeXlsx.ts';
 
@@ -300,4 +300,21 @@ test('OECD: own headers on every call, and a Cloudflare bot check reads as that,
     assert.equal(s.headers.Accept, 'application/json');
     assert.match(s.headers['User-Agent'], /^EconQuest\//);
   }
+});
+
+test('a redirect to the source own error page reads as a site error, not a format change', async () => {
+  const down: FetchFn = async (url, init) => {
+    if (url.includes('markets.newyorkfed.org')) {
+      const res = new Response('<html><body>Something went wrong</body></html>', { status: 200 });
+      Object.defineProperty(res, 'url', { value: 'https://www.newyorkfed.org/errors/500' });
+      return res;
+    }
+    return healthy(url, init);
+  };
+  const { row } = await byId({ env: {}, fetchFn: down, only: ['nyfed'] });
+  assert.equal(row('nyfed').state, 'refused');
+  assert.match(row('nyfed').detail, /^Site error: .*errors\/500.*not a format change/);
+  assert.ok(isErrorPageRedirect('https://www.newyorkfed.org/errors/500'));
+  assert.ok(!isErrorPageRedirect('https://markets.newyorkfed.org/api/rates/unsecured/effr/last/1.json'));
+  assert.ok(!isErrorPageRedirect(undefined));
 });

@@ -17,7 +17,7 @@ import type { LiveWatchlistItem } from '../types/council';
 import { POLITICAL_FISCAL_CATEGORIES, upcomingOfficialEvents } from '../data/officialCalendar';
 import { INFLATION_TARGETS } from './marketsMacro';
 import { formatPeriod } from './officialYields';
-import { carryToVol, reerLabel } from './fxValuation';
+import { carryToVol, effrSourceText, reerLabel } from './fxValuation';
 
 export type Quality = 'live' | 'estimate' | 'sample';
 export const QUALITY_WEIGHT: Record<Quality, number> = { live: 1, estimate: 0.7, sample: 0.5 };
@@ -209,7 +209,7 @@ export function carrySignal(it: LiveWatchlistItem): Divergence | null {
     headline: `Policy rate ${cv.carryPts.toFixed(1)} pts over the US, ${cv.ratio.toFixed(2)} times the currency's ${it.fxVol3mPct.toFixed(1)}% three-month volatility.`,
     evidence: [
       { text: `Policy rate ${it.policyRatePct.toFixed(2)}%`, source: pr.src },
-      { text: `US fed funds ${it.usFedFundsPct.toFixed(2)}%`, source: `NY Fed${it.usFedFundsDate ? `, ${it.usFedFundsDate}` : ''}` },
+      { text: `US fed funds ${it.usFedFundsPct.toFixed(2)}%`, source: effrSourceText({ source: it.usFedFundsSource, date: it.usFedFundsDate }) },
       { text: `Volatility ${it.fxVol3mPct.toFixed(1)}%`, source: `ECB rates${it.fxVolTo ? `, to ${it.fxVolTo}` : ''}` },
     ],
     soWhat: 'Holding the currency earns more than its recent swings would usually take away. Carry can unwind fast when markets turn.',

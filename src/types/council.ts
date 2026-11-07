@@ -542,6 +542,8 @@ export interface WatchlistItem {
   /** US effective federal funds rate (NY Fed), for carry. */
   usFedFundsPct?: number;
   usFedFundsDate?: string;
+  /** Where the fed funds rate came from: the New York Fed API, or FRED (DFF) when that was down. */
+  usFedFundsSource?: 'nyfed' | 'fred';
   /** CFTC currency futures positioning (utils/cftcPositioning.ts), with the date the app pulled it. */
   cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
   /** TIC holdings of US Treasuries (utils/ticHoldings.ts), with the date the app pulled them. */
