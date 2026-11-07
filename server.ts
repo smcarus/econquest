@@ -4501,7 +4501,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       const activeProviderLabel =
         geoResult?.providerUsed ||
         sovResult?.providerUsed ||
-        `Google AI Studio (${geminiModel(runtimeConfig, process.env)})`;
+        `Google Gemini (${geminiModel(runtimeConfig, process.env)})`;
       baseRun.runtimeUsed = `${activeProviderLabel} · Grounding: ${
         searchGroundingLinks.length > 0
           ? `${searchGroundingLinks.length} Live Web + ${liveSnapshot.liveApiSourcesActive.length} API Feeds`

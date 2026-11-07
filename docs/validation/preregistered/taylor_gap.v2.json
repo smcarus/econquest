@@ -2,7 +2,7 @@
   "id": "taylor_gap",
   "version": 2,
   "registeredOn": "2026-11-05",
-  "registeredBy": "Sam (owner), drafted by Claude; registered before any run of this version",
+  "registeredBy": "Sam (owner); registered before any run of this version",
   "hypothesis": "With an output gap in the rule, when the policy rate sits more than 1 point above it (tight) the central bank cuts within 6 months more often than in any month, and when it sits more than 1 point below (loose) it hikes within 6 months more often than in any month; the edge survives counting cases in the same year as one block and holds in most countries.",
   "method": "taylor_gap",
   "framework": 2,

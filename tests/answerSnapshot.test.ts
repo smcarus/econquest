@@ -58,7 +58,7 @@ test('saved snapshots load back, verify, and an edit after saving shows', () => 
 
 test('modelFromProvider reads the model tag', () => {
   assert.equal(modelFromProvider('Local Ollama (qwen2.5:32b · Referee)'), 'qwen2.5:32b');
-  assert.equal(modelFromProvider('Google AI Studio (gemini-3.8-flash)'), 'gemini-3.8-flash');
+  assert.equal(modelFromProvider('Google Gemini (gemini-3.8-flash)'), 'gemini-3.8-flash');
   assert.equal(modelFromProvider(undefined), null);
 });
 

@@ -2,7 +2,7 @@
   "id": "rule_family",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Drafted by Claude under Sam's signal standard (2026-11-06); registered before any run",
+  "registeredBy": "Drafted under Sam's signal standard (2026-11-06); registered before any run",
   "hypothesis": "When the policy rate sits more than 1 point above every rule in the Policy rules panel (Taylor 1993, balanced approach, inflation only, inertial 0.85, first difference), the central bank cuts within 6 months more often than after any month; when it sits more than 1 point below every rule, it hikes within 6 months more often than after any month. The edge survives counting cases in the same year as one block and holds in most countries.",
   "method": "rule_family",
   "framework": 2,

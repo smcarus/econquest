@@ -3,7 +3,6 @@ node_modules
 dist
 .git
 .github
-.aistudio
 .env
 .env.*
 !.env.example

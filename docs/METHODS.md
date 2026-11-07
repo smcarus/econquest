@@ -104,8 +104,8 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/taylor_gap.json`, registered 2026-11-05, method 1, cases counted as independent, sample from 2000-01). When the policy rate sits more than 1 point above a simple Taylor rule (tight), the central bank cuts within 6 months more often than in any month; when it sits more than 1 point below (loose), it hikes within 6 months more often than in any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05. SHA-256 960be86bbdb1f618…
-- Version 2 (`docs/validation/preregistered/taylor_gap.v2.json`, registered 2026-11-05, method 2, whole years resampled, sample from 2000-01). With an output gap in the rule, when the policy rate sits more than 1 point above it (tight) the central bank cuts within 6 months more often than in any month, and when it sits more than 1 point below (loose) it hikes within 6 months more often than in any month; the edge survives counting cases in the same year as one block and holds in most countries. A re-test of version 1, which failed (61 of 161 = 37.9% against 34.8%, lift 3.1 points, p 0.23); what changed: Adds the output-gap term of Taylor (1993), 0.5 x gap, that version 1 left out and listed as its first known limit. The gap is the app's real-time estimate (one-sided Hodrick-Prescott, lambda 100, on IMF real GDP growth outturns up to each year), and year t is used only from April of t+1. Everything else is as in version 1, and the verdict is by method 2. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 18cb3f00401c9fdf…
+- Version 1 (`docs/validation/preregistered/taylor_gap.json`, registered 2026-11-05, method 1, cases counted as independent, sample from 2000-01). When the policy rate sits more than 1 point above a simple Taylor rule (tight), the central bank cuts within 6 months more often than in any month; when it sits more than 1 point below (loose), it hikes within 6 months more often than in any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05. SHA-256 0dcd2ef9ac2917a3…
+- Version 2 (`docs/validation/preregistered/taylor_gap.v2.json`, registered 2026-11-05, method 2, whole years resampled, sample from 2000-01). With an output gap in the rule, when the policy rate sits more than 1 point above it (tight) the central bank cuts within 6 months more often than in any month, and when it sits more than 1 point below (loose) it hikes within 6 months more often than in any month; the edge survives counting cases in the same year as one block and holds in most countries. A re-test of version 1, which failed (61 of 161 = 37.9% against 34.8%, lift 3.1 points, p 0.23); what changed: Adds the output-gap term of Taylor (1993), 0.5 x gap, that version 1 left out and listed as its first known limit. The gap is the app's real-time estimate (one-sided Hodrick-Prescott, lambda 100, on IMF real GDP growth outturns up to each year), and year t is used only from April of t+1. Everything else is as in version 1, and the verdict is by method 2. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 eab6b716189c7258…
 
 **Recorded verdicts**
 
@@ -140,7 +140,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/cli_turn_policy.json`, registered 2026-11-05, method 1, cases counted as independent, sample from 1995-01). After an OECD leading-indicator peak (trough), the central bank cuts (hikes) within 6 months more often than it does after any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05. SHA-256 a219b147a121f02f…
+- Version 1 (`docs/validation/preregistered/cli_turn_policy.json`, registered 2026-11-05, method 1, cases counted as independent, sample from 1995-01). After an OECD leading-indicator peak (trough), the central bank cuts (hikes) within 6 months more often than it does after any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05. SHA-256 a991477f71db0592…
 
 **Recorded verdicts**
 
@@ -167,8 +167,8 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/cftc_crowding.json`, registered 2026-11-05, method 1, cases counted as independent, sample from 2007-06-01). When leveraged-fund positioning in a currency future becomes crowded (top or bottom 10% of the past three years), it comes back by 3 points of open interest within 8 weeks more often than after any week. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05. SHA-256 9adbe66e570e1716…
-- Version 2 (`docs/validation/preregistered/cftc_crowding.v2.json`, registered 2026-11-05, method 2, whole years resampled, sample from 2007-06-01). When leveraged-fund positioning in a currency future becomes crowded (top or bottom 10% of the past three years), it comes back by 3 points of open interest within 8 weeks more often than after any week, and the edge survives counting cases in the same year as one block and holds in most currencies. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 f37296987185d533…
+- Version 1 (`docs/validation/preregistered/cftc_crowding.json`, registered 2026-11-05, method 1, cases counted as independent, sample from 2007-06-01). When leveraged-fund positioning in a currency future becomes crowded (top or bottom 10% of the past three years), it comes back by 3 points of open interest within 8 weeks more often than after any week. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05. SHA-256 d2f50657b535fe15…
+- Version 2 (`docs/validation/preregistered/cftc_crowding.v2.json`, registered 2026-11-05, method 2, whole years resampled, sample from 2007-06-01). When leveraged-fund positioning in a currency future becomes crowded (top or bottom 10% of the past three years), it comes back by 3 points of open interest within 8 weeks more often than after any week, and the edge survives counting cases in the same year as one block and holds in most currencies. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 f7d9a4599a2f16df…
 
 **Recorded verdicts**
 
@@ -236,7 +236,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/regime_quadrant.json`, registered 2026-11-06, method 2, whole years resampled, sample from 1995-01). When growth and inflation are both rising (the leading indicator up over 6 months and y/y inflation up over 3 months), the central bank hikes within 6 months more often than after any month; when both are falling, it cuts within 6 months more often than after any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 40ba9d4f466fc74b…
+- Version 1 (`docs/validation/preregistered/regime_quadrant.json`, registered 2026-11-06, method 2, whole years resampled, sample from 1995-01). When growth and inflation are both rising (the leading indicator up over 6 months and y/y inflation up over 3 months), the central bank hikes within 6 months more often than after any month; when both are falling, it cuts within 6 months more often than after any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 28f7aab1c7eb0634…
 
 **Recorded verdicts**
 
@@ -263,7 +263,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/cycle_clock.json`, registered 2026-11-06, method 2, whole years resampled, sample from 1995-01). Once the cycle clock reads hiking (a hike after a hold or a cut), another hike follows within 6 months more often than a hike follows any month; once it reads cutting, another cut follows within 6 months more often than a cut follows any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 f713f531fdfa4a48…
+- Version 1 (`docs/validation/preregistered/cycle_clock.json`, registered 2026-11-06, method 2, whole years resampled, sample from 1995-01). Once the cycle clock reads hiking (a hike after a hold or a cut), another hike follows within 6 months more often than a hike follows any month; once it reads cutting, another cut follows within 6 months more often than a cut follows any month. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 75fe942928029a51…
 
 **Recorded verdicts**
 
@@ -290,7 +290,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/timing_agent.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2007-06-01). When the Timing Agent flags an unwind setup (leveraged-fund positioning in a currency future crowded, top or bottom 10% of the past three years, and already 3 points of open interest back over 4 weeks), positioning comes back a further 3 points within 8 weeks more often than after any week. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 d4186b55db6ce925…
+- Version 1 (`docs/validation/preregistered/timing_agent.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2007-06-01). When the Timing Agent flags an unwind setup (leveraged-fund positioning in a currency future crowded, top or bottom 10% of the past three years, and already 3 points of open interest back over 4 weeks), positioning comes back a further 3 points within 8 weeks more often than after any week. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 abc80cc6cbb282a1…
 
 **Recorded verdicts**
 
@@ -449,7 +449,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/rule_family.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2000-01). When the policy rate sits more than 1 point above every rule in the Policy rules panel (Taylor 1993, balanced approach, inflation only, inertial 0.85, first difference), the central bank cuts within 6 months more often than after any month; when it sits more than 1 point below every rule, it hikes within 6 months more often than after any month. The edge survives counting cases in the same year as one block and holds in most countries. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 9ebb90ff9fbe3b90…
+- Version 1 (`docs/validation/preregistered/rule_family.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2000-01). When the policy rate sits more than 1 point above every rule in the Policy rules panel (Taylor 1993, balanced approach, inflation only, inertial 0.85, first difference), the central bank cuts within 6 months more often than after any month; when it sits more than 1 point below every rule, it hikes within 6 months more often than after any month. The edge survives counting cases in the same year as one block and holds in most countries. Pass mark: at least 30 cases, a lift of 10 points or more over the base rate, p at or below 0.05, a positive lift in at least 50% of series, at least 8 years. SHA-256 1fffb8f01b619ff9…
 
 **Recorded verdicts**
 
@@ -590,7 +590,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 **Pre-registered tests**
 
-- Version 1 (`docs/validation/preregistered/unrest_onset.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2018). In a country with no state-based armed conflict this year (UCDP/PRIO), a year with an unrest spike episode (protests or violence as a share of the country's GDELT events at 3 or more standard deviations above its own previous 24 months) is followed by armed conflict located in the country the next calendar year more often than quiet country-years in general. Pass mark: at least 30 cases, a lift of 3 points or more over the base rate, p at or below 0.05, at least 6 years. SHA-256 18f450717cf993d0…
+- Version 1 (`docs/validation/preregistered/unrest_onset.json`, registered 2026-11-06, method 2, whole years resampled, sample from 2018). In a country with no state-based armed conflict this year (UCDP/PRIO), a year with an unrest spike episode (protests or violence as a share of the country's GDELT events at 3 or more standard deviations above its own previous 24 months) is followed by armed conflict located in the country the next calendar year more often than quiet country-years in general. Pass mark: at least 30 cases, a lift of 3 points or more over the base rate, p at or below 0.05, at least 6 years. SHA-256 36191d40a31c0c32…
 
 **Recorded verdicts**
 

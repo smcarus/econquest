@@ -2,7 +2,7 @@
   "id": "timing_agent",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "When the Timing Agent flags an unwind setup (leveraged-fund positioning in a currency future crowded, top or bottom 10% of the past three years, and already 3 points of open interest back over 4 weeks), positioning comes back a further 3 points within 8 weeks more often than after any week.",
   "method": "timing_unwind",
   "framework": 2,

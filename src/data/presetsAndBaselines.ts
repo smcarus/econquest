@@ -854,7 +854,7 @@ export function buildDefaultAssessmentRun(
     policyDocumentTitle: 'IMF Article IV Consultation Staff Concluding Statement & Central Bank Policy Extract',
     policyDocumentSnippet:
       'Staff emphasizes that achieving the primary fiscal balance target requires structural expenditure containment. Unanchored medium-term inflation expectations and external maritime freight volatility warrant continued monetary vigilance and rebuilding of hard-currency liquidity buffers.',
-    runtimeUsed: 'Google AI Studio (Quick: gemini-3.8-flash · Deep: gemini-3.8-flash High-Reasoning)',
+    runtimeUsed: 'Google Gemini (Quick: gemini-3.8-flash · Deep: gemini-3.8-flash High-Reasoning)',
     stage: 'COMPLETED',
     openData,
     charts,
@@ -1585,7 +1585,7 @@ export function buildDefaultAssessmentRun(
       executedAt: new Date().toISOString(),
       totalLatencyMs: 640,
       overallReliabilityScorePct: 98,
-      activeProvider: 'Google AI Studio (gemini-3.8-flash · Institutional Anchor Verified)',
+      activeProvider: 'Google Gemini (gemini-3.8-flash · Institutional Anchor Verified)',
       searchGroundingSourcesCount: openData.liveApiSourcesActive.length,
       stages: [
         {

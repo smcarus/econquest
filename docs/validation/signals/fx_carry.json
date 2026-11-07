@@ -2,7 +2,7 @@
   "id": "fx_carry",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Drafted by Claude under Sam's signal standard (2026-11-06); registered before any run",
+  "registeredBy": "Drafted under Sam's signal standard (2026-11-06); registered before any run",
   "hypothesis": "Each month, holding the third of currencies with the highest policy rate against the US and selling the third with the lowest (equal weights, against the dollar, held one month) earns more than holding dollars, net of a flat 0.25% cost per unit traded, with whole calendar years resampled together.",
   "method": "fx_factor",
   "factor": "carry",

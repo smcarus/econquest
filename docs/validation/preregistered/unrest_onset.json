@@ -2,7 +2,7 @@
   "id": "unrest_onset",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Drafted by Claude under Sam's signal standard (2026-11-06), Phase 4 of the seven-groups plan; registered before any run",
+  "registeredBy": "Drafted under Sam's signal standard (2026-11-06), Phase 4 of the seven-groups plan; registered before any run",
   "hypothesis": "In a country with no state-based armed conflict this year (UCDP/PRIO), a year with an unrest spike episode (protests or violence as a share of the country's GDELT events at 3 or more standard deviations above its own previous 24 months) is followed by armed conflict located in the country the next calendar year more often than quiet country-years in general.",
   "method": "unrest_onset",
   "framework": 2,
