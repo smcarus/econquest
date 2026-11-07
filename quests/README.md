@@ -1,5 +1,7 @@
 # Quests
 
+Quests are switched off in the app until they are verified and documented; see [docs/QUESTS.md](../docs/QUESTS.md).
+
 Open questions about economies, sovereigns and geopolitical risk that anyone can answer, argue and check. Each Quest is one JSON file with a stated rule for how it is settled from the app's own feeds.
 
 - `quests/drafts/` holds proposed Quests. They can still be edited.
