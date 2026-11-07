@@ -18,6 +18,7 @@
  *
  * Browser-safe.
  */
+import { figureHelp } from '../data/glossary';
 import { CDS_HIDDEN } from './cdsHidden';
 import { COUNCIL_AGENTS, AGENT_ORDER, isDocFinding, sentenceCheck, type AgentAnswer, type CoreAgentId, type CouncilBrief, type CouncilPlan } from './askCouncil';
 import type { Contradiction } from './stanceCheck';
@@ -156,7 +157,26 @@ export function focusAsText(f: ExplainFocus | undefined): string {
     ...(f.detail || []).map((d) => `- ${d}`),
     '',
   ];
+  const defs = plainDefinitions([f.label, ...(f.detail || [])]);
+  if (defs.length) lines.push('Plain definitions of the terms above, for wording only (they are not figures):', ...defs, '');
   return lines.join('\n');
+}
+
+/**
+ * Glossary definitions (src/data/glossary.ts) for the terms in the given labels, one line each.
+ * Only definitions without digits, so nothing here can be quoted as a figure.
+ */
+export function plainDefinitions(labels: string[], max = 4): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const l of labels) {
+    const e = figureHelp(l.split(':')[0]);
+    if (!e || seen.has(e.id) || /\d/.test(e.what)) continue;
+    seen.add(e.id);
+    out.push(`- ${e.term}: ${e.what}`);
+    if (out.length >= max) break;
+  }
+  return out;
 }
 
 export interface ExplainPlan {
@@ -211,7 +231,7 @@ export function lensCoverage(lenses: LensId[], answers: AgentAnswer[]): Array<{ 
 }
 
 export const EXPLAIN_INSTRUCTION = [
-  'You are the synthesis agent of a sovereign research council: a senior economist explaining a number or a pattern to a policy reader who is not a specialist.',
+  'You are the synthesis agent of a sovereign research council: a senior economist explaining a number or a pattern to a reader with no training in economics (a student, a journalist, a citizen, an official from another field).',
   'You receive one standard document per agent (findings with the agent\'s call, each figure with its tag and source, missing data, coverage), and sometimes the exact figure or chart the user pressed Explain on.',
   'Explain; do not rank or list. Say what the number is, why it is where it is, and what it means through each lens you are given.',
   'Keep data apart from interpretation. Facts state what the figures are, quoting them as written with what they measure and the period. Reasons, lens readings and what to watch are your interpretation: connect the figures with standard economics (for example a high real rate means tight policy, which slows credit and supports the currency; a weak currency raises import prices for households and firms).',
@@ -220,7 +240,10 @@ export const EXPLAIN_INSTRUCTION = [
   'Write a lens only from the agents named for it. If a lens has no figures, leave it out; the app says it is missing.',
   'Each finding states the agent\'s stance in fixed words (policy tight, neutral or loose; ' + (CDS_HIDDEN ? 'cheap, in line or rich against peers' : 'CDS cheap, in line or rich') + '; real exchange rate strong, near average or weak). Use those words; never describe a stance differently.',
   'Passages from the Policy Document Agent are quotes from the user\'s documents: name the document, and do not treat its forecasts as data.',
-  'Plain English, full sentences, short. No advice to buy or sell.',
+  'Write so that reader understands on first reading. Short sentences, one idea each, everyday words. The first time you use a technical term (for example primary balance, real interest rate, current account, spread, carry, output gap), say what it means in a few plain words in brackets, using the plain definitions given when there are any. Write out an abbreviation the first time (International Monetary Fund, not IMF alone).',
+  'Where the figures allow, say what the reading means in daily life: prices in shops, the cost of loans and mortgages, jobs, the value of savings and of the currency, and how much room the government has to spend. Say it is a reading of the figures, not a measured effect.',
+  'If the figures cannot answer part of the question, say so plainly rather than guess.',
+  'No advice to buy or sell.',
 ].join(' ');
 
 /** Goes after the documents: the lenses, the shape of the answer, and the question last. */
