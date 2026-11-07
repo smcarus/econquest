@@ -1,3 +1,4 @@
+import { netInterestPct } from './imfFiscal';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { HC_SPREAD_LABEL, hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
 import type { CouncilAssessmentRun } from '../types/council';
@@ -109,7 +110,26 @@ const PATH_NAME: Record<string, string> = {
   'imf.debtToGdpPct': 'live debt/GDP',
   'imf.realGdpGrowthPct': 'live growth',
   'imf.primaryFiscalBalancePct': 'a live primary balance',
+  'imf.overallBalancePct': 'a live overall balance',
 };
+
+const usdBn = (v: number) => `${v < 0 ? '-' : ''}US$${Math.abs(v).toFixed(1)} bn`;
+
+/**
+ * Net interest paid, % of GDP: primary balance minus overall balance, both IMF Fiscal Monitor for
+ * the same year (src/utils/imfFiscal.ts). Missing when either is missing or the years differ.
+ */
+export function netInterestRow(status: SnapshotDataStatus, open?: CouncilAssessmentRun['openData']): BriefRow {
+  const years = open?.imfIndicators?.years || {};
+  const yPrimary = years['imf.primaryFiscalBalancePct'];
+  const yOverall = years['imf.overallBalancePct'];
+  const row = modelRow(status, 'Net interest paid', ['imf.primaryFiscalBalancePct', 'imf.overallBalancePct'], () => '', `primary minus overall balance, IMF Fiscal Monitor${yOverall ? ` ${yOverall}` : ''}`);
+  if (row.missing) return row;
+  const v = netInterestPct(status.live('imf.primaryFiscalBalancePct'), status.live('imf.overallBalancePct'), yPrimary, yOverall);
+  return v === undefined
+    ? missingRow('Net interest paid', { kind: 'unreachable', short: 'Balances are for different years', help: `The IMF primary balance is for ${yPrimary} and the overall balance for ${yOverall}; net interest needs both for the same year.` })
+    : { ...row, value: `${pct(v)} of GDP` };
+}
 
 /** A figure worked out here from other figures: shown only when every input is live. */
 export function modelRow(status: SnapshotDataStatus, label: string, inputs: string[], value: () => string, how = 'model, from figures above'): BriefRow {
@@ -211,7 +231,11 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
   const groups: BriefGroup[] = [
     {
       title: 'Growth and inflation',
-      rows: [liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open), liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open)],
+      rows: [
+        liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open),
+        liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open),
+        liveRow(status, 'Unemployment rate', 'imf.unemploymentPct', (v) => pct(v), open),
+      ],
     },
     {
       title: 'Monetary policy',
@@ -233,6 +257,10 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
         liveRow(status, 'Debt / GDP, 2027 forecast', 'imf.debtToGdpForecast2027Pct', (v) => pct(v), open),
         liveRow(status, 'Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`, open),
+        liveRow(status, 'Overall balance', 'imf.overallBalancePct', (v) => `${pct(v)} of GDP`, open),
+        netInterestRow(status, open),
+        liveRow(status, 'Revenue', 'imf.revenuePct', (v) => `${pct(v)} of GDP`, open),
+        liveRow(status, 'Expenditure', 'imf.expenditurePct', (v) => `${pct(v)} of GDP`, open),
         noSourceRow('Balance that keeps debt stable', 'Needs the average interest rate on government debt, which no connected source provides yet.'),
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
       ],
@@ -241,6 +269,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
       title: 'External position',
       rows: [
         liveRow(status, 'Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`, open),
+        liveRow(status, 'Current account, US dollars', 'imf.currentAccountUsdBn', usdBn, open),
         liveRow(status, 'FX reserves', 'wb.fxReservesMonthsImport', (v) => `${v.toFixed(1)} months of imports`, open),
         liveRow(status, 'External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`, open),
       ],
@@ -267,6 +296,12 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v)),
         r('Debt / GDP, 2027 forecast', 'imf.debtToGdpForecast2027Pct', (v) => pct(v)),
         r('Primary balance', 'imf.primaryFiscalBalancePct', (v) => `${pct(v)} of GDP`),
+        r('Overall balance (Fiscal Monitor)', 'imf.overallBalancePct', (v) => `${pct(v)} of GDP`),
+        r('Revenue (Fiscal Monitor)', 'imf.revenuePct', (v) => `${pct(v)} of GDP`),
+        r('Expenditure (Fiscal Monitor)', 'imf.expenditurePct', (v) => `${pct(v)} of GDP`),
+        r('Unemployment rate', 'imf.unemploymentPct', (v) => pct(v)),
+        r('Current account, US dollars', 'imf.currentAccountUsdBn', usdBn),
+        r('Current account (IMF WEO)', 'imf.currentAccountImfPct', (v) => `${pct(v)} of GDP`),
       ],
     },
     {

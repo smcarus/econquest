@@ -369,6 +369,15 @@ export interface OpenDataSnapshot {
     cpiInflationPct: number;
     /** IMF WEO output gap, % of potential GDP; set only where the IMF publishes one (mostly advanced economies). */
     outputGapPct?: number;
+    /** IMF Fiscal Monitor general government revenue, expenditure and overall balance, % of GDP (src/utils/imfFiscal.ts). */
+    revenuePct?: number;
+    expenditurePct?: number;
+    overallBalancePct?: number;
+    /** IMF WEO unemployment rate, %. */
+    unemploymentPct?: number;
+    /** IMF WEO current account balance, US$ billions and % of GDP. */
+    currentAccountUsdBn?: number;
+    currentAccountImfPct?: number;
     sourceUrl: string;
     /** WEO year each live figure is for, by liveFields key (e.g. 'imf.debtToGdpPct' -> '2025'). */
     years?: Record<string, string>;

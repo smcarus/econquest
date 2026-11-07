@@ -115,3 +115,39 @@ test('saved figures carry their period: IMF figures name the WEO year, spot FX t
   assert.match(fx, /^FX spot, .*2026/);
   assert.doesNotMatch(fx, /live/);
 });
+
+test('IMF Fiscal Monitor and WEO extras (D5): shown when live, net interest = primary minus overall for the same year', () => {
+  const rowsOf = (tweak: (s: OpenDataSnapshot) => void) => economistBrief(runFor('BRA', [], tweak), NOW).groups.flatMap((g) => g.rows);
+  const live = rowsOf((s) => {
+    s.imfIndicators.primaryFiscalBalancePct = 0.4;
+    s.imfIndicators.overallBalancePct = -7.6;
+    s.imfIndicators.revenuePct = 41.2;
+    s.imfIndicators.unemploymentPct = 6;
+    s.imfIndicators.currentAccountUsdBn = -61.3;
+    s.imfIndicators.years = { 'imf.primaryFiscalBalancePct': '2025', 'imf.overallBalancePct': '2025' };
+    s.liveFields = {
+      'imf.primaryFiscalBalancePct': 'IMF WEO',
+      'imf.overallBalancePct': 'IMF Fiscal Monitor',
+      'imf.revenuePct': 'IMF Fiscal Monitor',
+      'imf.unemploymentPct': 'IMF WEO',
+      'imf.currentAccountUsdBn': 'IMF WEO',
+    };
+  });
+  const row = (l: string) => live.find((r) => r.label === l)!;
+  assert.equal(row('Net interest paid').value, '8.0% of GDP');
+  assert.match(row('Net interest paid').source, /primary minus overall balance, IMF Fiscal Monitor 2025/);
+  assert.equal(row('Revenue').verified, true);
+  assert.equal(row('Unemployment rate').value, '6.0%');
+  assert.equal(row('Current account, US dollars').value, '-US$61.3 bn');
+  assert.equal(row('Expenditure').value, 'Missing');
+  // Different years: no net interest.
+  const mixed = rowsOf((s) => {
+    s.imfIndicators.primaryFiscalBalancePct = 0.4;
+    s.imfIndicators.overallBalancePct = -7.6;
+    s.imfIndicators.years = { 'imf.primaryFiscalBalancePct': '2025', 'imf.overallBalancePct': '2024' };
+    s.liveFields = { 'imf.primaryFiscalBalancePct': 'IMF WEO', 'imf.overallBalancePct': 'IMF Fiscal Monitor' };
+  });
+  const ni = mixed.find((r) => r.label === 'Net interest paid')!;
+  assert.equal(ni.value, 'Missing');
+  assert.equal(ni.source, 'Balances are for different years');
+});
