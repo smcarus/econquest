@@ -12,7 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
-import { csvRows, GSCPI_URLS, parseGscpiRows } from './stressIndices';
+import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
 import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig } from './hardCurrencySpread';
 import { geminiModel } from './geminiModel';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
@@ -946,22 +946,19 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
   });
 
   add('nyfed_gscpi', async () => {
-    let lastText: string | undefined;
-    const res = await httpCheck(
-      { id: 'nyfed_gscpi', name: 'NY Fed Global Supply Chain Pressure Index', group: 'free', feeds: 'Monthly supply chain pressure index (scenario factor and world series); the app also tries the .xlsx file' },
-      fetchFn,
-      GSCPI_URLS.csv,
-      Math.max(T, 15000),
-      (r) => {
-        lastText = r.text;
-        const obs = r.text && !r.text.startsWith('PK') ? parseGscpiRows(csvRows(r.text)) : [];
-        const last = obs[obs.length - 1];
-        return last ? `GSCPI ${fmt(last.value, 2)} (${last.date.slice(0, 7)}), ${obs.length} months` : null;
-      },
-      {},
-      'The NY Fed answered, but the CSV had no date and index columns the app reads (the app then tries the .xlsx file).'
-    );
-    return res.state === 'bad_reply' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
+    const def: Def = { id: 'nyfed_gscpi', name: 'NY Fed Global Supply Chain Pressure Index', group: 'free', feeds: 'Monthly supply chain pressure index (scenario factor and world series), an Excel 97 file' };
+    const started = Date.now();
+    try {
+      const res = await fetchFn(GSCPI_URLS.csv, { signal: AbortSignal.timeout(Math.max(T, 20000)) });
+      const latencyMs = Date.now() - started;
+      if (!res.ok) return { ...setRow(def, 'refused', `HTTP ${res.status}`, 'www.newyorkfed.org'), httpStatus: res.status, latencyMs };
+      const got = await gscpiFromBytes(new Uint8Array(await res.arrayBuffer()), now);
+      if ('reason' in got) return { ...setRow(def, 'bad_reply', `${got.reason}.`, 'www.newyorkfed.org'), latencyMs };
+      const last = got.obs[got.obs.length - 1];
+      return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms.`, 'www.newyorkfed.org'), latencyMs, sample: `GSCPI ${fmt(last.value, 2)} (${last.date.slice(0, 7)}), ${got.obs.length} months` };
+    } catch (e) {
+      return setRow(def, 'no_answer', (e as Error).message || 'No answer', 'www.newyorkfed.org');
+    }
   });
 
   // ---- Free with your own key -----------------------------------------------------------------

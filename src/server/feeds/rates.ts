@@ -23,8 +23,7 @@ import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseB
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, type InflationSurveys, parseEcbCsv, parseFocus12m } from '../../utils/inflationSurveys';
-import { readXlsxSheet, xlsxSheetNames } from '../../utils/xlsxRead';
-import { csvRows, GSCPI_URLS, type IdxObs, parseGscpiRows, STRESS_INDICES, type StressPulls } from '../../utils/stressIndices';
+import { gscpiFromBytes, GSCPI_URLS, STRESS_INDICES, type StressPulls } from '../../utils/stressIndices';
 import { type InflationExpectations, parseFredApiObservations, US_INFLATION_EXPECTATION_IDS } from '../../utils/inflationExpectations';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
@@ -227,32 +226,18 @@ let gscpiCache: { at: number; value: NonNullable<StressPulls['gscpi']> } | null 
 export async function fetchGscpi(): Promise<NonNullable<StressPulls['gscpi']>> {
   if (gscpiCache && Date.now() - gscpiCache.at < ('obs' in gscpiCache.value ? 12 : 1) * 60 * 60 * 1000) return gscpiCache.value;
   let value: NonNullable<StressPulls['gscpi']> = { reason: 'The New York Fed GSCPI file did not answer' };
-  try {
-    const csv = await fetchTextWithTimeout(GSCPI_URLS.csv, 15000);
-    const obs = csv && !csv.startsWith('PK') ? parseGscpiRows(csvRows(csv)) : [];
-    if (obs.length) value = { obs, fetchedAt: new Date().toISOString() };
-  } catch {
-    // try the Excel file
-  }
-  if (!('obs' in value)) {
+  for (const url of [GSCPI_URLS.csv, GSCPI_URLS.xlsx]) {
     try {
-      const res = await fetchWithTimeout(GSCPI_URLS.xlsx, 20000);
-      if (res.ok) {
-        const buf = new Uint8Array(await res.arrayBuffer());
-        let obs: IdxObs[] = [];
-        try {
-          for (const name of await xlsxSheetNames(buf)) {
-            const rows = await readXlsxSheet(buf, name);
-            const got = rows ? parseGscpiRows(rows) : [];
-            if (got.length > obs.length) obs = got;
-          }
-          value = obs.length ? { obs, fetchedAt: new Date().toISOString() } : { reason: 'The New York Fed GSCPI file answered, but no sheet had a date column with index values' };
-        } catch {
-          value = { reason: 'The New York Fed GSCPI file is not an .xlsx workbook this app can read' };
-        }
+      const res = await fetchWithTimeout(url, 20000);
+      if (!res.ok) continue;
+      const got = await gscpiFromBytes(new Uint8Array(await res.arrayBuffer()));
+      if ('obs' in got) {
+        value = got;
+        break;
       }
+      value = got;
     } catch {
-      // keep the reason above
+      // try the next address
     }
   }
   gscpiCache = { at: Date.now(), value };
