@@ -4,13 +4,15 @@
  * set local time, with every run kept so Menu > Data
  * health > Scheduled can say what ran, when, and how it ended.
  *
- * Off unless switched on in the environment, so a laptop running `npm run dev` never starts a
- * long download by itself. The home-server compose file switches both on.
+ * The pre-registered tests are on by default (every Sunday at 03:30), so each passing test builds
+ * its forward record without anyone switching it on. Download all stays off unless set, so a laptop
+ * running `npm run dev` never starts a long download by itself; the home-server compose file
+ * switches it on.
  *
- *   SCHEDULE_DOWNLOAD_ALL="02:30"      every day at 02:30
- *   SCHEDULE_BACKTESTS="sun 03:30"     every Sunday at 03:30 (backtests, then forecast and signal tests)
+ *   SCHEDULE_DOWNLOAD_ALL="02:30"      every day at 02:30 (default: off)
+ *   SCHEDULE_BACKTESTS="sun 03:30"     every Sunday at 03:30 (the default when not set)
  *   SCHEDULE_TZ="Europe/London"        time zone for both (default: the computer's)
- *   "off" (or nothing) leaves a job off.
+ *   "off" (or an empty value) turns a job off.
  *
  * Nothing here makes a figure: a job only runs the app's own pulls and tests.
  */
@@ -20,7 +22,7 @@ import { clockIn } from './dataHealth';
 
 export type JobId = 'download_all' | 'backtests';
 
-export const JOBS: Record<JobId, { label: string; env: string; what: string }> = {
+export const JOBS: Record<JobId, { label: string; env: string; what: string; defaultSchedule?: string }> = {
   download_all: {
     label: 'Download all',
     env: 'SCHEDULE_DOWNLOAD_ALL',
@@ -29,6 +31,8 @@ export const JOBS: Record<JobId, { label: string; env: string; what: string }> =
   backtests: {
     label: 'Pre-registered tests',
     env: 'SCHEDULE_BACKTESTS',
+    // On by default so the forward record grows; SCHEDULE_BACKTESTS=off stops it.
+    defaultSchedule: 'sun 03:30',
     what: 'Runs the pre-registered backtests, forecast evaluations and currency signal tests on the latest data, adding to each passing test\'s forward record; verdicts appear in Menu > Models & validation.',
   },
 };
@@ -56,6 +60,17 @@ export function parseSchedule(value: string | undefined): Schedule {
   const weekday = WEEKDAYS.indexOf(m[1].slice(0, 3).toLowerCase());
   if (weekday < 0 || (m[1].length > 3 && !WEEKDAY_NAMES[weekday].toLowerCase().startsWith(m[1].toLowerCase()))) return { kind: 'invalid', raw };
   return { kind: 'weekly', weekday, time };
+}
+
+/**
+ * A job's schedule from the environment: its own setting when set (an empty value or "off" turns
+ * it off), else its default (only the pre-registered tests have one).
+ */
+export function jobScheduleFrom(id: JobId, env: Record<string, string | undefined>): { schedule: Schedule; fromDefault: boolean } {
+  const value = env[JOBS[id].env];
+  const fallback = JOBS[id].defaultSchedule;
+  if (value === undefined && fallback) return { schedule: parseSchedule(fallback), fromDefault: true };
+  return { schedule: parseSchedule(value), fromDefault: false };
 }
 
 export function describeSchedule(s: Schedule, timeZone: string): string {

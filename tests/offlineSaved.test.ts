@@ -31,7 +31,7 @@ async function watchlistFrom(helper: string, dataDir: string, rounds: number): P
   for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
   for (const [id, v] of Object.entries(index.keys || {})) env[id] = v === 'present' ? 'replay-key' : String(v);
   const port = 4700 + Math.floor(Math.random() * 200);
-  Object.assign(env, { NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers', helper)}`, REPLAY_DIR: recDir, DATA_DIR: dataDir, PORT: String(port), NODE_ENV: 'production', CDS_FEED: 'off', GEMINI_API_KEY: '' });
+  Object.assign(env, { NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers', helper)}`, REPLAY_DIR: recDir, DATA_DIR: dataDir, PORT: String(port), NODE_ENV: 'production', CDS_FEED: 'off', SCHEDULE_BACKTESTS: 'off', GEMINI_API_KEY: '' });
   const server = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'server.ts')], { cwd: root, env, stdio: ['ignore', 'pipe', 'pipe'] });
   let log = '';
   server.stdout?.on('data', (d) => (log += d));

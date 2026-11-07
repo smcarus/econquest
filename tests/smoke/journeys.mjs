@@ -36,6 +36,7 @@ const server = spawn(process.execPath, ['--import', 'tsx', path.join(root, 'serv
     NODE_ENV: 'production',
     PORT: String(port),
     DATA_DIR: dataDir,
+    SCHEDULE_BACKTESTS: 'off',
     GEMINI_API_KEY: '',
     ECONQUEST_SECRET_KEY: '',
   },

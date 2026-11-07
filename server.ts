@@ -109,7 +109,7 @@ import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
-import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, markStarted, parseSchedule, readJobs, testsSummary, type TestsPart, writeJobs } from './src/utils/scheduledJobs';
+import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, jobScheduleFrom, markStarted, readJobs, testsSummary, type TestsPart, writeJobs } from './src/utils/scheduledJobs';
 import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
@@ -1680,7 +1680,7 @@ const SIGNAL_RESULT_FILE = path.join(DATA_DIR, 'local', 'validation', 'signals.j
 
 /** Scheduled jobs (src/utils/scheduledJobs.ts): time zone for SCHEDULE_DOWNLOAD_ALL and SCHEDULE_BACKTESTS. */
 const SCHEDULE_TZ = (process.env.SCHEDULE_TZ || '').trim() || NIGHTLY_CHECK_TZ;
-const jobSchedule = (id: JobId) => parseSchedule(process.env[JOBS[id].env]);
+const jobSchedule = (id: JobId) => jobScheduleFrom(id, process.env).schedule;
 const jobRunning: Partial<Record<JobId, boolean>> = {};
 
 async function runScheduledJob(id: JobId): Promise<{ ok: boolean; summary: string }> {
@@ -3403,7 +3403,7 @@ async function startServer() {
     res.json({
       timeZone: SCHEDULE_TZ,
       jobs: (Object.keys(JOBS) as JobId[]).map((id) => {
-        const schedule = jobSchedule(id);
+        const { schedule, fromDefault } = jobScheduleFrom(id, process.env);
         return {
           id,
           label: JOBS[id].label,
@@ -3411,6 +3411,7 @@ async function startServer() {
           env: JOBS[id].env,
           on: schedule.kind === 'daily' || schedule.kind === 'weekly',
           schedule: describeSchedule(schedule, SCHEDULE_TZ),
+          fromDefault,
           running: Boolean(jobRunning[id]),
           lastSkipped: jobs[id]?.lastSkipped || null,
           runs: [...(jobs[id]?.runs || [])].reverse().slice(0, 10),
@@ -5884,7 +5885,7 @@ ${String(documentText).slice(0, 12000)}
     setInterval(() => void morningTick(), 60_000).unref();
     // Nightly data check: once a day after DATA_CHECK_TIME, kept in the data health history.
     setInterval(() => void nightlyCheckTick(), 60_000).unref();
-    // Scheduled jobs (SCHEDULE_DOWNLOAD_ALL, SCHEDULE_BACKTESTS): off unless set; checked every minute.
+    // Scheduled jobs: the pre-registered tests weekly by default, Download all only when set; checked every minute.
     writeJobs(SCHEDULED_JOBS_FILE, closeInterrupted(readJobs(SCHEDULED_JOBS_FILE), new Date().toISOString()));
     if ((Object.keys(JOBS) as JobId[]).some((id) => jobSchedule(id).kind !== 'off')) setInterval(scheduledJobsTick, 60_000).unref();
     // GDELT raw files: weekly top-up once a first pull exists, checked hourly.

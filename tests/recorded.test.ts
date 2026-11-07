@@ -48,6 +48,7 @@ before(async () => {
     NODE_OPTIONS: `--import ${path.join(root, 'tests/helpers/replay-fetch.mjs')}`,
     REPLAY_DIR: recDir,
     DATA_DIR: dataDir,
+    SCHEDULE_BACKTESTS: 'off',
     PORT: String(port),
     NODE_ENV: 'production',
     CDS_FEED: 'off',
