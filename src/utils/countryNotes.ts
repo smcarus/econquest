@@ -195,31 +195,56 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
   const nextMeeting = nextOfficialEvent(run.iso3, 'MPC_DECISION', now);
   const nextCpi = nextOfficialEvent(run.iso3, 'CPI_RELEASE', now);
 
-  // Each observation only from live figures; none is written from a missing one.
+  // Each observation only from live figures; none is written from a missing one. Each adds, in
+  // plain words, what the reading usually means: standard economics, no new figures.
   const j: string[] = [];
-  if (g !== undefined)
-    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}.`);
-  else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}.`);
+  if (g !== undefined) {
+    const meaning =
+      g >= 4
+        ? 'Fast growth usually brings more jobs and tax revenue.'
+        : g >= 2
+          ? 'That is a steady pace: enough to add jobs and income, but not a boom.'
+          : g >= 0
+            ? 'Slow growth adds few jobs and little tax revenue, so living standards and the budget improve slowly.'
+            : 'The economy is shrinking, which usually means job losses and falling tax revenue.';
+    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}. ${meaning}`);
+  } else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}: prices are ${cpi < 0 ? 'falling' : 'rising'} by that much a year.`);
   if (realRate !== undefined)
     j.push(
       realRate > 2
-        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.`
+        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation. Borrowing is expensive once rising prices are allowed for, which slows lending and spending, usually brings inflation down and tends to support the currency.`
         : realRate >= 0
-          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.`
-          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.`
+          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation. Borrowing costs a little more than prices rise, a gentle brake on spending.`
+          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation. Borrowing costs less than prices rise, which supports spending but leaves savers losing ground and can let inflation persist.`
     );
   if (debt !== undefined)
     j.push(
       `Government debt is ${pct(debt, 0)} of GDP${
         debtChange === undefined ? '' : ` and is forecast to ${Math.abs(debtChange) < 1 ? 'stay roughly flat' : debtChange > 0 ? `rise by ${debtChange.toFixed(0)} pts` : `fall by ${Math.abs(debtChange).toFixed(0)} pts`} by 2027`
-      }.`
+      }. That is ${debt > 70 ? 'above' : 'below'} the 70% level at which the IMF looks more closely at emerging economies' debt; who holds the debt and at what interest rate matters as much as the level.`
     );
-  if (pb !== undefined) j.push(`The primary balance is ${pct(pb)} of GDP.`);
+  if (pb !== undefined)
+    j.push(
+      `The primary balance is ${pct(pb)} of GDP: ${
+        pb >= 0
+          ? 'taxes and other revenue cover spending before interest, so the government is not adding to its debt except to pay interest.'
+          : 'the government borrows even before paying interest on its debt, which adds to the debt each year.'
+      }`
+    );
   const ext: string[] = [];
-  if (ca !== undefined && ca < -4) ext.push(`a current account deficit of ${pct(Math.abs(ca))} of GDP`);
-  if (res !== undefined && res < 3) ext.push('reserves below the usual three-month import floor');
+  if (ca !== undefined && ca < -4) ext.push(`a current account deficit of ${pct(Math.abs(ca))} of GDP (the country spends more abroad than it earns, so it relies on foreign money continuing to arrive)`);
+  if (res !== undefined && res < 3) ext.push('reserves below the usual three-month import floor (the central bank\'s foreign currency would pay for under three months of imports if other money stopped)');
   if (ca !== undefined || res !== undefined)
-    j.push(ext.length ? `External weak points: ${ext.join(', ')}.` : `The external position looks comfortable on ${[res !== undefined ? 'reserves' : '', ca !== undefined ? 'the current account' : ''].filter(Boolean).join(' and ')}.`);
+    j.push(
+      ext.length
+        ? `External weak points: ${ext.join(', ')}.`
+        : `The external position looks comfortable on ${[res !== undefined ? 'reserves' : '', ca !== undefined ? 'the current account' : ''].filter(Boolean).join(' and ')}: ${[
+            res !== undefined ? 'reserves cover at least three months of imports' : '',
+            ca !== undefined ? 'any current account deficit is under 4% of GDP' : '',
+          ]
+            .filter(Boolean)
+            .join(', and ')}.`
+    );
 
   const parts = [
     g !== undefined ? (g >= 2 ? 'growing' : 'slow growth') : '',
