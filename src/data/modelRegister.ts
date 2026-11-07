@@ -52,7 +52,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'taylor_gap',
     name: 'Policy rule check (Taylor gap)',
-    says: 'Policy is tight, neutral or loose against a simple Taylor rule.',
+    says: 'Whether interest rates are tight (holding the economy back), neutral or loose (giving it a push), judged against a simple textbook formula (the Taylor rule) that sets the rate from inflation and spare capacity.',
     method: 'Rule rate = 2% + inflation + 0.5 x (inflation - target) + 0.5 x output gap; tight or loose when the policy rate is more than the band away.',
     inputs: 'BIS policy rate, monthly inflation (else IMF WEO), central bank target, IMF output gap',
     where: 'Research > Markets & signals (Central Bank Watcher Agent), Council chat, Replicate a rate decision',
@@ -66,7 +66,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'cli_turn_policy',
     name: 'Leading-indicator turn to policy move',
-    says: 'After an OECD leading-indicator peak (trough), the central bank tends to cut (hike).',
+    says: 'When an early-warning gauge of the economy (the OECD leading indicator) turns down from a peak, the central bank has tended to cut rates afterwards; when it turns up from a low, to raise them.',
     method: 'Each CLI turning point is matched with a policy move in the matching direction within 6 months.',
     inputs: 'OECD composite leading indicator (via DBnomics), BIS policy rates',
     where: 'Research > Markets & signals (Signal track record), Timing Agent',
@@ -80,7 +80,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'cftc_crowding',
     name: 'Crowded futures positioning to unwind',
-    says: 'Leveraged-fund positioning in the top or bottom 10% of its range tends to unwind.',
+    says: 'When speculators\' bets on a currency are at an extreme (in the top or bottom 10% of their range), those bets have tended to be unwound, moving the currency the other way.',
     method: 'Entry into the 3-year top or bottom decile counts as crowded; an unwind is a 3-point move of open interest back within 8 weeks.',
     inputs: 'CFTC Traders in Financial Futures, weekly',
     where: 'Research > Markets & signals (Futures positioning, Signal track record), Timing Agent',
@@ -94,7 +94,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'reer_gap',
     name: 'Real exchange rate gap and carry-to-volatility',
-    says: 'The currency is strong (dear) or weak (cheap) against its own 10-year average, and whether carry pays for its swings.',
+    says: 'Whether the currency is strong (dear) or weak (cheap) against its own 10-year average, after allowing for inflation, and whether the extra interest it pays (carry) is enough to make up for how much it swings.',
     method: 'BIS real broad effective rate against its 10-year average; policy-rate gap over the US divided by 3-month realised volatility.',
     inputs: 'BIS real effective exchange rates (monthly), BIS policy rates, ECB reference rates (Frankfurter)',
     where: 'Research > Markets & signals (FX Valuation Agent, carry in the Relative Value Agent), Council chat',
@@ -122,7 +122,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'divergence_rank',
     name: 'Where data and price disagree (ranking)',
-    says: 'Ranks countries by the size of the gap between what the data say and what markets price.',
+    says: 'Ranks countries by how far market prices and the economic figures seem to disagree. A large gap is a question to look into, not a prediction.',
     method: 'Size of each rule’s gap (policy, CDS, real yield, refinancing, FX) times how far its figures can be trusted.',
     inputs: 'The readings above',
     where: 'MarketEdge disagreements, Compare',
@@ -192,7 +192,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'gdp_nowcast',
     name: 'GDP nowcast (bridge equation)',
-    says: 'Where real GDP growth is likely to come in for quarters not published yet.',
+    says: 'An early estimate of economic growth for quarters the statistics office has not published yet, from monthly figures that come out sooner.',
     method: 'q/q real GDP growth on the quarter\'s activity-index growth and/or leading-indicator change plus last quarter\'s growth; months not out yet are an AR forecast of the monthly series.',
     inputs: 'OECD quarterly national accounts (via DBnomics), BCB IBC-Br, Eurostat industrial production, OECD composite leading indicator',
     where: 'Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)',
@@ -220,7 +220,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'fiscal_reaction',
     name: 'Fiscal reaction (Bohn test)',
-    says: 'Whether the primary balance has risen with debt in this country\'s own history.',
+    says: 'Whether this government has, in its own history, tightened its budget (raised the primary balance, the budget before interest) when debt rose. If it has, that is a sign debt has been kept in check.',
     method: 'OLS of the primary balance on last year\'s debt and the output gap, outturn years only, Newey-West errors (Bohn 1998); needs 15 years.',
     inputs: 'IMF Fiscal Monitor primary balance, IMF WEO gross debt, the app\'s output gap estimate',
     where: 'Country Research > History & data (Fiscal reaction)',
@@ -234,7 +234,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'gross_financing_need',
     name: 'Gross financing need',
-    says: 'How much the government has to borrow each year: deficit plus external debt falling due.',
+    says: 'How much the government has to raise each year: the budget deficit plus the debt owed abroad that falls due and must be repaid or borrowed again.',
     method: 'Overall deficit plus scheduled external public principal (World Bank IDS), as % of GDP; a lower bound because domestic amortisation has no free source. Benchmark 15% of GDP (IMF MAC DSA, emerging markets).',
     inputs: 'IMF Fiscal Monitor balances, IMF GDP in dollars, World Bank IDS principal projections, QEDS',
     where: 'Country Research > History & data (Gross financing need)',
@@ -290,7 +290,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
-    says: 'Reserves against the IMF adequacy metric, with the usual months-of-imports and short-term debt cover.',
+    says: 'Whether the central bank\'s foreign currency savings are enough for a rainy day: against the IMF\'s adequacy measure, months of imports they would pay for, and how much short-term foreign debt they would cover.',
     method: 'IMF ARA weights for floating and fixed regimes on exports, broad money and short-term debt (the other-liabilities term has no free source, so the ratio is an upper bound).',
     inputs: 'World Bank reserves, short-term external debt, broad money, exports, GDP',
     where: 'Country Research > History & data (Reserve adequacy)',
@@ -374,7 +374,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'fx_carry',
     name: 'Currency carry',
-    says: 'Currencies with higher policy rates than the US have tended to pay more than they lose to depreciation.',
+    says: 'Currencies with higher interest rates than the US have tended to pay investors more in interest than they lost when the currency fell (the carry trade).',
     method: 'Each month, long the third of currencies with the highest policy rate gap to the US, short the lowest third, equal weights against the dollar, held a month (Lustig and Verdelhan 2007; Menkhoff et al. 2012).',
     inputs: 'ECB reference rates (month-end, per USD), BIS policy rates',
     where: 'Models & validation (pre-registered test); no panel yet',
@@ -388,7 +388,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'fx_value',
     name: 'Currency value (five-year real depreciation)',
-    says: 'Currencies that have cheapened most in real terms against the dollar over five years have tended to recover.',
+    says: 'Currencies that have become cheapest against the dollar over five years, after allowing for inflation, have tended to recover some of the fall.',
     method: 'Each month, long the third of currencies with the largest five-year real depreciation (consumer prices lagged two months), short the third with the least (Asness, Moskowitz and Pedersen 2013; Menkhoff et al. 2017).',
     inputs: 'ECB reference rates, BIS policy rates (for the return), OECD consumer prices',
     where: 'Models & validation (pre-registered test); no panel yet',
@@ -402,7 +402,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'fx_momentum',
     name: 'Currency momentum (12-1)',
-    says: 'Currencies that have paid most over the past year (leaving out the latest month) have tended to keep doing so.',
+    says: 'Currencies that have done best over the past year (leaving out the latest month) have tended to keep doing well for a while (momentum).',
     method: 'Each month, long the third of currencies with the highest excess return over months t-12 to t-1, short the lowest third (Asness, Moskowitz and Pedersen 2013; Menkhoff et al. 2012).',
     inputs: 'ECB reference rates, BIS policy rates',
     where: 'Models & validation (pre-registered test); no panel yet',
@@ -430,7 +430,7 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'beer',
     name: 'BEER fair value of the real exchange rate',
-    says: 'Whether the real effective exchange rate sits above (dear) or below (cheap) the level its fundamentals have gone with in this country.',
+    says: 'Whether the currency, after allowing for inflation and averaged across trading partners, sits above (dear) or below (cheap) the level that this country\'s economic fundamentals have usually gone with.',
     method: 'OLS of log BIS real effective rate (yearly) on log terms of trade, log GDP per head at PPP vs the US, and the summed current account (NFA proxy), Newey-West errors (Clark and MacDonald 1998).',
     inputs: 'BIS real effective exchange rates, World Bank terms of trade, GDP per head at PPP, current account',
     where: 'Country Research > History & data (BEER fair value)',

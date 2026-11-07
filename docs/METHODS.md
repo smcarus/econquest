@@ -92,7 +92,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Policy rule check (Taylor gap)
 
-- **Says:** Policy is tight, neutral or loose against a simple Taylor rule.
+- **Says:** Whether interest rates are tight (holding the economy back), neutral or loose (giving it a push), judged against a simple textbook formula (the Taylor rule) that sets the rate from inflation and spare capacity.
 - **Rule:** Rule rate = 2% + inflation + 0.5 x (inflation - target) + 0.5 x output gap; tight or loose when the policy rate is more than the band away.
 - **Reads:** BIS policy rate, monthly inflation (else IMF WEO), central bank target, IMF output gap
 - **Shows in:** Research > Markets & signals (Central Bank Watcher Agent), Council chat, Replicate a rate decision
@@ -128,7 +128,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Leading-indicator turn to policy move
 
-- **Says:** After an OECD leading-indicator peak (trough), the central bank tends to cut (hike).
+- **Says:** When an early-warning gauge of the economy (the OECD leading indicator) turns down from a peak, the central bank has tended to cut rates afterwards; when it turns up from a low, to raise them.
 - **Rule:** Each CLI turning point is matched with a policy move in the matching direction within 6 months.
 - **Reads:** OECD composite leading indicator (via DBnomics), BIS policy rates
 - **Shows in:** Research > Markets & signals (Signal track record), Timing Agent
@@ -155,7 +155,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Crowded futures positioning to unwind
 
-- **Says:** Leveraged-fund positioning in the top or bottom 10% of its range tends to unwind.
+- **Says:** When speculators' bets on a currency are at an extreme (in the top or bottom 10% of their range), those bets have tended to be unwound, moving the currency the other way.
 - **Rule:** Entry into the 3-year top or bottom decile counts as crowded; an unwind is a 3-point move of open interest back within 8 weeks.
 - **Reads:** CFTC Traders in Financial Futures, weekly
 - **Shows in:** Research > Markets & signals (Futures positioning, Signal track record), Timing Agent
@@ -188,7 +188,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Real exchange rate gap and carry-to-volatility
 
-- **Says:** The currency is strong (dear) or weak (cheap) against its own 10-year average, and whether carry pays for its swings.
+- **Says:** Whether the currency is strong (dear) or weak (cheap) against its own 10-year average, after allowing for inflation, and whether the extra interest it pays (carry) is enough to make up for how much it swings.
 - **Rule:** BIS real broad effective rate against its 10-year average; policy-rate gap over the US divided by 3-month realised volatility.
 - **Reads:** BIS real effective exchange rates (monthly), BIS policy rates, ECB reference rates (Frankfurter)
 - **Shows in:** Research > Markets & signals (FX Valuation Agent, carry in the Relative Value Agent), Council chat
@@ -212,7 +212,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Where data and price disagree (ranking)
 
-- **Says:** Ranks countries by the size of the gap between what the data say and what markets price.
+- **Says:** Ranks countries by how far market prices and the economic figures seem to disagree. A large gap is a question to look into, not a prediction.
 - **Rule:** Size of each rule’s gap (policy, CDS, real yield, refinancing, FX) times how far its figures can be trusted.
 - **Reads:** The readings above
 - **Shows in:** MarketEdge disagreements, Compare
@@ -317,7 +317,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### GDP nowcast (bridge equation)
 
-- **Says:** Where real GDP growth is likely to come in for quarters not published yet.
+- **Says:** An early estimate of economic growth for quarters the statistics office has not published yet, from monthly figures that come out sooner.
 - **Rule:** q/q real GDP growth on the quarter's activity-index growth and/or leading-indicator change plus last quarter's growth; months not out yet are an AR forecast of the monthly series.
 - **Reads:** OECD quarterly national accounts (via DBnomics), BCB IBC-Br, Eurostat industrial production, OECD composite leading indicator
 - **Shows in:** Research > History & data (Nowcast and forecasts), Council chat (Nowcast & Forecast)
@@ -353,7 +353,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Fiscal reaction (Bohn test)
 
-- **Says:** Whether the primary balance has risen with debt in this country's own history.
+- **Says:** Whether this government has, in its own history, tightened its budget (raised the primary balance, the budget before interest) when debt rose. If it has, that is a sign debt has been kept in check.
 - **Rule:** OLS of the primary balance on last year's debt and the output gap, outturn years only, Newey-West errors (Bohn 1998); needs 15 years.
 - **Reads:** IMF Fiscal Monitor primary balance, IMF WEO gross debt, the app's output gap estimate
 - **Shows in:** Country Research > History & data (Fiscal reaction)
@@ -365,7 +365,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Gross financing need
 
-- **Says:** How much the government has to borrow each year: deficit plus external debt falling due.
+- **Says:** How much the government has to raise each year: the budget deficit plus the debt owed abroad that falls due and must be repaid or borrowed again.
 - **Rule:** Overall deficit plus scheduled external public principal (World Bank IDS), as % of GDP; a lower bound because domestic amortisation has no free source. Benchmark 15% of GDP (IMF MAC DSA, emerging markets).
 - **Reads:** IMF Fiscal Monitor balances, IMF GDP in dollars, World Bank IDS principal projections, QEDS
 - **Shows in:** Country Research > History & data (Gross financing need)
@@ -413,7 +413,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Reserve adequacy (IMF ARA, partial)
 
-- **Says:** Reserves against the IMF adequacy metric, with the usual months-of-imports and short-term debt cover.
+- **Says:** Whether the central bank's foreign currency savings are enough for a rainy day: against the IMF's adequacy measure, months of imports they would pay for, and how much short-term foreign debt they would cover.
 - **Rule:** IMF ARA weights for floating and fixed regimes on exports, broad money and short-term debt (the other-liabilities term has no free source, so the ratio is an upper bound).
 - **Reads:** World Bank reserves, short-term external debt, broad money, exports, GDP
 - **Shows in:** Country Research > History & data (Reserve adequacy)
@@ -506,7 +506,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Currency carry
 
-- **Says:** Currencies with higher policy rates than the US have tended to pay more than they lose to depreciation.
+- **Says:** Currencies with higher interest rates than the US have tended to pay investors more in interest than they lost when the currency fell (the carry trade).
 - **Rule:** Each month, long the third of currencies with the highest policy rate gap to the US, short the lowest third, equal weights against the dollar, held a month (Lustig and Verdelhan 2007; Menkhoff et al. 2012).
 - **Reads:** ECB reference rates (month-end, per USD), BIS policy rates
 - **Shows in:** Models & validation (pre-registered test); no panel yet
@@ -522,7 +522,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Currency value (five-year real depreciation)
 
-- **Says:** Currencies that have cheapened most in real terms against the dollar over five years have tended to recover.
+- **Says:** Currencies that have become cheapest against the dollar over five years, after allowing for inflation, have tended to recover some of the fall.
 - **Rule:** Each month, long the third of currencies with the largest five-year real depreciation (consumer prices lagged two months), short the third with the least (Asness, Moskowitz and Pedersen 2013; Menkhoff et al. 2017).
 - **Reads:** ECB reference rates, BIS policy rates (for the return), OECD consumer prices
 - **Shows in:** Models & validation (pre-registered test); no panel yet
@@ -538,7 +538,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Currency momentum (12-1)
 
-- **Says:** Currencies that have paid most over the past year (leaving out the latest month) have tended to keep doing so.
+- **Says:** Currencies that have done best over the past year (leaving out the latest month) have tended to keep doing well for a while (momentum).
 - **Rule:** Each month, long the third of currencies with the highest excess return over months t-12 to t-1, short the lowest third (Asness, Moskowitz and Pedersen 2013; Menkhoff et al. 2012).
 - **Reads:** ECB reference rates, BIS policy rates
 - **Shows in:** Models & validation (pre-registered test); no panel yet
@@ -566,7 +566,7 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### BEER fair value of the real exchange rate
 
-- **Says:** Whether the real effective exchange rate sits above (dear) or below (cheap) the level its fundamentals have gone with in this country.
+- **Says:** Whether the currency, after allowing for inflation and averaged across trading partners, sits above (dear) or below (cheap) the level that this country's economic fundamentals have usually gone with.
 - **Rule:** OLS of log BIS real effective rate (yearly) on log terms of trade, log GDP per head at PPP vs the US, and the summed current account (NFA proxy), Newey-West errors (Clark and MacDonald 1998).
 - **Reads:** BIS real effective exchange rates, World Bank terms of trade, GDP per head at PPP, current account
 - **Shows in:** Country Research > History & data (BEER fair value)
