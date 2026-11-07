@@ -2,7 +2,7 @@
   "id": "cpi_nowcast",
   "version": 2,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; registered before any run of this version",
+  "registeredBy": "Sam (owner); registered before any run of this version",
   "hypothesis": "An AR (lag 0-13 by BIC) on monthly y/y inflation, fitted on the last 10 years at each origin, for the one or two months after the newest published figure, has a lower RMSE than carrying the newest figure on.",
   "target": "cpi_nowcast_m",
   "retestOf": {

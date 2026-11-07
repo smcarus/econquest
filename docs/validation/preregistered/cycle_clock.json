@@ -2,7 +2,7 @@
   "id": "cycle_clock",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "Once the cycle clock reads hiking (a hike after a hold or a cut), another hike follows within 6 months more often than a hike follows any month; once it reads cutting, another cut follows within 6 months more often than a cut follows any month.",
   "method": "cycle_clock",
   "framework": 2,

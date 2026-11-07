@@ -2,7 +2,7 @@
   "id": "gdp_nowcast",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "The bridge-equation nowcast of quarterly real GDP growth (q/q), made 30 days after the quarter ends from the monthly activity index and/or OECD leading indicator published by then, has a lower RMSE than the historical mean of GDP growth published by then.",
   "target": "gdp_nowcast_q",
   "params": {

@@ -2,7 +2,7 @@
   "id": "policy_rate_forecast",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "An AR (lag 0-3 by BIC, no drift, last 120 months) on the monthly change in the policy rate forecasts the rate with a lower RMSE than no change, 3 and 12 months ahead.",
   "target": "policy_rate_m",
   "params": {

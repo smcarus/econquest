@@ -2,7 +2,7 @@
   "id": "taylor_gap",
   "version": 1,
   "registeredOn": "2026-11-05",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "When the policy rate sits more than 1 point above a simple Taylor rule (tight), the central bank cuts within 6 months more often than in any month; when it sits more than 1 point below (loose), it hikes within 6 months more often than in any month.",
   "method": "taylor_gap",
   "params": {

@@ -2,7 +2,7 @@
   "id": "debt_forecast",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "An AR (lag 0-2 by BIC, with drift) on the yearly change in government debt to GDP forecasts the ratio with a lower RMSE than no change, one and two years ahead.",
   "target": "debt_gdp_a",
   "params": {

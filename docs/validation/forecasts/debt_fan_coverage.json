@@ -2,7 +2,7 @@
   "id": "debt_fan_coverage",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner) chose the design (past IMF WEO editions as the baseline); drafted by Claude; registered before any run",
+  "registeredBy": "Sam (owner) chose the design (past IMF WEO editions as the baseline); registered before any run",
   "hypothesis": "The debt fan chart, rebuilt at each past October WEO edition exactly as the panel builds it today (that edition's actual years as the shock history, its projections as the baseline, 2000 paths, fixed seed), holds the later government debt outturn inside its 10th-90th percentile band between 70% and 90% of the time at every horizon from 1 to 5 years.",
   "target": "debt_fan_coverage",
   "params": {

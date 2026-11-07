@@ -2,7 +2,7 @@
   "id": "cli_turn_policy",
   "version": 1,
   "registeredOn": "2026-11-05",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "After an OECD leading-indicator peak (trough), the central bank cuts (hikes) within 6 months more often than it does after any month.",
   "method": "cli_turn_policy",
   "params": {

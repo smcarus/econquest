@@ -2,7 +2,7 @@
   "id": "regime_quadrant",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "When growth and inflation are both rising (the leading indicator up over 6 months and y/y inflation up over 3 months), the central bank hikes within 6 months more often than after any month; when both are falling, it cuts within 6 months more often than after any month.",
   "method": "regime_quadrant",
   "framework": 2,

@@ -2,7 +2,7 @@
   "id": "gdp_forecast",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "An AR (lag 0-4 by BIC, refitted at each origin on all data to then) forecast of quarterly real GDP growth (q/q) has a lower RMSE than the historical mean, one and four quarters ahead.",
   "target": "gdp_growth_q",
   "params": {
