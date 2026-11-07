@@ -360,9 +360,9 @@ export const MODEL_REGISTER: RegisterEntry[] = [
   {
     id: 'global_scenarios',
     name: 'Global shock scenarios',
-    says: 'How the currency and policy rate have moved with the US policy rate, the dollar and US financial stress, applied to a stated shock.',
+    says: 'How the currency and policy rate have moved with the US policy rate, the dollar, US financial stress (index of your choice) and global supply chain pressure, applied to a stated shock.',
     method: 'OLS on monthly changes over the last 15 years; implied move = coefficients x stated shock, 90% band from Newey-West errors.',
-    inputs: 'ECB reference rates, BIS policy rates (incl. US), St. Louis Fed Financial Stress Index (FRED)',
+    inputs: 'ECB reference rates, BIS policy rates (incl. US), St. Louis Fed Financial Stress Index or Chicago Fed NFCI / adjusted NFCI (FRED), NY Fed Global Supply Chain Pressure Index',
     where: 'Country Research > History & data (Global shock scenarios)',
     use: 'Research',
     status: 'descriptive',

@@ -183,8 +183,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'ecb',
-    name: 'ECB euro reference rates (through Frankfurter)',
-    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move',
+    name: 'ECB statistics: euro reference rates (through Frankfurter), Survey of Professional Forecasters',
+    usedFor: 'Daily exchange rate history per US dollar since 1999; FX volatility; last year\'s closing rate for the year-to-date move; Survey of Professional Forecasters inflation expectations (ECB Data Portal, dataset SPF, quarterly world series)',
     terms: [
       { label: 'ECB statistics reuse policy', url: 'https://www.ecb.europa.eu/stats/ecb_statistics/governance_and_quality_framework/html/usage_policy.en.html' },
       { label: 'Frankfurter licence', url: 'https://frankfurter.dev/license/' },
@@ -227,7 +227,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'nyfed',
     name: 'New York Fed markets data',
-    usedFor: 'Fed funds, SOFR, reverse repo',
+    usedFor: 'Fed funds, SOFR, reverse repo; Global Supply Chain Pressure Index (GSCPI, a factor in the global shock scenarios and a world series; built by the New York Fed from transport and manufacturing data)',
     terms: [{ label: 'Terms of Use', url: 'https://www.newyorkfed.org/privacy/termsofuse' }],
     status: 'conditions',
     display: 'Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed\'s notice.',
@@ -244,8 +244,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'fred',
-    name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed Financial Stress Index',
-    usedFor: 'St. Louis Fed Financial Stress Index (STLFSI4, a factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
+    name: 'FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations',
+    usedFor: 'US inflation expectations: 5- and 10-year breakevens and the 5y5y forward (T5YIE, T10YIE, T5YIFR, computed by the St. Louis Fed from US Treasury yields, labelled "Copyrighted: Citation Required") and the Cleveland Fed 1- and 10-year expected inflation (EXPINF1YR, EXPINF10YR, labelled "Public Domain: Citation Requested"); St. Louis Fed Financial Stress Index (STLFSI4, the default stress factor in the global shock scenarios; owned by the St. Louis Fed itself, labelled "Copyrighted: Citation Required"); Chicago Fed NFCI and adjusted NFCI (NFCI, ANFCI, alternative stress factors and world series; owned by the Federal Reserve Bank of Chicago, labelled "Copyrighted: Citation Required"); 10Y yields for the US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, the Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries (all OECD series on FRED)',
     terms: [
       { label: 'FRED legal', url: 'https://fred.stlouisfed.org/legal/' },
       { label: 'FRED API terms', url: 'https://fred.stlouisfed.org/docs/api/terms_of_use.html' },
@@ -526,15 +526,18 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'bcb',
-    name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months)',
-    usedFor: 'Brazil\'s IPCA inflation over 12 months',
-    terms: [{ label: 'Open data portal: about', url: 'https://dadosabertos.bcb.gov.br/pages/sobre-o-portal' }],
+    name: 'Banco Central do Brasil (SGS 13522, IPCA 12 months; Focus market expectations)',
+    usedFor: 'Brazil\'s IPCA inflation over 12 months; Focus survey median IPCA expected over the next 12 months (Olinda OData, Expectativas)',
+    terms: [
+      { label: 'Open data portal: about', url: 'https://dadosabertos.bcb.gov.br/pages/sobre-o-portal' },
+      { label: 'Focus dataset page (licence: ODbL)', url: 'https://dadosabertos.bcb.gov.br/dataset/expectativas-mercado' },
+    ],
     status: 'not_verified',
     display: 'The open data portal names no licence and its footer reads "Todos os direitos reservados" (all rights reserved). The copyright page needs JavaScript and was not read.',
     commercial: 'Not stated.',
     attribution: 'Fonte: Banco Central do Brasil, SGS série 13522.',
     quotes: ['© Banco Central do Brasil - Todos os direitos reservados'],
-    flag: 'Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.',
+    flag: 'The Focus dataset page names the Open Data Commons Open Database License (ODbL), read 2026-11-07, while the site footer reads all rights reserved. Read https://www.bcb.gov.br/acessoinformacao/direitosautorais in a browser and update this row.',
     share: 'unclear',
     shareNote: 'No licence stated; the footer reads all rights reserved.',
     checked: D,
