@@ -118,6 +118,7 @@ export function QuestsDialog({ onClose }: { onClose: () => void }) {
           {list && list.enabled && !openId && view === 'board' && <Scoreboard />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
+              <ThisWeek onOpen={open} />
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 Open questions anyone can answer, argue and check. Each Quest states the rule that settles it, and every figure shown is read live from a feed. Forecasts you log here stay on this computer; nothing is published.
               </p>
@@ -886,5 +887,48 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
         </table>
       )}
     </div>
+  );
+}
+
+type DigestReply = { closingSoon: Array<{ id: string; title: string; closesOn: string }>; opening: Array<{ id: string; title: string; opensOn: string }>; settled: Array<{ id: string; title: string; result: string }> };
+
+/** This week: Quests closing soon, opening, and results recorded in the last 7 days. Hidden when there is nothing. */
+function ThisWeek({ onOpen }: { onOpen: (id: string) => void }) {
+  const [d, setD] = useState<DigestReply | null>(null);
+  useEffect(() => {
+    send('/api/quests/digest').then(setD).catch(() => setD(null));
+  }, []);
+  if (!d || (!d.closingSoon.length && !d.opening.length && !d.settled.length)) return null;
+  const item = (id: string, title: string, note: string) => (
+    <li key={id}>
+      <button type="button" className="underline text-left" onClick={() => onOpen(id)}>
+        {title}
+      </button>{' '}
+      <span className="text-xs text-slate-500">{note}</span>
+    </li>
+  );
+  return (
+    <Box title="This week">
+      <div className="text-sm space-y-2" data-quest-this-week>
+        {d.closingSoon.length > 0 && (
+          <div>
+            <div className="text-xs text-slate-500">Closing soon</div>
+            <ul>{d.closingSoon.map((x) => item(x.id, x.title, `closes ${x.closesOn}`))}</ul>
+          </div>
+        )}
+        {d.opening.length > 0 && (
+          <div>
+            <div className="text-xs text-slate-500">Opening</div>
+            <ul>{d.opening.map((x) => item(x.id, x.title, `opens ${x.opensOn}`))}</ul>
+          </div>
+        )}
+        {d.settled.length > 0 && (
+          <div>
+            <div className="text-xs text-slate-500">Results recorded</div>
+            <ul>{d.settled.map((x) => item(x.id, x.title, x.result))}</ul>
+          </div>
+        )}
+      </div>
+    </Box>
   );
 }
