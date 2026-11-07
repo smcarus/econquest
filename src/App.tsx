@@ -94,6 +94,7 @@ import {
   AlertCircle,
   CheckCircle2,
   ShieldCheck,
+  GraduationCap,
   ScrollText,
   Activity,
   ShieldQuestion,
@@ -278,6 +279,22 @@ export default function App() {
       saveShareMode(!on);
       return !on;
     });
+  // Menu > Exam mode (src/utils/examMode.ts): server-wide; no AI step writes while it is on.
+  const [exam, setExam] = useState<{ on: boolean; canChange?: boolean; error?: string }>({ on: false });
+  useEffect(() => {
+    fetch('/api/exam-mode')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((b) => b && setExam({ on: b.on === true, canChange: b.canChange === true }))
+      .catch(() => undefined);
+  }, []);
+  const toggleExam = () => {
+    fetch('/api/exam-mode', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on: !exam.on }) })
+      .then(async (r) => {
+        const b = await r.json().catch(() => ({}));
+        setExam(r.ok ? { on: b.on === true, canChange: true } : { ...exam, error: String(b.error || `HTTP ${r.status}`) });
+      })
+      .catch(() => setExam({ ...exam, error: 'The app server did not answer.' }));
+  };
   // Menu > Account: the signed-in name beside the item, or that sign-in is off.
   const [isAccountOpen, setIsAccountOpen] = useState(false);
   const [accountHint, setAccountHint] = useState('');
@@ -1240,6 +1257,17 @@ export default function App() {
 
           <OfflinePill status={onlineStatus} onOpen={() => setIsOfflineDataOpen(true)} />
 
+          {exam.on && (
+            <span
+              title="Exam mode is on: no AI summaries or AI steps; questions asked and countries opened are written to the audit log."
+              className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap text-amber-700 dark:text-amber-300"
+              data-exam-mode="on"
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Exam mode</span>
+            </span>
+          )}
+
           {shareMode && (
             <button
               type="button"
@@ -1379,6 +1407,15 @@ export default function App() {
                         hint: shareMode ? 'On' : 'Off',
                         title: 'On: downloads hold back figures whose sources\' terms do not let them be passed on, or do not say (Menu > About & data licences).',
                         onClick: toggleShareMode,
+                        className: '',
+                      },
+                      {
+                        key: 'exam',
+                        icon: <GraduationCap className={`w-3.5 h-3.5 ${exam.on ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'}`} />,
+                        label: 'Exam mode',
+                        hint: exam.error ? 'Not allowed' : exam.on ? 'On' : 'Off',
+                        title: exam.error || (exam.canChange === false ? 'Only the computer running the app, or an admin when sign-in is on, can switch exam mode.' : 'On: no AI summaries or AI steps for anyone using this app; Council chat shows figures only, and questions asked and countries opened go to the audit log.'),
+                        onClick: toggleExam,
                         className: '',
                       },
                       {

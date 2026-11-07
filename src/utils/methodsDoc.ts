@@ -173,6 +173,18 @@ export const STATED_METHODS: { id: string; name: string; where: string; method: 
     code: 'src/utils/unitConverters.ts',
   },
   {
+    id: 'exercises',
+    name: 'Exercises with answer keys',
+    where: 'Research > One country > History & data',
+    method: [
+      'Real policy rate: the BIS policy rate at the end of the month less monthly inflation (y/y) for the same month; tolerance 0.1 points.',
+      'Taylor (1993) rule: neutral real rate 2% + inflation + 0.5 x (inflation - target) + 0.5 x output gap, with IMF WEO inflation and output gap for the year and the bank\'s current published target, both stated in the question; tolerance 0.1. The key also gives the actual year-end policy rate against the rule.',
+      'r minus g: the December 10Y government bond yield less nominal GDP growth, (1 + real growth)(1 + inflation) - 1 from the IMF WEO; tolerance 0.2. Debt change: the IMF WEO government debt ratio this year less last year; tolerance 0.2.',
+    ],
+    limits: 'Only questions whose inputs are all on file are set; others are listed with why. IMF projections are never used. The current inflation target is used for past years. In exam mode the answer key stays on the server and answers are only marked right or not.',
+    code: 'src/utils/exercises.ts',
+  },
+  {
     id: 'reserve_adequacy',
     name: 'Reserve adequacy (IMF ARA, partial)',
     where: 'Research > History & data',

@@ -998,3 +998,32 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
   assert.equal((await fetch(`${base}/api/reviews/${review.id}`, { method: 'DELETE' })).status, 200);
   assert.equal((await fetch(`${base}/api/reviews/${review.id}`)).status, 404);
 });
+
+test('exam mode: switched from this computer, AI steps answer with figures only, opens are audited, then off again', async () => {
+  const put = (on: boolean) => fetch(`${base}/api/exam-mode`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ on }) });
+  assert.equal((await (await fetch(`${base}/api/exam-mode`)).json()).on, false);
+  const on = await put(true);
+  assert.equal(on.status, 200);
+  assert.equal((await on.json()).on, true);
+  try {
+    const answers = [{ id: 'cb', name: 'Central Bank Watcher', why: 'x', findings: [{ iso3: 'TUR', countryName: 'Turkey', reading: 'r', figures: [{ label: 'CPI inflation', value: '34.0%', source: 'IMF, live', tag: 'live' }], weight: 0.5 }], missing: [] }];
+    const syn = await (await fetch(`${base}/api/council/synthesise`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'Exam question about Turkey', answers }) })).json();
+    assert.equal(syn.brief, null);
+    assert.match(syn.reason, /Exam mode is on/);
+    const choice = await (await fetch(`${base}/api/council/choose-agents`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ question: 'q' }) })).json();
+    assert.match(choice.reason, /exam mode/);
+    const blocked = await fetch(`${base}/api/ai/try-model`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(blocked.status, 409);
+    const ex = await (await fetch(`${base}/api/exercises/MEX?month=2024-12`)).json();
+    assert.equal(ex.examMode, true);
+    assert.ok(ex.exercises.every((e: Record<string, unknown>) => !('answer' in e) && !('workings' in e)));
+    const opened = await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'Turkey, overview' }) })).json();
+    assert.equal(opened.recorded, true);
+    const audit = await (await fetch(`${base}/api/audit?q=exam`)).text();
+    assert.match(audit, /Exam mode: Opened country \\"Turkey, overview\\"/);
+    assert.match(audit, /Exam question about Turkey/);
+  } finally {
+    assert.equal((await (await put(false)).json()).on, false);
+  }
+  assert.equal((await (await fetch(`${base}/api/exam-mode/opened`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ what: 'country', label: 'x' }) })).json()).recorded, false);
+});

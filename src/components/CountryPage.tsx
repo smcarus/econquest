@@ -1,5 +1,6 @@
 import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { noteExamOpened } from '../utils/examMode';
 import { openDataLicences } from './AboutDialog';
 import { Plus, RefreshCw } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
@@ -38,6 +39,7 @@ const LocalProjectionsPanel = lazyNamed(() => import('./LocalProjectionsPanel'),
 const ReserveAdequacyPanel = lazyNamed(() => import('./ReserveAdequacyPanel'), 'ReserveAdequacyPanel');
 const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'RiskScorecardPanel');
 const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'UnitConverterPanel');
+const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
@@ -125,6 +127,8 @@ export const CountryPage: React.FC<{
 }) => {
   const net = useOnlineStatus();
   const offline = !!net && !net.online;
+  // Exam mode: what was opened goes to the audit log for the teacher.
+  useEffect(() => noteExamOpened('country', `${run.countryName}, ${activeTab}`), [run.countryName, activeTab]);
   const item = watchlistItems.find((w) => w.iso3 === run.iso3);
   const tabs = COUNTRY_TABS;
   const tab = tabs.find((t) => t.id === activeTab) || DEFAULT_COUNTRY_TAB;
@@ -334,6 +338,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Unit converters">
             <React.Suspense fallback={<DeskLoading />}>
               <UnitConverterPanel key={`conv-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-exercises" className="scroll-mt-4" />
+          <PanelBoundary name="Exercises">
+            <React.Suspense fallback={<DeskLoading />}>
+              <ExercisesPanel key={`ex-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />

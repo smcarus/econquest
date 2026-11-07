@@ -59,6 +59,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Story leads | Research | Stated method, no call to test | Not applicable |
 | Publication export | Research | Stated method, no call to test | Not applicable |
 | Unit converters | Research | Stated method, no call to test | Not applicable |
+| Exercises with answer keys | Research | Stated method, no call to test | Not applicable |
 | Reserve adequacy (IMF ARA, partial) | Research | Stated method, no call to test | Not applicable |
 | Debt fan chart (stochastic) | Research | Stated method, no call to test | Not applicable |
 | Inflation after policy rate changes (local projections) | Research | Stated method, no call to test | Not applicable |
@@ -677,6 +678,15 @@ These show where things stand on a stated method and make no call a backtest cou
 - Only the year asked for is used; a year with no figure reads Missing with the years on file. IMF projections are never used.
 - **Limits:** Yearly averages: a single day's amount converts only roughly, and in high inflation the year's average rate can be far from the rate on the day. The GDP PPP factor suits economy-wide amounts, not one household's basket.
 - **Code:** `src/utils/unitConverters.ts`
+
+### Exercises with answer keys
+
+- **Shows in:** Research > One country > History & data
+- Real policy rate: the BIS policy rate at the end of the month less monthly inflation (y/y) for the same month; tolerance 0.1 points.
+- Taylor (1993) rule: neutral real rate 2% + inflation + 0.5 x (inflation - target) + 0.5 x output gap, with IMF WEO inflation and output gap for the year and the bank's current published target, both stated in the question; tolerance 0.1. The key also gives the actual year-end policy rate against the rule.
+- r minus g: the December 10Y government bond yield less nominal GDP growth, (1 + real growth)(1 + inflation) - 1 from the IMF WEO; tolerance 0.2. Debt change: the IMF WEO government debt ratio this year less last year; tolerance 0.2.
+- **Limits:** Only questions whose inputs are all on file are set; others are listed with why. IMF projections are never used. The current inflation target is used for past years. In exam mode the answer key stays on the server and answers are only marked right or not.
+- **Code:** `src/utils/exercises.ts`
 
 ### Reserve adequacy (IMF ARA, partial)
 
