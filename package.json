@@ -34,6 +34,7 @@
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",
+    "docs:glossary": "tsx scripts/docs-glossary.ts",
     "users": "tsx scripts/users.ts",
     "backup:drill": "tsx scripts/backup-drill.ts",
     "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",

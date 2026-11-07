@@ -3,7 +3,14 @@
 How to use the terminal, page by page. For setup see the [README](../README.md); for every data
 source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md); for what each source's terms allow
 see [DATA_LICENCES.md](./DATA_LICENCES.md); for how each model and signal works and its backtest
-verdict see [METHODS.md](./METHODS.md).
+verdict see [METHODS.md](./METHODS.md); for plain-language explanations of every term see the
+[Glossary](./GLOSSARY.md).
+
+**New to economics?** Every figure in the Research tables has a *What is this?* link under its name:
+tap it for what the figure is, why it matters and how to read it (what a higher or lower value
+means). Each panel opens with a sentence or two on what it tells you. The full list of terms is in
+Menu > User manual > *Glossary*, and *Explain* on any figure asks the council what it means for that
+country.
 
 **Research, not validated advice.** The app is a research workspace. No model in it has been
 independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &
