@@ -37,6 +37,8 @@ export interface RecordedVerdict {
   verdict: 'passed' | 'failed' | 'too_few_cases';
   /** Backtest method (1 or 2); forecast evaluations and signal tests have one method each. */
   method?: number;
+  /** The p the verdict was judged on, copied from the run (older rows state it only in the summary). */
+  p?: number;
   summary: string;
 }
 
