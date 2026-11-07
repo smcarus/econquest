@@ -137,3 +137,11 @@ export async function readXlsxSheet(data: ArrayBuffer | Uint8Array, sheetName: s
   const sharedXml = await zipText(buf, entries, 'xl/sharedStrings.xml');
   return parseSheetRows(sheetXml, sharedXml ? parseSharedStrings(sharedXml) : []);
 }
+
+/** Every worksheet's name, in workbook order. */
+export async function xlsxSheetNames(data: ArrayBuffer | Uint8Array): Promise<string[]> {
+  const buf = data instanceof Uint8Array ? data : new Uint8Array(data);
+  const workbook = await zipText(buf, zipEntries(buf), 'xl/workbook.xml');
+  if (!workbook) return [];
+  return [...workbook.matchAll(/<sheet\b[^>]*>/g)].map((m) => unescapeXml(m[0].match(/\bname="([^"]*)"/)?.[1] || '')).filter(Boolean);
+}

@@ -86,6 +86,7 @@ import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/ut
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
+import { stressWorldSeries } from './src/utils/stressIndices';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { parseRules } from './src/utils/watchRules';
@@ -162,7 +163,7 @@ import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
-import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
+import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchStressPulls, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
@@ -3018,7 +3019,9 @@ async function startServer() {
     await quick(fetchCommodities());
     const m = commodityMemory;
     const prices = [...Object.values(m?.pink?.series || {}), ...Object.values(m?.eia?.series || {})];
-    return commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt });
+    // Stress and supply chain indices (src/utils/stressIndices.ts), chartable and testable like prices.
+    const stress = stressWorldSeries(await quick(fetchStressPulls())).filter((x): x is Series => 'points' in x);
+    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...stress];
   }
   // Fed balance sheet (H.4.1) from FRED: Research > Compare countries > Markets & signals.
   app.get('/api/fed-balance-sheet', async (_req, res) => {
@@ -3026,7 +3029,7 @@ async function startServer() {
   });
   app.get('/api/series/world', async (_req, res) => {
     const series = await worldSeries();
-    res.json({ series: series.map(seriesSummary), missing: series.length ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }] });
+    res.json({ series: series.map(seriesSummary), missing: series.some((x) => x.id.startsWith('commodity_')) ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }] });
   });
   app.get('/api/series/world/:id', async (req, res) => {
     const hit = (await worldSeries()).find((s) => s.id === req.params.id);

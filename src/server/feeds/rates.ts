@@ -22,6 +22,8 @@ import { CBPOL_DATASET, parseCbpolCsv } from '../../utils/bisPolicyRates';
 import { type BisCreditCycle, bisCreditGapUrl, bisDsrUrl, bisPropertyUrl, parseBisCreditGap, parseBisDsr, parseBisProperty } from '../../utils/bisCreditCycle';
 import { bocBoeEditions, bocBoeUrl, parseBocBoeCsv, type SovereignDefaults } from '../../utils/sovereignDefaults';
 import { idsChinaUrl, idsCreditorsUrl, type IdsCreditors, parseIdsCreditors } from '../../utils/idsCreditors';
+import { readXlsxSheet, xlsxSheetNames } from '../../utils/xlsxRead';
+import { csvRows, GSCPI_URLS, type IdxObs, parseGscpiRows, STRESS_INDICES, type StressPulls } from '../../utils/stressIndices';
 import { type InflationExpectations, parseFredApiObservations, US_INFLATION_EXPECTATION_IDS } from '../../utils/inflationExpectations';
 import { buildFedBalanceSheet, FED_SERIES, type FedBalanceSheet, type Obs, parseFredCsvSeries } from '../../utils/fedBalanceSheet';
 
@@ -191,7 +193,6 @@ export async function fetchSovereignDefaults(): Promise<SovereignDefaults | null
  * scenario engine's financial stress factor and the US inflation expectations.
  * Kept 12 hours in memory (an hour after a miss); when FRED does not answer the factor is left out and named.
  */
-export const FRED_STRESS_SERIES = 'STLFSI4';
 const fredHistoryCache = new Map<string, { at: number; value: Obs[] | null }>();
 export async function fetchFredHistory(seriesId: string, from = '1993-12-01'): Promise<Obs[] | null> {
   const hit = fredHistoryCache.get(seriesId);
@@ -215,6 +216,57 @@ export async function fetchFredHistory(seriesId: string, from = '1993-12-01'): P
   const value = obs.length ? obs : null;
   fredHistoryCache.set(seriesId, { at: Date.now(), value });
   return value;
+}
+
+/**
+ * NY Fed Global Supply Chain Pressure Index (src/utils/stressIndices.ts): the CSV file first, then
+ * the Excel file (every sheet tried). Kept 12 hours (an hour after a miss); a miss carries its reason.
+ */
+let gscpiCache: { at: number; value: NonNullable<StressPulls['gscpi']> } | null = null;
+export async function fetchGscpi(): Promise<NonNullable<StressPulls['gscpi']>> {
+  if (gscpiCache && Date.now() - gscpiCache.at < ('obs' in gscpiCache.value ? 12 : 1) * 60 * 60 * 1000) return gscpiCache.value;
+  let value: NonNullable<StressPulls['gscpi']> = { reason: 'The New York Fed GSCPI file did not answer' };
+  try {
+    const csv = await fetchTextWithTimeout(GSCPI_URLS.csv, 15000);
+    const obs = csv && !csv.startsWith('PK') ? parseGscpiRows(csvRows(csv)) : [];
+    if (obs.length) value = { obs, fetchedAt: new Date().toISOString() };
+  } catch {
+    // try the Excel file
+  }
+  if (!('obs' in value)) {
+    try {
+      const res = await fetchWithTimeout(GSCPI_URLS.xlsx, 20000);
+      if (res.ok) {
+        const buf = new Uint8Array(await res.arrayBuffer());
+        let obs: IdxObs[] = [];
+        try {
+          for (const name of await xlsxSheetNames(buf)) {
+            const rows = await readXlsxSheet(buf, name);
+            const got = rows ? parseGscpiRows(rows) : [];
+            if (got.length > obs.length) obs = got;
+          }
+          value = obs.length ? { obs, fetchedAt: new Date().toISOString() } : { reason: 'The New York Fed GSCPI file answered, but no sheet had a date column with index values' };
+        } catch {
+          value = { reason: 'The New York Fed GSCPI file is not an .xlsx workbook this app can read' };
+        }
+      }
+    } catch {
+      // keep the reason above
+    }
+  }
+  gscpiCache = { at: Date.now(), value };
+  return value;
+}
+
+/** The stress indices (FRED weekly) and the GSCPI, for the scenarios and the world series. */
+export async function fetchStressPulls(): Promise<StressPulls> {
+  const [fred, gscpi] = await Promise.all([
+    Promise.all(STRESS_INDICES.map(async (s) => [s.fred, await fetchFredHistory(s.fred)] as const)),
+    fetchGscpi(),
+  ]);
+  const out: StressPulls['fred'] = {};
+  for (const [id, obs] of fred) if (obs?.length) out[id] = obs;
+  return { fred: out, gscpi, fetchedAt: new Date().toISOString() };
 }
 
 /** US inflation expectations (src/utils/inflationExpectations.ts): five FRED series from 2003, or null when none answered. */

@@ -19,6 +19,7 @@ interface Reply {
   factors: Array<{ id: FactorId; label: string; unit: string }>;
   responses: Record<ResponseId, { label: string; unit: string; note: string }>;
   missingFactors: string[];
+  stress?: { key: string; choices: Array<{ key: string; label: string }> };
   method: string;
   sources: string[];
   grVar?: (Extract<GrVarOutcome, { ok: true }> & { sentence: string; method: string; file?: string }) | { ok: false; reason: string; method: string };
@@ -31,20 +32,21 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preset, setPreset] = useState('tight');
+  const [stressKey, setStressKey] = useState('stlfsi');
   const [shock, setShock] = useState<Partial<Record<FactorId, number>>>({ us_rate: 1, dollar: 5 });
 
   useEffect(() => {
     let live = true;
     setReply(null);
     setError(null);
-    fetch(`/api/scenario/${encodeURIComponent(iso3)}`)
+    fetch(`/api/scenario/${encodeURIComponent(iso3)}?stress=${encodeURIComponent(stressKey)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: Reply) => live && setReply(b))
       .catch((e: Error) => live && setError(`The scenario models could not be read (${e.message}).`));
     return () => {
       live = false;
     };
-  }, [iso3]);
+  }, [iso3, stressKey]);
 
   const fitted = useMemo(() => (reply?.models || []).filter((m): m is Extract<ScenarioModelOutcome, { ok: true }> => m.ok), [reply]);
   const results = useMemo(() => fitted.map((m) => ({ m, r: applyScenario(m, shock) })), [fitted, shock]);
@@ -78,13 +80,25 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
             </button>
           )}
         </h2>
-        <p className="ui-label">If the Fed moves, the dollar swings or US financial stress rises, how have this country's currency and policy rate moved with it? Fitted on the last 15 years of monthly moves; co-movement, not a forecast.</p>
+        <p className="ui-label">If the Fed moves, the dollar swings, US financial stress rises or supply chains tighten, how have this country's currency and policy rate moved with it? Fitted on the last 15 years of monthly moves; co-movement, not a forecast.</p>
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}
         {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
         {reply && (
           <>
+            {reply.stress && (
+              <label className="ui-label flex items-center gap-2" data-scenario-stress="true">
+                Financial stress index
+                <select className="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value={stressKey} onChange={(e) => setStressKey(e.target.value)}>
+                  {reply.stress.choices.map((c) => (
+                    <option key={c.key} value={c.key}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            )}
             <div className="flex flex-wrap gap-2">
               {reply.presets.map((p) => (
                 <button
@@ -164,7 +178,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
               </p>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Method: {reply.method} The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet: only five years of monthly prices are saved. Financial stress is the St. Louis Fed index (zero = average stress, up = more stress). Sources: {reply.sources.join('; ')}.
+              Method: {reply.method} The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet: only five years of monthly prices are saved. Financial stress is the index picked above (zero = average, up = more stress or tighter conditions); supply chain pressure is the NY Fed GSCPI (standard deviations, up = more pressure). Each index can also be charted and tested in the Chart Agent. Sources: {reply.sources.join('; ')}.
             </p>
             {reply.grVar && (
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2" data-gr-var="true">

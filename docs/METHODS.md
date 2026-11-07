@@ -494,9 +494,9 @@ The grades follow the practice of model-validation teams: pre-registration and n
 
 ### Global shock scenarios
 
-- **Says:** How the currency and policy rate have moved with the US policy rate, the dollar and US financial stress, applied to a stated shock.
+- **Says:** How the currency and policy rate have moved with the US policy rate, the dollar, US financial stress (index of your choice) and global supply chain pressure, applied to a stated shock.
 - **Rule:** OLS on monthly changes over the last 15 years; implied move = coefficients x stated shock, 90% band from Newey-West errors.
-- **Reads:** ECB reference rates, BIS policy rates (incl. US), St. Louis Fed Financial Stress Index (FRED)
+- **Reads:** ECB reference rates, BIS policy rates (incl. US), St. Louis Fed Financial Stress Index or Chicago Fed NFCI / adjusted NFCI (FRED), NY Fed Global Supply Chain Pressure Index
 - **Shows in:** Country Research > History & data (Global shock scenarios)
 - **Use:** Research
 - **Status:** Description, not a tested signal
@@ -840,8 +840,8 @@ These show where things stand on a stated method and make no call a backtest cou
 ### Global shock scenarios (scenario engine)
 
 - **Shows in:** Research > History & data
-- One OLS per response on monthly changes over the last 15 years (at least 60 months): the currency (100 x log change of units per US dollar, ECB month-end) and the policy rate (BIS month-end, change in points), each on the US policy rate change (BIS), the dollar (100 x log change of euros per dollar, ECB) and US financial stress (change in the St. Louis Fed Financial Stress Index, FRED STLFSI4, the last weekly reading of the month).
-- A scenario is a set of stated factor moves (presets: Fed +1 point, dollar +5%, both, the reverse, financial stress +1 point, stress +1 with dollar +5%; or your own). Implied move = coefficients x shock, intercept left out; 90% band from the Newey-West covariance of the coefficients. The residual standard deviation is shown as the size of a typical unexplained month.
+- One OLS per response on monthly changes over the last 15 years (at least 60 months): the currency (100 x log change of units per US dollar, ECB month-end) and the policy rate (BIS month-end, change in points), each on the US policy rate change (BIS), the dollar (100 x log change of euros per dollar, ECB) US financial stress (change in the index you pick: the St. Louis Fed Financial Stress Index STLFSI4 by default, or the Chicago Fed NFCI or adjusted NFCI; FRED, the last weekly reading of the month) and global supply chain pressure (change in the NY Fed GSCPI, monthly).
+- A scenario is a set of stated factor moves (presets: Fed +1 point, dollar +5%, both, the reverse, financial stress +1 point, stress +1 with dollar +5%, supply chain pressure +1 point; or your own). Implied move = coefficients x shock, intercept left out; 90% band from the Newey-West covariance of the coefficients. The residual standard deviation is shown as the size of a typical unexplained month.
 - **Limits:** Contemporaneous co-movement, linear in the shock: not causal, and the Fed and the dollar often move for the same reasons as the country. Shocks larger than any month in the sample are flagged as extrapolation. The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet (only five years of monthly prices saved); the NY Fed supply chain pressure index is not either (no checked download). The Chicago Fed NFCI is left out as a near-duplicate of the stress index. Currencies the ECB does not publish have no currency model.
 - **Code:** `src/utils/scenarioEngine.ts`
 
