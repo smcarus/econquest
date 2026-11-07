@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { DigestPanel } from './DigestPanel';
-import { CalendarClock, ExternalLink, PanelLeft, PanelRight, Ticket, X } from 'lucide-react';
+import { CalendarClock, ExternalLink, PanelLeft, PanelRight, X } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
-import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { POLITICAL_FISCAL_CATEGORIES, hasOfficialSchedule, upcomingOfficialEvents } from '../data/officialCalendar';
 import { rankDivergences } from '../utils/divergences';
 import { formatAsOf } from '../utils/dataStatus';
@@ -100,10 +99,7 @@ export const TodayPage: React.FC<{
   /** The list shown, so the pop-out opens on the same one. */
   watchlistId?: string;
   watchlistItems: LiveWatchlistItem[];
-  stagedTickets: StagedTradeTicketSpec[];
   onOpenCountry: (item: LiveWatchlistItem, sectionId?: string) => void;
-  onStageTicket: (ticket: StagedTradeTicketSpec) => void;
-  onOpenTickets: () => void;
   onOpenWatchlistManager: () => void;
   /** Opens Reports on the council brief just saved. */
   onSendCouncilToReports?: () => void;
@@ -123,10 +119,7 @@ export const TodayPage: React.FC<{
   watchlistName,
   watchlistId,
   watchlistItems,
-  stagedTickets,
   onOpenCountry,
-  onStageTicket,
-  onOpenTickets,
   onOpenWatchlistManager,
   onSendCouncilToReports,
   fullCouncil,
@@ -513,50 +506,6 @@ export const TodayPage: React.FC<{
         )}
       </div>
 
-      {!coreOnly && (
-      <Card
-        title="Waiting for you"
-        icon={<Ticket className="w-4 h-4 text-blue-600 dark:text-blue-400" />}
-        note="Trade tickets staged for the investment committee."
-        action={
-          stagedTickets.length > 0 ? (
-            <button
-              type="button"
-              onClick={onOpenTickets}
-              className="text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline whitespace-nowrap"
-            >
-              Open IC tickets
-            </button>
-          ) : undefined
-        }
-      >
-        {stagedTickets.length === 0 ? (
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            No staged tickets.
-          </p>
-        ) : (
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-            {stagedTickets.slice(0, 5).map((t) => (
-              <li key={t.ticketId} className="py-2 flex items-center justify-between gap-3">
-                <div>
-                  <div className="text-sm font-medium text-slate-900 dark:text-white">{t.strategyTitle}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">
-                    {t.countryName} · conviction {t.convictionScore0To100}/100
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => openIso(t.iso3, t.targetSectionId)}
-                  className="ui-btn"
-                >
-                  Open desk
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Card>
-      )}
     </div>
   );
 };

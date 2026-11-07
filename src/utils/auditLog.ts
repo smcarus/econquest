@@ -225,7 +225,6 @@ export function describeRequest(method: string, path: string): AuditInput | null
     'POST /api/council/phase1-and-cascade': { kind: 'council', summary: 'Ran the full council' },
     'POST /api/council/supreme-council': { kind: 'council', summary: 'Ran the council verdict step' },
     'POST /api/council/supreme-synthesis': { kind: 'council', summary: 'Ran the council verdict step' },
-    'POST /api/council/analyze-policy-document': { kind: 'council', summary: 'Read a policy document with the AI model' },
     'POST /api/connectors/ping-and-inspect': { kind: 'settings', summary: 'Checked a connector' },
     'POST /api/council/webhook-dispatch': { kind: 'settings', summary: 'Sent a council result to a webhook' },
     'POST /api/v1/integration/publish': { kind: 'settings', summary: 'Published a council result through the integration API' },

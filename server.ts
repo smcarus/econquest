@@ -133,13 +133,11 @@ import {
   IntegrationBroadcastScope,
   OpenDataSnapshot,
   PipelineStageTelemetry,
-  PolicyDocumentCategory,
   PredictionEventCategory,
   RawVenueEventContract,
   SupremeCouncilOutput,
   WatchlistItem,
 } from './src/types/council.ts';
-import { computeDeterministicDocumentAnalysis } from './src/utils/portfolioAndFundingEngine.ts';
 import { getSnapshotDataStatus } from './src/utils/dataStatus.ts';
 import { councilInputs, MISSING_FIGURES_RULE } from './src/utils/councilInputs.ts';
 import { watchlistYieldFields } from './src/utils/watchlistYield.ts';
@@ -2711,7 +2709,7 @@ async function startServer() {
     res.json({ ...state, canChange: true });
   });
   // Every other step that calls an AI model is refused while exam mode is on.
-  const EXAM_BLOCKED = /^\/api\/(council\/(phase1-and-cascade|rerun|analyze-policy-document)|ai\/try-model|morning-brief\/run|reviews\/[^/]+\/(diagnose|options|memo))$/;
+  const EXAM_BLOCKED = /^\/api\/(council\/(phase1-and-cascade|rerun)|ai\/try-model|morning-brief\/run|reviews\/[^/]+\/(diagnose|options|memo))$/;
   app.use((req, res, next) => {
     if (req.method === 'POST' && EXAM_BLOCKED.test(req.path) && loadExamMode().on) return res.status(409).json({ error: 'Exam mode is on: steps that use an AI model are switched off (Menu > Exam mode).' });
     next();
@@ -5000,246 +4998,6 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       ? compareRuns({ snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, { snapshot: out.snapshot, brief: out.brief, provider: out.provider })
       : null;
     res.json({ original: { snapshot: summariseSnapshot(first), brief: first.output.brief, provider: first.output.provider }, rerun: out, comparison });
-  });
-
-  app.post('/api/council/analyze-policy-document', async (req, res) => {
-    try {
-      const {
-        iso3 = 'BRA',
-        documentTitle = 'Institutional Policy Document',
-        documentText = '',
-        documentCategory,
-        openData,
-        runtimeConfig = {},
-      } = req.body || {};
-
-      const snapshot: OpenDataSnapshot =
-        openData && openData.iso3
-          ? openData
-          : await fetchLiveOpenDataSnapshot(String(iso3));
-
-      const deterministicBaseline = computeDeterministicDocumentAnalysis(
-        snapshot,
-        String(documentTitle),
-        String(documentText),
-        documentCategory as PolicyDocumentCategory | undefined
-      );
-
-      const docStep = await executeResilientLlmStep<any>({
-        stepName: 'POLICY_DOCUMENT_INTELLIGENCE',
-        providerMode: runtimeConfig.providerMode || 'gemini',
-        runtimeConfig,
-        thinkingLevel: ThinkingLevel.LOW,
-        systemInstruction:
-          'You are an Institutional Sovereign Credit, Central Bank MPC, and IMF Article IV Document Analyst. Extract quantitative monetary stance, fiscal slippage risk, IMF tranche disbursement probability, verbatim clause telemetry, and calibrated macro shock vectors in strict JSON. Never invent notional dollar amounts; express all metrics in basis points (bps), percentages (% of GDP), or months of import cover.',
-        prompt: `Analyze the following sovereign policy or legal document for ${snapshot.countryName} (${snapshot.iso3}):
-Title: ${documentTitle}
-Category: ${deterministicBaseline.documentCategory}
-Country figures (only live feeds, official series and your own data; nothing built in):
-${councilInputs(snapshot).lines.join('\n')}
-${MISSING_FIGURES_RULE}
-
-Document Text:
-"""
-${String(documentText).slice(0, 12000)}
-"""`,
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            executiveSynthesis: { type: Type.STRING },
-            hawkishDovishStanceScore: {
-              type: Type.NUMBER,
-              description: '-100 (Ultra-Dovish) to +100 (Ultra-Hawkish)',
-            },
-            monetaryStanceLabel: { type: Type.STRING },
-            fiscalSlippageRiskScore: {
-              type: Type.NUMBER,
-              description: '0 (Strict Rule Compliance) to 100 (Severe Slippage)',
-            },
-            imfProgramTrancheDisbursementProbPct: {
-              type: Type.NUMBER,
-              description: '0 to 100%',
-            },
-            cacVotingThresholdType: { type: Type.STRING },
-            extractedClauses: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  categoryLabel: { type: Type.STRING },
-                  verbatimQuote: { type: Type.STRING },
-                  quantitativeMetricExtracted: { type: Type.STRING },
-                  directionalSignal: {
-                    type: Type.STRING,
-                    description:
-                      'HAWKISH_TIGHTENING, DOVISH_ACCOMMODATIVE, FISCAL_CONSOLIDATION, FISCAL_SLIPPAGE_RISK, CREDITOR_FRIENDLY, or RESTRUCTURING_RISK',
-                  },
-                  impactScoreBps: { type: Type.NUMBER },
-                  confidencePct: { type: Type.NUMBER },
-                },
-                required: [
-                  'categoryLabel',
-                  'verbatimQuote',
-                  'quantitativeMetricExtracted',
-                  'directionalSignal',
-                  'impactScoreBps',
-                ],
-              },
-            },
-            calibratedShockVector: {
-              type: Type.OBJECT,
-              properties: {
-                policyRateDeltaBps: { type: Type.NUMBER },
-                primaryFiscalBalanceDeltaPctGdp: { type: Type.NUMBER },
-                sovereignSpreadShockBps: { type: Type.NUMBER },
-                energyAndCpiShockPct: { type: Type.NUMBER },
-                fxReserveAdequacyDeltaMonths: { type: Type.NUMBER },
-                politicalWillDeltaPoints: { type: Type.NUMBER },
-                rationaleSummary: { type: Type.STRING },
-              },
-              required: [
-                'policyRateDeltaBps',
-                'primaryFiscalBalanceDeltaPctGdp',
-                'sovereignSpreadShockBps',
-                'rationaleSummary',
-              ],
-            },
-          },
-          required: [
-            'executiveSynthesis',
-            'hawkishDovishStanceScore',
-            'fiscalSlippageRiskScore',
-            'imfProgramTrancheDisbursementProbPct',
-          ],
-        },
-        fallbackValue: deterministicBaseline,
-      });
-
-      const aiData = docStep.data || {};
-      const validSignals = [
-        'HAWKISH_TIGHTENING',
-        'DOVISH_ACCOMMODATIVE',
-        'FISCAL_CONSOLIDATION',
-        'FISCAL_SLIPPAGE_RISK',
-        'CREDITOR_FRIENDLY',
-        'RESTRUCTURING_RISK',
-      ];
-
-      // Blend AI score with econometric Taylor-Rule & Debt/GDP anchor so outputs remain bounded
-      const blendedHawk =
-        typeof aiData.hawkishDovishStanceScore === 'number'
-          ? Math.max(
-              -98,
-              Math.min(
-                98,
-                Math.round(
-                  aiData.hawkishDovishStanceScore * 0.65 +
-                    deterministicBaseline.hawkishDovishStanceScore * 0.35
-                )
-              )
-            )
-          : deterministicBaseline.hawkishDovishStanceScore;
-
-      const blendedSlippage =
-        typeof aiData.fiscalSlippageRiskScore === 'number'
-          ? Math.max(
-              5,
-              Math.min(
-                98,
-                Math.round(
-                  aiData.fiscalSlippageRiskScore * 0.65 +
-                    deterministicBaseline.fiscalSlippageRiskScore * 0.35
-                )
-              )
-            )
-          : deterministicBaseline.fiscalSlippageRiskScore;
-
-      const blendedImfProb =
-        typeof aiData.imfProgramTrancheDisbursementProbPct === 'number'
-          ? Math.max(
-              5,
-              Math.min(
-                98,
-                Math.round(
-                  aiData.imfProgramTrancheDisbursementProbPct * 0.65 +
-                    deterministicBaseline.imfProgramTrancheDisbursementProbPct * 0.35
-                )
-              )
-            )
-          : deterministicBaseline.imfProgramTrancheDisbursementProbPct;
-
-      const clauses =
-        Array.isArray(aiData.extractedClauses) && aiData.extractedClauses.length > 0
-          ? aiData.extractedClauses.slice(0, 5).map((c: any, idx: number) => ({
-              clauseId: `AI-CL-${idx + 1}`,
-              categoryLabel: String(c.categoryLabel || 'Policy Clause Telemetry'),
-              verbatimQuote: String(c.verbatimQuote || ''),
-              quantitativeMetricExtracted: String(c.quantitativeMetricExtracted || ''),
-              directionalSignal: validSignals.includes(String(c.directionalSignal))
-                ? c.directionalSignal
-                : deterministicBaseline.extractedClauses[0]?.directionalSignal ||
-                  'HAWKISH_TIGHTENING',
-              impactScoreBps: Math.max(-250, Math.min(250, Math.round(Number(c.impactScoreBps || 25)))),
-              confidencePct: Math.max(60, Math.min(99, Math.round(Number(c.confidencePct || 91)))),
-            }))
-          : deterministicBaseline.extractedClauses;
-
-      const rawShock = aiData.calibratedShockVector || {};
-      const baseShock = deterministicBaseline.calibratedShockVector;
-
-      const result = {
-        ...deterministicBaseline,
-        analyzedAt: new Date().toISOString(),
-        providerUsed: docStep.usedFallback
-          ? deterministicBaseline.providerUsed
-          : `Hybrid ${docStep.providerUsed} + Econometric Taylor/QPC Anchor`,
-        isAiEnhanced: !docStep.usedFallback,
-        executiveSynthesis: aiData.executiveSynthesis || deterministicBaseline.executiveSynthesis,
-        hawkishDovishStanceScore: blendedHawk,
-        monetaryStanceLabel:
-          aiData.monetaryStanceLabel || deterministicBaseline.monetaryStanceLabel,
-        fiscalSlippageRiskScore: blendedSlippage,
-        imfProgramTrancheDisbursementProbPct: blendedImfProb,
-        cacVotingThresholdType:
-          aiData.cacVotingThresholdType || deterministicBaseline.cacVotingThresholdType,
-        extractedClauses: clauses,
-        calibratedShockVector: {
-          policyRateDeltaBps:
-            typeof rawShock.policyRateDeltaBps === 'number'
-              ? Math.max(-300, Math.min(400, Math.round(rawShock.policyRateDeltaBps)))
-              : baseShock.policyRateDeltaBps,
-          primaryFiscalBalanceDeltaPctGdp:
-            typeof rawShock.primaryFiscalBalanceDeltaPctGdp === 'number'
-              ? Number(
-                  Math.max(-3.5, Math.min(3.5, rawShock.primaryFiscalBalanceDeltaPctGdp)).toFixed(2)
-                )
-              : baseShock.primaryFiscalBalanceDeltaPctGdp,
-          sovereignSpreadShockBps:
-            typeof rawShock.sovereignSpreadShockBps === 'number'
-              ? Math.max(-180, Math.min(350, Math.round(rawShock.sovereignSpreadShockBps)))
-              : baseShock.sovereignSpreadShockBps,
-          energyAndCpiShockPct:
-            typeof rawShock.energyAndCpiShockPct === 'number'
-              ? Number(Math.max(-5, Math.min(25, rawShock.energyAndCpiShockPct)).toFixed(1))
-              : baseShock.energyAndCpiShockPct,
-          fxReserveAdequacyDeltaMonths:
-            typeof rawShock.fxReserveAdequacyDeltaMonths === 'number'
-              ? Number(Math.max(-2.5, Math.min(2.5, rawShock.fxReserveAdequacyDeltaMonths)).toFixed(2))
-              : baseShock.fxReserveAdequacyDeltaMonths,
-          politicalWillDeltaPoints:
-            typeof rawShock.politicalWillDeltaPoints === 'number'
-              ? Math.max(-25, Math.min(25, Math.round(rawShock.politicalWillDeltaPoints)))
-              : baseShock.politicalWillDeltaPoints,
-          rationaleSummary: String(rawShock.rationaleSummary || baseShock.rationaleSummary),
-        },
-      };
-
-      res.json({ analysis: result });
-    } catch (err: any) {
-      res.status(500).json({
-        error: err?.message || 'Failed to analyze policy document',
-      });
-    }
   });
 
   // ---------------------------------------------------------------------------
