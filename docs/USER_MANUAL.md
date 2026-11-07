@@ -638,7 +638,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   makes is written down while its window is still open, before anyone knows the outcome, and scored
   by the same rule when the window ends. The dialog shows, under Forward record, how many calls,
   how many followed against the base rate, and the latest calls. Lines are never edited, and each
-  carries a hash over the line before it, so the dialog says if the file was changed. A passing
+  carries a hash over the line before it, so the dialog says if the file was changed. The server runs
+  all the pre-registered tests by itself every Sunday at 03:30 (Menu > Data health > Scheduled), so
+  the forward record grows without anyone pressing a button; `SCHEDULE_BACKTESTS=off` stops it and
+  `SCHEDULE_BACKTESTS="wed 01:00"` moves it. A passing
   currency factor test (`npm run signals:evaluate`) does the same with its book: the long and short
   currencies at the latest complete month-end are recorded before that month's return exists, and
   scored as recorded (net of the same flat cost) once the month ends. A passing nowcast

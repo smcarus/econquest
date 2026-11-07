@@ -40,6 +40,8 @@ before(async () => {
       CDS_CSV_PATH: path.join(dataDir, 'cds.csv'),
       // Not a time: the job must read as off, with the reason (never started by the tests).
       SCHEDULE_DOWNLOAD_ALL: 'nightly',
+      // The tests run weekly by default; off here so a test run on a Sunday never starts them.
+      SCHEDULE_BACKTESTS: 'off',
       SCHEDULE_TZ: 'UTC',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
@@ -207,7 +209,7 @@ test('MarketEdge benchmarks: US, China, Russia, UK, EU, India, with sources or r
   assert.deepEqual(body.peers.map((p: WatchlistItem) => p.iso3), ['GBR']);
 });
 
-test('scheduled jobs: off unless set, a bad setting says why, and no run is invented', async () => {
+test('scheduled jobs: a bad setting says why, "off" turns the default off, and no run is invented', async () => {
   const res = await fetch(`${base}/api/scheduled-jobs`);
   assert.equal(res.status, 200);
   const body = await res.json();
@@ -217,6 +219,7 @@ test('scheduled jobs: off unless set, a bad setting says why, and no run is inve
   assert.match(byId.download_all.schedule, /^Off: "nightly" is not a time/);
   assert.equal(byId.backtests.on, false);
   assert.equal(byId.backtests.schedule, 'Off');
+  assert.equal(byId.backtests.fromDefault, false);
   assert.deepEqual(byId.backtests.runs, []);
   assert.match(body.nightlyCheck.schedule, /Every day after|Off/);
 });

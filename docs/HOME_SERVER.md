@@ -222,7 +222,7 @@ Config comes only from environment variables (`.env` here, or the full list in t
 | `OLLAMA_DEEP_MODEL` | qwen2.5:32b | Referee steps |
 | `TZ` | UTC | Time zone for the morning brief, the nightly data check and scheduled jobs |
 | `SCHEDULE_DOWNLOAD_ALL` | 02:30 | Daily Download all (every free feed for every country); `off` to stop |
-| `SCHEDULE_BACKTESTS` | sun 03:30 | Weekly run of the pre-registered tests: backtests, then forecast evaluations and currency signal tests, each adding to its forward record; `off` to stop |
+| `SCHEDULE_BACKTESTS` | sun 03:30 | Weekly run of the pre-registered tests: backtests, then forecast evaluations and currency signal tests, each adding to its forward record; `off` to stop. The app runs this weekly by default even outside the home server |
 | `LOG_FORMAT` | json in the image | `json` or empty for plain text |
 | `SHUTDOWN_TIMEOUT_MS` | 8000 | How long a stop waits for open requests |
 
