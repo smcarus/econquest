@@ -1222,7 +1222,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       name: `Gemini (${model})`,
       group: 'ai',
       feeds: 'Council summary, debate replies, agent choice',
-      setup: 'Menu > Settings > AI model key, or GEMINI_API_KEY="..." in .env (aistudio.google.com > Get API key).',
+      setup: 'Menu > Settings > AI model key, or GEMINI_API_KEY="..." in .env (https://ai.google.dev/gemini-api/docs/api-key).',
     };
     const key = (env.GEMINI_API_KEY || '').trim();
     if (!key || key === 'MY_GEMINI_API_KEY') {

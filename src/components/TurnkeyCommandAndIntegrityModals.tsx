@@ -2131,7 +2131,7 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
                     {
                       id: 'gemini' as const,
                       title: 'Cloud Google Gemini',
-                      desc: 'Google AI Studio gemini-3.8-flash with Search Grounding',
+                      desc: 'Google Gemini gemini-3.8-flash with Search Grounding',
                     },
                     {
                       id: 'openai_compatible' as const,
