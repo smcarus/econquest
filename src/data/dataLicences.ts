@@ -374,7 +374,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ucdp',
     name: 'UCDP (Uppsala Conflict Data Program) downloaded files',
-    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year (files you put in data/local/ucdp/)',
+    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (files you put in data/local/ucdp/)',
     terms: [{ label: 'UCDP downloads (licence and citations)', url: 'https://ucdp.uu.se/downloads/' }],
     status: 'open',
     display: 'Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset.',

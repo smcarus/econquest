@@ -1086,6 +1086,7 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     }
     const missing = UCDP_DATASET_IDS.filter((d) => !data!.files[d]);
     const read = files.map((d) => { const f = data!.files[d]!; return `${UCDP_DATASETS[d].name} ${f.version} (${f.minYear}-${f.maxYear}, ${f.rows} rows)`; });
+    if (data.candidate) read.push(`UCDP Candidate Events ${data.candidate.versions.join(', ')} (${data.candidate.events.size} events, preliminary)`);
     const r = ucdpReading(data, SAMPLE_ISO3);
     const latest = r?.latest;
     const sample = latest
