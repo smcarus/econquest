@@ -41,26 +41,26 @@ export function missingReason(key: FigureKey, iso3: string): MissingReason {
       return {
         kind: 'setup',
         short: 'Needs setup',
-        help: 'No free CDS source exists. Connect your own licensed CDS under Menu > Settings > Your own paid data (a CSV file or your LSEG account).',
+        help: 'CDS prices (the market cost of insuring against a government default) are sold by data vendors; no free source publishes them, and the app does not guess. If you have a licence, connect your own CDS under Menu > Settings > Your own paid data (a CSV file or your LSEG account).',
       };
     case 'hcspread':
       return hcSpreadMissing(iso3);
     case 'yield':
       if (iso3 === 'TUR')
-        return { kind: 'setup', short: 'Needs EVDS key', help: 'Add the free EVDS key and 10Y series code (central bank of Turkey) under Menu > Settings > Data API keys, or in .env.' };
+        return { kind: 'setup', short: 'Needs EVDS key', help: 'Turkey\'s 10-year government bond yield comes from EVDS, the central bank of Turkey\'s free data service, which needs a free key. Add the key and the 10Y series code under Menu > Settings > Data API keys, or in .env.' };
       if (hasFreeOfficialYield(iso3))
-        return { kind: 'unreachable', short: 'Feed did not answer', help: 'The official yield feed did not answer. Press Refresh now under Research > One country, or add a free FRED key under Menu > Settings for a steadier connection.' };
-      return { kind: 'setup', short: 'No source yet', help: 'No free official 10Y series is wired in for this country. Upload a yields file with its official figures.' };
+        return { kind: 'unreachable', short: 'Feed did not answer', help: 'The 10-year government bond yield comes from an official source (FRED, the US Federal Reserve\'s free data service, which republishes OECD figures), and it did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. A free FRED key under Menu > Settings gives a steadier connection.' };
+      return { kind: 'setup', short: 'No source yet', help: 'No free official source of this country\'s 10-year government bond yield is connected yet, and the app does not estimate one. If you have the official figures (for example from the central bank or finance ministry website), upload them as a yields file.' };
     case 'debt':
-      return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Refresh now under Research > One country, or check the connection.' };
+      return { kind: 'unreachable', short: 'IMF did not answer', help: 'This figure comes from the International Monetary Fund\'s free World Economic Outlook data, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. If it keeps happening, check the internet connection under Menu > Tools > Data connections.' };
     case 'cpi':
-      return { kind: 'unreachable', short: 'IMF did not answer', help: 'The IMF feed (free, no key) did not answer. Press Refresh now under Research > One country, or check the connection.' };
+      return { kind: 'unreachable', short: 'IMF did not answer', help: 'Inflation comes from the International Monetary Fund\'s free World Economic Outlook data, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again.' };
     case 'reserves':
-      return { kind: 'unreachable', short: 'World Bank did not answer', help: 'The World Bank feed (free, no key) did not answer. Press Refresh now under Research > One country, or check the connection.' };
+      return { kind: 'unreachable', short: 'World Bank did not answer', help: 'This figure comes from the World Bank\'s free development data, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. If it keeps happening, check the internet connection under Menu > Tools > Data connections.' };
     case 'policy':
       if (!CBPOL_AREA[iso3] || CBPOL_NOT_COVERED.has(iso3))
-        return { kind: 'setup', short: 'Not in BIS policy rates', help: 'The BIS central bank policy rates dataset has no series for this country. Add your own figure through a data connector to fill it.' };
-      return { kind: 'unreachable', short: 'BIS did not answer', help: 'The BIS policy rates feed (free, no key) did not answer. Press Refresh now under Research > One country, or check the connection under Menu > Tools > Data connections.' };
+        return { kind: 'setup', short: 'Not in BIS policy rates', help: 'Policy rates come from the Bank for International Settlements (BIS, the bank that central banks use), which collects them from about 40 central banks. This country is not one of them, so the app has no official figure. You can add the central bank\'s published rate through a data connector.' };
+      return { kind: 'unreachable', short: 'BIS did not answer', help: 'Policy rates come from the Bank for International Settlements (BIS) free data service, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again. If it keeps happening, check Menu > Tools > Data connections.' };
   }
 }
 

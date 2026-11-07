@@ -79,16 +79,16 @@ export function pathMissing(status: SnapshotDataStatus, path: string): MissingRe
   if (path === 'market.policyRatePct') return missingReason('policy', status.iso3);
   if (path.startsWith('imf.'))
     return status.isFeedLive('imf')
-      ? { kind: 'unreachable', short: 'Not in IMF data', help: 'The IMF feed answered but has no figure for this country.' }
+      ? { kind: 'unreachable', short: 'Not in IMF data', help: 'The International Monetary Fund answered, but has not published this figure for this country. This happens for some small economies, for countries in crisis or conflict, and for figures the IMF stopped estimating. The app leaves it Missing rather than fill the gap.' }
       : missingReason('debt', status.iso3);
   if (path.startsWith('wb.'))
     return status.isFeedLive('worldbank')
-      ? { kind: 'unreachable', short: 'Not in World Bank data', help: 'The World Bank feed answered but has no recent figure for this country.' }
+      ? { kind: 'unreachable', short: 'Not in World Bank data', help: 'The World Bank answered, but has no recent figure for this country. World Bank figures are yearly and arrive a year or more late, and some countries do not report them. The app leaves it Missing rather than fill the gap.' }
       : missingReason('reserves', status.iso3);
   if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx'))
-    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The free exchange-rate feed did not answer. Press Refresh now under Research > One country.' };
-  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'The free GDELT news feed did not answer. Press Refresh now under Research > One country.' };
-  return { kind: 'setup', short: 'No source yet', help: 'No live or official source is connected for this figure yet.' };
+    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The exchange rate comes from a free daily exchange-rate service, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again.' };
+  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'News figures come from GDELT, a free project that reads news sites worldwide, which did not answer this time. It is often busy and asks callers to wait. Press Refresh now under Research > One country to try again.' };
+  return { kind: 'setup', short: 'No source yet', help: 'No free live or official source for this figure is connected yet. The app shows Missing rather than an estimate or a sample number.' };
 }
 
 export function missingRow(label: string, reason: MissingReason): BriefRow {
@@ -127,7 +127,7 @@ export function netInterestRow(status: SnapshotDataStatus, open?: CouncilAssessm
   if (row.missing) return row;
   const v = netInterestPct(status.live('imf.primaryFiscalBalancePct'), status.live('imf.overallBalancePct'), yPrimary, yOverall);
   return v === undefined
-    ? missingRow('Net interest paid', { kind: 'unreachable', short: 'Balances are for different years', help: `The IMF primary balance is for ${yPrimary} and the overall balance for ${yOverall}; net interest needs both for the same year.` })
+    ? missingRow('Net interest paid', { kind: 'unreachable', short: 'Balances are for different years', help: `Net interest is worked out as the primary balance minus the overall balance, so both must be for the same year. The IMF figures are for different years (primary balance ${yPrimary}, overall balance ${yOverall}), and mixing years would give a wrong answer.` })
     : { ...row, value: `${pct(v)} of GDP` };
 }
 
@@ -138,7 +138,7 @@ export function modelRow(status: SnapshotDataStatus, label: string, inputs: stri
 }
 
 /** A built-in figure with no connected source (debt maturity profile, rollover figures). */
-export const noSourceRow = (label: string, help = 'No live or official source is connected for this figure yet.'): BriefRow =>
+export const noSourceRow = (label: string, help = 'No free live or official source for this figure is connected yet. The app shows Missing rather than an estimate or a sample number.'): BriefRow =>
   missingRow(label, { kind: 'setup', short: 'No source yet', help });
 
 /** Old-style tag by kind. Built-in and AI-estimated figures are never tagged as data. */
@@ -171,7 +171,7 @@ export function missingNote(groups: BriefGroup[], countryName: string): string |
   const rows = groups.flatMap((g) => g.rows);
   const missing = rows.filter((r) => r.missing).length;
   if (!missing) return undefined;
-  return `${missing} of ${rows.length} figures for ${countryName} are missing because their source is not connected or did not answer. They read Missing; no built-in values are shown.`;
+  return `${missing} of ${rows.length} figures for ${countryName} are missing, because their source is not connected or did not answer. They read Missing, and no built-in or estimated value is shown in their place. Tap "Why missing?" on any of them for the reason and what would fill it.`;
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -313,7 +313,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
-          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free QEDS feed did not answer, or does not cover this country. Press Refresh now under Research > One country.' }),
+          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'This comes from QEDS, the World Bank and IMF\'s free quarterly statistics on debt owed abroad. It did not answer, or this country does not report to it. Press Refresh now under Research > One country to try again.' }),
       ],
     },
     {
@@ -323,7 +323,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r(`${HC_SPREAD_LABEL} over Treasuries (not CDS)`, 'market.hcBondSpreadBps', (v) => `${Math.round(v)} bps`),
         r('Policy rate', 'market.policyRatePct', (v) => pct(v, 2)),
         r(`Spot FX (${open.currencyCode} per USD)`, 'market.exchangeRatePerUsd', (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(v >= 10 ? 2 : 4))),
-        noSourceRow('Credit rating', 'Needs a ratings feed (licensed); AI estimates are not used.'),
+        noSourceRow('Credit rating', 'Credit ratings (grades such as BBB or B from S&P, Moody\'s and Fitch) are licensed data with no free feed. The app does not guess them or ask an AI model for them.'),
       ],
     },
     {
