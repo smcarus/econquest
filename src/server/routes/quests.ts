@@ -40,6 +40,9 @@
  * `npm run quests:run-tests`; after close, /:id/entries gives each test with its verdict and its
  * reading after the Holm correction across every test on record.
  *
+ * Stance profiles (step 11): GET /api/quests/stances gives the axes and the profiles people signed
+ * up with by their own pull request (quests/profiles/). Stances being set stay in the browser.
+ *
  * Digest (step 8):
  *   GET  /api/quests/digest           this week: closing soon, opening, results recorded, results due
  */
@@ -69,6 +72,8 @@ import { questDigest } from '../../utils/questGenerator';
 import { describeTestVerdict } from '../../utils/questSignal';
 import { loadTestRecord, testRecordPath } from '../../utils/questTestStore';
 import { trackRowsFromRepo } from '../../utils/trackRecordDocNode';
+import { STANCE_AXES } from '../../utils/questStances';
+import { loadProfiles } from '../../utils/questStanceStore';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -282,6 +287,11 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const quests = loadQuests(dir).map((x) => ({ quest: x.quest, approved: x.approved }));
     const tests = loadTestRecord(testRecordPath(dir));
     res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir), tests: tests.record.verdicts }) });
+  });
+
+  app.get('/api/quests/stances', (_req, res) => {
+    if (!enabled()) return off(res);
+    res.json({ enabled: true, axes: STANCE_AXES, profiles: loadProfiles(dir), repo: repoOf() || null });
   });
 
   app.get('/api/quests/digest', (_req, res) => {

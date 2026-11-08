@@ -1,11 +1,12 @@
 name: Quest entries
 
-# Runs only on pull requests that add Quest entries (quests/entries/**). The time it runs is the
+# Runs only on pull requests that add Quest entries (quests/entries/**) or stance profiles (quests/profiles/**). The time it runs is the
 # entry's time: a push after entries close re-runs it and fails. Do not re-run it after close.
 on:
   pull_request:
     paths:
       - 'quests/entries/**'
+      - 'quests/profiles/**'
 
 permissions:
   contents: read

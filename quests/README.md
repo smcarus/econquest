@@ -29,6 +29,8 @@ Results are kept in `resolutions.jsonl`, one line per result, dispute decision, 
 
 Verdicts of the tests entered to Signal Quests are kept in `test-verdicts.json`, written only by `npm run quests:run-tests`, once per Quest after entries close (see [docs/QUESTS.md](../docs/QUESTS.md#signal-quests)); never edit it by hand.
 
+Stance profiles go in `profiles/<GitHub name>.json`, each added or changed only by that person's own pull request, and removed by them or a maintainer on request (see [docs/QUESTS.md](../docs/QUESTS.md#stance-profiles)). Git keeps every version.
+
 Public forecast entries go in `entries/<quest id>/<GitHub name>.<n>.json`, one file per entry, added by pull request and checked by `npm run quests:entries` (see [docs/QUESTS.md](../docs/QUESTS.md#public-entries)). An entry is never changed or removed; a replacement is the next number.
 
 Quest text, entries and evidence maps are licensed under CC BY 4.0.

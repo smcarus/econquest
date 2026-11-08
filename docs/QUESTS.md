@@ -28,7 +28,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Debate Quests: pick a position and argue it (privately, by pull request or by email); Claim Check reads each argument as it is written; an opening brief written once by the app's AI model (`npm run quests:brief`), which may state no figures of its own; an evidence map after close with the results of related Forecast Quests, exported as Markdown; debates argued listed on each contributor's page, never scored | Built and tested, switched off |
 | Replication Quests: an entry gives the figure a person's script produced and a public link to the script; after close the maintainer records the app's own figure (`npm run quests:resolve -- --replicate`); each entry reproduces it if within the Quest's tolerance; listed on contributor pages, never ranked | Built and tested, switched off |
 | Signal Quests: an entry is a pre-registered test on one of the app's test rules, entered in public only (pull request or email); the app checks it as it is written; after close every test is run once (`npm run quests:run-tests`), recorded in `quests/test-verdicts.json` and counted in the Holm correction in docs/TRACK_RECORD.md; tests listed on contributor pages, never ranked | Built and tested, switched off; no test has been run on real data yet |
-| Preference profiles | Not built |
+| Stance profiles: eight economics questions set in the app (kept in the browser); a public profile only by the person's own pull request (`quests/profiles/<login>.json`, checked by the `Quest entries` CI job); shown on the Stances tab and contributor pages; group tables of stance against skill not shown | Built and tested, switched off |
 | Health page and yearly dataset | Not built |
 
 ## How a Quest is settled
@@ -145,6 +145,18 @@ What is shown, and when (a figure resting on too few cases says how many more it
 
 Rankings use skill only. To be ranked a person needs 12 settled forecasts with a base rate and a GitHub account that was at least 90 days old when the first Quest they entered closed, which makes throwaway accounts useless. Emailed entries, checked by a maintainer, need no account. Seasons run by the calendar year a Quest settles in, with an all-time table that never resets; field tables rank only within a field. Nobody is ranked on how many Quests they enter.
 
+## Stance profiles
+
+Stance profiles exist for one research question: do people who hold a view forecast better or worse on the Quests that test it? A stance tied to a name is a political opinion about a person, so the design leaves the choice entirely to that person.
+
+1. **Eight questions on economics, not parties.** Inflation against growth, cutting deficits against spending, floating against managed exchange rates, open against controlled capital flows, central-bank independence, lenders against borrowers in debt deals, whether sanctions work, and open trade against protection. Each is a scale from -2 to 2 between two plain positions (0 means no lean), and any can be left out. No left-right label, no party names, nothing marked right or wrong. The list is in `src/utils/questStances.ts`.
+2. **Set in the app.** The Stances tab keeps what a person sets in their own browser and nowhere else.
+3. **Sign up on GitHub, if you want a profile.** A person who wants their stances on their public page ticks that they understand it is public and that git keeps every version, then opens GitHub's prefilled page for `quests/profiles/<login>.json` and opens a pull request. The `Quest entries` check allows a profile to be added or changed only by the person it names, and removed by them or a maintainer on request; the pull request holds nothing else. Nobody has to have a profile, and having one changes nothing about scoring.
+4. **Never inferred.** The app does not work out anyone's stance from their forecasts, arguments or anything else.
+5. **No group tables for now.** Tables of stance against skill for groups of people need a way to collect stances without names, which the project does not have, so they are not shown (Sam, 2026-11-08). With profiles only by name, any table would be of named people, so it is left out rather than built on them.
+
+Profiles are not recorded verdicts: removing one is allowed, and entries, scores and results stay as recorded.
+
 ## Signal Quests
 
 A Signal Quest asks people to propose a test of an idea, for example "crowded futures positioning comes back within six weeks". A test asks whether a rule would have beaten the simplest guess (how often the same thing happened after any month or week) on past data, using only figures that had been published at the time. The tests follow the same signal standard as the app's own (docs/METHODOLOGY.md), and they are judged in the same family: every test tried raises the bar for every other, the app's own included.
@@ -188,7 +200,7 @@ Documented:
 
 - [ ] This page lists what works and what does not, with no "Not built" item that users can reach
 - [ ] `CONTRIBUTING.md` has the Quests section: how to propose, enter, dispute, and access from countries GitHub blocks
-- [ ] A privacy notice says what is public (login, entries, rationales, scores, the GitHub account's creation date) and that git history is permanent
+- [ ] A privacy notice says what is public (login, entries, rationales, scores, the GitHub account's creation date, and stance profiles for people who sign up with one) and that git history is permanent
 - [ ] The user manual has a Quests section
 - [ ] The public repository has a Quests category in GitHub Discussions, linked from each approved Quest
 
