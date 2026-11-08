@@ -150,6 +150,13 @@ calculation, each with a test in `tests/`), `src/components/` (React pages and p
 `src/data/` (navigation, official calendar, country list). Each panel sits inside a crash guard
 (`PanelBoundary`), so one failing panel never blanks the app.
 
+### Data API for scripts
+
+R, Python and Stata scripts can read the same series, panels and figure tables the screens show,
+with source and date on every value: see [docs/DATA_API.md](docs/DATA_API.md) and the helper files in
+`scripts/data-api/`. A copy with sign-in on accepts the integration API key (below) on those
+read-only addresses only.
+
 ### Integration API
 
 Other apps can read council output from `/api/v1/integration/*` (desks, bundle, publish, an SSE

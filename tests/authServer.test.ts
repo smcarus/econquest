@@ -35,6 +35,7 @@ before(async () => {
       TRUST_PROXY: '1',
       ECONQUEST_SECRET_KEY: 'test-master-key-that-is-long-enough-1234',
       GEMINI_API_KEY: '',
+      SMCR_INTEGRATION_API_KEY: 'smcr_data_api_test_key',
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -114,6 +115,28 @@ test('signed in, the API answers; signed out, it refuses', async () => {
   assert.equal((await fetch(`${base}/api/audit`, { headers: { Cookie: adminCookie } })).status, 200);
   assert.equal((await fetch(`${base}/api/audit`)).status, 401);
   assert.equal((await fetch(`${base}/api/audit`, { headers: { Cookie: 'eq_session=forged' } })).status, 401);
+});
+
+test('scripts: with the integration key switched on, the key opens the data addresses and nothing else (docs/DATA_API.md)', async () => {
+  const KEY = 'smcr_data_api_test_key';
+  const read = (p: string, headers: Record<string, string> = {}) => fetch(`${base}${p}`, { headers });
+  // Switched off (the default): a key does not stand in for signing in.
+  assert.equal((await read('/api/series/BRA', { 'X-SMCR-API-Key': KEY })).status, 401);
+  const on = await post('/api/ai/runtime-config-save', { runtimeConfig: { integrationConfig: { requireApiKey: true } } }, adminCookie);
+  assert.equal(on.status, 200);
+  try {
+    assert.equal((await read('/api/series/BRA')).status, 401, 'no key');
+    assert.equal((await read('/api/series/BRA', { 'X-SMCR-API-Key': 'wrong' })).status, 401, 'wrong key');
+    assert.equal((await read('/api/series/BRA', { 'X-SMCR-API-Key': KEY })).status, 200, 'header key');
+    assert.equal((await read('/api/export/BRA/figures.csv', { Authorization: `Bearer ${KEY}` })).status, 200, 'bearer key');
+    assert.equal((await read(`/api/series/BRA?apiKey=${KEY}`)).status, 401, 'never from the address');
+    assert.equal((await read('/api/audit', { 'X-SMCR-API-Key': KEY })).status, 401, 'not other reads');
+    assert.equal((await read('/api/settings/keys', { 'X-SMCR-API-Key': KEY })).status, 401, 'not keys');
+    const change = await fetch(`${base}/api/research/episodes`, { method: 'POST', headers: { 'X-SMCR-API-Key': KEY, 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(change.status, 401, 'not changes');
+  } finally {
+    await post('/api/ai/runtime-config-save', { runtimeConfig: { integrationConfig: { requireApiKey: false } } }, adminCookie);
+  }
 });
 
 test('wrong passwords are refused, then locked out; the right one signs in', async () => {

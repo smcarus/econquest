@@ -32,6 +32,7 @@ import { AuthStore } from './src/utils/authStore';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { refusal, requiredRole, roleAtLeast } from './src/utils/permissions';
 import { CSRF_HEADER, csrfMatches, csrfToken, isAiCall, isWrite, LIMITS, RateLimiter, SECURITY_HEADERS } from './src/utils/requestLimits';
+import { apiKeyFrom, DATA_API_LIMIT, isDataApiRead, keyMatches } from './src/server/dataApi';
 import { authMode, clearedSessionCookie, displayNameProblem, DUMMY_HASH, newAccount, newSetupCode, normaliseUsername, openPath, passwordProblem, publicAccount, readCookie, sessionCookie, sessionLimits, SESSION_COOKIE, setupCodeMatches, SignInLimiter, usernameProblem, verifyPassword, hashPassword, ROLES, type Account, type Role } from './src/utils/auth';
 import { mergeLastGood } from './src/utils/snapshotMerge';
 import { reviveMissing } from './src/utils/reviveMissing';
@@ -2519,6 +2520,9 @@ async function startServer() {
     if (mode === 'off' || hit || openPath(req.method, req.path)) return next();
     // The integration API keeps its own key check when that is switched on in Settings.
     if (req.path.startsWith('/api/v1/integration/') && (serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG).requireApiKey) return next();
+    // Scripts reading data (docs/DATA_API.md): the same key, sent in a header, opens the read-only data addresses.
+    const integration = serverGuiRuntimeConfig.integrationConfig || DEFAULT_INTEGRATION_CONFIG;
+    if (integration.requireApiKey && isDataApiRead(req.method, req.path) && keyMatches(apiKeyFrom(req.headers), integration.apiKey)) return next();
     res.status(401).json({ error: mode === 'setup' ? 'Create the first admin account to start using the app.' : 'Sign in to use the app.', signIn: true, mode });
   });
   // Roles (src/utils/permissions.ts): one table for every API call. Sign-in off = the single user.
@@ -2544,6 +2548,15 @@ async function startServer() {
       return res.status(429).json({ error: ai ? `Too many AI requests from this account. Try again in ${wait} seconds.` : `Too many requests from this account. Try again in ${wait} seconds.` });
     }
     next();
+  });
+  // Data reads that come from no signed-in account (scripts, or the single user with sign-in off): one
+  // limit per address, so a script in a loop cannot slow the app (src/server/dataApi.ts).
+  app.use((req, res, next) => {
+    if (signedIn(res) || !isDataApiRead(req.method, req.path)) return next();
+    const wait = limiter.take(`data:${req.socket.remoteAddress || 'unknown'}`, DATA_API_LIMIT);
+    if (!wait) return next();
+    res.setHeader('Retry-After', String(wait));
+    res.status(429).json({ error: `Too many data requests from this address. Try again in ${wait} seconds (docs/DATA_API.md).` });
   });
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
