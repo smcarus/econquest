@@ -132,9 +132,9 @@ export function agentBadge(id: string): AgentBadgeInfo {
 }
 
 /** Hover and screen-reader text for a badge at the reader's help level. */
-export function agentBadgeTip(id: string, name: string, level: HelpLevel): string {
+export function agentBadgeTip(id: string, name: string, level: HelpLevel, tx: (s: string) => string = (s) => s): string {
   const b = agentBadge(id);
-  if (level === 0) return name;
-  if (level === 1 || !b.reads) return `${name}: ${b.plain}`;
-  return `${name}: ${b.plain} Reads: ${b.reads}`;
+  if (level === 0) return tx(name);
+  if (level === 1 || !b.reads) return `${tx(name)}: ${tx(b.plain)}`;
+  return `${tx(name)}: ${tx(b.plain)} ${tx('Reads:')} ${tx(b.reads)}`;
 }

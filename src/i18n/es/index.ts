@@ -21,6 +21,8 @@ import { COMPARE_TEXT_ES } from './compareText';
 import { MENU_ES } from './menu';
 import { KEY_FIELDS_ES } from './keyFieldsText';
 import { GLOSSARY_ES } from './glossaryText';
+import { CHAT_ES } from './chat';
+import { CHAT_TEXT_ES } from './chatText';
 
 export const ES: Record<string, Record<string, string>> = {
   shell: SHELL_ES,
@@ -34,7 +36,8 @@ export const ES: Record<string, Record<string, string>> = {
   common: COMMON_ES,
   tools: TOOLS_ES,
   menu: MENU_ES,
+  chat: CHAT_ES,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const ES_TEXT: Record<string, string> = { ...COMPARE_TEXT_ES, ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES, ...KEY_FIELDS_ES, ...GLOSSARY_ES };
+export const ES_TEXT: Record<string, string> = { ...COMPARE_TEXT_ES, ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES, ...KEY_FIELDS_ES, ...GLOSSARY_ES, ...CHAT_TEXT_ES };

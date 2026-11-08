@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { shortHash, type RunComparison, type SnapshotSummary } from '../utils/answerSnapshot';
 import type { SynthesisResult } from '../utils/askCouncil';
+import { useT, useTx } from '../i18n/useLang';
+import { CHAT } from '../i18n/messages/chat';
 
 const when = (iso: string) => {
   const d = new Date(iso);
@@ -13,6 +15,7 @@ const when = (iso: string) => {
  */
 export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: SnapshotSummary; runtimeConfig?: () => Record<string, unknown> }) {
   const s = snapshot;
+  const t = useT(CHAT);
   const row = (label: string, value: React.ReactNode) => (
     <div className="flex gap-2">
       <dt className="w-24 sm:w-32 shrink-0 text-slate-500 dark:text-slate-400">{label}</dt>
@@ -22,34 +25,33 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
   return (
     <details className="text-xs text-slate-500 dark:text-slate-400" data-council-snapshot={s.id}>
       <summary className="cursor-pointer">
-        Snapshot {shortHash(s.inputsHash)} · {s.asOf ? `data as of ${s.asOf}` : s.dataPinnedAt ? 'pinned data' : 'latest data'} · {s.model || 'no model answered'}
+        {t('sn_summary', { hash: shortHash(s.inputsHash), data: s.asOf ? t('sn_dataAsOf', { date: s.asOf }) : s.dataPinnedAt ? t('sn_pinned') : t('sn_latest'), model: s.model || t('sn_noModel') })}
       </summary>
       <div className="mt-1 space-y-2 border-l-2 border-slate-200 dark:border-slate-700 pl-3">
         <p>
-          What this answer was made from. The same snapshot sent to the same model at temperature {s.temperature} with seed {s.seed} gives the same answer as closely as the model
-          allows.
+          {t('sn_intro', { temp: s.temperature, seed: s.seed })}
         </p>
         <dl className="space-y-0.5">
-          {row('Asked', when(s.askedAt))}
-          {row('Data', s.asOf ? `As of ${s.asOf} (saved pull on or before that day)` : s.dataPinnedAt ? `Pinned: the figures the app held at ${when(s.dataPinnedAt)}` : 'Latest figures the app held when asked')}
-          {row('AI model', s.model || 'None answered')}
-          {row('Sampling', `Temperature ${s.temperature}, seed ${s.seed}`)}
-          {row('Instructions', <span title={s.templateHash}>{shortHash(s.templateHash)}</span>)}
-          {row('Prompt sent', <span title={s.promptHash}>{shortHash(s.promptHash)}</span>)}
-          {row('Inputs / answer', (
+          {row(t('sn_asked'), when(s.askedAt))}
+          {row(t('sn_data'), s.asOf ? t('sn_dataAsOfLong', { date: s.asOf }) : s.dataPinnedAt ? t('sn_pinnedLong', { when: when(s.dataPinnedAt) }) : t('sn_latestLong'))}
+          {row(t('sn_model'), s.model || t('sn_none'))}
+          {row(t('sn_sampling'), t('sn_samplingVal', { temp: s.temperature, seed: s.seed }))}
+          {row(t('sn_instructions'), <span title={s.templateHash}>{shortHash(s.templateHash)}</span>)}
+          {row(t('sn_prompt'), <span title={s.promptHash}>{shortHash(s.promptHash)}</span>)}
+          {row(t('sn_io'), (
             <span>
               <span title={s.inputsHash}>{shortHash(s.inputsHash)}</span> / <span title={s.outputHash}>{shortHash(s.outputHash)}</span>
             </span>
           ))}
-          {s.rerunOf && row('Re-run of', s.rerunOf)}
+          {s.rerunOf && row(t('sn_rerunOf'), s.rerunOf)}
         </dl>
         {s.documents.length > 0 && (
           <div>
-            <p className="text-slate-700 dark:text-slate-300">Agent documents read</p>
+            <p className="text-slate-700 dark:text-slate-300">{t('sn_docs')}</p>
             <ul className="mt-0.5 space-y-0.5">
               {s.documents.map((d) => (
                 <li key={d.docId}>
-                  {d.agent}: template v{d.version}, {d.figures} figure{d.figures === 1 ? '' : 's'}, <span title={d.hash}>{shortHash(d.hash)}</span>
+                  {d.figures === 1 ? t('sn_doc1', { agent: d.agent, version: d.version }) : t('sn_doc', { agent: d.agent, version: d.version, n: d.figures })} <span title={d.hash}>{shortHash(d.hash)}</span>
                 </li>
               ))}
             </ul>
@@ -57,15 +59,15 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
         )}
         {s.figures.length > 0 && (
           <details>
-            <summary className="cursor-pointer text-slate-700 dark:text-slate-300">Figures used ({s.figures.length})</summary>
+            <summary className="cursor-pointer text-slate-700 dark:text-slate-300">{t('sn_figures', { n: s.figures.length })}</summary>
             <div className="mt-1 overflow-x-auto">
               <table className="w-full text-left tabular-nums">
                 <thead>
                   <tr className="text-slate-500 dark:text-slate-400">
-                    <th className="pr-2 font-normal">Country</th>
-                    <th className="pr-2 font-normal">Figure</th>
-                    <th className="pr-2 font-normal">Value</th>
-                    <th className="font-normal">Source and period</th>
+                    <th className="pr-2 font-normal">{t('sn_country')}</th>
+                    <th className="pr-2 font-normal">{t('sn_figure')}</th>
+                    <th className="pr-2 font-normal">{t('sn_value')}</th>
+                    <th className="font-normal">{t('sn_source')}</th>
                   </tr>
                 </thead>
                 <tbody className="text-slate-800 dark:text-slate-200">
@@ -82,7 +84,7 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
             </div>
           </details>
         )}
-        <p>Saved on this computer as {s.id} and named in Menu &gt; Audit log.</p>
+        <p>{t('sn_saved', { id: s.id })}</p>
         <RerunSnapshot id={s.id} runtimeConfig={runtimeConfig} />
       </div>
     </details>
@@ -99,6 +101,8 @@ function RerunSnapshot({ id, runtimeConfig }: { id: string; runtimeConfig?: () =
   const [running, setRunning] = useState(false);
   const [reply, setReply] = useState<RerunReply | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT(CHAT);
+  const tx = useTx();
   const run = async () => {
     setRunning(true);
     setError(null);
@@ -109,10 +113,10 @@ function RerunSnapshot({ id, runtimeConfig }: { id: string; runtimeConfig?: () =
         body: JSON.stringify({ id, runtimeConfig: runtimeConfig?.() ?? {} }),
       });
       const j = await r.json().catch(() => ({}));
-      if (!r.ok) setError(j?.error || `The re-run did not answer (HTTP ${r.status}).`);
+      if (!r.ok) setError(j?.error || t('sn_httpErr', { status: r.status }));
       else setReply(j as RerunReply);
     } catch {
-      setError('The app server did not answer.');
+      setError(t('sn_noServer'));
     } finally {
       setRunning(false);
     }
@@ -122,28 +126,28 @@ function RerunSnapshot({ id, runtimeConfig }: { id: string; runtimeConfig?: () =
   return (
     <div className="space-y-1" data-council-rerun={id}>
       <button type="button" className="ui-btn text-xs" onClick={run} disabled={running}>
-        {running ? 'Re-running…' : reply ? 'Re-run again' : 'Re-run on this snapshot'}
+        {running ? t('sn_rerunning') : reply ? t('sn_rerunAgain') : t('sn_rerun')}
       </button>
-      {!reply && !running && <p>Sends the same figures, documents and question to the model you have set now, and compares the answer.</p>}
+      {!reply && !running && <p>{t('sn_rerunNote')}</p>}
       {error && <p className="text-amber-800 dark:text-amber-300">{error}</p>}
-      {reply && !c && <p className="text-amber-800 dark:text-amber-300">{reply.rerun.reason || 'The re-run could not be saved, so it was not compared.'}</p>}
+      {reply && !c && <p className="text-amber-800 dark:text-amber-300">{reply.rerun.reason ? tx(reply.rerun.reason) : t('sn_notSaved')}</p>}
       {c && (
         <div className="space-y-1" data-council-rerun-result={c.sameAnswer ? 'same' : 'different'}>
           <ul className="space-y-0.5">
             {c.notes.map((n, i) => (
               <li key={i} className={i === 0 ? (c.sameAnswer ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-800 dark:text-amber-300') : ''}>
-                {n}
+                {tx(n)}
               </li>
             ))}
           </ul>
           {!c.sameAnswer && b && (
             <details>
-              <summary className="cursor-pointer text-slate-700 dark:text-slate-300">Show what changed</summary>
+              <summary className="cursor-pointer text-slate-700 dark:text-slate-300">{t('sn_showChanged')}</summary>
               <div className="mt-1 space-y-1 text-slate-800 dark:text-slate-200">
-                {c.headlineChanged && <p>New headline: {b.headline || '(none)'}</p>}
+                {c.headlineChanged && <p>{t('sn_newHeadline', { text: b.headline || t('sn_noneParen') })}</p>}
                 {c.pointsAdded.length > 0 && (
                   <div>
-                    <p className="text-slate-500 dark:text-slate-400">New sentences</p>
+                    <p className="text-slate-500 dark:text-slate-400">{t('sn_newSentences')}</p>
                     <ul className="list-disc pl-5">
                       {c.pointsAdded.map((p) => (
                         <li key={p}>{p}</li>
@@ -153,7 +157,7 @@ function RerunSnapshot({ id, runtimeConfig }: { id: string; runtimeConfig?: () =
                 )}
                 {c.pointsRemoved.length > 0 && (
                   <div>
-                    <p className="text-slate-500 dark:text-slate-400">Sentences no longer there</p>
+                    <p className="text-slate-500 dark:text-slate-400">{t('sn_goneSentences')}</p>
                     <ul className="list-disc pl-5 line-through decoration-slate-400">
                       {c.pointsRemoved.map((p) => (
                         <li key={p}>{p}</li>
@@ -164,7 +168,7 @@ function RerunSnapshot({ id, runtimeConfig }: { id: string; runtimeConfig?: () =
               </div>
             </details>
           )}
-          {reply.rerun.snapshot && <p>Saved as {reply.rerun.snapshot.id}.</p>}
+          {reply.rerun.snapshot && <p>{t('sn_savedAs', { id: reply.rerun.snapshot.id })}</p>}
         </div>
       )}
     </div>
