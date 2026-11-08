@@ -4,6 +4,8 @@ import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import { SOVEREIGN_CATALOG } from '../data/presetsAndBaselines';
 import type { AddedCountry } from '../types/council';
 import { FIELD_CLASS } from './SignInPage';
+import { useT } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 
 /**
  * Research > One country > Add a country. The user picks a country and, if they know them, its
@@ -11,6 +13,7 @@ import { FIELD_CLASS } from './SignInPage';
  * country, its figures come from the feeds and read Missing until a feed answers.
  */
 export function AddCountryDialog({ onClose, onAdd }: { onClose: () => void; onAdd: (c: AddedCountry) => void }) {
+  const t = useT(MENU);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   const [query, setQuery] = useState('');
   const [picked, setPicked] = useState<{ iso3: string; name: string } | null>(null);
@@ -58,22 +61,21 @@ export function AddCountryDialog({ onClose, onAdd }: { onClose: () => void; onAd
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 id="add-country-title" className="ui-title inline-flex items-center gap-2">
-            <Globe className="w-4 h-4" aria-hidden /> Add a country
+            <Globe className="w-4 h-4" aria-hidden /> {t('adc_title')}
           </h2>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close add a country" className="ui-btn ui-btn-ghost">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label={t('adc_closeAria')} className="ui-btn ui-btn-ghost">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4 space-y-3 overflow-y-auto ui-body">
           <p className="ui-label">
-            The country joins your watchlist. Its figures come from the data feeds, as for every other country, and read Missing until
-            a feed answers. Nothing is typed in or estimated.
+            {t('adc_intro')}
           </p>
           <label className="block space-y-0.5">
-            <span className="ui-label block">Find a country</span>
-            <input className={FIELD_CLASS} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Name or ISO code, for example Kenya or KEN" />
+            <span className="ui-label block">{t('adc_find')}</span>
+            <input className={FIELD_CLASS} value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('adc_findPh')} />
           </label>
-          <ul className="max-h-56 overflow-y-auto border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800" aria-label="Countries">
+          <ul className="max-h-56 overflow-y-auto border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800" aria-label={t('adc_countries')}>
             {countries.map((c) => (
               <li key={c.iso3}>
                 <button
@@ -84,30 +86,30 @@ export function AddCountryDialog({ onClose, onAdd }: { onClose: () => void; onAd
                     picked?.iso3 === c.iso3 ? 'bg-blue-50 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200' : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
                   }`}
                 >
-                  {c.name} <span className="ui-label">{c.iso3}{known.has(c.iso3) ? ' · already in the app' : ''}</span>
+                  {c.name} <span className="ui-label">{c.iso3}{known.has(c.iso3) ? t('adc_already') : ''}</span>
                 </button>
               </li>
             ))}
-            {!countries.length && <li className="px-3 py-2 ui-label">No country matches.</li>}
+            {!countries.length && <li className="px-3 py-2 ui-label">{t('adc_noMatch')}</li>}
           </ul>
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-0.5">
-              <span className="ui-label block">Currency code (optional)</span>
+              <span className="ui-label block">{t('adc_currency')}</span>
               <input className={FIELD_CLASS} value={currencyCode} maxLength={3} onChange={(e) => setCurrencyCode(e.target.value)} placeholder="KES" />
             </label>
             <label className="block space-y-0.5">
-              <span className="ui-label block">Region (optional)</span>
+              <span className="ui-label block">{t('adc_region')}</span>
               <input className={FIELD_CLASS} value={region} onChange={(e) => setRegion(e.target.value)} placeholder="Africa" />
             </label>
           </div>
-          <p className="ui-label">The currency code is used for exchange-rate feeds; without it the exchange rate reads Missing.</p>
+          <p className="ui-label">{t('adc_currencyNote')}</p>
         </div>
         <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-slate-200 dark:border-slate-800">
           <button type="button" onClick={onClose} className="ui-btn ui-btn-ghost">
-            Cancel
+            {t('c_cancel')}
           </button>
           <button type="submit" disabled={!picked} className="ui-btn ui-btn-primary">
-            {picked ? `Add ${picked.name}` : 'Pick a country'}
+            {picked ? t('adc_add', { name: picked.name }) : t('adc_pick')}
           </button>
         </div>
       </form>

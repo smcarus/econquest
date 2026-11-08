@@ -37,6 +37,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   The Compare countries panels are in Spanish too: story leads, where data and price disagree, growth and inflation,
   MarketEdge, scenario exposure and the Fed balance sheet, with the sentences the app writes from the data. The
   "Since your last visit" lines on Workspace now show in Spanish as well.
+  The Menu dialogs are in Spanish too: Settings (AI model, free data keys and what each one does, server alerts,
+  morning brief, backup), About & data licences, Account and the sign-in page, Add a country, the Idea journal,
+  Data connections and Offline data. Each source's licence row stays in English because it quotes that source's terms.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

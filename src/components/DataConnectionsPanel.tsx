@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, CircleDashed, CircleOff, RefreshCw, Settings2, XCircle } from 'lucide-react';
 import { API_KEY_FIELDS } from '../data/apiKeyFields';
 import { STATE_LABEL, isFailure, type ConnectionGroup, type ConnectionReport, type ConnectionResult, type ConnectionState } from '../utils/connectionCheck';
+import { useLang, useT, useTx } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 
 /**
  * Data connections: one row per outside source, checked live from the server (GET
@@ -19,12 +21,6 @@ const openSettingsFor = (checkId: string) => {
   window.dispatchEvent(new CustomEvent('econquest:open-settings', { detail: { tab: section === 'ai' ? 'ai' : section === 'own_account' ? 'paid' : 'keys' } }));
 };
 
-const GROUP_TITLE: Record<ConnectionGroup, string> = {
-  free: 'Free sources (no key)',
-  free_key: 'Free sources that need your own key',
-  own_account: 'Your own paid data (off unless you switch it on)',
-  ai: 'AI model',
-};
 
 function StateIcon({ state }: { state: ConnectionState }) {
   const cls = 'w-4 h-4 shrink-0';
@@ -42,7 +38,10 @@ function stateTone(state: ConnectionState): string {
   return 'text-slate-500 dark:text-slate-400';
 }
 
-const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
+const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => {
+  const t = useT(MENU);
+  const tx = useTx();
+  return (
   <li className="py-2 text-sm" data-connection={r.id} data-state={r.state}>
     <div className="flex items-start gap-2">
       <StateIcon state={r.state} />
@@ -50,13 +49,13 @@ const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
         <div className="flex flex-wrap items-baseline justify-between gap-x-3">
           <span className="font-medium text-slate-900 dark:text-white">{r.name}</span>
           <span className={`text-xs font-medium ${stateTone(r.state)}`}>
-            {STATE_LABEL[r.state]}
+            {STATE_LABEL[r.state] && t(`st_${r.state}`)}
             {r.state === 'connected' && r.latencyMs !== undefined ? `, ${r.latencyMs} ms` : ''}
           </span>
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400">Fills: {r.feeds}</div>
+        <div className="text-xs text-slate-500 dark:text-slate-400">{t('dc_fills', { feeds: tx(r.feeds) })}</div>
         <div className="mt-0.5 text-xs text-slate-700 dark:text-slate-300 break-words">
-          {r.state === 'connected' && r.sample ? r.sample : r.detail}
+          {tx(r.state === 'connected' && r.sample ? r.sample : r.detail)}
           {r.state !== 'connected' && r.host ? <span className="text-slate-400"> ({r.host})</span> : null}
         </div>
         {r.warning && (
@@ -68,24 +67,27 @@ const Row: React.FC<{ r: ConnectionResult }> = ({ r }) => (
         {SETTINGS_CHECK_IDS.has(r.id) ? (
           <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
             <button type="button" onClick={() => openSettingsFor(r.id)} className="text-blue-700 dark:text-blue-400 hover:underline">
-              {r.state === 'optional' ? 'Add your key in Settings' : 'Add or change the key in Settings'}
+              {r.state === 'optional' ? t('dc_addKey') : t('dc_changeKey')}
             </button>
-            <span> (or set it in .env)</span>
+            <span>{t('dc_orEnv')}</span>
           </div>
         ) : (
           r.setup &&
           (r.state === 'needs_setup' || r.state === 'off') && (
             <div className="mt-1 text-xs text-slate-600 dark:text-slate-400">
-              <span className="font-medium">Set up in .env:</span> <code className="break-words">{r.setup}</code>
+              <span className="font-medium">{t('dc_setupEnv')}</span> <code className="break-words">{r.setup}</code>
             </div>
           )
         )}
       </div>
     </div>
   </li>
-);
+  );
+};
 
 export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ startCollapsed = false }) => {
+  const t = useT(MENU);
+  const lang = useLang();
   const [open, setOpen] = useState(!startCollapsed);
   const [report, setReport] = useState<ConnectionReport | null>(null);
   const [loading, setLoading] = useState(false);
@@ -99,11 +101,11 @@ export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ s
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setReport((await res.json()) as ConnectionReport);
     } catch (e) {
-      setError(`The check could not run: ${e instanceof Error ? e.message : 'server did not answer'}. Is the app server running?`);
+      setError(t('dc_cantRun', { detail: e instanceof Error ? e.message : t('dc_noAnswer') }));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void run(false);
@@ -117,33 +119,32 @@ export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ s
       <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
         <div>
           <h2 id="data-connections" className="ui-section-title">
-            Data connections
+            {t('dc_title')}
           </h2>
           <p className="ui-label">
-            Each source is asked for one small real answer, the same way the tools ask. The same check runs in a terminal with{' '}
-            <code>npm run check:data</code>.
+            {t('dc_intro')} <code>npm run check:data</code>.{lang !== 'en' && ` ${t('dc_englishNote')}`}
           </p>
           {c && (
             <p className="mt-1 text-xs text-slate-600 dark:text-slate-300" data-connection-summary="true">
-              {c.connected} connected, {failed} failed, {c.needs_setup} need setup, {c.off} off, {c.optional} optional not set
-              {report ? ` · checked ${new Date(report.checkedAt).toLocaleTimeString()}` : ''}
+              {t('dc_summary', { connected: c.connected, failed, setup: c.needs_setup, off: c.off, optional: c.optional })}
+              {report ? t('dc_checkedAt', { time: new Date(report.checkedAt).toLocaleTimeString() }) : ''}
             </p>
           )}
         </div>
         <div className="flex items-center gap-2">
           {startCollapsed && (
             <button type="button" className="ui-pill" aria-expanded={open} onClick={() => setOpen((o) => !o)} data-connections-toggle="true">
-              {open ? 'Hide sources' : 'Show every source'}
+              {open ? t('dc_hide') : t('dc_show')}
             </button>
           )}
           <button type="button" className="ui-pill inline-flex items-center gap-1.5" onClick={() => void run(true)} disabled={loading}>
             <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} aria-hidden />
-            {loading ? 'Checking…' : 'Check again'}
+            {loading ? t('dc_checking') : t('dc_again')}
           </button>
         </div>
       </header>
       {error && <p className="px-4 py-3 text-sm text-rose-700 dark:text-rose-400">{error}</p>}
-      {!report && loading && <p className="px-4 py-3 text-sm text-slate-500">Checking every source (up to 20 seconds)…</p>}
+      {!report && loading && <p className="px-4 py-3 text-sm text-slate-500">{t('dc_checkingAll')}</p>}
       {report && open && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-6 px-4 pb-3">
           {(['free', 'free_key', 'own_account', 'ai'] as ConnectionGroup[]).map((g) => {
@@ -152,7 +153,7 @@ export const DataConnectionsPanel: React.FC<{ startCollapsed?: boolean }> = ({ s
             if (!rows.length) return null;
             return (
               <div key={g} className="pt-3">
-                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400">{GROUP_TITLE[g]}</h3>
+                <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400">{t(`dc_g_${g}`)}</h3>
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
                   {rows.map((r) => (
                     <Row key={r.id} r={r} />
