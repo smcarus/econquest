@@ -4,6 +4,11 @@ import { geminiModel } from './src/utils/geminiModel';
 import { registerAnalysisRoutes } from './src/server/routes/analysis';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { mountEngineRoutes } from './src/server/engineRoutes';
+import { ENGINE_ROUTES } from './src/engine/routeTable';
+import { createNodePlatform } from './src/platform/node';
+import { secretBoxFromEnv } from './src/utils/secretBox';
+import type { Caller } from './src/engine/routes';
 import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
@@ -82,7 +87,6 @@ import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './s
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
-import { loadWatchRules, saveWatchRules } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
 import { tableWorkbook } from './src/utils/xlsxExport';
@@ -92,7 +96,6 @@ import { stressWorldSeries } from './src/utils/stressIndices';
 import { spfWorldSeries } from './src/utils/inflationSurveys';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
-import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import {
   API_KEY_IDS,
@@ -192,6 +195,8 @@ async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
 }
 
 const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
+/** The device services the shared engine uses on this computer (src/platform/node.ts). */
+const enginePlatform = createNodePlatform({ dataDir: DATA_DIR, secretBox: secretBoxFromEnv(process.env).box });
 const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 /** A pull that came back short (a feed failed, or nothing answered) is tried again after an hour. */
 const SNAPSHOT_RETRY_MS = 60 * 60 * 1000;
@@ -2347,6 +2352,15 @@ async function startServer() {
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
+  /** Who is asking, in the shared engine's terms (src/engine/routes.ts). */
+  const callerFor = (req: express.Request, res: express.Response): Caller => {
+    const who = signedIn(res);
+    return {
+      trusted: trusted(req, res),
+      account: who ? { id: who.id, username: who.username, displayName: who.displayName, role: who.role } : null,
+      from: req.socket.remoteAddress || 'an unknown address',
+    };
+  };
   // Each account's own workspace (holdings, watchlists, added countries); the shared file while
   // sign-in is off. The first admin starts from the shared file, which held the single user's lists.
   workspaceFileForAccount = (account: Account | null): string => {
@@ -3320,19 +3334,8 @@ async function startServer() {
     });
   });
 
-  app.get('/api/watch-rules', (_req, res) => res.json({ rules: loadWatchRules(WATCH_RULES_FILE), file: 'data/local/watch-rules.json' }));
-  app.put('/api/watch-rules', (req, res) => {
-    if (trusted(req, res) === false) {
-      return res.status(403).json({ error: `Watch alerts can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
-    }
-    const rules = parseRules(req.body);
-    try {
-      saveWatchRules(WATCH_RULES_FILE, rules);
-      res.json({ ok: true, rules });
-    } catch (error: any) {
-      res.status(500).json({ error: `Could not save the watch alerts file (${error?.code || error?.message || 'unknown error'}).` });
-    }
-  });
+  // Watch alerts come from the shared engine's route table (same code as the phone app).
+  mountEngineRoutes(app, ENGINE_ROUTES, { platform: enginePlatform }, callerFor);
   app.put('/api/settings/keys/:id', async (req, res) => {
     if (refuseRemote(req, res)) return;
     const next = withKey(savedSettings, req.params.id, req.body?.value);
