@@ -44,6 +44,7 @@ const RiskScorecardPanel = lazyNamed(() => import('./RiskScorecardPanel'), 'Risk
 const UnitConverterPanel = lazyNamed(() => import('./UnitConverterPanel'), 'UnitConverterPanel');
 const ExercisesPanel = lazyNamed(() => import('./ExercisesPanel'), 'ExercisesPanel');
 const ModelSandboxPanel = lazyNamed(() => import('./ModelSandboxPanel'), 'ModelSandboxPanel');
+const GapModelPanel = lazyNamed(() => import('./GapModelPanel'), 'GapModelPanel');
 const SanctionsPanel = lazyNamed(() => import('./SanctionsPanel'), 'SanctionsPanel');
 const ForecastPanel = lazyNamed(() => import('./ForecastPanel'), 'ForecastPanel');
 const FiscalMultiplierPanel = lazyNamed(() => import('./FiscalMultiplierPanel'), 'FiscalMultiplierPanel');
@@ -370,6 +371,12 @@ export const CountryPage: React.FC<{
           <PanelBoundary name="Model sandboxes">
             <React.Suspense fallback={<DeskLoading />}>
               <ModelSandboxPanel key={`sb-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
+          </PanelBoundary>
+          <div id="tool-gap-model" className="scroll-mt-4" />
+          <PanelBoundary name="Small gap model">
+            <React.Suspense fallback={<DeskLoading />}>
+              <GapModelPanel key={`gm-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} snapshot={run.openData} />
             </React.Suspense>
           </PanelBoundary>
           <div id="tool-forecast" className="scroll-mt-4" />
