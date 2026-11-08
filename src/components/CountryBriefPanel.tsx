@@ -68,12 +68,13 @@ export const CountryBriefPanel: React.FC<{
 export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => {
   const level = useHelpLevel();
   const t = useT(BRIEF);
+  const tx = useTx();
   return (
   <div className="p-4 space-y-2">
-    <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
+    <p className="text-sm font-medium text-slate-900 dark:text-white">{tx(brief.headline)}</p>
     {brief.sampleWarning && (
       <p className="text-xs px-2 py-1.5 border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300">
-        {brief.sampleWarning}
+        {tx(brief.sampleWarning)}
       </p>
     )}
     <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
@@ -81,11 +82,11 @@ export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => {
         const { fact, meaning } = splitMeaning(j);
         return (
           <li key={j}>
-            {fact}
+            {tx(fact)}
             {meaning && showGuides(level) && (
               <span className="block text-slate-600 dark:text-slate-400" data-meaning="true">
                 <span className="font-medium">{t('whatItMeans')}</span>
-                {meaning}
+                {tx(meaning)}
               </span>
             )}
           </li>
@@ -176,7 +177,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
       <section key={g.title} className="ui-panel group">
         <header className="ui-panel-header flex items-start justify-between gap-2">
           <h3 className="ui-section-title flex flex-wrap items-center gap-2">
-            {g.title}
+            {tx(g.title)}
             <PanelValidationBadge title={g.title} />
           </h3>
           {country && g.rows.some((r) => !r.missing) && (
@@ -187,16 +188,16 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
         </header>
         {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{panelIntro(g.title)}</p>}
         <table className="w-full text-sm">
-          <caption className="sr-only">{g.title}</caption>
+          <caption className="sr-only">{tx(g.title)}</caption>
           <tbody>
             {g.rows.map((r) =>
               r.value.length > 60 ? (
                 // A sentence, not a figure: label, then the text under it, left-aligned.
                 <tr key={`${r.label}-${r.value}`} className="border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
                   <td colSpan={2} className="px-4 py-1.5 text-left">
-                    <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
-                    <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
-                    <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{tx(r.label)}</span>
+                    <span className="block text-xs text-slate-500 dark:text-slate-400">{tx(r.source)}</span>
+                    <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{tx(r.value)}</span>
                     {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
                     {help(r.label)}
                   </td>
@@ -204,18 +205,18 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
               ) : (
               <tr key={`${r.label}-${r.value}`} className="group/row border-b border-slate-100 dark:border-slate-800 last:border-0" title={r.help ? tx(r.help) : undefined} data-missing={r.missing ? 'true' : undefined}>
                 <th scope="row" className="px-4 py-1.5 text-left font-normal text-slate-600 dark:text-slate-400">
-                  {r.label}
+                  {tx(r.label)}
                   <span
                     className={`block text-xs ${
                       r.verified ? 'text-emerald-700 dark:text-emerald-400' : r.missing ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'
                     }`}
                   >
-                    {r.source}
+                    {tx(r.source)}
                   </span>
                   {help(r.label)}
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
-                  {r.value}
+                  {tx(r.value)}
                   {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
                   {country && !r.missing && (
                     <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title={t('explainRowTitle')} data-explain-row={r.label}>

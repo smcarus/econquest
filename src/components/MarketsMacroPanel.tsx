@@ -6,7 +6,7 @@ import { marketEdgePeers } from '../utils/marketEdgeAnchors';
 import { BriefGroups, BriefSummary } from './CountryBriefPanel';
 import { useMarketEdgeAnchors } from './MarketEdgeScreen';
 import type { BriefRow } from '../utils/countryNotes';
-import { useT } from '../i18n/useLang';
+import { useT, useTx } from '../i18n/useLang';
 import { BRIEF } from '../i18n/messages/brief';
 
 /** Rows the Brief tab already shows; MarketEdge leaves them out of its first group. */
@@ -41,6 +41,7 @@ export const MarketsMacroPanel: React.FC<{
   afterSummary?: React.ReactNode;
 }> = ({ run, peers, onOpenCompare, afterSummary }) => {
   const t = useT(BRIEF);
+  const tx = useTx();
   const anchors = useMarketEdgeAnchors();
   // Peers without their built-in figures (utils/liveFigures.ts).
   const livePeers = useMemo(() => peers.map(toLive), [peers]);
@@ -97,14 +98,14 @@ export const MarketsMacroPanel: React.FC<{
         <details className="ui-panel" data-empty-panels={split.empty.length}>
           <summary className="cursor-pointer px-4 py-3 ui-body">
             {split.empty.length === 1 ? t('emptyOne', { country: run.countryName }) : t('emptyMany', { n: split.empty.length, country: run.countryName })}
-            <span className="block ui-label">{t('emptyOpen', { list: split.empty.map((g) => g.title).join(' · ') })}</span>
+            <span className="block ui-label">{t('emptyOpen', { list: split.empty.map((g) => tx(g.title)).join(' · ') })}</span>
           </summary>
           <ul className="border-t border-slate-100 dark:border-slate-800">
             {split.empty.map((g) => (
               <li key={g.title} className="px-4 py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
-                <span className="ui-body">{g.title}</span>
-                <span className="block text-xs text-amber-700 dark:text-amber-400">{emptyGroupReasons(g).join('; ')}</span>
-                <span className="block ui-label">{g.rows.map((r) => r.label).join(' · ')}</span>
+                <span className="ui-body">{tx(g.title)}</span>
+                <span className="block text-xs text-amber-700 dark:text-amber-400">{emptyGroupReasons(g).map(tx).join('; ')}</span>
+                <span className="block ui-label">{g.rows.map((r) => tx(r.label)).join(' · ')}</span>
               </li>
             ))}
           </ul>

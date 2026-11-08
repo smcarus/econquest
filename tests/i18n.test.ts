@@ -112,3 +112,69 @@ test('Research section names and figure names in the message file match the ones
   for (const s of RESEARCH_SECTIONS) assert.equal(en[`sec_${s.id}`], s.label, `section ${s.id}`);
   assert.equal(en.fig_spread, HC_SPREAD_LABEL);
 });
+
+test('the brief panels: every title, figure name, reason and meaning they build from the data has Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  const { economistBrief, splitMeaning } = await import('../src/utils/countryNotes');
+  const { bankerBrief } = await import('../src/utils/bankerNote');
+  const { officialBrief } = await import('../src/utils/officialNote');
+  const { marketsMacroBrief } = await import('../src/utils/marketsMacro');
+  const { buildBaselineOpenData, SOVEREIGN_CATALOG } = await import('../src/data/presetsAndBaselines');
+  const { upcomingOfficialEvents } = await import('../src/data/officialCalendar');
+  const { markLive, TEST_FEED_VALUES } = await import('./helpers/live');
+  attachLanguage('es', ES, ES_TEXT);
+  const now = new Date('2026-11-04T12:00:00Z');
+  const isos = SOVEREIGN_CATALOG.map((c) => c.iso3);
+  // Calendar event titles are the source's own names and stay as they are.
+  const events = new Set(upcomingOfficialEvents(isos, 400, now).map((e) => e.title));
+  const SECTION: Record<string, string> = { imf: 'imfIndicators', wb: 'worldBankIndicators', gdelt: 'gdeltMetrics', market: 'monetaryAndMarket' };
+  const need = new Set<string>();
+  for (const iso of isos)
+    // No live figures, then every figure live at a few different values, so each rule's branches show.
+    for (const scale of [0, 1, -1, 0.2, 3]) {
+      const openData = buildBaselineOpenData(iso);
+      openData.dataStatus = { verifiedLiveSources: [], checkedAt: '2026-11-04T12:00:00Z' } as never;
+      if (scale) {
+        for (const [p, v] of Object.entries(TEST_FEED_VALUES)) {
+          const [pre, k] = p.split('.');
+          const sec = (openData as unknown as Record<string, Record<string, number>>)[SECTION[pre!]!];
+          if (sec) sec[k!] = v * scale;
+        }
+        markLive(openData, Object.keys(TEST_FEED_VALUES));
+      }
+      const run = { iso3: iso, countryName: openData.countryName, openData } as never;
+      for (const b of [economistBrief(run, now), bankerBrief(run, [], now), officialBrief(run, now), marketsMacroBrief(run, [])]) {
+        if (b.sampleWarning) need.add(b.sampleWarning);
+        if (/yet\.$|are live\.$/.test(b.headline)) need.add(b.headline);
+        for (const j of b.judgements) {
+          const m = splitMeaning(j).meaning;
+          if (m) need.add(m);
+        }
+        for (const g of b.groups) {
+          need.add(g.title);
+          for (const r of g.rows) {
+            if (!events.has(r.label)) need.add(r.label);
+            if (!/\d/.test(r.value)) need.add(r.value);
+            if (r.help) need.add(r.help);
+            if (/did not answer|^Needs |^No |^Not |^live |^model|^official calendar|^no official/.test(r.source)) need.add(r.source);
+          }
+        }
+      }
+    }
+  const untranslated = [...need].filter((s) => translateText(s, 'es') === s);
+  assert.deepEqual(untranslated, [], 'brief text with no Spanish');
+});
+
+test('a pattern swaps a whole sentence and keeps what the app put in it', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  assert.equal(translateText('Spot FX (BRL per USD)', 'es'), 'Tipo de cambio al contado (BRL por USD)');
+  assert.equal(translateText('Brazil: inflation 4.6% against a 3.0% target.', 'es'), 'Brazil: inflación del 4.6% frente a una meta del 3.0%.');
+  assert.equal(translateText('Brazil: inflation 4.6%.', 'es'), 'Brazil: inflación del 4.6%.');
+  assert.match(translateText('18 of 19 figures for Brazil are missing, because their source is not connected or did not answer. They read Missing, and no built-in or estimated value is shown in their place. Tap "Why missing?" on any of them for the reason and what would fill it.', 'es'), /^Faltan 18 de 19 cifras de Brazil,/);
+  // A sentence with figures that no pattern covers stays English.
+  assert.equal(translateText('Brazil: inflation 4.6% against a 3.0% target, 10Y 15.29%.', 'es'), 'Brazil: inflation 4.6% against a 3.0% target, 10Y 15.29%.');
+  assert.equal(translateText('Growth is moderate at 2.8% a year.', 'es'), 'Growth is moderate at 2.8% a year.');
+});
