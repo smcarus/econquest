@@ -8,6 +8,7 @@ import { OWN_DATA_ES } from './ownData';
 import { WORKSPACE_ES } from './workspace';
 import { WATCHLIST_ES } from './watchlist';
 import { MISSING_ES } from './missing';
+import { BRIEF_TEXT_ES } from './briefText';
 import { RESEARCH_ES } from './research';
 import { BRIEF_ES } from './brief';
 
@@ -22,4 +23,4 @@ export const ES: Record<string, Record<string, string>> = {
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const ES_TEXT: Record<string, string> = { ...MISSING_ES };
+export const ES_TEXT: Record<string, string> = { ...MISSING_ES, ...BRIEF_TEXT_ES };

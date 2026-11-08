@@ -88,7 +88,26 @@ export type Messages<C> = C extends Catalog<infer K> ? Record<K, string> : never
 const registry = new Map<string, Catalog>();
 const loaded: Partial<Record<Lang, Record<string, Record<string, string>>>> = {};
 /** Whole sentences that are built in English elsewhere (Missing reasons), keyed by their English. */
-const loadedText: Partial<Record<Lang, { exact: Record<string, string>; parts: Array<[string, string]> }>> = {};
+const loadedText: Partial<Record<Lang, { exact: Record<string, string>; patterns: Array<[RegExp, string, string[]]>; parts: Array<[string, string]> }>> = {};
+
+/** "{n} of {total} figures" as a whole-text pattern; each {name} matches what the app put there (no comma). */
+function textPattern(en: string): [RegExp, string[]] {
+  const names: string[] = [];
+  const src = en
+    .split(/(\{\w+\})/)
+    .map((part) => {
+      const m = /^\{(\w+)\}$/.exec(part);
+      if (m) {
+        names.push(m[1]!);
+        // Never across a comma or semicolon, so a pattern cannot swallow the next clause of a longer
+        // sentence; only a {source} (a source's own name) may hold commas.
+        return m[1] === 'source' ? '(.+?)' : '([^,;]+?)';
+      }
+      return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    })
+    .join('');
+  return [new RegExp(`^${src}$`, 's'), names];
+}
 let version = 0;
 
 /** Defines a message file with its keys taken from the English list. */
@@ -101,9 +120,18 @@ export function defineMessages<K extends string>(area: string, en: Record<K, str
 /** Puts a loaded language's words into every message file, now and as later files are defined. */
 export function attachLanguage(lang: Exclude<Lang, 'en'>, dicts: Record<string, Record<string, string>>, text: Record<string, string> = {}): void {
   loaded[lang] = dicts;
+  const exact: Record<string, string> = {};
+  const patterns: Array<[RegExp, string, string[]]> = [];
+  for (const [en, tr] of Object.entries(text)) {
+    if (/\{\w+\}/.test(en)) {
+      const [re, names] = textPattern(en);
+      patterns.push([re, tr, names]);
+    } else exact[en] = tr;
+  }
   // Longest first, so a sentence is swapped before any shorter sentence inside it.
-  const parts = Object.entries(text).filter(([en]) => en.length > 20).sort((a, b) => b[0].length - a[0].length);
-  loadedText[lang] = { exact: text, parts: parts as Array<[string, string]> };
+  patterns.sort((a, b) => b[0].source.length - a[0].source.length);
+  const parts = Object.entries(exact).filter(([en]) => en.length > 20).sort((a, b) => b[0].length - a[0].length);
+  loadedText[lang] = { exact, patterns, parts };
   for (const [area, catalog] of registry) Object.assign(catalog[lang], dicts[area]);
   version += 1;
 }
@@ -138,8 +166,8 @@ export function translate<K extends string>(catalog: Catalog<K>, lang: Lang, key
 
 /**
  * A sentence the app builds in English because it also goes into notes and the council's prompts
- * (the reasons a figure is Missing), shown in the chosen language. An exact match is swapped
- * whole; a joined text ("Turkey: ... Egypt: ...") has each known sentence swapped in place; anything
+ * (the reasons a figure is Missing, the brief panels' figure names), shown in the chosen language. An
+ * exact match is swapped whole; a key with {name} in it is a whole-text pattern; a joined text ("Turkey: ... Egypt: ...") has each known sentence swapped in place; anything
  * not in the list stays English.
  */
 export function translateText(text: string, lang: Lang): string {
@@ -148,6 +176,10 @@ export function translateText(text: string, lang: Lang): string {
   if (!t) return text;
   const exact = t.exact[text];
   if (exact !== undefined) return exact;
+  for (const [re, tr, names] of t.patterns) {
+    const m = re.exec(text);
+    if (m) return tr.replace(/\{(\w+)\}/g, (whole, name: string) => (names.includes(name) ? (m[names.indexOf(name) + 1] ?? whole) : whole));
+  }
   let out = text;
   for (const [en, tr] of t.parts) if (out.includes(en)) out = out.split(en).join(tr);
   return out;
