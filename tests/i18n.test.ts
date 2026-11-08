@@ -103,3 +103,12 @@ test('Missing reasons swap whole, swap inside a joined text, and stay English wh
   assert.equal(translateText('Something new', 'es'), 'Something new');
   assert.equal(translateText('', 'es'), '');
 });
+
+test('Research section names and figure names in the message file match the ones the app defines', async () => {
+  const { RESEARCH_SECTIONS } = await import('../src/utils/researchSections');
+  const { HC_SPREAD_LABEL } = await import('../src/utils/hardCurrencySpread');
+  const { RESEARCH } = await import('../src/i18n/messages/research');
+  const en = RESEARCH.en as Record<string, string>;
+  for (const s of RESEARCH_SECTIONS) assert.equal(en[`sec_${s.id}`], s.label, `section ${s.id}`);
+  assert.equal(en.fig_spread, HC_SPREAD_LABEL);
+});

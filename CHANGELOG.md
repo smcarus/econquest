@@ -15,7 +15,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   for now, because the agents read questions in English. Workspace (the Agents and Briefing panels, your inputs,
   what moved, the next two weeks and watch alerts) is in Spanish too, and so are the watchlist table, its
   column picker and the pop-out watchlist window. The reasons a figure shows as Missing are in Spanish on screen
-  as well; they stay English in notes and in what the council reads.
+  as well; they stay English in notes and in what the council reads. Research's frame is in Spanish too: the scope
+  bar, the four section names, the Compare and My holdings headers, the live-data badge, the Sources grid, and one
+  country's header and Sources tab; the panels inside each section follow.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

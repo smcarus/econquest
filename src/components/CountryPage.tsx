@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { noteExamOpened } from '../utils/examMode';
 import { openDataLicences } from './aboutOpen';
 import { Plus, RefreshCw } from 'lucide-react';
+import { useT, useTx } from '../i18n/useLang';
+import { RESEARCH } from '../i18n/messages/research';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { DataStatusBadge } from './DataStatusBadge';
 import { useOnlineStatus } from './OfflineData';
@@ -73,10 +75,12 @@ export const COUNTRY_TABS: CountryTabConfig[] = [
 /** Where the Country page opens when no role or desk says otherwise. */
 export const DEFAULT_COUNTRY_TAB: CountryTabConfig = COUNTRY_TABS.find((t) => t.id === 'overview')!;
 
-const Figure: React.FC<{ label: string; value: string; title?: string; missing?: string; onHistory?: () => void }> = ({ label, value, title, missing, onHistory }) => (
+const Figure: React.FC<{ label: string; value: string; title?: string; missing?: string; onHistory?: () => void }> = ({ label, value, title, missing, onHistory }) => {
+  const t = useT(RESEARCH);
+  return (
   <div
     className={`min-w-0 ${onHistory ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50' : ''}`}
-    title={onHistory ? `${title ? `${title} ` : ''}Click for its history.` : title}
+    title={onHistory ? `${title ? `${title} ` : ''}${t('clickHistory')}` : title}
     data-missing={missing ? 'true' : undefined}
     role={onHistory ? 'button' : undefined}
     tabIndex={onHistory ? 0 : undefined}
@@ -89,7 +93,8 @@ const Figure: React.FC<{ label: string; value: string; title?: string; missing?:
     </div>
     {missing && <div className="text-xs text-amber-700 dark:text-amber-400 sm:whitespace-nowrap">{missing}</div>}
   </div>
-);
+  );
+};
 
 /** The header's key figures, each shown only from a real source. */
 const HEADER_FIGURES: Array<{ path: string; label: string; fmt: (v: number) => string; series: string }> = [
@@ -100,6 +105,15 @@ const HEADER_FIGURES: Array<{ path: string; label: string; fmt: (v: number) => s
   { path: 'market.policyRatePct', label: 'Policy rate', fmt: (v) => `${v.toFixed(2)}%`, series: 'policy_rate' },
   { path: 'wb.fxReservesMonthsImport', label: 'Reserves', fmt: (v) => `${v.toFixed(1)} mo`, series: 'reserves_months' },
 ];
+
+/** Header figure names in the chosen language. */
+const FIG_KEY: Record<string, 'fig_debt' | 'fig_spread' | 'fig_yield' | 'fig_policy' | 'fig_reserves'> = {
+  'market.hcBondSpreadBps': 'fig_spread',
+  'imf.debtToGdpPct': 'fig_debt',
+  'market.sovereign10YBondYieldPct': 'fig_yield',
+  'market.policyRatePct': 'fig_policy',
+  'wb.fxReservesMonthsImport': 'fig_reserves',
+};
 
 export const CountryPage: React.FC<{
   run: CouncilAssessmentRun;
@@ -127,6 +141,8 @@ export const CountryPage: React.FC<{
   briefView,
   onWriteNote,
 }) => {
+  const t = useT(RESEARCH);
+  const tx = useTx();
   const net = useOnlineStatus();
   const offline = !!net && !net.online;
   // Exam mode: what was opened goes to the audit log for the teacher.
@@ -148,7 +164,7 @@ export const CountryPage: React.FC<{
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <label htmlFor="country-select" className="sr-only">
-              Country
+              {t('country')}
             </label>
             <select
               id="country-select"
@@ -169,7 +185,7 @@ export const CountryPage: React.FC<{
                   {w.countryName}
                 </option>
               ))}
-              <option value="__add">+ Add a country…</option>
+              <option value="__add">{t('addCountry')}</option>
             </select>
             {/* On a phone, Refresh sits beside the country as an icon. */}
             <button
@@ -177,8 +193,8 @@ export const CountryPage: React.FC<{
               onClick={onSync}
               disabled={isSyncing}
               className="ui-btn inline-flex sm:hidden ml-auto"
-              aria-label={isSyncing ? 'Refreshing' : 'Refresh now'}
-              title="Pull every data feed for this country again now"
+              aria-label={isSyncing ? t('refreshingShort') : t('refresh')}
+              title={t('refreshTitleShort')}
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
             </button>
@@ -192,10 +208,10 @@ export const CountryPage: React.FC<{
               return (
                 <Figure
                   key={f.path}
-                  label={f.path === 'market.hcBondSpreadBps' && open.hcBondSpread ? `${HC_SPREAD_LABEL}, ${hcSpreadWhen(open.hcBondSpread.period)}` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `5Y CDS, ${formatPeriod(status.ownCds.date)}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `10Y yield, ${describeOfficialYield(status.officialYield).when}` : f.label}
-                  value={v === undefined ? 'Missing' : f.fmt(v)}
-                  missing={why?.short}
-                  title={why ? why.help : f.path === 'market.hcBondSpreadBps' && open.hcBondSpread ? `${HC_SPREAD_LONG}, ${hcSpreadWhen(open.hcBondSpread.period)}, ${HC_SPREAD_SOURCE}. ${HC_SPREAD_NOT_CDS}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `Official figure: ${describeOfficialYield(status.officialYield).long}.` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `Your own ${status.ownCds.source} quote.` : undefined}
+                  label={f.path === 'market.hcBondSpreadBps' && open.hcBondSpread ? `${t('fig_spread')}, ${hcSpreadWhen(open.hcBondSpread.period)}` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `5Y CDS, ${formatPeriod(status.ownCds.date)}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `${t('fig_yield')}, ${describeOfficialYield(status.officialYield).when}` : FIG_KEY[f.path] ? t(FIG_KEY[f.path]!) : f.label}
+                  value={v === undefined ? t('missing') : f.fmt(v)}
+                  missing={why ? tx(why.short) : undefined}
+                  title={why ? tx(why.help) : f.path === 'market.hcBondSpreadBps' && open.hcBondSpread ? `${HC_SPREAD_LONG}, ${hcSpreadWhen(open.hcBondSpread.period)}, ${HC_SPREAD_SOURCE}. ${HC_SPREAD_NOT_CDS}` : f.path === 'market.sovereign10YBondYieldPct' && status.officialYield ? `Official figure: ${describeOfficialYield(status.officialYield).long}.` : f.path === 'market.cds5YSpreadBps' && status.ownCds ? `Your own ${status.ownCds.source} quote.` : undefined}
                   onHistory={
                     showHistory
                       ? () => {
@@ -216,17 +232,17 @@ export const CountryPage: React.FC<{
               onClick={onSync}
               disabled={isSyncing}
               className="ui-btn hidden sm:inline-flex"
-              title="Pull every data feed for this country again now (normally once a week, or within the hour after a failed pull)"
+              title={t('refreshTitle')}
             >
               <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Refreshing…' : 'Refresh now'}
+              {isSyncing ? t('refreshing') : t('refresh')}
             </button>
           </div>
         </div>
 
         {/* Sections: the same four as Compare and My holdings */}
         <ResearchSectionNav
-          ariaLabel="Country sections"
+          ariaLabel={t('countrySectionsAria')}
           active={tab.id}
           onChange={(id) => onChangeTab(id as CountryTabId)}
           sections={tabs}
@@ -238,23 +254,23 @@ export const CountryPage: React.FC<{
           <div className="xl:col-span-2 space-y-2">
             <section className="ui-panel">
               <header className="ui-panel-header">
-                <h2 className="ui-section-title">{offline ? `What is saved for ${run.countryName}` : `What is live for ${run.countryName}`}</h2>
+                <h2 className="ui-section-title">{offline ? t('savedFor', { name: run.countryName }) : t('liveFor', { name: run.countryName })}</h2>
                 <p className="ui-label">
-                  Every figure the country pages use, with its source, or why it is missing and what would fill it. No built-in values are shown.
-                  {offline && ' The feeds cannot be reached from this computer, so these are the figures from the last pull, each with its own date.'}
+                  {t('sourcesNote')}
+                  {offline && t('sourcesOffline')}
                 </p>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.csv`} download>
-                    Download these figures (CSV)
+                    {t('downloadCsv')}
                   </a>
                   <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(run.iso3)}/figures.xlsx`} download>
-                    Excel
+                    {t('excel')}
                   </a>
                   <button type="button" className="ui-btn ui-btn-ghost inline-flex" onClick={() => openDataLicences()} data-open-licences>
-                    Data licences
+                    {t('licences')}
                   </button>
                 </div>
-                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Before sharing these figures, check each source&apos;s terms: some need a credit, a few need the provider&apos;s permission for client or commercial use.</p>
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{t('termsNote')}</p>
                 <SourceCredits credits={creditsForSources(run.openData?.liveApiSourcesActive ?? [])} className="mt-1" />
               </header>
             </section>
@@ -263,15 +279,15 @@ export const CountryPage: React.FC<{
           </div>
           <section className="ui-panel">
             <header className="ui-panel-header">
-              <h2 className="ui-section-title">Coming up</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Official schedule, next 120 days</p>
+              <h2 className="ui-section-title">{t('comingUp')}</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t('comingUpNote')}</p>
             </header>
             <div className="p-4">
               {events.length === 0 ? (
                 <p className="text-sm text-slate-500 dark:text-slate-400">
                   {hasOfficialSchedule(run.iso3)
-                    ? 'Nothing scheduled in the next 120 days.'
-                    : `No official schedule on file for ${run.countryName}.`}
+                    ? t('nothingScheduled')
+                    : t('noSchedule', { name: run.countryName })}
                 </p>
               ) : (
                 <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -280,7 +296,7 @@ export const CountryPage: React.FC<{
                       <div>
                         <div className="text-sm text-slate-900 dark:text-white">
                           {ev.title}
-                          {ev.dateKind === 'legal_deadline' && <span className="text-xs text-slate-500 dark:text-slate-400"> · latest date in law</span>}
+                          {ev.dateKind === 'legal_deadline' && <span className="text-xs text-slate-500 dark:text-slate-400">{t('lawDate')}</span>}
                         </div>
                         <a
                           href={ev.sourceUrl}
@@ -296,7 +312,7 @@ export const CountryPage: React.FC<{
                           {new Date(`${ev.date}T12:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
                         </div>
                         <div className="text-slate-500 dark:text-slate-400">
-                          {ev.daysUntil === 0 ? 'today' : `in ${ev.daysUntil}d`}
+                          {ev.daysUntil === 0 ? t('today') : t('inDays', { n: ev.daysUntil })}
                         </div>
                       </div>
                     </li>
@@ -481,15 +497,16 @@ export const CountryPage: React.FC<{
 const FreshnessPanel: React.FC<{ item?: WatchlistItem }> = ({ item }) => {
   const checks = item ? freshnessChecks(item) : [];
   if (!checks.length) return null;
+  const t = useT(RESEARCH);
   const stale = checks.filter((c) => c.stale);
   return (
     <section className="ui-panel" data-freshness="true">
       <header className="ui-panel-header">
-        <h2 className="ui-section-title">{stale.length ? `Older than usual (${stale.length} of ${checks.length} dated figures)` : 'Freshness'}</h2>
+        <h2 className="ui-section-title">{stale.length ? t('olderThan', { stale: stale.length, total: checks.length }) : t('freshness')}</h2>
         <p className="ui-label">
           {stale.length
-            ? 'These figures are older than their source normally runs (how often it comes out plus its usual delay). Read them with their date.'
-            : `All ${checks.length} dated figures are within their usual age.`}
+            ? t('staleNote')
+            : t('allFresh', { n: checks.length })}
         </p>
       </header>
       {stale.length > 0 && (
@@ -503,7 +520,7 @@ const FreshnessPanel: React.FC<{ item?: WatchlistItem }> = ({ item }) => {
                 </span>
               </div>
               {c.why && <p className="text-xs text-slate-600 dark:text-slate-400">{c.why}</p>}
-              {c.fresher && <p className="text-xs text-slate-600 dark:text-slate-400">Fresher source: {c.fresher}.</p>}
+              {c.fresher && <p className="text-xs text-slate-600 dark:text-slate-400">{t('fresher', { source: c.fresher })}</p>}
             </li>
           ))}
         </ul>
