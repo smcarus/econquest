@@ -38,6 +38,7 @@
     "quests:approve": "tsx scripts/quests-approve.ts",
     "quests:brief": "tsx scripts/quests-brief.ts",
     "quests:digest": "tsx scripts/quests-digest.ts",
+    "quests:run-tests": "tsx scripts/quests-run-tests.ts",
     "council:time": "tsx scripts/council-time.ts",
     "docs:methods": "tsx scripts/docs-methods.ts",
     "docs:track-record": "tsx scripts/docs-track-record.ts",

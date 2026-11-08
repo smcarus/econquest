@@ -18,7 +18,7 @@ import { loadPublicEntries } from '../src/utils/questPublicEntryStore.ts';
 import { loadResolutions, resolutionsPath } from '../src/utils/questResolveStore.ts';
 import { computeStats } from '../src/utils/questStats.ts';
 import { accountsPath, readAccounts, statsPath } from '../src/utils/questStatsStore.ts';
-import type { Quest } from '../src/utils/quests.ts';
+import { loadTestRecord, testRecordPath } from '../src/utils/questTestStore.ts';
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'quests');
 const rec = loadResolutions(resolutionsPath(dir));
@@ -26,9 +26,12 @@ if (rec.brokenAt !== -1) {
   console.error(`quests/resolutions.jsonl is broken at line ${rec.brokenAt + 1}; restore it from git before computing statistics.`);
   process.exit(1);
 }
-const quests = loadQuests(dir)
-  .filter((x) => x.quest.type !== 'signal')
-  .map((x) => ({ quest: x.quest as Exclude<Quest, { type: 'signal' }>, approved: x.approved }));
+const quests = loadQuests(dir).map((x) => ({ quest: x.quest, approved: x.approved }));
+const tests = loadTestRecord(testRecordPath(dir));
+if (tests.problems.length) {
+  console.error(`quests/test-verdicts.json: ${tests.problems.join('; ')}; restore it from git before computing statistics.`);
+  process.exit(1);
+}
 const entries = loadPublicEntries(dir);
 const accounts = readAccounts(dir);
 const missing = [...new Set(entries.map((e) => e.login))].filter((l) => !l.startsWith('~') && !accounts[l]).sort();
@@ -48,6 +51,6 @@ if (missing.length && !process.argv.includes('--offline')) {
 }
 const sorted = Object.fromEntries(Object.entries(accounts).sort(([a], [b]) => a.localeCompare(b)));
 fs.writeFileSync(accountsPath(dir), `${JSON.stringify({ note: 'GitHub account creation times, looked up by npm run quests:stats for the 90-day ranking rule. Public data.', accounts: sorted }, null, 2)}\n`);
-const stats = computeStats({ quests, entries, lines: rec.lines, accounts: sorted });
+const stats = computeStats({ quests, entries, lines: rec.lines, accounts: sorted, tests: tests.record.verdicts });
 fs.writeFileSync(statsPath(dir), `${JSON.stringify(stats, null, 2)}\n`);
 console.log(`Wrote quests/stats.json: ${stats.contributors.length} contributor(s), ${stats.board.allTime.length} ranked; quests/accounts.json: ${Object.keys(sorted).length} account(s).`);

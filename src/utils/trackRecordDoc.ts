@@ -12,10 +12,17 @@
  * family with p = 1. Holm-adjusted p-values only rise when any input p rises, so this can only make
  * every other adjusted p larger (stricter), never smaller; the row itself reads "p not recorded".
  *
+ * Tests entered to Signal Quests (quests/test-verdicts.json, src/utils/questSignal.ts) join the same
+ * family: each one tried raises the bar for every other, the app's own tests included.
+ *
  * Browser-safe, pure.
  */
 import { holm } from './multipleTesting';
 import { VERDICT_FOLDER, type RecordedVerdict, type VerdictKind } from './methodsDoc';
+import type { QuestTestVerdict } from './questSignal';
+
+/** A row's kind: one of the app's own test folders, or a test entered to a Signal Quest. */
+export type TrackKind = VerdictKind | 'quest';
 
 export interface TestFile {
   kind: VerdictKind;
@@ -36,8 +43,10 @@ export interface RecordedRun {
 export interface TrackRow {
   key: string;
   verdict: RecordedVerdict;
-  kind: VerdictKind;
+  kind: TrackKind;
   file?: TestFile;
+  /** A Quest test: where its entry file is. */
+  quest?: { questId: string; login: string; n: number };
   /** The p the verdict was judged on, when the record states one. */
   p?: number;
   adjusted?: number;
@@ -45,7 +54,7 @@ export interface TrackRow {
   holds?: boolean;
 }
 
-const KIND_LABEL: Record<VerdictKind, string> = { backtest: 'Backtest', forecast: 'Forecast evaluation', signal: 'Signal test' };
+const KIND_LABEL: Record<TrackKind, string> = { backtest: 'Backtest', forecast: 'Forecast evaluation', signal: 'Signal test', quest: 'Quest test' };
 const VERDICT_LABEL: Record<RecordedVerdict['verdict'], string> = { passed: 'Passed', failed: 'Failed', too_few_cases: 'Too few cases' };
 
 /** The largest "p <number>" written in a summary, or undefined when it states none. */
@@ -59,13 +68,23 @@ const r3 = (v: number) => Number(v.toPrecision(3));
 const fmtP = (p: number) => (p < 0.001 ? p.toExponential(1) : String(r3(p)));
 
 /** One row per recorded verdict (each version of each test counts), with the Holm reading across them all. */
-export function trackRows(verdicts: RecordedVerdict[], files: TestFile[]): TrackRow[] {
-  const base = verdicts.map((v) => {
+export function trackRows(verdicts: RecordedVerdict[], files: TestFile[], questVerdicts: QuestTestVerdict[] = []): TrackRow[] {
+  const own: TrackRow[] = verdicts.map((v) => {
     const kind = v.kind ?? 'backtest';
     const file = files.find((f) => f.kind === kind && f.id === v.id && f.version === v.version);
     const p = typeof v.p === 'number' && Number.isFinite(v.p) ? v.p : pFromSummary(v.summary);
     return { key: `${kind} ${v.id} v${v.version}`, verdict: v, kind, file, p, alpha: file?.maxPValue ?? (kind === 'forecast' ? 0.1 : 0.05) };
   });
+  const quests: TrackRow[] = questVerdicts.map((q) => ({
+    key: `quest ${q.id} v${q.version}`,
+    verdict: { id: q.id, version: q.version, ranAt: q.ranAt, verdict: q.verdict, method: 2, summary: q.summary, ...(q.p !== undefined ? { p: q.p } : {}) },
+    kind: 'quest',
+    quest: { questId: q.questId, login: q.login, n: q.n },
+    file: { kind: 'signal', id: q.id, version: q.version, file: `${q.login}.${q.n}.json`, registeredOn: q.registeredOn, hash: q.entryHash, maxPValue: q.maxPValue },
+    p: typeof q.p === 'number' && Number.isFinite(q.p) ? q.p : undefined,
+    alpha: q.maxPValue,
+  }));
+  const base = [...own, ...quests];
   const adj = holm(base.map((r) => ({ key: r.key, p: r.p ?? 1 })));
   return base.map((r) => {
     if (r.p === undefined) return r;
@@ -76,8 +95,8 @@ export function trackRows(verdicts: RecordedVerdict[], files: TestFile[]): Track
 
 const cell = (s: string) => s.replace(/\|/g, '\\|');
 
-export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile[], runs: RecordedRun[]): string {
-  const rows = trackRows(verdicts, files);
+export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile[], runs: RecordedRun[], questVerdicts: QuestTestVerdict[] = []): string {
+  const rows = trackRows(verdicts, files, questVerdicts);
   const n = rows.length;
   const count = (k: RecordedVerdict['verdict']) => rows.filter((r) => r.verdict.verdict === k).length;
   const passes = rows.filter((r) => r.verdict.verdict === 'passed');
@@ -141,9 +160,14 @@ export function trackRecordMarkdown(verdicts: RecordedVerdict[], files: TestFile
   );
   for (const r of rows) {
     const v = r.verdict;
-    const folder = VERDICT_FOLDER[r.kind];
-    const file = r.file?.file ?? fileName(v.id, v.version);
     const hash = r.file?.hash ? `, SHA-256 \`${r.file.hash.slice(0, 12)}\`` : '';
+    if (r.quest) {
+      const entry = `quests/entries/${r.quest.questId}/${r.quest.login}.${r.quest.n}.json`;
+      out.push(`- **${name(r)}** (${VERDICT_LABEL[v.verdict].toLowerCase()}; entered by ${r.quest.login} to Signal Quest ${r.quest.questId}, entry file [${entry}](../${entry})${hash}): ${v.summary}`);
+      continue;
+    }
+    const folder = VERDICT_FOLDER[r.kind as VerdictKind];
+    const file = r.file?.file ?? fileName(v.id, v.version);
     out.push(`- **${name(r)}** (${VERDICT_LABEL[v.verdict].toLowerCase()}; test file [docs/validation/${folder}/${file}](./validation/${folder}/${file})${hash}): ${v.summary}`);
   }
   out.push(

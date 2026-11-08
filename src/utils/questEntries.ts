@@ -8,7 +8,8 @@
  * series wait for the resolver, which reads the value as first published (src/utils/questResolve.ts), because
  * today's download may already hold a revised figure. Scoring, not a signal. Browser-safe, pure.
  */
-import { questSettlesOn, type DebateQuest, type ForecastQuest, type ReplicationQuest } from './quests';
+import { questSettlesOn, type DebateQuest, type ForecastQuest, type ReplicationQuest, type SignalQuest } from './quests';
+import { signalTestProblems, type SignalTest } from './questSignal';
 import { questSeriesDef } from './questSeries';
 import type { QuestObservation, QuestRule } from './questRules';
 import { daysBetween, directionBaseRate, firstOnOrAfter, scoreLevel, scoreProbability, type LevelScore, type Point, type ProbabilityScore } from './questScoring';
@@ -18,12 +19,13 @@ export const GROUP_MAX = 40;
 
 /**
  * A Forecast Quest takes a probability or a number; a Debate Quest takes a position (1 = the first
- * listed); a Replication Quest takes the figure the person's script produced.
+ * listed); a Replication Quest takes the figure the person's script produced; a Signal Quest takes a
+ * pre-registered test (public entries only, src/utils/questSignal.ts).
  */
-export type EntryAnswer = { probability: number } | { level: number } | { position: number } | { value: number };
+export type EntryAnswer = { probability: number } | { level: number } | { position: number } | { value: number } | { test: SignalTest };
 
 /** The Quests that take entries. */
-export type EntryQuest = ForecastQuest | DebateQuest | ReplicationQuest;
+export type EntryQuest = ForecastQuest | DebateQuest | ReplicationQuest | SignalQuest;
 
 /** A Replication entry links to its script: a public https address of at most this many characters. */
 export const CODE_URL_MAX = 300;
@@ -59,7 +61,15 @@ export function canonicalEntry(e: Omit<QuestEntry, 'hash'> | QuestEntry): string
 }
 
 /** The answer a Quest takes, from loose numbers (a form or a query string). */
-export function answerFor(quest: EntryQuest, raw: Partial<Record<'probability' | 'level' | 'position' | 'value', unknown>>): EntryAnswer {
+export function answerFor(quest: EntryQuest, raw: Partial<Record<'probability' | 'level' | 'position' | 'value' | 'test', unknown>>): EntryAnswer {
+  if (quest.type === 'signal') {
+    if (typeof raw.test !== 'string') return { test: raw.test as SignalTest };
+    try {
+      return { test: JSON.parse(raw.test) as SignalTest };
+    } catch {
+      return { test: null as unknown as SignalTest };
+    }
+  }
   if (quest.type === 'debate') return { position: Number(raw.position) };
   if (quest.type === 'replication') return { value: Number(raw.value) };
   return quest.rule.kind === 'level' ? { level: Number(raw.level) } : { probability: Number(raw.probability) };
@@ -81,6 +91,8 @@ export function entryProblems(x: Partial<QuestEntryInput>, quest: EntryQuest, to
     const n = quest.positions.length;
     if (!a || !Number.isInteger(a.position) || (a.position as number) < 1 || (a.position as number) > n) out.push(`This Quest asks you to pick a position, 1 to ${n}`);
     if (typeof x.rationale !== 'string' || x.rationale.trim().length < ARGUMENT_MIN) out.push(`Your argument: at least ${ARGUMENT_MIN} characters, saying why, with the figures you rely on`);
+  } else if (quest.type === 'signal') {
+    out.push(...signalTestProblems((x.answer as { test?: unknown } | undefined)?.test, quest.methods));
   } else if (quest.type === 'replication') {
     if (!a || typeof a.value !== 'number' || !Number.isFinite(a.value)) out.push("This Quest asks for the figure your script produced");
     if (!isCodeUrl(x.code)) out.push(`Code: the public https address of your script (up to ${CODE_URL_MAX} characters), so anyone can run it`);

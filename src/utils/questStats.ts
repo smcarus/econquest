@@ -15,6 +15,8 @@
  *   debates argued     the Debate Quests a person argued (step 9); listed, never scored or ranked     none
  *   replications       Replication Quests entered and whether each reproduced the app's figure;      none
  *                      listed, never ranked (step 10)
+ *   tests              Signal Quest tests entered and each one's verdict (step 10); listed, never   none
+ *                      ranked
  *
  * Rankings: by skill score only, among people with 12 or more settled forecasts with a base rate,
  * whose GitHub account was at least 90 days old when their first Quest closed (emailed entries,
@@ -24,7 +26,8 @@
  *
  * Browser-safe, pure.
  */
-import { questSettlesOn, type DebateQuest, type ForecastQuest, type ReplicationQuest } from './quests';
+import { questSettlesOn, type DebateQuest, type ForecastQuest, type ReplicationQuest, type SignalQuest } from './quests';
+import type { QuestTestVerdict, QuestVerdictStatus } from './questSignal';
 import { countedPublicEntries, entrySpread, type PublicEntry } from './questPublicEntries';
 import { resultState, type ResolutionLine } from './questResolve';
 import { brier, mean, scoreLevel, scoreProbability } from './questScoring';
@@ -87,6 +90,8 @@ export interface ContributorStats {
   debates: Array<{ questId: string; title: string }>;
   /** Replication Quests entered: matched is null until the app's figure is recorded. Listed, never ranked. */
   replications: Array<{ questId: string; title: string; matched: boolean | null }>;
+  /** Signal Quest tests entered: verdict is null until the tests are run. Listed, never ranked. */
+  tests: Array<{ questId: string; title: string; verdict: QuestVerdictStatus | null }>;
   /** Why the person is not on the scoreboard, when they are not. */
   unranked?: string;
   entries: ScoredEntry[];
@@ -160,17 +165,19 @@ function rankRows(rows: Array<{ login: string; skills: number[] }>, min: number,
 }
 
 export interface StatsInput {
-  quests: Array<{ quest: ForecastQuest | DebateQuest | ReplicationQuest; approved: boolean }>;
+  quests: Array<{ quest: ForecastQuest | DebateQuest | ReplicationQuest | SignalQuest; approved: boolean }>;
   entries: PublicEntry[];
   lines: ResolutionLine[];
+  /** Verdicts of Signal Quest tests (quests/test-verdicts.json). */
+  tests?: QuestTestVerdict[];
   /** GitHub login -> account creation time (ISO), as looked up by npm run quests:stats. */
   accounts: Record<string, string>;
 }
 
-export function computeStats({ quests, entries, lines, accounts }: StatsInput): QuestStats {
+export function computeStats({ quests, entries, lines, accounts, tests = [] }: StatsInput): QuestStats {
   const approved = quests.filter((q) => q.approved);
-  const byPerson = new Map<string, { entered: number; unresolvable: number; waiting: number; byTopic: Record<string, number>; byRegion: Record<string, number>; scored: ScoredEntry[]; firstClose: string; debates: Array<{ questId: string; title: string }>; replications: ContributorStats['replications'] }>();
-  const person = (login: string) => byPerson.get(login) || { entered: 0, unresolvable: 0, waiting: 0, byTopic: {}, byRegion: {}, scored: [], firstClose: '9999-12-31', debates: [], replications: [] };
+  const byPerson = new Map<string, { entered: number; unresolvable: number; waiting: number; byTopic: Record<string, number>; byRegion: Record<string, number>; scored: ScoredEntry[]; firstClose: string; debates: Array<{ questId: string; title: string }>; replications: ContributorStats['replications']; tests: ContributorStats['tests'] }>();
+  const person = (login: string) => byPerson.get(login) || { entered: 0, unresolvable: 0, waiting: 0, byTopic: {}, byRegion: {}, scored: [], firstClose: '9999-12-31', debates: [], replications: [], tests: [] };
   let crowdSkills: number[] = [];
   for (const { quest } of approved) {
     const counted = countedPublicEntries(entries, quest.id, quest.version);
@@ -179,6 +186,15 @@ export function computeStats({ quests, entries, lines, accounts }: StatsInput): 
       for (const e of counted) {
         const p = person(e.login);
         p.debates.push({ questId: quest.id, title: quest.title });
+        byPerson.set(e.login, p);
+      }
+      continue;
+    }
+    if (quest.type === 'signal') {
+      for (const e of counted) {
+        const p = person(e.login);
+        const v = tests.find((t) => t.questId === quest.id && t.questVersion === quest.version && t.login === e.login && t.n === e.n);
+        p.tests.push({ questId: quest.id, title: quest.title, verdict: v?.verdict ?? null });
         byPerson.set(e.login, p);
       }
       continue;
@@ -268,6 +284,7 @@ export function computeStats({ quests, entries, lines, accounts }: StatsInput): 
       proposed: approved.filter((q) => q.quest.author === login).map((q) => ({ questId: q.quest.id, entries: countedPublicEntries(entries, q.quest.id, q.quest.version).length })),
       debates: p.debates,
       replications: p.replications,
+      tests: p.tests,
       ...(unranked ? { unranked } : {}),
       entries: scored,
     });

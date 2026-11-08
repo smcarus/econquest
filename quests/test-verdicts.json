@@ -1,0 +1,5 @@
+{
+ "note": "Verdicts of the tests entered to Signal Quests, written only by `npm run quests:run-tests` from a real run, once per Quest after entries close. Never edit a line by hand: a failed test stays failed. Every verdict here is counted in the Holm correction in docs/TRACK_RECORD.md.",
+ "runs": [],
+ "verdicts": []
+}

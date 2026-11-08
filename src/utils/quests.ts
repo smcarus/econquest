@@ -19,6 +19,7 @@
  * Browser-safe, pure.
  */
 import { isDate, ruleAnswer, ruleProblems, ruleSettleDate, type QuestRule } from './questRules';
+import { SIGNAL_METHOD_IDS } from './questSignal';
 
 export const QUEST_TYPES = ['forecast', 'signal', 'replication', 'debate'] as const;
 export type QuestType = (typeof QUEST_TYPES)[number];
@@ -74,6 +75,8 @@ export interface SignalQuest extends QuestBase {
   /** The idea to test, in words. Entries are pre-registered test files that follow the signal standard. */
   hypothesis: string;
   settlesOn: string;
+  /** The test methods an entry may use (src/utils/questSignal.ts); any of them when left out. */
+  methods?: string[];
 }
 
 export interface ReplicationQuest extends QuestBase {
@@ -157,7 +160,7 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
   const q = raw as Partial<Quest> & Record<string, unknown>;
   const out: string[] = [];
   if (typeof q.id !== 'string' || !ID.test(q.id) || q.id.length > 60) out.push('id: lower-case words joined by hyphens, at most 60 characters');
-  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
+  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs', 'test-verdicts'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
   if (!Number.isInteger(q.version) || (q.version as number) < 1) out.push('version: a whole number from 1');
   if (opts.fileName && typeof q.id === 'string' && Number.isInteger(q.version) && opts.fileName !== questFileName(q as Quest)) out.push(`file name: must be ${questFileName(q as Quest)}`);
   if (!QUEST_TYPES.includes(q.type as QuestType)) out.push(`type: one of ${QUEST_TYPES.join(', ')}`);
@@ -195,6 +198,7 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
     }
     case 'signal':
       if (!str(base.hypothesis, SUMMARY_MAX)) out.push(`hypothesis: 1 to ${SUMMARY_MAX} characters`);
+      if (base.methods !== undefined && (!Array.isArray(base.methods) || !base.methods.length || !base.methods.every((m) => SIGNAL_METHOD_IDS.includes(m as never)))) out.push(`methods: one or more of ${SIGNAL_METHOD_IDS.join(', ')}`);
       break;
     case 'replication':
       if (!REPLICATION_TOOLS.includes(base.tool)) out.push(`tool: one of ${REPLICATION_TOOLS.join(', ')}`);

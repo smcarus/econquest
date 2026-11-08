@@ -27,7 +27,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Quest generator (`npm run quests:generate`: weekly Brent and currency Quests, monthly policy-rate Quests, as drafts), batch approval (`npm run quests:approve`), weekly digest (`npm run quests:digest`) and "This week" on the Quests page | Built and tested, switched off |
 | Debate Quests: pick a position and argue it (privately, by pull request or by email); Claim Check reads each argument as it is written; an opening brief written once by the app's AI model (`npm run quests:brief`), which may state no figures of its own; an evidence map after close with the results of related Forecast Quests, exported as Markdown; debates argued listed on each contributor's page, never scored | Built and tested, switched off |
 | Replication Quests: an entry gives the figure a person's script produced and a public link to the script; after close the maintainer records the app's own figure (`npm run quests:resolve -- --replicate`); each entry reproduces it if within the Quest's tolerance; listed on contributor pages, never ranked | Built and tested, switched off |
-| Signal Quests (contributed pre-registered tests, run once, in the multiple-testing family) | Not built |
+| Signal Quests: an entry is a pre-registered test on one of the app's test rules, entered in public only (pull request or email); the app checks it as it is written; after close every test is run once (`npm run quests:run-tests`), recorded in `quests/test-verdicts.json` and counted in the Holm correction in docs/TRACK_RECORD.md; tests listed on contributor pages, never ranked | Built and tested, switched off; no test has been run on real data yet |
 | Preference profiles | Not built |
 | Health page and yearly dataset | Not built |
 
@@ -145,6 +145,23 @@ What is shown, and when (a figure resting on too few cases says how many more it
 
 Rankings use skill only. To be ranked a person needs 12 settled forecasts with a base rate and a GitHub account that was at least 90 days old when the first Quest they entered closed, which makes throwaway accounts useless. Emailed entries, checked by a maintainer, need no account. Seasons run by the calendar year a Quest settles in, with an all-time table that never resets; field tables rank only within a field. Nobody is ranked on how many Quests they enter.
 
+## Signal Quests
+
+A Signal Quest asks people to propose a test of an idea, for example "crowded futures positioning comes back within six weeks". A test asks whether a rule would have beaten the simplest guess (how often the same thing happened after any month or week) on past data, using only figures that had been published at the time. The tests follow the same signal standard as the app's own (docs/METHODOLOGY.md), and they are judged in the same family: every test tried raises the bar for every other, the app's own included.
+
+1. **Write the test down.** An entry's answer is `"answer": { "test": { ... } }` with:
+   - `hypothesis`: what the test expects to find, in plain words (40 to 600 characters);
+   - `method`: one of the rules the app can already run on its long free histories (the Propose a test box lists them with their settings, and `src/utils/questSignal.ts` holds the list). A Quest may limit the rules with `"methods": [...]`. A test that needs a rule or data the app does not have yet starts with a code pull request that adds the rule; it cannot be entered as a file;
+   - `params`: every setting of that rule, so nothing is chosen after the run;
+   - `sample`: `{ "from": "YYYY-MM" }`, and `"to"` if the test should stop before the latest data;
+   - `passMark`: at least 30 cases over at least 6 years with cases, p at or under 0.05 with whole years resampled (method 2), and a lift of at least 1 point over the base rate. A test may ask for more, never less;
+   - `knownLimits`: at least one sentence on what the test cannot show.
+2. **Enter it in public**, by pull request (the app's Propose a test box checks the test as you type and prepares the file) or by email through a maintainer (`npm run quests:entries -- --by <login> --email ~name --quest <id> --received <time> --test test.json`). A test cannot be logged privately: it must be fixed in the open before it runs. A replacement before close is the next number; only the newest is run.
+3. **Entries close.** Tests are hidden in the app until then.
+4. **Each test is run once.** A maintainer runs `npm run quests:run-tests -- --by <login> <id>` on a computer that reaches the feeds (BIS, DBnomics, CFTC, OECD, IMF; the protest-spike rule also reads the GDELT and UCDP files on that computer). Each counted entry that passes the entry check becomes a test file with its own hash, registered on the close date, and is run by the same runner as `npm run backtest`, judged by method 2. If any test cannot run (a feed did not answer), nothing is recorded and the maintainer runs it again later, so an outage never becomes a verdict. The verdicts go in `quests/test-verdicts.json` with the SHA-256 of each entry file; a Quest's tests are run once, and a second run is refused. The maintainer then runs `npm run docs:track-record` and commits both files.
+5. **Verdicts.** Each test reads *Passed*, *Failed* or *Too few cases* against its own pass mark, never changed. A pass that still holds after the Holm correction across every test on record reads *Validated*; one that does not reads *Provisional pass*. A failed test is never re-run or re-tuned: a better idea is a new test in a new Quest, and it counts as another test tried. Results on past data are hypothetical: they show how a rule would have done, not money made.
+6. **Contributor pages** list each test proposed and its verdict. Tests are never ranked.
+
 ## Checklist before Quests are switched on
 
 Working properly:
@@ -158,6 +175,7 @@ Working properly:
 - [ ] `QUESTS_REPO` set in `.env.example`, and on the public repository: Actions on, branch protection requiring the `Quest entries` check, the `QUESTS_MAINTAINERS` variable set
 - [ ] CONTRIBUTING gives the address for emailed entries
 - [ ] Scores match a hand calculation for at least three settled test Quests
+- [ ] A test Signal Quest run with `npm run quests:run-tests` on the maintainer's computer, its verdicts checked against `npm run backtest` run on the same test files, and docs/TRACK_RECORD.md regenerated
 - [ ] An opening brief written with `npm run quests:brief` on the maintainer's computer for a test Debate Quest, read by the maintainer, and an evidence map exported after a test close
 - [ ] Private entries on drafts are refused once Quests go live (today a draft takes private entries so it can be tested)
 - [ ] Practice questions checked on the maintainer's computer for every daily and weekly series
