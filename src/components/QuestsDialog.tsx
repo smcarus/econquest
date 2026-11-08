@@ -4,11 +4,13 @@
  * on (QUESTS_ENABLED=on, docs/QUESTS.md). Forecasts can be logged privately on this computer,
  * practised on past data, and compared in a class table; nothing here is published. Debate Quests
  * show their recorded opening brief, take a position and an argument (checked by Claim Check as it
- * is written), and close with an evidence map that exports as Markdown.
+ * is written), and close with an evidence map that exports as Markdown. Replication Quests take a
+ * script's figure; Signal Quests take a pre-registered test, shown after close with its verdict.
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Compass, X } from 'lucide-react';
-import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType, ReplicationQuest } from '../utils/quests';
+import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType, ReplicationQuest, SignalQuest } from '../utils/quests';
+import { SIGNAL_FLOOR, SIGNAL_METHODS, SIGNAL_TEMPLATE, signalTestProblems, type SignalTest } from '../utils/questSignal';
 import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
 import type { LiveWatchlistItem } from '../types/council';
@@ -252,6 +254,12 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                     <>
                       <ReplicationEntries questId={detail.quest.id} />
                       <Replicate quest={detail.quest} />
+                    </>
+                  )}
+                  {detail.quest.type === 'signal' && (
+                    <>
+                      <SignalEntries questId={detail.quest.id} />
+                      <ProposeTest quest={detail.quest} />
                     </>
                   )}
                   {detail.quest.type === 'debate' && (
@@ -885,6 +893,11 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
           Quests proposed: {c.proposed.map((p) => `${p.questId} (${p.entries} entr${p.entries === 1 ? 'y' : 'ies'})`).join(', ')}
         </p>
       )}
+      {c.tests?.length > 0 && (
+        <p className="text-sm" data-quest-tests>
+          Tests proposed (never ranked): {c.tests.map((t) => `${t.title} (${t.verdict === null ? 'not run yet' : t.verdict.replace(/_/g, ' ')})`).join('; ')}
+        </p>
+      )}
       {c.replications?.length > 0 && (
         <p className="text-sm" data-quest-replications>
           Replications (never ranked): {c.replications.map((r) => `${r.title} (${r.matched === null ? 'waiting for the app\'s figure' : r.matched ? 'reproduced' : 'did not match'})`).join('; ')}
@@ -1342,6 +1355,156 @@ function ReplicationEntries({ questId }: { questId: string }) {
           </tbody>
         </table>
       )}
+    </Box>
+  );
+}
+
+// ---------------------------------------------------------------- Signal Quests (step 10)
+
+/** Propose a test: a pre-registered test file, entered in public so it is fixed before it runs. */
+function ProposeTest({ quest }: { quest: SignalQuest }) {
+  const start: SignalTest = quest.methods?.length && !quest.methods.includes(SIGNAL_TEMPLATE.method) ? { ...SIGNAL_TEMPLATE, method: quest.methods[0] as SignalTest['method'], params: Object.fromEntries(SIGNAL_METHODS[quest.methods[0] as SignalTest['method']].params.map((k) => [k, 0])) } : SIGNAL_TEMPLATE;
+  const [text, setText] = useState(() => JSON.stringify(start, null, 2));
+  const [login, setLogin] = useState(readLogin);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ url: string; path: string; text: string; note: string; replaces?: number } | null>(null);
+  let parsed: unknown = null;
+  let parseError = '';
+  try {
+    parsed = JSON.parse(text);
+  } catch (e: any) {
+    parseError = `Not valid JSON yet: ${e?.message || e}`;
+  }
+  const problems = parseError ? [parseError] : signalTestProblems(parsed, quest.methods);
+  const methods = (quest.methods?.length ? quest.methods : Object.keys(SIGNAL_METHODS)) as SignalTest['method'][];
+  const preparePublic = async () => {
+    setMsg(null);
+    setDraft(null);
+    try {
+      localStorage.setItem(LOGIN_KEY, login.trim());
+    } catch {
+      /* not remembered; fine */
+    }
+    try {
+      const qs = new URLSearchParams({ login: login.trim(), test: JSON.stringify(parsed) });
+      setDraft(await send(`/api/quests/${encodeURIComponent(quest.id)}/draft-entry?${qs}`));
+    } catch (e: any) {
+      setMsg(e?.message || String(e));
+    }
+  };
+  return (
+    <Box title="Propose a test">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        A test asks whether a rule would have beaten the simplest guess (how often the same thing happened after any month or week) on past data, using only figures that had been published at the time. You write the whole test down before anything is run: the rule, every setting, the years to use and the pass mark. Once entries close, the maintainer runs every test once. Its verdict is recorded and never changed: a failed test stays failed and is never re-tuned. Every test tried also makes the bar higher for all the others (the Holm correction), so propose a test you believe in, not many variations.
+      </p>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Pass mark floor: at least {SIGNAL_FLOOR.minCases} cases over at least {SIGNAL_FLOOR.minYears} years, a p of {SIGNAL_FLOOR.maxPValue} or less with whole years resampled, and at least {SIGNAL_FLOOR.minLiftPts} point better than the base rate. You may ask for more, never less. Tests are entered in public (a pull request, or by email to the maintainer), so they are fixed in the open.
+      </p>
+      <div className="text-xs space-y-1" data-quest-test-methods>
+        <div className="text-slate-500">Rules a test can use</div>
+        <ul className="list-disc pl-5">
+          {methods.map((m) => (
+            <li key={m}>
+              <code>{m}</code>: {SIGNAL_METHODS[m].label}. Settings: {SIGNAL_METHODS[m].params.join(', ')}.{SIGNAL_METHODS[m].local ? ' Reads files on the maintainer\'s computer.' : ''}
+            </li>
+          ))}
+        </ul>
+        <p className="text-slate-500">A test that needs a rule or data the app does not have yet starts with a code pull request that adds it.</p>
+      </div>
+      <label className="text-xs space-y-1 block">
+        <span className="block">Your test (start from the example and change it)</span>
+        <textarea className={`${fieldCls} w-full font-mono`} rows={14} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} data-quest-test-text />
+      </label>
+      {problems.length > 0 ? (
+        <ul className="list-disc pl-5 text-xs text-rose-700 dark:text-rose-400" data-quest-test-problems>
+          {problems.map((p) => (
+            <li key={p}>{p}</li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-xs text-emerald-700 dark:text-emerald-400" data-quest-test-ok>
+          The test can be run as written.
+        </p>
+      )}
+      <div className="flex flex-wrap gap-2 items-end">
+        <label className="text-xs space-y-1">
+          <span className="block">GitHub name</span>
+          <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
+        </label>
+        <button type="button" className="ui-btn" onClick={preparePublic} disabled={problems.length > 0 || !login.trim()} data-quest-test-public>
+          Prepare public entry
+        </button>
+      </div>
+      {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
+      {draft && (
+        <div className="space-y-1 text-xs" data-quest-draft>
+          <p>
+            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept, and only the newest is run. ` : ''}File: {draft.path}
+          </p>
+          <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{draft.text}</pre>
+          <p>{draft.note}</p>
+          <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
+            Open on GitHub
+          </a>
+        </div>
+      )}
+    </Box>
+  );
+}
+
+type SignalVerdict = { verdict: string; label: string; text: string; p?: number; adjusted?: number; holds?: boolean; family: number; method: string };
+type SignalReply =
+  | { open: true; count: number; note: string }
+  | { open: false; count: number; note: string; error?: string; entries: Array<{ login: string; n: number; via: string; answer: { test?: SignalTest }; verdict?: SignalVerdict }> };
+
+const GRADE_CLS: Record<string, string> = {
+  Validated: 'text-emerald-700 dark:text-emerald-400',
+  'Provisional pass': 'text-amber-700 dark:text-amber-400',
+  Failed: 'text-rose-700 dark:text-rose-400',
+  'Too few cases': 'text-slate-600 dark:text-slate-300',
+};
+
+/** The tests entered: hidden until close, then each with its verdict and its reading after the Holm correction. */
+function SignalEntries({ questId }: { questId: string }) {
+  const [data, setData] = useState<SignalReply | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send(`/api/quests/${encodeURIComponent(questId)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, [questId]);
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Tests did not load: {err}</p>;
+  if (!data) return null;
+  return (
+    <Box title={`Tests proposed (${data.count})`}>
+      <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden={data.open ? '' : undefined}>
+        {data.note}
+      </p>
+      {!data.open && data.error && <p className="text-xs text-rose-700 dark:text-rose-400">{data.error}</p>}
+      {!data.open && data.entries.length === 0 && <p className="text-xs text-slate-500">No tests were proposed.</p>}
+      {!data.open &&
+        data.entries.map((e) => (
+          <div key={e.login} className="border-t border-slate-200 dark:border-slate-800 pt-2 space-y-1" data-quest-test-entry>
+            <div className="text-sm">
+              {e.login}
+              {e.via === 'email' ? <span className="text-xs text-slate-500"> (emailed)</span> : null}
+              {e.answer.test ? <span className="text-xs text-slate-500"> · {SIGNAL_METHODS[e.answer.test.method]?.label ?? e.answer.test.method}</span> : null}
+            </div>
+            {e.answer.test && <p className="text-sm">{e.answer.test.hypothesis}</p>}
+            {e.verdict ? (
+              <p className={`text-xs ${GRADE_CLS[e.verdict.label] ?? ''}`} data-quest-test-verdict>
+                <strong>{e.verdict.label}.</strong> {e.verdict.text}
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500">Not run yet.</p>
+            )}
+            {e.answer.test && (
+              <details className="text-xs">
+                <summary className="cursor-pointer text-slate-500">The test as entered</summary>
+                <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{JSON.stringify(e.answer.test, null, 2)}</pre>
+              </details>
+            )}
+          </div>
+        ))}
+      <p className="text-xs text-slate-500">Results on past data are hypothetical: they show how a rule would have done, not money made. Passing does not mean a rule will work in future.</p>
     </Box>
   );
 }

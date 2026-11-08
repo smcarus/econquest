@@ -10,7 +10,8 @@
  *   npm run quests:entries -- --by <login> --email ~name --quest <id> --received <ISO time>
  *                              (--probability 0.6 | --level 41.5 | --position 2) [--rationale "..."]
  *       (a Debate Quest takes --position, 1 for the first listed, and needs --rationale: the argument;
- *       a Replication Quest takes --value, the script's figure, and --code, the script's https address)
+ *       a Replication Quest takes --value, the script's figure, and --code, the script's https address;
+ *       a Signal Quest takes --test <file.json>, the emailed test, as in docs/QUESTS.md)
  *       write an entry someone emailed because GitHub blocks them; commit it in a pull request
  *       of its own within 7 days of close
  */
@@ -36,7 +37,7 @@ const fail = (msg: string): never => {
 };
 const quests = loadQuests(dir);
 const questFor = (id: string) => {
-  const x = quests.find((q) => q.quest.id === id && q.quest.type !== 'signal');
+  const x = quests.find((q) => q.quest.id === id);
   return x ? { quest: x.quest as EntryQuest, hash: x.hash, approved: x.approved } : undefined;
 };
 const maintainers = (process.env.QUESTS_MAINTAINERS || 'smcarus').split(/[\s,]+/).filter(Boolean);
@@ -82,7 +83,7 @@ if (emailName) {
   const q = questFor(id!);
   if (!q) fail(`No Quest that takes entries with id ${id}`);
   const quest = q!.quest;
-  const answer = answerFor(quest, { probability: opt('--probability'), level: opt('--level'), position: opt('--position'), value: opt('--value') });
+  const answer = answerFor(quest, { probability: opt('--probability'), level: opt('--level'), position: opt('--position'), value: opt('--value'), test: opt('--test') ? fs.readFileSync(opt('--test')!, 'utf8') : undefined });
   const code = opt('--code');
   const existing = readPublicEntryFiles(dir).map((f) => parseEntryPath(f.rel)).filter((x) => x && x.questId === id && x.login === emailName);
   const n = existing.reduce((m, x) => Math.max(m, x!.n), 0) + 1;

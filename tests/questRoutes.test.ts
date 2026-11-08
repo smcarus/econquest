@@ -102,7 +102,11 @@ test('private entries: logged, hashed, listed as counted, and refused when the a
     const debateReply = await fetch(`${s.base}/api/quests/egy-reserves-debate/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(debateReply.status, 400);
     assert.match((await debateReply.json()).error, /pick a position/);
-    assert.equal((await fetch(`${s.base}/api/quests/credit-gap-crisis-signal/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
+    // A Signal Quest test is entered in public only, so it is fixed in the open (tests/questSignal.test.ts).
+    const signalReply = await fetch(`${s.base}/api/quests/credit-gap-crisis-signal/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(signalReply.status, 400);
+    assert.match((await signalReply.json()).error, /entered in public/);
+    assert.equal((await fetch(`${s.base}/api/quests/no-such-quest/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
   } finally {
     await s.close();
   }

@@ -363,7 +363,9 @@ backtests, forecast evaluations and signal tests, failed ones and earlier versio
 tried twice is two tests). Holm's step-down procedure controls the family-wise error rate without
 assumptions about how the tests depend on each other. A verdict "holds after correction" when its
 adjusted p-value is at or below that test's own registered pass mark. The correction never changes a
-recorded verdict; it determines the evidence grade (`src/utils/multipleTesting.ts`).
+recorded verdict; it determines the evidence grade (`src/utils/multipleTesting.ts`). The public
+track record (docs/TRACK_RECORD.md) also counts the tests people enter to Signal Quests
+(docs/QUESTS.md), so every outside test tried raises the bar for the app's own passes too.
 
 ## 9. Evidence grades
 

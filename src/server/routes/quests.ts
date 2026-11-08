@@ -34,6 +34,12 @@
  * (src/utils/questDebate.ts). GET /api/quests/:id also gives a Debate's recorded opening brief
  * (quests/briefs/) and the results of the Forecast Quests it names as related.
  *
+ * Replication and Signal Quests (step 10): a Replication entry gives the figure a script produced and
+ * where the script is; it is matched against the app's figure once a maintainer records it. A Signal
+ * entry is a pre-registered test (src/utils/questSignal.ts), public only, run once after close by
+ * `npm run quests:run-tests`; after close, /:id/entries gives each test with its verdict and its
+ * reading after the Holm correction across every test on record.
+ *
  * Digest (step 8):
  *   GET  /api/quests/digest           this week: closing soon, opening, results recorded, results due
  */
@@ -60,6 +66,9 @@ import { loadPublicEntries } from '../../utils/questPublicEntryStore';
 import { computeStats } from '../../utils/questStats';
 import { readAccounts } from '../../utils/questStatsStore';
 import { questDigest } from '../../utils/questGenerator';
+import { describeTestVerdict } from '../../utils/questSignal';
+import { loadTestRecord, testRecordPath } from '../../utils/questTestStore';
+import { trackRowsFromRepo } from '../../utils/trackRecordDocNode';
 
 export const QUESTS_DIR = path.join(APP_ROOT, 'quests');
 
@@ -167,10 +176,10 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const found = loadQuests(dir).find((x) => x.quest.id === id);
     return found && found.quest.type === 'forecast' ? { quest: found.quest as ForecastQuest, hash: found.hash } : null;
   };
-  /** A Quest that takes entries: Forecast, Debate or Replication. */
+  /** A Quest that takes entries: any type (a Signal Quest takes public entries only). */
   const entryQuestById = (id: string) => {
     const found = loadQuests(dir).find((x) => x.quest.id === id);
-    return found && found.quest.type !== 'signal' ? { quest: found.quest as EntryQuest, hash: found.hash, approved: found.approved } : null;
+    return found ? { quest: found.quest as EntryQuest, hash: found.hash, approved: found.approved } : null;
   };
   const scoreAll = async (entries: QuestEntry[], today: string) => {
     const all = loadQuests(dir);
@@ -270,10 +279,9 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (!enabled()) return off(res);
     const rec = loadResolutions(resultsFile);
     if (rec.brokenAt !== -1) return res.json({ enabled: true, error: `The results record is broken at line ${rec.brokenAt + 1}, so no statistics are shown until it is restored` });
-    const quests = loadQuests(dir)
-      .filter((x) => x.quest.type !== 'signal')
-      .map((x) => ({ quest: x.quest as Exclude<Quest, { type: 'signal' }>, approved: x.approved }));
-    res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir) }) });
+    const quests = loadQuests(dir).map((x) => ({ quest: x.quest, approved: x.approved }));
+    const tests = loadTestRecord(testRecordPath(dir));
+    res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir), tests: tests.record.verdicts }) });
   });
 
   app.get('/api/quests/digest', (_req, res) => {
@@ -313,6 +321,31 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const counted = countedPublicEntries(loadPublicEntries(dir), q.id, q.version);
     if (today <= q.closesOn) {
       return res.json({ enabled: true, open: true, count: counted.length, note: `Entries are not shown until they close on ${q.closesOn}, so nobody can copy the crowd here. (Pull requests on GitHub are public.)` });
+    }
+    if (q.type === 'signal') {
+      const record = loadTestRecord(testRecordPath(dir));
+      let rows: ReturnType<typeof trackRowsFromRepo> = [];
+      try {
+        rows = trackRowsFromRepo(APP_ROOT, dir);
+      } catch {
+        /* the Holm reading is left out when the record cannot be read */
+      }
+      const ran = record.record.runs.find((r) => r.questId === q.id && r.questVersion === q.version);
+      const entries = counted.map((e) => {
+        const v = record.record.verdicts.find((t) => t.questId === q.id && t.questVersion === q.version && t.login === e.login && t.n === e.n);
+        const row = v ? rows.find((r) => r.kind === 'quest' && r.verdict.id === v.id && r.verdict.version === v.version) : undefined;
+        return { login: e.login, n: e.n, via: e.via, answer: e.answer, rationale: e.rationale, ...(v ? { verdict: { ...v, ...describeTestVerdict(v, row), adjusted: row?.adjusted, holds: row?.holds, family: rows.length } } : {}) };
+      });
+      return res.json({
+        enabled: true,
+        open: false,
+        count: counted.length,
+        answer: 'test',
+        entries,
+        ...(record.problems.length ? { error: `quests/test-verdicts.json: ${record.problems.join('; ')}` } : {}),
+        ran: ran ? { at: ran.ranAt, by: ran.by } : null,
+        note: ran ? `Each test was run once, on ${ran.ranAt.slice(0, 10)}. The Holm reading counts every test on record (${rows.length}), the app's own included.` : 'The tests are run once by a maintainer after entries close (npm run quests:run-tests); verdicts appear here when they are recorded.',
+      });
     }
     if (q.type === 'debate') {
       return res.json({ enabled: true, open: false, count: counted.length, answer: 'position', entries: counted.map((e) => ({ login: e.login, n: e.n, via: e.via, answer: e.answer, rationale: e.rationale })) });
@@ -398,7 +431,8 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     if (!enabled()) return off(res);
     if (deps.refuseRemoteChange?.(req, res)) return;
     const found = entryQuestById(req.params.id);
-    if (!found) return res.status(404).json({ enabled: true, error: 'Signal Quests take test files, not entries here' });
+    if (!found) return res.status(404).json({ enabled: true, error: 'No Quest with that id' });
+    if (found.quest.type === 'signal') return res.status(400).json({ enabled: true, error: 'A Signal Quest test is entered in public (by pull request or email), so it is fixed in the open before it runs. Use "Prepare a public entry".' });
     const today = todayIso();
     const body = (req.body || {}) as Partial<QuestEntryInput>;
     const input: Partial<QuestEntryInput> = {
