@@ -7,6 +7,7 @@ import { defineMessages } from '../lang';
 
 export const COUNCIL = defineMessages('council', {
   title: 'Council chat',
+  loadingChat: 'Loading Council chat…',
   newConversation: 'New conversation',
   newShort: 'New',
   close: 'Close',

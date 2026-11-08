@@ -100,4 +100,5 @@ export const COUNCIL_ES: Messages<typeof COUNCIL> = {
   footer: 'Abre un documento para ver cada cifra y su fuente. Es investigación, no un consejo validado.',
   noQuestion: 'Todavía no hay ninguna pregunta. Cuando hagas una, aquí aparecerán los agentes que responden, cada uno con su estado en vivo.',
   aboutTitle: 'Sobre {scope}',
+  loadingChat: 'Cargando el chat del consejo…',
 };
