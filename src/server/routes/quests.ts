@@ -67,6 +67,7 @@ import { readBrief } from '../../utils/questBriefStore';
 import { countedPublicEntries, entryFileText, entryPath, entrySpread, isEntrantName, newFileUrl, publicEntryProblems, type PublicEntry } from '../../utils/questPublicEntries';
 import { loadPublicEntries } from '../../utils/questPublicEntryStore';
 import { computeStats } from '../../utils/questStats';
+import { questHealth } from '../../utils/questHealth';
 import { readAccounts } from '../../utils/questStatsStore';
 import { questDigest } from '../../utils/questGenerator';
 import { describeTestVerdict } from '../../utils/questSignal';
@@ -287,6 +288,17 @@ export function registerQuestRoutes(app: express.Express, deps: QuestDeps): void
     const quests = loadQuests(dir).map((x) => ({ quest: x.quest, approved: x.approved }));
     const tests = loadTestRecord(testRecordPath(dir));
     res.json({ enabled: true, ...computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir), tests: tests.record.verdicts }) });
+  });
+
+  app.get('/api/quests/health', (_req, res) => {
+    if (!enabled()) return off(res);
+    const rec = loadResolutions(resultsFile);
+    if (rec.brokenAt !== -1) return res.json({ enabled: true, error: `The results record is broken at line ${rec.brokenAt + 1}, so no measures are shown until it is restored` });
+    const quests = loadQuests(dir).map((x) => ({ quest: x.quest, approved: x.approved }));
+    const tests = loadTestRecord(testRecordPath(dir)).record.verdicts;
+    const entries = loadPublicEntries(dir);
+    const { crowd } = computeStats({ quests, entries, lines: rec.lines, accounts: readAccounts(dir), tests });
+    res.json({ enabled: true, ...questHealth({ quests, entries, lines: rec.lines, tests, crowd, today: todayIso() }) });
   });
 
   app.get('/api/quests/stances', (_req, res) => {

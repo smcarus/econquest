@@ -19,6 +19,7 @@ import { readAccounts } from '../src/utils/questStatsStore.ts';
 import { loadTestRecord, testRecordPath } from '../src/utils/questTestStore.ts';
 import { loadProfiles } from '../src/utils/questStanceStore.ts';
 import { boardHtml } from '../src/utils/questBoard.ts';
+import { questHealth } from '../src/utils/questHealth.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'quests');
@@ -34,8 +35,11 @@ if (rec.brokenAt !== -1) fail(`quests/resolutions.jsonl is broken at line ${rec.
 const tests = loadTestRecord(testRecordPath(dir));
 if (tests.problems.length) fail(`quests/test-verdicts.json: ${tests.problems.join('; ')}; restore it from git first.`);
 const quests = loadQuests(dir).map((x) => ({ quest: x.quest, approved: x.approved }));
-const stats = computeStats({ quests, entries: loadPublicEntries(dir), lines: rec.lines, accounts: readAccounts(dir), tests: tests.record.verdicts });
-const html = boardHtml({ stats, quests, lines: rec.lines, profiles: loadProfiles(dir), repo: /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test((process.env.QUESTS_REPO || '').trim()) ? (process.env.QUESTS_REPO || '').trim() : '', today: new Date().toISOString().slice(0, 10) });
+const entries = loadPublicEntries(dir);
+const today = new Date().toISOString().slice(0, 10);
+const stats = computeStats({ quests, entries, lines: rec.lines, accounts: readAccounts(dir), tests: tests.record.verdicts });
+const health = questHealth({ quests, entries, lines: rec.lines, tests: tests.record.verdicts, crowd: stats.crowd, today });
+const html = boardHtml({ stats, quests, lines: rec.lines, profiles: loadProfiles(dir), health, repo: /^[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}$/.test((process.env.QUESTS_REPO || '').trim()) ? (process.env.QUESTS_REPO || '').trim() : '', today });
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, html);
 console.log(`Wrote ${path.relative(root, out)}: ${stats.contributors.length} contributor(s), ${stats.board.allTime.length} ranked, ${quests.filter((q) => q.approved).length} approved Quest(s).`);

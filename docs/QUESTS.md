@@ -30,7 +30,8 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Signal Quests: an entry is a pre-registered test on one of the app's test rules, entered in public only (pull request or email); the app checks it as it is written; after close every test is run once (`npm run quests:run-tests`), recorded in `quests/test-verdicts.json` and counted in the Holm correction in docs/TRACK_RECORD.md; tests listed on contributor pages, never ranked | Built and tested, switched off; no test has been run on real data yet |
 | Public board: one static page (`npm run quests:board`, default `docs/quests/index.html`) built only from the files in `quests/`, with the ranked table and its rules, seasons, the crowd, each approved Quest and its result, every contributor and signed-up stances; no scripts, readable on a phone, light and dark | Built and tested; not published yet |
 | Stance profiles: eight economics questions set in the app (kept in the browser); a public profile only by the person's own pull request (`quests/profiles/<login>.json`, checked by the `Quest entries` CI job); shown on the Stances tab and contributor pages; group tables of stance against skill not shown | Built and tested, switched off |
-| Health page and yearly dataset | Not built |
+| Health measures for the six-month review: people per month, entries per Quest, results recorded on time, crowd against the base rate (Health tab, `/api/quests/health`, and on the public board) | Built and tested, switched off |
+| Yearly open dataset (`npm run quests:dataset -- --year <YYYY>`): CSV tables of Quests, entries, results, test verdicts and scores with a README, citation file and checksums, ready to deposit for a DOI; stance profiles left out | Built and tested; no dataset released yet |
 
 ## How a Quest is settled
 
@@ -148,7 +149,7 @@ Rankings use skill only. To be ranked a person needs 12 settled forecasts with a
 
 ## Public board
 
-For people who never install the app, `npm run quests:board` builds one static web page from the files in `quests/` (Quests, public entries, the results record, Signal Quest verdicts and stance profiles), by default at `docs/quests/index.html`, which GitHub Pages can serve. It shows what the Scoreboard tab shows: the ranked table with 90% ranges and the rules for being ranked, seasons, the crowd against the base rate, each approved Quest with its status and result, every contributor with their settled count, debates, replications and tests (listed, never ranked), and the stances of people who signed up with a profile. Drafts are left out. The page has no scripts and makes no network calls, and anyone can rebuild it from the same files and get the same page. Run `npm run quests:stats` first so new GitHub account dates are looked up, set `QUESTS_REPO` for links to the repository, then commit the page with the stats files.
+For people who never install the app, `npm run quests:board` builds one static web page from the files in `quests/` (Quests, public entries, the results record, Signal Quest verdicts and stance profiles), by default at `docs/quests/index.html`, which GitHub Pages can serve. It shows what the Scoreboard tab shows: the ranked table with 90% ranges and the rules for being ranked, seasons, the crowd against the base rate, each approved Quest with its status and result, every contributor with their settled count, debates, replications and tests (listed, never ranked), the health measures below, and the stances of people who signed up with a profile. Drafts are left out. The page has no scripts and makes no network calls, and anyone can rebuild it from the same files and get the same page. Run `npm run quests:stats` first so new GitHub account dates are looked up, set `QUESTS_REPO` for links to the repository, then commit the page with the stats files.
 
 ## Stance profiles
 
@@ -179,6 +180,27 @@ A Signal Quest asks people to propose a test of an idea, for example "crowded fu
 5. **Verdicts.** Each test reads *Passed*, *Failed* or *Too few cases* against its own pass mark, never changed. A pass that still holds after the Holm correction across every test on record reads *Validated*; one that does not reads *Provisional pass*. A failed test is never re-run or re-tuned: a better idea is a new test in a new Quest, and it counts as another test tried. Results on past data are hypothetical: they show how a rule would have done, not money made.
 6. **Contributor pages** list each test proposed and its verdict. Tests are never ranked.
 
+## Is it working? (health)
+
+Six months after the first Quest opens, the maintainer looks at four measures to decide whether to keep going, change things or stop. The Health tab and the public board show them, worked out from the public files alone (`src/utils/questHealth.ts`):
+
+| Measure | What it counts | Why it matters |
+| --- | --- | --- |
+| People per month | People with a counted entry on a Quest that closed that month, and how many came back in more than one month. Entry files carry no date of their own, so the Quest's closing month is used | A project with no regular contributors is not worth the upkeep |
+| Entries per Quest | Counted entries on each closed Quest (a replacement replaces, never adds), the middle Quest's count, and how many closed with none | A crowd figure from two answers means little |
+| Results on time | Share of due Quests whose result was recorded within 14 days of the day it was due; late and overdue are listed. Debate Quests have no result, a withdrawn Quest is left out, and a Signal Quest with no tests entered has nothing to run | Late results mean a feed or the maintainer is the bottleneck |
+| Crowd against the base rate | The crowd's middle answer scored against how often the thing happened in the past, shown once there are enough settled Quests | Whether the crowd adds anything a simple base rate does not |
+
+## Yearly open dataset
+
+Once a year the maintainer runs `npm run quests:dataset -- --year <YYYY>` (add `--out <folder>`, default `quests-dataset-<YYYY>/`, which git ignores). It writes, for every approved Quest that closed in the year:
+
+- `quests.csv`, `entries.csv` (replacements included and marked), `results.csv` (every line of the results record, with its hash), `test-verdicts.csv` and `scores.csv`;
+- `README.md` describing every column in plain words, what is left out and why, the licence (CC BY 4.0) and the credit each data source asks for;
+- `CITATION.cff` and `SHA256SUMS`.
+
+Stance profiles are left out: a person can remove their profile from the repository, but not from a deposited dataset. GitHub account dates, private logs, class tables and drafts are left out too. To get a DOI, upload the folder to Zenodo (or another repository that issues DOIs) as a Dataset under CC BY 4.0, then add the DOI to the dataset's `CITATION.cff` and to this page. The script makes no network calls, so the same files always give the same tables.
+
 ## Checklist before Quests are switched on
 
 Working properly:
@@ -201,6 +223,8 @@ Working properly:
 - [ ] A Quests tab on Menu > Track record shows the recorded results and the chain check
 - [ ] The public board built with `npm run quests:board` on the public repository, checked on a phone, and GitHub Pages switched on for it
 - [ ] `npm run quests:stats` run on the maintainer's computer: account dates looked up, figures checked by hand for one contributor with test entries
+- [ ] The Health tab checked against a hand count for the test Quests, and the six-month review date written in the maintainer's calendar
+- [ ] A test dataset built with `npm run quests:dataset` from the test Quests, opened in a spreadsheet, and the Zenodo upload steps tried in Zenodo's sandbox
 
 Documented:
 

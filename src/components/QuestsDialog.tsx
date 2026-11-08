@@ -13,6 +13,7 @@ import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType, Replicat
 import { SIGNAL_FLOOR, SIGNAL_METHODS, SIGNAL_TEMPLATE, signalTestProblems, type SignalTest } from '../utils/questSignal';
 import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
+import type { OnTimeState, QuestHealth } from '../utils/questHealth';
 import type { LiveWatchlistItem } from '../types/council';
 import { newFileUrl, type PublicEntry } from '../utils/questPublicEntries';
 import { profileFileText, profilePath, stancesProblems, stanceWords, type StanceAxis, type StanceProfile, type Stances, type StanceValue } from '../utils/questStances';
@@ -57,7 +58,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances'>('quests');
+  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances' | 'health'>('quests');
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -114,6 +115,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   ['results', 'Results'],
                   ['board', 'Scoreboard'],
                   ['stances', 'Stances'],
+                  ['health', 'Health'],
                 ] as const
               ).map(([k, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -127,6 +129,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
           {list && list.enabled && !openId && view === 'results' && <Results />}
           {list && list.enabled && !openId && view === 'board' && <Scoreboard />}
           {list && list.enabled && !openId && view === 'stances' && <StancesView />}
+          {list && list.enabled && !openId && view === 'health' && <Health />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <ThisWeek onOpen={open} />
@@ -819,6 +822,80 @@ function Scoreboard() {
         </div>
       )}
       {data.contributors.length === 0 && <p className="text-sm text-slate-500">No public entries yet.</p>}
+    </div>
+  );
+}
+
+const ON_TIME_LABEL: Record<OnTimeState, string> = { on_time: 'On time', late: 'Recorded late', overdue: 'Overdue', waiting: 'Due, inside the grace period' };
+
+/** Health: the few measures that show whether Quests are working, for the six-month review. */
+function Health() {
+  const [h, setH] = useState<QuestHealth | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send('/api/quests/health').then(setH).catch((e) => setErr(e?.message || String(e)));
+  }, []);
+  if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
+  if (!h) return <p className="text-sm text-slate-500">Loading…</p>;
+  const th = 'text-left font-normal text-slate-500 py-1 pr-3';
+  const td = 'py-1 pr-3 border-t border-slate-200 dark:border-slate-800';
+  return (
+    <div className="space-y-4" data-quest-health>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Is it working? These measures answer that from the public files alone: how many people take part, how many answers each Quest gets, whether results are recorded when they are due, and whether the crowd does better than simply using the base rate. They are looked at together {h.reviewOn ? <>at the six-month review on <strong>{h.reviewOn}</strong> (six months after the first Quest opened on {h.firstOpened})</> : 'six months after the first Quest opens'}, to decide whether to keep going, change things or stop.
+      </p>
+      {!h.approved && <p className="text-sm text-slate-500">No approved Quests yet, so there is nothing to measure.</p>}
+      {h.approved > 0 && (
+        <>
+          <p className="text-sm">
+            {h.approved} approved Quest{h.approved === 1 ? '' : 's'}, {h.closed} closed to entries{h.closedEmpty ? ` (${h.closedEmpty} with no entries)` : ''}. {h.totalEntries} counted entr{h.totalEntries === 1 ? 'y' : 'ies'} from {h.totalPeople} {h.totalPeople === 1 ? 'person' : 'people'}; {h.returning} came back in more than one month.
+          </p>
+          <Box title="People taking part, by month">
+            <p className="text-xs text-slate-500">Counted by the month each Quest closed, since entry files carry no date of their own. A replacement entry replaces the earlier one, so each person counts once per Quest.</p>
+            {h.months.length ? (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr><th className={th}>Month</th><th className={th}>Quests closed</th><th className={th}>Entries</th><th className={th}>People</th></tr>
+                </thead>
+                <tbody>
+                  {h.months.map((m) => (
+                    <tr key={m.month}><td className={td}>{m.month}</td><td className={td}>{m.questsClosed}</td><td className={td}>{m.entries}</td><td className={td}>{m.people}</td></tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p className="text-sm text-slate-500">No Quest has closed yet.</p>
+            )}
+          </Box>
+          <Box title="Entries per Quest">
+            <p className="text-xs text-slate-500">The middle Quest had {h.medianEntries === null ? 'no figure yet' : `${h.medianEntries} entr${h.medianEntries === 1 ? 'y' : 'ies'}`}. A crowd figure needs several answers to mean much, so Quests with very few show where more people are needed.</p>
+            {h.perQuest.length > 0 && (
+              <ul className="text-sm space-y-0.5">
+                {h.perQuest.map((q) => (
+                  <li key={q.id}>{q.title} <span className="text-xs text-slate-500">({TYPE_LABEL[q.type]}, closed {q.closesOn})</span>: {q.entries}</li>
+                ))}
+              </ul>
+            )}
+          </Box>
+          <Box title="Results recorded on time">
+            <p className="text-xs text-slate-500">A result counts as on time when it is recorded within {h.onTime.graceDays} days of the day it was due. Late results usually mean a feed was slow or the maintainer was away. Debate Quests have no result, a withdrawn Quest is left out, and a Signal Quest with no tests entered has nothing to run.</p>
+            <p className="text-sm">
+              {h.onTime.share === null ? 'No result has been due long enough to judge yet.' : `${pct(h.onTime.share)} on time: ${h.onTime.onTime} of ${h.onTime.due} (${h.onTime.late} recorded late, ${h.onTime.overdue} overdue).`}
+              {h.onTime.waiting ? ` ${h.onTime.waiting} more ${h.onTime.waiting === 1 ? 'is' : 'are'} due and still inside the grace period.` : ''}
+            </p>
+            {h.onTime.quests.length > 0 && (
+              <ul className="text-sm space-y-0.5">
+                {h.onTime.quests.map((q) => (
+                  <li key={q.id}>{q.title} <span className="text-xs text-slate-500">(due {q.settlesOn}{q.recordedOn ? `, recorded ${q.recordedOn}` : ''})</span>: {ON_TIME_LABEL[q.state]}</li>
+                ))}
+              </ul>
+            )}
+          </Box>
+          <p className="text-sm">
+            The crowd (the middle answer on each Quest) against the base rate: <G g={h.crowd} show={(v) => fmt(v)} />. Plus means the crowd did better than simply using how often the thing happened in the past.
+          </p>
+        </>
+      )}
     </div>
   );
 }
