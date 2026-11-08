@@ -4,6 +4,7 @@
  *
  * 1. Keyboard: the first Tab reaches "Skip to content", which moves focus to the page.
  * 2. Council chat: ask a question; the question and an answer block appear, with no crash.
+ * Your tests: Menu > Models & validation > Your tests registers a test, which is then frozen.
  * 3. One country: each of the four sections opens; History & data holds the forecast panel and the
  *    small gap model, which runs only on typed numbers.
  * 4. Settings > Free data keys: save a key, see it masked, check it is not in the keys reply or
@@ -138,6 +139,31 @@ try {
     if (await gm.locator('[data-gap-missing]').count()) throw new Error('the gap model still lists missing inputs');
     if (!(await gm.locator('[data-gap-explain]').count())) throw new Error('the gap model has no Ask the council button');
     await noCrash(page);
+  });
+
+  await step('your tests: register one and it is frozen', async () => {
+    await page.getByRole('button', { name: 'Menu', exact: true }).click();
+    await page.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
+    await page.locator('[data-your-tests-toggle]').click();
+    const box = page.locator('[data-your-tests]');
+    await box.waitFor({ timeout: 15_000 });
+    await box.locator('[data-your-test-new]').click();
+    await box.locator('[data-your-test-save]').click();
+    await box.locator('[data-your-test-problems]').waitFor({ timeout: 5000 });
+    await box.locator('[data-your-test-field="name"]').fill('Journey test');
+    await box.locator('[data-your-test-field="method"]').selectOption('cycle_clock');
+    await box.locator('[data-your-test-field="hypothesis"]').fill('A hike after a hold is followed by another hike within six months.');
+    await box.locator('[data-your-test-param="holdAfterMonths"]').fill('6');
+    await box.locator('[data-your-test-param="windowMonths"]').fill('6');
+    await box.locator('[data-your-test-field="from"]').fill('1995-01');
+    for (const [k, v] of [['minCases', '30'], ['minLiftPts', '10'], ['maxPValue', '0.05']]) await box.locator(`[data-your-test-pass="${k}"]`).fill(v);
+    await box.locator('[data-your-test-save]').click();
+    await box.locator('[data-your-test-saved]').waitFor({ timeout: 5000 });
+    if (!(await box.locator('[data-your-test-list]').innerText()).includes('mine_journey_test')) throw new Error('the registered test is not listed');
+    const again = await page.evaluate(async () => (await fetch('/api/user-tests/mine_journey_test', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status);
+    if (again !== 405) throw new Error(`editing a registered test answered ${again}, expected 405`);
+    await noCrash(page);
+    await page.keyboard.press('Escape');
   });
 
   const fakeKey = 'abcdef0123456789abcdef0123456789';

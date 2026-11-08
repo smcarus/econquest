@@ -6,6 +6,7 @@ import { SHELL_ES } from './shell';
 import { COUNCIL_ES } from './council';
 import { OWN_DATA_ES } from './ownData';
 import { GAP_MODEL_ES } from './gapModel';
+import { YOUR_TESTS_ES } from './yourTests';
 import { WORKSPACE_ES } from './workspace';
 import { WATCHLIST_ES } from './watchlist';
 import { MISSING_ES } from './missing';
@@ -32,6 +33,7 @@ export const ES: Record<string, Record<string, string>> = {
   council: COUNCIL_ES,
   ownData: OWN_DATA_ES,
   gapModel: GAP_MODEL_ES,
+  yourTests: YOUR_TESTS_ES,
   workspace: WORKSPACE_ES,
   watchlist: WATCHLIST_ES,
   research: RESEARCH_ES,
