@@ -110,3 +110,25 @@ test('the cited paths: halving US defence into public investment adds output ove
   // The output loss weakens the budget, so debt ends a little higher with the feedback in.
   assert.ok(eu.feedback!.low < 0 && eu.debtEnd.low > noFeedback.debtEnd.low);
 });
+
+test('whatIfSetup picks the spending figure, the published paths and the semi-elasticity, or says why it cannot run', async () => {
+  const { whatIfSetup } = await import('../src/utils/fiscalWhatIf.ts');
+  const dsa = { year: '2025', debtNow: 120, inputs: baseline, method: '' };
+  const usa: any = { iso3: 'USA', countryName: 'United States', fiscal: { debtPctGdp: { value: 124, year: '2025' }, defencePctGdp: { value: 3.1, year: '2025' } }, debtSustainability: dsa };
+  const q = parseWhatIf(SAM_Q)!;
+  const s = whatIfSetup(usa, q);
+  assert.equal(s.spend?.source, 'World Bank (SIPRI)');
+  assert.match(s.cut!.source, /Barro and Redlick/);
+  assert.match(s.respend!.source, /WP\/15\/95/);
+  assert.equal(s.semiElasticity, undefined);
+  assert.ok(s.inputs && !s.cannotRun);
+  // The reader's own multipliers replace the published paths and are labelled.
+  const mine = whatIfSetup(usa, q, { cutOwn: { low: 0.3, high: 0.5 }, respendOwn: { low: 1, high: 1.2 } });
+  assert.match(mine.cut!.source, /your setting/);
+  const deu: any = { iso3: 'DEU', countryName: 'Germany', fiscal: { debtPctGdp: { value: 63, year: '2025' } }, debtSustainability: dsa, govSpending: { GF0403: { pct: 0.7, year: '2024', table: 'eurostat' } } };
+  const e = whatIfSetup(deu, parseWhatIf('What if Germany halved energy spending to cut the deficit?')!);
+  assert.equal(e.semiElasticity?.value, 0.504);
+  assert.match(e.spend!.source, /Eurostat/);
+  const ind: any = { iso3: 'IND', countryName: 'India', fiscal: {}, debtSustainability: dsa };
+  assert.match(whatIfSetup(ind, parseWhatIf('What if India halved energy spending?')!).cannotRun!, /India: the fuel and energy what-if cannot run, as fuel and energy spending \(Eurostat or IMF COFOG\) and IMF debt for the multiplier range are missing/);
+});

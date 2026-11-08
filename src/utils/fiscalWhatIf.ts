@@ -22,8 +22,10 @@
  * come from the caller or the cited data file, with their sources. Browser-safe.
  */
 import { nextDebt, nominalGrowthPct, type YearAssump } from './debtSustainability';
-import { sectorsInQuestion, type CofogSector } from './govSpending';
-import { INVESTMENT_WORDS } from '../data/spendingMultipliers';
+import { sectorByCode, sectorsInQuestion, TABLE_LABEL, type CofogSector } from './govSpending';
+import { BUDGET_SEMI_ELASTICITY, BUDGET_SEMI_ELASTICITY_SOURCE, DEFENCE, INVESTMENT_WORDS, PUBLIC_INVESTMENT, type MultiplierPath } from '../data/spendingMultipliers';
+import { multiplierView, TNM_CITATION } from './fiscalMultipliers';
+import type { LiveWatchlistItem } from '../types/council';
 
 export type WhatIfUse = 'respend' | 'deficit';
 
@@ -112,6 +114,8 @@ export interface WhatIfRun {
   feedback?: { low: number; high: number };
   /** Debt at the end of the horizon, % of GDP: baseline, and with the change at each end of the range. */
   debtEnd: { year: string; baseline: number; low: number; high: number };
+  /** Year by year: debt on the baseline and at each end, and the output level at each end. */
+  years: Array<{ year: string; debtBaseline: number; debtLow: number; debtHigh: number; levelLow: number; levelHigh: number }>;
 }
 
 export interface WhatIfResult {
@@ -124,10 +128,9 @@ export interface WhatIfResult {
 const r2 = (v: number) => Number(v.toFixed(2));
 const at = (xs: number[], k: number) => xs[Math.min(k, xs.length - 1)] ?? 0;
 
-function pathEnd(debtNow: number, years: YearAssump[]): number {
+function debtPath(debtNow: number, years: YearAssump[]): number[] {
   let d = debtNow;
-  for (const y of years) d = nextDebt(d, y.i, nominalGrowthPct(y.g, y.pi), y.pb);
-  return d;
+  return years.map((y) => (d = nextDebt(d, y.i, nominalGrowthPct(y.g, y.pi), y.pb)));
 }
 
 /** Runs the change through the debt identity on the IMF baseline; null without baseline inputs. */
@@ -136,7 +139,8 @@ export function runWhatIf(inp: WhatIfInputs): WhatIfResult | null {
   const cutPp = inp.spend.pct * inp.share;
   const respend = inp.respend || inp.cut;
   const eps = inp.semiElasticity?.value;
-  const baseEnd = pathEnd(inp.debtNow, inp.baseline);
+  const basePath = debtPath(inp.debtNow, inp.baseline);
+  const baseEnd = basePath[basePath.length - 1];
   const last = inp.baseline.length - 1;
   const endYear = inp.baseline[last].year;
   const runs: WhatIfRun[] = inp.uses.map((use) => {
@@ -150,13 +154,12 @@ export function runWhatIf(inp: WhatIfInputs): WhatIfResult | null {
         const resM = samePath ? cutM : at(end === 'weak' ? respend.low : respend.high, k);
         return cutPp * (-cutM + (use === 'respend' ? resM : 0));
       });
-    const run = (lv: number[]) => {
-      const years = inp.baseline.map((y, k) => ({ ...y, g: y.g + lv[k] - (k ? lv[k - 1] : 0), pb: y.pb + kept + (eps !== undefined ? eps * lv[k] : 0) }));
-      return pathEnd(inp.debtNow, years);
-    };
+    const run = (lv: number[]) =>
+      debtPath(inp.debtNow, inp.baseline.map((y, k) => ({ ...y, g: y.g + lv[k] - (k ? lv[k - 1] : 0), pb: y.pb + kept + (eps !== undefined ? eps * lv[k] : 0) })));
     const weak = levels('weak');
     const strong = levels('strong');
-    const [dw, ds] = [run(weak), run(strong)];
+    const [pw, ps] = [run(weak), run(strong)];
+    const [dw, ds] = [pw[last], ps[last]];
     const lo = (a: number, b: number) => r2(Math.min(a, b));
     const hi = (a: number, b: number) => r2(Math.max(a, b));
     return {
@@ -166,6 +169,7 @@ export function runWhatIf(inp: WhatIfInputs): WhatIfResult | null {
       level: { year: endYear, low: lo(weak[last], strong[last]), high: hi(weak[last], strong[last]) },
       ...(eps !== undefined ? { feedback: { low: lo(eps * weak[last], eps * strong[last]), high: hi(eps * weak[last], eps * strong[last]) } } : {}),
       debtEnd: { year: endYear, baseline: r2(baseEnd), low: lo(dw, ds), high: hi(dw, ds) },
+      years: inp.baseline.map((y, k) => ({ year: y.year, debtBaseline: r2(basePath[k]), debtLow: lo(pw[k], ps[k]), debtHigh: hi(pw[k], ps[k]), levelLow: lo(weak[k], strong[k]), levelHigh: hi(weak[k], strong[k]) })),
     };
   });
   const same = !inp.respend;
@@ -190,4 +194,80 @@ export function whatIfSentence(r: WhatIfRun, cutPp: number, respendLabel = 'othe
   const d = r.debtEnd.low === r.debtEnd.high ? `${r.debtEnd.low.toFixed(1)}%` : `${r.debtEnd.low.toFixed(1)}-${r.debtEnd.high.toFixed(1)}%`;
   const lead = r.use === 'respend' ? `If the ${cutPp.toFixed(1)}% of GDP is spent on ${respendLabel}` : `If the ${cutPp.toFixed(1)}% of GDP is kept to cut the deficit`;
   return `${lead}, first-year growth moves ${range(r.growth.low, r.growth.high)}, output is ${range(r.level.low, r.level.high)} by ${r.level.year}, and debt in ${r.debtEnd.year} is ${d} of GDP against ${r.debtEnd.baseline.toFixed(1)}% on the IMF baseline.`;
+}
+
+/** What a reader can change on the scenario card; anything not set comes from the question. */
+export interface WhatIfChoices {
+  sectorCode?: string;
+  share?: number;
+  uses?: WhatIfUse[];
+  destination?: 'investment' | 'other';
+  /** The reader's own first-year output effects, held as a level (labelled "your setting"). */
+  cutOwn?: { low: number; high: number };
+  respendOwn?: { low: number; high: number };
+}
+
+export interface WhatIfSetup {
+  sector: CofogSector;
+  share: number;
+  uses: WhatIfUse[];
+  destination: 'investment' | 'other';
+  spend?: { pct: number; year: string; source: string };
+  cut?: PathRange;
+  respend?: PathRange;
+  /** True when the money respent follows the cut's own path (so respending nets to zero). */
+  sameRespend: boolean;
+  respendLabel: string;
+  semiElasticity?: { value: number; source: string };
+  inputs?: WhatIfInputs;
+  /** Why the what-if cannot run, when it cannot. */
+  cannotRun?: string;
+}
+
+const asPath = (p: MultiplierPath): PathRange => ({ low: p.low, high: p.high, source: `${p.source}, ${p.scope}; ${p.fill}` });
+
+/**
+ * Gathers a country's inputs for a what-if: the spending figure (World Bank/SIPRI for defence, else
+ * Eurostat or IMF COFOG), the IMF baseline inputs, the published output paths (defence: Barro and
+ * Redlick; public investment: IMF WP/15/95; anything else: the IMF bucket range held as a level) or
+ * the reader's own, and the EU budget semi-elasticity where there is one.
+ */
+export function whatIfSetup(it: LiveWatchlistItem, q: WhatIfQuestion, ch: WhatIfChoices = {}): WhatIfSetup {
+  const f = it.fiscal || {};
+  const dsa = it.debtSustainability;
+  const sector = (ch.sectorCode && sectorByCode(ch.sectorCode)) || q.sector;
+  const share = ch.share ?? q.share;
+  const uses = ch.uses ?? q.uses;
+  const destination = ch.destination ?? q.destination;
+  const cofog = it.govSpending?.[sector.code];
+  const spend =
+    sector.code === 'GF02' && f.defencePctGdp
+      ? { pct: f.defencePctGdp.value, year: f.defencePctGdp.year, source: 'World Bank (SIPRI)' }
+      : cofog
+        ? { pct: cofog.pct, year: cofog.year, source: TABLE_LABEL[cofog.table] }
+        : undefined;
+  const mv = f.debtPctGdp
+    ? multiplierView({ iso3: it.iso3, debtPctGdp: f.debtPctGdp, outputGap: it.outputGap, ...(it.policyRateSource === 'bis' && it.policyRatePct !== undefined ? { policyRatePct: it.policyRatePct } : {}) })
+    : undefined;
+  const bucket = mv ? flatPath(mv.guide.low, mv.guide.high, `IMF bucket range ${mv.guide.low}-${mv.guide.high} (${mv.guide.bucket}, first year, held as a level), ${TNM_CITATION}`) : undefined;
+  const own = (v: { low: number; high: number }) => flatPath(Math.min(v.low, v.high), Math.max(v.low, v.high), `your setting, ${v.low}-${v.high} first year, held as a level`);
+  const cut = ch.cutOwn ? own(ch.cutOwn) : sector.code === 'GF02' ? asPath(DEFENCE) : bucket;
+  const respendPublished = destination === 'investment' ? asPath(PUBLIC_INVESTMENT) : bucket;
+  const respend = ch.respendOwn ? own(ch.respendOwn) : respendPublished;
+  const sameRespend = !ch.respendOwn && !ch.cutOwn && respend === cut;
+  const semi = BUDGET_SEMI_ELASTICITY[it.iso3];
+  const semiElasticity = semi !== undefined ? { value: semi, source: BUDGET_SEMI_ELASTICITY_SOURCE } : undefined;
+  const baseline = dsa?.inputs;
+  const out: WhatIfSetup = { sector, share, uses, destination, spend, cut, respend, sameRespend, respendLabel: destination === 'investment' ? 'public investment' : 'other spending', semiElasticity };
+  if (spend && dsa && baseline?.length && cut) {
+    out.inputs = { spend, share, uses, debtNow: dsa.debtNow, year: dsa.year, baseline, cut, ...(respend && !sameRespend ? { respend } : {}), ...(semiElasticity ? { semiElasticity } : {}) };
+  } else {
+    const need = [
+      !spend ? `${sector.label.toLowerCase()} spending (${sector.code === 'GF02' ? 'World Bank/SIPRI or ' : ''}Eurostat or IMF COFOG)` : '',
+      !baseline?.length ? 'the IMF baseline inputs for the debt path' : '',
+      !cut ? 'IMF debt for the multiplier range' : '',
+    ].filter(Boolean);
+    out.cannotRun = `${it.countryName}: the ${sector.label.toLowerCase()} what-if cannot run, as ${need.join(' and ')} ${need.length > 1 ? 'are' : 'is'} missing`;
+  }
+  return out;
 }

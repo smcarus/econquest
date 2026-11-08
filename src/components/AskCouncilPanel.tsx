@@ -18,6 +18,8 @@ import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { ExplainAnswer } from './ExplainAnswer';
+import { WhatIfCard } from './WhatIfCard';
+import { parseWhatIf } from '../utils/fiscalWhatIf';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
 import { askCouncilColumns, fullCouncilColumns, type FullCouncilPhase } from '../utils/councilNetwork';
@@ -535,6 +537,14 @@ export const AskCouncilPanel: React.FC<{
             </p>
           )}
         </div>
+
+        {/* What-if scenario card: the calculator's numbers for each country named (up to two), editable. */}
+        {(() => {
+          const wq = parseWhatIf(t.asked.question);
+          return wq
+            ? t.asked.plan.countries.slice(0, 2).map((c) => <WhatIfCard key={`whatif-${t.asked.askedAt}-${c.iso3}`} question={wq} item={c} />)
+            : null;
+        })()}
 
         {/* The Chart Agent's chart and test results, when the question asked for one. */}
         {t.asked.answers
