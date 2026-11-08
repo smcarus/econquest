@@ -11,6 +11,14 @@
  *   - Turkey (CBRT): 2027 H2 dates not yet published.
  *   - Mexico (Banxico), Indonesia (BI): 2027 schedules not yet published.
  *   - CPI release calendars: only Mexico's INPC dates were found (secondary source).
+ * Added 2026-11-08 from each bank's own page: Fed, ECB (shown for Germany, France and Italy), Bank
+ * of Canada, RBA, Bank of Korea (2027 not yet published) and Bank of Russia. Not added that day:
+ *   - India (RBI): the 2026-27 MPC schedule release was not reachable from the press release pages.
+ *   - Egypt (CBE), Chile (BCCh), Poland (NBP): the pages refused an automated reader.
+ *   - Argentina (BCRA) and Saudi Arabia (SAMA): no decision calendar found (BCRA announces by
+ *     communiqué; SAMA's site gave no text). China: the LPR is published on the 20th of each month,
+ *     moved for holidays, so dates are not listed until the holiday calendar is read.
+ * Menu > Data health > Calendar flags sources read long ago and schedules running out.
  */
 
 export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'INFLATION_REPORT' | 'ELECTION' | 'BUDGET' | 'IMF_PROGRAMME';
@@ -80,10 +88,18 @@ const BOE_SRC = {
   primarySource: true,
 };
 
+const R8 = '2026-11-08';
+const FED_SRC = { sourceName: 'Federal Reserve FOMC meeting calendar (each date tentative until confirmed at the meeting before)', sourceUrl: 'https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm', primarySource: true, retrieved: R8 };
+const ECB_SRC = { sourceName: 'ECB Governing Council meeting calendar (monetary policy meetings, day 2)', sourceUrl: 'https://www.ecb.europa.eu/press/calendars/mgcgc/html/index.en.html', primarySource: true, retrieved: R8 };
+const BOC_SRC = { sourceName: 'Bank of Canada schedule of interest rate announcements', sourceUrl: 'https://www.bankofcanada.ca/core-functions/monetary-policy/key-interest-rate/', primarySource: true, retrieved: R8 };
+const RBA_SRC = { sourceName: 'RBA Monetary Policy Board meeting schedule (decision on day 2)', sourceUrl: 'https://www.rba.gov.au/schedules-events/board-meeting-schedules.html', primarySource: true, retrieved: R8 };
+const BOK_SRC = { sourceName: 'Bank of Korea Monetary Policy Board meeting dates (2027 not yet published)', sourceUrl: 'https://www.bok.or.kr/eng/main/contents.do?menuNo=400020', primarySource: true, retrieved: R8 };
+const CBR_SRC = { sourceName: 'Bank of Russia calendar of key rate meetings', sourceUrl: 'https://www.cbr.ru/eng/dkp/cal_mp/', primarySource: true, retrieved: R8 };
+
 type Row = [iso3: string, category: OfficialEventCategory, title: string, date: string];
 
-function rows(src: Omit<OfficialCalendarEvent, 'iso3' | 'category' | 'title' | 'date' | 'retrieved'>, list: Row[]): OfficialCalendarEvent[] {
-  return list.map(([iso3, category, title, date]) => ({ iso3, category, title, date, ...src, retrieved: RETRIEVED }));
+function rows(src: Omit<OfficialCalendarEvent, 'iso3' | 'category' | 'title' | 'date' | 'retrieved'> & { retrieved?: string }, list: Row[]): OfficialCalendarEvent[] {
+  return list.map(([iso3, category, title, date]) => ({ iso3, category, title, date, ...src, retrieved: src.retrieved || RETRIEVED }));
 }
 
 const COPOM = 'BCB Copom Selic rate decision';
@@ -93,6 +109,12 @@ const BANXICO = 'Banxico monetary policy decision';
 const BI = 'Bank Indonesia BI-Rate decision (Board of Governors meeting, day 2)';
 const BOJ = 'BoJ Monetary Policy Meeting decision';
 const BOE = 'BoE MPC Bank Rate decision';
+const FED = 'FOMC federal funds rate decision';
+const ECB = 'ECB Governing Council monetary policy decision (euro area)';
+const BOC = 'Bank of Canada interest rate announcement';
+const RBA = 'RBA cash rate decision';
+const BOK = 'Bank of Korea Base Rate decision';
+const CBR = 'Bank of Russia key rate decision';
 
 /*
  * Elections, budgets and IMF programmes. Checked 2026-11-04. Budget rows are the deadline the
@@ -197,6 +219,87 @@ export const OFFICIAL_CALENDAR: OfficialCalendarEvent[] = [
     ['GBR', 'MPC_DECISION', BOE, '2027-09-16'],
     ['GBR', 'MPC_DECISION', BOE, '2027-11-04'],
     ['GBR', 'MPC_DECISION', BOE, '2027-12-16'],
+  ]),
+  ...rows(FED_SRC, [
+    ['USA', 'MPC_DECISION', FED, '2026-12-09'],
+    ['USA', 'MPC_DECISION', FED, '2027-01-27'],
+    ['USA', 'MPC_DECISION', FED, '2027-03-17'],
+    ['USA', 'MPC_DECISION', FED, '2027-04-28'],
+    ['USA', 'MPC_DECISION', FED, '2027-06-09'],
+    ['USA', 'MPC_DECISION', FED, '2027-07-28'],
+    ['USA', 'MPC_DECISION', FED, '2027-09-15'],
+    ['USA', 'MPC_DECISION', FED, '2027-10-27'],
+    ['USA', 'MPC_DECISION', FED, '2027-12-08'],
+  ]),
+  ...rows(ECB_SRC, [
+    ['DEU', 'MPC_DECISION', ECB, '2026-12-17'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-02-04'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-03-18'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-04-29'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-06-10'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-07-22'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-09-09'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-10-28'],
+    ['DEU', 'MPC_DECISION', ECB, '2027-12-16'],
+  ]),
+  ...rows(ECB_SRC, [
+    ['FRA', 'MPC_DECISION', ECB, '2026-12-17'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-02-04'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-03-18'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-04-29'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-06-10'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-07-22'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-09-09'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-10-28'],
+    ['FRA', 'MPC_DECISION', ECB, '2027-12-16'],
+  ]),
+  ...rows(ECB_SRC, [
+    ['ITA', 'MPC_DECISION', ECB, '2026-12-17'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-02-04'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-03-18'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-04-29'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-06-10'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-07-22'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-09-09'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-10-28'],
+    ['ITA', 'MPC_DECISION', ECB, '2027-12-16'],
+  ]),
+  ...rows(BOC_SRC, [
+    ['CAN', 'MPC_DECISION', BOC, '2026-12-09'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-01-27'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-03-03'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-04-28'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-06-02'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-07-21'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-09-08'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-10-27'],
+    ['CAN', 'MPC_DECISION', BOC, '2027-12-08'],
+  ]),
+  ...rows(RBA_SRC, [
+    ['AUS', 'MPC_DECISION', RBA, '2026-11-03'],
+    ['AUS', 'MPC_DECISION', RBA, '2026-12-08'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-02-09'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-03-23'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-05-04'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-06-22'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-08-10'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-09-28'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-11-02'],
+    ['AUS', 'MPC_DECISION', RBA, '2027-12-14'],
+  ]),
+  ...rows(BOK_SRC, [
+    ['KOR', 'MPC_DECISION', BOK, '2026-11-26'],
+  ]),
+  ...rows(CBR_SRC, [
+    ['RUS', 'MPC_DECISION', CBR, '2026-12-18'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-02-12'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-03-19'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-04-30'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-06-11'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-07-30'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-09-10'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-10-22'],
+    ['RUS', 'MPC_DECISION', CBR, '2027-12-17'],
   ]),
 ];
 
