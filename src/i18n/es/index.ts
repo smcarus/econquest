@@ -17,6 +17,7 @@ import { COMMON_ES } from './common';
 import { TOOLS_ES } from './tools';
 import { TOOL_TEXT_ES } from './toolText';
 import { TOOLS_CATALOG_ES } from './toolsCatalog';
+import { COMPARE_TEXT_ES } from './compareText';
 
 export const ES: Record<string, Record<string, string>> = {
   shell: SHELL_ES,
@@ -32,4 +33,4 @@ export const ES: Record<string, Record<string, string>> = {
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const ES_TEXT: Record<string, string> = { ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES };
+export const ES_TEXT: Record<string, string> = { ...COMPARE_TEXT_ES, ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES };
