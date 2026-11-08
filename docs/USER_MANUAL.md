@@ -26,8 +26,10 @@ The level is kept in this browser.
 
 **Language.** The *EN* / *ES* button beside the help button switches the app between English and
 Spanish (español); each press moves to the next language, and the choice is kept in this browser.
-The Spanish wording is being added a part of the app at a time, starting with the header and the
-Menu; anything not yet translated shows in English. Figures, source names, series names and answers
+The Spanish wording is being added a part of the app at a time: so far the header, the Menu,
+Council chat and Your data; anything not yet translated shows in English. The council's agents
+still read questions in English, so in Spanish the chat asks you to type questions in English for
+now, and the suggested questions stay in English. Figures, source names, series names and answers
 written by the AI model are never translated: they show as the source or the model wrote them. The
 Spanish has not yet been checked by a native speaker, and the button's hover text says so.
 
