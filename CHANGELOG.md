@@ -9,7 +9,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
   switch come first, the rest follows a part at a time. Translations live in keyed message files (src/i18n/messages/).
   Council chat and Your data are now in Spanish too. The Spanish words load only when Spanish is chosen
   (src/i18n/es/), so English users download none of them. In Spanish the chat says to ask questions in English
-  for now, because the agents read questions in English.
+  for now, because the agents read questions in English. Workspace (the Agents and Briefing panels, your inputs,
+  what moved, the next two weeks and watch alerts) is in Spanish too.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

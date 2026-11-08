@@ -37,7 +37,6 @@ import {
   loadWorkspaceSessionFromStorage,
   saveWorkspaceSessionToStorage,
 } from './utils/workspaceSession';
-import { AddCountryDialog } from './components/AddCountryDialog';
 import { WatchlistSidebar } from './components/WatchlistSidebar';
 import { toLive } from './utils/liveFigures';
 import { WATCHLIST_CHANNEL, WATCHLIST_STORAGE_KEY, type WatchlistMessage } from './utils/watchlistView';
@@ -109,7 +108,7 @@ import {
   Users,
 } from 'lucide-react';
 import { OfflineDataDialog, OfflinePill, useOnlineStatus } from './components/OfflineData';
-import { AboutDialog, OPEN_ABOUT_EVENT } from './components/AboutDialog';
+import { OPEN_ABOUT_EVENT } from './components/aboutOpen';
 import type { PublicAccount } from './utils/auth';
 import { fetchAuthStatus } from './utils/authClient';
 import { ROLE_LABEL } from './utils/authLabels';
@@ -133,6 +132,8 @@ const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'A
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
 const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
+const AboutDialog = lazyNamed(() => import('./components/AboutDialog'), 'AboutDialog');
+const AddCountryDialog = lazyNamed(() => import('./components/AddCountryDialog'), 'AddCountryDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
 const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
@@ -1837,9 +1838,9 @@ export default function App() {
         </section>
       </main>
 
-      {isCustomSovereignModalOpen && (
-        <AddCountryDialog onClose={() => setIsCustomSovereignModalOpen(false)} onAdd={handleOnboardCustomSovereign} />
-      )}
+      <Suspense fallback={null}>
+        {isCustomSovereignModalOpen && <AddCountryDialog onClose={() => setIsCustomSovereignModalOpen(false)} onAdd={handleOnboardCustomSovereign} />}
+      </Suspense>
 
       {isOfflineDataOpen && <OfflineDataDialog onClose={() => setIsOfflineDataOpen(false)} />}
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
@@ -1850,7 +1851,7 @@ export default function App() {
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isAccountOpen && <AccountDialog onClose={() => setIsAccountOpen(false)} />}</Suspense>
-      {aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}
+      <Suspense fallback={null}>{aboutFocus !== undefined && <AboutDialog focusId={aboutFocus} onClose={() => setAboutFocus(undefined)} />}</Suspense>
       {isManualModalOpen && (
         <Suspense fallback={null}>
       <SovereignManualAndGithubModal

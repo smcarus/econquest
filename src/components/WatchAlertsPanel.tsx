@@ -1,3 +1,5 @@
+import { useT } from '../i18n/useLang';
+import { WORKSPACE } from '../i18n/messages/workspace';
 import React, { useEffect, useMemo, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { WATCH_METRICS, evaluateRules, ruleText, type WatchMetric, type WatchOp, type WatchRule } from '../utils/watchRules';
@@ -12,6 +14,7 @@ export const WatchAlertsPanel: React.FC<{
   /** "Uses:" line linking back to Workspace > Your inputs. */
   uses?: React.ReactNode;
 }> = ({ items, onOpenCountry, uses }) => {
+  const t = useT(WORKSPACE);
   const [rules, setRules] = useState<WatchRule[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState('');
@@ -22,7 +25,7 @@ export const WatchAlertsPanel: React.FC<{
     fetch('/api/watch-rules')
       .then((r) => (r.ok ? r.json() : { rules: [] }))
       .then((d) => setRules(Array.isArray(d?.rules) ? d.rules : []))
-      .catch(() => setError('Could not read your watch alerts.'))
+      .catch(() => setError(t('readFailed')))
       .finally(() => setLoaded(true));
   }, []);
 
@@ -31,10 +34,10 @@ export const WatchAlertsPanel: React.FC<{
     try {
       const r = await fetch('/api/watch-rules', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ rules: next }) });
       const d = await r.json();
-      if (!r.ok) throw new Error(d?.error || 'Could not save.');
+      if (!r.ok) throw new Error(d?.error || t('saveFailed'));
       setRules(d.rules);
     } catch (e: any) {
-      setError(e?.message || 'Could not save.');
+      setError(e?.message || t('saveFailed'));
     }
   };
 
@@ -47,21 +50,21 @@ export const WatchAlertsPanel: React.FC<{
     <section className="ui-panel" data-watch-alerts="true">
       <header className="ui-panel-header flex flex-wrap items-baseline justify-between gap-2">
         <div>
-          <h3 className="ui-section-title">Watch alerts</h3>
-          <p className="ui-label">Thresholds you set on the timing figures. A missing figure never triggers. Kept on this computer.</p>
+          <h3 className="ui-section-title">{t('panelAlerts')}</h3>
+          <p className="ui-label">{t('alertsNote')}</p>
           {uses}
         </div>
         <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setAdding((a) => !a)} data-watch-add-toggle="true">
-          {adding ? 'Close' : 'Add a rule'}
+          {adding ? t('close') : t('addRule')}
         </button>
       </header>
 
       {adding && (
         <div className="px-4 py-3 flex flex-wrap items-end gap-2 border-b border-slate-100 dark:border-slate-800 text-sm">
           <label className="flex flex-col gap-1">
-            <span className="ui-label">Country</span>
+            <span className="ui-label">{t('country')}</span>
             <select className="border border-slate-200 dark:border-slate-700 bg-transparent px-2 py-1" value={draft.iso3} onChange={(e) => setDraft({ ...draft, iso3: e.target.value })}>
-              <option value="*">Any country on screen</option>
+              <option value="*">{t('anyCountry')}</option>
               {items.map((i) => (
                 <option key={i.iso3} value={i.iso3}>
                   {i.countryName}
@@ -70,7 +73,7 @@ export const WatchAlertsPanel: React.FC<{
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="ui-label">Figure</span>
+            <span className="ui-label">{t('figure')}</span>
             <select className="border border-slate-200 dark:border-slate-700 bg-transparent px-2 py-1" value={draft.metric} onChange={(e) => setDraft({ ...draft, metric: e.target.value as WatchMetric })}>
               {(Object.keys(WATCH_METRICS) as WatchMetric[]).map((m) => (
                 <option key={m} value={m}>
@@ -80,14 +83,14 @@ export const WatchAlertsPanel: React.FC<{
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="ui-label">When</span>
+            <span className="ui-label">{t('when')}</span>
             <select className="border border-slate-200 dark:border-slate-700 bg-transparent px-2 py-1" value={draft.op} onChange={(e) => setDraft({ ...draft, op: e.target.value as WatchOp })}>
-              <option value=">=">at or above</option>
-              <option value="<=">at or below</option>
+              <option value=">=">{t('atOrAbove')}</option>
+              <option value="<=">{t('atOrBelow')}</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="ui-label">Value{WATCH_METRICS[draft.metric].unit ? ` (${WATCH_METRICS[draft.metric].unit})` : ''}</span>
+            <span className="ui-label">{t('value')}{WATCH_METRICS[draft.metric].unit ? ` (${WATCH_METRICS[draft.metric].unit})` : ''}</span>
             <input
               className="w-24 border border-slate-200 dark:border-slate-700 bg-transparent px-2 py-1 tabular-nums"
               inputMode="decimal"
@@ -106,7 +109,7 @@ export const WatchAlertsPanel: React.FC<{
               setDraft({ ...draft, value: '' });
             }}
           >
-            Save rule
+            {t('saveRule')}
           </button>
         </div>
       )}
@@ -115,9 +118,9 @@ export const WatchAlertsPanel: React.FC<{
 
       <div className="px-4 py-3 text-sm">
         {!loaded ? (
-          <p className="ui-label">Loading your rules.</p>
+          <p className="ui-label">{t('loadingRules')}</p>
         ) : !rules.length ? (
-          <p className="ui-label">No rules yet. Add one, for example CFTC positioning percentile at or above 90 for any country.</p>
+          <p className="ui-label">{t('noRules')}</p>
         ) : (
           <>
             {hits.length ? (
@@ -138,7 +141,7 @@ export const WatchAlertsPanel: React.FC<{
                 ))}
               </ul>
             ) : (
-              <p className="ui-label mb-3">No rule is crossed now.</p>
+              <p className="ui-label mb-3">{t('noneCrossed')}</p>
             )}
             <ul className="space-y-1">
               {rules.map((r) => {
@@ -147,10 +150,10 @@ export const WatchAlertsPanel: React.FC<{
                   <li key={r.id} className="flex items-baseline justify-between gap-2 text-slate-600 dark:text-slate-400">
                     <span>
                       {ruleText(r, nameOf(r.iso3))}
-                      {blanks ? <span className="text-xs text-slate-500"> · no figure for {blanks} {blanks === 1 ? 'country' : 'countries'}</span> : null}
+                      {blanks ? <span className="text-xs text-slate-500">{blanks === 1 ? t('noFigureOne') : t('noFigureMany', { n: blanks })}</span> : null}
                     </span>
                     <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => void save(rules.filter((x) => x.id !== r.id))}>
-                      Remove
+                      {t('remove')}
                     </button>
                   </li>
                 );
