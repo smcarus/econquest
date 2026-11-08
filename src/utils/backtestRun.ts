@@ -131,13 +131,15 @@ async function pullHistory(fetcher: Fetcher, problems: string[], methods: Set<st
   return { bis, cli, cftc, cpi };
 }
 
-export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void; forwardFile?: string; /** Files on disk some tests read (GDELT months, UCDP), loaded only when such a test runs. */ local?: { gdeltMonths: () => V1Month[]; ucdp: () => UcdpData | null } }): Promise<ValidationFile & { problems: string[] }> {
+export async function runBacktests(opts: { specDir: string; resultFile: string; fetcher?: Fetcher; now?: Date; onResult?: (r: BacktestResult) => void; forwardFile?: string; /** Files on disk some tests read (GDELT months, UCDP), loaded only when such a test runs. */ local?: { gdeltMonths: () => V1Month[]; ucdp: () => UcdpData | null }; /** Never run a version that already has a verdict (your own tests: a recorded verdict never changes). */ skipRecorded?: boolean }): Promise<ValidationFile & { problems: string[] }> {
   const problems: string[] = [];
   const specs = loadSpecs(opts.specDir);
   for (const s of specs) if (s.problem) problems.push(`${s.file}: ${s.problem}; not run`);
   // Oldest version first, so the latest version of each test ends up under results[id].
-  const runnable = specs.filter((s) => s.spec).sort((a, b) => a.spec!.id.localeCompare(b.spec!.id) || a.spec!.version - b.spec!.version);
   const file = loadValidation(opts.resultFile);
+  const runnable = specs
+    .filter((s) => s.spec && !(opts.skipRecorded && file.versions?.[`${s.spec.id} v${s.spec.version}`]))
+    .sort((a, b) => a.spec!.id.localeCompare(b.spec!.id) || a.spec!.version - b.spec!.version);
   if (runnable.length) {
     const h = await pullHistory(opts.fetcher || defaultFetcher, problems, new Set(runnable.map((s) => s.spec!.method)));
     const needGap = runnable.some((s) => (s.spec!.method === 'taylor_gap' && Number(s.spec!.params?.outputWeight) > 0) || s.spec!.method === 'rule_family');

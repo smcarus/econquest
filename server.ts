@@ -3021,7 +3021,7 @@ async function startServer() {
     const fwd = loadForward(forwardFilePath(DATA_DIR));
     res.json({ ...v, specs, running: validationRunning, file: 'data/local/validation/results.json', forecasts, forecastTests, forward: forwardSummary(fwd.lines), forwardCheck: { chainOk: fwd.chainOk, badLines: fwd.badLines, lines: fwd.lines.length, file: 'data/local/validation/forward.jsonl' } });
   });
-  registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });
+  registerUserTestRoutes(app, { dataDir: DATA_DIR, specDir: SPEC_DIR, refuseRemoteChange, signedIn, local: backtestLocal, audit: (summary, detail) => appendAudit(AUDIT_FILES, { kind: 'validation', summary, detail }) });
   app.post('/api/validation/run', async (req, res) => {
     if (refuseRemoteChange(req, res)) return;
     if (validationRunning) return res.status(409).json({ error: 'The backtests are already running.' });

@@ -141,7 +141,7 @@ try {
     await noCrash(page);
   });
 
-  await step('your tests: register one and it is frozen', async () => {
+  await step('your tests: register, freeze and run one', async () => {
     await page.getByRole('button', { name: 'Menu', exact: true }).click();
     await page.getByRole('menuitem', { name: /^Models & validation/ }).first().click();
     await page.locator('[data-your-tests-toggle]').click();
@@ -162,12 +162,28 @@ try {
     if (!(await box.locator('[data-your-test-list]').innerText()).includes('mine_journey_test')) throw new Error('the registered test is not listed');
     const again = await page.evaluate(async () => (await fetch('/api/user-tests/mine_journey_test', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status);
     if (again !== 405) throw new Error(`editing a registered test answered ${again}, expected 405`);
+    // Running it (on the recorded replies the test server answers with): it ends with a verdict or says why not,
+    // and a second run leaves a recorded verdict exactly as it was.
+    const runOnce = async () => {
+      await box.locator('[data-your-tests-run]').click();
+      await page.waitForFunction(async () => !(await (await fetch('/api/user-tests')).json()).running, null, { timeout: 60_000, polling: 1000 });
+      return page.evaluate(async () => (await fetch('/api/user-tests')).json());
+    };
+    const first = await runOnce();
+    const verdict = first.results?.['mine_journey_test v1'];
+    if (!verdict && !first.lastRun?.problems?.length) throw new Error('the run gave neither a verdict nor a reason');
+    if (verdict) {
+      await box.locator('[data-your-test-result="mine_journey_test v1"]').waitFor({ timeout: 10_000 });
+      const second = await runOnce();
+      if (JSON.stringify(second.results['mine_journey_test v1']) !== JSON.stringify(verdict)) throw new Error('a second run changed the recorded verdict');
+    }
     await noCrash(page);
     await page.keyboard.press('Escape');
   });
 
   const fakeKey = 'abcdef0123456789abcdef0123456789';
   await step('settings: save, mask and remove a key', async () => {
+    await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Menu', exact: true }).click();
     await page.getByRole('menuitem', { name: /^Settings/ }).first().click();
     await page.locator('[data-settings-tab="keys"]').click();
