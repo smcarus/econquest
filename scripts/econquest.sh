@@ -84,6 +84,13 @@ show_status() {
 # else on this computer.
 run_daily_now() {
   if docker_up && [ -n "$(docker compose ps -q econquest 2>/dev/null)" ]; then
+    # A Docker app built before the last `git pull` runs older code that may not have the daily run:
+    # rebuild and restart it first (the same as `npm run update`), then wait for it to answer.
+    if ! docker compose exec -T econquest node -e "process.exit(require('./package.json').scripts?.daily ? 0 : 1)" >/dev/null 2>&1; then
+      echo "The Docker app runs code from before the last update; rebuilding it first..."
+      OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://host.docker.internal:11434}" docker compose up -d --build econquest || return 1
+      for _ in $(seq 1 45); do http_ok "${DOCKER_PORT}" && break; sleep 2; done
+    fi
     docker compose exec -T -e ECONQUEST_WHERE=docker econquest npm run daily -- "$@"
   else
     ECONQUEST_WHERE="this computer" npm run daily -- "$@"
