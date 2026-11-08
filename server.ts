@@ -9,6 +9,7 @@ import { ENGINE_ROUTES } from './src/engine/routeTable';
 import { createNodePlatform } from './src/platform/node';
 import { secretBoxFromEnv } from './src/utils/secretBox';
 import type { Caller } from './src/engine/routes';
+import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
@@ -3084,6 +3085,7 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
   app.get('/api/series/:iso3', async (req, res) => {

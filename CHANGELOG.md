@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
+  labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store
   (ghcr.io/e-conquest/econquest), for Intel/AMD and Apple Silicon/ARM machines, so nobody has to build it.
 - docs/INSTALL.md: a plain-language install guide for people new to this, with deploy/quick-start/compose.yml.
