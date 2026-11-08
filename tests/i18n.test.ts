@@ -245,3 +245,38 @@ test('the one-country panels: sentences, labels and reasons the app builds in En
   const untranslated = s.filter((x) => tx(x) === x || / the | weaker | stronger | points? lower| higher than/.test(tx(x)));
   assert.deepEqual(untranslated, [], 'panel text with no Spanish');
 });
+
+test('Holdings and Tools: tool names, briefs, signals and tool reasons the app builds in English have Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (x: string) => translateText(x, 'es');
+  const { READY_TOOLS, TOOL_CATEGORIES, HIDDEN_GROUPS } = await import('../src/data/toolsCatalog');
+  const { bookView, pmBookBrief, clientBrief } = await import('../src/utils/bookNote');
+  const { buildExercises } = await import('../src/utils/exercises');
+  const { convertAll } = await import('../src/utils/unitConverters');
+  const { taylorSandbox, filterSandbox } = await import('../src/utils/modelSandboxes');
+  const { ASSET_CLASS_LABEL } = await import('../src/utils/holdings');
+  const s: string[] = [];
+  s.push(...TOOL_CATEGORIES.flatMap((c) => [c.title, c.purpose]), ...READY_TOOLS.flatMap((t) => [t.title, t.what]));
+  s.push(...HIDDEN_GROUPS.flatMap((g) => [g.title, ...g.desks.flatMap((d) => [d.label, d.needs])]).filter((x) => x !== 'Macro'));
+  s.push(...Object.values(ASSET_CLASS_LABEL));
+  // Countries, positions, event titles and source names stay as written; the sentences around them change.
+  const keep = new Set(['Brazil', 'Mexico']);
+  const holdings = [
+    { id: 'a', iso3: 'BRA', instrument: 'x', assetClass: 'HC_BOND', side: 'LONG', notionalUsdMm: 10, durationYears: 5 },
+    { id: 'b', iso3: 'MEX', instrument: 'y', assetClass: 'LC_BOND', side: 'SHORT', notionalUsdMm: 30 },
+  ];
+  const items = [{ iso3: 'BRA', countryName: 'Brazil', yield10YPct: 13.2, yield10YSource: 'official' }, { iso3: 'MEX', countryName: 'Mexico' }];
+  for (const b of [pmBookBrief(bookView(holdings as never, items as never, items as never)), clientBrief(bookView(holdings as never, items as never, items as never)), pmBookBrief(bookView([], [], [])), clientBrief(bookView([], [], []))])
+    s.push(b.headline, ...b.judgements.filter((j) => !/official events? in the next|official dates? in the next|; the next is/.test(j)), ...b.groups.flatMap((g) => [g.title, ...g.rows.filter((r) => !r.verified).flatMap((r) => [r.label, r.source])]));
+  const ex = buildExercises({ countryName: 'Brazil', month: '2025-12', series: {} as never });
+  s.push(...ex.notSet.map((n) => n.reason));
+  const conv = convertAll(1e6, '2024', '2025', {});
+  s.push(...conv.flatMap((r) => (r.ok ? [] : [r.label, r.reason])));
+  s.push(...taylorSandbox({ rStar: 2, pi: 4, target: 3, gap: -1, aPi: 0.5, aGap: 0.5 }).terms.map((t) => t.label));
+  const f = filterSandbox([], 100, 2);
+  if ('reason' in f) s.push(f.reason);
+  const untranslated = s.filter((x) => !keep.has(x) && !/^[\d.%$,mm −-]+$/.test(x) && (tx(x) === x || / the | your | of the /.test(tx(x))));
+  assert.deepEqual(untranslated, [], 'tool text with no Spanish');
+});
