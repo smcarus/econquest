@@ -61,7 +61,7 @@ test('countrySeries prefers the full official run over saved pulls, and lists th
   assert.equal(set.series.find((s) => s.id === 'current_account')!.freq, 'per pull');
   assert.equal(set.series.find((s) => s.id === 'reserves_usd')!.points[0].value, 330);
   const extra = OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).length;
-  assert.equal(set.series.length + set.missing.length, 33 + ARCHIVE_FIGURES.length + extra); // + Focus survey (Brazil only); + 7 BoC-BoE default series; + 11 World Bank IDS creditor series; + spread-implied default probability; // 9 feed series incl. the USD bond spread, quarterly GDP q/q and y/y, monthly activity; + 4 BIS credit cycle
+  assert.equal(set.series.length + set.missing.length, 36 + ARCHIVE_FIGURES.length + extra); // + 3 IMF PortWatch port series; + Focus survey (Brazil only); + 7 BoC-BoE default series; + 11 World Bank IDS creditor series; + spread-implied default probability; // 9 feed series incl. the USD bond spread, quarterly GDP q/q and y/y, monthly activity; + 4 BIS credit cycle
 });
 
 test('summary: "latest" is the newest outturn, not an IMF projection', async () => {

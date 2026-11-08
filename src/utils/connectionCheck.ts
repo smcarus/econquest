@@ -13,6 +13,7 @@
  */
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
+import { chokepointsUrl, parsePortWatchStats } from './portWatch';
 import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig } from './hardCurrencySpread';
 import { geminiModel } from './geminiModel';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
@@ -294,6 +295,7 @@ export const SOURCE_IDS = [
   'ecb_spf',
   'bcb_focus',
   'nyfed_gscpi',
+  'imf_portwatch',
   'evds',
   'banxico',
   'ucdp',
@@ -959,6 +961,26 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     } catch (e) {
       return setRow(def, 'no_answer', (e as Error).message || 'No answer', 'www.newyorkfed.org');
     }
+  });
+
+  add('imf_portwatch', async () => {
+    let lastText: string | undefined;
+    const res = await httpCheck(
+      { id: 'imf_portwatch', name: 'IMF PortWatch', group: 'free', feeds: 'Ships through eight chokepoints (world series) and each country\'s port activity, monthly averages of daily data' },
+      fetchFn,
+      chokepointsUrl(),
+      Math.max(T, 25000),
+      (r) => {
+        lastText = r.text;
+        const map = parsePortWatchStats(JSON.parse(r.text || 'null'), ['ships', 'volume']);
+        const suez = map.get('chokepoint1');
+        const last = suez?.[suez.length - 1];
+        return last ? `Suez Canal ${fmt(last.sums.ships / last.lastDay, 1)} ships/day (${last.month}, to day ${last.lastDay}), ${map.size} chokepoints, ${suez!.length} months` : null;
+      },
+      {},
+      'PortWatch answered, but without the monthly sums (portid, year, month, ships) the app asks for.'
+    );
+    return res.state === 'bad_reply' || res.state === 'refused' ? { ...res, detail: `${res.detail}${replyStart(lastText)}` } : res;
   });
 
   // ---- Free with your own key -----------------------------------------------------------------
