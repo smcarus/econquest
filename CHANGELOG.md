@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Lighter checks on pull requests: a change that only touches writing (Markdown files, docs/, licence files) runs
+  the type check and tests but skips the build, size check and browser tests; the app-image check runs only when
+  the Dockerfile, deploy files, server code, package files or the checks themselves change; a newer push to the
+  same pull request cancels the older run; and the browser download for the UI tests is kept between runs.
+  Every push to main still runs everything.
 - Faster start: Council chat's screens now download the first time the chat or the Agents panel is shown, not
   with the rest of the app, which takes about 13 KB (compressed) off what every visitor downloads at start.
   The conversation itself still lives above the pages, so a question keeps running while you move.
