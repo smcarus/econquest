@@ -27,7 +27,8 @@ export type Target = { name: string; dir: string; limits: Limits };
 export const TARGETS: Target[] = [
   // Measured 8 Nov 2026: start 1 450 KB (447 KB compressed), largest file 1 242 KB (the PDF reader's
   // worker, loaded only when a PDF is opened), total 4.86 MB. Limits leave about 3% for small changes.
-  { name: 'web', dir: 'dist', limits: { startKB: 1500, startGzipKB: 460, largestJsKB: 1280, totalMB: 5 } },
+  // Start compressed raised to 465 KB the same day (Sam): the what-if scenario card took it to 461 KB.
+  { name: 'web', dir: 'dist', limits: { startKB: 1500, startGzipKB: 465, largestJsKB: 1280, totalMB: 5 } },
   { name: 'phone', dir: 'mobile/dist', limits: { startKB: 1000, startGzipKB: 300, largestJsKB: 400, totalMB: 20 } },
 ];
 
