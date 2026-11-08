@@ -40,6 +40,7 @@ async function replayServer(replayDir: string) {
     MODEL_REPLAY_DIR: replayDir,
     MODEL_REPLAY_LOG: missLog,
     DATA_DIR: path.join(work, 'data'),
+    SCHEDULE_BACKTESTS: 'off',
     PORT: String(port),
     NODE_ENV: 'production',
     CDS_FEED: 'off',

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { CalendarClock } from 'lucide-react';
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { ValidationBadge } from './ValidationBadge';
@@ -40,7 +41,7 @@ export const EventStudyPanel: React.FC<{ iso3: string; countryName: string }> = 
   const data = days.map((day) => ({ day, hike: hikes?.steps.find((s) => s.day === day)?.mean, cut: cuts?.steps.find((s) => s.day === day)?.mean }));
 
   return (
-    <section className="ui-panel" data-event-study="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-event-study="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <CalendarClock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -69,6 +70,7 @@ export const EventStudyPanel: React.FC<{ iso3: string; countryName: string }> = 
           )}
         </h2>
         <p className="ui-label">How the currency has moved against the dollar in the days around rate changes. Up = weaker currency. A description of the past, not a forecast: many decisions were expected.</p>
+        <ChartGuide id="event_study" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         <div className="flex flex-wrap gap-2">

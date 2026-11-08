@@ -9,6 +9,7 @@
  *
  * Browser-safe.
  */
+import { isOwnSource } from '../engine/ownSeries';
 import { DATA_LICENCES, LICENCE_STATUS_LABEL, type LicenceRow, type LicenceShare, type LicenceStatus } from '../data/dataLicences';
 
 /** Register id and the words in a source text that name it. */
@@ -91,6 +92,7 @@ export function shareForSource(source: string | undefined): { share: LicenceShar
 
 /** Short text for a table cell or a references line. */
 export function licenceLabelForSource(source: string | undefined): string {
+  if (isOwnSource(source)) return 'Your own file: terms as you stated them, not checked by the app';
   const lic = licenceForSource(source);
   return lic ? lic.label : 'Not in the licence register';
 }

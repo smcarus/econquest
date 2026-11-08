@@ -46,7 +46,7 @@ export const ResearchCompare: React.FC<{
   const open = (tab: string) => (item: LiveWatchlistItem) => onOpenCountry(item, tab);
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-research-compare="true">
+    <div className="space-y-3" data-research-compare="true">
       <ResearchHeader
         title={watchlistName}
         subtitle={`${watchlistItems.length} ${watchlistItems.length === 1 ? 'country' : 'countries'} side by side. Click a country to open it on its own.`}

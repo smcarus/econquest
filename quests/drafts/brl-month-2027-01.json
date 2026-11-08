@@ -1,0 +1,34 @@
+{
+  "id": "brl-month-2027-01",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will the Brazilian real be weaker against the US dollar a month after entries close?",
+  "summary": "Give the probability that reais per US dollar (ECB reference rates crossed to the dollar) are higher, meaning a weaker real, about a month after entries close than on the day they close.",
+  "countries": [
+    "BRA"
+  ],
+  "topics": [
+    "fx"
+  ],
+  "region": "Americas",
+  "closesOn": "2026-12-18",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "BRA",
+      "series": "fx_per_usd"
+    },
+    "from": "closesOn",
+    "to": {
+      "on": "2027-01-18"
+    },
+    "op": "higher"
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "The ECB does not fix on TARGET holidays; the first fixing on or after each date is used."
+  ]
+}

@@ -237,12 +237,12 @@ export function hcSpreadMissing(iso3: string): { kind: 'setup' | 'unreachable'; 
     return {
       kind: 'unreachable',
       short: 'BCRP did not answer',
-      help: 'The central bank of Peru (BCRPData, free, no key) publishes this spread monthly and did not answer. Press Refresh now, or download it under Menu > Offline data.',
+      help: 'This spread (the extra interest the government pays on its US dollar bonds over US government bonds) is republished monthly, free, by the central bank of Peru\'s data service (BCRPData), which did not answer this time. Press Refresh now, or download it for offline use under Menu > Offline data.',
     };
   return {
     kind: 'setup',
     short: 'No free source',
-    help: 'No free official source publishes a US dollar bond spread for this country. BCRP covers Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela.',
+    help: 'No free official source publishes this spread for this country. The spread (the extra interest the government pays on its US dollar bonds over US government bonds) is published free only for eight Latin American countries, by the central bank of Peru: Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela. For other countries it is sold by data vendors, so the app shows Missing.',
   };
 }
 

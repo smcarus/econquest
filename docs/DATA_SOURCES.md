@@ -249,16 +249,23 @@ Notes from the first check on Sam's Mac (2026-11-05):
   of imports from the Gulf producers, and a fourth line, "Commodity prices, last 12 months",
   applies each commodity's actual 12-month Pink Sheet move to the country's export mix and its
   fuel imports. Each line reads Missing when a figure it needs did not load.
+  The World Bank trade shares and WITS partner shares are kept on disk after each pull that
+  returned any figure (`data/live/trade-exposure.json`) and shown from there when no feed answers.
 
-## Free, downloaded files (nothing fetched)
+## Free, downloaded files
+
+These files are fetched by the daily start-up run (see "Daily start-up run" below) where the
+publisher allows an automated download; ACLED is the one that still has to be downloaded by hand.
 
 ### Geopolitical Risk index (Caldara and Iacoviello)
 
 The country risk scorecard reads the monthly Geopolitical Risk file from
 <https://www.matteoiacoviello.com/gpr.htm> (Caldara and Iacoviello, American Economic Review 2022):
-the world index and the country index for 44 countries. Download the monthly file, open it and save
-it as .xlsx or .csv in `data/local/gpr/` (the site's .xls is the old binary Excel format, which the
-app does not read). The newest file in the folder is used. Nothing is fetched.
+the world index and the country index for 44 countries (CC BY: cite Caldara and Iacoviello 2022 and
+the page). The daily start-up run (`npm run daily`, started by `npm run go`) fetches the monthly
+file as published (`data_gpr_export.xls`) into `data/local/gpr/` when the saved copy is more than 7
+days old; `npm run gpr:pull` does the same by hand. A download is kept only if it reads as the GPR
+table. You can also save the file there yourself as .xls, .xlsx or .csv; the newest file is used.
 
 ### Sanctions lists (OFAC, UN)
 
@@ -266,18 +273,21 @@ Country Research > History & data > Sanctions lists reads files you download int
 `data/local/sanctions/`: OFAC's SDN.CSV and ADD.CSV and the non-SDN CONS_PRIM.CSV and CONS_ADD.CSV
 (from <https://ofac.treasury.gov/sanctions-list-service>, the legacy CSV layout), and the UN Security
 Council consolidated.xml (<https://main.un.org/securitycouncil/en/content/un-sc-consolidated-list>).
-`npm run sanctions:pull` tries the official download addresses and keeps a file only if it reads as
-the list; if a site refuses, download the file by hand into the same folder. No key is needed. The
+`npm run sanctions:pull` (also part of the daily start-up run) tries the official download addresses
+and keeps a file only if it reads as the list; if a site refuses, download the file by hand into the
+same folder. No key is needed. The
 EU and UK lists are not read yet.
 
 ### UCDP conflict data
 
 The Uppsala Conflict Data Program publishes its datasets as CSV files at
 <https://ucdp.uu.se/downloads/> (free, CC BY 4.0, cite the publications listed with each dataset).
-The app does not call UCDP. The 26.1 release of the five files below is shipped in the repository
-(`datasets/ucdp/`, unchanged, with its licence and citations in the README there), so the figures work
-with no setup. For a newer release, download the same files and put them, as the .zip or the .csv
-inside, in `data/local/ucdp/` (or replace the shipped ones). The app reads both folders when it starts
+The 26.1 release of the five files below is shipped in the repository (`datasets/ucdp/`, unchanged,
+with its licence and citations in the README there), so the figures work with no setup. The daily
+start-up run (`npm run daily`; by hand `npm run ucdp:pull`) checks ucdp.uu.se for a newer yearly
+release of the same five files and for the monthly Candidate Events files after the latest release,
+and saves any it finds, as published, in `data/local/ucdp/`; a file is kept only if it reads as that
+UCDP file. You can also put files there yourself, as the .zip or the .csv inside. The app reads both folders when it starts
 and again whenever a file changes; a newer release of a dataset wins over an older one.
 
 | File (26.1 release) | Fills | Years |
@@ -393,6 +403,32 @@ Menu > Settings > AI model and data connections > connectors lets you point the 
 address (an internal data lake, for example) and map its fields. Figures from a connector are
 labelled with the connector's name. When a connector cannot be reached, its test says so and
 maps nothing.
+
+## Daily start-up run
+
+Every `npm run go` (and a double-click on `econquest-mac.command`) starts the daily start-up run in
+the background once the app is up; the app can be used straight away. It runs at most once every
+20 hours (an hour after a run that found no connection), inside the Docker app when that is running
+(so its figures land in the Docker app's data) and on this computer otherwise. In order:
+
+1. Every free feed for every country, the same run as Menu > Offline data > Download all (steps
+   pulled within the last day are skipped), including government spending by sector (Eurostat and
+   IMF COFOG) and defence spending (SIPRI via the World Bank).
+2. Files: past IMF WEO editions (`npm run weo:pull`), the OFAC and UN sanctions lists
+   (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`) and newer UCDP files (`ucdp:pull`).
+3. The long histories behind the nowcasts and forecasts (refreshed weekly), then a nowcast and a
+   forecast for every country, listing which are Missing and why.
+4. The pre-registered tests (backtests, forecast evaluations, currency signal tests) when the last
+   run is more than 7 days old, so a Sunday the computer was off is caught up. Results are added to
+   the forward record; recorded verdicts are never changed. `SCHEDULE_BACKTESTS=off` stops them here
+   too.
+5. The connection check, which lists every source that needs a key or a file from you. Sources that
+   need your own key (FRED, Comtrade and the rest under Menu > Settings > API keys) are used only
+   when you have set the key.
+
+The log is `data/local/logs/daily.log`; `npm run go -- status` (or `npm run daily:status -- --full`)
+shows what the last run did. `npm run go -- daily` runs it now in the window, `npm run go -- --no-daily`
+starts without it. Nothing is made up: a step that fails says why and the last good figures stay.
 
 ## Pull archive
 

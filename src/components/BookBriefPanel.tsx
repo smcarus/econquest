@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { FileText } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
-import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import type { Holding } from '../utils/holdings';
 import { bookView, clientBrief, pmBookBrief } from '../utils/bookNote';
 import { BriefGroups, BriefSummary } from './CountryBriefPanel';
@@ -32,19 +31,18 @@ export const BookBriefPanel: React.FC<{
   holdings: Holding[];
   riskLookup: LiveWatchlistItem[];
   watchlist: LiveWatchlistItem[];
-  stagedTickets: StagedTradeTicketSpec[];
   view: BookBriefView;
   onWriteReport: (view: BookBriefView) => void;
-}> = ({ holdings, riskLookup, watchlist, stagedTickets, view: initialView, onWriteReport }) => {
+}> = ({ holdings, riskLookup, watchlist, view: initialView, onWriteReport }) => {
   const [view, setView] = useState<BookBriefView>(initialView);
   const brief = useMemo(() => {
     const v = bookView(holdings, riskLookup, watchlist);
-    return view === 'client' ? clientBrief(v) : pmBookBrief(v, stagedTickets);
-  }, [holdings, riskLookup, watchlist, stagedTickets, view]);
+    return view === 'client' ? clientBrief(v) : pmBookBrief(v);
+  }, [holdings, riskLookup, watchlist, view]);
   const info = VIEW_INFO[view];
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <section className="ui-panel">
         <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
           <div>

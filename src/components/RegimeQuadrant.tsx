@@ -1,4 +1,5 @@
 import { ValidationBadge } from './ValidationBadge';
+import { ChartGuide } from './HelpLevel';
 import React, { useMemo } from 'react';
 import { Compass } from 'lucide-react';
 import { CartesianGrid, LabelList, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis } from 'recharts';
@@ -20,7 +21,7 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
   }, [points]);
 
   return (
-    <section className="ui-panel" data-regime-quadrant="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-regime-quadrant="true">
       <header className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
@@ -31,6 +32,7 @@ export const RegimeQuadrant: React.FC<{ items: LiveWatchlistItem[]; onOpenCountr
           <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
             Right = OECD leading indicator up over 6 months; up = inflation higher than 3 months ago. A stated rule on live monthly data, for discussion, not a forecast.
           </p>
+          <ChartGuide id="regime" className="pt-1" />
         </div>
       </header>
       <div className="p-4 grid grid-cols-1 lg:grid-cols-5 gap-4">

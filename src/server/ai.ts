@@ -19,7 +19,7 @@ export const makeGeminiClient = () =>
     apiKey: process.env.GEMINI_API_KEY,
     httpOptions: {
       headers: {
-        'User-Agent': 'aistudio-build',
+        'User-Agent': 'econquest-terminal',
       },
     },
   });
@@ -511,7 +511,7 @@ export async function executeResilientLlmStep<T>(options: {
     }
   }
 
-  // 2. Execute on Google AI Studio Gemini with exponential backoff + jitter
+  // 2. Execute on Google Gemini with exponential backoff + jitter
   if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY !== 'MY_GEMINI_API_KEY') {
     const geminiName = geminiModel(options.runtimeConfig, process.env, isDeepCouncilStep);
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -548,8 +548,8 @@ export async function executeResilientLlmStep<T>(options: {
             usedFallback: false,
             providerUsed:
               options.providerMode === 'gemini'
-                ? `Google AI Studio (${geminiName})`
-                : `Hybrid Failover -> Google AI Studio (${geminiName})`,
+                ? `Google Gemini (${geminiName})`
+                : `Hybrid Failover -> Google Gemini (${geminiName})`,
             model: geminiName,
             ...(options.temperature !== undefined ? { temperature: options.temperature } : {}),
             ...(options.seed !== undefined ? { seed: options.seed } : {}),

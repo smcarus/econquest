@@ -85,7 +85,7 @@ export const ModelSandboxPanel: React.FC<{ iso3: string; countryName: string }> 
   );
 
   return (
-    <section className="ui-panel" data-model-sandbox="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-model-sandbox="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <SlidersHorizontal className="w-4 h-4 text-blue-600 dark:text-blue-400" />

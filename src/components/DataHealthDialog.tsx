@@ -30,7 +30,7 @@ type RevisionsReply = { revisions: RevisionRow[]; total: number; projectionsHidd
 type JobRun = { startedAt: string; finishedAt?: string; ok?: boolean; summary?: string };
 type ScheduledReply = {
   timeZone: string;
-  jobs: Array<{ id: string; label: string; what: string; env: string; on: boolean; schedule: string; running: boolean; lastSkipped: { at: string; reason: string } | null; runs: JobRun[] }>;
+  jobs: Array<{ id: string; label: string; what: string; env: string; on: boolean; schedule: string; fromDefault?: boolean; running: boolean; lastSkipped: { at: string; reason: string } | null; runs: JobRun[] }>;
   nightlyCheck: { schedule: string };
   file: string;
 };
@@ -292,6 +292,7 @@ function ScheduledView() {
             <p className="text-xs text-slate-500 dark:text-slate-400">
               {j.what}
               {!j.on ? ` To switch it on, set ${j.env} on the server (see docs/HOME_SERVER.md).` : ''}
+              {j.on && j.fromDefault ? ` On by default; set ${j.env}=off on the server to stop it.` : ''}
             </p>
             {j.lastSkipped && <p className="text-xs text-amber-700 dark:text-amber-300">{when(j.lastSkipped.at)}: {j.lastSkipped.reason}</p>}
             {j.runs.length > 0 && (

@@ -7,6 +7,10 @@ import { bankerBrief } from '../utils/bankerNote';
 import { officialBrief } from '../utils/officialNote';
 import { explainInChat } from '../utils/explainHandoff';
 import type { BriefGroup } from '../utils/countryNotes';
+import { figureHelp, panelIntro, type GlossaryEntry } from '../data/glossary';
+import { splitMeaning } from '../utils/countryNotes';
+import { useHelpLevel } from './HelpLevel';
+import { showFigureHelp, showGuides, showMissingHelp } from '../utils/helpLevel';
 
 export type BriefView = 'economist' | 'banker' | 'official';
 
@@ -50,7 +54,7 @@ export const CountryBriefPanel: React.FC<{
   const info = VIEW_INFO[view];
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <section className="ui-panel">
         <header className="ui-panel-header flex flex-wrap items-start justify-between gap-2">
           <div>
@@ -78,7 +82,9 @@ export const CountryBriefPanel: React.FC<{
 };
 
 /** Headline, sample warning and observations, inside a brief panel. */
-export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
+export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => {
+  const level = useHelpLevel();
+  return (
   <div className="p-4 space-y-2">
     <p className="text-sm font-medium text-slate-900 dark:text-white">{brief.headline}</p>
     {brief.sampleWarning && (
@@ -87,13 +93,28 @@ export const BriefSummary: React.FC<{ brief: CountryBrief }> = ({ brief }) => (
       </p>
     )}
     <ul className="list-disc pl-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">
-      {brief.judgements.map((j) => (
-        <li key={j}>{j}</li>
-      ))}
+      {brief.judgements.map((j) => {
+        const { fact, meaning } = splitMeaning(j);
+        return (
+          <li key={j}>
+            {fact}
+            {meaning && showGuides(level) && (
+              <span className="block text-slate-600 dark:text-slate-400" data-meaning="true">
+                <span className="font-medium">What it means: </span>
+                {meaning}
+              </span>
+            )}
+          </li>
+        );
+      })}
     </ul>
-    <p className="ui-label">These observations are simple rules on the live figures below, not a forecast. Missing figures are left out of them. Hover a missing figure for what would fill it.</p>
+    <p className="ui-label">
+      These observations are simple rules applied to the live figures below, not a forecast and not advice. Missing figures are left out of them.
+      {showGuides(level) ? ' "What is this?" explains a figure in plain words, and "Why missing?" says why a figure is absent and what would fill it. The help button at the top sets how much is explained.' : ' Hover a missing figure for the reason.'}
+    </p>
   </div>
-);
+  );
+};
 
 type BriefRow = BriefGroup['rows'][number];
 
@@ -116,10 +137,48 @@ const EXPLAIN_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline s
 const EXPLAIN_ROW_LINK = 'text-xs text-blue-700 dark:text-blue-300 hover:underline sm:opacity-0 sm:group-hover/row:opacity-100 focus:opacity-100';
 
 /**
+ * "What is this?" under a figure label: the plain-words glossary entry for the figure (what it is,
+ * why it matters, how to read it). Closed by default so the table stays short; tap to open.
+ */
+/** "Why missing?" under a Missing value: the reason in full, visible on a phone as well as on hover. */
+export const MissingHelp: React.FC<{ help?: string }> = ({ help }) =>
+  help ? (
+    <details className="mt-0.5 text-xs font-normal text-left" data-missing-help="true">
+      <summary className="cursor-pointer text-amber-700 dark:text-amber-400 hover:underline w-fit ml-auto">Why missing?</summary>
+      <p className="mt-1 max-w-prose text-slate-600 dark:text-slate-300">{help}</p>
+    </details>
+  ) : null;
+
+export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => (
+  <details className="mt-0.5 text-xs font-normal" data-figure-help={entry.id}>
+    <summary className="cursor-pointer text-blue-700 dark:text-blue-300 hover:underline w-fit">What is this?</summary>
+    <div className="mt-1 space-y-1 text-slate-600 dark:text-slate-300 max-w-prose text-left">
+      <p>
+        <strong className="font-medium text-slate-800 dark:text-slate-100">{entry.term}.</strong> {entry.what}
+      </p>
+      <p>{entry.why}</p>
+      {entry.read && (
+        <p>
+          <span className="font-medium text-slate-800 dark:text-slate-100">How to read it: </span>
+          {entry.read}
+        </p>
+      )}
+      {entry.limits && <p className="text-slate-500 dark:text-slate-400">{entry.limits}</p>}
+    </div>
+  </details>
+);
+
+/**
  * The figure tables of a brief, each row with its source under the label. With a country, each
  * figure and each panel gets an Explain link (shown on hover on a wide screen) into Council chat.
  */
-export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => (
+export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: string; countryName: string } }> = ({ brief, country }) => {
+  const level = useHelpLevel();
+  const help = (label: string) => {
+    const e = figureHelp(label);
+    return e && showFigureHelp(e, level) ? <FigureHelp entry={e} /> : null;
+  };
+  return (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
     {brief.groups.map((g) => (
       <section key={g.title} className="ui-panel group">
@@ -134,6 +193,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
             </button>
           )}
         </header>
+        {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{panelIntro(g.title)}</p>}
         <table className="w-full text-sm">
           <caption className="sr-only">{g.title}</caption>
           <tbody>
@@ -145,6 +205,8 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                     <span className="text-slate-600 dark:text-slate-400">{r.label}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{r.source}</span>
                     <span className={`block mt-0.5 ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-white'}`}>{r.value}</span>
+                    {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
+                    {help(r.label)}
                   </td>
                 </tr>
               ) : (
@@ -158,9 +220,11 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
                   >
                     {r.source}
                   </span>
+                  {help(r.label)}
                 </th>
                 <td className={`px-4 py-1.5 text-right align-top [font-variant-numeric:tabular-nums] ${r.missing ? 'text-slate-400 dark:text-slate-500' : 'font-medium text-slate-900 dark:text-white'}`}>
                   {r.value}
+                  {r.missing && showMissingHelp(level) && <MissingHelp help={r.help} />}
                   {country && !r.missing && (
                     <button type="button" className={`block ml-auto font-normal ${EXPLAIN_ROW_LINK}`} onClick={() => explainRow(r, country)} title="Ask the council what this figure means and why it is where it is" data-explain-row={r.label}>
                       Explain
@@ -176,3 +240,4 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
     ))}
   </div>
 );
+};

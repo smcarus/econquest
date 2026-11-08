@@ -1,0 +1,26 @@
+{
+  "id": "tur-taylor-exercise-replication",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "replication",
+  "tool": "exercises",
+  "title": "Reproduce the Taylor rule answer key for Turkey",
+  "summary": "Tools > Exercises sets a Taylor rule question with a worked answer from the app's own series. Reproduce the answer key for Turkey at the date of your choice and check the app's workings.",
+  "target": "Exercises, Taylor rule question for Turkey at a stated month: the rule rate and its inputs.",
+  "tolerance": 0.05,
+  "countries": [
+    "TUR"
+  ],
+  "topics": [
+    "monetary",
+    "inflation"
+  ],
+  "region": "EMEA",
+  "closesOn": "2027-02-28",
+  "settlesOn": "2027-03-15",
+  "knownLimits": [
+    "The exercise has no output gap term when none is published; state the inputs you used."
+  ]
+}

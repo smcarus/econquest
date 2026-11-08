@@ -2,7 +2,7 @@
   "id": "fx_value",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Drafted by Claude under Sam's signal standard (2026-11-06); registered before any run",
+  "registeredBy": "Drafted under Sam's signal standard (2026-11-06); registered before any run",
   "hypothesis": "Each month, holding the third of currencies that have cheapened most in real terms against the US dollar over the past five years (nominal depreciation less the consumer price inflation gap, prices lagged two months) and selling the third that have become dearest earns more than holding dollars, net of a flat 0.25% cost per unit traded, with whole calendar years resampled together.",
   "method": "fx_factor",
   "factor": "value",

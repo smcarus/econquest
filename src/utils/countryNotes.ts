@@ -71,6 +71,17 @@ function pathSource(status: SnapshotDataStatus, path: string, open?: CouncilAsse
   return tag || 'live feed';
 }
 
+/**
+ * Marks where an observation's plain "what it means" sentence starts (an invisible separator), so
+ * the brief can hide it when help is off (src/utils/helpLevel.ts). Reports join the two.
+ */
+export const MEANS = '\u2063';
+export function splitMeaning(j: string): { fact: string; meaning?: string } {
+  const i = j.indexOf(MEANS);
+  return i < 0 ? { fact: j } : { fact: j.slice(0, i), meaning: j.slice(i + 1) };
+}
+export const joinMeaning = (j: string): string => j.split(MEANS).join(' ');
+
 /** Why a figure path is missing, and what would fill it. */
 export function pathMissing(status: SnapshotDataStatus, path: string): MissingReason {
   if (path === 'market.sovereign10YBondYieldPct') return missingReason('yield', status.iso3);
@@ -79,16 +90,16 @@ export function pathMissing(status: SnapshotDataStatus, path: string): MissingRe
   if (path === 'market.policyRatePct') return missingReason('policy', status.iso3);
   if (path.startsWith('imf.'))
     return status.isFeedLive('imf')
-      ? { kind: 'unreachable', short: 'Not in IMF data', help: 'The IMF feed answered but has no figure for this country.' }
+      ? { kind: 'unreachable', short: 'Not in IMF data', help: 'The International Monetary Fund answered, but has not published this figure for this country. This happens for some small economies, for countries in crisis or conflict, and for figures the IMF stopped estimating. The app leaves it Missing rather than fill the gap.' }
       : missingReason('debt', status.iso3);
   if (path.startsWith('wb.'))
     return status.isFeedLive('worldbank')
-      ? { kind: 'unreachable', short: 'Not in World Bank data', help: 'The World Bank feed answered but has no recent figure for this country.' }
+      ? { kind: 'unreachable', short: 'Not in World Bank data', help: 'The World Bank answered, but has no recent figure for this country. World Bank figures are yearly and arrive a year or more late, and some countries do not report them. The app leaves it Missing rather than fill the gap.' }
       : missingReason('reserves', status.iso3);
   if (path.startsWith('market.exchangeRate') || path.startsWith('market.fx'))
-    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The free exchange-rate feed did not answer. Press Refresh now under Research > One country.' };
-  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'The free GDELT news feed did not answer. Press Refresh now under Research > One country.' };
-  return { kind: 'setup', short: 'No source yet', help: 'No live or official source is connected for this figure yet.' };
+    return { kind: 'unreachable', short: 'FX feed did not answer', help: 'The exchange rate comes from a free daily exchange-rate service, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again.' };
+  if (path.startsWith('gdelt.')) return { kind: 'unreachable', short: 'GDELT did not answer', help: 'News figures come from GDELT, a free project that reads news sites worldwide, which did not answer this time. It is often busy and asks callers to wait. Press Refresh now under Research > One country to try again.' };
+  return { kind: 'setup', short: 'No source yet', help: 'No free live or official source for this figure is connected yet. The app shows Missing rather than an estimate or a sample number.' };
 }
 
 export function missingRow(label: string, reason: MissingReason): BriefRow {
@@ -127,7 +138,7 @@ export function netInterestRow(status: SnapshotDataStatus, open?: CouncilAssessm
   if (row.missing) return row;
   const v = netInterestPct(status.live('imf.primaryFiscalBalancePct'), status.live('imf.overallBalancePct'), yPrimary, yOverall);
   return v === undefined
-    ? missingRow('Net interest paid', { kind: 'unreachable', short: 'Balances are for different years', help: `The IMF primary balance is for ${yPrimary} and the overall balance for ${yOverall}; net interest needs both for the same year.` })
+    ? missingRow('Net interest paid', { kind: 'unreachable', short: 'Balances are for different years', help: `Net interest is worked out as the primary balance minus the overall balance, so both must be for the same year. The IMF figures are for different years (primary balance ${yPrimary}, overall balance ${yOverall}), and mixing years would give a wrong answer.` })
     : { ...row, value: `${pct(v)} of GDP` };
 }
 
@@ -138,7 +149,7 @@ export function modelRow(status: SnapshotDataStatus, label: string, inputs: stri
 }
 
 /** A built-in figure with no connected source (debt maturity profile, rollover figures). */
-export const noSourceRow = (label: string, help = 'No live or official source is connected for this figure yet.'): BriefRow =>
+export const noSourceRow = (label: string, help = 'No free live or official source for this figure is connected yet. The app shows Missing rather than an estimate or a sample number.'): BriefRow =>
   missingRow(label, { kind: 'setup', short: 'No source yet', help });
 
 /** Old-style tag by kind. Built-in and AI-estimated figures are never tagged as data. */
@@ -171,7 +182,7 @@ export function missingNote(groups: BriefGroup[], countryName: string): string |
   const rows = groups.flatMap((g) => g.rows);
   const missing = rows.filter((r) => r.missing).length;
   if (!missing) return undefined;
-  return `${missing} of ${rows.length} figures for ${countryName} are missing because their source is not connected or did not answer. They read Missing; no built-in values are shown.`;
+  return `${missing} of ${rows.length} figures for ${countryName} are missing, because their source is not connected or did not answer. They read Missing, and no built-in or estimated value is shown in their place. Tap "Why missing?" on any of them for the reason and what would fill it.`;
 }
 
 /* ------------------------------------------------------------------------------------------
@@ -195,31 +206,56 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
   const nextMeeting = nextOfficialEvent(run.iso3, 'MPC_DECISION', now);
   const nextCpi = nextOfficialEvent(run.iso3, 'CPI_RELEASE', now);
 
-  // Each observation only from live figures; none is written from a missing one.
+  // Each observation only from live figures; none is written from a missing one. Each adds, in
+  // plain words, what the reading usually means: standard economics, no new figures.
   const j: string[] = [];
-  if (g !== undefined)
-    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}.`);
-  else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}.`);
+  if (g !== undefined) {
+    const meaning =
+      g >= 4
+        ? 'Fast growth usually brings more jobs and tax revenue.'
+        : g >= 2
+          ? 'That is a steady pace: enough to add jobs and income, but not a boom.'
+          : g >= 0
+            ? 'Slow growth adds few jobs and little tax revenue, so living standards and the budget improve slowly.'
+            : 'The economy is shrinking, which usually means job losses and falling tax revenue.';
+    j.push(`Growth is ${g >= 4 ? 'strong' : g >= 2 ? 'moderate' : g >= 0 ? 'weak' : 'negative'} at ${pct(g)} a year${cpi !== undefined ? `, with inflation at ${pct(cpi)}` : ''}.${MEANS}${meaning}`);
+  } else if (cpi !== undefined) j.push(`Inflation is ${pct(cpi)}: prices are ${cpi < 0 ? 'falling' : 'rising'} by that much a year.`);
   if (realRate !== undefined)
     j.push(
       realRate > 2
-        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.`
+        ? `Monetary policy is tight: the policy rate is ${pct(realRate)} above inflation.${MEANS}Borrowing is expensive once rising prices are allowed for, which slows lending and spending, usually brings inflation down and tends to support the currency.`
         : realRate >= 0
-          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.`
-          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.`
+          ? `Monetary policy is mildly restrictive: the policy rate is ${pct(realRate)} above inflation.${MEANS}Borrowing costs a little more than prices rise, a gentle brake on spending.`
+          : `Real interest rates are negative (${pct(realRate)}): policy is loose relative to inflation.${MEANS}Borrowing costs less than prices rise, which supports spending but leaves savers losing ground and can let inflation persist.`
     );
   if (debt !== undefined)
     j.push(
       `Government debt is ${pct(debt, 0)} of GDP${
         debtChange === undefined ? '' : ` and is forecast to ${Math.abs(debtChange) < 1 ? 'stay roughly flat' : debtChange > 0 ? `rise by ${debtChange.toFixed(0)} pts` : `fall by ${Math.abs(debtChange).toFixed(0)} pts`} by 2027`
-      }.`
+      }.${MEANS}That is ${debt > 70 ? 'above' : 'below'} the 70% level at which the IMF looks more closely at emerging economies' debt; who holds the debt and at what interest rate matters as much as the level.`
     );
-  if (pb !== undefined) j.push(`The primary balance is ${pct(pb)} of GDP.`);
+  if (pb !== undefined)
+    j.push(
+      `The primary balance is ${pct(pb)} of GDP.${MEANS}${
+        pb >= 0
+          ? 'Taxes and other revenue cover spending before interest, so the government is not adding to its debt except to pay interest.'
+          : 'The government borrows even before paying interest on its debt, which adds to the debt each year.'
+      }`
+    );
   const ext: string[] = [];
-  if (ca !== undefined && ca < -4) ext.push(`a current account deficit of ${pct(Math.abs(ca))} of GDP`);
-  if (res !== undefined && res < 3) ext.push('reserves below the usual three-month import floor');
+  if (ca !== undefined && ca < -4) ext.push(`a current account deficit of ${pct(Math.abs(ca))} of GDP (the country spends more abroad than it earns, so it relies on foreign money continuing to arrive)`);
+  if (res !== undefined && res < 3) ext.push('reserves below the usual three-month import floor (the central bank\'s foreign currency would pay for under three months of imports if other money stopped)');
   if (ca !== undefined || res !== undefined)
-    j.push(ext.length ? `External weak points: ${ext.join(', ')}.` : `The external position looks comfortable on ${[res !== undefined ? 'reserves' : '', ca !== undefined ? 'the current account' : ''].filter(Boolean).join(' and ')}.`);
+    j.push(
+      ext.length
+        ? `External weak points: ${ext.join(', ')}.`
+        : `The external position looks comfortable on ${[res !== undefined ? 'reserves' : '', ca !== undefined ? 'the current account' : ''].filter(Boolean).join(' and ')}: ${[
+            res !== undefined ? 'reserves cover at least three months of imports' : '',
+            ca !== undefined ? 'any current account deficit is under 4% of GDP' : '',
+          ]
+            .filter(Boolean)
+            .join(', and ')}.`
+    );
 
   const parts = [
     g !== undefined ? (g >= 2 ? 'growing' : 'slow growth') : '',
@@ -313,7 +349,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
-          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'The free QEDS feed did not answer, or does not cover this country. Press Refresh now under Research > One country.' }),
+          : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'This comes from QEDS, the World Bank and IMF\'s free quarterly statistics on debt owed abroad. It did not answer, or this country does not report to it. Press Refresh now under Research > One country to try again.' }),
       ],
     },
     {
@@ -323,7 +359,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r(`${HC_SPREAD_LABEL} over Treasuries (not CDS)`, 'market.hcBondSpreadBps', (v) => `${Math.round(v)} bps`),
         r('Policy rate', 'market.policyRatePct', (v) => pct(v, 2)),
         r(`Spot FX (${open.currencyCode} per USD)`, 'market.exchangeRatePerUsd', (v) => (v >= 100 ? v.toFixed(0) : v.toFixed(v >= 10 ? 2 : 4))),
-        noSourceRow('Credit rating', 'Needs a ratings feed (licensed); AI estimates are not used.'),
+        noSourceRow('Credit rating', 'Credit ratings (grades such as BBB or B from S&P, Moody\'s and Fitch) are licensed data with no free feed. The app does not guess them or ask an AI model for them.'),
       ],
     },
     {
@@ -403,7 +439,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
   const byTitle = (t: string) => b.groups.find((g) => g.title === t)!;
   const out: NoteSection[] = [];
   if (include('summary')) {
-    out.push({ id: 'summary', heading: ECONOMIST_SECTIONS.summary, lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${x}`)] });
+    out.push({ id: 'summary', heading: ECONOMIST_SECTIONS.summary, lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${joinMeaning(x)}`)] });
   }
   const groups: Array<[string, string]> = [
     ['growth', 'Growth and inflation'],

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
 import { contextSentence, historicalContext } from '../utils/historicalContext';
@@ -97,8 +98,8 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
   }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-history-panel="true" data-no-stat-ref="true">
-      <section className="ui-panel xl:col-span-2" data-no-provenance-overlay="true">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-history-panel="true">
+      <section className="ui-panel xl:col-span-2">
         <header className="ui-panel-header">
           <h2 className="ui-section-title">{current ? `${current.label}, ${countryName}` : `History for ${countryName}`}</h2>
           {current && (
@@ -107,6 +108,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
               {pulledLabel(current.pulledAt) ? ` · pulled ${pulledLabel(current.pulledAt)}` : ''}
             </p>
           )}
+          {current && <ChartGuide id="history" className="pt-1" />}
         </header>
         <div className="p-4 space-y-3">
           {list === null && <p className="ui-body">Loading…</p>}

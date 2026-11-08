@@ -7,6 +7,8 @@ import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { quarterLabel } from './debtSchedule';
 import {
   calendarSection,
+  joinMeaning,
+  MEANS,
   groupLines,
   pct,
   pts,
@@ -117,13 +119,18 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   ].sort((a, b) => b.y - a.y);
 
   const j: string[] = [];
-  if (band && cds !== undefined) j.push(`Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}).`);
-  else if (y10 !== undefined) j.push(`The 10Y yield is ${pct(y10, 2)}. Market access is not judged without a CDS figure.`);
+  if (band && cds !== undefined)
+    j.push(
+      `Market access is ${band.label} (5Y CDS ${Math.round(cds)} bps${y10 !== undefined ? `, 10Y yield ${pct(y10, 2)}` : ''}).${MEANS}CDS is what markets charge to insure against this government not paying; ${
+        band.open ? 'at this level it can usually still sell new bonds, at a cost that rises with the CDS price.' : 'at this level markets are pricing a real chance of default, and new bonds are hard to sell at any bearable price.'
+      }`
+    );
+  else if (y10 !== undefined) j.push(`The 10Y yield is ${pct(y10, 2)}. Market access is not judged without a CDS figure (the market price of insuring against default).`);
   if (qeds && qedsPeak) {
     j.push(
       `Government external debt due in the 12 months from the end of ${quarterLabel(qeds.asOf)} is $${qeds.next12mUsdBn.toFixed(1)} bn (QEDS); the heaviest quarter is ${
         qedsPeak.label === 'Next 3 months' ? 'the first three months' : `${qedsPeak.label} ahead`
-      } ($${qedsPeak.usdBn.toFixed(1)} bn).`
+      } ($${qedsPeak.usdBn.toFixed(1)} bn).${MEANS}This is what must be repaid to foreign lenders, or borrowed again, over the year.`
     );
   }
   if (idsYear?.debtServiceUsdBn !== undefined)
@@ -140,7 +147,9 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
     j.push(
       `The BIS counts ${bn(bis.intl.outstandingUsdBn)} of government bonds in international markets at the end of ${quarterLabel(bis.intl.asOf)}${
         parts.length ? `, ${parts.join(' and ')}` : ''
-      }${bis.all ? `; all government debt securities, domestic included, come to ${bn(bis.all.outstandingUsdBn)}` : ''}.`
+      }${bis.all ? `; all government debt securities, domestic included, come to ${bn(bis.all.outstandingUsdBn)}` : ''}.${
+        fxShare !== undefined && fxShare > 0 ? `${MEANS}Bonds in foreign currency get heavier to repay if the local currency falls.` : ''
+      }`
     );
   } else if (bis?.all) {
     j.push(`The BIS counts ${bn(bis.all.outstandingUsdBn)} of government debt securities in all markets at the end of ${quarterLabel(bis.all.asOf)}.`);
@@ -150,10 +159,10 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
       ? `Avoid pricing around ${events
           .slice(0, 3)
           .map((e) => `${formatPeriod(e.date)} (${EVENT_SHORT[e.category] || e.title})`)
-          .join(', ')}.`
+          .join(', ')}: announcements on those days can move bond prices, so new bonds are usually not sold just before them.`
       : 'No official rate decisions or data releases on file in the next 60 days.'
   );
-  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield.`);
+  if (others.length && y10 !== undefined) j.push(`It pays more than ${cheaperThan} of ${others.length} watchlist peers with an official 10-year yield.${MEANS}Paying more than similar governments usually means markets see more risk, or expect higher inflation, in this country.`);
   j.push(
     signals.length
       ? `Signs of distress: ${signals.join('; ')}.${unchecked.length ? ` Not checked, figures missing: ${unchecked.join(', ')}.` : ''}`
@@ -254,7 +263,7 @@ export function buildBankerSections(
     out.push({
       id: 'summary',
       heading: BANKER_SECTIONS.summary,
-      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${x}`)],
+      lines: [b.headline, ...(b.sampleWarning ? [`**Note:** ${b.sampleWarning}`] : []), ...b.judgements.map((x) => `- ${joinMeaning(x)}`)],
     });
   }
   const groups: Array<[string, string]> = [
@@ -265,16 +274,22 @@ export function buildBankerSections(
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: BANKER_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('restructuring')) {
-    const dsa = run.openData.dsaAnalytics;
+    // The debt sustainability view on IMF history (src/utils/debtSustainability.ts), when it has run.
+    const dsa = peers.find((p) => p.iso3 === run.iso3)?.debtSustainability;
+    const gap = dsa?.stabilisingPb !== undefined && dsa.projectedPb !== undefined ? dsa.stabilisingPb - dsa.projectedPb : undefined;
     out.push({
       id: 'restructuring',
       heading: BANKER_SECTIONS.restructuring,
       lines: [
         b.judgements[b.judgements.length - 1],
-        `- Interest rate minus growth: ${pts(dsa.rMinusGDifferentialPct)} (model, from figures above)`,
-        `- Fiscal gap to stabilise debt: ${dsa.fiscalConsolidationGapPct.toFixed(1)} pts of GDP (model, from figures above)`,
+        dsa?.rMinusG !== undefined
+          ? `- Interest rate minus growth: ${pts(dsa.rMinusG)} (debt sustainability view on IMF figures, ${dsa.year})`
+          : '- Interest rate minus growth: Missing (the debt sustainability view needs the saved IMF history: Menu > Offline data > Download all)',
+        gap !== undefined
+          ? `- Primary balance gap to hold debt steady: ${gap.toFixed(1)} pts of GDP (needed ${dsa!.stabilisingPb!.toFixed(1)}, IMF projection ${dsa!.projectedPb!.toFixed(1)})`
+          : '- Primary balance gap to hold debt steady: Missing (needs the debt sustainability view)',
         ...(run.openData.monetaryAndMarket.cds5YSpreadBps >= 400
-          ? ['The Restructuring tab on the Country page has the NPV and collective action clause tools for this credit.']
+          ? ['The restructuring calculator under Model sandboxes on the country page values a deal on terms you enter.']
           : []),
       ],
     });

@@ -11,17 +11,25 @@ not answer", "No source yet"). There are no built-in, sample or AI-estimated fig
 LSEG, EPFR, ratings, consensus) is used only from your own account or file, behind a switch in
 Settings.
 
+- [docs/GLOSSARY.md](./docs/GLOSSARY.md): every economic, market and testing term in the app, in plain words
+- [docs/METHODOLOGY.md](./docs/METHODOLOGY.md): how data is sourced, how the council is checked, and how models and signals are tested and graded
 - [docs/USER_MANUAL.md](./docs/USER_MANUAL.md): how to use each page
 - [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md): every source, what it fills, how to set it up
 - [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md): what each source's terms allow (showing figures to others, commercial use, credit)
 - [docs/METHODS.md](./docs/METHODS.md): a methods note per model and signal, with its pre-registered backtests and recorded verdicts
+- [docs/QUESTS.md](./docs/QUESTS.md): Quests, open questions anyone can answer and check (switched off until verified), and the checklist before they are turned on
+- [docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md): every pre-registered test on record, passed or failed, with the Holm correction across all of them and the forward record
 - [docs/RISK_AND_COMPLIANCE.md](./docs/RISK_AND_COMPLIANCE.md): audit log, model register, pre-registered backtests, report sign-off, and what a multi-user version would need
 - [docs/SECURITY.md](./docs/SECURITY.md): accounts, sign-in, sessions, and what is not protected yet
 - [docs/DESIGN_SYSTEM.md](./docs/DESIGN_SYSTEM.md): UI rules for contributors
+- [CONTRIBUTING.md](./CONTRIBUTING.md): how to contribute, the research rules, and signing off commits
 
 ---
 
 ## Start it
+
+**New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install Docker
+Desktop, download one file, run the ready-made app. No building and no programming needed.
 
 You need Node.js 20 or later. Everything else is optional.
 
@@ -117,7 +125,7 @@ npm run build        # production bundle
 npm run test:smoke   # opens every page of the built app in Chromium with all feeds down
 npm run check:data   # live check of every source from this computer
 npm run check:imf    # prints the IMF series codes the app matches
-npm run record:feeds # records every free feed's real reply for the tests (run where the feeds answer)
+npm run record:feeds # records every free feed's real reply for the tests (run where the feeds answer), then the shareable subset
 npm run preload      # downloads every free feed for every country, for fast offline use
 ```
 
@@ -132,6 +140,10 @@ every URL, own paid data and AI switched off) in `tests/fixtures/recorded/`, wit
 it. `tests/recorded.test.ts` replays those replies through the real server with the clock set back to
 the recording, and fails, naming the source, if a source connected then no longer is or a figure
 filled then is now Missing. It is skipped until a recording exists. Record again after adding a feed.
+The same run builds `tests/fixtures/recorded-public/` (`npm run record:public`): only the replies from
+sources whose terms allow passing data on (`tests/helpers/publicFeeds.mjs`), replayed once to save
+what the app reads from them. That folder ships in the public repository, so
+`tests/recordedPublic.test.ts` gives outside contributors the same check without a key.
 
 Layout: `server.ts` (Express API, data pulls and caches), `src/utils/` (one module per source or
 calculation, each with a test in `tests/`), `src/components/` (React pages and panels),
@@ -157,3 +169,16 @@ it by pointing its own domain at this computer, and it refuses changes sent from
 sites. If you open it to your network, list the names it may be reached by in `ALLOWED_HOSTS`. The
 connector test and webhook buttons work only from this computer and cannot be pointed at the app
 itself or at cloud metadata addresses.
+
+---
+
+## Licence
+
+Code: [Apache License 2.0](./LICENSE). Documentation, methods notes, validation records and Quest
+content: [CC BY 4.0](./LICENSE-docs.md). Figures fetched from outside sources keep their own terms
+([docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md)); the bundled UCDP datasets are CC BY 4.0 ([NOTICE](./NOTICE)).
+
+This is research and teaching software, not investment advice. Contributions are welcome: see
+[CONTRIBUTING.md](./CONTRIBUTING.md), the [code of conduct](./CODE_OF_CONDUCT.md),
+[GOVERNANCE.md](./GOVERNANCE.md) and, for security problems, [SECURITY.md](./SECURITY.md). To cite
+the software, use [CITATION.cff](./CITATION.cff).

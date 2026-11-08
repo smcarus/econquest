@@ -30,6 +30,7 @@ before(async () => {
       NODE_ENV: 'production',
       PORT: String(port),
       DATA_DIR: dataDir,
+      SCHEDULE_BACKTESTS: 'off',
       AUTH: 'on',
       TRUST_PROXY: '1',
       ECONQUEST_SECRET_KEY: 'test-master-key-that-is-long-enough-1234',

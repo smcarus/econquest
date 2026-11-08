@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { Activity } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { OUTPUT_GAP_REFERENCES, outputGapSentence, type OutputGapResult } from '../utils/outputGap';
@@ -51,7 +52,7 @@ export const OutputGapPanel: React.FC<{ iso3: string; countryName: string }> = (
   }, [reply, since]);
 
   return (
-    <section className="ui-panel" data-output-gap="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-output-gap="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -79,6 +80,7 @@ export const OutputGapPanel: React.FC<{ iso3: string; countryName: string }> = (
           )}
         </h2>
         <p className="ui-label">How far output is above or below its trend, % of potential GDP. Estimated by the app from IMF real GDP growth; not an official figure.</p>
+        <ChartGuide id="output_gap" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}

@@ -63,6 +63,7 @@ export async function fetchLiveOpenDataSnapshotNetwork(
         'DT.DOD.DECT.GN.ZS', // Total External Debt Stocks (% of GNI)
         'DT.DOD.DSTC.IR.ZS', // Short-Term Debt (% of Total Reserves)
         'PV.EST', // WGI Political Stability & Absence of Violence (-2.5 to +2.5)
+        'MS.MIL.XPND.GD.ZS', // Military expenditure (% of GDP), SIPRI via the World Bank
       ];
       const results = await Promise.allSettled(
         wbIndicators.map(async (ind) => {
@@ -94,6 +95,8 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           baseline.worldBankIndicators.externalDebtPctGni = Number(val.toFixed(1)); markLive('wb.externalDebtPctGni', `World Bank, ${row.date}`);
         } else if (ind === 'DT.DOD.DSTC.IR.ZS' && val > 0) {
           liveShortTermDebtPctReserves = Number(val.toFixed(1));
+        } else if (ind === 'MS.MIL.XPND.GD.ZS' && val > 0) {
+          baseline.worldBankIndicators.militaryExpenditurePctGdp = Number(val.toFixed(2)); markLive('wb.militaryExpenditurePctGdp', `World Bank (SIPRI), ${row.date}`);
         } else if (ind === 'PV.EST') {
           // Convert WGI estimate (-2.5 to +2.5) into 0-100 percentile scale
           const pctl = Math.max(2, Math.min(98, ((val + 2.5) / 5.0) * 100));
@@ -363,11 +366,15 @@ export async function fetchLiveOpenDataSnapshotNetwork(
   // 7. Apply any user-configured GUI External/Internal Macro REST Connectors
   await applyGuiMacroConnectorsToSnapshot(baseline, normalizedIso, activeSources);
 
-  // Dynamically recompute DSA (r - g), Greenspan-Guidotti Debt Rollover, Yield Curve & Real Policy Rate
-  recomputeDerivedOpenDataAnalytics(baseline, {
-    liquidReservesUsdBn: liveReservesUsdBn,
-    shortTermDebtPctReserves: liveShortTermDebtPctReserves,
-  });
+  // Reserve cover from the World Bank figures only (Greenspan-Guidotti: reserves over short-term
+  // external debt); without both figures it stays Missing.
+  if (liveReservesUsdBn !== undefined) baseline.debtRollover.liquidFxReservesUsdBn = liveReservesUsdBn;
+  if (liveReservesUsdBn !== undefined && liveShortTermDebtPctReserves !== undefined) {
+    baseline.debtRollover.shortTermExternalDebtUsdBn = Number(((liveReservesUsdBn * liveShortTermDebtPctReserves) / 100).toFixed(1));
+    baseline.debtRollover.greenspanGuidottiRatioPct = Number((10000 / liveShortTermDebtPctReserves).toFixed(0));
+  }
+  // Real policy rate and the official calendar, from the figures above only.
+  recomputeDerivedOpenDataAnalytics(baseline);
 
   // Only feeds that actually answered count as live; never inherit the sample list.
   const verifiedLiveSources = Array.from(new Set(activeSources));

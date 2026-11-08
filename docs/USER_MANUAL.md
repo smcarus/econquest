@@ -3,7 +3,35 @@
 How to use the terminal, page by page. For setup see the [README](../README.md); for every data
 source and its settings see [DATA_SOURCES.md](./DATA_SOURCES.md); for what each source's terms allow
 see [DATA_LICENCES.md](./DATA_LICENCES.md); for how each model and signal works and its backtest
-verdict see [METHODS.md](./METHODS.md).
+verdict see [METHODS.md](./METHODS.md); for plain-language explanations of every term see the
+[Glossary](./GLOSSARY.md).
+
+**New to economics?** Every figure in the Research tables has a *What is this?* link under its name:
+tap it for what the figure is, why it matters and how to read it (what a higher or lower value
+means). Each panel opens with a sentence or two on what it tells you. The full list of terms is in
+Menu > User manual > *Glossary*, and *Explain* on any figure asks the council what it means for that
+country.
+
+**How much is explained.** The help button at the top of the page (next to the light and dark
+switch) sets the level, and each press moves to the next:
+
+- *Key help* (the default): a guide on every chart (how to read it, and what it means in real life),
+  a short introduction on each panel, a "What it means" line under each brief observation, and
+  *What is this?* on the main figures, about half of them.
+- *Full help*: everything in Key help, plus *What is this?* on every figure and term.
+- *Help off*: figures, sources and observations only; the reason a figure is missing stays as hover
+  text. Explain answers are then written for a reader who knows the terms.
+
+The level is kept in this browser.
+
+**Language.** The *EN* / *ES* button beside the help button switches the app between English and
+Spanish (español); each press moves to the next language, and the choice is kept in this browser.
+The Spanish wording is being added a part of the app at a time: so far the header, the Menu,
+Council chat and Your data; anything not yet translated shows in English. The council's agents
+still read questions in English, so in Spanish the chat asks you to type questions in English for
+now, and the suggested questions stay in English. Figures, source names, series names and answers
+written by the AI model are never translated: they show as the source or the model wrote them. The
+Spanish has not yet been checked by a native speaker, and the button's hover text says so.
 
 **Research, not validated advice.** The app is a research workspace. No model in it has been
 independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &
@@ -409,7 +437,7 @@ Until it passes, the badge says it is not validated.
 with its source and year: the six World Bank governance indicators (0 is the world average, 1 is one
 standard deviation, with the change over five years), armed conflict and deaths from UCDP for the
 latest year it has coded, this month's unrest reading from the GDELT files, the Caldara-Iacoviello geopolitical risk
-index for the country and the world (save their monthly file as .xlsx or .csv in `data/local/gpr/`),
+index for the country and the world (the daily start-up run fetches their monthly file into `data/local/gpr/`),
 and the economy (debt,
 growth, inflation, current account, reserves, external debt). There is no overall score, because
 any weighting of them would be a guess. A figure that is not on file is listed as Missing with
@@ -593,6 +621,26 @@ hold no figures of their own; the handout reads them from the app's series when 
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
+- **Your data**: load your own series from a CSV file, for figures the app does not have (for
+  example a series from your country's statistics office or a central bank report). Pick the file,
+  give it a name, unit, frequency, country (or *Not about one country*) and say where the figures came
+  from; the terms of use and a note for readers are optional. *Check* reads the file and lists every
+  problem by line, or shows how many figures it found and the first rows; *Save* opens only after a
+  clean check. The file needs a header row and two columns, the date and the value (with more
+  columns, name the two to use `date` and `value`). Commas, semicolons or tabs separate columns; with
+  semicolons or tabs a decimal comma (3,5) is fine. Dates: daily and weekly `YYYY-MM-DD`, monthly
+  `YYYY-MM`, quarterly `YYYY-Q1`, annual `YYYY`; dates such as 03/04/2025 are refused because they
+  could mean March or April. An empty value, `NA` or `..` means no figure for that date: the row is
+  counted and skipped, never filled in. Your figures are kept exactly as given and labelled
+  *Your file* with your source wherever they show; the app has not checked them. Each series keeps
+  the SHA-256 of the file you loaded and of the figures read from it, and the list says *Changed
+  outside the app* if the saved copy no longer matches. Saving and deleting go to the audit log;
+  viewers can look but not load or delete. Kept in `data/local/own-series/` (one file per series, up
+  to 200 series, 2 MB and 50,000 rows per file).
+  Saved series join the country's series (or the world list for *Not about one country*): they
+  show in the History tab, the Chart Agent and the econometrics lab, and download with the other
+  series, with *Your file* as their source. Sharing mode holds their values back, because the app
+  cannot check their terms. The council does not read them yet.
 - **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
@@ -638,7 +686,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   makes is written down while its window is still open, before anyone knows the outcome, and scored
   by the same rule when the window ends. The dialog shows, under Forward record, how many calls,
   how many followed against the base rate, and the latest calls. Lines are never edited, and each
-  carries a hash over the line before it, so the dialog says if the file was changed. A passing
+  carries a hash over the line before it, so the dialog says if the file was changed. The server runs
+  all the pre-registered tests by itself every Sunday at 03:30 (Menu > Data health > Scheduled), so
+  the forward record grows without anyone pressing a button; `SCHEDULE_BACKTESTS=off` stops it and
+  `SCHEDULE_BACKTESTS="wed 01:00"` moves it. A passing
   currency factor test (`npm run signals:evaluate`) does the same with its book: the long and short
   currencies at the latest complete month-end are recorded before that month's return exists, and
   scored as recorded (net of the same flat cost) once the month ends. A passing nowcast

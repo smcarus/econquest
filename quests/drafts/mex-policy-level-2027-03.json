@@ -1,0 +1,32 @@
+{
+  "id": "mex-policy-level-2027-03",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "What will Mexico's policy rate be on 31 March 2027?",
+  "summary": "Forecast the BIS daily policy rate for Mexico on 31 March 2027, in percent. Scored by absolute error, against a no-change forecast.",
+  "countries": [
+    "MEX"
+  ],
+  "topics": [
+    "monetary"
+  ],
+  "region": "Americas",
+  "closesOn": "2026-12-31",
+  "rule": {
+    "kind": "level",
+    "ref": {
+      "country": "MEX",
+      "series": "policy_rate"
+    },
+    "at": {
+      "on": "2027-03-31"
+    }
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "BIS daily data can lag a decision by a few days."
+  ]
+}

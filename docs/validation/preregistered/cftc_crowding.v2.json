@@ -2,7 +2,7 @@
   "id": "cftc_crowding",
   "version": 2,
   "registeredOn": "2026-11-05",
-  "registeredBy": "Sam (owner), drafted by Claude; same rule as version 1, registered before any method 2 run",
+  "registeredBy": "Sam (owner); same rule as version 1, registered before any method 2 run",
   "hypothesis": "When leveraged-fund positioning in a currency future becomes crowded (top or bottom 10% of the past three years), it comes back by 3 points of open interest within 8 weeks more often than after any week, and the edge survives counting cases in the same year as one block and holds in most currencies.",
   "method": "cftc_crowding",
   "framework": 2,

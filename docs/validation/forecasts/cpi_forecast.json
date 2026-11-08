@@ -2,7 +2,7 @@
   "id": "cpi_forecast",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Sam (owner), drafted by Claude; no run made before this file was committed",
+  "registeredBy": "Sam (owner); no run made before this file was committed",
   "hypothesis": "An AR (lag 0-13 by BIC) forecast of monthly y/y inflation has a lower RMSE than carrying the newest figure on, 3 and 12 months ahead.",
   "target": "cpi_yoy_m",
   "params": {

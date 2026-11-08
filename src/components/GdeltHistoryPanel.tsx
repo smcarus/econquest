@@ -1,4 +1,5 @@
 import { ChartNumbers } from './ChartNumbers';
+import { ChartGuide } from './HelpLevel';
 import React, { useEffect, useState } from 'react';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { V1Reading, V1Series } from '../utils/gdeltDaily';
@@ -32,10 +33,11 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
   const s = reply?.series;
   const r = reply?.reading;
   return (
-    <section className="ui-panel" data-gdelt-daily="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-gdelt-daily="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">Event history, {countryName} <ValidationBadge id="unrest_onset" /></h2>
         <p className="ui-label">Protests and violence as a share of the country&apos;s reported events, month by month, from GDELT&apos;s own event files.</p>
+        <ChartGuide id="event_history" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}

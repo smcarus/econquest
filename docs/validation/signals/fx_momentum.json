@@ -2,7 +2,7 @@
   "id": "fx_momentum",
   "version": 1,
   "registeredOn": "2026-11-06",
-  "registeredBy": "Drafted by Claude under Sam's signal standard (2026-11-06); registered before any run",
+  "registeredBy": "Drafted under Sam's signal standard (2026-11-06); registered before any run",
   "hypothesis": "Each month, holding the third of currencies with the highest excess return against the US dollar over the past twelve months leaving out the latest (12-1) and selling the third with the lowest earns more than holding dollars, net of a flat 0.25% cost per unit traded, with whole calendar years resampled together.",
   "method": "fx_factor",
   "factor": "momentum",

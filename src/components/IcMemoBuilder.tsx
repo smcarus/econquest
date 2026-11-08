@@ -3,7 +3,6 @@ import { approvalText, coherenceText, modelCouncil, riskPctText } from '../utils
 import React, { useMemo, useState } from 'react';
 import { Copy, Download, Printer } from 'lucide-react';
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
-import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from '../utils/dataStatus';
 import { describeOfficialYield, formatPeriod } from '../utils/officialYields';
 import { summariseBook, type Holding } from '../utils/holdings';
@@ -27,13 +26,12 @@ import { withNotice } from '../utils/disclaimer';
 
 /**
  * One builder for the investment committee memo. It pulls the current country view,
- * staged tickets, imported holdings and the official calendar into a draft the user can
+ * imported holdings and the official calendar into a draft the user can
  * edit, then copy, download as Markdown, or print to PDF. Every figure carries its data status.
  */
 
 export interface IcMemoBuilderProps {
   run: CouncilAssessmentRun;
-  stagedTickets: StagedTradeTicketSpec[];
   holdings: Holding[];
   riskLookup: LiveWatchlistItem[];
   /** The watchlist, for the issuer note's peer comparison. Defaults to riskLookup. */
@@ -54,7 +52,7 @@ export const AUDIENCE_INFO: Record<
   MemoAudience,
   { tab: string; title: string; heading: string; file: string; help: string; /** Covers the whole book, not the current country. */ bookLevel?: boolean }
 > = {
-  ic: { tab: 'Investment committee memo', title: 'IC memo', heading: 'Memo', file: 'ic-memo', help: 'Internal memo with trades, risk figures and kill switches.' },
+  ic: { tab: 'Investment committee memo', title: 'IC memo', heading: 'Memo', file: 'ic-memo', help: 'Internal memo with the council\'s call, key figures, risks and the calendar.' },
   client: { tab: 'Client note', title: 'client note', heading: 'Client note', file: 'client-note', help: 'Plain language for a private client. No trade levels, scores or desk terms.' },
   economist: {
     tab: 'Country note',
@@ -82,7 +80,7 @@ export const AUDIENCE_INFO: Record<
     title: 'Portfolio review',
     heading: 'Portfolio review',
     file: 'portfolio-review',
-    help: 'Internal review of the whole book: concentration, where the risk sits, official events in the next 30 days and staged ideas.',
+    help: 'Internal review of the whole book: concentration, where the risk sits, and official events in the next 30 days.',
     bookLevel: true,
   },
   client_review: {
@@ -103,20 +101,19 @@ export const AUDIENCE_INFO: Record<
   },
 };
 
-export type SectionId = 'recommendation' | 'figures' | 'thesis' | 'trades' | 'portfolio' | 'risks' | 'calendar' | 'sources';
+export type SectionId = 'recommendation' | 'figures' | 'thesis' | 'portfolio' | 'risks' | 'calendar' | 'sources';
 
 export const SECTION_LABEL: Record<SectionId, string> = {
   recommendation: 'Recommendation',
   figures: 'Key figures',
   thesis: 'Thesis',
-  trades: 'Proposed trades',
   portfolio: 'Portfolio impact',
-  risks: 'Risks and kill switch',
+  risks: 'Risks',
   calendar: 'Coming up',
   sources: 'Data and sources',
 };
 
-/** Headings for the client note. Trades and kill switches are internal, so the client note has no trades section. */
+/** Headings for the client note. */
 export const CLIENT_SECTION_LABEL: Partial<Record<SectionId, string>> = {
   recommendation: 'Our view',
   thesis: 'Why we think this',
@@ -146,7 +143,6 @@ export const sectionLabels = (audience: MemoAudience): Record<string, string> =>
 export function buildReportSections(
   p: IcMemoBuilderProps,
   include: Record<string, boolean>,
-  ticketScope: 'country' | 'all',
   audience: MemoAudience
 ): Array<{ heading: string; lines: string[] }> {
   const on = (id: string) => include[id] !== false;
@@ -159,10 +155,10 @@ export function buildReportSections(
   if (audience === 'banker') return cite(buildBankerSections(p.run, p.peers ?? p.riskLookup, on));
   if (audience === 'book' || audience === 'client_review') {
     const v = bookView(p.holdings, p.riskLookup, p.peers ?? p.riskLookup);
-    return audience === 'book' ? buildBookSections(v, p.stagedTickets, on) : buildClientReviewSections(v, on);
+    return audience === 'book' ? buildBookSections(v, on) : buildClientReviewSections(v, on);
   }
   const all = Object.fromEntries((Object.keys(SECTION_LABEL) as SectionId[]).map((id) => [id, on(id)])) as Record<SectionId, boolean>;
-  return buildSections(p, all, ticketScope, audience);
+  return buildSections(p, all, audience);
 }
 
 const CLIENT_VERDICT: Record<string, string> = {
@@ -190,11 +186,10 @@ function yieldSourceNote(status: SnapshotDataStatus, fallback: string): string {
 export function buildSections(
   p: IcMemoBuilderProps,
   include: Record<SectionId, boolean>,
-  ticketScope: 'country' | 'all',
   audience: MemoAudience = 'ic'
 ): MemoSection[] {
   if (audience === 'client') return buildClientSections(p, include);
-  const { run, stagedTickets, holdings, riskLookup } = p;
+  const { run, holdings, riskLookup } = p;
   const open = run.openData;
   const sc = modelCouncil(run);
   const status = getSnapshotDataStatus(open);
@@ -204,7 +199,6 @@ export function buildSections(
     return v === undefined ? `- ${label}: Missing (${pathMissing(status, path).short})` : `- ${label}: ${fmt(v)}${note}`;
   };
   const inputs = councilInputs(open);
-  const tickets = ticketScope === 'country' ? stagedTickets.filter((t) => t.iso3 === run.iso3) : stagedTickets;
   const out: MemoSection[] = [];
 
   if (include.recommendation) {
@@ -244,20 +238,6 @@ export function buildSections(
     out.push({ id: 'thesis', heading: SECTION_LABEL.thesis, lines });
   }
 
-  if (include.trades) {
-    const lines = tickets.length
-      ? tickets.map(
-          (t) =>
-            `- **${t.strategyTitle}** (${t.countryName}). Entry ${t.entrySpreadOrYieldBps} bps, target ${t.targetSpreadOrYieldBps}, stop ${t.stopLossSpreadOrYieldBps}. Expected 12M carry and roll ${t.expected12MCarryRollBps} bps; conviction ${t.convictionScore0To100}/100.`
-        )
-      : [
-          ticketScope === 'country'
-            ? `No staged trade tickets for ${run.countryName}. Stage one from a desk, or switch to all tickets.`
-            : 'No staged trade tickets.',
-        ];
-    out.push({ id: 'trades', heading: SECTION_LABEL.trades, lines });
-  }
-
   if (include.portfolio) {
     if (!holdings.length) {
       out.push({
@@ -289,7 +269,6 @@ export function buildSections(
       if (rg.tailRiskHedgeInstrument) lines.push(`- Tail hedge: ${rg.tailRiskHedgeInstrument}.`);
       if (rg.factorCrowdingWarning) lines.push(`- Crowding: ${rg.factorCrowdingWarning}`);
     }
-    tickets.forEach((t) => t.preMortemKillSwitchRule && lines.push(`- Kill switch, ${t.strategyTitle}: ${t.preMortemKillSwitchRule}`));
     if (!lines.length) lines.push('No risk notes yet.');
     out.push({ id: 'risks', heading: SECTION_LABEL.risks, lines });
   }
@@ -471,7 +450,6 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const [audience, setAudience] = useState<MemoAudience>(props.defaultAudience ?? 'ic');
   // Sections the user switched off, per section id. Anything not listed is included.
   const [include, setInclude] = useState<Record<string, boolean>>({});
-  const [ticketScope, setTicketScope] = useState<'country' | 'all'>('country');
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState('');
   const [edited, setEdited] = useState<string | null>(null);
@@ -482,9 +460,9 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const memoTitle = title.trim() || defaultTitle;
   const labels = sectionLabels(audience);
   const generated = useMemo(
-    () => toMarkdown(memoTitle, author.trim(), buildReportSections(props, include, ticketScope, audience)),
+    () => toMarkdown(memoTitle, author.trim(), buildReportSections(props, include, audience)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [props.run, props.stagedTickets, props.holdings, props.riskLookup, props.peers, include, ticketScope, memoTitle, author, audience]
+    [props.run, props.holdings, props.riskLookup, props.peers, include, memoTitle, author, audience]
   );
   const switchAudience = (a: MemoAudience) => {
     setAudience(a);
@@ -524,7 +502,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
   };
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
       <section className="ui-panel" aria-label="Memo settings">
         <header className="ui-panel-header">
           <h2 className="ui-section-title">Build the report</h2>
@@ -532,8 +510,8 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             {audience === 'council'
               ? 'Pulls the last council brief you sent from Workspace.'
               : info.bookLevel
-              ? 'Pulls your holdings (or the watchlist at equal weight), staged tickets and the official calendar.'
-              : 'Pulls the current country, your tickets, holdings and the official calendar.'}
+              ? 'Pulls your holdings (or the watchlist at equal weight) and the official calendar.'
+              : 'Pulls the current country, your holdings and the official calendar.'}
           </p>
         </header>
         <div className="p-4 space-y-4">
@@ -571,19 +549,6 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
               </label>
             ))}
           </fieldset>
-          {audience === 'ic' && (
-          <fieldset className="space-y-1.5">
-            <legend className="ui-label mb-1">Trade tickets</legend>
-            <label className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-              <input type="radio" name="memo-scope" checked={ticketScope === 'country'} onChange={() => setTicketScope('country')} />
-              {run.countryName} only
-            </label>
-            <label className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
-              <input type="radio" name="memo-scope" checked={ticketScope === 'all'} onChange={() => setTicketScope('all')} />
-              All staged tickets
-            </label>
-          </fieldset>
-          )}
           <p className="ui-label">To write a memo on another country, switch country under Research › One country, then come back.</p>
         </div>
       </section>

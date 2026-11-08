@@ -38,7 +38,7 @@ test('effective number of countries: equal weights give the count', () => {
 
 test('a concentrated book is called concentrated, with its DV01 cost of a 10 bp move', () => {
   const v = bookView([h('EGY', 60), h('MEX', 20), h('ZAF', 20)], LIVE, []);
-  const b = pmBookBrief(v, [], NOW);
+  const b = pmBookBrief(v, NOW);
   assert.match(b.judgements[0], /^Concentrated: Egypt .* 60% of the book/);
   // DV01 = 100mm x 7y x 100 / 1000 = $70k per bp, so 10 bp = $0.7mm.
   assert.ok(b.judgements.some((j) => /10 bp widening .* \$0\.7mm/.test(j)));
@@ -47,7 +47,7 @@ test('a concentrated book is called concentrated, with its DV01 cost of a 10 bp 
 
 test('the brief never shows a holdings figure as verified, and official events are dated', () => {
   const v = bookView([h('BRA', 50), h('MEX', 50)], SOVEREIGN_CATALOG, []);
-  const b = pmBookBrief(v, [], NOW);
+  const b = pmBookBrief(v, NOW);
   const book = b.groups.find((g) => g.title === 'The book')!;
   assert.ok(book.rows.every((r) => !r.verified));
   const events = b.groups.find((g) => g.title === 'Next 30 days')!;
@@ -56,12 +56,12 @@ test('the brief never shows a holdings figure as verified, and official events a
 
 test('portfolio review: every section, in order, and the figures list covers each country', () => {
   const v = bookView([h('BRA', 50), h('TUR', 30), h('POL', 20)], LIVE, []);
-  const s = buildBookSections(v, [], () => true, NOW);
+  const s = buildBookSections(v, () => true, NOW);
   assert.deepEqual(s.map((x) => x.id), Object.keys(BOOK_SECTIONS));
   const figs = s.find((x) => x.id === 'figures')!;
   assert.equal(figs.lines.length, 3);
   assert.ok(figs.lines.every((l) => /5Y CDS \d+ bps/.test(l) && !/risk score/i.test(l)));
-  assert.equal(buildBookSections(v, [], (id) => id !== 'trades', NOW).some((x) => x.id === 'trades'), false);
+  assert.equal(buildBookSections(v, (id) => id !== 'events', NOW).some((x) => x.id === 'events'), false);
 });
 
 test('client review is plain language: no bps, DV01, scores or trade levels', () => {
@@ -84,7 +84,7 @@ test('without holdings the client review says it is a draft from the watchlist',
 test('no built-in figures: without live sources the book names what is missing and fills nothing in', () => {
   // The catalogue's own numbers have no live source, so none of them may appear.
   const v = bookView([h('EGY', 60), h('MEX', 40)], SOVEREIGN_CATALOG, []);
-  const b = pmBookBrief(v, [], NOW);
+  const b = pmBookBrief(v, NOW);
   assert.match(b.headline, /Largest positions: Egypt[^;]* 60%; Mexico 40%/);
   assert.ok(!b.judgements.some((j) => /CDS at 400/.test(j)), 'no stress reading without CDS');
   const book = b.groups.find((g) => g.title === 'The book')!;
@@ -94,7 +94,7 @@ test('no built-in figures: without live sources the book names what is missing a
     assert.ok(r.help, `${label} says how to fill it`);
   }
   assert.ok(!book.rows.some((x) => /risk score/i.test(x.label)));
-  const figs = buildBookSections(v, [], (id) => id === 'figures', NOW)[0];
+  const figs = buildBookSections(v, (id) => id === 'figures', NOW)[0];
   assert.ok(figs.lines.every((l) => /5Y CDS: Missing/.test(l)));
   const client = clientBrief(v, NOW);
   assert.match(client.headline, /2 countries\./);

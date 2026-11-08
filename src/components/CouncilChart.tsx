@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
@@ -319,11 +320,12 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
     }
   };
   return (
-    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true" data-no-provenance-overlay="true">
+    <section className="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2" data-council-chart="true">
       <header className="flex flex-wrap items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="ui-label">Chart Agent</div>
           <h3 className="text-sm font-medium text-slate-900 dark:text-white">{result.title}</h3>
+          <ChartGuide id="council_chart" className="pt-1" />
         </div>
         <div className="flex items-center gap-1">
           <button

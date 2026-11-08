@@ -14,6 +14,7 @@
  */
 import { LICENCE_SHARE_LABEL } from '../data/dataLicences';
 import { shareForSource } from './licenceLookup';
+import { isOwnSource } from '../engine/ownSeries';
 
 export const SHARE_MODE_KEY = 'econquest.shareMode.v1';
 
@@ -39,6 +40,8 @@ export function saveShareMode(on: boolean): void {
 
 /** Why a value from this source is held back in sharing mode, or null when it can be passed on. */
 export function withheldReason(source: string | undefined): string | null {
+  // Your own file (Menu > Your data): the app cannot know whether its terms let it be passed on.
+  if (isOwnSource(source)) return 'Withheld in sharing mode: your own file, whose terms the app cannot check (Menu > Your data)';
   const share = shareForSource(source);
   if (!share || share.share === 'allowed') return null;
   const names = share.rows.filter((r) => r.share === share.share).map((r) => r.name).join('; ');

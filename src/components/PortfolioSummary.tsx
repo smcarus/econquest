@@ -3,7 +3,6 @@ import React, { useMemo } from 'react';
 import { Upload } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
 import { yieldSourceHelp, yieldSourceNote } from '../utils/watchlistYield';
-import type { StagedTradeTicketSpec } from '../utils/nssYieldCurveAndCatalystEngine';
 import { summariseBook, type Holding } from '../utils/holdings';
 import { bookView, type BookLine } from '../utils/bookNote';
 import { missingReason, type FigureKey } from '../utils/liveFigures';
@@ -21,7 +20,6 @@ interface PortfolioSummaryProps {
   /** Watchlist plus the full catalogue, for the figures of held countries. */
   riskLookup: LiveWatchlistItem[];
   holdings: Holding[];
-  stagedTickets: StagedTradeTicketSpec[];
   onOpenCountry: (item: LiveWatchlistItem) => void;
   onManageHoldings: () => void;
 }
@@ -66,7 +64,6 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   watchlistItems,
   riskLookup,
   holdings,
-  stagedTickets,
   onOpenCountry,
   onManageHoldings,
 }) => {
@@ -94,7 +91,7 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
   }
 
   return (
-    <div className="space-y-3" data-no-stat-ref="true" data-no-provenance-overlay="true">
+    <div className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="ui-label">
           {hasHoldings
@@ -134,8 +131,8 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
         </p>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-        <div className="lg:col-span-2 min-w-0">
+      <div>
+        <div className="min-w-0">
           {/* Phones: one tappable card per country instead of a table that scrolls sideways. */}
           <ul className="sm:hidden divide-y divide-slate-100 dark:divide-slate-800 border-y border-slate-100 dark:border-slate-800">
             {s.rows.map((r) => {
@@ -269,26 +266,6 @@ export const PortfolioSummary: React.FC<PortfolioSummaryProps> = ({
             })()}{' '}
             Tap or click a country to open it.
           </p>
-        </div>
-
-        <div>
-          <div className="ui-section-title mb-1">Staged trade ideas</div>
-          {stagedTickets.length === 0 ? (
-            <p className="ui-label">None yet. Stage a ticket from Workspace or any desk.</p>
-          ) : (
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              {stagedTickets.slice(0, 5).map((t) => (
-                <li key={t.ticketId} className="py-1.5">
-                  <div className="text-sm text-slate-900 dark:text-white truncate" title={t.strategyTitle}>
-                    {t.strategyTitle}
-                  </div>
-                  <div className="ui-label">
-                    {t.countryName} · conviction {t.convictionScore0To100}/100
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </div>
     </div>

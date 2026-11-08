@@ -56,6 +56,8 @@ export interface Series {
   points: SeriesPoint[];
   /** A sentence on how to read it, when it is not obvious. */
   about?: string;
+  /** Loaded by the user from their own CSV file (Menu > Your data), not from a feed. */
+  own?: boolean;
 }
 
 export interface SeriesMissing {

@@ -1,6 +1,0 @@
-{
-  "name": "Sovereign & Macro Council of Agents Terminal",
-  "description": "Institutional multi-agent research, risk governance, and trading orchestration terminal built on the TradingAgents hierarchy with zero-cost open data feeds, annotated multi-timeframe charts, custom watchlists, Ollama interoperability, and SMCR-1.0 standardized PDF/Markdown/JSON reports.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

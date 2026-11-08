@@ -31,7 +31,7 @@ export const WeoVintagesPanel: React.FC<{ iso3: string; countryName: string }> =
   }, [iso3, code, year, tick]);
 
   return (
-    <section className="ui-panel" data-weo-vintages="true" data-no-provenance-overlay="true">
+    <section className="ui-panel" data-weo-vintages="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <History className="w-4 h-4 text-blue-600 dark:text-blue-400" />

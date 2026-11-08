@@ -64,7 +64,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'worldbank',
     name: 'World Bank indicators and debt statistics (IDS, QEDS)',
-    usedFor: 'Reserves, current account, external debt, political stability, trade shares; external debt falling due; who holds public external debt and terms of new loans (IDS)',
+    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); external debt falling due; who holds public external debt and terms of new loans (IDS)',
     terms: [{ label: 'Terms of Use for Datasets', url: 'https://www.worldbank.org/ext/en/legal/terms-conditions/datasets' }],
     status: 'open',
     display: 'Allowed: the data may be shared with third parties under CC BY 4.0.',
@@ -75,7 +75,7 @@ export const DATA_LICENCES: LicenceRow[] = [
       'You may extract, download, and make copies of the data contained in the Datasets, and you may share that data with third parties according to these terms of use.',
       'Some datasets and indicators are provided by third parties, and may not be redistributed or reused without the consent of the original data provider',
     ],
-    flag: 'Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator\'s metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read.',
+    flag: 'Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator\'s metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read. Military spending is SIPRI\'s data republished by the World Bank; SIPRI\'s own terms were not read.',
     share: 'allowed',
     shareNote: 'CC BY 4.0 allows sharing with credit.',
     checked: D,
@@ -101,7 +101,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'imf',
     name: 'IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER)',
-    usedFor: 'Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares',
+    usedFor: 'Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, government spending by function (GFS COFOG, read through DBnomics)',
     terms: [{ label: 'Copyright and Usage (Special Terms for Statistical Data)', url: 'https://www.imf.org/en/About/copyright-and-terms' }],
     status: 'permission',
     display: 'Allowed with attribution: the IMF lets users publish and distribute its Data.',
@@ -288,13 +288,13 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'eurostat',
-    name: 'Eurostat HICP',
-    usedFor: 'Monthly inflation for EU members (Poland on the defaults)',
+    name: 'Eurostat HICP and government expenditure by function (COFOG)',
+    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp)',
     terms: [{ label: 'Eurostat copyright and reuse', url: 'https://ec.europa.eu/eurostat/about-us/policies/copyright' }],
     status: 'open',
     display: 'Allowed without a licence if Eurostat is named and any change to the data is stated.',
-    commercial: 'Allowed for EU, EFTA and candidate countries (the app reads EU members only).',
-    attribution: 'Source: Eurostat (prc_hicp_minr).',
+    commercial: 'Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).',
+    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp).',
     quotes: [
       'Eurostat has a policy of encouraging free re-use of its data, both for non-commercial and commercial purposes.',
       'when re-use involves modifications to the data or text, this must be stated clearly to the end user of the information.',
@@ -374,7 +374,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ucdp',
     name: 'UCDP (Uppsala Conflict Data Program) downloaded files',
-    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (files you put in data/local/ucdp/)',
+    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (release shipped in datasets/ucdp/; newer files fetched into data/local/ucdp/ by the daily start-up run or npm run ucdp:pull, or put there by you)',
     terms: [{ label: 'UCDP downloads (licence and citations)', url: 'https://ucdp.uu.se/downloads/' }],
     status: 'open',
     display: 'Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset.',
@@ -421,7 +421,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'gpr',
     name: 'Caldara-Iacoviello Geopolitical Risk index',
-    usedFor: 'Monthly geopolitical risk index, world and 44 countries (file you save in data/local/gpr/), in the country risk scorecard',
+    usedFor: 'Monthly geopolitical risk index, world and 44 countries (file fetched into data/local/gpr/ by the daily start-up run or npm run gpr:pull, or saved there by you), in the country risk scorecard',
     terms: [{ label: 'Geopolitical Risk Index page', url: 'https://www.matteoiacoviello.com/gpr.htm' }],
     status: 'not_verified',
     display: 'Not confirmed: the data page could not be read from where this register was written.',

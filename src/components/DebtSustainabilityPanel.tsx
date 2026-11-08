@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { ChartGuide } from './HelpLevel';
 import { ValidationBadge } from './ValidationBadge';
 import { Landmark } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -61,7 +62,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
   }, [reply]);
 
   return (
-    <section className="ui-panel" data-dsa="true" data-no-provenance-overlay="true" data-no-stat-ref="true">
+    <section className="ui-panel" data-dsa="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
@@ -92,6 +93,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
           )}
         </h2>
         <p className="ui-label">Government debt, % of GDP: the IMF path, a baseline on the IMF's inputs, and stated stress scenarios. Research, not validated advice.</p>
+        <ChartGuide id="debt" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
         {!reply && !error && <p className="ui-body">Loading…</p>}

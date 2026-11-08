@@ -1,4 +1,5 @@
 import { SettingsText } from './SettingsText';
+import { readHelpLevel } from '../utils/helpLevel';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardList, Copy, Download, FileText, NotebookPen, X } from 'lucide-react';
 import { startPolicyReview } from '../utils/reviewHandoff';
@@ -38,6 +39,8 @@ import {
 } from '../utils/askCouncil';
 
 import { smallRefereeNote } from '../utils/refereeModel';
+import { useT } from '../i18n/useLang';
+import { COUNCIL } from '../i18n/messages/council';
 import { AnswerSnapshotDetails } from './AnswerSnapshot';
 import { CouncilTimingNote } from './CouncilTimingNote';
 import type { CouncilTiming } from '../utils/councilTiming';
@@ -85,10 +88,10 @@ export interface FullCouncilStep {
   onOpenFullReview?: () => void;
 }
 
-const VERDICT: Record<string, string> = {
-  EXECUTE_TRADES: 'Act on the trade ideas',
-  DEFENSIVE_HEDGE: 'Hedge the exposure',
-  HOLD_AND_MONITOR: 'Hold and keep watching',
+const VERDICT: Record<string, 'verdictExecute' | 'verdictHedge' | 'verdictHold'> = {
+  EXECUTE_TRADES: 'verdictExecute',
+  DEFENSIVE_HEDGE: 'verdictHedge',
+  HOLD_AND_MONITOR: 'verdictHold',
 };
 
 const EXAMPLES = [
@@ -231,7 +234,7 @@ function useCouncilChatState(items: LiveWatchlistItem[]) {
       const r = await fetch('/api/council/synthesise', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: plan.explain } : {}), runtimeConfig: runtimeConfig() }),
+        body: JSON.stringify({ question: text, askedAt, ...(pinned ? { dataPinnedAt: pinned.at } : {}), answers: answersForModel(answers), scope: plan.scopeNote, countries: plan.countries.length, earlier: history.map((t) => ({ question: t.question, headline: t.headline })), ...(plan.explain ? { explain: { ...plan.explain, helpLevel: readHelpLevel() } } : {}), runtimeConfig: runtimeConfig() }),
       });
       setSynthesis(r.ok ? ((await r.json()) as SynthesisResult) : { brief: null, removed: [], reason: `The summary step did not answer (HTTP ${r.status}).` });
     } catch {
@@ -380,6 +383,7 @@ export const AskCouncilPanel: React.FC<{
     items, question, setQuestion, scope, setScope, asked, past, lib, synthesis, writing, copied, choosing, docs, setDocs,
     debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy, pinned, pinData,
   } = useCouncilChat();
+  const tr = useT(COUNCIL);
   // Welcome suggestions from your holdings, watchlist moves and your last saved question (src/utils/chatSuggestions.ts).
   const suggestions = React.useMemo(
     () => chatSuggestions({ holdings: loadHoldings(), items, recent: lib.briefs, examples: EXAMPLES }),
@@ -421,14 +425,9 @@ export const AskCouncilPanel: React.FC<{
     </div>
   );
 
-  /** Who wrote the AI text, and the sentences the checks removed. */
+  /** Warnings about the AI text: a small referee, and the sentences the checks removed. */
   const removedNotes = (t: Turn) => (
     <>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                AI {t.synthesis?.brief?.explain ? 'explanation' : 'summary'} by {t.synthesis?.provider || 'the configured model'}, from the agents’ figures only.
-                {t.synthesis && t.synthesis.removed.length > 0 && ` ${t.synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
-                {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && ` ${t.synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
-              </p>
               {smallRefereeNote(t.synthesis?.provider) && (
                 <p className="text-xs text-amber-800 dark:text-amber-300" data-council-small-referee="true">
                   <SettingsText text={smallRefereeNote(t.synthesis?.provider)!} />
@@ -436,7 +435,7 @@ export const AskCouncilPanel: React.FC<{
               )}
               {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && (
                 <details className="text-xs text-amber-800 dark:text-amber-300" data-council-contradicted="true">
-                  <summary className="cursor-pointer">Show sentences that contradicted an agent</summary>
+                  <summary className="cursor-pointer">{tr('showContradicted')}</summary>
                   <ul className="list-disc pl-5 mt-1 space-y-1">
                     {t.synthesis.contradicted!.map((c) => (
                       <li key={c.sentence}>
@@ -448,7 +447,7 @@ export const AskCouncilPanel: React.FC<{
               )}
               {t.synthesis && t.synthesis.removed.length > 0 && (
                 <details className="text-xs text-slate-500 dark:text-slate-400">
-                  <summary className="cursor-pointer">Show removed sentences</summary>
+                  <summary className="cursor-pointer">{tr('showRemoved')}</summary>
                   <ul className="list-disc pl-5 mt-1 space-y-0.5">
                     {t.synthesis.removed.map((r) => (
                       <li key={r}>{r}</li>
@@ -456,9 +455,17 @@ export const AskCouncilPanel: React.FC<{
                   </ul>
                 </details>
               )}
-              {t.synthesis?.snapshot && <AnswerSnapshotDetails snapshot={t.synthesis.snapshot} runtimeConfig={runtimeConfig} />}
     </>
   );
+
+  /** The one-line source note under an answer: the agents that gave figures and the model that wrote it. */
+  const sourceLine = (t: Turn, writingNow: boolean) => {
+    const from = t.asked.answers.filter((a) => a.findings.length).map((a) => a.name);
+    const model = t.synthesis?.provider?.match(/\(([^·)]+)/)?.[1]?.trim() || t.synthesis?.provider;
+    const writer = /^Local Ollama/.test(t.synthesis?.provider || '') ? tr('localAi', { model: model || '' }) : model || tr('theAiModel');
+    const by = writingNow ? tr('summaryWriting') : t.synthesis?.brief ? tr('writtenBy', { writer }) : tr('noAiSummary');
+    return `${from.length ? tr('fromAgents', { list: from.join(', ') }) : tr('noAgentFigures')} · ${by}`;
+  };
 
   /** The council's answer to one question: summary first, then the agents, debate and downloads. */
   const councilReply = (t: Turn, live: boolean) => {
@@ -474,13 +481,13 @@ export const AskCouncilPanel: React.FC<{
     return (
       <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-3" data-council-result={live ? 'true' : 'earlier'}>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          <span className="font-medium text-slate-700 dark:text-slate-200">Council</span> · about {t.asked.plan.scopeNote} · {time(t.asked.askedAt)}
+          <span className="font-medium text-slate-700 dark:text-slate-200">{tr('councilLabel')}</span> · {tr('about', { scope: t.asked.plan.scopeNote })} · {time(t.asked.askedAt)}
         </p>
 
         {t.changes && (
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-1" data-council-changes={t.changes.changes.length + t.changes.stanceChanges.length}>
             <div className="ui-label">
-              What changed since your saved question of {t.changes.sinceAskedAt.slice(0, 16).replace('T', ' ')} UTC (“{t.changes.sinceQuestion}”)
+              {tr('changedSince', { when: t.changes.sinceAskedAt.slice(0, 16).replace('T', ' '), question: t.changes.sinceQuestion })}
             </div>
             <ul className="text-sm text-slate-800 dark:text-slate-200 space-y-0.5">
               {changeLines(t.changes).map((l, i) => (
@@ -494,7 +501,7 @@ export const AskCouncilPanel: React.FC<{
 
         <div className="space-y-2" data-council-summary="true">
           {writingNow ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">The synthesis agent is writing the brief from the agents’ answers…</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">{tr('writing')}</p>
           ) : b?.explain ? (
             <>
               <ExplainAnswer headline={b.headline} explain={b.explain} answers={t.asked.answers} />
@@ -512,7 +519,7 @@ export const AskCouncilPanel: React.FC<{
               )}
               {b.disagreements.length > 0 && (
                 <div>
-                  <div className="ui-label mt-1">Where the agents disagree</div>
+                  <div className="ui-label mt-1">{tr('disagree')}</div>
                   <ul className="list-disc pl-5 text-sm text-slate-800 dark:text-slate-200 space-y-1">
                     {b.disagreements.map((d) => (
                       <li key={d}>{d}</li>
@@ -524,7 +531,7 @@ export const AskCouncilPanel: React.FC<{
             </>
           ) : (
             <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
-              No AI summary. <SettingsText text={t.synthesis?.reason || ''} /> Each agent’s document below stands on its own.
+              {tr('noSummary')} <SettingsText text={t.synthesis?.reason || ''} /> {tr('noSummaryTail')}
             </p>
           )}
         </div>
@@ -533,44 +540,17 @@ export const AskCouncilPanel: React.FC<{
         {t.asked.answers
           .filter((a) => a.chart)
           .map((a) => (
-            <React.Suspense key={`chart-${t.asked.askedAt}`} fallback={<p className="text-xs text-slate-500 dark:text-slate-400">Drawing the chart…</p>}>
+            <React.Suspense key={`chart-${t.asked.askedAt}`} fallback={<p className="text-xs text-slate-500 dark:text-slate-400">{tr('drawingChart')}</p>}>
               <CouncilChartCard result={a.chart!} />
             </React.Suspense>
           ))}
 
-        {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
-        <DocumentCards
-          agents={agentDocs}
-          synthesis={writingNow ? null : synthDoc}
-          writing={writingNow}
-          onOpen={setOpenDoc}
-          savedIds={savedDocIds}
-          note={
-            <span data-council-agents="true">
-              {withFindings} of {t.asked.answers.length} {t.asked.answers.length === 1 ? 'agent' : 'agents'} answered with figures
-            </span>
-          }
-        />
-        {!page && (
-          <details className="group">
-            <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">Show the agent layout</summary>
-            <div className="mt-2 space-y-2">
-              <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
-              {t.asked.plan.chooserNote && (
-                <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
-                  {t.asked.plan.chooserNote}
-                </p>
-              )}
-            </div>
-          </details>
-        )}
-
         {live && t.asked.plan.offWatchlistIso3 && t.asked.plan.offWatchlistIso3.length > 0 && (
           <div className="flex flex-wrap items-center gap-2" data-council-off-watchlist="true">
             <button type="button" className="ui-btn ui-btn-primary" onClick={() => void addForQuestion()}>
-              Add {t.asked.plan.offWatchlist?.join(', ')} for this question
+              {tr('addFor', { list: t.asked.plan.offWatchlist?.join(', ') || '' })}
             </button>
-            <span className="text-xs text-slate-500 dark:text-slate-400">Pulls its live figures and asks again; your watchlist stays as it is.</span>
+            <span className="text-xs text-slate-500 dark:text-slate-400">{tr('addForNote')}</span>
             {adding && <span className="text-xs text-amber-700 dark:text-amber-400">{adding}</span>}
           </div>
         )}
@@ -578,17 +558,17 @@ export const AskCouncilPanel: React.FC<{
         {(t.debate || (live && t.asked.answers.filter((a) => a.id !== 'doc' && a.findings.length).length >= 2)) && (
           <div className="border border-slate-200 dark:border-slate-700 p-3 space-y-2" data-council-debate="true">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="ui-label">Agent debate</div>
+              <div className="ui-label">{tr('debate')}</div>
               {live && !t.debate && (
                 <button type="button" className="ui-btn" onClick={() => void runDebate()} disabled={busy}>
-                  Let the agents debate
+                  {tr('letDebate')}
                 </button>
               )}
             </div>
             {!t.debate ? (
-              <p className="text-sm text-slate-600 dark:text-slate-300">The agents challenge each other where their readings on a country pull different ways.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{tr('debateIntro')}</p>
             ) : t.debate.challenges.length === 0 ? (
-              <p className="text-sm text-slate-600 dark:text-slate-300">The agents do not pull different ways on these countries, so there is nothing to debate.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-300">{tr('debateNone')}</p>
             ) : (
               <>
                 <ol className="space-y-3">
@@ -597,14 +577,14 @@ export const AskCouncilPanel: React.FC<{
                     return (
                       <li key={`${c.iso3}-${c.from}-${c.to}`} className="text-sm space-y-1" data-debate-challenge={`${c.from}>${c.to}`}>
                         <div className="font-medium text-slate-900 dark:text-white">
-                          {c.countryName}: the {c.fromName} Agent challenges the {c.toName} Agent
+                          {tr('challenge', { country: c.countryName, from: c.fromName, to: c.toName })}
                         </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">{c.toName} Agent said: {c.claim}.</p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">{tr('agentSaid', { agent: c.toName, claim: c.claim })}</p>
                         <p className="text-slate-800 dark:text-slate-200">{c.challenge}</p>
-                        <p className="text-xs text-slate-600 dark:text-slate-400">What would settle it: {c.settle}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">{tr('settle', { settle: c.settle })}</p>
                         {r && (
                           <p className="border-l-2 border-blue-300 dark:border-blue-700 pl-2 text-slate-800 dark:text-slate-200" data-debate-reply="true">
-                            <span className="text-slate-500 dark:text-slate-400">{c.toName} Agent replies: </span>
+                            <span className="text-slate-500 dark:text-slate-400">{tr('agentReplies', { agent: c.toName })}</span>
                             {r.reply}
                           </p>
                         )}
@@ -613,12 +593,12 @@ export const AskCouncilPanel: React.FC<{
                   })}
                 </ol>
                 {debatingNow ? (
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Asking the AI model for each agent’s reply…</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{tr('debateAsking')}</p>
                 ) : t.debate.replies ? (
                   <>
                     {t.debate.verdict && (
                       <p className="text-sm text-slate-900 dark:text-white">
-                        <span className="text-slate-500 dark:text-slate-400">Where it lands: </span>
+                        <span className="text-slate-500 dark:text-slate-400">{tr('lands')}</span>
                         {t.debate.verdict}
                       </p>
                     )}
@@ -631,7 +611,7 @@ export const AskCouncilPanel: React.FC<{
                     )}
                     {!!t.debate.removed?.length && (
                       <details className="text-xs text-amber-700 dark:text-amber-400">
-                        <summary className="cursor-pointer">{t.debate.removed.length} AI sentence(s) removed by the number or stance check</summary>
+                        <summary className="cursor-pointer">{tr('debateRemoved', { n: t.debate.removed.length })}</summary>
                         <ul className="list-disc pl-5 mt-1">
                           {t.debate.removed.map((x) => (
                             <li key={x}>{x}</li>
@@ -640,12 +620,12 @@ export const AskCouncilPanel: React.FC<{
                       </details>
                     )}
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Challenges from stated rules on the agents’ figures; replies written by the AI model{t.debate.provider ? ` (${t.debate.provider})` : ''} from those figures only.
+                      {tr('debateFoot', { provider: t.debate.provider ? ` (${t.debate.provider})` : '' })}
                     </p>
                   </>
                 ) : (
                   <p className="text-xs text-slate-500 dark:text-slate-400">
-                    No AI replies ({t.debate.reason || 'no AI model answered'}). The challenges come from stated rules on the agents’ figures.
+                    {tr('noReplies', { reason: t.debate.reason || tr('noModelAnswered') })}
                   </p>
                 )}
               </>
@@ -653,65 +633,107 @@ export const AskCouncilPanel: React.FC<{
           </div>
         )}
 
-        {/* One row of actions for the whole answer: save it (brief + every document), copy, download. */}
-        <div className="flex flex-wrap items-center gap-1.5" data-council-answer-actions="true">
-          {allDocsSaved ? (
-            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400" data-council-saved="true">
-              <FileText className="w-3.5 h-3.5" /> Saved to Reports
-              <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" onClick={onSendToReports}>
-                Open Reports
+        {/* Sources fold: one quiet line under the answer, so the text reads straight through (Sam, 2026-11-08).
+            Opening it shows who wrote the summary, the snapshot, each document, and the actions. */}
+        <details className="group" data-council-sources="true">
+          <summary className="cursor-pointer list-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+            <span className="inline-block transition-transform group-open:rotate-90">▸</span> {sourceLine(t, writingNow)}
+            <span className="text-blue-700 dark:text-blue-300">{tr('sourcesActions')}</span>
+          </summary>
+          <div className="mt-2 space-y-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {tr(t.synthesis?.brief?.explain ? 'aiExplanationBy' : 'aiSummaryBy', { model: t.synthesis?.provider || tr('configuredModel') })}
+              {t.synthesis && t.synthesis.removed.length > 0 && tr('removedNumbers', { n: t.synthesis.removed.length })}
+              {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && tr('removedContradicted', { n: t.synthesis.contradicted!.length })}
+            </p>
+            {t.synthesis?.snapshot && <AnswerSnapshotDetails snapshot={t.synthesis.snapshot} runtimeConfig={runtimeConfig} />}
+            {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
+            <DocumentCards
+              agents={agentDocs}
+              synthesis={writingNow ? null : synthDoc}
+              writing={writingNow}
+              onOpen={setOpenDoc}
+              savedIds={savedDocIds}
+              note={
+                <span data-council-agents="true">
+                  {t.asked.answers.length === 1 ? tr('agentsAnsweredOne', { n: withFindings }) : tr('agentsAnsweredMany', { n: withFindings, total: t.asked.answers.length })}
+                </span>
+              }
+            />
+            {!page && (
+              <details className="group">
+                <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">{tr('showLayout')}</summary>
+                <div className="mt-2 space-y-2">
+                  <AgentNetwork title={tr('agentsOn', { scope: t.asked.plan.scopeNote })} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
+                  {t.asked.plan.chooserNote && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
+                      {t.asked.plan.chooserNote}
+                    </p>
+                  )}
+                </div>
+              </details>
+            )}
+            {/* One row of actions for the whole answer: save it (brief + every document), copy, download. */}
+            <div className="flex flex-wrap items-center gap-1.5" data-council-answer-actions="true">
+              {allDocsSaved ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400" data-council-saved="true">
+                  <FileText className="w-3.5 h-3.5" /> {tr('savedToReports')}
+                  <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" onClick={onSendToReports}>
+                    {tr('openReports')}
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="ui-btn"
+                  disabled={writingNow || !savedT}
+                  onClick={() => saveAnswer(savedT, [synthDoc, ...agentDocs])}
+                  title={tr('saveTitle')}
+                  data-council-save="true"
+                >
+                  <FileText className="w-3.5 h-3.5" /> {tr('saveToReports')}
+                </button>
+              )}
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost"
+                disabled={writingNow}
+                title={tr('startReviewTitle')}
+                data-council-start-review="true"
+                onClick={() => startPolicyReview({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, problem: t.asked.question })}
+              >
+                <ClipboardList className="w-3.5 h-3.5" /> {tr('startReview')}
               </button>
-            </span>
-          ) : (
-            <button
-              type="button"
-              className="ui-btn"
-              disabled={writingNow || !savedT}
-              onClick={() => saveAnswer(savedT, [synthDoc, ...agentDocs])}
-              title="Keeps this answer and each document in Reports (data/local/research.json)"
-              data-council-save="true"
-            >
-              <FileText className="w-3.5 h-3.5" /> Save to Reports
-            </button>
-          )}
-          <button
-            type="button"
-            className="ui-btn ui-btn-ghost"
-            disabled={writingNow}
-            title="Turn this question into a step-by-step policy review in Reports"
-            data-council-start-review="true"
-            onClick={() => startPolicyReview({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, problem: t.asked.question })}
-          >
-            <ClipboardList className="w-3.5 h-3.5" /> Start a policy review
-          </button>
-          <button
-            type="button"
-            className="ui-btn ui-btn-ghost"
-            disabled={writingNow}
-            title="Log a trade idea from this answer in the idea journal; it is hashed and scored at the horizon"
-            data-council-log-idea="true"
-            onClick={() => openIdeaJournal({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, thesis: [t.asked.question, t.synthesis?.brief?.headline].filter(Boolean).join('\n') })}
-          >
-            <NotebookPen className="w-3.5 h-3.5" /> Log idea
-          </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
-            <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? 'Copied' : 'Copy'}
-          </button>
-          <details className="relative" data-council-download="true">
-            <summary className={`ui-btn ui-btn-ghost list-none cursor-pointer ${writingNow ? 'pointer-events-none opacity-50' : ''}`}>
-              <Download className="w-3.5 h-3.5" /> Download
-            </summary>
-            <div className="absolute z-20 mt-1 left-0 min-w-[10rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm py-1">
-              <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'md'); }}>
-                Markdown (.md)
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost"
+                disabled={writingNow}
+                title={tr('logIdeaTitle')}
+                data-council-log-idea="true"
+                onClick={() => openIdeaJournal({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, thesis: [t.asked.question, t.synthesis?.brief?.headline].filter(Boolean).join('\n') })}
+              >
+                <NotebookPen className="w-3.5 h-3.5" /> {tr('logIdea')}
               </button>
-              <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'pdf'); }}>
-                PDF
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
+                <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? tr('copied') : tr('copy')}
               </button>
+              <details className="relative" data-council-download="true">
+                <summary className={`ui-btn ui-btn-ghost list-none cursor-pointer ${writingNow ? 'pointer-events-none opacity-50' : ''}`}>
+                  <Download className="w-3.5 h-3.5" /> {tr('download')}
+                </summary>
+                <div className="absolute z-20 mt-1 left-0 min-w-[10rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm py-1">
+                  <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'md'); }}>
+                    Markdown (.md)
+                  </button>
+                  <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'pdf'); }}>
+                    PDF
+                  </button>
+                </div>
+              </details>
             </div>
-          </details>
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. Research, not validated advice.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{tr('footer')}</p>
+          </div>
+        </details>
       </div>
     );
   };
@@ -721,24 +743,24 @@ export const AskCouncilPanel: React.FC<{
       className={`flex flex-col ${page ? 'h-full' : 'ui-panel'} ${onClose ? 'h-full' : ''}`}
       data-ask-council="true"
       data-council-layout={page ? 'page' : onClose ? 'dock' : 'card'}
-      data-no-provenance-overlay="true"
-      data-no-stat-ref="true"
+     
+     
     >
       <header className={`flex items-center justify-between gap-2 ${page ? 'pb-2' : 'ui-panel-header'}`}>
         <div className="min-w-0">
-          <h3 className="ui-section-title whitespace-nowrap">Council chat</h3>
+          <h3 className="ui-section-title whitespace-nowrap">{tr('title')}</h3>
           {uses}
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {(asked || fullCouncilInChat) && (
-            <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true" aria-label="New conversation">
-              <span className="sm:hidden">New</span><span className="hidden sm:inline">New conversation</span>
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={newConversation} disabled={busy} data-council-new="true" aria-label={tr('newConversation')}>
+              <span className="sm:hidden">{tr('newShort')}</span><span className="hidden sm:inline">{tr('newConversation')}</span>
             </button>
           )}
           {toolbar}
           {onClose && (
-            <button type="button" className="ui-btn ui-btn-ghost" onClick={onClose} aria-label="Close Council chat" data-council-close="true">
-              <X className="w-3.5 h-3.5" /> Close
+            <button type="button" className="ui-btn ui-btn-ghost" onClick={onClose} aria-label={tr('closeAria')} data-council-close="true">
+              <X className="w-3.5 h-3.5" /> {tr('close')}
             </button>
           )}
         </div>
@@ -749,11 +771,16 @@ export const AskCouncilPanel: React.FC<{
         {!asked && !choosing && !fullCouncilInChat && (
           <div className={page ? 'pt-[12vh] text-center space-y-4' : 'border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-2'} data-council-welcome="true">
             <p className={page ? 'text-xl font-semibold text-slate-900 dark:text-white' : 'text-sm text-slate-800 dark:text-slate-200'}>
-              What do you want to know about the Economy?
+              {tr('welcome')}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Agents answer from the app’s own figures, each with its source; with an AI model, a summary agent writes a short brief from their answers only.
+              {tr('welcomeNote')}
             </p>
+            {tr('askInEnglish') && (
+              <p className="text-xs text-amber-800 dark:text-amber-300" data-council-ask-in-english="true">
+                {tr('askInEnglish')}
+              </p>
+            )}
             <div className={`flex flex-wrap gap-1.5 ${page ? 'justify-center' : ''}`}>
               {suggestions.map((sug) => (
                 <button
@@ -771,10 +798,10 @@ export const AskCouncilPanel: React.FC<{
               ))}
             </div>
             <details className={`text-xs ${page ? 'mx-auto max-w-xl' : ''}`} data-council-chart-menu="true">
-              <summary className="cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">Charts and statistical tests</summary>
+              <summary className="cursor-pointer text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">{tr('chartsMenu')}</summary>
               <div className="mt-2 text-left space-y-1.5">
                 <p className="text-slate-500 dark:text-slate-400">
-                  Ask for a chart in words, such as “chart Brazil’s policy rate against inflation and test which moves first”. The Chart Agent draws the series the app holds and can run correlation, regression, lead/lag, Granger, stationarity (ADF) and trend (HP filter) tests. To compare countries, ask for a scatter, such as “scatter government debt against bond yields across countries”. Or start from one of these:
+                  {tr('chartsHelp')}
                 </p>
                 <ul className="space-y-1">
                   {PRESETS.map((p) => (
@@ -802,7 +829,7 @@ export const AskCouncilPanel: React.FC<{
           <>
             {userMessage(asked.question, asked.askedAt, 'q-live')}
             {extra.length > 0 && (
-              <p className="text-xs text-slate-500 dark:text-slate-400">Added for questions in this session, not on your watchlist: {extra.map((e) => e.countryName).join(', ')}.</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{tr('addedSession', { list: extra.map((e) => e.countryName).join(', ') })}</p>
             )}
             {councilReply(current, true)}
           </>
@@ -810,20 +837,20 @@ export const AskCouncilPanel: React.FC<{
 
         {choosing && (
           <p className="text-sm text-slate-500 dark:text-slate-400" data-council-choosing="true">
-            Asking the AI model which agents should answer…
+            {tr('choosing')}
           </p>
         )}
 
         {fc && fullCouncilInChat && (
           <>
-            {userMessage(`Run the full council on ${fc.countryName}`)}
+            {userMessage(tr('runFullMessage', { country: fc.countryName }))}
             <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-3" data-full-council={fc.stage}>
-              <p className="text-xs text-slate-500 dark:text-slate-400"><span className="font-medium text-slate-700 dark:text-slate-200">Full council</span> · {fc.countryName}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400"><span className="font-medium text-slate-700 dark:text-slate-200">{tr('fullCouncil')}</span> · {fc.countryName}</p>
               {!page && fc.progressId && phase !== 'idle' && (
                 <AgentNetwork
-                  title={`Full council on ${fc.countryName}`}
+                  title={tr('fullCouncilOn', { country: fc.countryName })}
                   columns={fullCouncilColumns(steps, phase)}
-                  footnote="Each desk’s three analysts and its devil’s advocate debate run as one model call, so they finish together."
+                  footnote={tr('deskFootnote')}
                 />
               )}
               {fc.stage === 'AWAITING_CRO_APPROVAL' ? (
@@ -837,14 +864,14 @@ export const AskCouncilPanel: React.FC<{
                   onOpenFullReview={fc.onOpenFullReview}
                 />
               ) : fc.isRunning ? (
-                <p className="text-sm text-slate-700 dark:text-slate-300">The desks are working. The council will pause here for your approval before the final report.</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{tr('desksWorking')}</p>
               ) : fc.isApproving ? (
-                <p className="text-sm text-slate-700 dark:text-slate-300">Assumptions approved. The supreme council is writing the final {fc.countryName} report.</p>
+                <p className="text-sm text-slate-700 dark:text-slate-300">{tr('approved', { country: fc.countryName })}</p>
               ) : fc.result ? (
                 <div className="space-y-1" data-full-council-result="true">
-                  <div className="ui-label">Final report {fc.result.reportId}</div>
+                  <div className="ui-label">{tr('finalReport', { id: fc.result.reportId })}</div>
                   <p className="text-sm font-medium text-slate-900 dark:text-white">
-                    {fc.countryName}: {VERDICT[fc.result.verdict] || fc.result.verdict}
+                    {fc.countryName}: {VERDICT[fc.result.verdict] ? tr(VERDICT[fc.result.verdict]!) : fc.result.verdict}
                   </p>
                   <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-wrap">{fc.result.summary}</p>
                   <FigureCheckNote check={fc.result.figureCheck?.desks} what="desk debates" />
@@ -852,7 +879,7 @@ export const AskCouncilPanel: React.FC<{
                   {fc.result.timing && <CouncilTimingNote timing={fc.result.timing} />}
                   {fc.onOpenFullReview && (
                     <button type="button" className="ui-btn" onClick={fc.onOpenFullReview}>
-                      Open the full report
+                      {tr('openFullReport')}
                     </button>
                   )}
                 </div>
@@ -881,7 +908,7 @@ export const AskCouncilPanel: React.FC<{
           </div>
         )}
         <label htmlFor="council-question" className="sr-only">
-          {asked ? 'Follow-up question' : 'Question'}
+          {asked ? tr('followUpLabel') : tr('questionLabel')}
         </label>
         <div className={`flex gap-2 items-end ${page ? 'p-2 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm' : ''}`}>
           <textarea
@@ -896,37 +923,37 @@ export const AskCouncilPanel: React.FC<{
                 submit();
               }
             }}
-            placeholder={asked ? 'Ask a follow-up, for example: and the currency? or what about Egypt?' : "For example: Is Turkey's central bank behind the curve, and what would a Hormuz closure do?"}
+            placeholder={asked ? tr('placeholderFollowUp') : tr('placeholderNew')}
             className={`flex-1 min-w-0 px-2 py-1.5 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white ${page ? 'border-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 resize-none' : 'border border-slate-200 dark:border-slate-700'}`}
           />
           <button type="submit" className="ui-btn ui-btn-primary" disabled={!question.trim() || busy}>
-            Send
+            {tr('send')}
           </button>
         </div>
         {pinned && (
           <p className="text-xs text-slate-500 dark:text-slate-400" data-council-pinned="true">
-            Figures pinned at {new Date(pinned.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}: answers in this conversation use them even if the feeds refresh.{' '}
+            {tr('pinnedAt', { when: new Date(pinned.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) })}{' '}
             <button type="button" className="underline hover:text-slate-800 dark:hover:text-slate-200" onClick={() => pinData(false)}>
-              Use the latest figures
+              {tr('useLatest')}
             </button>
           </p>
         )}
         <details className="group" data-council-options="true">
           <summary className="cursor-pointer select-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-            Options: countries, policy documents, full council{lib.briefs.length ? ', saved research' : ''}
-            {docs.length ? ` · ${docs.length} document${docs.length === 1 ? '' : 's'} in use` : ''}
+            {tr('options')}{lib.briefs.length ? tr('optionsSaved') : ''}
+            {docs.length ? tr(docs.length === 1 ? 'docsInUseOne' : 'docsInUseMany', { n: docs.length }) : ''}
           </summary>
           <div className="mt-2 space-y-2">
         <div className="flex flex-wrap items-center gap-2">
           {!asked && (
             <label className="ui-label flex items-center gap-1.5">
-              <span>Countries</span>
+              <span>{tr('countries')}</span>
               <select
                 value={scope}
                 onChange={(e) => setScope(e.target.value)}
                 className="px-1.5 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white max-w-[14rem]"
               >
-                <option value="">As named, else all</option>
+                <option value="">{tr('asNamed')}</option>
                 {items.map((i) => (
                   <option key={i.iso3} value={i.iso3}>
                     {i.countryName}
@@ -936,14 +963,14 @@ export const AskCouncilPanel: React.FC<{
             </label>
           )}
           {fc && !fc.isRunning && !fc.isApproving && fc.stage !== 'AWAITING_CRO_APPROVAL' && (
-            <button type="button" className="ui-btn" onClick={fc.onRun} title={`Nine desk agents debate ${fc.countryName} (the country open now); it pauses in this chat for your approval before the final report.`}>
-              {fc.result ? `Run the full council on ${fc.countryName} again` : `Run the full council on ${fc.countryName}`}
+            <button type="button" className="ui-btn" onClick={fc.onRun} title={tr('runFullTitle', { country: fc.countryName })}>
+              {fc.result ? tr('runFullAgain', { country: fc.countryName }) : tr('runFullMessage', { country: fc.countryName })}
             </button>
           )}
         </div>
         <label className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-300">
           <input type="checkbox" checked={Boolean(pinned)} onChange={(e) => pinData(e.target.checked)} disabled={busy} data-council-pin="true" />
-          Pin this conversation to the figures held now (each answer records it in its snapshot)
+          {tr('pinLabel')}
         </label>
         <PolicyDocsPicker docs={docs} onChange={changeDocs} disabled={busy} />
         <SavedDocsRow lib={lib} activeIds={docs.map((d) => d.id)} canAdd={docs.length < MAX_DOCS && !busy} onUse={(d) => setDocs((cur) => (cur.some((x) => x.id === d.id) || cur.length >= MAX_DOCS ? cur : [...cur, d]))} />
@@ -966,11 +993,12 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
   const phase = fullCouncilPhase(fc);
   const steps = useCouncilProgress(fc?.progressId ?? null, Boolean(fc && (fc.isRunning || fc.isApproving)));
   const showFull = Boolean(fc?.progressId && phase !== 'idle');
+  const tr = useT(COUNCIL);
   return (
     <div className="space-y-4" data-council-agents-panel="true">
       {choosing && (
         <p className="text-sm text-slate-500 dark:text-slate-400" data-agents-choosing="true">
-          Asking the AI model which agents should answer…
+          {tr('choosing')}
         </p>
       )}
       {asked && !choosing && (
@@ -980,7 +1008,7 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
           </p>
           <AgentNetwork
             stacked
-            title={`About ${asked.plan.scopeNote}`}
+            title={tr('aboutTitle', { scope: asked.plan.scopeNote })}
             columns={askCouncilColumns(asked.answers, writing, synthesis, asked.plan.chosenBy)}
           />
           {asked.plan.chooserNote && (
@@ -993,14 +1021,14 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
       {fc && showFull && (
         <AgentNetwork
           stacked
-          title={`Full council on ${fc.countryName}`}
+          title={tr('fullCouncilOn', { country: fc.countryName })}
           columns={fullCouncilColumns(steps, phase)}
-          footnote="Each desk’s three analysts and its devil’s advocate debate run as one model call, so they finish together."
+          footnote={tr('deskFootnote')}
         />
       )}
       {!asked && !choosing && !showFull && (
         <p className="text-sm text-slate-500 dark:text-slate-400" data-agents-empty="true">
-          No question yet. When you ask one, the agents that answer show here, each with its live status.
+          {tr('noQuestion')}
         </p>
       )}
     </div>

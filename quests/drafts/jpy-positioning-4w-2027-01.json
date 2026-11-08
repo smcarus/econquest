@@ -1,0 +1,35 @@
+{
+  "id": "jpy-positioning-4w-2027-01",
+  "version": 1,
+  "registeredOn": "2026-11-07",
+  "opensOn": "2026-12-01",
+  "author": "smcarus",
+  "type": "forecast",
+  "title": "Will leveraged funds be more long the yen four weeks after entries close?",
+  "summary": "Give the probability that the CFTC leveraged-funds net position in yen futures, as a share of open interest, is higher in the first weekly report on or after the settle date than in the first report on or after the close date.",
+  "countries": [
+    "JPN"
+  ],
+  "topics": [
+    "positioning",
+    "fx"
+  ],
+  "region": "Asia-Pacific",
+  "closesOn": "2026-12-18",
+  "rule": {
+    "kind": "direction",
+    "ref": {
+      "country": "JPN",
+      "series": "cftc_lev_net"
+    },
+    "from": "closesOn",
+    "to": {
+      "on": "2027-01-15"
+    },
+    "op": "higher"
+  },
+  "fallback": "unresolvable",
+  "knownLimits": [
+    "CFTC reports are dated Tuesday and published on Friday; a US government shutdown can delay them."
+  ]
+}
