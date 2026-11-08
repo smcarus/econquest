@@ -100,8 +100,8 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'imf',
-    name: 'IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER)',
-    usedFor: 'Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, government spending by function (GFS COFOG, read through DBnomics)',
+    name: 'IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER, Consumer Price Index)',
+    usedFor: 'Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, monthly consumer prices (CPI dataset), government spending by function (GFS COFOG, read through DBnomics)',
     terms: [{ label: 'Copyright and Usage (Special Terms for Statistical Data)', url: 'https://www.imf.org/en/About/copyright-and-terms' }],
     status: 'permission',
     display: 'Allowed with attribution: the IMF lets users publish and distribute its Data.',

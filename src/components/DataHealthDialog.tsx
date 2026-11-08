@@ -7,6 +7,7 @@
  * - Revisions: IMF and World Bank yearly values changed since the app first downloaded them.
  * - Scheduled: jobs the server runs by itself (Download all, the pre-registered tests) and how each run ended.
  * - Calendar: the hand-typed official calendar against today (old checks, schedules running out).
+ * - Inflation: every country's monthly inflation figure with its source and age; old OECD copies flagged.
  *
  * Nothing here changes a figure: it says what to check.
  */
@@ -17,6 +18,7 @@ import type { SourceHealth } from '../utils/dataHealth';
 import type { FigureEvent, FigureEventKind, OpenIssue } from '../utils/figureWatch';
 import type { HistoryRevision } from '../utils/officialHistory';
 import { CALENDAR_FLAG_TEXT, type CalendarHealth } from '../utils/calendarHealth';
+import { BASIS_TEXT, INFLATION_FLAG_TEXT, type InflationHealth } from '../utils/inflationHealth';
 
 type SourcesReply = {
   sources: SourceHealth[];
@@ -37,7 +39,7 @@ type ScheduledReply = {
   file: string;
 };
 
-export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled' | 'calendar';
+export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled' | 'calendar' | 'inflation';
 
 const when = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -376,6 +378,52 @@ function CalendarView() {
   );
 }
 
+function InflationView() {
+  const { data, error } = useJson<InflationHealth>('/api/data/health/inflation');
+  const month = (m?: string) => (m ? new Date(`${m}-01T00:00:00`).toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) : '');
+  return (
+    <div className="space-y-3">
+      {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        Each country's monthly inflation comes from the freshest source that answered: its own statistics office or central bank, Eurostat, IMF monthly consumer prices, and last the OECD copy on DBnomics, which stopped updating in June 2026. A country's series always comes whole from one source. This lists each figure's source and age; it never changes a figure.
+      </p>
+      {data && (
+        <p className="text-sm">
+          {data.needsLook ? `${data.needsLook} figure${data.needsLook === 1 ? '' : 's'} more than ${data.oldDays} days old or missing.` : `Every figure is under ${data.oldDays} days old.`}
+        </p>
+      )}
+      {data && data.rows.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs text-slate-500 dark:text-slate-400">
+              <tr>
+                <th className="pr-3 font-normal">Country</th>
+                <th className="pr-3 font-normal">Source</th>
+                <th className="pr-3 font-normal">Month</th>
+                <th className="pr-3 font-normal">Inflation</th>
+                <th className="pr-3 font-normal">Age</th>
+                <th className="font-normal">Check</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={r.iso3} className="border-t border-slate-100 dark:border-slate-800 align-top">
+                  <td className="pr-3">{r.iso3}</td>
+                  <td className="pr-3">{r.basis ? `${BASIS_TEXT[r.basis]}${r.source ? ` (${r.source})` : ''}` : 'none'}</td>
+                  <td className="pr-3 whitespace-nowrap">{month(r.month)}</td>
+                  <td className="pr-3 whitespace-nowrap">{r.yoyPct !== undefined ? `${r.yoyPct.toFixed(1)}%` : ''}</td>
+                  <td className="pr-3 whitespace-nowrap">{r.ageDays !== undefined ? `${r.ageDays} d` : ''}</td>
+                  <td className={r.flag ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}>{r.flag ? INFLATION_FLAG_TEXT[r.flag] : 'OK'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose: () => void; initialTab?: DataHealthTab }) {
   const [tab, setTab] = useState<DataHealthTab>(initialTab);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -391,6 +439,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
     ['revisions', 'Revisions'],
     ['scheduled', 'Scheduled'],
     ['calendar', 'Calendar'],
+    ['inflation', 'Inflation'],
   ];
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -423,6 +472,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
           {tab === 'revisions' && <RevisionsView />}
           {tab === 'scheduled' && <ScheduledView />}
           {tab === 'calendar' && <CalendarView />}
+          {tab === 'inflation' && <InflationView />}
         </div>
       </div>
     </div>

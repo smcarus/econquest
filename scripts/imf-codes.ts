@@ -1,6 +1,6 @@
 /**
- * Prints what the IMF data API actually holds for the three datasets the app reads (IL, BOP,
- * COFER), so the name matching in src/utils/imfReserves.ts and imfCofer.ts can be checked
+ * Prints what the IMF data API actually holds for the datasets the app reads (IL, BOP, COFER, CPI),
+ * so the name matching in src/utils/imfReserves.ts, imfCofer.ts and imfCpi.ts can be checked
  * against the live codes. Run on a computer that can reach api.imf.org:
  *
  *   npm run check:imf
@@ -10,6 +10,7 @@
  */
 import { IMF_MEASURES, getJson, imfDataUrl, imfStructureUrl, matchIndicators, parseImfData, parseImfStructure, pickSeries, seriesKey, labelOf } from '../src/utils/imfReserves.ts';
 import { WORLD_IDS, coferKey, findWorldCode, describeSeries } from '../src/utils/imfCofer.ts';
+import { imfCpiDataUrl, imfCpiKey, imfCpiStructureUrl, parseImfCpiStructure, pickImfCpiSeries } from '../src/utils/imfCpi.ts';
 
 const fetchFn = (u: string, i?: RequestInit) => fetch(u, i);
 const LOOK: Record<string, RegExp> = {
@@ -63,5 +64,31 @@ for (const flow of ['IL', 'BOP', 'COFER']) {
     }
     const p = pickSeries(series, m);
     console.log(`  picked: ${p ? p.key : 'none'}`);
+  }
+}
+
+// ---- CPI (monthly consumer prices, src/utils/imfCpi.ts) ----------------------------------------
+{
+  console.log('\n=== CPI');
+  const r = await getJson(fetchFn, imfCpiStructureUrl(), 60000);
+  const s = r.json ? parseImfCpiStructure(r.json) : null;
+  if (!s) console.log(`structure: ${r.error ?? 'answered but was not read'}`);
+  else {
+    console.log(`dimensions: ${s.dims.map((d) => `${d.id} (${d.codes.length} codes)`).join('.')}`);
+    for (const d of s.dims.filter((x) => x.codes.length && x.codes.length < 400 && !/COUNTRY|REF_AREA/.test(x.id))) {
+      const hits = d.codes.filter((c) => /consumer price|all items|^total|year|percent change|index/i.test(c.name)).slice(0, 15);
+      for (const c of hits) console.log(`  ${d.id} ${c.id}  ${c.name}`);
+    }
+    for (const iso3 of ['USA', 'IND', 'BRA']) {
+      const k = imfCpiKey(s, iso3);
+      const d = await getJson(fetchFn, imfCpiDataUrl(k.key), 60000);
+      const series = d.json ? parseImfData(d.json) : [];
+      console.log(`\n${iso3} key ${k.key} (${k.picked.join(', ') || 'nothing matched'}): ${d.error ?? `${series.length} series`}`);
+      for (const x of series.slice(0, 6)) {
+        const last = x.obs[x.obs.length - 1];
+        console.log(`    ${x.key}  last ${last ? `${last.period} ${last.value}` : '-'}`);
+      }
+      console.log(`  picked: ${pickImfCpiSeries(series)?.key ?? 'none'}`);
+    }
   }
 }

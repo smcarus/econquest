@@ -29,6 +29,7 @@ import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
 import { BANXICO_CPI_SERIES, banxicoHeaders, banxicoSeriesUrl, BCB_IPCA_12M, bcbSgsUrl, eurostatHicpUrl, EVDS_CPI_DEFAULT_SERIES, evdsCpiUrl, parseBanxicoMonthly, parseEvdsCpiYoy, parseBcbSgs, parseEurostatHicp } from './nationalCpi';
 import { coferLine, pullCofer } from './imfCofer';
+import { pullImfCpi } from './imfCpi';
 import { CFTC_CURRENCY_CODES, cftcUrl, parseCftcRows, positioningFor } from './cftcPositioning';
 import { BIS_ISO2, bisIntlUrl, parseBisIntl } from './bisDebtSecurities';
 import { CBPOL_AREA, cbpolDailyUrl, parseCbpolCsv, policyRateFor } from './bisPolicyRates';
@@ -268,6 +269,7 @@ export const SOURCE_IDS = [
   'imf',
   'imf_reserves',
   'imf_cofer',
+  'imf_cpi',
   'gdelt',
   'gdelt_v1',
   'polymarket',
@@ -451,6 +453,24 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const status = r.httpStatus && r.httpStatus >= 400 ? r.httpStatus : Number(/HTTP (\d{3})/.exec(r.note)?.[1] ?? 0) || undefined;
     const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.note) ? 'no_answer' : 'bad_reply';
     return { ...setRow(def, state, r.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
+  });
+
+  add('imf_cpi', async () => {
+    const def: Def = { id: 'imf_cpi', name: 'IMF monthly consumer prices (api.imf.org)', group: 'free', feeds: 'Monthly inflation, all items, year on year, for countries outside the EU when fresher than the OECD copy' };
+    const t0 = Date.now();
+    let r: Awaited<ReturnType<typeof pullImfCpi>>;
+    try {
+      r = await pullImfCpi({ fetchFn, env, timeoutMs: Math.max(T, 30000) }, 'USA');
+    } catch (err) {
+      return { ...setRow(def, 'no_answer', describeNetworkError(err, Math.max(T, 30000)), IMF_SDMX_HOST), latencyMs: Date.now() - t0 };
+    }
+    const latencyMs = Date.now() - t0;
+    const setup = 'If the IMF codes are not matched by name, set IMF_CPI_KEY in .env to the series key ({ISO3} for the country); npm run check:imf prints the codes.';
+    const last = r.series?.points[r.series.points.length - 1];
+    if (last) return { ...setRow(def, 'connected', `Answered in ${latencyMs} ms. ${r.step.note}.`, IMF_SDMX_HOST), latencyMs, sample: `United States inflation ${fmt(last.value, 1)}% y/y (${formatMonth(last.period)})`, setup };
+    const status = Number(/HTTP (\d{3})/.exec(r.step.note)?.[1] ?? 0) || undefined;
+    const state: ConnectionState = status ? 'refused' : /no answer within|fetch failed|request failed/i.test(r.step.note) ? 'no_answer' : 'bad_reply';
+    return { ...setRow(def, state, r.step.note, IMF_SDMX_HOST), latencyMs, ...(status ? { httpStatus: status } : {}), setup };
   });
 
   add('gdelt', () =>

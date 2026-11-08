@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Fresher inflation figures (data plan G3): IMF monthly consumer prices (CPI dataset, found by IMF names,
+  `IMF_CPI_KEY` override) join the national and Eurostat series ahead of the stale OECD copy on DBnomics. Each
+  country takes the freshest source (same month: national, then IMF, then OECD), always whole from one source.
+  New Data health tab "Inflation" with each figure's source, month and age, flagging figures over 90 days old
+  and old OECD copies. Daily-run step `world:imf_cpi`, Data health row `imf_cpi`, `npm run check:imf` prints the
+  CPI codes, and the freshness note now points to IMF monthly CPI where no national feed exists.
 - EU business and consumer surveys (data plan G2): the European Commission's monthly Economic Sentiment
   Indicator, industrial, services and consumer confidence and Employment Expectations Indicator for EU members,
   seasonally adjusted, from 2005, read free from Eurostat. A free stand-in for paid PMIs, labelled "EU business

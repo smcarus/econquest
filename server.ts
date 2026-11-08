@@ -122,6 +122,7 @@ import { checkConnections, describeNetworkError, isFailure, type ConnectionRepor
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
 import { calendarHealth, localDay } from './src/utils/calendarHealth';
+import { inflationHealth } from './src/utils/inflationHealth';
 import { OFFICIAL_CALENDAR } from './src/data/officialCalendar';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
@@ -174,7 +175,7 @@ import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
 import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
-import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
+import { fetchImfPull, fetchCoferPull, fetchImfCpiPull, loadImfCpi } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
@@ -512,6 +513,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
       return had(await fetchTicPull(), 'US Treasury');
+    case 'world:imf_cpi': {
+      const got = await fetchImfCpiPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly consumer prices (npm run check:imf shows why)' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).map((s) => s.points[s.points.length - 1]?.period || '');
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `The IMF did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
     case 'world:eu_surveys': {
       const got = await fetchEuSurveyPull({ force: true });
       if (!got) return { outcome: 'failed', note: 'Eurostat did not answer for the EU business surveys' };
@@ -1190,6 +1199,8 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     // Government spending by purpose (Eurostat and IMF COFOG): annual; the first pull fills the cache.
     Promise.race([fetchGovSpendingPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
+  // IMF monthly CPI: the copy the daily run saved (no page waits on the IMF).
+  const imfCpi = loadImfCpi();
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
     [...(extra.length ? [] : SOVEREIGN_CATALOG), ...extra].map(async (catItem) => {
@@ -1217,8 +1228,8 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
         const ust = ticHoldingFor(catItem.iso3, tic?.table);
         const bisRate = policyRateFor(catItem.iso3, cbpol);
         const lead = cliFor(catItem.iso3, cli?.series);
-        // Monthly inflation: a national or Eurostat series where it is at least as new as the OECD's.
-        const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}));
+        // Monthly inflation: the freshest of national or Eurostat, IMF monthly CPI and the OECD copy.
+        const prices = cpiFor(catItem.iso3, mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {}));
         const record: SignalRecord = {};
         {
           const pts = areaSeries(catItem.iso3, cli?.series);
@@ -1282,7 +1293,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           })()),
           // The OECD's monthly figure, where it has one, is fresher than the IMF's annual one.
           ...(prices && (cpi || nationalCpi)
-            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
+            ? { cpiInflationPct: prices.yoyPct, cpiSource: 'oecd' as const, cpiMonth: prices.month, oecdCpi: { ...prices, pulledAt: (prices.basis === 'national' ? nationalCpi?.pulledAt : prices.basis === 'imf' ? imfCpi?.pulledAt : cpi?.pulledAt) || new Date().toISOString() } }
             : cpi
               ? { oecdCpiPulledAt: cpi.pulledAt }
               : {}),
@@ -3243,7 +3254,8 @@ async function startServer() {
       iso3.toUpperCase() === 'BRA' ? quick(fetchInflationSurveys()) : Promise.resolve(null),
       quick(fetchPortWatchPorts(iso3)),
     ]);
-    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
+    const imfCpi = loadImfCpi();
+    const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {}, imfCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
       .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
@@ -3254,7 +3266,7 @@ async function startServer() {
       qna,
       activity,
       cpiOecdAnswered: Boolean(cpi),
-      cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
+      cpi: merged ? { pulledAt: [cpi?.pulledAt, nationalCpi?.pulledAt, imfCpi?.pulledAt].filter(Boolean).sort().pop() || '', series: merged } : null,
       cftc,
       tic,
       archive,
@@ -3703,6 +3715,13 @@ async function startServer() {
   // The official calendar against today (src/utils/calendarHealth.ts): old checks, schedules running out.
   app.get('/api/data/health/calendar', (_req, res) => {
     res.json(calendarHealth(OFFICIAL_CALENDAR, SOVEREIGN_CATALOG.map((c) => c.iso3), localDay()));
+  });
+  // Every country's monthly inflation with its source and age (src/utils/inflationHealth.ts): old OECD copies flagged.
+  app.get('/api/data/health/inflation', async (_req, res) => {
+    const quick = <T,>(p: Promise<T>) => Promise.race([p, new Promise<null>((resolve) => setTimeout(() => resolve(null), 5000))]);
+    const [cpi, nationalCpi] = await Promise.all([quick(fetchCpiPull()), quick(fetchNationalCpi())]);
+    const merged = mergeNationalCpi(cpi?.series, (nationalCpi ?? nationalCpiMemory?.pull)?.series || {}, loadImfCpi()?.series || {});
+    res.json(inflationHealth(SOVEREIGN_CATALOG.map((c) => c.iso3), (iso3) => cpiFor(iso3, merged)));
   });
   app.get('/api/data/health/revisions', (req, res) => {
     const only = typeof req.query.iso3 === 'string' ? req.query.iso3.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) : '';

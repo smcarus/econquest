@@ -810,6 +810,11 @@ hold no figures of their own; the handout reads them from the app's series when 
     unless you tick *Include IMF projections* (every WEO revises them). The History tab shows the same
     as "Revised from X on <date>" beside the year.
   - *Scheduled*: jobs the server runs by itself and how each run ended.
+  - *Inflation*: every country's monthly inflation figure with its source, month and age in days.
+    Each country uses the freshest source that answered (its own statistics office or central bank,
+    Eurostat, IMF monthly consumer prices, then the OECD copy on DBnomics, which stopped updating in
+    June 2026); a figure more than 90 days old is flagged, and an old OECD copy says a fresher source
+    replaces it as soon as one answers. A country's series always comes whole from one source.
   - *Calendar*: the official calendar (central bank decisions, CPI releases, elections, budget
     deadlines) is typed in by hand from each source page, so it goes out of date unless someone
     reads the pages again. This tab lists, for each country and kind of date, the next date, the last
