@@ -14,6 +14,9 @@ import { RESEARCH_ES } from './research';
 import { BRIEF_ES } from './brief';
 import { PANELS_ES } from './panels';
 import { COMMON_ES } from './common';
+import { TOOLS_ES } from './tools';
+import { TOOL_TEXT_ES } from './toolText';
+import { TOOLS_CATALOG_ES } from './toolsCatalog';
 
 export const ES: Record<string, Record<string, string>> = {
   shell: SHELL_ES,
@@ -25,7 +28,8 @@ export const ES: Record<string, Record<string, string>> = {
   brief: BRIEF_ES,
   panels: PANELS_ES,
   common: COMMON_ES,
+  tools: TOOLS_ES,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const ES_TEXT: Record<string, string> = { ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES };
+export const ES_TEXT: Record<string, string> = { ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES, ...TOOL_TEXT_ES, ...TOOLS_CATALOG_ES };

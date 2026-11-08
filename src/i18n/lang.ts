@@ -103,8 +103,9 @@ function textPattern(en: string): [RegExp, string[]] {
       if (m) {
         names.push(m[1]!);
         // Never across a comma or semicolon, so a pattern cannot swallow the next clause of a longer
-        // sentence; only {source} (a source's own name), {list} and {detail} may hold commas.
-        return WIDE.has(m[1]!) ? '(.+?)' : '([^,;]+?)';
+        // sentence; only {source} (a source's own name), {list} and {detail} may hold commas, and
+        // {num}, {num2} hold one number, thousands commas included.
+        return WIDE.has(m[1]!) ? '(.+?)' : m[1]!.startsWith('num') ? '([-+]?[\\d.,]+)' : '([^,;]+?)';
       }
       return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     })

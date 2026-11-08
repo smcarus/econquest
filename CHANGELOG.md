@@ -30,6 +30,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   sets, and what the council reads stays English. Five of those panels now download only when opened, which takes
   about 110 KB (compressed) off the start. The app's total size limit is raised from 5 MB to 6 MB to hold the
   Spanish and French text, which downloads only when someone picks that language.
+  Holdings and Tools are in Spanish too: the holdings editor, the book table, signals on your holdings, the book
+  and client briefs on screen, the Tools page with every tool and hidden desk, the compare-countries table, research
+  notebooks, unit converters, exercises and model sandboxes. Downloaded reviews and notebooks stay English.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store
