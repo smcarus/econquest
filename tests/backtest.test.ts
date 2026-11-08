@@ -303,6 +303,28 @@ test('runBacktests runs every version and keeps each verdict; the latest version
   assert.deepEqual(Object.keys(loadValidation(resultFile).versions!).sort(), ['r v1', 'r v2']);
 });
 
+test('runBacktests with skipRecorded never runs a version that has a verdict, so the verdict cannot change (your own tests)', async () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'spec-'));
+  const body = JSON.stringify(spec({ id: 'mine_r', method: 'cli_turn_policy', sample: { from: '1990-01' }, passMark: { minCases: 1, minLiftPts: 10, maxPValue: 0.05 } }));
+  fs.writeFileSync(path.join(dir, 'mine_r.json'), body);
+  fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify({ files: { 'mine_r.json': sha256(body) } }));
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), 'bt-'));
+  const resultFile = path.join(out, 'user-results.json');
+  const forwardFile = path.join(out, 'user-forward.jsonl');
+  const cli = cliPeak();
+  const bisCsv = ['FREQ,REF_AREA,UNIT_MEASURE,TIME_PERIOD,OBS_VALUE', ...cli.map((p) => `M,BR,368,${p.period},${p.period >= '2001-12' ? 5 : 6}`)].join('\n');
+  const dbn = { series: { docs: [{ dimensions: { REF_AREA: 'BRA', FREQ: 'M', MEASURE: 'LI', ADJUSTMENT: 'AA', METHODOLOGY: 'H', UNIT_MEASURE: 'IX', TRANSFORMATION: 'IX' }, period: cli.map((p) => p.period), value: cli.map((p) => p.value) }] } };
+  const fetcher = async (url: string) => (url.includes('stats.bis.org') ? bisCsv : url.includes('db.nomics') && !url.includes('PRICES') ? JSON.stringify(dbn) : Promise.reject(new Error('HTTP 503')));
+  const first = await runBacktests({ specDir: dir, resultFile, forwardFile, skipRecorded: true, fetcher, now: new Date('2026-11-08T10:00:00Z') });
+  const recorded = first.versions!['mine_r v1'];
+  assert.ok(recorded, 'the first run records a verdict');
+  let calls = 0;
+  const again = await runBacktests({ specDir: dir, resultFile, forwardFile, skipRecorded: true, fetcher: async (u) => (calls++, fetcher(u)), now: new Date('2026-12-08T10:00:00Z') });
+  assert.equal(calls, 0, 'nothing to run, so nothing is downloaded');
+  assert.deepEqual(again.versions!['mine_r v1'], recorded, 'the recorded verdict is unchanged');
+  assert.ok(!fs.existsSync(path.join(path.dirname(resultFile), 'results.json')), 'the app\'s own results file is not touched');
+});
+
 test('taylorGapCases with an output gap: uses the gap of the latest year published by then, and skips months without one', () => {
   const months = Array.from({ length: 36 }, (_, i) => addMonths('2014-01', i));
   const inflation = months.map((period) => ({ period, value: 2 }));

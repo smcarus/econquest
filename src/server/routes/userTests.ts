@@ -4,8 +4,12 @@
  * a reference); never writes beside them.
  */
 import type express from 'express';
-import { loadSpecs } from '../../utils/backtestRun';
-import type { BacktestSpec } from '../../utils/backtest';
+import path from 'path';
+import { loadSpecs, loadValidation, runBacktests } from '../../utils/backtestRun';
+import type { BacktestResult, BacktestSpec } from '../../utils/backtest';
+import { holmReadings, testsOnRecord } from '../../utils/multipleTesting';
+import type { V1Month } from '../../utils/gdeltDaily';
+import type { UcdpData } from '../../utils/ucdpConflict';
 import { buildUserTest, methodParams } from '../../utils/userTests';
 import { listUserTests, registerUserTest, userTestDir } from '../userTestStore';
 import type { Account } from '../../utils/auth';
@@ -16,18 +20,55 @@ export interface UserTestDeps {
   refuseRemoteChange: (req: express.Request, res: express.Response) => boolean;
   signedIn: (res: express.Response) => Account | null;
   audit: (summary: string, detail: Record<string, unknown>) => void;
+  /** Files on disk some methods read (GDELT months, UCDP), as for the app's own backtests. */
+  local?: { gdeltMonths: () => V1Month[]; ucdp: () => UcdpData | null };
 }
+
+/** Your tests' verdicts and forward record sit beside the app's but in files of their own. */
+export const userResultFile = (dataDir: string) => path.join(dataDir, 'local', 'validation', 'user-results.json');
+export const userForwardFile = (dataDir: string) => path.join(dataDir, 'local', 'validation', 'user-forward.jsonl');
 
 export function registerUserTestRoutes(app: express.Express, deps: UserTestDeps): void {
   const methods = () => methodParams(loadSpecs(deps.specDir).map((s) => s.spec).filter((s): s is BacktestSpec => Boolean(s)));
   const dir = userTestDir(deps.dataDir);
+  let running = false;
 
   app.get('/api/user-tests', (_req, res) => {
+    const tests = listUserTests(dir);
+    const v = loadValidation(userResultFile(deps.dataDir));
+    // Holm across your own tests only: the app's tests are a separate family, so neither moves the other.
+    const alphaFor = (id: string, version: number) => tests.find((t) => t.spec?.id === id && t.spec?.version === version)?.spec?.passMark?.maxPValue;
+    const holm = Object.fromEntries(holmReadings(testsOnRecord(v.versions, alphaFor)));
     res.json({
       methods: methods(),
-      tests: listUserTests(dir).map((t) => ({ file: t.file, hash: t.hash, problem: t.problem, spec: t.spec })),
+      tests: tests.map((t) => ({ file: t.file, hash: t.hash, problem: t.problem, spec: t.spec })),
+      results: v.versions || {},
+      holm,
+      running,
+      lastRun: v.lastRun ?? null,
       folder: 'data/local/validation/user-tests',
     });
+  });
+
+  // Runs every registered test that has no verdict yet, in the background, on the same free histories
+  // as the app's own backtests. A recorded verdict is never run again, so it can never change.
+  app.post('/api/user-tests/run', (req, res) => {
+    if (deps.refuseRemoteChange(req, res)) return;
+    if (running) return res.status(409).json({ error: 'RUNNING', message: 'Your tests are already running.' });
+    running = true;
+    void runBacktests({
+      specDir: dir,
+      resultFile: userResultFile(deps.dataDir),
+      forwardFile: userForwardFile(deps.dataDir),
+      skipRecorded: true,
+      local: deps.local,
+      onResult: (r: BacktestResult) => deps.audit(`Own test ${r.id} v${r.specVersion}: ${r.status.replace(/_/g, ' ')}`, { verdict: r.verdict, specHash: r.specHash, cases: r.cases, pValue: r.pValue, span: r.span }),
+    })
+      .catch((e) => deps.audit('Own tests could not run', { error: String(e?.message || e) }))
+      .finally(() => {
+        running = false;
+      });
+    res.status(202).json({ started: true });
   });
 
   app.post('/api/user-tests', (req, res) => {

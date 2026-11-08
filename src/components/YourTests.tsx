@@ -3,6 +3,8 @@ import { Lock } from 'lucide-react';
 import { useT } from '../i18n/useLang';
 import { YOUR_TESTS } from '../i18n/messages/yourTests';
 import type { MethodParams, UserTestProblem, UserTestSpec } from '../utils/userTests';
+import type { BacktestResult } from '../utils/backtest';
+import type { HolmReading } from '../utils/multipleTesting';
 
 /**
  * Menu > Models & validation > Your tests (plan item L4a): register a test of your own, frozen on
@@ -13,6 +15,10 @@ import type { MethodParams, UserTestProblem, UserTestSpec } from '../utils/userT
 interface Reply {
   methods: MethodParams[];
   tests: Array<{ file: string; hash: string; problem?: string; spec: UserTestSpec | null }>;
+  results: Record<string, BacktestResult>;
+  holm: Record<string, HolmReading>;
+  running: boolean;
+  lastRun: { at: string; problems: string[] } | null;
   folder: string;
 }
 
@@ -46,6 +52,26 @@ export const YourTests: React.FC = () => {
   useEffect(() => {
     void load();
   }, []);
+  // While a run is going, look again every few seconds until it ends.
+  useEffect(() => {
+    if (!reply?.running) return;
+    const id = window.setTimeout(() => void load(), 4000);
+    return () => window.clearTimeout(id);
+  }, [reply]);
+
+  const runAll = async () => {
+    setError(null);
+    try {
+      const r = await fetch('/api/user-tests/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!r.ok && r.status !== 409) {
+        const j = await r.json().catch(() => ({}));
+        setError(t('runFailed', { error: j.error || `HTTP ${r.status}` }));
+      }
+    } catch (e) {
+      setError(t('runFailed', { error: String((e as Error)?.message || e) }));
+    }
+    void load();
+  };
 
   const m = reply?.methods.find((x) => x.method === method);
   const methodLabel = (id: string) => t(`method_${id}` as 'method_taylor_gap');
@@ -138,7 +164,21 @@ export const YourTests: React.FC = () => {
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {methodLabel(x.spec.method)} · {Object.entries(x.spec.params).map(([k, v]) => `${k} ${v}`).join(', ')} · {t('fingerprint', { hash: x.hash.slice(0, 12) })}
                   </p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">{t('notRun')}</p>
+                  {(() => {
+                    const key = `${x.spec.id} v${x.spec.version}`;
+                    const r = reply.results[key];
+                    if (!r) return <p className="text-xs text-slate-500 dark:text-slate-400">{t('notRun')}</p>;
+                    const h = reply.holm[key];
+                    return (
+                      <div className="text-xs" data-your-test-result={key}>
+                        <p className={r.status === 'passed' ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'}>
+                          {t('result', { status: t(`st_${r.status}`), cases: String(r.cases), hit: String(r.hitRatePct), base: String(r.baseRatePct), p: String(Number(r.pValue.toPrecision(3))), date: r.ranAt.slice(0, 10) })}
+                        </p>
+                        <p className="text-slate-600 dark:text-slate-300">{r.verdict}</p>
+                        {h && <p className="text-slate-500 dark:text-slate-400">{t('holmLine', { adj: String(h.adjusted), n: String(h.tested), holds: h.holds ? t('holds') : t('notHolds'), alpha: String(h.alpha) })}</p>}
+                      </div>
+                    );
+                  })()}
                 </>
               ) : (
                 <p className="text-xs text-amber-700 dark:text-amber-400">{t('refused', { problem: x.problem || '' })}</p>
@@ -146,6 +186,16 @@ export const YourTests: React.FC = () => {
             </li>
           ))}
         </ul>
+      )}
+
+      {reply && reply.tests.some((x) => x.spec) && (
+        <div className="space-y-1">
+          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void runAll()} disabled={reply.running} data-your-tests-run="true">
+            {t('runAll')}
+          </button>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{reply.running ? t('runningNow') : t('runNote')}</p>
+          {!reply.running && reply.lastRun?.problems?.length ? <p className="text-xs text-amber-700 dark:text-amber-400">{t('lastProblems', { problems: reply.lastRun.problems.join(' · ') })}</p> : null}
+        </div>
       )}
 
       {!form ? (

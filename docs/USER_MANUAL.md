@@ -755,7 +755,12 @@ hold no figures of their own; the handout reads them from the app's series when 
   `data/local/validation/user-tests/` with today's date and its SHA-256 fingerprint in the folder's
   `manifest.json`. It can never be edited or removed, and a file changed by hand is refused; a
   changed idea is a new test with a new name. Your tests are kept apart from the app's, so neither
-  changes the other's correction for multiple tests. Running them on the saved data comes next.
+  changes the other's correction for multiple tests. *Run my tests* runs every registered test that
+  has no verdict yet, in the background, on the same long free histories as the app's own backtests
+  (so it needs a connection and a minute or two). Each verdict shows under its test with the cases,
+  hit rate, base rate and p-value, and a Holm-adjusted p across your own tests only. A recorded
+  verdict is never run again, so it can never change; verdicts are kept in
+  `data/local/validation/user-results.json` and in the audit log.
 - **About & data licences**: the standing research notice and the licence register. One row per
   source: what the app reads from it, what its terms say about showing figures to others and about
   commercial use, the credit to print, quotes from the terms page with links, and the open questions

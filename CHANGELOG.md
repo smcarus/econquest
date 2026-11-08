@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Register your own test, part 2 (run and record): "Run my tests" under Menu > Models & validation > Your tests runs
+  every registered test that has no verdict yet, in the background, with the same methods and free histories as the
+  app's own backtests. Verdicts are kept in data/local/validation/user-results.json (forward record in
+  user-forward.jsonl) and the audit log, apart from the app's own; a recorded verdict is never run again, so it
+  cannot change. Each verdict shows a Holm-adjusted p across your own tests only.
 - Register your own test, part 1 (the form): Menu > Models & validation > Your tests lets a researcher write a
   hypothesis, pick one of the app's backtest methods and type every threshold, the sample and the pass mark, then
   save it. Saving freezes it with the server's date and a SHA-256 fingerprint in its own manifest
