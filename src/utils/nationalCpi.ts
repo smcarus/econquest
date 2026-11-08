@@ -88,16 +88,22 @@ export function parseEurostatHicp(json: unknown): Record<string, { period: strin
 export type CpiSeriesWithSource = Record<string, { basis: CpiBasis; points: { period: string; value: number }[]; short?: string; long?: string }>;
 
 /**
- * Puts each national series in place of the OECD one for its country when it is at least as new.
- * Keys are ISO3 (the OECD reply also keys countries by ISO3).
+ * One series per country, the freshest of the sources it has (plan G3: national or Eurostat, then
+ * IMF monthly CPI, then the OECD copy). The newest month wins; on the same month the order of
+ * preference decides (national, IMF, OECD). Each country's series comes whole from one source,
+ * never stitched from two, and carries that source's label. Keys are ISO3.
  */
-export function mergeNationalCpi(oecd: CpiSeries | null | undefined, national: Record<string, NationalCpiSeries>): CpiSeriesWithSource | null {
+export function mergeNationalCpi(oecd: CpiSeries | null | undefined, national: Record<string, NationalCpiSeries>, imf: Record<string, NationalCpiSeries> = {}): CpiSeriesWithSource | null {
   const out: CpiSeriesWithSource = { ...(oecd || {}) };
-  for (const [iso3, n] of Object.entries(national)) {
-    if (!n.points.length) continue;
-    const mine = n.points[n.points.length - 1].period;
-    const theirs = out[iso3]?.points?.[out[iso3].points.length - 1]?.period;
-    if (!theirs || mine >= theirs) out[iso3] = { basis: 'national', points: n.points, short: n.short, long: n.long };
+  const lastOf = (pts?: { period: string }[]) => pts?.[pts.length - 1]?.period;
+  // IMF first, then national, so a national series wins a tie with the IMF.
+  for (const [basis, src] of [['imf', imf], ['national', national]] as const) {
+    for (const [iso3, n] of Object.entries(src)) {
+      if (!n?.points?.length) continue;
+      const mine = lastOf(n.points)!;
+      const theirs = lastOf(out[iso3]?.points);
+      if (!theirs || mine >= theirs) out[iso3] = { basis, points: n.points, short: n.short, long: n.long };
+    }
   }
   return Object.keys(out).length ? out : null;
 }
