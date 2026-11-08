@@ -8,6 +8,9 @@
  * or reordered line breaks the chain from there on. A recorded result is never replaced: a dispute
  * decision is a new line, and the page shows both.
  *
+ * A Replication Quest has no feed rule: the maintainer records the app's own figure, where the app
+ * showed it, and the Quest's tolerance (`--replicate`); each entry then matches or not.
+ *
  * Values are read the way the rule says:
  *   daily, weekly   the first published value on or after the date
  *   annual          the value for the year as first downloaded on or after the date: later
@@ -25,7 +28,9 @@ export type ResolutionKind = 'settled' | 'unresolvable' | 'decision' | 'withdraw
 
 export type ResolutionOutcome =
   | { answer: 'probability'; happened: boolean; baseRate: number | null }
-  | { answer: 'level'; value: number; noChange: number | null };
+  | { answer: 'level'; value: number; noChange: number | null }
+  /** A Replication Quest: the app's figure, recorded by the maintainer from the app, and the tolerance a match allows. */
+  | { answer: 'replication'; value: number; tolerance: number; from: string };
 
 export interface ResolutionLine {
   seq: number;
@@ -170,6 +175,7 @@ export function describeOutcome(l: Pick<ResolutionLine, 'kind' | 'outcome' | 're
   const fb = l.via === 'fallback' ? ' (from the fallback rule, because the main series had no value)' : '';
   const o = l.outcome;
   if (!o) return 'Settled.';
+  if (o.answer === 'replication') return `The app's figure is ${o.value} (${o.from}); an entry within ${o.tolerance} of it reproduces it.`;
   if (o.answer === 'level') return `The value was ${o.value}${read ? ` (${read})` : ''}${fb}.${o.noChange !== null ? ` On the day entries closed it was ${o.noChange}.` : ''}`;
   const rate = o.baseRate === null ? '' : ` In past periods of the same length this happened ${Math.round(o.baseRate * 100)}% of the time.`;
   return `${o.happened ? 'Yes, it happened' : 'No, it did not happen'}${read ? ` (${read})` : ''}${fb}.${rate}`;

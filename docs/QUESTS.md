@@ -26,7 +26,8 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Contributor statistics and scoreboard: skill with a 90% range, beat no change, calibration, sharpness, record against the crowd, fields, streak, each shown only above its minimum; rankings after 12 settled forecasts and a 90-day-old GitHub account; seasons, all-time and field tables (`npm run quests:stats`, Scoreboard tab) | Built and tested, switched off |
 | Quest generator (`npm run quests:generate`: weekly Brent and currency Quests, monthly policy-rate Quests, as drafts), batch approval (`npm run quests:approve`), weekly digest (`npm run quests:digest`) and "This week" on the Quests page | Built and tested, switched off |
 | Debate Quests: pick a position and argue it (privately, by pull request or by email); Claim Check reads each argument as it is written; an opening brief written once by the app's AI model (`npm run quests:brief`), which may state no figures of its own; an evidence map after close with the results of related Forecast Quests, exported as Markdown; debates argued listed on each contributor's page, never scored | Built and tested, switched off |
-| Signal and replication workflows | Not built |
+| Replication Quests: an entry gives the figure a person's script produced and a public link to the script; after close the maintainer records the app's own figure (`npm run quests:resolve -- --replicate`); each entry reproduces it if within the Quest's tolerance; listed on contributor pages, never ranked | Built and tested, switched off |
+| Signal Quests (contributed pre-registered tests, run once, in the multiple-testing family) | Not built |
 | Preference profiles | Not built |
 | Health page and yearly dataset | Not built |
 
@@ -98,6 +99,16 @@ How it works, step by step:
 6. **Contributor pages** list the Debates a person argued. Debates never count towards any score or ranking.
 
 Conflict, unrest and casualty questions run only as Debate Quests.
+
+## Replication Quests
+
+A Replication Quest asks people to rebuild a figure the app shows, for example the Bohn fiscal reaction coefficient for Brazil, from the same public data with their own code. It checks the app: if many people get the same figure, readers can trust it; if a careful script gets something else, the app may be wrong.
+
+1. **Enter.** Write a script in any language, put it where anyone can read it (a GitHub repository or gist; the link must start with https://), and enter the figure it gives: privately in the app, by pull request (the entry file holds `"answer": { "value": 0.061 }` and `"code": "https://..."`), or by email through a maintainer (`--value` and `--code`). Notes are optional: say which data vintage and settings you used, and any difference you found.
+2. **Entries close.** Figures are hidden in the app until then.
+3. **The app's figure is recorded.** The maintainer opens the panel the Quest names, with the settings it states, and records what the app shows: `npm run quests:resolve -- --by <login> --replicate <id> <figure> "panel, settings, date read"`. This is a line in the results record like any other result, and is never changed (a dispute is decided with `--decide`).
+4. **Matching.** An entry reproduces the figure when it is within the Quest's tolerance of the app's figure. An entry that differs is not "wrong": if its notes show the app made a mistake, the maintainer opens a bug against the app and records a note naming the entry (`--note`), and that entry solves the Quest.
+5. **Contributor pages** list each replication and whether it reproduced the app's figure. Replications are never ranked.
 
 ## Making new Quests
 

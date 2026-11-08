@@ -27,6 +27,8 @@ export interface PublicEntry {
   n: number;
   answer: EntryAnswer;
   rationale?: string;
+  /** Replication: the public https address of the script. */
+  code?: string;
   via: 'pull-request' | 'email';
   /** Emailed entries: when the maintainer received the email (ISO), and who posted it. */
   receivedAt?: string;
@@ -63,6 +65,7 @@ export function entryFileText(e: PublicEntry): string {
     n: e.n,
     answer: e.answer,
     ...(e.rationale ? { rationale: e.rationale } : {}),
+    ...(e.code ? { code: e.code } : {}),
     via: e.via,
     ...(e.receivedAt ? { receivedAt: e.receivedAt } : {}),
     ...(e.postedBy ? { postedBy: e.postedBy } : {}),
@@ -77,7 +80,7 @@ export function publicEntryProblems(raw: unknown, filePath: string, quest: { que
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return ['not a JSON object'];
   const e = raw as Partial<PublicEntry>;
   const out: string[] = [];
-  const known = new Set(['questId', 'questVersion', 'questHash', 'login', 'n', 'answer', 'rationale', 'via', 'receivedAt', 'postedBy']);
+  const known = new Set(['questId', 'questVersion', 'questHash', 'login', 'n', 'answer', 'rationale', 'code', 'via', 'receivedAt', 'postedBy']);
   for (const k of Object.keys(e)) if (!known.has(k)) out.push(`${k}: not a field of an entry`);
   if (e.questId !== at.questId) out.push(`questId: must be ${at.questId}, the folder it is in`);
   if (e.login !== at.login) out.push(`login: must be ${at.login}, as in the file name`);
@@ -97,7 +100,7 @@ export function publicEntryProblems(raw: unknown, filePath: string, quest: { que
     out.push('via: "pull-request" or "email"');
   }
   // Answer and rationale: the same rules as a private entry (dates are checked against the change, below).
-  for (const p of entryProblems({ answer: e.answer as EntryAnswer, rationale: e.rationale }, quest.quest, quest.quest.opensOn)) if (!/^Entries (open|closed)/.test(p)) out.push(p);
+  for (const p of entryProblems({ answer: e.answer as EntryAnswer, rationale: e.rationale, code: e.code }, quest.quest, quest.quest.opensOn)) if (!/^Entries (open|closed)/.test(p)) out.push(p);
   return out;
 }
 

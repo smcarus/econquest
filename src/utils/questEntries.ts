@@ -8,7 +8,7 @@
  * series wait for the resolver, which reads the value as first published (src/utils/questResolve.ts), because
  * today's download may already hold a revised figure. Scoring, not a signal. Browser-safe, pure.
  */
-import { questSettlesOn, type DebateQuest, type ForecastQuest } from './quests';
+import { questSettlesOn, type DebateQuest, type ForecastQuest, type ReplicationQuest } from './quests';
 import { questSeriesDef } from './questSeries';
 import type { QuestObservation, QuestRule } from './questRules';
 import { daysBetween, directionBaseRate, firstOnOrAfter, scoreLevel, scoreProbability, type LevelScore, type Point, type ProbabilityScore } from './questScoring';
@@ -16,11 +16,18 @@ import { daysBetween, directionBaseRate, firstOnOrAfter, scoreLevel, scoreProbab
 export const RATIONALE_MAX = 2000;
 export const GROUP_MAX = 40;
 
-/** A Forecast Quest takes a probability or a number; a Debate Quest takes a position (1 = the first listed). */
-export type EntryAnswer = { probability: number } | { level: number } | { position: number };
+/**
+ * A Forecast Quest takes a probability or a number; a Debate Quest takes a position (1 = the first
+ * listed); a Replication Quest takes the figure the person's script produced.
+ */
+export type EntryAnswer = { probability: number } | { level: number } | { position: number } | { value: number };
 
 /** The Quests that take entries. */
-export type EntryQuest = ForecastQuest | DebateQuest;
+export type EntryQuest = ForecastQuest | DebateQuest | ReplicationQuest;
+
+/** A Replication entry links to its script: a public https address of at most this many characters. */
+export const CODE_URL_MAX = 300;
+export const isCodeUrl = (s: unknown): s is string => typeof s === 'string' && s.length <= CODE_URL_MAX && /^https:\/\/[^\s/]+\.[^\s/]+\/\S+$/.test(s);
 
 /** A Debate entry must argue its position: at least this many characters. */
 export const ARGUMENT_MIN = 40;
@@ -29,6 +36,8 @@ export interface QuestEntryInput {
   questId: string;
   answer: EntryAnswer;
   rationale?: string;
+  /** Replication: where the script is (a public https address). */
+  code?: string;
   /** A class code, so a teacher can see the class table. */
   group?: string;
 }
@@ -49,15 +58,32 @@ export function canonicalEntry(e: Omit<QuestEntry, 'hash'> | QuestEntry): string
   return JSON.stringify(sort(rest));
 }
 
+/** The answer a Quest takes, from loose numbers (a form or a query string). */
+export function answerFor(quest: EntryQuest, raw: Partial<Record<'probability' | 'level' | 'position' | 'value', unknown>>): EntryAnswer {
+  if (quest.type === 'debate') return { position: Number(raw.position) };
+  if (quest.type === 'replication') return { value: Number(raw.value) };
+  return quest.rule.kind === 'level' ? { level: Number(raw.level) } : { probability: Number(raw.probability) };
+}
+
+/** A Replication entry against the app's recorded figure: a match when within the Quest's tolerance. */
+export function replicationScore(value: number, appValue: number, tolerance: number): { matched: boolean; difference: number; note: string } {
+  const difference = Math.round((value - appValue) * 1e6) / 1e6;
+  const matched = Math.abs(value - appValue) <= tolerance + 1e-12;
+  return { matched, difference, note: matched ? `Reproduces the app's ${appValue} (difference ${difference}, within ${tolerance})` : `Differs from the app's ${appValue} by ${difference} (more than ${tolerance}); if the script shows the app is wrong, the maintainer can record that` };
+}
+
 export function entryProblems(x: Partial<QuestEntryInput>, quest: EntryQuest, today: string): string[] {
   const out: string[] = [];
   if (today > quest.closesOn) out.push(`Entries closed on ${quest.closesOn}`);
   if (today < quest.opensOn && quest.approvedBy) out.push(`Entries open on ${quest.opensOn}`);
-  const a = x.answer as Partial<{ probability: number; level: number; position: number }> | undefined;
+  const a = x.answer as Partial<{ probability: number; level: number; position: number; value: number }> | undefined;
   if (quest.type === 'debate') {
     const n = quest.positions.length;
     if (!a || !Number.isInteger(a.position) || (a.position as number) < 1 || (a.position as number) > n) out.push(`This Quest asks you to pick a position, 1 to ${n}`);
     if (typeof x.rationale !== 'string' || x.rationale.trim().length < ARGUMENT_MIN) out.push(`Your argument: at least ${ARGUMENT_MIN} characters, saying why, with the figures you rely on`);
+  } else if (quest.type === 'replication') {
+    if (!a || typeof a.value !== 'number' || !Number.isFinite(a.value)) out.push("This Quest asks for the figure your script produced");
+    if (!isCodeUrl(x.code)) out.push(`Code: the public https address of your script (up to ${CODE_URL_MAX} characters), so anyone can run it`);
   } else if (quest.rule.kind === 'level') {
     if (!a || typeof a.level !== 'number' || !Number.isFinite(a.level)) out.push('This Quest asks for a number');
   } else if (!a || typeof a.probability !== 'number' || !(a.probability >= 0 && a.probability <= 1)) {
@@ -84,6 +110,7 @@ export type EntryScore =
   | { status: 'resolver'; note: string }
   | { status: 'unresolvable'; note: string }
   | { status: 'debate'; note: string }
+  | { status: 'replicated'; matched: boolean; difference: number; note: string }
   | ({ status: 'settled'; readings: Point[]; via: 'rule' | 'fallback' } & (ProbabilityScore | LevelScore));
 
 type Outcome = { happened: boolean; readings: Point[]; baseRate: number | null } | { level: number; readings: Point[]; noChange: number | null } | { reason: string } | { wait: string } | { resolver: string };

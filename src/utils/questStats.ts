@@ -13,6 +13,8 @@
  *   field strengths    skill by topic and by region                                                   8 in that field
  *   forward streak     settled Quests in a row with positive skill; shown, never ranked               5 settled
  *   debates argued     the Debate Quests a person argued (step 9); listed, never scored or ranked     none
+ *   replications       Replication Quests entered and whether each reproduced the app's figure;      none
+ *                      listed, never ranked (step 10)
  *
  * Rankings: by skill score only, among people with 12 or more settled forecasts with a base rate,
  * whose GitHub account was at least 90 days old when their first Quest closed (emailed entries,
@@ -22,10 +24,11 @@
  *
  * Browser-safe, pure.
  */
-import { questSettlesOn, type DebateQuest, type ForecastQuest } from './quests';
+import { questSettlesOn, type DebateQuest, type ForecastQuest, type ReplicationQuest } from './quests';
 import { countedPublicEntries, entrySpread, type PublicEntry } from './questPublicEntries';
 import { resultState, type ResolutionLine } from './questResolve';
 import { brier, mean, scoreLevel, scoreProbability } from './questScoring';
+import { replicationScore } from './questEntries';
 
 export const MIN = { skill: 12, beatNoChange: 12, calibration: 30, sharpness: 12, contrarian: 12, field: 8, streak: 5 } as const;
 export const ACCOUNT_DAYS = 90;
@@ -82,6 +85,8 @@ export interface ContributorStats {
   proposed: Array<{ questId: string; entries: number }>;
   /** Debate Quests argued: listed, never scored or ranked. */
   debates: Array<{ questId: string; title: string }>;
+  /** Replication Quests entered: matched is null until the app's figure is recorded. Listed, never ranked. */
+  replications: Array<{ questId: string; title: string; matched: boolean | null }>;
   /** Why the person is not on the scoreboard, when they are not. */
   unranked?: string;
   entries: ScoredEntry[];
@@ -155,7 +160,7 @@ function rankRows(rows: Array<{ login: string; skills: number[] }>, min: number,
 }
 
 export interface StatsInput {
-  quests: Array<{ quest: ForecastQuest | DebateQuest; approved: boolean }>;
+  quests: Array<{ quest: ForecastQuest | DebateQuest | ReplicationQuest; approved: boolean }>;
   entries: PublicEntry[];
   lines: ResolutionLine[];
   /** GitHub login -> account creation time (ISO), as looked up by npm run quests:stats. */
@@ -164,8 +169,8 @@ export interface StatsInput {
 
 export function computeStats({ quests, entries, lines, accounts }: StatsInput): QuestStats {
   const approved = quests.filter((q) => q.approved);
-  const byPerson = new Map<string, { entered: number; unresolvable: number; waiting: number; byTopic: Record<string, number>; byRegion: Record<string, number>; scored: ScoredEntry[]; firstClose: string; debates: Array<{ questId: string; title: string }> }>();
-  const person = (login: string) => byPerson.get(login) || { entered: 0, unresolvable: 0, waiting: 0, byTopic: {}, byRegion: {}, scored: [], firstClose: '9999-12-31', debates: [] };
+  const byPerson = new Map<string, { entered: number; unresolvable: number; waiting: number; byTopic: Record<string, number>; byRegion: Record<string, number>; scored: ScoredEntry[]; firstClose: string; debates: Array<{ questId: string; title: string }>; replications: ContributorStats['replications'] }>();
+  const person = (login: string) => byPerson.get(login) || { entered: 0, unresolvable: 0, waiting: 0, byTopic: {}, byRegion: {}, scored: [], firstClose: '9999-12-31', debates: [], replications: [] };
   let crowdSkills: number[] = [];
   for (const { quest } of approved) {
     const counted = countedPublicEntries(entries, quest.id, quest.version);
@@ -174,6 +179,17 @@ export function computeStats({ quests, entries, lines, accounts }: StatsInput): 
       for (const e of counted) {
         const p = person(e.login);
         p.debates.push({ questId: quest.id, title: quest.title });
+        byPerson.set(e.login, p);
+      }
+      continue;
+    }
+    if (quest.type === 'replication') {
+      const rs = resultState(lines, quest.id, quest.version);
+      const o = rs.state === 'settled' ? rs.line.outcome : undefined;
+      for (const e of counted) {
+        const p = person(e.login);
+        const matched = o?.answer === 'replication' && 'value' in e.answer ? replicationScore(e.answer.value, o.value, o.tolerance).matched : null;
+        p.replications.push({ questId: quest.id, title: quest.title, matched });
         byPerson.set(e.login, p);
       }
       continue;
@@ -251,6 +267,7 @@ export function computeStats({ quests, entries, lines, accounts }: StatsInput): 
       streak: gate(scored.length, MIN.streak, () => streak),
       proposed: approved.filter((q) => q.quest.author === login).map((q) => ({ questId: q.quest.id, entries: countedPublicEntries(entries, q.quest.id, q.quest.version).length })),
       debates: p.debates,
+      replications: p.replications,
       ...(unranked ? { unranked } : {}),
       entries: scored,
     });
