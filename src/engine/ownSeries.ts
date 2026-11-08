@@ -419,11 +419,35 @@ export function ownSeriesView(f: OwnSeriesFile): OwnSeriesView {
     label: f.meta.label,
     unit: f.meta.unit,
     freq: f.meta.freq,
-    source: `Your file: ${f.meta.source}`,
+    source: `${OWN_SOURCE_PREFIX}${f.meta.source}`,
     pulledAt: f.savedAt,
     points: f.points,
     about: `Loaded by you from a CSV file on ${f.savedAt.slice(0, 10)}; the app has not checked these figures. ${extra}`.trim(),
     own: true,
     licence: f.meta.licence ?? null,
   };
+}
+
+/** Words every reader of a "Your file" figure can match on (downloads, sharing mode). */
+export const OWN_SOURCE_PREFIX = 'Your file: ';
+
+/** True when a source line names one of your own files rather than a feed. */
+export const isOwnSource = (source: string | undefined | null): boolean => typeof source === 'string' && source.startsWith(OWN_SOURCE_PREFIX);
+
+/**
+ * Your saved series for one country (or WLD), in the shape charts and downloads read. A copy
+ * changed outside the app still shows, with that said first in its description.
+ */
+export async function ownSeriesViewsFor(platform: Platform, iso3: string): Promise<OwnSeriesView[]> {
+  const code = iso3.toUpperCase();
+  const names = (await platform.files.list(OWN_SERIES_FOLDER)).filter((n) => n.endsWith('.json'));
+  const out: OwnSeriesView[] = [];
+  for (const n of names) {
+    const f = readFile(await platform.files.read(`${OWN_SERIES_FOLDER}/${n.split('/').pop() ?? n}`));
+    if (!f || f.meta.iso3 !== code) continue;
+    const view = ownSeriesView(f);
+    const intact = (await sha256Hex(pointsDigestText(f.points))) === f.pointsSha256;
+    out.push(intact ? view : { ...view, about: `Changed outside the app since it was saved (its figures no longer match their fingerprint). ${view.about}` });
+  }
+  return out.sort((a, b) => a.label.localeCompare(b.label));
 }

@@ -10,6 +10,7 @@ import { createNodePlatform } from './src/platform/node';
 import { secretBoxFromEnv } from './src/utils/secretBox';
 import type { Caller } from './src/engine/routes';
 import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
+import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
@@ -3010,7 +3011,7 @@ async function startServer() {
       .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .map((x) => ({ date: x.date, pulledAt: x.pulledAt, snapshot: x.snapshot }));
-    return countrySeries(iso3, {
+    const set = countrySeries(iso3, {
       cbpol,
       cli,
       qna,
@@ -3031,6 +3032,9 @@ async function startServer() {
       inflationSurveys,
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
+    // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).
+    const own = await ownSeriesViewsFor(enginePlatform, iso3).catch(() => []);
+    return { ...set, series: [...set.series, ...own] };
   }
   async function worldSeries(): Promise<Series[]> {
     await quick(fetchCommodities());
@@ -3039,7 +3043,9 @@ async function startServer() {
     // Stress and supply chain indices (src/utils/stressIndices.ts), chartable and testable like prices.
     const [pulls, surveys] = await Promise.all([quick(fetchStressPulls()), quick(fetchInflationSurveys())]);
     const extra = [...stressWorldSeries(pulls), ...spfWorldSeries(surveys)].filter((x): x is Series => 'points' in x);
-    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra];
+    // Your own series not about one country (Menu > Your data: "Not about one country").
+    const own = await ownSeriesViewsFor(enginePlatform, OWN_NO_COUNTRY).catch(() => []);
+    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra, ...own];
   }
   // Fed balance sheet (H.4.1) from FRED: Research > Compare countries > Markets & signals.
   app.get('/api/fed-balance-sheet', async (_req, res) => {
