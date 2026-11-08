@@ -1,7 +1,6 @@
 import type express from 'express';
 import crypto from 'crypto';
 import type { Account } from '../../utils/auth';
-import { DATA_DIR } from '../config';
 import type { AnalysisDeps } from './analysis';
 import { refusal } from '../../utils/permissions';
 import { appendAudit } from '../../utils/auditStore';
@@ -9,7 +8,8 @@ import { AUDIT_FILES } from '../config';
 import { CBPOL_AREA, CBPOL_NOT_COVERED } from '../../utils/bisPolicyRates';
 import { SOVEREIGN_CATALOG } from '../../data/presetsAndBaselines.ts';
 import { addDays, IDEA_METHOD, scoreIdea, summariseIdeas, validateIdea, valueOnOrBefore, type IdeaInput } from '../../utils/ideaJournal';
-import { appendIdea, ideaFilePath, loadIdeas } from '../../utils/ideaStore';
+import { appendIdea, loadIdeas } from '../../engine/ideaStore';
+import type { Platform } from '../../platform/types';
 import { fetchPolicyDaily } from '../feeds/rates';
 
 /**
@@ -21,12 +21,12 @@ export interface IdeaDeps {
   seriesFor: AnalysisDeps['seriesFor'];
   refuseRemoteChange: (req: express.Request, res: express.Response) => boolean;
   signedIn: (res: express.Response) => Account | null;
+  /** The device services the shared engine uses (the idea file lives under its data folder). */
+  platform: Platform;
 }
 
-const IDEA_FILE = ideaFilePath(DATA_DIR);
-
 export function registerIdeaRoutes(app: express.Express, deps: IdeaDeps): void {
-  const { quick, seriesFor, refuseRemoteChange, signedIn } = deps;
+  const { quick, seriesFor, refuseRemoteChange, signedIn, platform } = deps;
   const nameOf = (iso3: string) => SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
   /** The published series an idea is scored on, or why there is none. */
   const seriesForIdea = async (iso3: string, instrument: IdeaInput['instrument']): Promise<{ target: string; points: Array<{ date: string; value: number }> } | { reason: string }> => {
@@ -45,7 +45,7 @@ export function registerIdeaRoutes(app: express.Express, deps: IdeaDeps): void {
   };
 
   app.get('/api/ideas', async (_req, res) => {
-    const { ideas, badLines } = loadIdeas(IDEA_FILE);
+    const { ideas, badLines } = await loadIdeas(platform);
     const today = new Date().toISOString().slice(0, 10);
     const cache = new Map<string, Promise<Awaited<ReturnType<typeof seriesForIdea>>>>();
     const scored = await Promise.all(
@@ -83,7 +83,7 @@ export function registerIdeaRoutes(app: express.Express, deps: IdeaDeps): void {
     const entry = valueOnOrBefore(s.points, today);
     if (!entry) return res.status(400).json({ error: 'Cannot log this idea: no published value yet to use as the entry level.' });
     try {
-      const idea = appendIdea(IDEA_FILE, {
+      const idea = await appendIdea(platform, {
         ...(input as IdeaInput),
         id: crypto.randomUUID(),
         loggedAt: now.toISOString(),
@@ -92,7 +92,7 @@ export function registerIdeaRoutes(app: express.Express, deps: IdeaDeps): void {
         entry,
         horizonDate: addDays(today, input.horizonDays!),
       });
-      appendAudit(AUDIT_FILES, { kind: 'idea', summary: `Logged a ${idea.type} idea: ${idea.direction} ${idea.instrument === 'fx' ? idea.target : `${idea.target} policy rate`} to ${idea.horizonDate}`, detail: { id: idea.id, hash: idea.hash } });
+      void appendAudit(AUDIT_FILES, { kind: 'idea', summary: `Logged a ${idea.type} idea: ${idea.direction} ${idea.instrument === 'fx' ? idea.target : `${idea.target} policy rate`} to ${idea.horizonDate}`, detail: { id: idea.id, hash: idea.hash } });
       res.json({ ok: true, idea });
     } catch (error: any) {
       res.status(500).json({ error: `Could not save the idea (${error?.code || error?.message || 'unknown error'}).` });

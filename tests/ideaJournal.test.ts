@@ -4,7 +4,9 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { addDays, canonicalIdea, scoreIdea, summariseIdeas, validateIdea, valueOnOrBefore, type Idea } from '../src/utils/ideaJournal';
-import { appendIdea, ideaHash, loadIdeas } from '../src/utils/ideaStore';
+import { createHash } from 'crypto';
+import { appendIdea, ideaHash, loadIdeas } from '../src/engine/ideaStore';
+import { createNodePlatform } from '../src/platform/node';
 
 const base: Omit<Idea, 'hash'> = {
   id: 'a',
@@ -79,16 +81,19 @@ test('summary counts hits by type', () => {
   assert.equal(rows.find((r) => r.type === 'value')!.open, 1);
 });
 
-test('the store appends hashed records and spots a changed line', () => {
+test('the store appends hashed records and spots a changed line', async () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ideas-'));
+  const platform = createNodePlatform({ dataDir: dir, logLine: () => undefined });
   const file = path.join(dir, 'local', 'ideas.jsonl');
-  const a = appendIdea(file, base);
-  appendIdea(file, { ...base, id: 'b' });
+  const a = await appendIdea(platform, base);
+  await appendIdea(platform, { ...base, id: 'b' });
   assert.equal(a.hash, ideaHash(base));
+  // Same hash as before the move to the shared engine (Node's own SHA-256).
+  assert.equal(a.hash, createHash('sha256').update(canonicalIdea(base)).digest('hex'));
   assert.equal(canonicalIdea(a), canonicalIdea(base));
   const text = fs.readFileSync(file, 'utf8').replace('"Carry and a hawkish bank"', '"Edited later"');
   fs.writeFileSync(file, `${text}not json\n`);
-  const { ideas, badLines } = loadIdeas(file);
+  const { ideas, badLines } = await loadIdeas(platform);
   assert.equal(ideas.length, 2);
   assert.equal(badLines, 1);
   assert.deepEqual(ideas.map((i) => i.hashOk), [false, true], "only the edited first line fails");
