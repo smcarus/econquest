@@ -139,21 +139,22 @@ export const MissingHelp: React.FC<{ help?: string }> = ({ help }) => {
 
 export const FigureHelp: React.FC<{ entry: GlossaryEntry }> = ({ entry }) => {
   const t = useT(BRIEF);
+  const tx = useTx();
   return (
   <details className="mt-0.5 text-xs font-normal" data-figure-help={entry.id}>
     <summary className="cursor-pointer text-blue-700 dark:text-blue-300 hover:underline w-fit">{t('whatIsThis')}</summary>
     <div className="mt-1 space-y-1 text-slate-600 dark:text-slate-300 max-w-prose text-left">
       <p>
-        <strong className="font-medium text-slate-800 dark:text-slate-100">{entry.term}.</strong> {entry.what}
+        <strong className="font-medium text-slate-800 dark:text-slate-100">{tx(entry.term)}.</strong> {tx(entry.what)}
       </p>
-      <p>{entry.why}</p>
+      <p>{tx(entry.why)}</p>
       {entry.read && (
         <p>
           <span className="font-medium text-slate-800 dark:text-slate-100">{t('howToRead')}</span>
-          {entry.read}
+          {tx(entry.read)}
         </p>
       )}
-      {entry.limits && <p className="text-slate-500 dark:text-slate-400">{entry.limits}</p>}
+      {entry.limits && <p className="text-slate-500 dark:text-slate-400">{tx(entry.limits)}</p>}
     </div>
   </details>
   );
@@ -186,7 +187,7 @@ export const BriefGroups: React.FC<{ brief: CountryBrief; country?: { iso3: stri
             </button>
           )}
         </header>
-        {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{panelIntro(g.title)}</p>}
+        {showGuides(level) && panelIntro(g.title) && <p className="px-4 pt-2 ui-label" data-panel-intro="true">{tx(panelIntro(g.title) ?? '')}</p>}
         <table className="w-full text-sm">
           <caption className="sr-only">{tx(g.title)}</caption>
           <tbody>

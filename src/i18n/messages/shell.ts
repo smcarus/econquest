@@ -58,6 +58,8 @@ export const SHELL = defineMessages(
     helpFullNote: 'Explains every figure and term, and why each missing figure is missing.',
     helpTitle: '{label}: {note} Press for {next}.',
     helpAria: 'Explanations: {label}. Press for {next}.',
+    guideRead: 'How to read this chart: ',
+    guideLife: 'What it means in real life: ',
     langTitle: 'Language: {name}. Press for {next}.',
     langNotReviewed: 'Language: {name}. This translation has not yet been checked by a native speaker; figures, sources and AI-written answers stay as written. Press for {next}.',
     langAria: 'Language: {name}. Press for {next}.',

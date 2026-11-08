@@ -40,6 +40,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   The Menu dialogs are in Spanish too: Settings (AI model, free data keys and what each one does, server alerts,
   morning brief, backup), About & data licences, Account and the sign-in page, Add a country, the Idea journal,
   Data connections and Offline data. Each source's licence row stays in English because it quotes that source's terms.
+  The help is in Spanish too: every "What is this?" glossary entry, the panel introductions, the "How to read this
+  chart" guides, and the Glossary in Menu > User manual, which is shown translated in Spanish (docs/GLOSSARY.md stays
+  English). The user manual and the About the project page stay English for now and say so.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store
