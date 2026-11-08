@@ -5,7 +5,8 @@
  *
  * It shows what the app's Scoreboard shows and nothing more: the ranked table with 90% ranges and
  * its rules, seasons, the crowd against the base rate, each approved Quest with its result, every
- * contributor's settled count, and the stances of people who signed up with a profile. Every figure
+ * contributor's settled count, the health measures (src/utils/questHealth.ts), and the stances of
+ * people who signed up with a profile. Every figure
  * is worked out from public files, so anyone can rebuild the page and get the same thing.
  *
  * Browser-safe, pure: returns the HTML text.
@@ -14,6 +15,7 @@ import { EXPORT_NOTICE } from './disclaimer';
 import { questSettlesOn, questStatus, type Quest } from './quests';
 import { describeOutcome, resultState, type ResolutionLine } from './questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from './questStats';
+import type { QuestHealth } from './questHealth';
 import { STANCE_AXES, stanceWords, type StanceProfile } from './questStances';
 
 export interface BoardInput {
@@ -21,6 +23,8 @@ export interface BoardInput {
   quests: Array<{ quest: Quest; approved: boolean }>;
   lines: ResolutionLine[];
   profiles: StanceProfile[];
+  /** The health measures; the section is left out when not given. */
+  health?: QuestHealth;
   /** owner/name of the public repository, for links; '' when not set. */
   repo: string;
   today: string;
@@ -38,6 +42,19 @@ function table(rows: BoardRow[]): string {
   return `<table><thead><tr><th>Rank</th><th>Who</th><th>Settled</th><th>Skill</th><th>90% range</th></tr></thead><tbody>${rows
     .map((r) => `<tr><td>${r.rank}</td><td><a href="#c-${esc(r.login)}">${esc(r.login)}</a></td><td>${r.n}</td><td>${sign(r.score)}</td><td>${sign(r.low)} to ${sign(r.high)}</td></tr>`)
     .join('')}</tbody></table>`;
+}
+
+function healthSection(h: QuestHealth): string {
+  if (!h.approved) return '';
+  const months = h.months.length
+    ? `<table><thead><tr><th>Month closed</th><th>Quests</th><th>Entries</th><th>People</th></tr></thead><tbody>${h.months.map((m) => `<tr><td>${esc(m.month)}</td><td>${m.questsClosed}</td><td>${m.entries}</td><td>${m.people}</td></tr>`).join('')}</tbody></table>`
+    : '<p class="muted">No Quest has closed yet.</p>';
+  const ot = h.onTime;
+  const onTime = ot.share === null ? 'No result has been due long enough to judge yet.' : `${Math.round(ot.share * 100)}% of results were recorded within ${ot.graceDays} days of their due date (${ot.onTime} of ${ot.due}; ${ot.late} late, ${ot.overdue} overdue).`;
+  return `<h2>Is it working?</h2>
+<p>${h.approved} approved Quests, ${h.closed} closed to entries${h.closedEmpty ? ` (${h.closedEmpty} with no entries)` : ''}; ${h.totalEntries} counted entries from ${h.totalPeople} people, ${h.returning} of whom came back in more than one month. The middle closed Quest had ${h.medianEntries === null ? 'no entries yet' : `${h.medianEntries} entr${h.medianEntries === 1 ? 'y' : 'ies'}`}. ${esc(onTime)}${h.reviewOn ? ` These measures are reviewed on ${esc(h.reviewOn)}, six months after the first Quest opened.` : ''}</p>
+${months}
+<p class="small">People are counted by the month each Quest closed, since entry files carry no date of their own.</p>`;
 }
 
 function contributor(c: ContributorStats, profile: StanceProfile | undefined): string {
@@ -115,6 +132,8 @@ ${seasons}
 
 <h2>Quests</h2>
 ${approved.length ? `<table><thead><tr><th>Quest</th><th>Type</th><th>Status</th><th>Entries close</th><th>Result</th></tr></thead><tbody>${quests}</tbody></table>` : '<p class="muted">No approved Quests yet.</p>'}
+
+${x.health ? healthSection(x.health) : ''}
 
 <h2>Everyone who has entered</h2>
 ${stats.contributors.length ? `<ul>${stats.contributors.map((c) => contributor(c, profiles.get(c.login))).join('')}</ul>` : '<p class="muted">No public entries yet.</p>'}
