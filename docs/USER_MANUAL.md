@@ -798,6 +798,16 @@ hold no figures of their own; the handout reads them from the app's series when 
   here is saved first in `data/local/backups/`, and AI keys already on this computer are kept. Use it
   to move to another computer or to keep a copy.
 
+### Reading the data from R, Python or Stata
+
+Your own scripts can read the same series, panel tables and figure tables the screens show, with the
+unit, source and date on every value and "Missing" with its reason where the app has no figure. Three
+small helper files, one each for Python, R and Stata, are in `scripts/data-api/`; none needs anything
+installed beyond the language. For example, in Python `eq.series("BRA", "policy_rate")` gives
+Brazil's policy rate one row per month. The full guide, with every address and what comes back, is
+`docs/DATA_API.md`. Downloads follow Sharing mode. A copy with sign-in on lets scripts read these
+addresses only with the integration API key, sent in a header (the guide says how to switch it on).
+
 ### Download all country data (for offline use)
 
 One pass over every free feed for every country the app covers: the world feeds once (BIS policy

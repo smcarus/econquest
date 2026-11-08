@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Data API for scripts: docs/DATA_API.md lists the read-only addresses for series, panels and figure tables
+  (the same ones the screens use, with source and date on every value and Missing with its reason), with
+  helper files for Python, R and Stata in scripts/data-api/ that need nothing installed. Downloads follow
+  Sharing mode. A copy with sign-in on lets a script read those addresses, and only those, with the
+  integration API key sent in a header. Reads that do not come from a signed-in account are limited to
+  about 120 a minute per address so a script cannot slow the app.
 - Small gap model, part 3 (council link): "Ask the council about this run" sends the run to Council chat as an
   Explain request labelled "Your model", with every parameter, the starting point, any shocks and the path, so the
   council treats the numbers as the user's own assumptions, not published figures or a forecast. It asks the AI
