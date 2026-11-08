@@ -48,6 +48,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   sign-off, policy documents, and the Agents panel's steps, agent descriptions and scope notes. The agent documents
   themselves stay English, as the agents and the summary read them, and the window says so. "Menu > Settings" links in
   translated help still open the right page of Settings.
+  The Reports pages are in Spanish too: policy reviews (every step, option, lens, evidence and outcome screen), saved
+  council documents, teaching episodes and the report builder's settings, types and section headings. The memo and
+  report text itself stays English, because it is shared and exported, and the page says so.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

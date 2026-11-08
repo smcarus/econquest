@@ -389,3 +389,31 @@ test('Council chat cards: assumptions, re-run notes, explanation lenses, chart c
   const parts = splitSettingsLinks(tx('No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.'));
   assert.ok(parts.some((p) => typeof p !== 'string' && p.page === 'ai'), 'the Spanish Settings link still opens the AI model page');
 });
+
+test('Reports pages: review steps, levers, lenses, memo types and section headings have Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (x: string) => translateText(x, 'es');
+  const { STEP_LABEL, STEP_HINT, STEP_STATE_LABEL } = await import('../src/utils/policyReview');
+  const { LEVER_LABEL, LENS_LABEL } = await import('../src/utils/reviewOptions');
+  const { GOAL_MOVE_LABEL } = await import('../src/utils/reviewOutcomes');
+  const { COUNCIL_SECTIONS } = await import('../src/utils/askCouncil');
+  const { AUDIENCE_INFO, sectionLabels } = await import('../src/components/IcMemoBuilder');
+  const s: string[] = [
+    ...Object.values(STEP_LABEL),
+    ...Object.values(STEP_HINT),
+    ...Object.values(STEP_STATE_LABEL),
+    ...Object.values(LEVER_LABEL),
+    ...Object.values(LENS_LABEL),
+    ...Object.values(GOAL_MOVE_LABEL),
+    ...Object.values(COUNCIL_SECTIONS),
+  ];
+  for (const [a, info] of Object.entries(AUDIENCE_INFO)) {
+    s.push(info.tab, info.heading, info.help, ...Object.values(sectionLabels(a as keyof typeof AUDIENCE_INFO)));
+  }
+  // Words spelled the same in both languages.
+  const SAME = new Set(['Fiscal']);
+  const untranslated = [...new Set(s)].filter((x) => !SAME.has(x) && tx(x) === x);
+  assert.deepEqual(untranslated, [], 'Reports text with no Spanish');
+});

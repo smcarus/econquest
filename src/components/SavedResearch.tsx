@@ -6,6 +6,8 @@ import type { PolicyDoc } from '../utils/policyDocs';
 import type { CouncilDocument } from '../utils/agentDocument';
 import { SignOffControl, refreshSignOffs } from './SignOffControl';
 import type { BriefSummary, CouncilDocSummary, DocSummary, Episode, EpisodeInput, Notebook, NotebookPatch, NotebookSummary, SavedBriefEntry } from '../utils/researchLibrary';
+import { useT, useTx } from '../i18n/useLang';
+import { REPORTS } from '../i18n/messages/reports';
 
 /** The research library on this computer (data/local/research.json), through the app server. */
 export function useResearchLibrary() {
@@ -15,6 +17,7 @@ export function useResearchLibrary() {
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [councilDocs, setCouncilDocs] = useState<CouncilDocSummary[]>([]);
   const [error, setError] = useState('');
+  const t = useT(REPORTS);
   const refresh = useCallback(async () => {
     try {
       const r = await fetch('/api/research');
@@ -27,9 +30,9 @@ export function useResearchLibrary() {
       setCouncilDocs(Array.isArray(j.councilDocs) ? j.councilDocs : []);
       setError('');
     } catch (e: any) {
-      setError(`Saved research could not be read (${e?.message || 'the app server did not answer'}).`);
+      setError(t('sr_readErr', { why: e?.message || t('sr_noServer') }));
     }
-  }, []);
+  }, [t]);
   useEffect(() => {
     void refresh();
   }, [refresh]);
@@ -45,7 +48,7 @@ export function useResearchLibrary() {
       await refresh();
       return j || {};
     } catch (e: any) {
-      setError(`Not saved: ${e?.message || 'the app server did not answer'}.`);
+      setError(t('sr_notSaved', { why: e?.message || t('sr_noServer') }));
       return null;
     }
   };
@@ -56,7 +59,7 @@ export function useResearchLibrary() {
       await refresh();
       return true;
     } catch (e: any) {
-      setError(`Not saved: ${e?.message || 'the app server did not answer'}.`);
+      setError(t('sr_notSaved', { why: e?.message || t('sr_noServer') }));
       return false;
     }
   };
@@ -115,11 +118,12 @@ function Line({ text }: { text: string }) {
 }
 
 export function BriefView({ brief }: { brief: SavedCouncilBrief }) {
+  const tx = useTx();
   return (
     <div className="space-y-3" data-saved-brief-view="true">
       {councilBriefSections(brief, () => true).map((s) => (
         <div key={s.heading} className="space-y-1">
-          <h4 className="text-sm font-medium text-slate-900 dark:text-white">{s.heading}</h4>
+          <h4 className="text-sm font-medium text-slate-900 dark:text-white">{tx(s.heading)}</h4>
           {s.lines.filter((l) => l.trim()).map((l, i) => (
             <p key={i} className={`text-sm text-slate-800 dark:text-slate-200 ${l.startsWith('  - ') ? 'pl-8' : l.startsWith('- ') ? 'pl-4' : ''}`}>
               <Line text={l.replace(/^\s*- /, '• ')} />
@@ -139,6 +143,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
   const [open, setOpen] = useState<SavedBriefEntry | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [copied, setCopied] = useState(false);
+  const t = useT(REPORTS);
   if (!lib.briefs.length && !lib.error) return null;
   const list = showAll ? lib.briefs : lib.briefs.slice(0, 5);
   const view = async (id: string) => {
@@ -153,7 +158,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
   return (
     <details className="px-4 py-2 border-t border-slate-100 dark:border-slate-800" data-saved-research="true">
       <summary className="cursor-pointer ui-label">
-        Saved research ({lib.briefs.length}), kept on this computer in data/local/research.json
+        {t('sr_summary', { n: lib.briefs.length })}
       </summary>
       {lib.error && <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">{lib.error}</p>}
       <ul className="mt-2 space-y-1.5">
@@ -162,7 +167,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
             <div className="flex flex-wrap items-start justify-between gap-2">
               <button type="button" className="text-left text-sm text-slate-900 dark:text-white hover:underline" onClick={() => void view(b.id)}>
                 {b.question}
-                {b.turns > 1 && <span className="text-slate-500 dark:text-slate-400"> (and {b.turns - 1} earlier {b.turns === 2 ? 'question' : 'questions'})</span>}
+                {b.turns > 1 && <span className="text-slate-500 dark:text-slate-400">{b.turns === 2 ? t('sr_earlier1') : t('sr_earlierN', { n: b.turns - 1 })}</span>}
               </button>
               <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">{when(b.askedAt)} UTC</span>
             </div>
@@ -170,7 +175,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
             <SignOffControl briefId={b.id} />
             {openId === b.id && (
               <div className="pt-2 space-y-2">
-                {open ? <BriefView brief={open} /> : <p className="text-xs text-slate-500">Opening…</p>}
+                {open ? <BriefView brief={open} /> : <p className="text-xs text-slate-500">{t('sr_opening')}</p>}
                 {open && (
                   <div className="flex flex-wrap gap-2">
                     <button
@@ -186,7 +191,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
                         }
                       }}
                     >
-                      <Copy className="w-3.5 h-3.5" /> {copied ? 'Copied' : 'Copy as text'}
+                      <Copy className="w-3.5 h-3.5" /> {copied ? t('sr_copied') : t('sr_copy')}
                     </button>
                     <button type="button" className="ui-btn" onClick={() => void downloadCouncilBrief(open, 'md')}>
                       <Download className="w-3.5 h-3.5" /> Markdown
@@ -202,7 +207,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
                         onSendToReports();
                       }}
                     >
-                      <FileText className="w-3.5 h-3.5" /> Open in Reports
+                      <FileText className="w-3.5 h-3.5" /> {t('sr_open')}
                     </button>
                     <button
                       type="button"
@@ -214,7 +219,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
                         }
                       }}
                     >
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                      <Trash2 className="w-3.5 h-3.5" /> {t('sr_delete')}
                     </button>
                   </div>
                 )}
@@ -225,7 +230,7 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
       </ul>
       {lib.briefs.length > 5 && (
         <button type="button" className="mt-1 ui-btn" onClick={() => setShowAll((s) => !s)}>
-          {showAll ? 'Show the latest 5' : `Show all ${lib.briefs.length}`}
+          {showAll ? t('sr_latest') : t('sr_all', { n: lib.briefs.length })}
         </button>
       )}
     </details>
@@ -235,16 +240,17 @@ export function SavedResearchList({ lib, toMarkdown, onSendToReports }: { lib: R
 /** Saved documents not in use now: add one back to the question, or delete it from this computer. */
 export function SavedDocsRow({ lib, activeIds, canAdd, onUse }: { lib: ResearchLibraryApi; activeIds: string[]; canAdd: boolean; onUse: (d: PolicyDoc) => void }) {
   const idle = lib.docs.filter((d) => !activeIds.includes(d.id));
+  const t = useT(REPORTS);
   if (!idle.length) return null;
   return (
     <div className="flex flex-wrap items-center gap-1.5" data-saved-docs="true">
-      <span className="text-xs text-slate-500 dark:text-slate-400">Saved documents:</span>
+      <span className="text-xs text-slate-500 dark:text-slate-400">{t('sr_docs')}</span>
       {idle.map((d) => (
         <span key={d.id} className="ui-pill flex items-center gap-1" data-saved-doc={d.title}>
           <button
             type="button"
             disabled={!canAdd}
-            title={canAdd ? 'Use this document in the next question' : 'Remove a document first (at most 5 at once)'}
+            title={canAdd ? t('sr_use') : t('sr_full')}
             onClick={async () => {
               const full = await lib.loadDoc(d.id);
               if (full) onUse(full);
@@ -253,7 +259,7 @@ export function SavedDocsRow({ lib, activeIds, canAdd, onUse }: { lib: ResearchL
           >
             + {d.title}
           </button>
-          <button type="button" aria-label={`Delete ${d.title} from this computer`} title="Delete from this computer" onClick={() => void lib.deleteDoc(d.id)} className="hover:text-rose-700">
+          <button type="button" aria-label={t('sr_delDoc', { title: d.title })} title={t('sr_delTitle')} onClick={() => void lib.deleteDoc(d.id)} className="hover:text-rose-700">
             <X className="w-3 h-3" />
           </button>
         </span>
