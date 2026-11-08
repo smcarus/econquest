@@ -160,7 +160,7 @@ export function questProblems(raw: unknown, opts: QuestCheckOptions): string[] {
   const q = raw as Partial<Quest> & Record<string, unknown>;
   const out: string[] = [];
   if (typeof q.id !== 'string' || !ID.test(q.id) || q.id.length > 60) out.push('id: lower-case words joined by hyphens, at most 60 characters');
-  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs', 'test-verdicts'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
+  else if (['manifest', 'stats', 'accounts', 'entries', 'drafts', 'resolutions', 'briefs', 'test-verdicts', 'profiles'].includes(q.id)) out.push(`id: "${q.id}" is the name of a file or folder in quests/; choose another`);
   if (!Number.isInteger(q.version) || (q.version as number) < 1) out.push('version: a whole number from 1');
   if (opts.fileName && typeof q.id === 'string' && Number.isInteger(q.version) && opts.fileName !== questFileName(q as Quest)) out.push(`file name: must be ${questFileName(q as Quest)}`);
   if (!QUEST_TYPES.includes(q.type as QuestType)) out.push(`type: one of ${QUEST_TYPES.join(', ')}`);

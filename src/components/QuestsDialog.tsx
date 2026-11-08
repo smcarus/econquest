@@ -14,7 +14,8 @@ import { SIGNAL_FLOOR, SIGNAL_METHODS, SIGNAL_TEMPLATE, signalTestProblems, type
 import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
 import type { LiveWatchlistItem } from '../types/council';
-import type { PublicEntry } from '../utils/questPublicEntries';
+import { newFileUrl, type PublicEntry } from '../utils/questPublicEntries';
+import { profileFileText, profilePath, stancesProblems, stanceWords, type StanceAxis, type StanceProfile, type Stances, type StanceValue } from '../utils/questStances';
 import { ARGUMENT_MIN } from '../utils/questEntries';
 import { checkArgument, evidenceMap, evidenceMarkdown, type ArgumentCheck, type DebateBrief, type EvidenceMap } from '../utils/questDebate';
 
@@ -56,7 +57,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
   const [openId, setOpenId] = useState<string | null>(null);
   const [detail, setDetail] = useState<Detail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
-  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board'>('quests');
+  const [view, setView] = useState<'quests' | 'mine' | 'class' | 'results' | 'board' | 'stances'>('quests');
 
   useEffect(() => {
     closeRef.current?.focus();
@@ -112,6 +113,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                   ['class', 'Class table'],
                   ['results', 'Results'],
                   ['board', 'Scoreboard'],
+                  ['stances', 'Stances'],
                 ] as const
               ).map(([k, label]) => (
                 <button key={k} type="button" role="tab" aria-selected={view === k} onClick={() => setView(k)} className={`px-3 py-1.5 text-sm ${view === k ? 'border-b-2 border-blue-600 text-slate-900 dark:text-white' : 'text-slate-500'}`} data-quests-tab={k}>
@@ -124,6 +126,7 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
           {list && list.enabled && !openId && view === 'class' && <ClassTable />}
           {list && list.enabled && !openId && view === 'results' && <Results />}
           {list && list.enabled && !openId && view === 'board' && <Scoreboard />}
+          {list && list.enabled && !openId && view === 'stances' && <StancesView />}
           {list && list.enabled && !openId && view === 'quests' && (
             <>
               <ThisWeek onOpen={open} />
@@ -774,6 +777,7 @@ function Scoreboard() {
   if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
   const person = who ? data.contributors.find((c) => c.login === who) : null;
   if (person) return <Contributor c={person} onBack={() => setWho(null)} />;
+
   const rows = table === 'all' ? data.board.allTime : table.startsWith('season:') ? data.board.seasons[table.slice(7)] ?? [] : data.board.fields[table.slice(6)] ?? [];
   return (
     <div className="space-y-3" data-quest-scoreboard>
@@ -842,6 +846,7 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
         {c.entered} Quest{c.entered === 1 ? '' : 's'} entered: {c.settled} settled, {c.unresolvable} unresolvable or withdrawn, {c.waiting} waiting for a result.
       </p>
       {c.unranked && <p className="text-xs text-slate-500">Not on the scoreboard: {c.unranked}.</p>}
+      <ProfileStances login={c.login} />
       <table className="w-full text-sm">
         <tbody>
           {row('Skill', <G g={c.skill} show={(v) => `${fmt(v.score)} (90% range ${fmt(v.low)} to ${fmt(v.high)})`} />, 'Better (+) or worse (-) than the base rate, averaged over settled probability forecasts.')}
@@ -1506,5 +1511,155 @@ function SignalEntries({ questId }: { questId: string }) {
         ))}
       <p className="text-xs text-slate-500">Results on past data are hypothetical: they show how a rule would have done, not money made. Passing does not mean a rule will work in future.</p>
     </Box>
+  );
+}
+
+// ---------------------------------------------------------------- Stance profiles (step 11)
+
+type StancesReply = { enabled: true; axes: StanceAxis[]; profiles: StanceProfile[]; repo: string | null };
+const STANCES_KEY = 'econquest.questStances.v1';
+const readStances = (): Stances => {
+  try {
+    const j = JSON.parse(localStorage.getItem(STANCES_KEY) || '{}');
+    return j && typeof j === 'object' ? (j as Stances) : {};
+  } catch {
+    return {};
+  }
+};
+const STANCE_STEPS: StanceValue[] = [-2, -1, 0, 1, 2];
+
+/** A contributor's own profile, when they signed up for one on GitHub. */
+function ProfileStances({ login }: { login: string }) {
+  const [data, setData] = useState<StancesReply | null>(null);
+  useEffect(() => {
+    send('/api/quests/stances').then(setData).catch(() => setData(null));
+  }, []);
+  const p = data?.profiles.find((x) => x.login === login);
+  if (!data || !p) return null;
+  return (
+    <div className="space-y-1" data-quest-profile-stances>
+      <div className="text-xs text-slate-500">Stances {login} chose to show (since {p.shownSince}; self-declared, never worked out by the app)</div>
+      <ul className="text-sm list-disc pl-5">
+        {data.axes.filter((a) => p.axes[a.id] !== undefined).map((a) => (
+          <li key={a.id}>
+            {a.question} {stanceWords(a, p.axes[a.id])}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Stances: set your own (kept in this browser), sign up with a profile on GitHub if you want one, and see who has. */
+function StancesView() {
+  const [data, setData] = useState<StancesReply | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [mine, setMine] = useState<Stances>(readStances);
+  const [login, setLogin] = useState(readLogin);
+  const [understood, setUnderstood] = useState(false);
+  useEffect(() => {
+    send('/api/quests/stances').then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, []);
+  const set = (id: string, v: StanceValue | undefined) => {
+    const next = { ...mine };
+    if (v === undefined) delete next[id];
+    else next[id] = v;
+    setMine(next);
+    try {
+      localStorage.setItem(STANCES_KEY, JSON.stringify(next));
+    } catch {
+      /* not kept; fine */
+    }
+  };
+  if (err) return <p className="text-sm text-rose-700 dark:text-rose-400">{err}</p>;
+  if (!data) return <p className="text-sm text-slate-500">Loading…</p>;
+  const problems = stancesProblems(mine);
+  const today = new Date().toISOString().slice(0, 10);
+  const profile: StanceProfile = { login: login.trim(), axes: mine, shownSince: today };
+  const text = profileFileText(profile);
+  const canSignUp = !problems.length && /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})$/.test(login.trim()) && understood && !!data.repo;
+  return (
+    <div className="space-y-3" data-quest-stances>
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Eight questions economists disagree on. Each is a scale between two positions; leave any you would rather not answer. These are about economics, not parties: there is no left or right label and no answer is marked right. The app never works out anyone's stance from their forecasts or arguments. What you set here stays in this browser.
+      </p>
+      <div className="space-y-3">
+        {data.axes.map((a) => (
+          <fieldset key={a.id} className="border border-slate-200 dark:border-slate-800 p-2 space-y-1" data-quest-stance-axis={a.id}>
+            <legend className="text-sm px-1">{a.question}</legend>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{a.explain}</p>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="w-40 text-right">{a.first}</span>
+              {STANCE_STEPS.map((v) => (
+                <label key={v} className="inline-flex flex-col items-center">
+                  <input type="radio" name={`stance-${a.id}`} checked={mine[a.id] === v} onChange={() => set(a.id, v)} aria-label={stanceWords(a, v)} />
+                </label>
+              ))}
+              <span className="w-40">{a.second}</span>
+              <button type="button" className="ui-btn ui-btn-ghost text-xs" onClick={() => set(a.id, undefined)} disabled={mine[a.id] === undefined}>
+                Leave out
+              </button>
+            </div>
+            <p className="text-xs text-slate-600 dark:text-slate-300">{stanceWords(a, mine[a.id])}</p>
+          </fieldset>
+        ))}
+      </div>
+      <Box title="Sign up with a profile (optional)">
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          If you want your stances on your public contributor page, add them as a file on GitHub by your own pull request. Only you can add or change your file. Be sure first: a stance tied to your name is a public statement of your views, and git keeps every version of the file for good, even after you remove it. Nobody has to do this, and it changes nothing about how your forecasts are scored.
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">Tables of stance against forecasting skill for groups of people are not shown: doing that safely needs a way to collect stances without names, which the project does not have.</p>
+        <label className="text-xs inline-flex items-center gap-2">
+          <input type="checkbox" checked={understood} onChange={(e) => setUnderstood(e.target.checked)} data-quest-stance-understood />
+          <span>I understand my stances will be public under my GitHub name, and git keeps them.</span>
+        </label>
+        <div className="flex flex-wrap gap-2 items-end">
+          <label className="text-xs space-y-1">
+            <span className="block">GitHub name</span>
+            <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
+          </label>
+          {canSignUp ? (
+            <a className="ui-btn inline-block" href={newFileUrl(data.repo!, 'main', profilePath(profile.login), text)} target="_blank" rel="noreferrer" data-quest-stance-signup>
+              Open on GitHub
+            </a>
+          ) : (
+            <button type="button" className="ui-btn" disabled>
+              Open on GitHub
+            </button>
+          )}
+        </div>
+        {!data.repo && <p className="text-xs text-slate-500">Profiles are not set up on this copy: QUESTS_REPO (the public repository) is not set.</p>}
+        {problems.length > 0 && <p className="text-xs text-slate-500">Set at least one stance first.</p>}
+        {!problems.length && login.trim() && (
+          <pre className="p-2 text-xs bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap" data-quest-stance-file>
+            {profilePath(profile.login)}
+            {'\n'}
+            {text}
+          </pre>
+        )}
+        <p className="text-xs text-slate-500">To change your profile later, edit your file on GitHub (keep its shownSince date) and open a pull request. To remove it, delete the file by pull request, or ask a maintainer.</p>
+      </Box>
+      <div className="space-y-1">
+        <div className="text-xs text-slate-500">People who signed up with a profile ({data.profiles.length})</div>
+        {data.profiles.length === 0 ? (
+          <p className="text-sm text-slate-500">Nobody yet.</p>
+        ) : (
+          <ul className="text-sm space-y-2">
+            {data.profiles.map((p) => (
+              <li key={p.login} data-quest-stance-profile={p.login}>
+                <strong>{p.login}</strong> <span className="text-xs text-slate-500">since {p.shownSince}</span>
+                <ul className="list-disc pl-5 text-xs">
+                  {data.axes.filter((a) => p.axes[a.id] !== undefined).map((a) => (
+                    <li key={a.id}>
+                      {a.question} {stanceWords(a, p.axes[a.id])}
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
   );
 }

@@ -20,7 +20,7 @@ export interface QuestFile {
   parseError?: string;
 }
 
-/** JSON files in quests/ that are not Quests: the manifest, contributor statistics, account ages and Signal Quest verdicts. */
+/** JSON files in quests/ that are not Quests: the manifest, contributor statistics, account ages, and Signal Quest verdicts. */
 export const NOT_QUESTS = new Set(['manifest.json', 'stats.json', 'accounts.json', 'test-verdicts.json']);
 
 const sha256 = (buf: Buffer) => createHash('sha256').update(buf).digest('hex');

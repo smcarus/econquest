@@ -4,7 +4,7 @@
  *   npm run quests:entries
  *       check every entry file in this folder (format, Quest, numbering)
  *   npm run quests:entries -- --pr
- *       the check CI runs on a pull request that adds entries (needs BASE_REF, PR_AUTHOR, HEAD_SHA
+ *       the check CI runs on a pull request that adds entries or a stance profile (quests/profiles/) (needs BASE_REF, PR_AUTHOR, HEAD_SHA
  *       and, optionally, QUESTS_MAINTAINERS from the workflow; the time is the time it runs). It runs
  *       from the base branch and reads the entry files from the pull request's head commit.
  *   npm run quests:entries -- --by <login> --email ~name --quest <id> --received <ISO time>
@@ -23,6 +23,7 @@ import { loadQuests } from '../src/utils/questStore.ts';
 import { checkEntryChange, entryFileText, entryPath, parseEntryPath, publicEntryProblems, type PublicEntry } from '../src/utils/questPublicEntries.ts';
 import { readPublicEntryFiles } from '../src/utils/questPublicEntryStore.ts';
 import { answerFor, type EntryQuest } from '../src/utils/questEntries.ts';
+import { checkProfileChange, PROFILES_DIR } from '../src/utils/questStances.ts';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const dir = path.join(root, 'quests');
@@ -62,10 +63,14 @@ if (argv.includes('--pr')) {
     existing = [];
   }
   const now = new Date().toISOString();
-  const problems = checkEntryChange({ files, existing, read: (p) => git('show', `${head}:${p}`), author: author!, maintainers, now, questFor });
-  const entries = files.filter((f) => f.path.startsWith('quests/entries/'));
+  const read = (p: string) => git('show', `${head}:${p}`);
+  const entryProblems = checkEntryChange({ files, existing, read, author: author!, maintainers, now, questFor });
+  const profileProblems = checkProfileChange({ files, read, author: author!, maintainers });
+  const problems: Record<string, string[]> = { ...entryProblems, ...profileProblems };
+  if (entryProblems.change || profileProblems.change) problems.change = [...(entryProblems.change || []), ...(profileProblems.change || [])];
+  const entries = files.filter((f) => f.path.startsWith('quests/entries/') || f.path.startsWith(`${PROFILES_DIR}/`));
   if (!entries.length) {
-    console.log('No entry files in this pull request.');
+    console.log('No entry or profile files in this pull request.');
     process.exit(0);
   }
   console.log(`Checked at ${now} for ${author}.`);
