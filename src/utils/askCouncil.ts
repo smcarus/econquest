@@ -42,6 +42,8 @@ import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { TNM_CITATION, multiplierView } from './fiscalMultipliers';
+import { parseWhatIf, runWhatIf, whatIfSentence } from './fiscalWhatIf';
+import { sectorLine, sectorsInQuestion, TABLE_LABEL } from './govSpending';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
@@ -93,7 +95,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   fiscal: {
     name: 'Fiscal & Debt',
     covers: 'government debt and the IMF projection of it, primary balance and the balance that would hold debt steady, external debt falling due in the next year and how far reserves cover it (IMF WEO, World Bank QEDS and IDS, BIS)',
-    topic: /\bdebt|fiscal|deficit|primary (?:balance|surplus)|sustainab|solvenc|amorti[sz]|refinanc|roll-?over|maturit|eurobond|debt service|borrowing|austerity|consolidation|imf program/i,
+    topic: /\bdebt|fiscal|deficit|primary (?:balance|surplus)|sustainab|solvenc|amorti[sz]|refinanc|roll-?over|maturit|eurobond|debt service|borrowing|austerity|consolidation|imf program|defen[cs]e (?:budget|spending)|military (?:budget|spending)|government spending|public spending|spend(?:s|ing)? on\b/i,
   },
   politics: {
     name: 'Politics & Events',
@@ -506,7 +508,9 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
 }
 
 /** Fiscal & Debt Agent: debt level and path, primary balance against the debt-stabilising one, and external debt falling due. */
-function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
+function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentAnswer, 'why'> {
+  const whatIf = parseWhatIf(question);
+  const named = sectorsInQuestion(question);
   const findings: AgentFinding[] = [];
   const missing: string[] = [];
   const bn = (v: number) => `$${v >= 100 ? v.toFixed(0) : v.toFixed(1)}bn`;
@@ -600,14 +604,65 @@ function fiscalAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
       missing.push(`${it.countryName}: no debt sustainability view (needs the saved IMF history with Fiscal Monitor balances; see Research > History & data)`);
     }
     // Fiscal multiplier: a cited reference range (src/utils/fiscalMultipliers.ts), never an estimate.
-    if (f.debtPctGdp) {
-      const mv = multiplierView({ iso3: it.iso3, debtPctGdp: f.debtPctGdp, outputGap: it.outputGap, ...(it.policyRateSource === 'bis' && it.policyRatePct !== undefined ? { policyRatePct: it.policyRatePct } : {}) });
+    const mv = f.debtPctGdp ? multiplierView({ iso3: it.iso3, debtPctGdp: f.debtPctGdp, outputGap: it.outputGap, ...(it.policyRateSource === 'bis' && it.policyRatePct !== undefined ? { policyRatePct: it.policyRatePct } : {}) }) : undefined;
+    if (mv) {
       figures.push({
         label: 'Fiscal multiplier, first year (reference range)',
         value: `${mv.guide.low}-${mv.guide.high} (${mv.guide.bucket} bucket, normal times)`,
         source: `${TNM_CITATION} ${mv.guide.why} Trough of the cycle ${mv.cycle.trough.low}-${mv.cycle.trough.high}, peak ${mv.cycle.peak.low}-${mv.cycle.peak.high}. Not an estimate for this country`,
         tag: 'model',
       });
+    }
+    if (f.defencePctGdp) {
+      figures.push({ label: 'Military spending', value: `${f.defencePctGdp.value.toFixed(1)}% of GDP`, source: `World Bank (SIPRI), ${f.defencePctGdp.year}`, tag: 'official' });
+    }
+    // Spending on the sectors the question names (src/utils/govSpending.ts: Eurostat or IMF COFOG).
+    for (const sec of named) {
+      if (sec.code === 'GF02' && f.defencePctGdp) continue;
+      const line = sectorLine(it.iso3, it.countryName, sec.code, it.govSpending ? { [it.iso3]: it.govSpending } : undefined);
+      if ('missing' in line) missing.push(line.missing);
+      else figures.push({ label: `Government spending on ${sec.label.toLowerCase()}`, value: line.value, source: line.source, tag: 'official' });
+    }
+    // What-if on a spending line (src/utils/fiscalWhatIf.ts): the debt identity re-run with the change.
+    if (whatIf) {
+      const inputs = dsa?.inputs;
+      const sec = whatIf.sector;
+      const cofog = it.govSpending?.[sec.code];
+      const spend =
+        sec.code === 'GF02' && f.defencePctGdp
+          ? { pct: f.defencePctGdp.value, year: f.defencePctGdp.year, source: 'World Bank (SIPRI)' }
+          : cofog
+            ? { pct: cofog.pct, year: cofog.year, source: TABLE_LABEL[cofog.table] }
+            : undefined;
+      const run =
+        spend && dsa && inputs?.length && mv
+          ? runWhatIf({
+              spend,
+              share: whatIf.share,
+              uses: whatIf.uses,
+              debtNow: dsa.debtNow,
+              year: dsa.year,
+              baseline: inputs,
+              multiplier: { low: mv.guide.low, high: mv.guide.high, source: `${mv.guide.bucket} bucket, ${TNM_CITATION}` },
+            })
+          : null;
+      if (run && spend) {
+        figures.push({ label: `What-if: ${sec.label.toLowerCase()} spending ${whatIf.said}`, value: `${spend.pct.toFixed(1)}% to ${run.newSpendPct.toFixed(1)}% of GDP (${sgn(-run.cutPp)} pts)`, source: `${spend.source}, ${spend.year}, changed as the question says`, tag: 'model' });
+        for (const r of run.runs) {
+          const how = r.use === 'respend' ? 'spent elsewhere' : 'kept to cut the deficit';
+          figures.push(
+            { label: `What-if, money ${how}: first-year growth effect`, value: r.growth.low === r.growth.high ? `${sgn(r.growth.low)}%` : `${sgn(r.growth.low)}% to ${sgn(r.growth.high)}%`, source: `multiplier range x spending change; ${run.method}`, tag: 'model' },
+            { label: `What-if, money ${how}: debt in ${r.debtEnd.year}`, value: r.debtEnd.low === r.debtEnd.high ? `${p1(r.debtEnd.low)} of GDP` : `${p1(r.debtEnd.low)} to ${p1(r.debtEnd.high)} of GDP`, source: `against ${p1(r.debtEnd.baseline)} on the IMF baseline; debt identity re-run with the change`, tag: 'model' }
+          );
+          parts.push(whatIfSentence(r, run.cutPp));
+        }
+        if (run.runs.some((r) => r.use === 'respend')) {
+          parts.push(`The cited multiplier range does not tell ${sec.label.toLowerCase()} apart from other spending, so respending nets to about zero here; a different multiplier for where the money goes would have to be set and sourced.`);
+        }
+      } else {
+        const need = [!spend ? `${sec.label.toLowerCase()} spending (${sec.code === 'GF02' ? 'World Bank/SIPRI or ' : ''}Eurostat or IMF COFOG)` : '', !inputs?.length ? 'the IMF baseline inputs for the debt path' : '', !mv ? 'IMF debt for the multiplier range' : ''].filter(Boolean);
+        missing.push(`${it.countryName}: the ${sec.label.toLowerCase()} what-if cannot run, as ${need.join(' and ')} ${need.length > 1 ? 'are' : 'is'} missing`);
+      }
     }
     if (!f.extDue12m && !f.intlBonds && !f.idsNext) missing.push(`${it.countryName}: no external debt falling due (World Bank QEDS, IDS and BIS did not answer or have no series)`);
     if (!figures.length) continue;
@@ -1048,7 +1103,7 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
       id === 'cb'
         ? cbAgent(plan.countries)
         : id === 'fiscal'
-          ? fiscalAgent(plan.countries)
+          ? fiscalAgent(plan.countries, question)
           : id === 'politics'
             ? politicsAgent(plan.countries)
             : id === 'rv'

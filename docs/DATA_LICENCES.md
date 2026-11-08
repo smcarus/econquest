@@ -34,7 +34,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
 | OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
-| Eurostat HICP | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU members only). | Source: Eurostat (prc_hicp_minr). |
+| Eurostat HICP and government expenditure by function (COFOG) | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp). |
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
 | US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
@@ -60,14 +60,14 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 
 ### World Bank indicators and debt statistics (IDS, QEDS)
 
-- **Used for:** Reserves, current account, external debt, political stability, trade shares; external debt falling due; who holds public external debt and terms of new loans (IDS)
+- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); external debt falling due; who holds public external debt and terms of new loans (IDS)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets) (checked 2026-11-06)
 - **Show to others:** Allowed: the data may be shared with third parties under CC BY 4.0.
 - **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
 - **Credit:** The World Bank: <dataset name>: <data source>, e.g. "The World Bank: World Development Indicators".
-- **Open question:** Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator's metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read.
+- **Open question:** Third-party indicators inside World Bank datasets can carry their own terms (stated in each indicator's metadata); the per-dataset licence for IDS and QEDS in the Data Catalog was not read. Military spending is SIPRI's data republished by the World Bank; SIPRI's own terms were not read.
 
 From the terms:
 
@@ -90,7 +90,7 @@ From the terms:
 
 ### IMF (World Economic Outlook, Fiscal Monitor, International Liquidity, Balance of Payments, COFER)
 
-- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares
+- **Used for:** Debt/GDP, inflation, growth, primary balance, output gap, reserves, current account, imports, COFER shares, government spending by function (GFS COFOG, read through DBnomics)
 - **Status:** Permission needed for client or commercial use
 - **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution; only commercial reuse needs permission.
 - **Terms read:** [Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-06)
@@ -255,15 +255,15 @@ From the terms:
 >
 > All OECD data should be cited as follows: OECD (year), (dataset name), (data source) DOI or https://data-explorer.oecd.org/. (accessed on (date)).
 
-### Eurostat HICP
+### Eurostat HICP and government expenditure by function (COFOG)
 
-- **Used for:** Monthly inflation for EU members (Poland on the defaults)
+- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with Eurostat named.
 - **Terms read:** [Eurostat copyright and reuse](https://ec.europa.eu/eurostat/about-us/policies/copyright) (checked 2026-11-06)
 - **Show to others:** Allowed without a licence if Eurostat is named and any change to the data is stated.
-- **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU members only).
-- **Credit:** Source: Eurostat (prc_hicp_minr).
+- **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).
+- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp).
 
 From the terms:
 
