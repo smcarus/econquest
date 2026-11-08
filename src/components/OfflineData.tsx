@@ -9,6 +9,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CloudOff, Download, HardDriveDownload, Square, X } from 'lucide-react';
 import { formatBytes, type PreloadState, type PreloadSummary } from '../utils/preload';
+import { useT, useTx } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 
 type PreloadReply = {
   state: PreloadState;
@@ -66,23 +68,26 @@ export function useOnlineStatus(): OnlineReply | null {
 
 /** Top-bar pill, shown only while the feeds cannot be reached. */
 export function OfflinePill({ status, onOpen }: { status: OnlineReply | null; onOpen: () => void }) {
+  const t = useT(MENU);
   if (!status || status.online) return null;
-  const from = status.savedFrom ? `saved data from ${day(status.savedFrom)}` : 'nothing saved yet';
+  const from = status.savedFrom ? t('od_savedFrom', { date: day(status.savedFrom) }) : t('od_nothing');
   return (
     <button
       type="button"
       onClick={onOpen}
       className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap text-amber-700 dark:text-amber-300"
-      title={`The free data feeds cannot be reached from this computer. The app shows ${from}; figures refresh once the feeds answer again.`}
+      title={t('od_pillTitle', { from })}
     >
       <CloudOff className="w-3.5 h-3.5" aria-hidden />
-      <span>Offline</span>
+      <span>{t('od_offline')}</span>
       <span className="hidden md:inline text-slate-500 dark:text-slate-400">· {from}</span>
     </button>
   );
 }
 
 export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
+  const t = useT(MENU);
+  const tx = useTx();
   const [reply, setReply] = useState<PreloadReply | null>(null);
   const [online, setOnline] = useState<OnlineReply | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -96,9 +101,9 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
       if (o.ok) setOnline(await o.json());
       setError(null);
     } catch (e: any) {
-      setError(`The app server did not answer (${e?.message || 'error'}).`);
+      setError(t('c_serverDown', { detail: e?.message || 'error' }));
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -150,56 +155,52 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 id="offline-data-title" className="ui-title inline-flex items-center gap-2">
-            <HardDriveDownload className="w-4 h-4" aria-hidden /> Offline data
+            <HardDriveDownload className="w-4 h-4" aria-hidden /> {t('od_title')}
           </h2>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close offline data" className="ui-btn ui-btn-ghost">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label={t('od_closeAria')} className="ui-btn ui-btn-ghost">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="p-4 space-y-4 overflow-y-auto ui-body">
-          <p>
-            Download every free feed for every country the app covers, with the full World Bank and IMF history, so
-            pages and the History tab load from this computer and keep working without a connection. Screens still
-            show only the newest value.
-          </p>
+          <p>{t('od_intro')}</p>
 
-          {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+          {error && <p className="text-rose-600 dark:text-rose-400">{tx(error)}</p>}
 
           {online && (
             <p className={online.online ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-300'}>
               {online.online
-                ? 'Online: the free feeds answer from this computer.'
-                : 'Offline: the free feeds cannot be reached from this computer. The app shows what is saved; a download needs a connection.'}
+                ? t('od_online')
+                : t('od_offlineNote')}
             </p>
           )}
 
           {s && reply && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div>
-                <div className="ui-label">Countries ready</div>
+                <div className="ui-label">{t('od_countries')}</div>
                 <div className="ui-num text-base">
-                  {s.countriesReady} of {s.countriesTotal}
+                  {t('od_of', { a: s.countriesReady, b: s.countriesTotal })}
                 </div>
               </div>
               <div>
-                <div className="ui-label">Steps saved</div>
+                <div className="ui-label">{t('od_steps')}</div>
                 <div className="ui-num text-base">
-                  {s.done} of {s.total}
+                  {t('od_of', { a: s.done, b: s.total })}
                 </div>
               </div>
               <div>
-                <div className="ui-label">On this computer</div>
+                <div className="ui-label">{t('od_disk')}</div>
                 <div className="ui-num text-base">{formatBytes(reply.disk.bytes)}</div>
               </div>
               <div>
-                <div className="ui-label">Still to download</div>
-                <div className="ui-num text-base" title="Average size of the countries already saved, times the countries left">
+                <div className="ui-label">{t('od_left')}</div>
+                <div className="ui-num text-base" title={t('od_leftTip')}>
                   {reply.disk.remainingEstimateBytes === null
-                    ? 'Known after the first country'
+                    ? t('od_afterFirst')
                     : reply.disk.remainingEstimateBytes === 0
-                    ? 'None'
-                    : `About ${formatBytes(reply.disk.remainingEstimateBytes)}`}
+                    ? t('od_none')
+                    : t('od_about', { size: formatBytes(reply.disk.remainingEstimateBytes) })}
                 </div>
               </div>
             </div>
@@ -207,23 +208,23 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
 
           {s && (
             <div>
-              <div className="h-2 bg-slate-100 dark:bg-slate-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label="Download progress">
+              <div className="h-2 bg-slate-100 dark:bg-slate-800" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={pct} aria-label={t('od_progress')}>
                 <div className="h-2 bg-blue-600 dark:bg-blue-500 transition-all" style={{ width: `${pct}%` }} />
               </div>
               <p className="mt-1 text-slate-500 dark:text-slate-400">
                 {reply?.state.running
                   ? reply.state.waiting
-                    ? `${reply.state.waiting.why}, until ${dayTime(reply.state.waiting.until)}.`
+                    ? t('od_waiting', { why: tx(reply.state.waiting.why), when: dayTime(reply.state.waiting.until) })
                     : reply.state.current
-                    ? `Now (step ${s.done + s.failed + s.skipped + 1} of ${s.total}, running ${elapsed(reply.state.current.since, now)}): ${reply.state.current.label}`
-                    : 'Starting…'
+                    ? t('od_now', { n: s.done + s.failed + s.skipped + 1, total: s.total, elapsed: elapsed(reply.state.current.since, now), label: tx(reply.state.current.label) })
+                    : t('od_starting')
                   : s.completeAsOf
-                  ? `Everything saved; the oldest step is from ${dayTime(s.completeAsOf)}.`
+                  ? t('od_complete', { when: dayTime(s.completeAsOf) })
                   : reply?.state.finishedAt
-                  ? `Last download finished ${dayTime(reply.state.finishedAt)}.`
+                  ? t('od_finished', { when: dayTime(reply.state.finishedAt) })
                   : reply?.state.endedEarly
-                  ? reply.state.endedEarly
-                  : 'Not downloaded yet.'}
+                  ? tx(reply.state.endedEarly)
+                  : t('od_notYet')}
               </p>
             </div>
           )}
@@ -231,7 +232,7 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
           <div className="flex flex-wrap gap-2">
             {running ? (
               <button type="button" className="ui-btn inline-flex items-center gap-1.5" onClick={() => void post('/api/preload/stop')}>
-                <Square className="w-3.5 h-3.5" aria-hidden /> Stop after this step
+                <Square className="w-3.5 h-3.5" aria-hidden /> {t('od_stop')}
               </button>
             ) : (
               <>
@@ -242,11 +243,11 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
                   onClick={() => void post('/api/preload/start')}
                 >
                   <Download className="w-3.5 h-3.5" aria-hidden />
-                  {s && s.done > 0 && s.done < s.total ? 'Carry on downloading' : 'Download all country data'}
+                  {s && s.done > 0 && s.done < s.total ? t('od_carryOn') : t('od_downloadAll')}
                 </button>
                 {s && s.done > 0 && (
                   <button type="button" className="ui-btn ui-btn-ghost" disabled={online?.online === false} onClick={() => void post('/api/preload/start', { fresh: true })}>
-                    Download everything again
+                    {t('od_again')}
                   </button>
                 )}
               </>
@@ -255,15 +256,15 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
 
           {s && s.problems.length > 0 && (
             <div>
-              <div className="ui-section-title mb-1">Not saved</div>
+              <div className="ui-section-title mb-1">{t('od_notSaved')}</div>
               <ul className="space-y-1">
                 {s.problems.map((p) => (
                   <li key={p.id}>
                     <span className={p.outcome === 'skipped' ? 'text-amber-700 dark:text-amber-300' : 'text-rose-600 dark:text-rose-400'}>
-                      {p.outcome === 'skipped' ? 'Needs setup' : 'Missing'}
+                      {p.outcome === 'skipped' ? t('od_needsSetup') : t('od_missing')}
                     </span>{' '}
-                    {p.label}
-                    {p.note ? <span className="text-slate-500 dark:text-slate-400">: {p.note}</span> : null}
+                    {tx(p.label)}
+                    {p.note ? <span className="text-slate-500 dark:text-slate-400">: {tx(p.note)}</span> : null}
                   </li>
                 ))}
               </ul>
@@ -271,10 +272,7 @@ export function OfflineDataDialog({ onClose }: { onClose: () => void }) {
           )}
 
           <p className="text-slate-500 dark:text-slate-400">
-            Takes a few minutes per country. A step that takes longer than 3 minutes is listed as not saved and the run moves on. You can
-            close this window; the download carries on, and a stopped one picks up where it left off. Same as{' '}
-            <code>npm run preload</code> in a terminal. Saved in data/live, data/history and data/archive; progress in{' '}
-            {reply?.file || 'data/local/preload.json'}.
+            {t('od_foot', { cmd: 'npm run preload', file: reply?.file || 'data/local/preload.json' })}
           </p>
         </div>
       </div>

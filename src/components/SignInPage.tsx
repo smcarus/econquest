@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { KeyRound, ShieldCheck } from 'lucide-react';
 import { postAuth, type AuthStatus } from '../utils/authClient';
+import { useT } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 
 /**
  * The page shown instead of the app while sign-in applies and nobody is signed in: a sign-in form,
@@ -32,6 +34,7 @@ function Field(props: { id: string; label: string; type?: string; value: string;
 
 /** Creates the first admin account. Used here and in Menu > Account while sign-in is off. */
 export function FirstAccountForm({ needsCode, onDone }: { needsCode: boolean; onDone: () => void }) {
+  const t = useT(MENU);
   const [code, setCode] = useState('');
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
@@ -41,7 +44,7 @@ export function FirstAccountForm({ needsCode, onDone }: { needsCode: boolean; on
   const [busy, setBusy] = useState(false);
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== again) return setError('The two passwords differ.');
+    if (password !== again) return setError(t('su_differ'));
     setBusy(true);
     setError('');
     const r = await postAuth('/api/auth/setup', { code, username, displayName, password });
@@ -50,27 +53,27 @@ export function FirstAccountForm({ needsCode, onDone }: { needsCode: boolean; on
     onDone();
   };
   return (
-    <form onSubmit={submit} className="space-y-3" aria-label="Create the first admin account">
+    <form onSubmit={submit} className="space-y-3" aria-label={t('su_formAria')}>
       {needsCode && (
         <Field
           id="setup-code"
-          label="Setup code"
+          label={t('su_code')}
           value={code}
           onChange={setCode}
           autoComplete="one-time-code"
-          hint="Printed in the server log when the app started (docker logs econquest-orchestrator, or the terminal running it)."
+          hint={t('su_codeHint')}
         />
       )}
-      <Field id="setup-username" label="Username" value={username} onChange={setUsername} autoComplete="username" />
-      <Field id="setup-name" label="Name shown on sign-offs and in the audit log" value={displayName} onChange={setDisplayName} autoComplete="name" />
-      <Field id="setup-password" label="Password" type="password" value={password} onChange={setPassword} autoComplete="new-password" hint="At least 12 characters. A short sentence works well." />
-      <Field id="setup-again" label="Password again" type="password" value={again} onChange={setAgain} autoComplete="new-password" />
+      <Field id="setup-username" label={t('ac_username')} value={username} onChange={setUsername} autoComplete="username" />
+      <Field id="setup-name" label={t('su_shownName')} value={displayName} onChange={setDisplayName} autoComplete="name" />
+      <Field id="setup-password" label={t('su_password')} type="password" value={password} onChange={setPassword} autoComplete="new-password" hint={t('su_pwHint')} />
+      <Field id="setup-again" label={t('su_again')} type="password" value={again} onChange={setAgain} autoComplete="new-password" />
       {error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-400">{error}</p>}
       <button type="submit" disabled={busy} className="ui-btn ui-btn-primary w-full justify-center">
-        {busy ? 'Creating…' : 'Create admin account and sign in'}
+        {busy ? t('su_creating') : t('su_create')}
       </button>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        From then on everyone signs in, including on this computer. A forgotten password can be reset on the server with
+        {t('su_reset')}
         <code className="mx-1">npm run users -- reset-password &lt;username&gt;</code>.
       </p>
     </form>
@@ -78,6 +81,7 @@ export function FirstAccountForm({ needsCode, onDone }: { needsCode: boolean; on
 }
 
 function SignInForm({ onDone }: { onDone: () => void }) {
+  const t = useT(MENU);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -92,18 +96,19 @@ function SignInForm({ onDone }: { onDone: () => void }) {
     onDone();
   };
   return (
-    <form onSubmit={submit} className="space-y-3" aria-label="Sign in">
-      <Field id="signin-username" label="Username" value={username} onChange={setUsername} autoComplete="username" />
-      <Field id="signin-password" label="Password" type="password" value={password} onChange={setPassword} autoComplete="current-password" />
+    <form onSubmit={submit} className="space-y-3" aria-label={t('su_signIn')}>
+      <Field id="signin-username" label={t('ac_username')} value={username} onChange={setUsername} autoComplete="username" />
+      <Field id="signin-password" label={t('su_password')} type="password" value={password} onChange={setPassword} autoComplete="current-password" />
       {error && <p role="alert" className="text-sm text-rose-700 dark:text-rose-400">{error}</p>}
       <button type="submit" disabled={busy} className="ui-btn ui-btn-primary w-full justify-center">
-        {busy ? 'Signing in…' : 'Sign in'}
+        {busy ? t('su_signingIn') : t('su_signIn')}
       </button>
     </form>
   );
 }
 
 export function SignInPage({ status }: { status: AuthStatus }) {
+  const t = useT(MENU);
   const reload = () => window.location.reload();
   const setup = status.mode === 'setup';
   return (
@@ -111,16 +116,13 @@ export function SignInPage({ status }: { status: AuthStatus }) {
       <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
         <h1 className="ui-title inline-flex items-center gap-2">
           {setup ? <ShieldCheck className="w-4 h-4" aria-hidden /> : <KeyRound className="w-4 h-4" aria-hidden />}
-          {setup ? 'Create the first admin account' : 'Sign in to EconQuest'}
+          {setup ? t('su_titleSetup') : t('su_title')}
         </h1>
         {setup && (
-          <p className="ui-body">
-            This app is open to a network and has no accounts yet. The first account is the admin, who manages keys, settings and
-            other accounts.
-          </p>
+          <p className="ui-body">{t('su_setupNote')}</p>
         )}
         {setup ? <FirstAccountForm needsCode={status.setupNeedsCode} onDone={reload} /> : <SignInForm onDone={reload} />}
-        {!setup && <p className="text-xs text-slate-500 dark:text-slate-400">Signed out after {status.sessionIdleHours} hours without use. Ask your admin for an account.</p>}
+        {!setup && <p className="text-xs text-slate-500 dark:text-slate-400">{t('su_idle', { n: status.sessionIdleHours })}</p>}
       </div>
     </main>
   );

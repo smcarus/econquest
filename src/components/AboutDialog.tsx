@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ExternalLink, Info, X } from 'lucide-react';
 import { REQUIRED_CREDITS } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
-import { DATA_LICENCES, LICENCE_SHARE_LABEL, LICENCE_STATUS_HELP, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
+import { useT } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
+import { DATA_LICENCES, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
  * Menu > About & data licences: what the app is, the standing research notice, and the licence
@@ -20,6 +22,7 @@ const STATUS_CLASS: Record<LicenceStatus, string> = {
 };
 
 export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onClose: () => void }) {
+  const t = useT(MENU);
   const [open, setOpen] = useState<string | null>(focusId ?? null);
   const closeRef = useRef<HTMLButtonElement | null>(null);
   useEffect(() => {
@@ -40,23 +43,19 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
       <div role="dialog" aria-modal="true" aria-labelledby="about-title" className="w-full max-w-3xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-800">
           <h2 id="about-title" className="ui-title inline-flex items-center gap-2">
-            <Info className="w-4 h-4" aria-hidden /> About & data licences
+            <Info className="w-4 h-4" aria-hidden /> {t('ab_title')}
           </h2>
-          <button ref={closeRef} type="button" onClick={onClose} aria-label="Close about and data licences" className="ui-btn ui-btn-ghost">
+          <button ref={closeRef} type="button" onClick={onClose} aria-label={t('ab_closeAria')} className="ui-btn ui-btn-ghost">
             <X className="w-4 h-4" />
           </button>
         </div>
         <div className="p-4 space-y-3 overflow-y-auto ui-body">
-          <p>
-            A research workspace for sovereign and macro questions. Figures come only from public feeds, official series or your own
-            files, each with its source and date; a figure nobody published reads Missing.
-          </p>
+          <p>{t('ab_what')}</p>
           <p className="border border-amber-200 dark:border-amber-800 p-2 text-amber-800 dark:text-amber-300" data-research-notice>
-            Research, not validated advice. No model in the app has been independently validated; each signal shows its pre-registered
-            backtest verdict under Menu &gt; Models &amp; validation. Nothing here is a recommendation to buy or sell.
+            {t('ab_notice')}
           </p>
-          <h3 className="ui-section-title">Credits</h3>
-          <p>Three sources ask for a visible credit wherever their figures show. The app shows each one beside those figures, and here:</p>
+          <h3 className="ui-section-title">{t('ab_credits')}</h3>
+          <p>{t('ab_creditsNote')}</p>
           <ul className="space-y-1" data-about-credits>
             {REQUIRED_CREDITS.map((c) => (
               <li key={c.id}>
@@ -64,16 +63,15 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
               </li>
             ))}
           </ul>
-          <h3 className="ui-section-title">Data licences</h3>
+          <h3 className="ui-section-title">{t('ab_licences')}</h3>
           <p>
-            What each source&apos;s own terms say about showing its figures to other people and about commercial use, with the credit it
-            asks for. Read on each terms page; where a page could not be read the row says so. A research note, not legal advice. Also in
-            docs/DATA_LICENCES.md.
+            {t('ab_licencesNote')}
+            {t('ab_englishNote') !== "Each source's row stays in English because it quotes that source's own terms." && ` ${t('ab_englishNote')}`}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400" data-licence-counts>
             {(Object.keys(LICENCE_STATUS_LABEL) as LicenceStatus[])
               .filter((s) => counts[s])
-              .map((s) => `${counts[s]} ${LICENCE_STATUS_LABEL[s].toLowerCase()}`)
+              .map((s) => `${counts[s]} ${t(`ab_st_${s}`).toLowerCase()}`)
               .join(' · ')}
           </p>
           <ul className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -84,31 +82,31 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
                     <span className="block">{r.name}</span>
                     <span className="block text-xs text-slate-500 dark:text-slate-400">{r.usedFor}</span>
                   </span>
-                  <span className={`shrink-0 text-xs font-medium ${STATUS_CLASS[r.status]}`} title={LICENCE_STATUS_HELP[r.status]}>
-                    {LICENCE_STATUS_LABEL[r.status]}
+                  <span className={`shrink-0 text-xs font-medium ${STATUS_CLASS[r.status]}`} title={t(`ab_sth_${r.status}`)}>
+                    {t(`ab_st_${r.status}`)}
                   </span>
                 </button>
                 {open === r.id && (
                   <dl className="mt-2 grid grid-cols-[8rem_1fr] gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
-                    <dt className="text-slate-500 dark:text-slate-400">Free sharing</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">{t('ab_freeSharing')}</dt>
                     <dd data-licence-share={r.share}>
-                      {LICENCE_SHARE_LABEL[r.share]}. {r.shareNote}
+                      {t(`ab_sh_${r.share}`)}. {r.shareNote}
                     </dd>
-                    <dt className="text-slate-500 dark:text-slate-400">Show to others</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">{t('ab_show')}</dt>
                     <dd>{r.display}</dd>
-                    <dt className="text-slate-500 dark:text-slate-400">Commercial use</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">{t('ab_commercial')}</dt>
                     <dd>{r.commercial}</dd>
-                    <dt className="text-slate-500 dark:text-slate-400">Credit</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">{t('ab_credit')}</dt>
                     <dd>{r.attribution}</dd>
                     {r.flag && (
                       <>
-                        <dt className="text-slate-500 dark:text-slate-400">Open question</dt>
+                        <dt className="text-slate-500 dark:text-slate-400">{t('ab_question')}</dt>
                         <dd>{r.flag}</dd>
                       </>
                     )}
                     {r.quotes.length > 0 && (
                       <>
-                        <dt className="text-slate-500 dark:text-slate-400">From the terms</dt>
+                        <dt className="text-slate-500 dark:text-slate-400">{t('ab_fromTerms')}</dt>
                         <dd className="space-y-1">
                           {r.quotes.map((q) => (
                             <blockquote key={q} className="border-l-2 border-slate-200 dark:border-slate-700 pl-2 italic">
@@ -118,14 +116,14 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
                         </dd>
                       </>
                     )}
-                    <dt className="text-slate-500 dark:text-slate-400">Terms read</dt>
+                    <dt className="text-slate-500 dark:text-slate-400">{t('ab_termsRead')}</dt>
                     <dd className="space-x-2">
-                      {r.terms.map((t) => (
-                        <a key={t.url} href={t.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-blue-600 dark:text-blue-400 hover:underline">
-                          {t.label} <ExternalLink className="w-3 h-3" aria-hidden />
+                      {r.terms.map((term) => (
+                        <a key={term.url} href={term.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-blue-600 dark:text-blue-400 hover:underline">
+                          {term.label} <ExternalLink className="w-3 h-3" aria-hidden />
                         </a>
                       ))}
-                      <span className="text-slate-400 dark:text-slate-500">checked {r.checked}</span>
+                      <span className="text-slate-400 dark:text-slate-500">{t('ab_checked', { date: r.checked })}</span>
                     </dd>
                   </dl>
                 )}
@@ -134,7 +132,7 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
           </ul>
           {questions.length > 0 && (
             <details>
-              <summary className="cursor-pointer">Open questions ({questions.length})</summary>
+              <summary className="cursor-pointer">{t('ab_questions', { n: questions.length })}</summary>
               <ol className="mt-1 list-decimal pl-5 space-y-1 text-xs text-slate-600 dark:text-slate-300">
                 {questions.map((r) => (
                   <li key={r.id}>

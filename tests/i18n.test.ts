@@ -319,3 +319,23 @@ test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenario
   const untranslated = s.filter((x) => x !== 'BIS' && (tx(x) === x || / the | your | of the | since /.test(tx(x))));
   assert.deepEqual(untranslated, [], 'compare text with no Spanish');
 });
+
+test('Menu dialogs: every key and setting in Settings has Spanish, and so do backup and morning brief lines', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (x: string) => translateText(x, 'es');
+  const { API_KEY_FIELDS } = await import('../src/data/apiKeyFields');
+  const { nextRunText } = await import('../src/utils/morningBrief');
+  const { parseBackup } = await import('../src/utils/backup');
+  const s: string[] = [];
+  for (const f of API_KEY_FIELDS) s.push(f.label, f.feeds, f.withoutIt, f.getKeySteps, ...(f.choices || []).map((c) => c.label));
+  const file = { settings: { enabled: true, time: '07:00', timeZone: 'UTC', questions: [], watchlistId: '' } } as never;
+  s.push(nextRunText(file, new Date('2026-11-08T05:00:00Z')), nextRunText(file, new Date('2026-11-08T09:00:00Z')));
+  for (const raw of ['not json', '{}']) {
+    const r = parseBackup(raw);
+    if (!r.ok) s.push(r.error);
+  }
+  const untranslated = s.filter((x) => tx(x) === x);
+  assert.deepEqual(untranslated, [], 'Settings text with no Spanish');
+});
