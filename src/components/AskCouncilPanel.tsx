@@ -422,14 +422,9 @@ export const AskCouncilPanel: React.FC<{
     </div>
   );
 
-  /** Who wrote the AI text, and the sentences the checks removed. */
+  /** Warnings about the AI text: a small referee, and the sentences the checks removed. */
   const removedNotes = (t: Turn) => (
     <>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                AI {t.synthesis?.brief?.explain ? 'explanation' : 'summary'} by {t.synthesis?.provider || 'the configured model'}, from the agents’ figures only.
-                {t.synthesis && t.synthesis.removed.length > 0 && ` ${t.synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
-                {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && ` ${t.synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
-              </p>
               {smallRefereeNote(t.synthesis?.provider) && (
                 <p className="text-xs text-amber-800 dark:text-amber-300" data-council-small-referee="true">
                   <SettingsText text={smallRefereeNote(t.synthesis?.provider)!} />
@@ -457,9 +452,17 @@ export const AskCouncilPanel: React.FC<{
                   </ul>
                 </details>
               )}
-              {t.synthesis?.snapshot && <AnswerSnapshotDetails snapshot={t.synthesis.snapshot} runtimeConfig={runtimeConfig} />}
     </>
   );
+
+  /** The one-line source note under an answer: the agents that gave figures and the model that wrote it. */
+  const sourceLine = (t: Turn, writingNow: boolean) => {
+    const from = t.asked.answers.filter((a) => a.findings.length).map((a) => a.name);
+    const model = t.synthesis?.provider?.match(/\(([^·)]+)/)?.[1]?.trim() || t.synthesis?.provider;
+    const writer = /^Local Ollama/.test(t.synthesis?.provider || '') ? `your local AI (${model})` : model || 'the AI model';
+    const by = writingNow ? 'summary being written' : t.synthesis?.brief ? `written by ${writer}` : 'no AI summary';
+    return `${from.length ? `From ${from.join(', ')}` : 'No agent had figures'} · ${by}`;
+  };
 
   /** The council's answer to one question: summary first, then the agents, debate and downloads. */
   const councilReply = (t: Turn, live: boolean) => {
@@ -525,7 +528,7 @@ export const AskCouncilPanel: React.FC<{
             </>
           ) : (
             <p className="text-sm text-slate-600 dark:text-slate-300" data-council-no-summary="true">
-              No AI summary. <SettingsText text={t.synthesis?.reason || ''} /> Each agent’s document below stands on its own.
+              No AI summary. <SettingsText text={t.synthesis?.reason || ''} /> Each agent’s document is under Sources below.
             </p>
           )}
         </div>
@@ -538,33 +541,6 @@ export const AskCouncilPanel: React.FC<{
               <CouncilChartCard result={a.chart!} />
             </React.Suspense>
           ))}
-
-        {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
-        <DocumentCards
-          agents={agentDocs}
-          synthesis={writingNow ? null : synthDoc}
-          writing={writingNow}
-          onOpen={setOpenDoc}
-          savedIds={savedDocIds}
-          note={
-            <span data-council-agents="true">
-              {withFindings} of {t.asked.answers.length} {t.asked.answers.length === 1 ? 'agent' : 'agents'} answered with figures
-            </span>
-          }
-        />
-        {!page && (
-          <details className="group">
-            <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">Show the agent layout</summary>
-            <div className="mt-2 space-y-2">
-              <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
-              {t.asked.plan.chooserNote && (
-                <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
-                  {t.asked.plan.chooserNote}
-                </p>
-              )}
-            </div>
-          </details>
-        )}
 
         {live && t.asked.plan.offWatchlistIso3 && t.asked.plan.offWatchlistIso3.length > 0 && (
           <div className="flex flex-wrap items-center gap-2" data-council-off-watchlist="true">
@@ -654,65 +630,107 @@ export const AskCouncilPanel: React.FC<{
           </div>
         )}
 
-        {/* One row of actions for the whole answer: save it (brief + every document), copy, download. */}
-        <div className="flex flex-wrap items-center gap-1.5" data-council-answer-actions="true">
-          {allDocsSaved ? (
-            <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400" data-council-saved="true">
-              <FileText className="w-3.5 h-3.5" /> Saved to Reports
-              <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" onClick={onSendToReports}>
-                Open Reports
+        {/* Sources fold: one quiet line under the answer, so the text reads straight through (Sam, 2026-11-08).
+            Opening it shows who wrote the summary, the snapshot, each document, and the actions. */}
+        <details className="group" data-council-sources="true">
+          <summary className="cursor-pointer list-none text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+            <span className="inline-block transition-transform group-open:rotate-90">▸</span> {sourceLine(t, writingNow)}
+            <span className="text-blue-700 dark:text-blue-300"> · Sources &amp; actions</span>
+          </summary>
+          <div className="mt-2 space-y-3">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              AI {t.synthesis?.brief?.explain ? 'explanation' : 'summary'} by {t.synthesis?.provider || 'the configured model'}, from the agents’ figures only.
+              {t.synthesis && t.synthesis.removed.length > 0 && ` ${t.synthesis.removed.length} sentence(s) removed because a number in them did not match any agent figure.`}
+              {t.synthesis && (t.synthesis.contradicted?.length ?? 0) > 0 && ` ${t.synthesis.contradicted!.length} sentence(s) removed because they contradicted an agent's call.`}
+            </p>
+            {t.synthesis?.snapshot && <AnswerSnapshotDetails snapshot={t.synthesis.snapshot} runtimeConfig={runtimeConfig} />}
+            {/* Each agent's standard document, and the synthesis document, as cards that open the document. */}
+            <DocumentCards
+              agents={agentDocs}
+              synthesis={writingNow ? null : synthDoc}
+              writing={writingNow}
+              onOpen={setOpenDoc}
+              savedIds={savedDocIds}
+              note={
+                <span data-council-agents="true">
+                  {withFindings} of {t.asked.answers.length} {t.asked.answers.length === 1 ? 'agent' : 'agents'} answered with figures
+                </span>
+              }
+            />
+            {!page && (
+              <details className="group">
+                <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">Show the agent layout</summary>
+                <div className="mt-2 space-y-2">
+                  <AgentNetwork title={`Agents on this question, about ${t.asked.plan.scopeNote}`} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
+                  {t.asked.plan.chooserNote && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
+                      {t.asked.plan.chooserNote}
+                    </p>
+                  )}
+                </div>
+              </details>
+            )}
+            {/* One row of actions for the whole answer: save it (brief + every document), copy, download. */}
+            <div className="flex flex-wrap items-center gap-1.5" data-council-answer-actions="true">
+              {allDocsSaved ? (
+                <span className="inline-flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-400" data-council-saved="true">
+                  <FileText className="w-3.5 h-3.5" /> Saved to Reports
+                  <button type="button" className="text-blue-700 dark:text-blue-300 hover:underline" onClick={onSendToReports}>
+                    Open Reports
+                  </button>
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  className="ui-btn"
+                  disabled={writingNow || !savedT}
+                  onClick={() => saveAnswer(savedT, [synthDoc, ...agentDocs])}
+                  title="Keeps this answer and each document in Reports (data/local/research.json)"
+                  data-council-save="true"
+                >
+                  <FileText className="w-3.5 h-3.5" /> Save to Reports
+                </button>
+              )}
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost"
+                disabled={writingNow}
+                title="Turn this question into a step-by-step policy review in Reports"
+                data-council-start-review="true"
+                onClick={() => startPolicyReview({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, problem: t.asked.question })}
+              >
+                <ClipboardList className="w-3.5 h-3.5" /> Start a policy review
               </button>
-            </span>
-          ) : (
-            <button
-              type="button"
-              className="ui-btn"
-              disabled={writingNow || !savedT}
-              onClick={() => saveAnswer(savedT, [synthDoc, ...agentDocs])}
-              title="Keeps this answer and each document in Reports (data/local/research.json)"
-              data-council-save="true"
-            >
-              <FileText className="w-3.5 h-3.5" /> Save to Reports
-            </button>
-          )}
-          <button
-            type="button"
-            className="ui-btn ui-btn-ghost"
-            disabled={writingNow}
-            title="Turn this question into a step-by-step policy review in Reports"
-            data-council-start-review="true"
-            onClick={() => startPolicyReview({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, problem: t.asked.question })}
-          >
-            <ClipboardList className="w-3.5 h-3.5" /> Start a policy review
-          </button>
-          <button
-            type="button"
-            className="ui-btn ui-btn-ghost"
-            disabled={writingNow}
-            title="Log a trade idea from this answer in the idea journal; it is hashed and scored at the horizon"
-            data-council-log-idea="true"
-            onClick={() => openIdeaJournal({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, thesis: [t.asked.question, t.synthesis?.brief?.headline].filter(Boolean).join('\n') })}
-          >
-            <NotebookPen className="w-3.5 h-3.5" /> Log idea
-          </button>
-          <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
-            <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? 'Copied' : 'Copy'}
-          </button>
-          <details className="relative" data-council-download="true">
-            <summary className={`ui-btn ui-btn-ghost list-none cursor-pointer ${writingNow ? 'pointer-events-none opacity-50' : ''}`}>
-              <Download className="w-3.5 h-3.5" /> Download
-            </summary>
-            <div className="absolute z-20 mt-1 left-0 min-w-[10rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm py-1">
-              <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'md'); }}>
-                Markdown (.md)
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost"
+                disabled={writingNow}
+                title="Log a trade idea from this answer in the idea journal; it is hashed and scored at the horizon"
+                data-council-log-idea="true"
+                onClick={() => openIdeaJournal({ iso3: t.asked.plan.countries.length === 1 ? t.asked.plan.countries[0].iso3 : undefined, thesis: [t.asked.question, t.synthesis?.brief?.headline].filter(Boolean).join('\n') })}
+              >
+                <NotebookPen className="w-3.5 h-3.5" /> Log idea
               </button>
-              <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'pdf'); }}>
-                PDF
+              <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
+                <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? 'Copied' : 'Copy'}
               </button>
+              <details className="relative" data-council-download="true">
+                <summary className={`ui-btn ui-btn-ghost list-none cursor-pointer ${writingNow ? 'pointer-events-none opacity-50' : ''}`}>
+                  <Download className="w-3.5 h-3.5" /> Download
+                </summary>
+                <div className="absolute z-20 mt-1 left-0 min-w-[10rem] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm py-1">
+                  <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'md'); }}>
+                    Markdown (.md)
+                  </button>
+                  <button type="button" className="block w-full text-left px-3 py-1.5 text-sm hover:bg-slate-50 dark:hover:bg-slate-800" onClick={(e) => { (e.currentTarget.closest('details') as HTMLDetailsElement).open = false; void downloadCouncilBrief(savedT, 'pdf'); }}>
+                    PDF
+                  </button>
+                </div>
+              </details>
             </div>
-          </details>
-        </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. Research, not validated advice.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Open a document for every figure and its source. Research, not validated advice.</p>
+          </div>
+        </details>
       </div>
     );
   };

@@ -118,7 +118,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   calendar: {
     name: 'Calendar',
     covers: 'rate decisions, CPI releases, elections, budget deadlines, IMF dates',
-    topic: /\bwhen\b|\bnext\b|calendar|election|budget|\bimf\b|\bdates?\b|upcoming|meeting|decision|catalyst|deadline|this (?:week|month|year)|coming/i,
+    topic: /\bwhen\b|\bnext\b|calendar|election|budget (?:dates?|deadlines?|votes?|releases?|days?|announcements?|statements?)|\bimf\b|\bdates?\b|upcoming|meeting|decision|catalyst|deadline|this (?:week|month|year)|coming/i,
   },
   timing: {
     name: TIMING_AGENT_NAME,

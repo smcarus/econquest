@@ -38,7 +38,7 @@ export const LENSES: Record<LensId, { label: string; agents: CoreAgentId[]; word
   fiscal: {
     label: 'Public finances',
     agents: ['fiscal'],
-    words: /fiscal|budget|\bdebt\b|deficit|\btax(?:es)?\b|spending|public finances?|government borrowing|sustainab/i,
+    words: /fiscal|budget|\bdebt\b|deficit|\btax(?:es)?\b|spending|public finances?|government borrowing|sustainab|defen[cs]e|military|reallocat|stimulus|austerity|public investment|infrastructure/i,
     asks: 'what it means for the government: debt path, interest costs, refinancing, room in the budget',
   },
   micro: {
@@ -84,6 +84,12 @@ const EXPLAIN_RE = new RegExp(
     '\\bso what\\b',
     '\\bwhy (?:does|do) (?:it|this|that) matter\\b',
     '\\bwhat (?:does|would) (?:it|this|that) mean for\\b',
+    // What-if policy questions (Sam, 2026-11-08): answered as an explanation of knock-on effects.
+    '\\bwhat (?:would|will|could|might) happen\\b',
+    '\\bwhat happens (?:if|when)\\b',
+    '\\bwhat if\\b',
+    '\\b(?:if|suppose|imagine)\\b.{0,160}?\\b(?:were|was|is|are|got|gets|being) (?:cut|halved|doubled|tripled|raised|lowered|increased|reduced|slashed|scrapped|removed|reallocated|redirected|abolished|frozen|spent|moved)\\b',
+    '\\b(?:effects?|impacts?|consequences?) of (?:cutting|halving|doubling|raising|lowering|increasing|reducing|slashing|scrapping|reallocating|redirecting|abolishing|freezing)\\b',
   ].join('|'),
   'i'
 );
