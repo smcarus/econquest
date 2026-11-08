@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Copy, Download, FileText, Trash2, X } from 'lucide-react';
 import { useResearchLibrary } from './SavedResearch';
+import { AgentBadge } from './AgentBadge';
+import { useHelpLevel } from './HelpLevel';
+import { agentBadgeTip } from '../utils/agentBadges';
 import type { LiveWatchlistItem } from '../types/council';
 import type { FigureTag } from '../utils/askCouncil';
 import { lazyNamed } from './LazyDesk';
@@ -52,22 +55,26 @@ function downloadMarkdown(d: CouncilDocument) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-const Card: React.FC<{ onOpen: () => void; title: string; meta: React.ReactNode; kind: string; strong?: boolean }> = ({ onOpen, title, meta, kind, strong }) => (
+const Card: React.FC<{ onOpen: () => void; title: string; meta: React.ReactNode; kind: string; strong?: boolean }> = ({ onOpen, title, meta, kind, strong }) => {
+  const helpLevel = useHelpLevel();
+  return (
   <button
     type="button"
     onClick={onOpen}
+    title={agentBadgeTip(kind, title, helpLevel)}
     data-council-doc-card={kind}
     className={`flex items-start gap-2 text-left border px-2.5 py-2 min-w-0 hover:border-blue-400 dark:hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-950/30 ${
       strong ? 'border-slate-400 dark:border-slate-500' : 'border-slate-200 dark:border-slate-700'
     }`}
   >
-    <FileText className="w-4 h-4 mt-0.5 shrink-0 text-slate-500 dark:text-slate-400" aria-hidden />
+    <AgentBadge id={kind} size="sm" />
     <span className="min-w-0">
       <span className="block text-sm font-medium text-slate-900 dark:text-white truncate">{title}</span>
       <span className="block text-xs text-slate-500 dark:text-slate-400">{meta}</span>
     </span>
   </button>
-);
+  );
+};
 
 /** One card per document: the synthesis first, then each agent. */
 export const DocumentCards: React.FC<{
@@ -261,9 +268,12 @@ export const DocumentViewer: React.FC<{
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 px-4 py-3 border-b border-slate-200 dark:border-slate-700">
-          <div className="min-w-0">
+          <div className="min-w-0 flex items-start gap-2">
+            <AgentBadge id={doc.kind === 'agent' ? doc.agentId : 'synthesis'} className="mt-0.5" />
+            <div className="min-w-0">
             <div className="text-base font-semibold text-slate-900 dark:text-white">{heading}</div>
             <div className="text-xs text-slate-500 dark:text-slate-400">Standard council document · template v{doc.version}</div>
+            </div>
           </div>
           <button ref={closeRef} type="button" className="ui-btn" onClick={onClose} aria-label="Close document">
             <X className="w-4 h-4" aria-hidden />
