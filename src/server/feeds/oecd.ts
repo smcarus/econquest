@@ -1,6 +1,7 @@
 /**
- * OECD data via DBnomics: composite leading indicators, CPI and national CPI. Calls are queued
- * and spaced so the service is not overloaded.
+ * OECD data via DBnomics: composite leading indicators, CPI and national CPI, plus the Eurostat
+ * pulls that sit beside them (HICP, industrial production, EU business surveys). OECD calls are
+ * queued and spaced so the service is not overloaded.
  */
 
 import fs from 'fs';
@@ -17,6 +18,7 @@ import { type ActivitySeries, BCB_IBCBR_SA, bcbSgsSinceUrl, EUROSTAT_IP_GEO, eur
 import { type CliSeries, cliUrl, parseCli } from '../../utils/oecdCli';
 import { type CpiSeries, cpiUrl, parseCpi } from '../../utils/oecdInflation';
 import { writeFileAtomic } from '../../utils/atomicWrite';
+import { EU_SURVEY_INDICATORS, euSurveyGeo, type EuSurveyPull, euSurveyUrl, parseEuSurvey } from '../../utils/euSurveys';
 
 /**
  * One way to fetch OECD data (now through DBnomics, api.db.nomics.world): named headers, one call
@@ -448,4 +450,77 @@ export async function fetchMonthlyActivity(): Promise<ActivityPull | null> {
     activityInFlight = null;
   });
   return activityInFlight;
+}
+
+/**
+ * EU business and consumer surveys (src/utils/euSurveys.ts) from Eurostat: one request per
+ * indicator for every EU member on the country list. Saved to data/live/eu-surveys.json with its
+ * pull date and pulled again after a day (the daily run does it); a failed indicator keeps its last
+ * good series, and a pull where nothing answered keeps the whole copy and is retried after an hour.
+ */
+let euSurveyMemory: { pull: EuSurveyPull | null; triedAt: number } | null = null;
+let euSurveyInFlight: Promise<EuSurveyPull | null> | null = null;
+function euSurveyFile(): string {
+  return path.join(DATA_DIR, 'live', 'eu-surveys.json');
+}
+/** The saved copy only, without asking Eurostat (pages read this; the daily run refreshes it). */
+export function loadEuSurveys(): EuSurveyPull | null {
+  if (!euSurveyMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(euSurveyFile(), 'utf8')) as EuSurveyPull;
+      if (saved?.pulledAt && saved.series) euSurveyMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  return euSurveyMemory?.pull ?? null;
+}
+export async function fetchEuSurveyPull(opts: { force?: boolean } = {}): Promise<EuSurveyPull | null> {
+  const saved = loadEuSurveys();
+  if (!opts.force) {
+    if (saved && Date.now() - Date.parse(saved.pulledAt) < 24 * 60 * 60 * 1000) return saved;
+    if (euSurveyMemory && Date.now() - euSurveyMemory.triedAt < 60 * 60 * 1000) return saved;
+  }
+  if (euSurveyInFlight) return euSurveyInFlight;
+  euSurveyInFlight = (async () => {
+    const prev = euSurveyMemory?.pull ?? null;
+    const eu = SOVEREIGN_CATALOG.map((c) => c.iso3).filter((i) => euSurveyGeo(i));
+    const series: EuSurveyPull['series'] = JSON.parse(JSON.stringify(prev?.series || {}));
+    let answered = 0;
+    if (eu.length) {
+      // One indicator at a time, so Eurostat sees a handful of small requests, not a burst.
+      for (const ind of EU_SURVEY_INDICATORS) {
+        try {
+          const res = await fetchWithTimeout(euSurveyUrl(ind, eu.map((i) => euSurveyGeo(i)!)), 30000);
+          if (!res.ok) {
+            console.warn(`[Eurostat] ${ind.dataset} ${ind.code} refused (HTTP ${res.status})`);
+            continue;
+          }
+          const got = parseEuSurvey(await res.json(), eu);
+          for (const [iso3, pts] of Object.entries(got)) {
+            (series[iso3] ||= {})[ind.id] = pts;
+            answered++;
+          }
+        } catch (e) {
+          console.warn(`[Eurostat] ${ind.dataset} ${ind.code}: ${describeNetworkError(e, 30000)}`);
+        }
+      }
+    }
+    if (!answered) {
+      euSurveyMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: EuSurveyPull = { pulledAt: new Date().toISOString(), series };
+    euSurveyMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(euSurveyFile()), { recursive: true });
+      writeFileAtomic(euSurveyFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    euSurveyInFlight = null;
+  });
+  return euSurveyInFlight;
 }

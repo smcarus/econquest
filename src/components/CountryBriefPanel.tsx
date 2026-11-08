@@ -31,7 +31,7 @@ export const CountryBriefPanel: React.FC<{
 }> = ({ run, peers, view: initialView, onWriteNote }) => {
   const [view, setView] = useState<BriefView>(initialView);
   const brief: CountryBrief = useMemo(
-    () => (view === 'banker' ? bankerBrief(run, peers) : view === 'official' ? officialBrief(run) : economistBrief(run)),
+    () => (view === 'banker' ? bankerBrief(run, peers) : view === 'official' ? officialBrief(run) : economistBrief(run, undefined, peers)),
     [run, peers, view]
   );
   const t = useT(BRIEF);

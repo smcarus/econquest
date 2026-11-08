@@ -78,6 +78,7 @@ own-data switch in Settings).
 | OECD consumer prices (via DBnomics) | Headline CPI inflation, y/y, monthly; the app's inflation figure where the OECD publishes one (IMF elsewhere) | api.db.nomics.world | 1 day, on disk |
 | Banco Central do Brasil (SGS 13522) | Brazil's IPCA inflation over 12 months, monthly; used instead of the OECD figure when at least as new (it was September 2026 against May on 2026-11-05) | api.bcb.gov.br | 1 day, on disk |
 | Eurostat HICP (prc_hicp_minr) | Monthly inflation, annual rate, all items, for EU members on your lists (Poland on the defaults); used instead of the OECD figure when at least as new. Turkey is not in this dataset | ec.europa.eu | 1 day, on disk |
+| Eurostat: EU business and consumer surveys (ei_bssi_m_r2, ei_bsee_m_r2) | The European Commission's monthly surveys, seasonally adjusted, for EU members on the country list, from 2005: Economic Sentiment Indicator, industrial, services and consumer confidence, Employment Expectations Indicator. Labelled "EU business survey, not a PMI". Economist note, country page and council charts | ec.europa.eu | Daily run, on disk (data/live/eu-surveys.json); pages read the saved copy |
 | UN Comtrade | Annual goods trade by partner (shares with China, Taiwan, Russia and the Gulf producers; top partners) and the export mix by HS chapter (fuels, ores, metals, farm goods) | comtradeapi.un.org | 30 days per country, on disk |
 | Central bank of Peru (BCRPData, EMBIG) | USD bond spread over US Treasuries: J.P. Morgan EMBI Global spread, monthly average, for Argentina, Brazil, Chile, Colombia, Ecuador, Mexico, Peru and Venezuela, plus the Latin American and emerging-market aggregates. The free stand-in for 5Y CDS: labelled a bond spread, never CDS. Other countries read Missing ("No free source"). Published about three weeks after the month | estadisticas.bcrp.gob.pe | 12 h, on disk (`data/live/market-extras.json`) |
 | FRED download | 10Y yields (OECD monthly): US, Mexico, South Africa, Japan, UK, Poland, Chile, India, Korea, Israel, Canada, Australia, New Zealand, Switzerland, Nordics, Czechia, Hungary, Slovakia and 11 euro-area countries | fred.stlouisfed.org | 6 h |
@@ -149,6 +150,20 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+- **EU business and consumer surveys** are the European Commission's monthly surveys of firms and
+  households (DG ECFIN), read from Eurostat's free JSON API, which republishes them (datasets
+  `ei_bssi_m_r2` and `ei_bsee_m_r2`; reuse allowed with Eurostat named and changes stated). One
+  request per indicator covers every EU member on the country list, seasonally adjusted, from
+  2005: the Economic Sentiment Indicator and the Employment Expectations Indicator (indexes,
+  long-term average = 100) and industrial, services and consumer confidence (balances: "better"
+  minus "worse" replies, in percentage points). They stand in for the paid purchasing managers'
+  indexes but are not PMIs (different questions and scale; a PMI's line is 50), and every label
+  says "EU business survey, not a PMI". Readings: an index above or below 100 (within 0.5 counts
+  as at the average); a balance against three months earlier (within 0.5 points counts as about
+  unchanged). A month not yet published is skipped, never filled in. The daily run saves the copy
+  (`data/live/eu-surveys.json`); a failed indicator keeps its last good series. Other countries stay
+  Missing: China's statistics office blocks robots and the regional Fed surveys on FRED may not be
+  redistributed.
 - **US Treasury auctions** come from the Fiscal Data API (`auctions_query`, free, no key; Fiscal
   Data's terms allow any use). One request reads ten years of auctions. Kept: regular bills, notes
   and bonds of six terms (13- and 26-week bills; 2-, 5- and 10-year notes; 30-year bonds), by

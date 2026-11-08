@@ -187,6 +187,8 @@ const SERIES_WORDS: Array<{ re: RegExp; id: string; label: string; world?: boole
   { re: /port calls|port activity|portwatch/i, id: 'portwatch_port_calls', label: 'Port calls per day' },
   { re: /seaborne exports/i, id: 'portwatch_exports', label: 'Seaborne exports per day (estimated)' },
   { re: /seaborne imports/i, id: 'portwatch_imports', label: 'Seaborne imports per day (estimated)' },
+  { re: /economic sentiment|\besi\b|business (?:and consumer )?surveys?|business confidence/i, id: 'eu_survey_esi', label: 'Economic sentiment indicator (EU business survey, not a PMI)' },
+  { re: /consumer confidence/i, id: 'eu_survey_consumer', label: 'Consumer confidence (EU business survey, not a PMI)' },
   { re: /auction (?:high )?yield/i, id: 'ust_auction_high_yield_10y', label: 'Treasury auction high yield, 10-year note' },
   { re: /bid[- ]to[- ]cover|treasury auctions?|auction demand/i, id: 'ust_auction_btc_10y', label: 'Treasury auction bid-to-cover, 10-year note' },
   { re: /supply[- ]chain|\bgscpi\b/i, id: 'gscpi', label: 'NY Fed Global Supply Chain Pressure Index', world: true },

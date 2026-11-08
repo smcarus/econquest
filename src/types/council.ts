@@ -563,6 +563,8 @@ export interface WatchlistItem {
   tic?: import('../utils/ticHoldings').TicHolding & { pulledAt: string };
   /** United States only: the latest US Treasury auctions (utils/treasuryAuctions.ts), with the date the app pulled them. */
   ustAuctions?: import('../utils/treasuryAuctions').UstAuctionSummary;
+  /** EU members only: the latest EU business and consumer surveys (utils/euSurveys.ts), with the date the app pulled them. */
+  euSurveys?: import('../utils/euSurveys').EuSurveySummary;
   /** IMF official reserves and balance of payments (utils/imfReserves.ts), with the date the app pulled them. */
   imf?: import('../utils/imfReserves').ImfExternal & { pulledAt: string };
   /** OECD composite leading indicator (utils/oecdCli.ts), with the date the app pulled it. */

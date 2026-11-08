@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- EU business and consumer surveys (data plan G2): the European Commission's monthly Economic Sentiment
+  Indicator, industrial, services and consumer confidence and Employment Expectations Indicator for EU members,
+  seasonally adjusted, from 2005, read free from Eurostat. A free stand-in for paid PMIs, labelled "EU business
+  survey, not a PMI" everywhere. The daily download saves them (data/live/eu-surveys.json); they show on the
+  economist note under Growth and inflation, as chartable series on each EU member's page and in council charts.
+  New Data health row (eu_surveys), Eurostat licence row extended, glossary entry, and Spanish and French text.
 - US Treasury auctions (data plan G1): bid-to-cover, high yield, amounts and the indirect bidders' share for
   13- and 26-week bills, 2-, 5- and 10-year notes and 30-year bonds, ten years back, from the free US Treasury
   Fiscal Data API. The daily download saves them (data/live/ust-auctions.json) and pages read only that copy.

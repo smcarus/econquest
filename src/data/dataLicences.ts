@@ -288,13 +288,13 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
   {
     id: 'eurostat',
-    name: 'Eurostat HICP and government expenditure by function (COFOG)',
-    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp)',
+    name: 'Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys',
+    usedFor: 'Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); the European Commission\'s business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2)',
     terms: [{ label: 'Eurostat copyright and reuse', url: 'https://ec.europa.eu/eurostat/about-us/policies/copyright' }],
     status: 'open',
     display: 'Allowed without a licence if Eurostat is named and any change to the data is stated.',
     commercial: 'Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).',
-    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp).',
+    attribution: 'Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2); surveys by the European Commission (DG ECFIN).',
     quotes: [
       'Eurostat has a policy of encouraging free re-use of its data, both for non-commercial and commercial purposes.',
       'when re-use involves modifications to the data or text, this must be stated clearly to the end user of the information.',

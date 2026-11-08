@@ -560,4 +560,6 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "US real GDP growth": "Croissance du PIB réel américain",
   "US CPI inflation": "Inflation IPC américaine",
   "US unemployment rate": "Taux de chômage américain",
+  "index, long-term average = 100": "indice, moyenne de long terme = 100",
+  "balance, % points": "solde, points de pourcentage",
 };

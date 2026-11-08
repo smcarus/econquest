@@ -310,7 +310,12 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
 
 **Summary (the brief).** Three views of the open country, each a list of observations with the rule behind it:
 
-- *Economist*: growth, inflation, debt, reserves and the external position.
+- *Economist*: growth, inflation, debt, reserves and the external position. For EU members it also
+  lists the latest European Commission business and consumer surveys (economic sentiment, industry,
+  services and consumer confidence, employment expectations), each marked "EU business survey, not a
+  PMI": the indexes are read against their long-term average of 100 and the confidence balances
+  against three months earlier, from the copy the daily download saves (via Eurostat). The same
+  surveys chart under History & data.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):

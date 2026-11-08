@@ -36,6 +36,16 @@ The share of people who want a job and are looking for one but do not have one.
 
 **Limits.** People who have given up looking, or work informally, are not counted, so in many emerging economies the rate understates how many people lack decent work.
 
+### Business and consumer surveys (not a PMI)
+
+Each month the European Commission asks thousands of firms and households in every EU country how things are going and how they expect them to go. The answers are turned into confidence measures for industry, services and consumers, an overall Economic Sentiment Indicator and an Employment Expectations Indicator.
+
+**Why it matters.** Surveys arrive weeks before official figures for output and jobs, so they are an early sign of where the economy is heading. They are free, unlike the purchasing managers' indexes (PMIs) that markets watch.
+
+**How to read it.** The sentiment and employment indexes have a long-term average of 100: above 100 means more upbeat than usual. Confidence balances are the share answering "better" minus the share answering "worse"; watch whether they are rising or falling more than their level.
+
+**Limits.** These are not PMIs: different questions, firms and scale (a PMI's dividing line is 50, not 100), so the two cannot be compared number for number. Moods can swing on news without a change in what people actually do. Only EU members are covered.
+
 ### Output gap
 
 The difference between what the economy is producing and what it could produce over time without pushing up inflation, as a share of that potential.

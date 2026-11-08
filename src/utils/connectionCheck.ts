@@ -23,6 +23,7 @@ import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from '.
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
+import { EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey } from './euSurveys';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
@@ -290,6 +291,7 @@ export const SOURCE_IDS = [
   'eurostat_hicp',
   'bcb_ibcbr',
   'eurostat_ip',
+  'eu_surveys',
   'comtrade',
   'fred_csv',
   'fred_api',
@@ -839,6 +841,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       {},
       'Eurostat answered, but not with the sts_inpr_m index the app reads (B-D, PRD, SCA, I21).'
+    )
+  );
+
+  add('eu_surveys', () =>
+    httpCheck(
+      { id: 'eu_surveys', name: 'EU business and consumer surveys (Eurostat)', group: 'free', feeds: 'Economic sentiment, industry, services and consumer confidence and employment expectations for EU members (not a PMI)' },
+      fetchFn,
+      euSurveyUrl(EU_SURVEY_INDICATORS[0], ['DE'], `${year - 1}-01`),
+      T,
+      (r) => {
+        const s = parseEuSurvey(parseJson(r.text), ['DEU']).DEU;
+        const last = s?.[s.length - 1];
+        return last ? `Germany economic sentiment ${fmt(last.value, 1)} (${formatMonth(last.period)}, long-term average = 100)` : null;
+      },
+      {},
+      'Eurostat answered, but not with the ei_bssi_m_r2 sentiment index the app reads (BS-ESI-I, SA).'
     )
   );
 
