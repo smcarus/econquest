@@ -387,6 +387,8 @@ export interface OpenDataSnapshot {
     externalDebtPctGni: number;
     currentAccountPctGdp: number;
     politicalStabilityPercentile: number;
+    /** Military expenditure, % of GDP (World Bank MS.MIL.XPND.GD.ZS, from SIPRI); only when the feed answered. */
+    militaryExpenditurePctGdp?: number;
     sourceUrl: string;
   };
   monetaryAndMarket: {
@@ -524,6 +526,8 @@ export interface WatchlistItem {
   outputGap?: { pct: number; year: string; source?: 'imf' | 'estimate'; low?: number; high?: number };
   /** Debt sustainability summary (src/utils/debtSustainability.ts) from the saved IMF history. */
   debtSustainability?: DsaSummary;
+  /** Government spending by purpose, % of GDP, latest published year per COFOG code (Eurostat or IMF); absent = Missing. */
+  govSpending?: Record<string, import('../utils/govSpending').SectorValue>;
   /** 'bis' when the BIS central bank policy rates feed filled policyRatePct; anything else does not count. */
   policyRateSource?: 'bis' | 'ai_estimate' | 'sample';
   /** BIS figures only: the date (YYYY-MM-DD, or YYYY-MM for an end-of-month figure), the central bank, and the history read from the BIS. */
@@ -920,5 +924,7 @@ export interface DsaSummary {
   stabilisingPb?: number;
   projectedPb?: number;
   rMinusG?: number;
+  /** The baseline's yearly inputs (IMF growth, inflation, effective interest, primary balance), for what-ifs. */
+  inputs?: import('../utils/debtSustainability').YearAssump[];
   method: string;
 }

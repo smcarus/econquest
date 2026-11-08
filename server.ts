@@ -163,6 +163,7 @@ import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD,
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
+import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
@@ -960,7 +961,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   }
 
   const hcPull = await fetchHcSpread().catch(() => null);
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities, govSpending] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -977,6 +978,8 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     Promise.race([fetchCoferPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     // Commodity prices for the spillover scenarios: don't hold the watchlist for the Pink Sheet download.
     Promise.race([fetchCommodities(), new Promise<CommodityReply | null>((resolve) => setTimeout(() => resolve(null), 3000))]),
+    // Government spending by purpose (Eurostat and IMF COFOG): annual; the first pull fills the cache.
+    Promise.race([fetchGovSpendingPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1053,6 +1056,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
                 const est = outputGapFrom(loadOfficialHistory(catItem.iso3));
                 return est.ok ? { outputGap: { pct: est.latest.central, year: est.latest.year, source: 'estimate' as const, low: est.latest.low, high: est.latest.high } } : {};
               })()),
+          ...(govSpending?.byCountry[catItem.iso3] ? { govSpending: govSpending.byCountry[catItem.iso3] } : {}),
           ...((() => {
             const d = dsaFrom(loadOfficialHistory(catItem.iso3));
             return d.ok ? { debtSustainability: dsaSummary(d) } : {};
