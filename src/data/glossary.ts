@@ -694,26 +694,29 @@ export function entryText(e: GlossaryEntry): string {
   return [e.what, e.read].filter(Boolean).join(' ');
 }
 
-/** docs/GLOSSARY.md, written from GLOSSARY. */
-export function glossaryMarkdown(): string {
+/**
+ * docs/GLOSSARY.md, written from GLOSSARY. With a translate function (the app's tx), every line is
+ * swapped for the reader's language; the file on disk stays English.
+ */
+export function glossaryMarkdown(tx: (s: string) => string = (s) => s): string {
   const out: string[] = [
-    '# Glossary',
+    `# ${tx('Glossary')}`,
     '',
-    'Plain-language explanations of the terms and figures EconQuest shows. Each entry says what the thing is, why it matters, and how to read it. The same text appears in the app under "What is this?" next to each figure, and in Menu > User manual > Glossary.',
+    tx('Plain-language explanations of the terms and figures EconQuest shows. Each entry says what the thing is, why it matters, and how to read it. The same text appears in the app under "What is this?" next to each figure, and in Menu > User manual > Glossary.'),
     '',
-    'Nothing here is a figure for any country. Where the app has no live or official value it shows "Missing" with the reason, never a number from this page.',
+    tx('Nothing here is a figure for any country. Where the app has no live or official value it shows "Missing" with the reason, never a number from this page.'),
     '',
-    '_Written from src/data/glossary.ts by `npm run docs:glossary`. Edit that file, not this one._',
+    tx('_Written from src/data/glossary.ts by `npm run docs:glossary`. Edit that file, not this one._'),
     '',
   ];
   for (const [g, title] of Object.entries(GLOSSARY_GROUPS) as Array<[GlossaryGroup, string]>) {
     const entries = GLOSSARY.filter((e) => e.group === g);
     if (!entries.length) continue;
-    out.push(`## ${title}`, '');
+    out.push(`## ${tx(title)}`, '');
     for (const e of entries) {
-      out.push(`### ${e.term}`, '', e.what, '', `**Why it matters.** ${e.why}`, '');
-      if (e.read) out.push(`**How to read it.** ${e.read}`, '');
-      if (e.limits) out.push(`**Limits.** ${e.limits}`, '');
+      out.push(`### ${tx(e.term)}`, '', tx(e.what), '', `**${tx('Why it matters.')}** ${tx(e.why)}`, '');
+      if (e.read) out.push(`**${tx('How to read it.')}** ${tx(e.read)}`, '');
+      if (e.limits) out.push(`**${tx('Limits.')}** ${tx(e.limits)}`, '');
     }
   }
   return out.join('\n');

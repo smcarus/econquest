@@ -367,6 +367,24 @@ export const MENU = defineMessages('menu', {
   od_needsSetup: 'Needs setup',
   od_missing: 'Missing',
   od_foot: 'Takes a few minutes per country. A step that takes longer than 3 minutes is listed as not saved and the run moves on. You can close this window; the download carries on, and a stopped one picks up where it left off. Same as {cmd} in a terminal. Saved in data/live, data/history and data/archive; progress in {file}.',
+  // User manual window
+  mn_title: 'User manual and glossary',
+  mn_manual: 'User manual',
+  mn_manualNote: 'How to use each part of the app, step by step.',
+  mn_glossary: 'Glossary',
+  mn_glossaryNote: 'Every economic and market term in the app, explained in plain words: what it is, why it matters and how to read it.',
+  mn_about: 'About the project',
+  mn_aboutNote: 'What EconQuest is, how to install it and where the data comes from.',
+  mn_englishNote: 'This document is only available in English for now.',
+  mn_copied: 'Copied',
+  mn_copy: 'Copy text',
+  mn_download: 'Download {file}',
+  mn_tabs: 'Document',
+  mn_all: 'All',
+  mn_findTerm: 'Find a term, e.g. inflation',
+  mn_search: 'Search this document',
+  mn_notLoaded: '{file} could not be loaded. Check that the server is running.',
+  mn_noMatch: 'No section matches "{q}". Clear the search to see the whole {doc}.',
 });
 
 /** The translate function useT(MENU) returns, for helpers outside a component. */

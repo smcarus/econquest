@@ -2,7 +2,7 @@ import React, { useSyncExternalStore } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { HELP_LEVEL_EVENT, HELP_LEVEL_KEY, nextHelpLevel, readHelpLevel, showGuides, writeHelpLevel, type HelpLevel } from '../utils/helpLevel';
 import { chartGuide, type ChartGuideId } from '../data/chartGuides';
-import { useT } from '../i18n/useLang';
+import { useT, useTx } from '../i18n/useLang';
 import { SHELL } from '../i18n/messages/shell';
 
 const LEVEL_KEYS = [
@@ -53,17 +53,19 @@ export const HelpLevelButton: React.FC = () => {
 /** "How to read this chart" and what it means in real life, under a chart's title. Levels 1 and 2. */
 export const ChartGuide: React.FC<{ id: ChartGuideId; className?: string }> = ({ id, className = 'px-4 pt-2' }) => {
   const level = useHelpLevel();
+  const t = useT(SHELL);
+  const tx = useTx();
   if (!showGuides(level)) return null;
   const g = chartGuide(id);
   return (
     <div className={`${className} text-xs text-slate-600 dark:text-slate-300 space-y-1 max-w-prose`} data-chart-guide={id}>
       <p>
-        <span className="font-medium text-slate-800 dark:text-slate-100">How to read this chart: </span>
-        {g.read}
+        <span className="font-medium text-slate-800 dark:text-slate-100">{t('guideRead')}</span>
+        {tx(g.read)}
       </p>
       <p>
-        <span className="font-medium text-slate-800 dark:text-slate-100">What it means in real life: </span>
-        {g.life}
+        <span className="font-medium text-slate-800 dark:text-slate-100">{t('guideLife')}</span>
+        {tx(g.life)}
       </p>
     </div>
   );

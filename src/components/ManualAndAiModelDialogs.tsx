@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { toDisplayCase } from '../utils/displayCase';
 import { GLOSSARY_GROUPS, glossaryMarkdown } from '../data/glossary';
+import { useLang, useT, useTx } from '../i18n/useLang';
+import { MENU } from '../i18n/messages/menu';
 import {
   AIRuntimeConfig,
   DockerSelfHostGuiConfig,
@@ -52,12 +54,12 @@ interface ManualDocsPayload {
 }
 
 /** The documents in the manual window, in tab order, with jump links to their main sections. */
-const DOCS: Array<{ id: DocId; label: string; file: string; note: string; jumps: Array<{ label: string; query: string }> }> = [
+const DOCS: Array<{ id: DocId; label: 'mn_manual' | 'mn_glossary' | 'mn_about'; file: string; note: 'mn_manualNote' | 'mn_glossaryNote' | 'mn_aboutNote'; jumps: Array<{ label: string; query: string }> }> = [
   {
     id: 'userManual',
-    label: 'User manual',
+    label: 'mn_manual',
     file: 'USER_MANUAL.md',
-    note: 'How to use each part of the app, step by step.',
+    note: 'mn_manualNote',
     jumps: [
       { label: 'Start here', query: 'Start here' },
       { label: 'Workspace', query: '1. Workspace' },
@@ -70,16 +72,16 @@ const DOCS: Array<{ id: DocId; label: string; file: string; note: string; jumps:
   },
   {
     id: 'glossary',
-    label: 'Glossary',
+    label: 'mn_glossary',
     file: 'GLOSSARY.md',
-    note: 'Every economic and market term in the app, explained in plain words: what it is, why it matters and how to read it.',
+    note: 'mn_glossaryNote',
     jumps: Object.values(GLOSSARY_GROUPS).map((g) => ({ label: g, query: g })),
   },
   {
     id: 'readme',
-    label: 'About the project',
+    label: 'mn_about',
     file: 'README.md',
-    note: 'What EconQuest is, how to install it and where the data comes from.',
+    note: 'mn_aboutNote',
     jumps: [],
   },
 ];
@@ -93,6 +95,9 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const t = useT(MENU);
+  const tx = useTx();
+  const lang = useLang();
 
   useEffect(() => {
     if (!isOpen) return;
@@ -120,10 +125,13 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
 
   const doc = DOCS.find((d) => d.id === activeDoc) || DOCS[0];
   // The glossary is built into the app, so it shows even before the server answers.
-  const builtIn = activeDoc === 'glossary' ? glossaryMarkdown() : '';
-  const activeFile: DocFile = docsPayload?.files[activeDoc] || {
+  // In another language the built-in glossary is shown translated, ahead of the English file.
+  const builtIn = activeDoc === 'glossary' ? glossaryMarkdown(lang === 'en' ? undefined : tx) : '';
+  const translated = builtIn && lang !== 'en';
+  const englishOnly = lang !== 'en' && activeDoc !== 'glossary';
+  const activeFile: DocFile = (!translated && docsPayload?.files[activeDoc]) || {
     path: `docs/${doc.file}`,
-    content: builtIn || (isLoading ? 'Loading…' : `${doc.file} could not be loaded. Check that the server is running.`),
+    content: builtIn || (isLoading ? t('c_loading') : t('mn_notLoaded', { file: doc.file })),
     lines: builtIn ? builtIn.split('\n').length : 0,
     bytes: builtIn.length,
   };
@@ -135,7 +143,7 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
     const matching = sections.filter((sec) => sec.toLowerCase().includes(q));
     return matching.length > 0
       ? matching.join('\n\n---\n\n')
-      : `No section matches "${searchFilter}". Clear the search to see the whole ${doc.label.toLowerCase()}.`;
+      : t('mn_noMatch', { q: searchFilter, doc: t(doc.label).toLowerCase() });
   })();
 
   const handleCopyMarkdown = () => {
@@ -158,13 +166,14 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
-      <div role="dialog" aria-label="User manual and glossary" className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
+      <div role="dialog" aria-label={t('mn_title')} className="w-full max-w-5xl max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 bg-slate-50 dark:bg-slate-950">
           <div className="flex items-center gap-3">
             <BookOpen className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <div>
-              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">User manual and glossary</h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">{doc.note}</p>
+              <h2 className="text-sm font-semibold text-slate-900 dark:text-white">{t('mn_title')}</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{t(doc.note)}</p>
+              {englishOnly && <p className="text-xs text-amber-700 dark:text-amber-400" data-english-only="true">{t('mn_englishNote')}</p>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -172,26 +181,26 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
               {copiedId === activeDoc ? (
                 <>
                   <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Copied</span>
+                  <span>{t('mn_copied')}</span>
                 </>
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copy text</span>
+                  <span>{t('mn_copy')}</span>
                 </>
               )}
             </button>
             <button type="button" onClick={handleDownloadMarkdown} className="ui-btn ui-btn-primary inline-flex">
               <Download className="w-3.5 h-3.5" />
-              <span>Download {doc.file}</span>
+              <span>{t('mn_download', { file: doc.file })}</span>
             </button>
-            <button type="button" onClick={onClose} aria-label="Close" className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
+            <button type="button" onClick={onClose} aria-label={t('c_close')} className="p-1.5 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200">
               <X className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950/90 flex flex-wrap items-center gap-1" role="tablist" aria-label="Document">
+        <div className="px-6 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-100/80 dark:bg-slate-950/90 flex flex-wrap items-center gap-1" role="tablist" aria-label={t('mn_tabs')}>
           {DOCS.map((d) => (
             <button
               key={d.id}
@@ -205,7 +214,7 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
               className="ui-pill inline-flex items-center gap-1.5"
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>{d.label}</span>
+              <span>{t(d.label)}</span>
             </button>
           ))}
         </div>
@@ -214,12 +223,12 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
           <div className="flex flex-wrap items-center gap-1.5">
             {doc.jumps.length > 0 && (
               <button type="button" onClick={() => setSearchFilter('')} aria-pressed={searchFilter === ''} className="ui-pill">
-                All
+                {t('mn_all')}
               </button>
             )}
             {doc.jumps.map((chap) => (
-              <button key={chap.query} type="button" onClick={() => setSearchFilter(chap.query)} aria-pressed={searchFilter === chap.query} className="ui-pill">
-                {chap.label}
+              <button key={chap.query} type="button" onClick={() => setSearchFilter(doc.id === 'glossary' && translated ? tx(chap.query) : chap.query)} aria-pressed={searchFilter === (doc.id === 'glossary' && translated ? tx(chap.query) : chap.query)} className="ui-pill">
+                {doc.id === 'glossary' ? tx(chap.label) : chap.label}
               </button>
             ))}
           </div>
@@ -229,8 +238,8 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
               type="text"
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              placeholder={activeDoc === 'glossary' ? 'Find a term, e.g. inflation' : 'Search this document'}
-              aria-label="Search this document"
+              placeholder={activeDoc === 'glossary' ? t('mn_findTerm') : t('mn_search')}
+              aria-label={t('mn_search')}
               className="w-full pl-8 pr-2.5 py-1 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500"
             />
           </div>
@@ -238,7 +247,7 @@ export const SovereignManualAndGithubModal: React.FC<SovereignManualAndGithubMod
 
         <div className="p-6 overflow-y-auto flex-1 bg-slate-50/50 dark:bg-slate-950/60">
           {isLoading && !builtIn ? (
-            <div className="py-12 text-center text-xs text-slate-500">Loading…</div>
+            <div className="py-12 text-center text-xs text-slate-500">{t('c_loading')}</div>
           ) : (
             <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-800 dark:text-slate-200 bg-white dark:bg-slate-900 p-5 border border-slate-200 dark:border-slate-800 select-text">
               {filteredContent}

@@ -57,6 +57,8 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   helpFullNote: 'Explica cada cifra y cada término, y por qué falta cada cifra que falta.',
   helpTitle: '{label}: {note} Pulse para pasar a {next}.',
   helpAria: 'Explicaciones: {label}. Pulse para pasar a {next}.',
+  guideRead: 'Cómo leer este gráfico: ',
+  guideLife: 'Qué significa en la vida real: ',
   langTitle: 'Idioma: {name}. Pulse para pasar a {next}.',
   langNotReviewed: 'Idioma: {name}. Esta traducción aún no ha sido revisada por un hablante nativo; las cifras, las fuentes y las respuestas escritas por la IA se muestran tal como están. Pulse para pasar a {next}.',
   langAria: 'Idioma: {name}. Pulse para pasar a {next}.',

@@ -339,3 +339,21 @@ test('Menu dialogs: every key and setting in Settings has Spanish, and so do bac
   const untranslated = s.filter((x) => tx(x) === x);
   assert.deepEqual(untranslated, [], 'Settings text with no Spanish');
 });
+
+test('help and glossary: every glossary entry, chart guide, panel introduction and the glossary page have Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (x: string) => translateText(x, 'es');
+  const { GLOSSARY, GLOSSARY_GROUPS, PANEL_INTROS, glossaryMarkdown } = await import('../src/data/glossary');
+  const { CHART_GUIDES } = await import('../src/data/chartGuides');
+  const s: string[] = [...Object.values(GLOSSARY_GROUPS), ...PANEL_INTROS.map((p) => p.intro)];
+  for (const e of GLOSSARY) s.push(e.term, e.what, e.why, ...(e.read ? [e.read] : []), ...(e.limits ? [e.limits] : []));
+  for (const g of Object.values(CHART_GUIDES)) s.push(g.read, g.life);
+  const untranslated = s.filter((x) => tx(x) === x);
+  assert.deepEqual(untranslated, [], 'help text with no Spanish');
+  const page = glossaryMarkdown(tx);
+  assert.ok(page.startsWith('# Glosario'), 'the glossary page title is Spanish');
+  assert.ok(!page.includes('**Why it matters.**'), 'the glossary page labels are Spanish');
+  assert.equal(glossaryMarkdown(), glossaryMarkdown((x) => x), 'the English page is unchanged');
+});
