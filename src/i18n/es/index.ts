@@ -7,6 +7,7 @@ import { COUNCIL_ES } from './council';
 import { OWN_DATA_ES } from './ownData';
 import { WORKSPACE_ES } from './workspace';
 import { WATCHLIST_ES } from './watchlist';
+import { MISSING_ES } from './missing';
 
 export const ES: Record<string, Record<string, string>> = {
   shell: SHELL_ES,
@@ -15,3 +16,6 @@ export const ES: Record<string, Record<string, string>> = {
   workspace: WORKSPACE_ES,
   watchlist: WATCHLIST_ES,
 };
+
+/** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
+export const ES_TEXT: Record<string, string> = { ...MISSING_ES };

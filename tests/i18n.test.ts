@@ -65,3 +65,41 @@ test('watchlist column headers in the message file match the columns the app def
   }
   for (const [key, label] of Object.entries(FIGURE_LABEL)) assert.equal(en[`fig_${key}`], label, `figure ${key}`);
 });
+
+test('every reason a figure can show as Missing has Spanish, and nothing else is in the list', async () => {
+  const { missingReason } = await import('../src/utils/liveFigures');
+  const { cliMissing } = await import('../src/utils/oecdCli');
+  const { SOVEREIGN_CATALOG } = await import('../src/data/presetsAndBaselines');
+  const { MISSING_ES } = await import('../src/i18n/es/missing');
+  const keys = ['cds', 'hcspread', 'yield', 'debt', 'reserves', 'cpi', 'policy'] as const;
+  const isos = [...new Set([...SOVEREIGN_CATALOG.map((c) => c.iso3), 'XXX', 'GHA', 'EGY', 'TUR'])];
+  const said = new Set<string>();
+  for (const k of keys)
+    for (const iso of isos) {
+      const r = missingReason(k, iso);
+      said.add(r.short);
+      said.add(r.help);
+    }
+  for (const pulled of [true, false]) {
+    const r = cliMissing(pulled);
+    said.add(r.short);
+    said.add(r.help);
+  }
+  for (const s of said) assert.ok(s in MISSING_ES, `no Spanish for: ${s}`);
+  for (const k of Object.keys(MISSING_ES)) assert.ok(said.has(k), `Spanish for a reason the app no longer gives: ${k}`);
+  for (const [en, es] of Object.entries(MISSING_ES)) assert.notEqual(es, en, `not translated: ${en}`);
+});
+
+test('Missing reasons swap whole, swap inside a joined text, and stay English when unknown', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  assert.equal(translateText('Needs setup', 'es'), 'Por configurar');
+  assert.equal(translateText('Needs setup', 'en'), 'Needs setup');
+  const help = Object.keys(ES_TEXT).find((k) => k.startsWith("Turkey's 10-year"))!;
+  const other = Object.keys(ES_TEXT).find((k) => k.startsWith('No free official source of this'))!;
+  const joined = `Turkey: ${help} Egypt: ${other}`;
+  assert.equal(translateText(joined, 'es'), `Turkey: ${ES_TEXT[help]} Egypt: ${ES_TEXT[other]}`);
+  assert.equal(translateText('Something new', 'es'), 'Something new');
+  assert.equal(translateText('', 'es'), '');
+});
