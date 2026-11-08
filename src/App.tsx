@@ -92,6 +92,7 @@ import {
   Activity,
   ShieldQuestion,
   NotebookPen,
+  FileUp,
   Compass,
   Info,
   ChevronDown,
@@ -128,6 +129,7 @@ const TeachingEpisodes = lazyNamed(() => import('./components/TeachingEpisodes')
 const AuditLogDialog = lazyNamed(() => import('./components/AuditLogDialog'), 'AuditLogDialog');
 const DataHealthDialog = lazyNamed(() => import('./components/DataHealthDialog'), 'DataHealthDialog');
 const IdeaJournalDialog = lazyNamed(() => import('./components/IdeaJournalDialog'), 'IdeaJournalDialog');
+const OwnSeriesDialog = lazyNamed(() => import('./components/OwnSeriesDialog'), 'OwnSeriesDialog');
 const QuestsDialog = lazyNamed(() => import('./components/QuestsDialog'), 'QuestsDialog');
 const ModelRegisterDialog = lazyNamed(() => import('./components/ModelRegisterDialog'), 'ModelRegisterDialog');
 const AccountDialog = lazyNamed(() => import('./components/AccountDialog'), 'AccountDialog');
@@ -256,6 +258,8 @@ export default function App() {
   const [registerFocus, setRegisterFocus] = useState<string | null | undefined>(undefined);
   // Menu > Idea journal, or "Log idea" on a Council chat answer.
   const [isIdeasOpen, setIsIdeasOpen] = useState(false);
+  // Menu > Your data: series loaded from your own CSV files.
+  const [isOwnDataOpen, setIsOwnDataOpen] = useState(false);
   useEffect(() => {
     const go = () => setIsIdeasOpen(true);
     window.addEventListener(OPEN_IDEAS_EVENT, go);
@@ -1381,6 +1385,15 @@ export default function App() {
                         className: '',
                       },
                       {
+                        key: 'own-data',
+                        icon: <FileUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+                        label: 'Your data',
+                        hint: '',
+                        title: 'Load your own series from a CSV file, labelled "Your file" wherever it shows.',
+                        onClick: () => setIsOwnDataOpen(true),
+                        className: '',
+                      },
+                      {
                         key: 'quests',
                         icon: <Compass className={`w-3.5 h-3.5 ${questsOn ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-500'}`} />,
                         label: 'Quests',
@@ -1825,6 +1838,7 @@ export default function App() {
       <Suspense fallback={null}>{isAuditLogOpen && <AuditLogDialog onClose={() => setIsAuditLogOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isDataHealthOpen && <DataHealthDialog onClose={() => setIsDataHealthOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isIdeasOpen && <IdeaJournalDialog onClose={() => setIsIdeasOpen(false)} />}</Suspense>
+      <Suspense fallback={null}>{isOwnDataOpen && <OwnSeriesDialog onClose={() => setIsOwnDataOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{isQuestsOpen && questsOn && <QuestsDialog items={liveWatchlistItems} onClose={() => setIsQuestsOpen(false)} />}</Suspense>
       <Suspense fallback={null}>{registerFocus !== undefined && <ModelRegisterDialog focusId={registerFocus} onClose={() => setRegisterFocus(undefined)} />}</Suspense>
       <Suspense fallback={null}>{isUsersOpen && me && <UsersDialog me={me} onClose={() => setIsUsersOpen(false)} />}</Suspense>

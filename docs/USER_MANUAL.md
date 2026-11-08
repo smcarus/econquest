@@ -612,6 +612,22 @@ hold no figures of their own; the handout reads them from the app's series when 
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
+- **Your data**: load your own series from a CSV file, for figures the app does not have (for
+  example a series from your country's statistics office or a central bank report). Pick the file,
+  give it a name, unit, frequency, country (or *Not about one country*) and say where the figures came
+  from; the terms of use and a note for readers are optional. *Check* reads the file and lists every
+  problem by line, or shows how many figures it found and the first rows; *Save* opens only after a
+  clean check. The file needs a header row and two columns, the date and the value (with more
+  columns, name the two to use `date` and `value`). Commas, semicolons or tabs separate columns; with
+  semicolons or tabs a decimal comma (3,5) is fine. Dates: daily and weekly `YYYY-MM-DD`, monthly
+  `YYYY-MM`, quarterly `YYYY-Q1`, annual `YYYY`; dates such as 03/04/2025 are refused because they
+  could mean March or April. An empty value, `NA` or `..` means no figure for that date: the row is
+  counted and skipped, never filled in. Your figures are kept exactly as given and labelled
+  *Your file* with your source wherever they show; the app has not checked them. Each series keeps
+  the SHA-256 of the file you loaded and of the figures read from it, and the list says *Changed
+  outside the app* if the saved copy no longer matches. Saving and deleting go to the audit log;
+  viewers can look but not load or delete. Kept in `data/local/own-series/` (one file per series, up
+  to 200 series, 2 MB and 50,000 rows per file).
 - **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
