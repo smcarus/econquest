@@ -199,3 +199,28 @@ test('routes: check saves nothing, save and delete are audited, viewers are refu
     await new Promise((r) => server.close(r));
   }
 });
+
+test('your series join the country or world list labelled "Your file"; sharing mode holds them back', async () => {
+  const { ownSeriesViewsFor, isOwnSource } = await import('../src/engine/ownSeries');
+  const { withheldReason } = await import('../src/utils/shareMode');
+  const { licenceLabelForSource } = await import('../src/utils/licenceLookup');
+  const platform = createMemoryPlatform();
+  const csv = 'date,value\n2024-01,10\n2024-02,12\n';
+  const gha = await saveOwnSeries(platform, META, csv);
+  await saveOwnSeries(platform, { ...META, label: 'Cocoa world stocks', iso3: 'WLD' }, csv);
+  assert.ok('saved' in gha);
+  const views = await ownSeriesViewsFor(platform, 'gha');
+  assert.deepEqual(views.map((v) => [v.label, v.own]), [['Ghana: cocoa purchases', true]]);
+  assert.equal((await ownSeriesViewsFor(platform, 'WLD')).length, 1);
+  assert.equal((await ownSeriesViewsFor(platform, 'KEN')).length, 0);
+  const name = `${OWN_SERIES_FOLDER}/${gha.saved.id}.json`;
+  const edited = JSON.parse(platform.fileMap.get(name) ?? '{}');
+  edited.points[1].value = 13;
+  platform.fileMap.set(name, JSON.stringify(edited));
+  assert.match((await ownSeriesViewsFor(platform, 'GHA'))[0]?.about ?? '', /^Changed outside the app/);
+  const src = views[0]?.source ?? '';
+  assert.equal(isOwnSource(src), true);
+  assert.equal(isOwnSource('IMF WEO'), false);
+  assert.match(withheldReason(src) ?? '', /your own file/);
+  assert.match(licenceLabelForSource(src), /^Your own file/);
+});

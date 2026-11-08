@@ -628,6 +628,10 @@ hold no figures of their own; the handout reads them from the app's series when 
   outside the app* if the saved copy no longer matches. Saving and deleting go to the audit log;
   viewers can look but not load or delete. Kept in `data/local/own-series/` (one file per series, up
   to 200 series, 2 MB and 50,000 rows per file).
+  Saved series join the country's series (or the world list for *Not about one country*): they
+  show in the History tab, the Chart Agent and the econometrics lab, and download with the other
+  series, with *Your file* as their source. Sharing mode holds their values back, because the app
+  cannot check their terms. The council does not read them yet.
 - **Offline data**: downloads every free feed for every country for fast, offline use (below). Shows
   countries ready, size on this computer, an estimate for what is left, and anything not saved with
   the reason.
