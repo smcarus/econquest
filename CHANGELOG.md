@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- French, part 3: the watchlist (also when popped out), Your data, the small gap model, Your tests, My holdings and
+  the book briefs, the Tools page with its groups, descriptions and tool panels, and Compare countries (MarketEdge,
+  divergences, growth and inflation quadrant, scenarios, story leads and the Fed balance sheet). The tool, compare
+  and chat-card coverage tests now check French as well as Spanish.
 - French, part 2: the Research pages (scope bar, section names, Sources), one country's three briefs with their
   figure names, reasons and meanings, and every panel on one country's other tabs, including the sentences the app
   writes from the data (debt sustainability, policy rules, event studies, scenarios, track record and the rest).

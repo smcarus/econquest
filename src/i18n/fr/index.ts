@@ -16,6 +16,14 @@ import { BRIEF_FR } from './brief';
 import { BRIEF_TEXT_FR } from './briefText';
 import { PANELS_FR } from './panels';
 import { PANEL_TEXT_FR } from './panelText';
+import { WATCHLIST_FR } from './watchlist';
+import { OWN_DATA_FR } from './ownData';
+import { GAP_MODEL_FR } from './gapModel';
+import { YOUR_TESTS_FR } from './yourTests';
+import { TOOLS_FR } from './tools';
+import { TOOL_TEXT_FR } from './toolText';
+import { TOOLS_CATALOG_FR } from './toolsCatalog';
+import { COMPARE_TEXT_FR } from './compareText';
 
 export const FR: Record<string, Record<string, string>> = {
   shell: SHELL_FR,
@@ -26,7 +34,12 @@ export const FR: Record<string, Record<string, string>> = {
   research: RESEARCH_FR,
   brief: BRIEF_FR,
   panels: PANELS_FR,
+  watchlist: WATCHLIST_FR,
+  ownData: OWN_DATA_FR,
+  gapModel: GAP_MODEL_FR,
+  yourTests: YOUR_TESTS_FR,
+  tools: TOOLS_FR,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const FR_TEXT: Record<string, string> = { ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...CHAT_TEXT_FR };
+export const FR_TEXT: Record<string, string> = { ...COMPARE_TEXT_FR, ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...TOOL_TEXT_FR, ...TOOLS_CATALOG_FR, ...CHAT_TEXT_FR };

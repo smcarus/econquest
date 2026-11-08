@@ -7,7 +7,9 @@ import { ES } from '../src/i18n/es';
 /** Words spelled the same in French and English; anything else left identical is untranslated. */
 const SAME_IN_FRENCH = new Set(['Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
-  'Violence', 'Violence (%)', 'violence', '{n} points', '{n} pt', '{n} pts', '{value} pts', 'Population', 'projection']);
+  'Violence', 'Violence (%)', 'violence', '{n} points', '{n} pt', '{n} pts', '{value} pts', 'Population', 'projection',
+  ' · notes', 'Client', 'Duration', 'Inflation, %', 'Instrument', 'Long', 'long', 'Record', 'Source', 'Type', 'taylor', 'CDS (protection)',
+  'Expansion', 'expansion', 'Expansion ({date})', 'Expansion, {detail} ({date})', '{num} points']);
 
 test('languages: English, Spanish and French; anything else reads as English', () => {
   assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es', 'fr']);
@@ -295,6 +297,10 @@ test('Holdings and Tools: tool names, briefs, signals and tool reasons the app b
   if ('reason' in f) s.push(f.reason);
   const untranslated = s.filter((x) => !keep.has(x) && !/^[\d.%$,mm −-]+$/.test(x) && (tx(x) === x || / the | your | of the /.test(tx(x))));
   assert.deepEqual(untranslated, [], 'tool text with no Spanish');
+  { const { FR, FR_TEXT } = await import('../src/i18n/fr'); attachLanguage('fr', FR, FR_TEXT); }
+  const fx = (x: string) => translateText(x, 'fr');
+  const noFrench = s.filter((x) => !keep.has(x) && !SAME_IN_FRENCH.has(x) && !/^[\d.%$,mm −-]+$/.test(x) && (fx(x) === x || / the | your | of the /.test(fx(x))));
+  assert.deepEqual(noFrench, [], 'tool text with no French');
 });
 
 test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenarios, leads and the Fed balance sheet have Spanish', async () => {
@@ -334,6 +340,10 @@ test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenario
   s.push(FED_SOURCE, 'Total assets', 'Bank reserves at the Fed', 'Treasury General Account', 'Overnight reverse repos', 'Wednesday level', 'Week average');
   const untranslated = s.filter((x) => x !== 'BIS' && (tx(x) === x || / the | your | of the | since /.test(tx(x))));
   assert.deepEqual(untranslated, [], 'compare text with no Spanish');
+  { const { FR, FR_TEXT } = await import('../src/i18n/fr'); attachLanguage('fr', FR, FR_TEXT); }
+  const fx = (x: string) => translateText(x, 'fr');
+  const noFrench = s.filter((x) => x !== 'BIS' && !SAME_IN_FRENCH.has(x) && (fx(x) === x || / the | your | of the | since /.test(fx(x))));
+  assert.deepEqual(noFrench, [], 'compare text with no French');
 });
 
 test('Menu dialogs: every key and setting in Settings has Spanish, and so do backup and morning brief lines', async () => {
@@ -401,6 +411,10 @@ test('Council chat cards: assumptions, re-run notes, explanation lenses, chart c
   );
   const untranslated = s.filter((x) => tx(x) === x);
   assert.deepEqual(untranslated, [], 'chat card text with no Spanish');
+  { const { FR, FR_TEXT } = await import('../src/i18n/fr'); attachLanguage('fr', FR, FR_TEXT); }
+  const fx = (x: string) => translateText(x, 'fr');
+  const noFrench = s.filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x);
+  assert.deepEqual(noFrench, [], 'chat card text with no French');
   const { splitSettingsLinks } = await import('../src/utils/settingsLinks');
   const parts = splitSettingsLinks(tx('No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.'));
   assert.ok(parts.some((p) => typeof p !== 'string' && p.page === 'ai'), 'the Spanish Settings link still opens the AI model page');
@@ -439,7 +453,7 @@ test('Reports pages: review steps, levers, lenses, memo types and section headin
 test('every French message file is complete, keeps every placeholder and matches an English file', async () => {
   const { FR } = await import('../src/i18n/fr');
   const byArea = new Map(ALL_CATALOGS.map((c) => [c.area, c]));
-  for (const area of ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
+  for (const area of ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels', 'watchlist', 'ownData', 'gapModel', 'yourTests', 'tools']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
   for (const [area, french] of Object.entries(FR)) {
     const c = byArea.get(area);
     assert.ok(c, `French for ${area}, which has no English file in src/i18n/messages/index.ts`);

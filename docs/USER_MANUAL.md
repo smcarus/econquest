@@ -32,7 +32,9 @@ a part at a time: so far the header and Menu button, Workspace with its Briefing
 with its cards (approval pause, snapshot, explanations, what-if, sign-off, policy documents, charts,
 council documents and the agent steps), the reasons shown under a Missing figure, the Research pages
 (scope bar, section names, Sources), one country's briefs with their figure names and reasons, and
-the panels on one country's other tabs, including the sentences the app writes from the data; anything not yet
+the panels on one country's other tabs, including the sentences the app writes from the data, the
+watchlist (also when popped out), Your data, the small gap model, Your tests, My holdings, the Tools
+page and its tool panels, and Compare countries; anything not yet
 translated shows in English. Both use the formal "you" (usted, vous). The council's agents still read
 questions in English, so in Spanish or French the chat asks you to type questions in English for now,
 and the suggested questions stay in English. Figures, source names, series names and answers written
