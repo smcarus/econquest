@@ -2527,22 +2527,22 @@ async function startServer() {
     });
     next();
   });
-  app.get('/api/audit', (req, res) => {
-    const { check, entries } = readAudit(AUDIT_FILES);
+  app.get('/api/audit', async (req, res) => {
+    const { check, entries } = await readAudit(AUDIT_FILES);
     const kind = typeof req.query.kind === 'string' && req.query.kind in AUDIT_KIND_LABEL ? (req.query.kind as AuditKind) : null;
     const q = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase().slice(0, 100) : '';
     const limit = Math.min(500, Math.max(1, Number(req.query.limit) || 200));
     const hits = entries.filter((e) => (!kind || e.kind === kind) && (!q || JSON.stringify(e).toLowerCase().includes(q)));
     res.json({ check, total: hits.length, entries: hits.slice(-limit).reverse(), kinds: AUDIT_KIND_LABEL, file: 'data/local/audit/audit-log.jsonl' });
   });
-  app.get('/api/audit/export.:fmt(csv|jsonl)', (req, res) => {
+  app.get('/api/audit/export.:fmt(csv|jsonl)', async (req, res) => {
     const stamp = new Date().toISOString().slice(0, 10);
     if (req.params.fmt === 'jsonl') {
       res.setHeader('Content-Type', 'application/x-ndjson; charset=utf-8');
       res.attachment(`econquest-audit-log-${stamp}.jsonl`);
-      return res.send(rawAudit(AUDIT_FILES));
+      return res.send(await rawAudit(AUDIT_FILES));
     }
-    const { check, entries } = readAudit(AUDIT_FILES);
+    const { check, entries } = await readAudit(AUDIT_FILES);
     const note = check.ok ? `Checked: ${check.entries} entries, chain intact, last hash ${check.lastHash ?? '-'}` : `CHECK FAILED: ${check.problem}`;
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.attachment(`econquest-audit-log-${stamp}.csv`);
@@ -3090,7 +3090,7 @@ async function startServer() {
     res.setHeader('Content-Disposition', `attachment; filename="${episodeFileName(ep, teacher)}"`);
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
-  registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn, platform: enginePlatform });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });

@@ -28,10 +28,10 @@ test('entries chain from GENESIS and the check passes on an untouched log', () =
   assert.equal(check.lastHash, b.hash);
 });
 
-test('the check finds an edited, removed or cut-off line', () => {
+test('the check finds an edited, removed or cut-off line', async () => {
   const files = tmpFiles();
-  for (let i = 0; i < 4; i++) appendAudit(files, { kind: 'data', summary: `step ${i}` });
-  assert.equal(readAudit(files).check.ok, true);
+  for (let i = 0; i < 4; i++) void appendAudit(files, { kind: 'data', summary: `step ${i}` });
+  assert.equal((await readAudit(files)).check.ok, true);
   const lines = fs.readFileSync(files.log, 'utf8').trim().split('\n');
 
   const edited = [...lines];
@@ -50,29 +50,29 @@ test('the check finds an edited, removed or cut-off line', () => {
 
   // Removing lines from the end leaves a valid chain; the head file catches it.
   fs.writeFileSync(files.log, lines.slice(0, 2).join('\n') + '\n');
-  const tail = readAudit(files);
+  const tail = await readAudit(files);
   assert.equal(tail.check.ok, false);
   assert.match(tail.check.problem!, /removed from the end/);
 });
 
-test('appendAudit carries on the chain after a restart (cache cleared) and writes mode 600', () => {
+test('appendAudit carries on the chain after a restart (cache cleared) and writes mode 600', async () => {
   const files = tmpFiles();
-  appendAudit(files, { kind: 'data', summary: 'one' });
+  await appendAudit(files, { kind: 'data', summary: 'one' });
   resetAuditCache();
-  const two = appendAudit(files, { kind: 'data', summary: 'two' });
+  const two = await appendAudit(files, { kind: 'data', summary: 'two' });
   assert.equal(two?.seq, 2);
-  const { check } = readAudit(files);
+  const { check } = await readAudit(files);
   assert.equal(check.ok, true);
   assert.equal(check.entries, 2);
   if (process.platform !== 'win32') assert.equal(fs.statSync(files.log).mode & 0o777, 0o600);
 });
 
-test('appendAudit never throws when the log cannot be written', () => {
+test('appendAudit never throws when the log cannot be written', async () => {
   resetAuditCache();
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'audit-'));
   const blocker = path.join(dir, 'local');
   fs.writeFileSync(blocker, 'not a folder');
-  assert.equal(appendAudit(auditFiles(dir), { kind: 'data', summary: 'x' }), null);
+  assert.equal(await appendAudit(auditFiles(dir), { kind: 'data', summary: 'x' }), null);
 });
 
 test('describeRequest names what a request did and never reads its body', () => {

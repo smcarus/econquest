@@ -295,6 +295,8 @@ test('council synthesis: a model brief keeps traceable sentences and drops inven
   assert.equal(saved.inputs.question, 'Is Turkey behind the curve on inflation?');
   assert.equal(saved.output.brief.headline, 'Turkey looks behind the curve.');
   assert.equal(saved.outputHash, snap.outputHash);
+  // Audit entries are written in turn after the reply; reading the log waits for those already queued.
+  await fetch(`${base}/api/audit`);
   const audit = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
   assert.ok(audit.some((e: { detail?: { snapshot?: { id: string } } }) => e.detail?.snapshot?.id === snap.id));
 });

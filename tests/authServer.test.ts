@@ -180,6 +180,8 @@ test('roles: the admin adds accounts; viewers only read, analysts cannot touch k
   assert.equal((await fetch(`${base}/api/workspace`, { headers: { Cookie: vic } })).status, 401);
   assert.equal((await post('/api/auth/sign-in', { username: 'vic', password: addV.password })).status, 401);
 
+  // Audit entries are written in turn after the reply; reading the log waits for those already queued.
+  assert.equal((await fetch(`${base}/api/audit`, { headers: { Cookie: adminCookie } })).status, 200);
   const raw = readFileSync(path.join(dataDir, 'local', 'audit', 'audit-log.jsonl'), 'utf8');
   assert.match(raw, /Sam \(sam\) added the account Ana \(ana\) as analyst/);
   assert.match(raw, /changed the account vic: disabled/);
