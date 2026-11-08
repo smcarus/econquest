@@ -4,14 +4,17 @@ import { attachLanguage, defineMessages, LANGS, nextLang, parseLang, placeholder
 import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
-test('languages: English and Spanish; anything else reads as English', () => {
-  assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es']);
+test('languages: English, Spanish and French; anything else reads as English', () => {
+  assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es', 'fr']);
   assert.equal(parseLang('es'), 'es');
-  for (const bad of [undefined, null, '', 'ES', 'fr', 'xx']) assert.equal(parseLang(bad), 'en');
+  assert.equal(parseLang('fr'), 'fr');
+  for (const bad of [undefined, null, '', 'ES', 'FR', 'de', 'xx']) assert.equal(parseLang(bad), 'en');
   assert.equal(nextLang('en'), 'es');
-  assert.equal(nextLang('es'), 'en');
-  // Spanish is marked as not yet checked by a native speaker, so the app says so beside the switch.
+  assert.equal(nextLang('es'), 'fr');
+  assert.equal(nextLang('fr'), 'en');
+  // Neither translation has been checked by a native speaker yet, so the app says so beside the switch.
   assert.equal(LANGS.find((l) => l.code === 'es')?.reviewed, false);
+  assert.equal(LANGS.find((l) => l.code === 'fr')?.reviewed, false);
 });
 
 test('translate fills placeholders and falls back to English, never to a bare key', () => {
@@ -416,4 +419,71 @@ test('Reports pages: review steps, levers, lenses, memo types and section headin
   const SAME = new Set(['Fiscal']);
   const untranslated = [...new Set(s)].filter((x) => !SAME.has(x) && tx(x) === x);
   assert.deepEqual(untranslated, [], 'Reports text with no Spanish');
+});
+
+// French (FR1 to FR4). Areas arrive in parts; an area not translated yet shows in English, but
+// every area that is here must be complete, and the parts done so far must stay here.
+/** Words spelled the same in French and English; anything else left identical is untranslated. */
+const SAME_IN_FRENCH = new Set(['Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade']);
+test('every French message file is complete, keeps every placeholder and matches an English file', async () => {
+  const { FR } = await import('../src/i18n/fr');
+  const byArea = new Map(ALL_CATALOGS.map((c) => [c.area, c]));
+  for (const area of ['shell', 'common', 'workspace', 'council', 'chat']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
+  for (const [area, french] of Object.entries(FR)) {
+    const c = byArea.get(area);
+    assert.ok(c, `French for ${area}, which has no English file in src/i18n/messages/index.ts`);
+    for (const [key, en] of Object.entries(c!.en)) {
+      const fr = french[key];
+      assert.ok(fr && fr.trim(), `${area}.${key} has no French`);
+      assert.deepEqual(placeholders(fr), placeholders(en), `${area}.${key} changes the placeholders`);
+      if (en.length > 3 && !SAME_IN_FRENCH.has(en)) assert.notEqual(fr, en, `${area}.${key} is still English`);
+    }
+    for (const key of Object.keys(french)) assert.ok(key in c!.en, `${area}.${key} is in French only`);
+  }
+});
+
+test('French sentences swapped at display time are known English sentences, keep their placeholders and are translated', async () => {
+  const { FR_TEXT } = await import('../src/i18n/fr');
+  const { ES_TEXT } = await import('../src/i18n/es');
+  const { MISSING_FR } = await import('../src/i18n/fr/missing');
+  const { MISSING_ES } = await import('../src/i18n/es/missing');
+  // Every Missing reason the app can give (the Spanish list is checked against the app above).
+  for (const en of Object.keys(MISSING_ES)) assert.ok(en in MISSING_FR, `no French for: ${en}`);
+  for (const [en, fr] of Object.entries(FR_TEXT)) {
+    assert.ok(en in ES_TEXT, `French for a sentence the app does not build: ${en}`);
+    assert.deepEqual(placeholders(fr), placeholders(en), `placeholders changed in: ${en}`);
+    if (en.length > 3 && !SAME_IN_FRENCH.has(en)) assert.notEqual(fr, en, `not translated: ${en}`);
+  }
+});
+
+test('French uses the formal "vous" throughout, never "tu"', async () => {
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  const all = [...Object.values(FR).flatMap((d) => Object.values(d)), ...Object.values(FR_TEXT)];
+  // "ton" is left out: it is also the noun "tone" (le ton de l'actualité).
+  const informal = /(^|[\s'’(«-])(tu|toi|te|t’|t')(?=[\s,.;:!?»)]|$)/i;
+  const found = all.filter((s) => informal.test(s));
+  assert.deepEqual(found, [], 'informal French');
+});
+
+test('French loads on its own: it does not change the Spanish, and English stays English', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  const { SHELL } = await import('../src/i18n/messages/shell');
+  attachLanguage('es', ES, ES_TEXT);
+  attachLanguage('fr', FR, FR_TEXT);
+  assert.equal(translate(SHELL, 'fr', 'research'), 'Recherche');
+  assert.equal(translate(SHELL, 'es', 'research'), ES.shell!.research);
+  assert.equal(translate(SHELL, 'en', 'research'), 'Research');
+  assert.equal(translateText('Needs setup', 'fr'), 'À configurer');
+  assert.equal(translateText('Needs setup', 'es'), 'Por configurar');
+  assert.equal(translateText('{num} months of imports'.replace('{num}', '4.2'), 'fr'), "4.2 mois d'importations");
+  // An area with no French yet falls back to English, never to Spanish or a bare key.
+  const later = defineMessages('demo-fr-later', { a: 'Apple' }, { a: 'Manzana' });
+  assert.equal(translate(later, 'fr', 'a'), 'Apple');
+});
+
+test('the French file is its own download: it imports nothing from the Spanish', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  for (const f of readdirSync('src/i18n/fr')) assert.doesNotMatch(readFileSync(`src/i18n/fr/${f}`, 'utf8'), /from '\.\.\/es/, `${f} imports Spanish`);
 });

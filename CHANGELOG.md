@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- French, part 1: the language button now goes English, Español, Français. French downloads only when picked
+  (its own file, separate from the Spanish) and covers the header, Workspace and its Briefing panel, Council chat
+  and its cards, and the reasons a figure shows as Missing, in the formal "vous". Anything not translated yet
+  shows in English. Tests check every French file is complete, keeps its placeholders and never uses "tu".
 - Register your own test, part 2 (run and record): "Run my tests" under Menu > Models & validation > Your tests runs
   every registered test that has no verdict yet, in the background, with the same methods and free histories as the
   app's own backtests. Verdicts are kept in data/local/validation/user-results.json (forward record in

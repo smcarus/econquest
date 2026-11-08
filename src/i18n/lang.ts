@@ -1,5 +1,5 @@
 /**
- * Languages (Sam, 2026-11-08: Spanish first, then French). The app's own words are kept in keyed
+ * Languages (Sam, 2026-11-08: Spanish first, then French; both use the formal "you": usted, vous). The app's own words are kept in keyed
  * message files (src/i18n/messages/), one file per area, so a new screen adds its own file
  * instead of editing a shared list. English is the source; a word missing in another language
  * falls back to English rather than showing a key.
@@ -11,7 +11,7 @@
  * if storage is blocked. Browser-safe; no React import here so the rules can be tested.
  */
 
-export type Lang = 'en' | 'es';
+export type Lang = 'en' | 'es' | 'fr';
 export const DEFAULT_LANG: Lang = 'en';
 export const LANG_KEY = 'econquest.lang.v1';
 export const LANG_EVENT = 'econquest:lang';
@@ -29,6 +29,7 @@ export interface LangInfo {
 export const LANGS: readonly LangInfo[] = [
   { code: 'en', name: 'English', short: 'EN', reviewed: true },
   { code: 'es', name: 'Español', short: 'ES', reviewed: false },
+  { code: 'fr', name: 'Français', short: 'FR', reviewed: false },
 ];
 
 export function parseLang(v: unknown): Lang {
@@ -71,17 +72,19 @@ export function writeLang(lang: Lang): void {
 
 /**
  * A message file: English for every key, other languages for as many keys as are done. The
- * English lives with the screen; the Spanish is kept in src/i18n/es/ and loaded only when someone
- * picks Spanish, so English users download none of it.
+ * English lives with the screen; the Spanish is kept in src/i18n/es/ and the French in
+ * src/i18n/fr/, each loaded only when someone picks that language, so English users download none
+ * of it and a French reader downloads no Spanish.
  */
 export interface Catalog<K extends string = string> {
   /** Area name, for the completeness test and for matching the Spanish file. */
   area: string;
   en: Record<K, string>;
   es: Partial<Record<K, string>>;
+  fr: Partial<Record<K, string>>;
 }
 
-/** The Spanish (or later French) for one message file: every key of its English. */
+/** The Spanish or French for one message file: every key of its English. */
 export type Messages<C> = C extends Catalog<infer K> ? Record<K, string> : never;
 
 /** Every message file defined so far, so a language loaded later reaches them all. */
@@ -116,7 +119,12 @@ let version = 0;
 
 /** Defines a message file with its keys taken from the English list. */
 export function defineMessages<K extends string>(area: string, en: Record<K, string>, es: Partial<Record<K, string>> = {}): Catalog<K> {
-  const catalog: Catalog<K> = { area, en, es: { ...es, ...(loaded.es?.[area] as Partial<Record<K, string>> | undefined) } };
+  const catalog: Catalog<K> = {
+    area,
+    en,
+    es: { ...es, ...(loaded.es?.[area] as Partial<Record<K, string>> | undefined) },
+    fr: { ...(loaded.fr?.[area] as Partial<Record<K, string>> | undefined) },
+  };
   registry.set(area, catalog as Catalog);
   return catalog;
 }
@@ -149,8 +157,14 @@ export function langVersion(): number {
 export async function ensureLang(lang: Lang): Promise<void> {
   if (lang === 'en' || loaded[lang]) return;
   try {
-    const { ES, ES_TEXT } = await import('./es/index');
-    attachLanguage('es', ES, ES_TEXT);
+    // One import per language, so each is its own download (Vite splits on each import()).
+    if (lang === 'es') {
+      const { ES, ES_TEXT } = await import('./es/index');
+      attachLanguage('es', ES, ES_TEXT);
+    } else {
+      const { FR, FR_TEXT } = await import('./fr/index');
+      attachLanguage('fr', FR, FR_TEXT);
+    }
   } catch {
     return; // Could not load (offline build gap): the app stays in English.
   }

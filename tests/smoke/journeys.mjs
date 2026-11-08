@@ -205,6 +205,21 @@ try {
     await page.keyboard.press('Escape');
   });
 
+  await step('language: French loads on its own, then back to English', async () => {
+    await page.keyboard.press('Escape');
+    const button = page.locator('button[data-lang]');
+    await button.click();
+    await page.waitForSelector('button[data-lang="es"]', { timeout: 10_000 });
+    await button.click();
+    await page.waitForSelector('button[data-lang="fr"]', { timeout: 10_000 });
+    await page.getByRole('button', { name: 'Recherche', exact: true }).first().waitFor({ timeout: 15_000 });
+    const lang = await page.evaluate(() => document.documentElement.lang);
+    if (lang !== 'fr') throw new Error(`the page says lang="${lang}", not "fr"`);
+    await noCrash(page);
+    await button.click();
+    await page.getByRole('button', { name: 'Research', exact: true }).first().waitFor({ timeout: 10_000 });
+  });
+
   await step('sign-in: first account, then everyone signs in', async () => {
     const password = 'a long journey test passphrase';
     const made = await page.request.post(`${base}/api/auth/setup`, { data: { username: 'tester', displayName: 'Journey Test', password } });
