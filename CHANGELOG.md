@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Small gap model, part 1 (the calculation, src/utils/gapModel.ts): four plain quarterly equations for the output
+  gap, inflation, the policy rate and the exchange rate. It ships with no numbers: every parameter and starting value
+  is typed in by the user, a blank one is shown as Missing and nothing runs, and a setting that explodes stops with
+  a warning. The screen comes in the next change.
 - Small referee (opt-in): Menu > Settings > AI model has a new "Allow a 14B referee" box, off by default. With it
   ticked, a mid-size model (9B to 29B, for example qwen2.5:14b) can be the referee, which needs about half the memory
   of the 32B model; every chat summary and debate it judges says "Small referee". With it unticked, a mid-size
