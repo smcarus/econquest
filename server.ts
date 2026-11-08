@@ -117,6 +117,8 @@ import {
 import { checkConnections, describeNetworkError, isFailure, type ConnectionReport } from './src/utils/connectionCheck';
 import { notify, readLastAlert, testAlertRoute } from './src/server/alerts';
 import { backtestRegressionAlert, backtestRegressions, dataCheckAlert, jobFailedAlert } from './src/utils/alertEvents';
+import { calendarHealth, localDay } from './src/utils/calendarHealth';
+import { OFFICIAL_CALENDAR } from './src/data/officialCalendar';
 import { checkTime, clockIn, nightlyDue, recordFromReport, sourceHealth, TRIGGER_LABEL, type CheckTrigger } from './src/utils/dataHealth';
 import type { BacktestResult } from './src/utils/backtest';
 import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type JobId, markFinished, markSkipped, jobScheduleFrom, markStarted, readJobs, testsSummary, type TestsPart, writeJobs } from './src/utils/scheduledJobs';
@@ -3654,6 +3656,10 @@ async function startServer() {
     });
   });
   // Data health: values the IMF or World Bank revised in the saved yearly history (data/history/).
+  // The official calendar against today (src/utils/calendarHealth.ts): old checks, schedules running out.
+  app.get('/api/data/health/calendar', (_req, res) => {
+    res.json(calendarHealth(OFFICIAL_CALENDAR, SOVEREIGN_CATALOG.map((c) => c.iso3), localDay()));
+  });
   app.get('/api/data/health/revisions', (req, res) => {
     const only = typeof req.query.iso3 === 'string' ? req.query.iso3.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) : '';
     const projections = req.query.projections === '1';
