@@ -42,9 +42,9 @@ import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
-import { flatPath, parseWhatIf, runWhatIf, whatIfSentence } from './fiscalWhatIf';
-import { BUDGET_SEMI_ELASTICITY, BUDGET_SEMI_ELASTICITY_SOURCE, DEFENCE, PUBLIC_INVESTMENT, type MultiplierPath } from '../data/spendingMultipliers';
-import { sectorLine, sectorsInQuestion, TABLE_LABEL } from './govSpending';
+import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
+import { BUDGET_SEMI_ELASTICITY, BUDGET_SEMI_ELASTICITY_SOURCE } from '../data/spendingMultipliers';
+import { sectorLine, sectorsInQuestion } from './govSpending';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
 import { changeLines } from './whatChanged';
@@ -626,36 +626,9 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
     }
     // What-if on a spending line (src/utils/fiscalWhatIf.ts): the debt identity re-run with the change.
     if (whatIf) {
-      const inputs = dsa?.inputs;
-      const sec = whatIf.sector;
-      const cofog = it.govSpending?.[sec.code];
-      const spend =
-        sec.code === 'GF02' && f.defencePctGdp
-          ? { pct: f.defencePctGdp.value, year: f.defencePctGdp.year, source: 'World Bank (SIPRI)' }
-          : cofog
-            ? { pct: cofog.pct, year: cofog.year, source: TABLE_LABEL[cofog.table] }
-            : undefined;
-      // Output paths (src/data/spendingMultipliers.ts): a defence cut on Barro and Redlick, money put
-      // into public investment on IMF WP/15/95, anything else on the IMF bucket range held as a level.
-      const bucket = mv ? flatPath(mv.guide.low, mv.guide.high, `IMF bucket range ${mv.guide.low}-${mv.guide.high} (${mv.guide.bucket}, first year, held as a level), ${TNM_CITATION}`) : undefined;
-      const asPath = (p: MultiplierPath) => ({ low: p.low, high: p.high, source: `${p.source}, ${p.scope}; ${p.fill}` });
-      const cutPath = sec.code === 'GF02' ? asPath(DEFENCE) : bucket;
-      const respendPath = whatIf.destination === 'investment' ? asPath(PUBLIC_INVESTMENT) : bucket;
-      const respendLabel = whatIf.destination === 'investment' ? 'public investment' : 'other spending';
-      const run =
-        spend && dsa && inputs?.length && mv && cutPath
-          ? runWhatIf({
-              spend,
-              share: whatIf.share,
-              uses: whatIf.uses,
-              debtNow: dsa.debtNow,
-              year: dsa.year,
-              baseline: inputs,
-              cut: cutPath,
-              ...(respendPath ? { respend: respendPath } : {}),
-              ...(BUDGET_SEMI_ELASTICITY[it.iso3] !== undefined ? { semiElasticity: { value: BUDGET_SEMI_ELASTICITY[it.iso3], source: BUDGET_SEMI_ELASTICITY_SOURCE } } : {}),
-            })
-          : null;
+      const setup = whatIfSetup(it, whatIf);
+      const { spend, respendLabel, sector: sec } = setup;
+      const run = setup.inputs ? runWhatIf(setup.inputs) : null;
       if (run && spend) {
         figures.push({ label: `What-if: ${sec.label.toLowerCase()} spending ${whatIf.said}`, value: `${spend.pct.toFixed(1)}% to ${run.newSpendPct.toFixed(1)}% of GDP (${sgn(-run.cutPp)} pts)`, source: `${spend.source}, ${spend.year}, changed as the question says`, tag: 'model' });
         const range = (a: number, b: number) => (a === b ? `${sgn(a)}%` : `${sgn(a)}% to ${sgn(b)}%`);
@@ -669,7 +642,7 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
           );
           parts.push(whatIfSentence(r, run.cutPp, respendLabel));
         }
-        if (run.runs.some((r) => r.use === 'respend') && respendPath === cutPath) {
+        if (run.runs.some((r) => r.use === 'respend') && setup.sameRespend) {
           parts.push(`The cited range does not tell ${sec.label.toLowerCase()} apart from other spending, so respending nets to about zero here; saying where the money goes (public investment, for example) uses a different published path.`);
         }
         if (whatIf.destination === 'investment' && !IMF_ADVANCED.has(it.iso3)) {
@@ -678,9 +651,8 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
         if (BUDGET_SEMI_ELASTICITY[it.iso3] === undefined) {
           missing.push(`${it.countryName}: the what-if leaves out the budget's response to output, as no published semi-elasticity is in the app (European Commission table covers EU members and the UK)`);
         }
-      } else {
-        const need = [!spend ? `${sec.label.toLowerCase()} spending (${sec.code === 'GF02' ? 'World Bank/SIPRI or ' : ''}Eurostat or IMF COFOG)` : '', !inputs?.length ? 'the IMF baseline inputs for the debt path' : '', !mv ? 'IMF debt for the multiplier range' : ''].filter(Boolean);
-        missing.push(`${it.countryName}: the ${sec.label.toLowerCase()} what-if cannot run, as ${need.join(' and ')} ${need.length > 1 ? 'are' : 'is'} missing`);
+      } else if (setup.cannotRun) {
+        missing.push(setup.cannotRun);
       }
     }
     if (!f.extDue12m && !f.intlBonds && !f.idsNext) missing.push(`${it.countryName}: no external debt falling due (World Bank QEDS, IDS and BIS did not answer or have no series)`);
