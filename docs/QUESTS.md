@@ -28,6 +28,7 @@ Quests stay off until every box in the checklist below is ticked. Only the proje
 | Debate Quests: pick a position and argue it (privately, by pull request or by email); Claim Check reads each argument as it is written; an opening brief written once by the app's AI model (`npm run quests:brief`), which may state no figures of its own; an evidence map after close with the results of related Forecast Quests, exported as Markdown; debates argued listed on each contributor's page, never scored | Built and tested, switched off |
 | Replication Quests: an entry gives the figure a person's script produced and a public link to the script; after close the maintainer records the app's own figure (`npm run quests:resolve -- --replicate`); each entry reproduces it if within the Quest's tolerance; listed on contributor pages, never ranked | Built and tested, switched off |
 | Signal Quests: an entry is a pre-registered test on one of the app's test rules, entered in public only (pull request or email); the app checks it as it is written; after close every test is run once (`npm run quests:run-tests`), recorded in `quests/test-verdicts.json` and counted in the Holm correction in docs/TRACK_RECORD.md; tests listed on contributor pages, never ranked | Built and tested, switched off; no test has been run on real data yet |
+| Public board: one static page (`npm run quests:board`, default `docs/quests/index.html`) built only from the files in `quests/`, with the ranked table and its rules, seasons, the crowd, each approved Quest and its result, every contributor and signed-up stances; no scripts, readable on a phone, light and dark | Built and tested; not published yet |
 | Stance profiles: eight economics questions set in the app (kept in the browser); a public profile only by the person's own pull request (`quests/profiles/<login>.json`, checked by the `Quest entries` CI job); shown on the Stances tab and contributor pages; group tables of stance against skill not shown | Built and tested, switched off |
 | Health page and yearly dataset | Not built |
 
@@ -128,7 +129,7 @@ Each week, `npm run quests:digest` prints a short post for the Quests category i
 
 ## Contributor statistics
 
-Statistics come only from the public entries and the recorded results, so anyone can recompute them. The app works them out each time the Scoreboard tab opens; `npm run quests:stats` writes the same figures to `quests/stats.json` for the public record and a future public board, and looks up each new contributor's GitHub account creation date (kept in `quests/accounts.json`, which is public data). Commit both files after a run.
+Statistics come only from the public entries and the recorded results, so anyone can recompute them. The app works them out each time the Scoreboard tab opens; `npm run quests:stats` writes the same figures to `quests/stats.json` for the public record (the public board, `npm run quests:board`, works them out the same way), and looks up each new contributor's GitHub account creation date (kept in `quests/accounts.json`, which is public data). Commit both files after a run.
 
 What is shown, and when (a figure resting on too few cases says how many more it needs instead of showing a number):
 
@@ -144,6 +145,10 @@ What is shown, and when (a figure resting on too few cases says how many more it
 | Streak | Settled Quests in a row with positive skill; shown, never ranked | 5 settled |
 
 Rankings use skill only. To be ranked a person needs 12 settled forecasts with a base rate and a GitHub account that was at least 90 days old when the first Quest they entered closed, which makes throwaway accounts useless. Emailed entries, checked by a maintainer, need no account. Seasons run by the calendar year a Quest settles in, with an all-time table that never resets; field tables rank only within a field. Nobody is ranked on how many Quests they enter.
+
+## Public board
+
+For people who never install the app, `npm run quests:board` builds one static web page from the files in `quests/` (Quests, public entries, the results record, Signal Quest verdicts and stance profiles), by default at `docs/quests/index.html`, which GitHub Pages can serve. It shows what the Scoreboard tab shows: the ranked table with 90% ranges and the rules for being ranked, seasons, the crowd against the base rate, each approved Quest with its status and result, every contributor with their settled count, debates, replications and tests (listed, never ranked), and the stances of people who signed up with a profile. Drafts are left out. The page has no scripts and makes no network calls, and anyone can rebuild it from the same files and get the same page. Run `npm run quests:stats` first so new GitHub account dates are looked up, set `QUESTS_REPO` for links to the repository, then commit the page with the stats files.
 
 ## Stance profiles
 
@@ -194,6 +199,7 @@ Working properly:
 - [ ] The UI smoke and journey tests cover the Quests page with Quests on and off
 - [ ] A test Quest of each kind settled with `npm run quests:resolve` on the maintainer's computer, and the record checked with `--verify`
 - [ ] A Quests tab on Menu > Track record shows the recorded results and the chain check
+- [ ] The public board built with `npm run quests:board` on the public repository, checked on a phone, and GitHub Pages switched on for it
 - [ ] `npm run quests:stats` run on the maintainer's computer: account dates looked up, figures checked by hand for one contributor with test entries
 
 Documented:
