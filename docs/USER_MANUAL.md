@@ -422,6 +422,20 @@ debt steady), the Taylor rule (neutral rate, inflation, target, output gap and b
 the output-gap filters (HP with any lambda against Hamilton with any horizon). A figure the app
 does not have reads Missing until you type one. Illustration of the formulas, not a forecast.
 
+**Small gap model.** Under the sandboxes, Research > One country > History & data has four plain
+equations that play out one quarter at a time: the output gap (how far the economy runs above or
+below its normal level), inflation, the policy rate and the exchange-rate gap. Open "The
+equations" to read them in full. The model comes with no numbers: you type every parameter
+(how persistent each variable is, how strongly the central bank reacts, the inflation target, the
+neutral real rate and the foreign rate) and every starting value. "Fill starting point from latest
+data" copies the country's latest saved output gap, inflation and policy rate into the starting
+boxes and shows each one's source and period; a figure the app does not hold stays empty with the
+reason, and the exchange-rate gap is always your own judgement. You can add shocks (for example
++1 point to inflation in quarter 2). Once every box holds a number the chart and table appear, and
+"Download the path (CSV)" saves the path with your settings written at the top. If your settings
+explode (usually a persistence near or above 1) the path stops with a warning. It shows your own
+assumptions played out, not a forecast.
+
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because
 GDELT's volume grew many times over the years). It is empty until the files are pulled with

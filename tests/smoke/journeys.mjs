@@ -4,7 +4,8 @@
  *
  * 1. Keyboard: the first Tab reaches "Skip to content", which moves focus to the page.
  * 2. Council chat: ask a question; the question and an answer block appear, with no crash.
- * 3. One country: each of the four sections opens; History & data holds the forecast panel.
+ * 3. One country: each of the four sections opens; History & data holds the forecast panel and the
+ *    small gap model, which runs only on typed numbers.
  * 4. Settings > Free data keys: save a key, see it masked, check it is not in the keys reply or
  *    the audit log, then remove it.
  * 5. Sign-in: create the first admin account; the app then asks everyone to sign in; a wrong
@@ -123,6 +124,19 @@ try {
     await page.waitForSelector('#tool-forecast', { state: 'attached', timeout: 15_000 });
     const tabs = await page.locator('[data-country-page] button.ui-tab').count();
     if (tabs !== 4) throw new Error(`the country page has ${tabs} section tabs, expected 4`);
+
+    // Small gap model: offline, the fill button names what is missing and fills nothing; typed numbers draw a path.
+    where = 'one country: small gap model';
+    const gm = page.locator('[data-gap-model]');
+    await gm.waitFor({ timeout: 15_000 });
+    await gm.locator('[data-gap-fill]').click();
+    if ((await gm.locator('[data-gap-fill-note]').count()) !== 4) throw new Error('the fill button did not explain each starting value');
+    if ((await gm.locator('[data-gap-input="y0"]').inputValue()) !== '') throw new Error('the fill button filled an output gap with the feeds down');
+    const typed = { b1: '0.8', b2: '0.1', b3: '0.05', c1: '0.7', c2: '0.2', c3: '0.1', rho: '0.7', phiP: '1.5', phiY: '0.5', d1: '0.8', d2: '0.3', rStar: '1', pStar: '2', iForeign: '3', y0: '0', p0: '3', i0: '4', q0: '0' };
+    for (const [k, v] of Object.entries(typed)) await gm.locator(`[data-gap-input="${k}"]`).fill(v);
+    await gm.locator('[data-gap-result]').waitFor({ timeout: 5000 });
+    if (await gm.locator('[data-gap-missing]').count()) throw new Error('the gap model still lists missing inputs');
+    await noCrash(page);
   });
 
   const fakeKey = 'abcdef0123456789abcdef0123456789';

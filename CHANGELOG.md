@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Small gap model, part 2 (the screen): Research > One country > History & data now has the small gap model under
+  the sandboxes. Every parameter starts blank; a "Fill starting point from latest data" button copies the country's
+  latest saved output gap, inflation and policy rate into the starting boxes with each one's source, and names the
+  reason when a figure is missing (the exchange-rate gap is always the user's own judgement). Optional shocks, a
+  chart and table of the path, and a CSV download with the settings written at the top. English and Spanish.
 - Small gap model, part 1 (the calculation, src/utils/gapModel.ts): four plain quarterly equations for the output
   gap, inflation, the policy rate and the exchange rate. It ships with no numbers: every parameter and starting value
   is typed in by the user, a blank one is shown as Missing and nothing runs, and a setting that explodes stops with
