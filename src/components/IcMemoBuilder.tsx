@@ -10,6 +10,8 @@ import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { toDisplayCase } from '../utils/displayCase';
 import { buildEconomistSections, ECONOMIST_SECTIONS, pathMissing } from '../utils/countryNotes';
 import { councilInputs } from '../utils/councilInputs';
+import { useLang, useT, useTx } from '../i18n/useLang';
+import { REPORTS } from '../i18n/messages/reports';
 
 const PATH_LABEL: Record<string, string> = {
   'imf.debtToGdpPct': 'debt/GDP',
@@ -454,6 +456,9 @@ export const IcMemoBuilder: React.FC<IcMemoBuilderProps> = (props) => {
   const [author, setAuthor] = useState('');
   const [edited, setEdited] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const t = useT(REPORTS);
+  const tx = useTx();
+  const lang = useLang();
 
   const info = AUDIENCE_INFO[audience];
   const defaultTitle = info.bookLevel ? info.title : `${run.countryName}: ${info.title}`;
@@ -503,28 +508,28 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
-      <section className="ui-panel" aria-label="Memo settings">
+      <section className="ui-panel" aria-label={t('im_settings')}>
         <header className="ui-panel-header">
-          <h2 className="ui-section-title">Build the report</h2>
+          <h2 className="ui-section-title">{t('im_build')}</h2>
           <p className="ui-label">
             {audience === 'council'
-              ? 'Pulls the last council brief you sent from Workspace.'
+              ? t('im_pullsCouncil')
               : info.bookLevel
-              ? 'Pulls your holdings (or the watchlist at equal weight) and the official calendar.'
-              : 'Pulls the current country, your holdings and the official calendar.'}
+              ? t('im_pullsBook')
+              : t('im_pullsCountry')}
           </p>
         </header>
         <div className="p-4 space-y-4">
-          <div role="tablist" aria-label="Memo type" className="flex flex-wrap gap-1.5">
+          <div role="tablist" aria-label={t('im_type')} className="flex flex-wrap gap-1.5">
             {(props.audiences?.length ? props.audiences : (Object.keys(AUDIENCE_INFO) as MemoAudience[])).map((a) => (
               <button key={a} type="button" role="tab" aria-selected={audience === a} className="ui-pill" onClick={() => switchAudience(a)}>
-                {AUDIENCE_INFO[a].tab}
+                {tx(AUDIENCE_INFO[a].tab)}
               </button>
             ))}
           </div>
-          <p className="ui-label">{info.help}</p>
+          <p className="ui-label">{tx(info.help)}</p>
           <label className="block ui-label space-y-0.5">
-            <span className="block">Title</span>
+            <span className="block">{t('im_title')}</span>
             <input
               className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               placeholder={defaultTitle}
@@ -533,7 +538,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             />
           </label>
           <label className="block ui-label space-y-0.5">
-            <span className="block">Author (optional)</span>
+            <span className="block">{t('im_author')}</span>
             <input
               className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
               value={author}
@@ -541,45 +546,46 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             />
           </label>
           <fieldset className="space-y-1.5">
-            <legend className="ui-label mb-1">Sections</legend>
+            <legend className="ui-label mb-1">{t('im_sections')}</legend>
             {Object.keys(labels).map((id) => (
               <label key={id} className="flex items-center gap-2 text-sm text-slate-800 dark:text-slate-200">
                 <input type="checkbox" checked={include[id] !== false} onChange={(e) => setInclude({ ...include, [id]: e.target.checked })} />
-                {labels[id]}
+                {tx(labels[id] ?? id)}
               </label>
             ))}
           </fieldset>
-          <p className="ui-label">To write a memo on another country, switch country under Research › One country, then come back.</p>
+          <p className="ui-label">{t('im_other')}</p>
         </div>
       </section>
 
-      <section className="ui-panel xl:col-span-2" aria-label="Memo">
+      <section className="ui-panel xl:col-span-2" aria-label={t('im_memo')}>
         <header className="ui-panel-header flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="ui-section-title">{info.heading}</h2>
-            <p className="ui-label">{edited !== null ? 'Edited by you. Settings changes are paused until you reset.' : 'Edit the text below before you share it.'}</p>
+            <h2 className="ui-section-title">{tx(info.heading)}</h2>
+            <p className="ui-label">{edited !== null ? t('im_edited') : t('im_editBelow')}</p>
+            {lang !== 'en' && <p className="ui-label" data-memo-english="true">{t('im_english')}</p>}
           </div>
           <div className="flex flex-wrap gap-1.5">
             {edited !== null && (
               <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setEdited(null)}>
-                Reset to generated
+                {t('im_reset')}
               </button>
             )}
             <button type="button" className="ui-btn" onClick={copy}>
-              <Copy className="w-3.5 h-3.5" /> {copied ? 'Copied' : 'Copy'}
+              <Copy className="w-3.5 h-3.5" /> {copied ? t('im_copied') : t('im_copy')}
             </button>
             <button type="button" className="ui-btn" onClick={download}>
-              <Download className="w-3.5 h-3.5" /> Markdown
+              <Download className="w-3.5 h-3.5" /> {t('im_markdown')}
             </button>
             <button type="button" className="ui-btn ui-btn-primary" onClick={print}>
-              <Printer className="w-3.5 h-3.5" /> Print or save PDF
+              <Printer className="w-3.5 h-3.5" /> {t('im_print')}
             </button>
           </div>
         </header>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-0 lg:divide-x divide-slate-100 dark:divide-slate-800">
           <div className="p-4">
             <label htmlFor="memo-text" className="ui-label block mb-1">
-              Text
+              {t('im_text')}
             </label>
             <textarea
               id="memo-text"
@@ -590,7 +596,7 @@ p{margin:6px 0}ul{margin:6px 0;padding-left:20px}li{margin:3px 0}</style></head>
             />
           </div>
           <div className="p-4">
-            <div className="ui-label mb-1">Preview</div>
+            <div className="ui-label mb-1">{t('im_preview')}</div>
             <article
               className="ic-memo-preview text-sm text-slate-800 dark:text-slate-200 space-y-2 [&_h1]:text-xl [&_h1]:font-semibold [&_h1]:text-slate-900 dark:[&_h1]:text-white [&_h2]:text-sm [&_h2]:font-semibold [&_h2]:mt-4 [&_h2]:pb-1 [&_h2]:border-b [&_h2]:border-slate-200 dark:[&_h2]:border-slate-700 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:my-0.5"
               dangerouslySetInnerHTML={{ __html: html }}

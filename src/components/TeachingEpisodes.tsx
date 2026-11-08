@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Download, GraduationCap, Plus, Trash2 } from 'lucide-react';
 import type { Episode } from '../utils/researchLibrary';
 import { useResearchLibrary } from './SavedResearch';
+import { useT, useTx } from '../i18n/useLang';
+import { REPORTS } from '../i18n/messages/reports';
 
 /**
  * Reports > Teaching episodes: a country, a past decision date and the questions students answer
@@ -18,6 +20,8 @@ function EpisodeView({ ep, countryName, onSave, onDelete }: { ep: Episode; count
   const [notes, setNotes] = useState(ep.notes);
   const [saved, setSaved] = useState(true);
   const [preview, setPreview] = useState<string | null>(null);
+  const t = useT(REPORTS);
+  const tx = useTx();
 
   useEffect(() => {
     let live = true;
@@ -26,9 +30,9 @@ function EpisodeView({ ep, countryName, onSave, onDelete }: { ep: Episode; count
       .then(async (r) => {
         const b = await r.json().catch(() => ({}));
         if (!live) return;
-        setPreview(r.ok ? b.sentence : `Missing: ${b.message || b.policyMissing || `HTTP ${r.status}`}`);
+        setPreview(r.ok ? b.sentence : t('te_missing', { why: tx(b.message || b.policyMissing || `HTTP ${r.status}`) }));
       })
-      .catch((e: Error) => live && setPreview(`Missing: ${e.message}`));
+      .catch((e: Error) => live && setPreview(t('te_missing', { why: e.message })));
     return () => {
       live = false;
     };
@@ -42,11 +46,11 @@ function EpisodeView({ ep, countryName, onSave, onDelete }: { ep: Episode; count
   return (
     <div className="px-2 pb-3 pt-1 space-y-3 border-t border-slate-100 dark:border-slate-800">
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Teacher view of {countryName} on {ep.date}: <span className="text-slate-800 dark:text-slate-200">{preview ?? 'Loading…'}</span> Students see the data the week before, not this line.
+        {t('te_view', { country: countryName, date: ep.date })} <span className="text-slate-800 dark:text-slate-200">{preview ?? t('te_loading')}</span> {t('te_studentsSee')}
       </p>
       <div>
         <label className="ui-label block mb-1" htmlFor={`ep-q-${ep.id}`}>
-          Questions, one per line
+          {t('te_questions')}
         </label>
         <textarea
           id={`ep-q-${ep.id}`}
@@ -62,7 +66,7 @@ function EpisodeView({ ep, countryName, onSave, onDelete }: { ep: Episode; count
       </div>
       <div>
         <label className="ui-label block mb-1" htmlFor={`ep-n-${ep.id}`}>
-          Notes for the teacher's copy
+          {t('te_notes')}
         </label>
         <textarea
           id={`ep-n-${ep.id}`}
@@ -78,16 +82,16 @@ function EpisodeView({ ep, countryName, onSave, onDelete }: { ep: Episode; count
       </div>
       <div className="flex flex-wrap gap-2">
         <button type="button" className="ui-btn" disabled={saved} onClick={() => void save()}>
-          {saved ? 'Saved' : 'Save'}
+          {saved ? t('te_saved') : t('te_save')}
         </button>
         <a className="ui-btn inline-flex" href={`/api/export/episode/${encodeURIComponent(ep.id)}.md`} download>
-          <Download className="w-3.5 h-3.5" /> Student handout
+          <Download className="w-3.5 h-3.5" /> {t('te_handout')}
         </a>
         <a className="ui-btn inline-flex" href={`/api/export/episode/${encodeURIComponent(ep.id)}.md?teacher=1`} download>
-          <Download className="w-3.5 h-3.5" /> Teacher copy
+          <Download className="w-3.5 h-3.5" /> {t('te_teacher')}
         </a>
         <button type="button" className="ui-btn" onClick={onDelete}>
-          <Trash2 className="w-3.5 h-3.5" /> Delete episode
+          <Trash2 className="w-3.5 h-3.5" /> {t('te_delete')}
         </button>
       </div>
     </div>
@@ -101,6 +105,7 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
   const [date, setDate] = useState('');
   const [questions, setQuestions] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
+  const t = useT(REPORTS);
 
   useEffect(() => {
     if (!iso3 && countries[0]) setIso3(countries[0].iso3);
@@ -114,10 +119,10 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <GraduationCap className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Teaching episodes
+          {t('te_title')}
         </h2>
         <p className="ui-label">
-          Pick a country and a past rate decision and write the questions. The handout gives students the data the week before, each figure with its source; the teacher copy adds what the bank did and your notes.
+          {t('te_intro')}
         </p>
       </header>
       <div className="p-4 space-y-3">
@@ -137,11 +142,11 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
         >
           <div className="flex flex-wrap items-center gap-2">
             <label className="sr-only" htmlFor="episode-title">
-              Episode title
+              {t('te_epTitle')}
             </label>
-            <input id="episode-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="Title, e.g. Copom cut, Sep 2026" className={`flex-1 min-w-[12rem] ${inputCls}`} />
+            <input id="episode-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={t('te_titlePh')} className={`flex-1 min-w-[12rem] ${inputCls}`} />
             <label className="sr-only" htmlFor="episode-country">
-              Country
+              {t('te_country')}
             </label>
             <select id="episode-country" value={iso3} onChange={(e) => setIso3(e.target.value)} className={inputCls}>
               {countries.map((c) => (
@@ -151,28 +156,28 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
               ))}
             </select>
             <label className="sr-only" htmlFor="episode-date">
-              Decision date
+              {t('te_date')}
             </label>
             <input id="episode-date" type="date" value={date} max={new Date().toISOString().slice(0, 10)} onChange={(e) => setDate(e.target.value)} className={inputCls} />
           </div>
           <label className="sr-only" htmlFor="episode-questions">
-            Questions, one per line
+            {t('te_questions')}
           </label>
           <textarea
             id="episode-questions"
             rows={3}
             value={questions}
             onChange={(e) => setQuestions(e.target.value)}
-            placeholder={'Questions, one per line, e.g.\nWhat did inflation and the target say the week before?\nDid a simple Taylor rule point the same way as the bank?'}
+            placeholder={t('te_qPh')}
             className={`w-full ${inputCls}`}
           />
           <button type="submit" className="ui-btn" disabled={!ready}>
-            <Plus className="w-3.5 h-3.5" /> Add episode
+            <Plus className="w-3.5 h-3.5" /> {t('te_add')}
           </button>
-          <p className="text-xs text-slate-500 dark:text-slate-400">Tip: the rate moves listed under Research › One country › History & data › Replicate a rate decision make good episode dates.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">{t('te_tip')}</p>
         </form>
 
-        {lib.episodes.length === 0 && !lib.error && <p className="ui-body">No episodes yet.</p>}
+        {lib.episodes.length === 0 && !lib.error && <p className="ui-body">{t('te_none')}</p>}
         {lib.episodes.length > 0 && (
           <ul className="space-y-1.5">
             {lib.episodes.map((ep) => (
@@ -185,7 +190,7 @@ export const TeachingEpisodes: React.FC<{ countries?: Country[] }> = ({ countrie
                 >
                   <span className="text-sm text-slate-900 dark:text-white">{ep.title}</span>
                   <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                    {nameOf(ep.iso3)} · {ep.date} · {ep.questions.length} question{ep.questions.length === 1 ? '' : 's'}
+                    {nameOf(ep.iso3)} · {ep.date} · {ep.questions.length === 1 ? t('te_q1') : t('te_qn', { n: ep.questions.length })}
                   </span>
                 </button>
                 {openId === ep.id && (

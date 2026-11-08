@@ -8,6 +8,7 @@ import { HelpLevelButton } from './components/HelpLevel';
 import { LanguageButton } from './components/LanguageButton';
 import { useT } from './i18n/useLang';
 import { RESEARCH } from './i18n/messages/research';
+import { REPORTS } from './i18n/messages/reports';
 import { SHELL } from './i18n/messages/shell';
 import {
   AIRuntimeConfig,
@@ -266,6 +267,7 @@ export default function App() {
   // The header and Menu in the chosen language (src/i18n; Spanish added 2026-11-08).
   const t = useT(SHELL);
   const tr = useT(RESEARCH);
+  const trp = useT(REPORTS);
   // Menu > Your data: series loaded from your own CSV files.
   const [isOwnDataOpen, setIsOwnDataOpen] = useState(false);
   useEffect(() => {
@@ -1773,9 +1775,9 @@ export default function App() {
           {appArea === 'reports' && (
             <PanelBoundary name="Reports">
             <WorkspacePage
-              ariaLabel="Reports sections"
-              title="Reports"
-              subtitle={`Documents to hand to the investment committee, risk and clients. Current country: ${run.countryName}`}
+              ariaLabel={trp('rp_aria')}
+              title={trp('rp_title')}
+              subtitle={trp('rp_subtitle', { country: run.countryName })}
               tabs={CORE_REPORTS_TABS}
               activeTabId={reportsTab}
               activeDesk={activeNavSection}
