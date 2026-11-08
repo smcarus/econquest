@@ -18,7 +18,7 @@ import { loadPublicEntries } from '../src/utils/questPublicEntryStore.ts';
 import { loadResolutions, resolutionsPath } from '../src/utils/questResolveStore.ts';
 import { computeStats } from '../src/utils/questStats.ts';
 import { accountsPath, readAccounts, statsPath } from '../src/utils/questStatsStore.ts';
-import type { ForecastQuest } from '../src/utils/quests.ts';
+import type { Quest } from '../src/utils/quests.ts';
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'quests');
 const rec = loadResolutions(resolutionsPath(dir));
@@ -26,7 +26,9 @@ if (rec.brokenAt !== -1) {
   console.error(`quests/resolutions.jsonl is broken at line ${rec.brokenAt + 1}; restore it from git before computing statistics.`);
   process.exit(1);
 }
-const quests = loadQuests(dir).filter((x) => x.quest.type === 'forecast').map((x) => ({ quest: x.quest as ForecastQuest, approved: x.approved }));
+const quests = loadQuests(dir)
+  .filter((x) => x.quest.type !== 'signal')
+  .map((x) => ({ quest: x.quest as Exclude<Quest, { type: 'signal' }>, approved: x.approved }));
 const entries = loadPublicEntries(dir);
 const accounts = readAccounts(dir);
 const missing = [...new Set(entries.map((e) => e.login))].filter((l) => !l.startsWith('~') && !accounts[l]).sort();

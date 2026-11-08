@@ -13,6 +13,10 @@
  *                                                               a maintainer's decision on a dispute
  *   npm run quests:resolve -- --by <login> --withdraw <id> "reason"   withdraw a Quest with no result
  *   npm run quests:resolve -- --by <login> --note <id> "text"   a note, e.g. the source revised the figure
+ *   npm run quests:resolve -- --by <login> --replicate <id> <figure> "where the app shows it"
+ *                                                               a Replication Quest: record the app's own
+ *                                                               figure (as the app shows it, with the panel,
+ *                                                               settings and date), once entries have closed
  *   npm run quests:resolve -- --verify                          check the chain only
  *
  * Only approved Quests (in quests/ and quests/manifest.json) get results; drafts never do.
@@ -63,7 +67,19 @@ const base = (x: ReturnType<typeof approved>) => ({ at: new Date().toISOString()
 const decide = after('--decide', 3);
 const withdraw = after('--withdraw', 2);
 const note = after('--note', 2);
-if (decide) {
+const replicate = after('--replicate', 3);
+if (replicate) {
+  const [id, figure, from] = replicate;
+  const x = approved(id);
+  if (x.quest.type !== 'replication') fail(`${id} is a ${x.quest.type} Quest; --replicate is for Replication Quests`);
+  const value = Number(figure);
+  if (!figure || !Number.isFinite(value)) fail('--replicate <id> <figure> "where the app shows it": the figure as a number');
+  if (!from || from.length < 10) fail('Say where the app shows the figure: the panel, the settings and the date you read it');
+  if (new Date().toISOString().slice(0, 10) <= x.quest.closesOn) fail(`Entries close on ${x.quest.closesOn}; record the app's figure after that`);
+  if (resultState(rec.lines, x.quest.id, x.quest.version).state !== 'none') fail(`${id} already has a result or was withdrawn; a dispute decision (--decide) is the way to change where it stands`);
+  const tolerance = (x.quest as { tolerance: number }).tolerance;
+  write({ ...base(x), kind: 'settled', outcome: { answer: 'replication', value, tolerance, from } });
+} else if (decide) {
   const [id, choice, reason] = decide;
   if (choice !== 'stands' && choice !== 'unresolvable') fail('--decide <id> stands|unresolvable "reason"');
   if (!reason) fail('Give the reason for the decision');

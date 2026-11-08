@@ -102,7 +102,7 @@ test('private entries: logged, hashed, listed as counted, and refused when the a
     const debateReply = await fetch(`${s.base}/api/quests/egy-reserves-debate/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(debateReply.status, 400);
     assert.match((await debateReply.json()).error, /pick a position/);
-    assert.equal((await fetch(`${s.base}/api/quests/bra-bohn-replication/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
+    assert.equal((await fetch(`${s.base}/api/quests/credit-gap-crisis-signal/private`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 404);
   } finally {
     await s.close();
   }

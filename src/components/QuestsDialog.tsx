@@ -8,7 +8,7 @@
  */
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Compass, X } from 'lucide-react';
-import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType } from '../utils/quests';
+import type { DebateQuest, Quest, QuestHorizon, QuestStatus, QuestType, ReplicationQuest } from '../utils/quests';
 import { describeOutcome, type QuestResultState, type ResolutionDraft, type ResolutionLine } from '../utils/questResolve';
 import type { BoardRow, ContributorStats, Gated, QuestStats } from '../utils/questStats';
 import type { LiveWatchlistItem } from '../types/council';
@@ -248,6 +248,12 @@ export function QuestsDialog({ onClose, items = [] }: { onClose: () => void; ite
                       <Practice questId={detail.quest.id} />
                     </>
                   )}
+                  {detail.quest.type === 'replication' && (
+                    <>
+                      <ReplicationEntries questId={detail.quest.id} />
+                      <Replicate quest={detail.quest} />
+                    </>
+                  )}
                   {detail.quest.type === 'debate' && (
                     <>
                       <BriefBox brief={detail.brief ?? null} quest={detail.quest} />
@@ -388,7 +394,7 @@ function Practice({ questId }: { questId: string }) {
   );
 }
 
-type ScoredEntry = { entry: { id: string; questId: string; loggedAt: string; answer: { probability?: number; level?: number; position?: number }; group?: string }; title: string; counted: boolean; hashOk: boolean; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } };
+type ScoredEntry = { entry: { id: string; questId: string; loggedAt: string; answer: { probability?: number; level?: number; position?: number; value?: number }; group?: string }; title: string; counted: boolean; hashOk: boolean; score: { status: string; note?: string; brier?: number; error?: number; skill?: number | null } };
 
 function MyEntries() {
   const [data, setData] = useState<{ author: string; entries: ScoredEntry[] } | null>(null);
@@ -418,7 +424,7 @@ function MyEntries() {
                 {e.hashOk ? '' : ' · hash does not match'}
               </div>
             </td>
-            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.position !== undefined ? `Position ${e.entry.answer.position}` : e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
+            <td className="py-1 pr-2 tabular-nums">{e.entry.answer.value !== undefined ? e.entry.answer.value : e.entry.answer.position !== undefined ? `Position ${e.entry.answer.position}` : e.entry.answer.level !== undefined ? e.entry.answer.level : `${Math.round((e.entry.answer.probability ?? 0) * 100)}%`}</td>
             <td className="py-1 text-xs">
               {e.score.status === 'settled'
                 ? `${e.score.brier !== undefined ? `Brier ${e.score.brier.toFixed(3)}` : `Error ${e.score.error}`}; skill ${e.score.skill === null || e.score.skill === undefined ? 'no baseline' : e.score.skill.toFixed(3)}`
@@ -879,6 +885,11 @@ function Contributor({ c, onBack }: { c: ContributorStats; onBack: () => void })
           Quests proposed: {c.proposed.map((p) => `${p.questId} (${p.entries} entr${p.entries === 1 ? 'y' : 'ies'})`).join(', ')}
         </p>
       )}
+      {c.replications?.length > 0 && (
+        <p className="text-sm" data-quest-replications>
+          Replications (never ranked): {c.replications.map((r) => `${r.title} (${r.matched === null ? 'waiting for the app\'s figure' : r.matched ? 'reproduced' : 'did not match'})`).join('; ')}
+        </p>
+      )}
       {c.debates?.length > 0 && (
         <p className="text-sm" data-quest-debates>
           Debates argued (never scored or ranked): {c.debates.map((d) => d.title).join('; ')}
@@ -1192,6 +1203,145 @@ function EvidenceMapBox({ quest, items, brief, related }: { quest: DebateQuest; 
         Export evidence map (Markdown)
       </button>
       <p className="text-xs text-slate-500">Claim Check compares figures with the app's figures as they are today, which may be newer than when an argument was written. It is a check against the app, not a verdict on the truth.</p>
+    </Box>
+  );
+}
+
+// ---------------------------------------------------------------- Replication Quests (step 10)
+
+/** Enter a replication: the figure the script produced and where the script is. */
+function Replicate({ quest }: { quest: ReplicationQuest }) {
+  const [value, setValue] = useState('');
+  const [code, setCode] = useState('');
+  const [notes, setNotes] = useState('');
+  const [login, setLogin] = useState(readLogin);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [draft, setDraft] = useState<{ url: string; path: string; text: string; note: string; replaces?: number } | null>(null);
+  const ready = value.trim() !== '' && Number.isFinite(Number(value)) && code.trim() !== '';
+  const logPrivately = async () => {
+    setMsg(null);
+    try {
+      const j = await send(`/api/quests/${encodeURIComponent(quest.id)}/private`, { answer: { value: Number(value) }, code: code.trim(), rationale: notes });
+      setMsg(`Logged on this computer at ${String(j.entry.loggedAt).slice(0, 16).replace('T', ' ')} UTC.`);
+    } catch (e: any) {
+      setMsg(e?.message || String(e));
+    }
+  };
+  const preparePublic = async () => {
+    setMsg(null);
+    setDraft(null);
+    try {
+      localStorage.setItem(LOGIN_KEY, login.trim());
+    } catch {
+      /* not remembered; fine */
+    }
+    try {
+      const qs = new URLSearchParams({ login: login.trim(), value: String(Number(value)), code: code.trim(), ...(notes.trim() ? { rationale: notes.trim() } : {}) });
+      setDraft(await send(`/api/quests/${encodeURIComponent(quest.id)}/draft-entry?${qs}`));
+    } catch (e: any) {
+      setMsg(e?.message || String(e));
+    }
+  };
+  return (
+    <Box title="Enter a replication">
+      <p className="text-xs text-slate-500 dark:text-slate-400">
+        Write a script in any language (R, Python, Stata, a spreadsheet with its formulas) that rebuilds the figure from the same public data, put it somewhere anyone can read it (a GitHub repository or gist), and enter the figure it gives. After entries close, the maintainer records the app's own figure; your entry reproduces it if it is within {quest.tolerance} of it. If your script shows the app is wrong, say why in the notes: that solves the Quest too, and the app gets fixed.
+      </p>
+      <div className="flex flex-wrap gap-2 items-end">
+        <label className="text-xs space-y-1">
+          <span className="block">Your script's figure</span>
+          <input className={`${fieldCls} w-32`} inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} data-quest-replication-value />
+        </label>
+        <label className="text-xs space-y-1 grow">
+          <span className="block">Where the script is (https address)</span>
+          <input className={`${fieldCls} w-full`} value={code} onChange={(e) => setCode(e.target.value)} placeholder="https://github.com/you/repo/blob/main/bohn.R" data-quest-replication-code />
+        </label>
+      </div>
+      <label className="text-xs space-y-1 block">
+        <span className="block">Notes (optional): data vintage, settings, and any difference you found</span>
+        <textarea className={`${fieldCls} w-full`} rows={2} maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} />
+      </label>
+      <div className="flex flex-wrap gap-2 items-end">
+        <button type="button" className="ui-btn" onClick={logPrivately} disabled={!ready}>
+          Log on this computer
+        </button>
+        <label className="text-xs space-y-1">
+          <span className="block">GitHub name</span>
+          <input className={`${fieldCls} w-40`} value={login} onChange={(e) => setLogin(e.target.value)} autoComplete="username" />
+        </label>
+        <button type="button" className="ui-btn" onClick={preparePublic} disabled={!ready || !login.trim()} data-quest-replication-public>
+          Prepare public entry
+        </button>
+      </div>
+      {msg && <p className="text-xs text-slate-600 dark:text-slate-300">{msg}</p>}
+      {draft && (
+        <div className="space-y-1 text-xs" data-quest-draft>
+          <p>
+            {draft.replaces ? `This replaces your entry ${draft.replaces}; both are kept. ` : ''}File: {draft.path}
+          </p>
+          <pre className="p-2 bg-slate-50 dark:bg-slate-950 overflow-x-auto whitespace-pre-wrap">{draft.text}</pre>
+          <p>{draft.note}</p>
+          <a className="ui-btn inline-block" href={draft.url} target="_blank" rel="noreferrer">
+            Open on GitHub
+          </a>
+        </div>
+      )}
+    </Box>
+  );
+}
+
+type ReplicationReply =
+  | { open: true; count: number; note: string }
+  | { open: false; count: number; entries: Array<{ login: string; n: number; via: string; answer: { value?: number }; code?: string; rationale?: string; score: { status: string; note?: string; matched?: boolean } }> };
+
+/** Replication entries: hidden until close, then each figure and script, matched against the app's recorded figure. */
+function ReplicationEntries({ questId }: { questId: string }) {
+  const [data, setData] = useState<ReplicationReply | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  useEffect(() => {
+    send(`/api/quests/${encodeURIComponent(questId)}/entries`).then(setData).catch((e) => setErr(e?.message || String(e)));
+  }, [questId]);
+  if (err) return <p className="text-xs text-rose-700 dark:text-rose-400">Entries did not load: {err}</p>;
+  if (!data) return null;
+  return (
+    <Box title={`Replications (${data.count})`}>
+      {data.open ? (
+        <p className="text-xs text-slate-600 dark:text-slate-300" data-quest-entries-hidden>
+          {data.note}
+        </p>
+      ) : data.entries.length === 0 ? (
+        <p className="text-xs text-slate-500">No replications were entered.</p>
+      ) : (
+        <table className="w-full text-sm" data-quest-replications-table>
+          <thead>
+            <tr className="text-xs text-slate-500 text-left">
+              <th className="py-1 pr-2 font-normal">Who</th>
+              <th className="py-1 pr-2 font-normal">Figure</th>
+              <th className="py-1 font-normal">Against the app</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.entries.map((e) => (
+              <tr key={e.login} className="border-t border-slate-200 dark:border-slate-800 align-top">
+                <td className="py-1 pr-2">
+                  {e.login}
+                  {e.via === 'email' ? <span className="text-xs text-slate-500"> (emailed)</span> : null}
+                  {e.code && (
+                    <div className="text-xs">
+                      <a className="underline" href={e.code} target="_blank" rel="noreferrer noopener">
+                        Script
+                      </a>
+                    </div>
+                  )}
+                  {e.rationale && <div className="text-xs text-slate-500">{e.rationale}</div>}
+                </td>
+                <td className="py-1 pr-2 tabular-nums">{e.answer.value}</td>
+                <td className={`py-1 text-xs ${e.score.status === 'replicated' ? (e.score.matched ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-400') : ''}`}>{e.score.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </Box>
   );
 }
