@@ -5,9 +5,11 @@
 import { SHELL_ES } from './shell';
 import { COUNCIL_ES } from './council';
 import { OWN_DATA_ES } from './ownData';
+import { WORKSPACE_ES } from './workspace';
 
 export const ES: Record<string, Record<string, string>> = {
   shell: SHELL_ES,
   council: COUNCIL_ES,
   ownData: OWN_DATA_ES,
+  workspace: WORKSPACE_ES,
 };

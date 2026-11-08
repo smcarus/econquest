@@ -5,16 +5,27 @@
  * input to output never disappears.
  */
 
+import { translate } from '../i18n/lang';
+import { WORKSPACE } from '../i18n/messages/workspace';
+
+/** Words for the chips, in the chosen language (English when none is passed, as in the tests). */
+export type WorkspaceT = (key: keyof typeof WORKSPACE.en, vars?: Record<string, string | number>) => string;
+const english: WorkspaceT = (key, vars) => translate(WORKSPACE, 'en', key, vars);
+
 export type InputId = 'watchlist' | 'country' | 'holdings' | 'feeds' | 'keys' | 'ai' | 'research';
 export type PanelId = 'digest' | 'watchlist' | 'calendar' | 'council' | 'alerts';
 
-export const PANEL_LABEL: Record<PanelId, string> = {
-  digest: 'What moved',
-  watchlist: 'Watchlist',
-  calendar: 'Next two weeks',
-  council: 'Council chat',
-  alerts: 'Watch alerts',
-};
+export const PANEL_KEY = {
+  digest: 'panelDigest',
+  watchlist: 'inWatchlist',
+  calendar: 'nextTwoWeeks',
+  council: 'panelCouncil',
+  alerts: 'panelAlerts',
+} as const satisfies Record<PanelId, keyof typeof WORKSPACE.en>;
+
+export const PANEL_LABEL: Record<PanelId, string> = Object.fromEntries(
+  Object.entries(PANEL_KEY).map(([id, key]) => [id, english(key)]),
+) as Record<PanelId, string>;
 
 /** ok = set and working; setup = the user has to do something; empty = optional and not used yet. */
 export type InputState = 'ok' | 'setup' | 'empty';
@@ -49,11 +60,10 @@ export interface WorkspaceInputsState {
   research?: { briefs: number; docs: number };
 }
 
-const AI_LABEL: Record<string, string> = {
-  ollama: 'Ollama on this computer',
-  hybrid: 'Gemini and Ollama',
-  openai_compatible: 'Your own model server',
-  gemini: 'Gemini',
+const AI_KEY: Record<string, 'aiOllama' | 'aiHybrid' | 'aiOwnServer'> = {
+  ollama: 'aiOllama',
+  hybrid: 'aiHybrid',
+  openai_compatible: 'aiOwnServer',
 };
 
 export function hasAiModel(aiProvider: string | undefined, keys: WorkspaceInputsState['keys']): boolean {
@@ -61,9 +71,9 @@ export function hasAiModel(aiProvider: string | undefined, keys: WorkspaceInputs
   return Boolean(keys?.some((k) => k.id === 'GEMINI_API_KEY' && k.source !== 'none'));
 }
 
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-
-export function workspaceInputs(s: WorkspaceInputsState): InputChip[] {
+export function workspaceInputs(s: WorkspaceInputsState, t: WorkspaceT = english): InputChip[] {
+  const count = (n: number, one: Parameters<WorkspaceT>[0], many: Parameters<WorkspaceT>[0]) => (n === 1 ? t(one) : t(many, { n }));
+  const aiLabel = (p: string) => (p === 'gemini' ? 'Gemini' : AI_KEY[p] ? t(AI_KEY[p]!) : t('aiChosen'));
   const freeKeys = (s.keys || []).filter((k) => (k.section || 'free_key') === 'free_key' && k.id !== 'GEMINI_API_KEY');
   const keysSet = freeKeys.filter((k) => k.source !== 'none').length;
   const fred = s.keys?.find((k) => k.id === 'FRED_API_KEY');
@@ -75,83 +85,83 @@ export function workspaceInputs(s: WorkspaceInputsState): InputChip[] {
   return [
     {
       id: 'watchlist',
-      label: 'Watchlist',
-      value: s.watchlistCount ? plural(s.watchlistCount, 'country', 'countries') : 'No countries',
+      label: t('inWatchlist'),
+      value: s.watchlistCount ? count(s.watchlistCount, 'countryOne', 'countryMany') : t('noCountries'),
       state: s.watchlistCount ? 'ok' : 'setup',
-      note: s.watchlistCount ? `${s.watchlistName}: every panel here works from these countries.` : 'Missing: add the countries you follow.',
+      note: s.watchlistCount ? t('watchlistOk', { name: s.watchlistName }) : t('watchlistMissing'),
       drives: ['digest', 'watchlist', 'calendar', 'council', 'alerts'],
-      alsoFeeds: 'Compare',
-      action: 'Edit watchlist',
+      alsoFeeds: t('alsoCompare'),
+      action: t('editWatchlist'),
     },
     {
       id: 'country',
-      label: 'Open country',
-      value: s.countryName || 'None',
+      label: t('openCountry'),
+      value: s.countryName || t('none'),
       state: s.countryName ? 'ok' : 'empty',
-      note: 'Marked Open in the watchlist; the full council runs on it. Pick another from the watchlist.',
+      note: t('openCountryNote'),
       drives: ['watchlist', 'council'],
-      alsoFeeds: 'Research > One country',
-      action: 'Open Research > One country',
+      alsoFeeds: t('alsoOneCountry'),
+      action: t('openOneCountry'),
     },
     {
       id: 'feeds',
-      label: 'Data feeds',
-      value: s.watchlistCount ? `Live for ${s.liveCount} of ${s.watchlistCount}` : 'No countries',
+      label: t('dataFeeds'),
+      value: s.watchlistCount ? t('liveFor', { live: s.liveCount, total: s.watchlistCount }) : t('noCountries'),
       state: s.liveCount > 0 ? 'ok' : 'setup',
       note:
         s.liveCount > 0
-          ? 'Countries where at least one public feed answered on the last pull.'
-          : 'Missing: no feed has answered yet.',
+          ? t('feedsOk')
+          : t('feedsMissing'),
       drives: ['digest', 'watchlist', 'council', 'alerts'],
-      action: 'Open Data connections',
+      action: t('openConnections'),
     },
     {
       id: 'keys',
-      label: 'Free keys',
-      value: s.keys ? `${keysSet} of ${freeKeys.length} set` : 'Missing',
+      label: t('freeKeys'),
+      value: s.keys ? t('keysSet', { set: keysSet, total: freeKeys.length }) : t('missing'),
       state: !s.keys ? 'setup' : fredSet ? 'ok' : 'setup',
       note: !s.keys
-        ? 'Missing: the app server did not answer.'
+        ? t('noServer')
         : fredSet
-          ? 'FRED is set: official 10Y yields for the US, Mexico, South Africa and others.'
-          : 'Add a free FRED key for official 10Y yields.',
+          ? t('fredSet')
+          : t('fredMissing'),
       drives: ['digest', 'watchlist', 'council'],
-      action: 'Open Settings',
+      action: t('openSettings'),
     },
     {
       id: 'ai',
-      label: 'AI model',
-      value: ai ? AI_LABEL[s.aiProvider || ''] || 'Chosen' : 'Not chosen',
+      label: t('aiModel'),
+      value: ai ? aiLabel(s.aiProvider || '') : t('aiNotChosen'),
       state: ai ? 'ok' : 'setup',
       note: ai
-        ? 'Writes the council summary, the debate and agent picks.'
-        : 'No summary or full council without one.',
+        ? t('aiOk')
+        : t('aiMissing'),
       drives: ['council'],
-      action: 'Choose AI model',
+      action: t('chooseAi'),
     },
     {
       id: 'holdings',
-      label: 'Holdings',
-      value: s.holdingsCount ? plural(s.holdingsCount, 'position') : 'None yet',
+      label: t('holdings'),
+      value: s.holdingsCount ? count(s.holdingsCount, 'positionOne', 'positionMany') : t('noneYet'),
       state: s.holdingsCount ? 'ok' : 'empty',
-      note: s.holdingsCount ? 'Countries you hold are marked Held in the watchlist.' : 'Optional: import a CSV of your positions.',
+      note: s.holdingsCount ? t('holdingsOk') : t('holdingsEmpty'),
       drives: ['watchlist'],
-      alsoFeeds: 'Portfolio',
-      action: 'Open holdings',
+      alsoFeeds: t('alsoPortfolio'),
+      action: t('openHoldings'),
     },
     {
       id: 'research',
-      label: 'Saved research',
-      value: !research ? 'Missing' : researchCount ? `${plural(research.briefs, 'brief')} · ${plural(research.docs, 'document')}` : 'None yet',
+      label: t('savedResearch'),
+      value: !research ? t('missing') : researchCount ? `${count(research.briefs, 'briefOne', 'briefMany')} · ${count(research.docs, 'documentOne', 'documentMany')}` : t('noneYet'),
       state: !research ? 'setup' : researchCount ? 'ok' : 'empty',
       note: !research
-        ? 'Missing: the app server did not answer.'
+        ? t('noServer')
         : researchCount
-          ? 'Kept on this computer (data/local/research.json).'
-          : 'Briefs you save and policy documents you add appear under Council chat.',
+          ? t('researchOk')
+          : t('researchEmpty'),
       drives: ['council'],
-      alsoFeeds: 'Reports',
-      action: 'Show in Council chat',
+      alsoFeeds: t('alsoReports'),
+      action: t('showInChat'),
     },
   ];
 }
