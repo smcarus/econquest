@@ -9,8 +9,11 @@ import { WORKSPACE_ES } from './workspace';
 import { WATCHLIST_ES } from './watchlist';
 import { MISSING_ES } from './missing';
 import { BRIEF_TEXT_ES } from './briefText';
+import { PANEL_TEXT_ES } from './panelText';
 import { RESEARCH_ES } from './research';
 import { BRIEF_ES } from './brief';
+import { PANELS_ES } from './panels';
+import { COMMON_ES } from './common';
 
 export const ES: Record<string, Record<string, string>> = {
   shell: SHELL_ES,
@@ -20,7 +23,9 @@ export const ES: Record<string, Record<string, string>> = {
   watchlist: WATCHLIST_ES,
   research: RESEARCH_ES,
   brief: BRIEF_ES,
+  panels: PANELS_ES,
+  common: COMMON_ES,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const ES_TEXT: Record<string, string> = { ...MISSING_ES, ...BRIEF_TEXT_ES };
+export const ES_TEXT: Record<string, string> = { ...MISSING_ES, ...BRIEF_TEXT_ES, ...PANEL_TEXT_ES };

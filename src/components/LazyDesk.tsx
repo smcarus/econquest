@@ -1,4 +1,6 @@
 import React, { lazy } from 'react';
+import { useT } from '../i18n/useLang';
+import { COMMON } from '../i18n/messages/common';
 
 /**
  * React.lazy for a named export, so desks can be split out of the main bundle
@@ -12,8 +14,11 @@ export function lazyNamed<M extends Record<string, unknown>, K extends keyof M &
 }
 
 /** Shown for the moment a desk's code is downloading. */
-export const DeskLoading: React.FC = () => (
-  <div className="ui-panel p-6" role="status" aria-live="polite">
-    <p className="ui-label">Loading desk…</p>
-  </div>
-);
+export const DeskLoading: React.FC = () => {
+  const t = useT(COMMON);
+  return (
+    <div className="ui-panel p-6" role="status" aria-live="polite">
+      <p className="ui-label">{t('loadingDesk')}</p>
+    </div>
+  );
+};

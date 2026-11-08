@@ -5,6 +5,8 @@ import { GOLDSTEIN_RULE } from '../utils/gdeltRaw';
 import { rawGdeltFigures } from '../utils/politicsEvents';
 import { requiredCredit } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
+import { useT, useTx } from '../i18n/useLang';
+import { PANELS } from '../i18n/messages/panels';
 
 /**
  * Country Research > Markets & signals > News and events: weekly event counts and the economic
@@ -25,6 +27,8 @@ const sg = (v: number, d = 2) => `${v > 0 ? '+' : ''}${v.toFixed(d)}`;
 export const GdeltEventsPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3, countryName }) => {
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT(PANELS);
+  const tx = useTx();
 
   useEffect(() => {
     let live = true;
@@ -33,7 +37,7 @@ export const GdeltEventsPanel: React.FC<{ iso3: string; countryName: string }> =
     fetch(`/api/gdelt-raw/${encodeURIComponent(iso3)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: Reply) => live && setReply(b))
-      .catch((e: Error) => live && setError(`The GDELT figures could not be read (${e.message}).`));
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
@@ -48,59 +52,59 @@ export const GdeltEventsPanel: React.FC<{ iso3: string; countryName: string }> =
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Newspaper className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          News and events, {countryName}
+          {t('gd_title', { country: countryName })}
         </h2>
-        <p className="ui-label">Weekly event counts and the economic themes in the news, read from GDELT's own 15-minute files.</p>
+        <p className="ui-label">{t('gd_intro')}</p>
       </header>
       <div className="p-4 space-y-3">
-        {!reply && !error && <p className="ui-body">Loading…</p>}
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('gd_what'), error })}</p>}
         {reply && !r && (
           <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
-            Missing: {reply.pull.pulledAt ? `no GDELT files on disk name ${countryName} yet` : 'GDELT raw files not pulled yet'}. Pull them with Menu &gt; Offline data, or{' '}
-            <code>npm run gdelt:pull</code> ({reply.weeks} weeks back).
-            {reply.pull.note ? ` Last pull: ${reply.pull.note}.` : ''}
+            {t('c_missingReason', { reason: reply.pull.pulledAt ? t('gd_noneOnDisk', { country: countryName }) : t('gd_notPulled') })} {t('gd_pullWith')}{' '}
+            <code>npm run gdelt:pull</code> {t('gd_weeksBack', { n: reply.weeks })}
+            {reply.pull.note ? t('gd_lastPull', { note: tx(reply.pull.note) }) : ''}
           </p>
         )}
         {r && (
           <>
             {sentences.length > 0 && (
               <p className="text-sm text-slate-900 dark:text-white" data-gdelt-sentence="true">
-                {sentences.join(' ')}
+                {sentences.map(tx).join(' ')}
               </p>
             )}
             {r.events && (
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-sm tabular-nums">
                 {(
                   [
-                    ['Events', r.events.count, r.events.baseline?.count],
-                    ['Protests', r.events.protests, r.events.baseline?.protests],
-                    ['Sanctions', r.events.sanctions, r.events.baseline?.sanctions],
-                    ['Violent', r.events.violence, r.events.baseline?.violence],
+                    [t('gd_events'), r.events.count, r.events.baseline?.count],
+                    [t('gd_protests'), r.events.protests, r.events.baseline?.protests],
+                    [t('gd_sanctions'), r.events.sanctions, r.events.baseline?.sanctions],
+                    [t('gd_violent'), r.events.violence, r.events.baseline?.violence],
                   ] as Array<[string, number, number | undefined]>
                 ).map(([label, v, b]) => (
                   <div key={label}>
                     <div className="text-xs text-slate-500 dark:text-slate-400">{label}</div>
                     <div className="font-medium text-slate-900 dark:text-white">{v}</div>
-                    {b !== undefined && <div className="text-xs text-slate-500 dark:text-slate-400">before {b}/wk</div>}
+                    {b !== undefined && <div className="text-xs text-slate-500 dark:text-slate-400">{t('gd_beforeWk', { n: b })}</div>}
                   </div>
                 ))}
-                <div title={GOLDSTEIN_RULE}>
+                <div title={tx(GOLDSTEIN_RULE)}>
                   <div className="text-xs text-slate-500 dark:text-slate-400">Goldstein</div>
                   <div className="font-medium text-slate-900 dark:text-white">{sg(r.events.goldsteinMean)}</div>
-                  {r.events.baseline && <div className="text-xs text-slate-500 dark:text-slate-400">before {sg(r.events.baseline.goldsteinMean)}</div>}
+                  {r.events.baseline && <div className="text-xs text-slate-500 dark:text-slate-400">{t('gd_before', { n: sg(r.events.baseline.goldsteinMean) })}</div>}
                 </div>
               </div>
             )}
             {r.gkg && r.gkg.themes.length > 0 && (
               <div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">Economic themes, share of {r.gkg.articles} articles naming {countryName} (tone {sg(r.gkg.toneMean)})</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{t('gd_themes', { n: r.gkg.articles, country: countryName, tone: sg(r.gkg.toneMean) })}</div>
                 <ul className="text-sm space-y-0.5 tabular-nums">
-                  {r.gkg.themes.slice(0, 6).map((t) => (
-                    <li key={t.id} className="flex justify-between gap-3">
-                      <span className="text-slate-900 dark:text-white">{t.label}</span>
+                  {r.gkg.themes.slice(0, 6).map((th) => (
+                    <li key={th.id} className="flex justify-between gap-3">
+                      <span className="text-slate-900 dark:text-white">{tx(th.label)}</span>
                       <span className="text-slate-600 dark:text-slate-300">
-                        {t.sharePct}%{t.baselineSharePct !== undefined ? ` (before ${t.baselineSharePct}%)` : ''}
+                        {th.sharePct}%{th.baselineSharePct !== undefined ? t('gd_themeBefore', { pct: th.baselineSharePct }) : ''}
                       </span>
                     </li>
                   ))}
@@ -109,24 +113,24 @@ export const GdeltEventsPanel: React.FC<{ iso3: string; countryName: string }> =
             )}
             {(r.topPersons.length > 0 || r.topOrgs.length > 0) && (
               <p className="text-xs text-slate-600 dark:text-slate-300">
-                Most named in economic coverage (4 weeks): {[...r.topPersons.map((p) => p.name), ...r.topOrgs.map((o) => o.name)].join(', ')}
+                {t('gd_mostNamed', { names: [...r.topPersons.map((p) => p.name), ...r.topOrgs.map((o) => o.name)].join(', ') })}
               </p>
             )}
             {s && s.weeks.length > 1 && (
               <details className="text-sm">
-                <summary className="cursor-pointer text-blue-700 dark:text-blue-300">Week by week ({s.weeks.length} weeks)</summary>
+                <summary className="cursor-pointer text-blue-700 dark:text-blue-300">{t('gd_weekByWeek', { n: s.weeks.length })}</summary>
                 <div className="overflow-x-auto mt-2">
                   <table className="w-full text-xs tabular-nums">
                     <thead className="text-slate-500 dark:text-slate-400">
                       <tr>
-                        <th className="text-left font-normal pr-2">Week of</th>
-                        <th className="text-right font-normal px-1">Events</th>
-                        <th className="text-right font-normal px-1">Protests</th>
-                        <th className="text-right font-normal px-1">Sanctions</th>
-                        <th className="text-right font-normal px-1">Violent</th>
+                        <th className="text-left font-normal pr-2">{t('gd_weekOf')}</th>
+                        <th className="text-right font-normal px-1">{t('gd_events')}</th>
+                        <th className="text-right font-normal px-1">{t('gd_protests')}</th>
+                        <th className="text-right font-normal px-1">{t('gd_sanctions')}</th>
+                        <th className="text-right font-normal px-1">{t('gd_violent')}</th>
                         <th className="text-right font-normal px-1">Goldstein</th>
-                        <th className="text-right font-normal px-1">Articles</th>
-                        <th className="text-right font-normal pl-1">Files read</th>
+                        <th className="text-right font-normal px-1">{t('gd_articles')}</th>
+                        <th className="text-right font-normal pl-1">{t('gd_filesRead')}</th>
                       </tr>
                     </thead>
                     <tbody className="text-slate-900 dark:text-white">
@@ -150,11 +154,16 @@ export const GdeltEventsPanel: React.FC<{ iso3: string; countryName: string }> =
               </details>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              GDELT 2.0 events files and Global Knowledge Graph, pulled {r.pulledAt?.slice(0, 10) || 'date unknown'}
-              {r.latestFileAt ? `, newest file ${r.latestFileAt.slice(0, 16).replace('T', ' ')} UTC` : ''}. Week of {r.weekStart}
-              {r.complete ? '' : ' (in progress)'}: {r.eventsFilesRead} of {r.eventsFilesExpected} events files read
-              {r.gkg?.sampleShare != null && r.gkg.sampleShare < 1 ? `; one GKG file every ${reply!.gkgEveryHours} hours, theme figures are shares of the articles read` : ''}. An event counts where it took
-              place or when {countryName} is an actor.
+              {t('gd_footer', {
+                pulled: r.pulledAt?.slice(0, 10) || t('gd_dateUnknown'),
+                newest: r.latestFileAt ? t('gd_newest', { date: r.latestFileAt.slice(0, 16).replace('T', ' ') }) : '',
+                week: r.weekStart,
+                progress: r.complete ? '' : t('gd_inProgress'),
+                read: r.eventsFilesRead,
+                expected: r.eventsFilesExpected,
+                sample: r.gkg?.sampleShare != null && r.gkg.sampleShare < 1 ? t('gd_sample', { h: reply!.gkgEveryHours }) : '',
+                country: countryName,
+              })}
             </p>
             <SourceCredits credits={[requiredCredit('gdelt')]} />
           </>

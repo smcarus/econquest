@@ -1,4 +1,6 @@
 import React from 'react';
+import { useT } from '../i18n/useLang';
+import { COMMON } from '../i18n/messages/common';
 
 /**
  * "Show the numbers" under a chart: the same figures as a plain table, for screen readers,
@@ -10,11 +12,12 @@ export const ChartNumbers: React.FC<{
   rows: Array<Array<string | number | null | undefined>>;
   newestFirst?: boolean;
 }> = ({ caption, columns, rows, newestFirst = true }) => {
+  const t = useT(COMMON);
   if (!rows.length) return null;
   const shown = newestFirst ? [...rows].reverse() : rows;
   return (
     <details data-chart-numbers="true">
-      <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">Show the numbers</summary>
+      <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">{t('showNumbers')}</summary>
       <div className="mt-2 max-h-64 overflow-auto">
         <table className="w-full text-xs [font-variant-numeric:tabular-nums]">
           <caption className="sr-only">{caption}</caption>

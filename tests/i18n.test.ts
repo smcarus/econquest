@@ -178,3 +178,70 @@ test('a pattern swaps a whole sentence and keeps what the app put in it', async 
   assert.equal(translateText('Brazil: inflation 4.6% against a 3.0% target, 10Y 15.29%.', 'es'), 'Brazil: inflation 4.6% against a 3.0% target, 10Y 15.29%.');
   assert.equal(translateText('Growth is moderate at 2.8% a year.', 'es'), 'Growth is moderate at 2.8% a year.');
 });
+
+test('the one-country panels: sentences, labels and reasons the app builds in English have Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  const { dsaSentence } = await import('../src/utils/debtSustainability');
+  const { debtFanSentence } = await import('../src/utils/debtFan');
+  const { bohnSentence } = await import('../src/utils/bohnTest');
+  const { gfnSentence } = await import('../src/utils/grossFinancingNeed');
+  const { ruleFamilySentence } = await import('../src/utils/ruleFamily');
+  const { eventSentence } = await import('../src/utils/eventStudy');
+  const { beerSentence } = await import('../src/utils/beer');
+  const { lpSentence } = await import('../src/utils/localProjections');
+  const { reserveAdequacySentence } = await import('../src/utils/reserveAdequacy');
+  const { replaySentence } = await import('../src/utils/decisionReplay');
+  const { trackRecordSentence } = await import('../src/utils/trackRecord');
+  const { scenarioSentence, FACTORS, RESPONSES, PRESETS } = await import('../src/utils/scenarioEngine');
+  const { multiplierView } = await import('../src/utils/fiscalMultipliers');
+  const { STATUS_LABEL } = await import('../src/data/modelRegister');
+  const { GRADE_LABEL } = await import('../src/utils/evidenceGrade');
+  const { STANDARD_OPTIONS } = await import('../src/utils/costedOptions');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (s: string) => translateText(s, 'es');
+  const s: string[] = [];
+  const sc = (id: string, label: string, end: number) => ({ id, label, about: '', end, path: [{ year: '2031', debt: end }] });
+  const dsa = { debtNow: 86.4, lastOutturnYear: '2025', scenarios: [sc('baseline', 'Baseline (IMF inputs)', 92.1)], worst: sc('combined', 'Combined shock', 101.2), stabilisingPb: 1.2, projectedPb: -0.4 };
+  s.push(dsaSentence(dsa as never), dsaSentence({ ...dsa, projectedPb: undefined } as never), dsaSentence({ ...dsa, worst: undefined, stabilisingPb: undefined } as never));
+  s.push(debtFanSentence({ sample: { from: '1995', to: '2025' }, years: [{ year: '2030', p10: 80, p50: 90, p90: 104 }], probAboveNow: 0.62 } as never));
+  for (const verdict of ['responds', 'weak', 'no_response']) s.push(bohnSentence({ verdict, rho: { value: 0.05, se: 0.01, p: 0.01 }, from: '1990', to: '2024', n: 35 } as never, 'Brazil'));
+  s.push(gfnSentence({ peak: { value: 18.2, year: '2026' }, aboveBenchmark: true, years: [] } as never, 'Brazil'));
+  s.push(gfnSentence({ peak: { value: 8.2, year: '2026' }, aboveBenchmark: false, years: [] } as never, 'Brazil'));
+  s.push(gfnSentence({ years: [{ deficit: 3 }] } as never, 'Brazil'), gfnSentence({ years: [] } as never, 'Brazil'));
+  for (const position of ['inside the range', 'above the range', 'below the range']) s.push(ruleFamilySentence({ rows: [{ pct: 1 }, { pct: 2 }], position, policyPct: 10.5, range: { lo: 8, hi: 11 }, rStar: 2 } as never, 'Brazil'));
+  for (const bank of ['own', 'fed']) {
+    s.push(eventSentence('Brazil', { bank, groups: [{ ok: true, n: 12, kind: 'hike', end: 1.2, dayZero: 0.3 }, { ok: true, n: 8, kind: 'cut', end: -0.4, dayZero: -0.1 }] } as never));
+    s.push(eventSentence('Brazil', { bank, groups: [] } as never));
+  }
+  for (const gapPct of [6.1, -3]) s.push(beerSentence('Brazil', { latest: { gapPct, month: '2026-09', fairValueYear: '2025' }, coef: [{ name: 'Terms of trade', signOk: true }], n: 25, r2: 0.61 } as never));
+  for (const [beta, lo, hi] of [[-0.3, -0.6, 0.1], [0.4, 0.1, 0.7]]) s.push(lpSentence({ steps: [{ h: 12, beta, lo, hi }], from: '2005-01', to: '2026-08' } as never, 'Brazil'));
+  for (const reading of ['below', 'ok']) s.push(reserveAdequacySentence({ reading, latest: { year: 2024, ratioFloatingMax: 80, ratioFixedMax: 70 } } as never, 'Brazil'));
+  for (const [action, signal, matched] of [['raised', 'raise', true], ['cut', 'hold', false], ['held', 'cut', false]] as const)
+    s.push(replaySentence({ action, rateBeforePct: 10.5, rateAfterPct: 11, rule: { pct: 12, signal }, matched, missing: [] } as never));
+  s.push(replaySentence({ action: 'held', rateBeforePct: 10.5, rateAfterPct: 10.5, missing: ['monthly inflation'] } as never));
+  s.push(trackRecordSentence({ entries: [] } as never), trackRecordSentence({ entries: [1, 2], calls: 0 } as never), trackRecordSentence({ entries: [1], calls: 3, scored: 0, horizonDays: 90 } as never));
+  s.push(trackRecordSentence({ entries: [1, 2], calls: 3, scored: 2, followed: 1, pending: 1, smallSample: true, horizonDays: 90 } as never));
+  s.push(scenarioSentence('Brazil', 'Fed raises 1 point', [{ response: 'fx', value: 2.1, lo: 0.5, hi: 3.8 }, { response: 'policy', value: -0.42, lo: -0.8, hi: -0.1 }] as never));
+  for (const group of [{ debtPctGdp: { value: 86, year: '2025' }, outputGap: { year: '2025', pct: -1.2, source: 'imf' } }, { outputGap: { year: '2025', pct: 1.2, source: 'estimate' }, policyRatePct: 0.25 }, {}]) {
+    for (const iso3 of ['BRA', 'DEU']) {
+      const mv = multiplierView({ iso3, ...group } as never);
+      s.push(mv.sentence, mv.cycle.note, mv.guide.why, ...(mv.lowerBound ? [mv.lowerBound.why] : []), ...mv.characteristics.flatMap((c) => [c.label, c.why]), ...mv.literature.map((l) => l.finding));
+    }
+  }
+  s.push(...Object.values(STATUS_LABEL), ...Object.values(GRADE_LABEL), ...STANDARD_OPTIONS.map((o) => o.label));
+  s.push(...FACTORS.map((f) => f.label), ...Object.values(RESPONSES).flatMap((r) => [r.label, r.note]), ...PRESETS.map((p) => p.label));
+  const { spikeSentence } = await import('../src/utils/unrestSpikes');
+  const { v1Figures } = await import('../src/utils/gdeltDaily');
+  const { sanctionsSentence } = await import('../src/utils/sanctionsLists');
+  const { grVarSentence } = await import('../src/utils/grVar');
+  const spike = { month: '2026-09', spikes: ['protests', 'violence'], episodes: ['protests'], protestZ: 2.4, violenceZ: 2.1 };
+  s.push(spikeSentence('Brazil', [spike] as never), spikeSentence('Brazil', [{ ...spike, spikes: [], episodes: [] }] as never), spikeSentence('Brazil', []));
+  s.push(...v1Figures({ month: '2026-09', from: '1979-01', months: 500, protestPct: 9, protestPctile: 95, violencePct: 4, violencePctile: 92, goldsteinMean: -2, goldsteinPctile: 5 } as never).sentences);
+  s.push(sanctionsSentence('Brazil', { byList: [{ entries: 12, short: 'OFAC SDN' }], programs: [{ program: 'SDGT', list: 'ofac_sdn', entries: 9 }] } as never, { files: [1] } as never));
+  s.push(sanctionsSentence('Brazil', { byList: [], programs: [] } as never, { files: [] } as never));
+  for (const scenario of [undefined, { value: 1.2, lo: 0.2, hi: 2.4 }])
+    s.push(grVarSentence('Brazil', { blocks: [{ basis: 'world', stress: { months: 40, var95: 6.1, es95: 8.2 }, all: { months: 300, var95: 4.2, es95: 6 }, scenario }] } as never));
+  const untranslated = s.filter((x) => tx(x) === x || / the | weaker | stronger | points? lower| higher than/.test(tx(x)));
+  assert.deepEqual(untranslated, [], 'panel text with no Spanish');
+});

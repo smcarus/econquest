@@ -18,16 +18,16 @@ import { describeAge, freshnessChecks } from '../utils/freshness';
 import { toLive } from '../utils/liveFigures';
 import { BriefGroups, CountryBriefPanel, type BriefView } from './CountryBriefPanel';
 import { MarketsMacroPanel } from './MarketsMacroPanel';
-import { AsOfPanel } from './AsOfPanel';
-import { DecisionReplayPanel } from './DecisionReplayPanel';
-import { TrackRecordPanel } from './TrackRecordPanel';
-import { GdeltEventsPanel } from './GdeltEventsPanel';
-import { GdeltHistoryPanel } from './GdeltHistoryPanel';
 import { PanelBoundary } from './PanelBoundary';
 import { ResearchSectionNav } from './ResearchSections';
 import { lazyNamed, DeskLoading } from './LazyDesk';
 // Charts (recharts) load only when History opens, keeping them out of the first download.
 const HistoryPanel = lazyNamed(() => import('./HistoryPanel'), 'HistoryPanel');
+const AsOfPanel = lazyNamed(() => import('./AsOfPanel'), 'AsOfPanel');
+const DecisionReplayPanel = lazyNamed(() => import('./DecisionReplayPanel'), 'DecisionReplayPanel');
+const TrackRecordPanel = lazyNamed(() => import('./TrackRecordPanel'), 'TrackRecordPanel');
+const GdeltEventsPanel = lazyNamed(() => import('./GdeltEventsPanel'), 'GdeltEventsPanel');
+const GdeltHistoryPanel = lazyNamed(() => import('./GdeltHistoryPanel'), 'GdeltHistoryPanel');
 const OutputGapPanel = lazyNamed(() => import('./OutputGapPanel'), 'OutputGapPanel');
 const DebtSustainabilityPanel = lazyNamed(() => import('./DebtSustainabilityPanel'), 'DebtSustainabilityPanel');
 const WeoVintagesPanel = lazyNamed(() => import('./WeoVintagesPanel'), 'WeoVintagesPanel');
@@ -338,7 +338,9 @@ export const CountryPage: React.FC<{
             <HistoryPanel key={run.iso3} iso3={run.iso3} countryName={run.countryName} pick={historyPick} />
           </React.Suspense>
           <PanelBoundary name="Event history">
-            <GdeltHistoryPanel key={`gdelt-daily-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            <React.Suspense fallback={<DeskLoading />}>
+              <GdeltHistoryPanel key={`gdelt-daily-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
           </PanelBoundary>
           <div id="tool-risk-scorecard" className="scroll-mt-4" />
           <PanelBoundary name="Country risk scorecard">
@@ -460,15 +462,21 @@ export const CountryPage: React.FC<{
           )}
           <div id="tool-as-of" className="scroll-mt-4" />
           <PanelBoundary name="As of a past day">
-            <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            <React.Suspense fallback={<DeskLoading />}>
+              <AsOfPanel key={`asof-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
           </PanelBoundary>
           <div id="tool-decision-replay" className="scroll-mt-4" />
           <PanelBoundary name="Replicate a rate decision">
-            <DecisionReplayPanel key={`replay-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            <React.Suspense fallback={<DeskLoading />}>
+              <DecisionReplayPanel key={`replay-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
           </PanelBoundary>
           <div id="tool-track-record" className="scroll-mt-4" />
           <PanelBoundary name="Track record">
-            <TrackRecordPanel key={`track-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            <React.Suspense fallback={<DeskLoading />}>
+              <TrackRecordPanel key={`track-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+            </React.Suspense>
           </PanelBoundary>
         </div>
       )}
@@ -480,7 +488,9 @@ export const CountryPage: React.FC<{
           onOpenCompare={onOpenCompare}
           afterSummary={
             <PanelBoundary name="News and events">
-              <GdeltEventsPanel key={`gdelt-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              <React.Suspense fallback={<DeskLoading />}>
+                <GdeltEventsPanel key={`gdelt-${run.iso3}`} iso3={run.iso3} countryName={run.countryName} />
+              </React.Suspense>
             </PanelBoundary>
           }
         />
