@@ -357,3 +357,35 @@ test('help and glossary: every glossary entry, chart guide, panel introduction a
   assert.ok(!page.includes('**Why it matters.**'), 'the glossary page labels are Spanish');
   assert.equal(glossaryMarkdown(), glossaryMarkdown((x) => x), 'the English page is unchanged');
 });
+
+test('Council chat cards: assumptions, re-run notes, explanation lenses, chart controls and reasons have Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (x: string) => translateText(x, 'es');
+  const { APPROVAL_ASSUMPTIONS } = await import('../src/components/CouncilApprovalCard');
+  const { TEST_TITLE } = await import('../src/utils/councilChart');
+  const { TRANSFORM_LABEL } = await import('../src/utils/stats');
+  const s: string[] = [];
+  for (const a of APPROVAL_ASSUMPTIONS) s.push(a.label);
+  s.push(APPROVAL_ASSUMPTIONS.find((a) => a.id === 'fxReserveAdequacyMonths')!.fmt(4.5), APPROVAL_ASSUMPTIONS.find((a) => a.id === 'brentCrudeShockUsd')!.fmt(10), APPROVAL_ASSUMPTIONS.find((a) => a.id === 'chokepointTransitDropPct')!.fmt(20));
+  for (const t of Object.values(TEST_TITLE)) s.push(t.replace(/ \(.*\)$/, '').replace(/^Is the relationship stable\?/, 'Rolling correlation'));
+  for (const k of ['level', 'change', 'yoy', 'index100', 'zscore'] as const) s.push(TRANSFORM_LABEL[k]);
+  s.push(
+    'Same answer, word for word.',
+    'Different answer: the headline changed, 2 sentence(s) new, 1 gone.',
+    'The sampling changed: temperature 0.2, seed 7 then; temperature 0, seed 7 now.',
+    '3 figure(s) differ between the two runs.',
+    'Monetary policy',
+    'Fiscal Agent had no figures',
+    'the summary did not cover it',
+    'No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.',
+    'The agents found no figures to answer with, so there is nothing to summarise.',
+    'public investment',
+  );
+  const untranslated = s.filter((x) => tx(x) === x);
+  assert.deepEqual(untranslated, [], 'chat card text with no Spanish');
+  const { splitSettingsLinks } = await import('../src/utils/settingsLinks');
+  const parts = splitSettingsLinks(tx('No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.'));
+  assert.ok(parts.some((p) => typeof p !== 'string' && p.page === 'ai'), 'the Spanish Settings link still opens the AI model page');
+});

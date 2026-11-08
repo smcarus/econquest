@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { FileText, X } from 'lucide-react';
 import { MAX_DOCS, MAX_DOC_CHARS, docTitle, type PolicyDoc } from '../utils/policyDocs';
 import { readDocumentFile } from '../utils/readDocument';
+import { useT } from '../i18n/useLang';
+import { CHAT } from '../i18n/messages/chat';
 
 const newId = () => Math.random().toString(36).slice(2, 10);
 const words = (t: string) => (t.match(/\S+/g) || []).length;
@@ -15,6 +17,7 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState('');
   const full = docs.length >= MAX_DOCS;
+  const t = useT(CHAT);
 
   const add = (d: Omit<PolicyDoc, 'id' | 'addedAt'>, current: PolicyDoc[]) => [...current, { ...d, id: newId(), addedAt: new Date().toISOString() }];
 
@@ -26,15 +29,15 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
     const problems: string[] = [];
     for (const f of Array.from(files)) {
       if (next.length >= MAX_DOCS) {
-        problems.push(`${f.name}: at most ${MAX_DOCS} documents`);
+        problems.push(t('pd_max', { name: f.name, n: MAX_DOCS }));
         break;
       }
       try {
         const { text, pages } = await readDocumentFile(f);
-        if (words(text) < 20) problems.push(`${f.name}: no readable text (a scanned PDF needs OCR first)`);
+        if (words(text) < 20) problems.push(t('pd_noText', { name: f.name }));
         else next = add({ title: docTitle(f.name), text, pages }, next);
       } catch (e: any) {
-        problems.push(`${f.name}: could not be read (${e?.message || 'unknown error'})`);
+        problems.push(t('pd_unreadable', { name: f.name, why: e?.message || t('pd_unknown') }));
       }
     }
     onChange(next);
@@ -46,15 +49,15 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
   return (
     <div className="space-y-1.5" data-policy-docs="true">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="ui-label">Policy documents</span>
+        <span className="ui-label">{t('pd_title')}</span>
         <input ref={fileRef} type="file" accept=".pdf,.txt,.md,text/plain,application/pdf" multiple className="hidden" onChange={(e) => void onFiles(e.target.files)} data-policy-docs-input="true" />
         <button type="button" className="ui-btn" disabled={disabled || busy || full} onClick={() => fileRef.current?.click()}>
-          <FileText className="w-3.5 h-3.5" /> {busy ? 'Reading…' : 'Add PDF or text file'}
+          <FileText className="w-3.5 h-3.5" /> {busy ? t('pd_reading') : t('pd_add')}
         </button>
         <button type="button" className="ui-btn" disabled={disabled || full} onClick={() => setPasting((p) => !p)}>
-          Paste text
+          {t('pd_paste')}
         </button>
-        <span className="text-xs text-slate-500 dark:text-slate-400">Kept on this computer (data/local); the summary sees just the quoted passages.</span>
+        <span className="text-xs text-slate-500 dark:text-slate-400">{t('pd_kept')}</span>
       </div>
 
       {pasting && (
@@ -62,7 +65,7 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
           <input
             value={pasteTitle}
             onChange={(e) => setPasteTitle(e.target.value)}
-            placeholder="Title, for example: CBRT MPC statement, October 2026"
+            placeholder={t('pd_titlePh')}
             maxLength={120}
             className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           />
@@ -70,7 +73,7 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value.slice(0, MAX_DOC_CHARS))}
             rows={4}
-            placeholder="Paste the document text"
+            placeholder={t('pd_textPh')}
             className="w-full px-2 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white"
           />
           <button
@@ -78,13 +81,13 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
             className="ui-btn ui-btn-primary"
             disabled={words(pasteText) < 20 || full}
             onClick={() => {
-              onChange(add({ title: pasteTitle.trim() || 'Pasted document', text: pasteText }, docs));
+              onChange(add({ title: pasteTitle.trim() || t('pd_pasted'), text: pasteText }, docs));
               setPasteText('');
               setPasteTitle('');
               setPasting(false);
             }}
           >
-            Add
+            {t('pd_addBtn')}
           </button>
         </div>
       )}
@@ -94,9 +97,9 @@ export function PolicyDocsPicker({ docs, onChange, disabled }: { docs: PolicyDoc
           {docs.map((d) => (
             <li key={d.id} className="ui-pill flex items-center gap-1" data-policy-doc={d.title}>
               <span>
-                {d.title} <span className="text-slate-500 dark:text-slate-400">({d.pages ? `${d.pages} ${d.pages === 1 ? 'page' : 'pages'}, ` : ''}{words(d.text).toLocaleString()} words)</span>
+                {d.title} <span className="text-slate-500 dark:text-slate-400">({d.pages ? (d.pages === 1 ? t('pd_page1') : t('pd_pages', { n: d.pages })) : ''}{t('pd_words', { n: words(d.text).toLocaleString() })})</span>
               </span>
-              <button type="button" aria-label={`Remove ${d.title}`} onClick={() => onChange(docs.filter((x) => x.id !== d.id))} className="hover:text-rose-700">
+              <button type="button" aria-label={t('pd_remove', { title: d.title })} onClick={() => onChange(docs.filter((x) => x.id !== d.id))} className="hover:text-rose-700">
                 <X className="w-3 h-3" />
               </button>
             </li>

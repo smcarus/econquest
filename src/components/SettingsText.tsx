@@ -1,11 +1,14 @@
 import React from 'react';
 import { splitSettingsLinks } from '../utils/settingsLinks';
 import { openSettings } from './SettingsDialog';
+import { useTx } from '../i18n/useLang';
 
-/** Help text in which "Menu > Settings > …" and "Menu > Settings > AI model" open that page of Settings. */
-export const SettingsText: React.FC<{ text: string }> = ({ text }) => (
+/** Help text in which "Menu > Settings > …" and "Menu > Settings > AI model" open that page of Settings; shown in the reader's language when known. */
+export const SettingsText: React.FC<{ text: string }> = ({ text }) => {
+  const tx = useTx();
+  return (
   <>
-    {splitSettingsLinks(text).map((part, i) =>
+    {splitSettingsLinks(tx(text)).map((part, i) =>
       typeof part === 'string' ? (
         <React.Fragment key={i}>{part}</React.Fragment>
       ) : (
@@ -22,3 +25,4 @@ export const SettingsText: React.FC<{ text: string }> = ({ text }) => (
     )}
   </>
 );
+};

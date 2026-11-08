@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { agentBadgeTip } from '../utils/agentBadges';
 import { AgentBadge } from './AgentBadge';
 import { useHelpLevel } from './HelpLevel';
+import { useT, useTx } from '../i18n/useLang';
+import { CHAT } from '../i18n/messages/chat';
 import { AlertTriangle, CheckCircle2, ChevronRight, Circle, Loader2, MinusCircle, XCircle } from 'lucide-react';
 
 export type AgentStatus = 'waiting' | 'running' | 'done' | 'fallback' | 'skipped' | 'failed';
@@ -31,44 +33,47 @@ export type ProgressSteps = Record<string, { status: AgentStatus; ms?: number; n
 const secs = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`);
 
 function StatusLine({ node, elapsedMs }: { node: AgentNode; elapsedMs?: number }) {
+  const t = useT(CHAT);
+  const tx = useTx();
+  const note = node.note ? tx(node.note) : '';
   const cls = 'flex items-center gap-1 text-xs';
   switch (node.status) {
     case 'running':
       return (
         <div className={`${cls} text-blue-700 dark:text-blue-300`}>
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> Working{elapsedMs !== undefined ? `, ${Math.floor(elapsedMs / 1000)} s` : ''}
-          {node.note ? ` · ${node.note}` : ''}
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('an_working')}{elapsedMs !== undefined ? `, ${Math.floor(elapsedMs / 1000)} s` : ''}
+          {note ? ` · ${note}` : ''}
         </div>
       );
     case 'done':
       return (
         <div className={`${cls} text-emerald-700 dark:text-emerald-400`}>
-          <CheckCircle2 className="w-3.5 h-3.5" /> Done{node.ms !== undefined && node.ms >= 50 ? ` in ${secs(node.ms)}` : ''}
-          {node.note ? ` · ${node.note}` : ''}
+          <CheckCircle2 className="w-3.5 h-3.5" /> {node.ms !== undefined && node.ms >= 50 ? t('an_doneIn', { time: secs(node.ms) }) : t('an_done')}
+          {note ? ` · ${note}` : ''}
         </div>
       );
     case 'fallback':
       return (
         <div className={`${cls} text-amber-700 dark:text-amber-400`}>
-          <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {node.note || 'Built-in figures used'}
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0" /> {note || t('an_fallback')}
         </div>
       );
     case 'skipped':
       return (
         <div className={`${cls} text-slate-500 dark:text-slate-400`}>
-          <MinusCircle className="w-3.5 h-3.5 shrink-0" /> Skipped{node.note ? `: ${node.note}` : ''}
+          <MinusCircle className="w-3.5 h-3.5 shrink-0" /> {note ? t('an_skippedWhy', { why: note }) : t('an_skipped')}
         </div>
       );
     case 'failed':
       return (
         <div className={`${cls} text-rose-700 dark:text-rose-400`}>
-          <XCircle className="w-3.5 h-3.5 shrink-0" /> {node.note || 'Failed'}
+          <XCircle className="w-3.5 h-3.5 shrink-0" /> {note || t('an_failed')}
         </div>
       );
     default:
       return (
         <div className={`${cls} text-slate-500 dark:text-slate-400`}>
-          <Circle className="w-3.5 h-3.5" /> {node.note || 'Waiting'}
+          <Circle className="w-3.5 h-3.5" /> {note || t('an_waiting')}
         </div>
       );
   }
@@ -88,6 +93,8 @@ export const AgentNetwork: React.FC<{
 }> = ({ title, columns, footnote, stacked }) => {
   // Seconds on a running node, counted from when this screen first saw it running.
   const helpLevel = useHelpLevel();
+  const t = useT(CHAT);
+  const tx = useTx();
   const seen = useRef<Record<string, number>>({});
   const [now, setNow] = useState(() => Date.now());
   const anyRunning = columns.some((c) => c.nodes.some((n) => n.status === 'running'));
@@ -109,7 +116,7 @@ export const AgentNetwork: React.FC<{
       <div className="flex flex-wrap items-baseline justify-between gap-2">
         <div className="ui-label">{title}</div>
         <div className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-          {finished} of {total} finished
+          {t('an_finished', { n: finished, total })}
         </div>
       </div>
       <div className={`flex flex-col gap-2 ${stacked ? '' : 'lg:flex-row lg:items-stretch'}`}>
@@ -121,19 +128,19 @@ export const AgentNetwork: React.FC<{
               </div>
             )}
             <div className="flex-1 min-w-0 space-y-1.5">
-              <div className="text-xs text-slate-500 dark:text-slate-400">{col.title}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">{tx(col.title)}</div>
               {col.nodes.map((n) => (
                 <div
                   key={n.id}
                   className={`flex items-start gap-2 px-1.5 py-1.5 ${n.status === 'skipped' ? 'opacity-70' : ''}`}
                   data-agent-node={n.id}
                   data-status={n.status}
-                  title={[agentBadgeTip(n.id, n.label, helpLevel), n.help].filter(Boolean).join('\n')}
+                  title={[agentBadgeTip(n.id, n.label, helpLevel, tx), n.help ? tx(n.help) : ''].filter(Boolean).join('\n')}
                 >
                   <AgentBadge id={n.id} status={n.status} className="mt-0.5" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-sm font-medium text-slate-900 dark:text-white">{n.label}</div>
-                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{n.task}</div>
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">{tx(n.label)}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{tx(n.task)}</div>
                     {n.members && n.members.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {n.members.map((m) => (
@@ -151,7 +158,7 @@ export const AgentNetwork: React.FC<{
           </React.Fragment>
         ))}
       </div>
-      {footnote && <p className="text-xs text-slate-500 dark:text-slate-400">{footnote}</p>}
+      {footnote && <p className="text-xs text-slate-500 dark:text-slate-400">{tx(footnote)}</p>}
     </div>
   );
 };

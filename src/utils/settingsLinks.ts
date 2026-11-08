@@ -8,14 +8,14 @@ export type SettingsPage = 'ai' | 'keys' | 'paid' | 'tools';
 export type SettingsTextPart = string | { text: string; page: SettingsPage };
 
 const PAGE_NAMES: Array<[RegExp, SettingsPage]> = [
-  [/^AI model(?: key| and data connections)?/, 'ai'],
-  [/^Your own paid data/, 'paid'],
-  [/^(?:Data API keys|API keys|Free data keys)/, 'keys'],
-  [/^Tools/, 'tools'],
+  [/^(?:AI model(?: key| and data connections)?|Modelo de IA)/, 'ai'],
+  [/^(?:Your own paid data|Sus datos de pago)/, 'paid'],
+  [/^(?:Data API keys|API keys|Free data keys|Claves de API de datos|Claves de datos gratuitos)/, 'keys'],
+  [/^(?:Tools|Herramientas)/, 'tools'],
 ];
 
-// "Menu > Settings > X", "Menu > Settings", "Settings > X", "Menu > Settings > AI model ...".
-const LINK = /(?:Menu\s*>\s*)?Settings(?:\s*>\s*(AI model(?: key| and data connections)?|Your own paid data|Data API keys|API keys|Free data keys|Tools))?|Menu\s*>\s*(AI model(?: and data connections)?)/g;
+// "Menu > Settings > X", "Menu > Settings", "Settings > X", "Menu > Settings > AI model ...", and the Spanish "Menú > Configuración > X".
+const LINK = /(?:Menu\s*>\s*)?Settings(?:\s*>\s*(AI model(?: key| and data connections)?|Your own paid data|Data API keys|API keys|Free data keys|Tools))?|Menu\s*>\s*(AI model(?: and data connections)?)|Menú\s*>\s*Configuración(?:\s*>\s*(Modelo de IA|Sus datos de pago|Claves de API de datos|Claves de datos gratuitos|Herramientas))?/g;
 
 export function splitSettingsLinks(text: string): SettingsTextPart[] {
   const out: SettingsTextPart[] = [];
@@ -24,8 +24,8 @@ export function splitSettingsLinks(text: string): SettingsTextPart[] {
     const whole = m[0];
     const at = m.index ?? 0;
     // A bare "Settings" with no "Menu >" in front is an ordinary word, not a link.
-    if (!m[1] && !m[2] && !whole.startsWith('Menu')) continue;
-    const name = m[1] || m[2] || '';
+    if (!m[1] && !m[2] && !m[3] && !whole.startsWith('Menu') && !whole.startsWith('Menú')) continue;
+    const name = m[1] || m[2] || m[3] || '';
     const page = PAGE_NAMES.find(([re]) => re.test(name))?.[1] ?? 'keys';
     if (at > last) out.push(text.slice(last, at));
     out.push({ text: whole, page });

@@ -43,6 +43,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
   The help is in Spanish too: every "What is this?" glossary entry, the panel introductions, the "How to read this
   chart" guides, and the Glossary in Menu > User manual, which is shown translated in Spanish (docs/GLOSSARY.md stays
   English). The user manual and the About the project page stay English for now and say so.
+  Council chat's cards are in Spanish too: the approval pause and its assumptions, the answer snapshot and re-run
+  notes, the what-if scenario card, explanations, the chart card's buttons and controls, the agent documents' frame,
+  sign-off, policy documents, and the Agents panel's steps, agent descriptions and scope notes. The agent documents
+  themselves stay English, as the agents and the summary read them, and the window says so. "Menu > Settings" links in
+  translated help still open the right page of Settings.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

@@ -5,8 +5,10 @@
 import { useEffect, useState } from 'react';
 import { BadgeCheck } from 'lucide-react';
 import type { SignOffStatus, SignOffStep, SignOffView } from '../utils/signoff';
+import { useT } from '../i18n/useLang';
+import { CHAT } from '../i18n/messages/chat';
 
-const LABEL: Record<SignOffStatus, string> = { draft: 'Draft', reviewed: 'Reviewed', approved: 'Approved', changed: 'Changed after sign-off' };
+const LABEL = { draft: 'so_draft', reviewed: 'so_reviewed', approved: 'so_approved', changed: 'so_changed' } as const;
 const TONE: Record<SignOffStatus, string> = { draft: '', reviewed: 'ui-badge-accent', approved: 'ui-badge-positive', changed: 'ui-badge-warning' };
 const NAME_KEY = 'econquest.signoffName.v1';
 
@@ -61,6 +63,7 @@ export function SignOffControl({ briefId, kind = 'brief' }: { briefId: string; k
   const [pending, setPending] = useState<SignOffStep | null>(null);
   const [name, setName] = useState(readName);
   const [error, setError] = useState('');
+  const t = useT(CHAT);
 
   const sign = async () => {
     if (!pending) return;
@@ -83,27 +86,27 @@ export function SignOffControl({ briefId, kind = 'brief' }: { briefId: string; k
 
   const who =
     status === 'approved'
-      ? ` by ${view?.approvedBy}${view?.selfApproved ? ' (self-approved, no second reviewer)' : view?.reviewedBy ? `, reviewed by ${view.reviewedBy}` : ''}`
+      ? `${t('so_by', { name: view?.approvedBy ?? '' })}${view?.selfApproved ? t('so_self') : view?.reviewedBy ? t('so_reviewedBy', { name: view.reviewedBy }) : ''}`
       : status === 'reviewed'
-      ? ` by ${view?.reviewedBy}`
+      ? t('so_by', { name: view?.reviewedBy ?? '' })
       : status === 'changed'
-      ? ': review again'
+      ? t('so_again')
       : '';
   const steps: Array<{ step: SignOffStep; label: string }> =
     status === 'draft' || status === 'changed'
-      ? [{ step: 'reviewed', label: 'Mark reviewed' }]
+      ? [{ step: 'reviewed', label: t('so_markReviewed') }]
       : status === 'reviewed'
       ? [
-          { step: 'approved', label: 'Approve' },
-          { step: 'withdrawn', label: 'Withdraw' },
+          { step: 'approved', label: t('so_approve') },
+          { step: 'withdrawn', label: t('so_withdraw') },
         ]
-      : [{ step: 'withdrawn', label: 'Withdraw approval' }];
+      : [{ step: 'withdrawn', label: t('so_withdrawApproval') }];
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs" data-signoff={status}>
-      <span className={`ui-badge ${TONE[status]} font-normal`} title={view ? `Content SHA-256 ${view.contentHash}` : undefined}>
+      <span className={`ui-badge ${TONE[status]} font-normal`} title={view ? t('so_hash', { hash: view.contentHash }) : undefined}>
         <BadgeCheck className="w-3 h-3" aria-hidden />
-        {LABEL[status]}
+        {t(LABEL[status])}
         {who}
       </span>
       {!pending &&
@@ -115,22 +118,22 @@ export function SignOffControl({ briefId, kind = 'brief' }: { briefId: string; k
       {pending && (
         <span className="inline-flex flex-wrap items-center gap-1">
           <label className="sr-only" htmlFor={`signoff-name-${kind}-${briefId}`}>
-            Your name
+            {t('so_name')}
           </label>
           <input
             id={`signoff-name-${kind}-${briefId}`}
             value={name}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && void sign()}
-            placeholder="Your name"
+            placeholder={t('so_name')}
             className="px-2 py-1 text-xs w-36 bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
             autoFocus
           />
           <button type="button" className="ui-btn ui-btn-primary" disabled={!name.trim()} onClick={() => void sign()}>
-            Sign: {pending === 'withdrawn' ? 'withdraw' : pending}
+            {pending === 'withdrawn' ? t('so_signWithdraw') : pending === 'approved' ? t('so_signApproved') : t('so_signReviewed')}
           </button>
           <button type="button" className="ui-btn ui-btn-ghost" onClick={() => setPending(null)}>
-            Cancel
+            {t('so_cancel')}
           </button>
         </span>
       )}

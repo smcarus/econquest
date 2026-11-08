@@ -20,7 +20,7 @@ import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../
 import { askCouncilColumns, fullCouncilColumns } from '../utils/councilNetwork';
 import { suggestFollowUps, saveCouncilBrief, type SavedCouncilBrief } from '../utils/askCouncil';
 import { smallRefereeNote } from '../utils/refereeModel';
-import { useT } from '../i18n/useLang';
+import { useT, useTx } from '../i18n/useLang';
 import { COUNCIL } from '../i18n/messages/council';
 import { AnswerSnapshotDetails } from './AnswerSnapshot';
 import { CouncilTimingNote } from './CouncilTimingNote';
@@ -51,6 +51,7 @@ export const AskCouncilPanel: React.FC<{
     debate, debating, extra, adding, runDebate, ask, addForQuestion, current, newConversation, changeDocs, copy, pinned, pinData,
   } = useCouncilChat();
   const tr = useT(COUNCIL);
+  const tx = useTx();
   // Welcome suggestions from your holdings, watchlist moves and your last saved question (src/utils/chatSuggestions.ts).
   const suggestions = React.useMemo(
     () => chatSuggestions({ holdings: loadHoldings(), items, recent: lib.briefs, examples: EXAMPLES }),
@@ -148,7 +149,7 @@ export const AskCouncilPanel: React.FC<{
     return (
       <div className="border-l-2 border-slate-300 dark:border-slate-600 pl-3 space-y-3" data-council-result={live ? 'true' : 'earlier'}>
         <p className="text-xs text-slate-500 dark:text-slate-400">
-          <span className="font-medium text-slate-700 dark:text-slate-200">{tr('councilLabel')}</span> · {tr('about', { scope: t.asked.plan.scopeNote })} · {time(t.asked.askedAt)}
+          <span className="font-medium text-slate-700 dark:text-slate-200">{tr('councilLabel')}</span> · {tr('about', { scope: tx(t.asked.plan.scopeNote) })} · {time(t.asked.askedAt)}
         </p>
 
         {t.changes && (
@@ -230,7 +231,7 @@ export const AskCouncilPanel: React.FC<{
               {tr('addFor', { list: t.asked.plan.offWatchlist?.join(', ') || '' })}
             </button>
             <span className="text-xs text-slate-500 dark:text-slate-400">{tr('addForNote')}</span>
-            {adding && <span className="text-xs text-amber-700 dark:text-amber-400">{adding}</span>}
+            {adding && <span className="text-xs text-amber-700 dark:text-amber-400"><SettingsText text={adding} /></span>}
           </div>
         )}
 
@@ -343,10 +344,10 @@ export const AskCouncilPanel: React.FC<{
               <details className="group">
                 <summary className="cursor-pointer text-xs text-blue-700 dark:text-blue-300">{tr('showLayout')}</summary>
                 <div className="mt-2 space-y-2">
-                  <AgentNetwork title={tr('agentsOn', { scope: t.asked.plan.scopeNote })} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
+                  <AgentNetwork title={tr('agentsOn', { scope: tx(t.asked.plan.scopeNote) })} columns={askCouncilColumns(t.asked.answers, writingNow, t.synthesis, t.asked.plan.chosenBy)} />
                   {t.asked.plan.chooserNote && (
                     <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={t.asked.plan.chosenBy}>
-                      {t.asked.plan.chooserNote}
+                      {tx(t.asked.plan.chooserNote)}
                     </p>
                   )}
                 </div>
@@ -673,6 +674,7 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
   const steps = useCouncilProgress(fc?.progressId ?? null, Boolean(fc && (fc.isRunning || fc.isApproving)));
   const showFull = Boolean(fc?.progressId && phase !== 'idle');
   const tr = useT(COUNCIL);
+  const tx = useTx();
   return (
     <div className="space-y-4" data-council-agents-panel="true">
       {choosing && (
@@ -687,12 +689,12 @@ export const CouncilAgentsPanel: React.FC<{ fullCouncil?: FullCouncilStep }> = (
           </p>
           <AgentNetwork
             stacked
-            title={tr('aboutTitle', { scope: asked.plan.scopeNote })}
+            title={tr('aboutTitle', { scope: tx(asked.plan.scopeNote) })}
             columns={askCouncilColumns(asked.answers, writing, synthesis, asked.plan.chosenBy)}
           />
           {asked.plan.chooserNote && (
             <p className="text-xs text-slate-500 dark:text-slate-400" data-council-chooser={asked.plan.chosenBy}>
-              {asked.plan.chooserNote}
+              {tx(asked.plan.chooserNote)}
             </p>
           )}
         </div>
