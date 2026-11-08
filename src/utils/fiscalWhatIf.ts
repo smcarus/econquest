@@ -7,19 +7,23 @@
  * - Spending on the line moves by `cutPp` points of GDP (spending x share cut).
  * - The freed money is either spent elsewhere ("respend") or kept to lower the deficit ("deficit").
  *   A question that says neither is run both ways, side by side.
- * - First-year growth effect = multiplier x change in spending (points of GDP), low and high ends of
- *   the cited IMF range (fiscalMultipliers.ts) unless the reader sets their own. Respending at the
- *   same multiplier as the cut nets to zero: the range does not tell defence and other spending
- *   apart, and the answer says so rather than guessing.
+ * - Output effect, year by year: a published path per point of GDP of spending
+ *   (src/data/spendingMultipliers.ts): Barro and Redlick for a defence cut, Abiad, Furceri and
+ *   Topalova (IMF WP/15/95) for money put into public investment, and otherwise the IMF bucket range
+ *   (fiscalMultipliers.ts) held as a level. Respending on the same path as the cut nets to zero, and
+ *   the answer says so rather than guessing.
+ * - Budget feedback: where a published semi-elasticity exists (European Commission, EU members), the
+ *   primary balance also moves by semi-elasticity x the output change.
  * - Debt: the debt identity (debtSustainability.nextDebt) on the IMF baseline inputs, with the
- *   primary balance raised by the money kept and year-one real growth moved by the growth effect.
- *   The growth effect is a one-off change in the level of output, so later years keep IMF growth.
+ *   primary balance raised by the money kept (and the feedback), and growth moved each year by the
+ *   change in the output level.
  *
- * No figure here is built in: the spending figure, the inputs and the multiplier range all come
- * from the caller with their sources. Browser-safe.
+ * No figure here is built in: the spending figure, the inputs, the paths and the semi-elasticity all
+ * come from the caller or the cited data file, with their sources. Browser-safe.
  */
 import { nextDebt, nominalGrowthPct, type YearAssump } from './debtSustainability';
 import { sectorsInQuestion, type CofogSector } from './govSpending';
+import { INVESTMENT_WORDS } from '../data/spendingMultipliers';
 
 export type WhatIfUse = 'respend' | 'deficit';
 
@@ -32,6 +36,8 @@ export interface WhatIfQuestion {
   uses: WhatIfUse[];
   /** The words that set the change, for the reading. */
   said: string;
+  /** Where respent money goes: public investment when the question says so, else other spending. */
+  destination: 'investment' | 'other';
 }
 
 const MOVE_RES: Array<{ re: RegExp; share: (m: RegExpExecArray) => number }> = [
@@ -59,9 +65,21 @@ export function parseWhatIf(question: string): WhatIfQuestion | null {
     const respend = RESPEND_RE.test(question);
     const deficit = DEFICIT_RE.test(question);
     const uses: WhatIfUse[] = respend && !deficit ? ['respend'] : deficit && !respend ? ['deficit'] : ['respend', 'deficit'];
-    return { sector, share, uses, said: hit[0] };
+    return { sector, share, uses, said: hit[0], destination: INVESTMENT_WORDS.test(question) ? 'investment' : 'other' };
   }
   return null;
+}
+
+/** An output-level path per 1 pp of GDP of spending, years 1..5, low and high ends, with its source. */
+export interface PathRange {
+  low: number[];
+  high: number[];
+  source: string;
+}
+
+/** A first-year multiplier range held as a level from then on (the IMF bucket range states year one only). */
+export function flatPath(low: number, high: number, source: string, years = 5): PathRange {
+  return { low: Array(years).fill(low), high: Array(years).fill(high), source };
 }
 
 export interface WhatIfInputs {
@@ -74,17 +92,24 @@ export interface WhatIfInputs {
   year: string;
   /** The DSA baseline inputs, one per projection year (IMF growth, inflation, interest, primary balance). */
   baseline: YearAssump[];
-  /** First-year multiplier range for the cut, with its source; respending uses the same unless set. */
-  multiplier: { low: number; high: number; source: string };
-  respendMultiplier?: { low: number; high: number; source: string };
+  /** Output effect of the cut, per pp of GDP, by year. */
+  cut: PathRange;
+  /** Output effect of the money respent, per pp of GDP, by year; the cut's own path when not set (nets to zero). */
+  respend?: PathRange;
+  /** Budget balance semi-elasticity to the output gap; without one the budget does not respond to the output change. */
+  semiElasticity?: { value: number; source: string };
 }
 
 export interface WhatIfRun {
   use: WhatIfUse;
-  /** Change in the primary balance, points of GDP (up = less borrowing). */
+  /** Policy change in the primary balance, points of GDP (up = less borrowing), before the budget's response to output. */
   pbChangePp: number;
   /** First-year change in real GDP, %, low and high ends. */
   growth: { low: number; high: number };
+  /** Change in the level of real GDP by the last year, %, low and high ends. */
+  level: { year: string; low: number; high: number };
+  /** The budget's response to that output change in the last year, points of GDP (semi-elasticity x output change). */
+  feedback?: { low: number; high: number };
   /** Debt at the end of the horizon, % of GDP: baseline, and with the change at each end of the range. */
   debtEnd: { year: string; baseline: number; low: number; high: number };
 }
@@ -97,6 +122,7 @@ export interface WhatIfResult {
 }
 
 const r2 = (v: number) => Number(v.toFixed(2));
+const at = (xs: number[], k: number) => xs[Math.min(k, xs.length - 1)] ?? 0;
 
 function pathEnd(debtNow: number, years: YearAssump[]): number {
   let d = debtNow;
@@ -108,34 +134,60 @@ function pathEnd(debtNow: number, years: YearAssump[]): number {
 export function runWhatIf(inp: WhatIfInputs): WhatIfResult | null {
   if (!inp.baseline.length || !(inp.spend.pct > 0)) return null;
   const cutPp = inp.spend.pct * inp.share;
-  const respendM = inp.respendMultiplier || inp.multiplier;
+  const respend = inp.respend || inp.cut;
+  const eps = inp.semiElasticity?.value;
   const baseEnd = pathEnd(inp.debtNow, inp.baseline);
-  const endYear = inp.baseline[inp.baseline.length - 1].year;
+  const last = inp.baseline.length - 1;
+  const endYear = inp.baseline[last].year;
   const runs: WhatIfRun[] = inp.uses.map((use) => {
-    const pbChangePp = use === 'deficit' ? cutPp : 0;
-    // The cut takes m x cut off output; respending adds the respend multiplier back.
-    const g = (m: 'low' | 'high') => -inp.multiplier[m] * cutPp + (use === 'respend' ? respendM[m] * cutPp : 0);
-    const growth = { low: r2(Math.min(g('low'), g('high'))), high: r2(Math.max(g('low'), g('high'))) };
-    const shifted = (dg: number) => inp.baseline.map((y, k) => ({ ...y, g: k === 0 ? y.g + dg : y.g, pb: y.pb + pbChangePp }));
-    const a = pathEnd(inp.debtNow, shifted(growth.low));
-    const b = pathEnd(inp.debtNow, shifted(growth.high));
-    return { use, pbChangePp: r2(pbChangePp), growth, debtEnd: { year: endYear, baseline: r2(baseEnd), low: r2(Math.min(a, b)), high: r2(Math.max(a, b)) } };
+    const kept = use === 'deficit' ? cutPp : 0;
+    // Weak end: the cut costs the most output and respending adds the least; strong end the other way.
+    // Money respent on the cut's own path takes the same end, so it nets to zero.
+    const samePath = !inp.respend;
+    const levels = (end: 'weak' | 'strong') =>
+      inp.baseline.map((_, k) => {
+        const cutM = at(end === 'weak' ? inp.cut.high : inp.cut.low, k);
+        const resM = samePath ? cutM : at(end === 'weak' ? respend.low : respend.high, k);
+        return cutPp * (-cutM + (use === 'respend' ? resM : 0));
+      });
+    const run = (lv: number[]) => {
+      const years = inp.baseline.map((y, k) => ({ ...y, g: y.g + lv[k] - (k ? lv[k - 1] : 0), pb: y.pb + kept + (eps !== undefined ? eps * lv[k] : 0) }));
+      return pathEnd(inp.debtNow, years);
+    };
+    const weak = levels('weak');
+    const strong = levels('strong');
+    const [dw, ds] = [run(weak), run(strong)];
+    const lo = (a: number, b: number) => r2(Math.min(a, b));
+    const hi = (a: number, b: number) => r2(Math.max(a, b));
+    return {
+      use,
+      pbChangePp: r2(kept),
+      growth: { low: lo(weak[0], strong[0]), high: hi(weak[0], strong[0]) },
+      level: { year: endYear, low: lo(weak[last], strong[last]), high: hi(weak[last], strong[last]) },
+      ...(eps !== undefined ? { feedback: { low: lo(eps * weak[last], eps * strong[last]), high: hi(eps * weak[last], eps * strong[last]) } } : {}),
+      debtEnd: { year: endYear, baseline: r2(baseEnd), low: lo(dw, ds), high: hi(dw, ds) },
+    };
   });
+  const same = !inp.respend;
   return {
     cutPp: r2(cutPp),
     newSpendPct: r2(inp.spend.pct - cutPp),
     runs,
-    method: `Spending change = ${inp.spend.pct.toFixed(2)}% of GDP (${inp.spend.source}, ${inp.spend.year}) x ${Math.round(inp.share * 100)}%. First-year growth effect = multiplier x spending change, at both ends of the range (${inp.multiplier.source}); respending ${inp.respendMultiplier ? `at ${inp.respendMultiplier.source}` : 'at the same range, so it nets to zero'}. Debt: d(t) = d(t-1)(1+i)/(1+n) - pb on the IMF baseline inputs from ${inp.year}, primary balance raised by the money kept, year-one growth moved by the growth effect (a one-off level change). Not a forecast.`,
+    method: [
+      `Spending change = ${inp.spend.pct.toFixed(2)}% of GDP (${inp.spend.source}, ${inp.spend.year}) x ${Math.round(inp.share * 100)}%.`,
+      `Output effect of the cut: ${inp.cut.source}; of the money respent: ${same ? 'the same, so respending nets to zero' : respend.source}. Each year's output level = spending change x the published effect for that year; growth moves by the change in that level.`,
+      eps !== undefined ? `The budget responds to the output change by ${eps} x the change (${inp.semiElasticity!.source}).` : 'The budget\'s response to the output change is not included: no published semi-elasticity in the app for this country.',
+      `Debt: d(t) = d(t-1)(1+i)/(1+n) - pb on the IMF baseline inputs from ${inp.year}. Not a forecast.`,
+    ].join(' '),
   };
 }
 
 const sgn = (v: number) => `${v > 0 ? '+' : ''}${v.toFixed(1)}`;
 
 /** One plain sentence per run, for the agent's reading. */
-export function whatIfSentence(r: WhatIfRun, cutPp: number): string {
-  const g = r.growth.low === r.growth.high ? `${sgn(r.growth.low)}%` : `${sgn(r.growth.low)}% to ${sgn(r.growth.high)}%`;
+export function whatIfSentence(r: WhatIfRun, cutPp: number, respendLabel = 'other spending'): string {
+  const range = (a: number, b: number, unit = '%') => (a === b ? `${sgn(a)}${unit}` : `${sgn(a)}${unit} to ${sgn(b)}${unit}`);
   const d = r.debtEnd.low === r.debtEnd.high ? `${r.debtEnd.low.toFixed(1)}%` : `${r.debtEnd.low.toFixed(1)}-${r.debtEnd.high.toFixed(1)}%`;
-  return r.use === 'respend'
-    ? `If the ${cutPp.toFixed(1)}% of GDP is spent elsewhere, borrowing is unchanged; first-year growth moves ${g} on the cited range, and debt in ${r.debtEnd.year} is ${d} of GDP against ${r.debtEnd.baseline.toFixed(1)}% on the IMF baseline.`
-    : `If the ${cutPp.toFixed(1)}% of GDP is kept to cut the deficit, first-year growth moves ${g}, and debt in ${r.debtEnd.year} is ${d} of GDP against ${r.debtEnd.baseline.toFixed(1)}% on the IMF baseline.`;
+  const lead = r.use === 'respend' ? `If the ${cutPp.toFixed(1)}% of GDP is spent on ${respendLabel}` : `If the ${cutPp.toFixed(1)}% of GDP is kept to cut the deficit`;
+  return `${lead}, first-year growth moves ${range(r.growth.low, r.growth.high)}, output is ${range(r.level.low, r.level.high)} by ${r.level.year}, and debt in ${r.debtEnd.year} is ${d} of GDP against ${r.debtEnd.baseline.toFixed(1)}% on the IMF baseline.`;
 }
