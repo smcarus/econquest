@@ -6,6 +6,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { createMemoryPlatform } from '../src/platform/memory';
+import { auditFiles, readAudit } from '../src/utils/auditStore';
 import {
   checkOwnMeta,
   checkOwnUpload,
@@ -189,6 +190,8 @@ test('routes: check saves nothing, save and delete are audited, viewers are refu
     assert.equal((await fetch(`${base}/api/own-series/${saved.id}`, { method: 'DELETE' })).status, 200);
     assert.equal((await (await fetch(`${base}/api/own-series`)).json()).series.length, 0);
 
+    // Audit entries are written in turn after the reply; reading the log waits for those already queued.
+    await readAudit(auditFiles(dir));
     const audit = fs.readFileSync(path.join(dir, 'local', 'audit', 'audit-log.jsonl'), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
     assert.deepEqual(audit.map((e) => [e.kind, e.summary.split(' ')[0]]), [
       ['own_data', 'Loaded'],
