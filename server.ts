@@ -796,7 +796,7 @@ async function runDailyCli(): Promise<void> {
       continue;
     }
     console.log(`  -- ${f.label}`);
-    const r = await runScript(f.script);
+    const r = await runScript(f.script, f.args);
     const got = interestingLines(r.output);
     add({
       id: f.id,

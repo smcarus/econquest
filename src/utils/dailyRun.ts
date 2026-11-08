@@ -49,8 +49,8 @@ export interface DailyFile {
 }
 
 /** Files fetched by scripts (each also runs on its own as npm run <script>). */
-export const FILE_PULLS: Array<{ id: string; script: string; label: string }> = [
-  { id: 'weo', script: 'weo-pull.ts', label: 'Past IMF World Economic Outlook editions (real-time IMF figures, debt fan test)' },
+export const FILE_PULLS: Array<{ id: string; script: string; label: string; args?: string[] }> = [
+  { id: 'weo', script: 'weo-pull.ts', args: ['--weekly'], label: 'Past IMF World Economic Outlook editions (real-time IMF figures, debt fan test)' },
   { id: 'sanctions', script: 'sanctions-pull.ts', label: 'OFAC and UN sanctions lists' },
   { id: 'gpr', script: 'gpr-pull.ts', label: 'Geopolitical Risk index (Caldara and Iacoviello, monthly)' },
   { id: 'ucdp', script: 'ucdp-pull.ts', label: 'UCDP conflict data (newer yearly release, monthly candidate events)' },
@@ -58,6 +58,11 @@ export const FILE_PULLS: Array<{ id: string; script: string; label: string }> = 
 
 /** Data that cannot be fetched automatically, said plainly instead of pretending. */
 export const BY_HAND: Array<{ label: string; why: string; how: string }> = [
+  {
+    label: 'Past IMF World Economic Outlook editions (only if the IMF refuses the download)',
+    why: 'The IMF website often refuses automated downloads of its past WEO database files (HTTP 403), and the app does not get around that.',
+    how: 'Open the IMF WEO database page (imf.org > Publications > World Economic Outlook databases), download the "By countries" file of each edition you need, and put it as downloaded in data/local/weo-vintages/.',
+  },
   {
     label: 'ACLED political violence and protest counts',
     why: 'ACLED gives its files only to people signed in to a free myACLED account, so the app cannot fetch them.',
@@ -114,7 +119,8 @@ export function testsDue(lastStartedAt: string | undefined, now: Date): boolean 
 /** Lines of a script's output worth keeping: what it could not save, and what it did save. */
 export function interestingLines(output: string): { saved: string[]; problems: string[] } {
   const lines = output.split(/\r?\n/).map((l) => l.trimEnd());
-  const saved = lines.filter((l) => /^Saved /.test(l));
+  // "Saved <file> (...)" per file; not the "Saved 0 new ..." totals line.
+  const saved = lines.filter((l) => /^Saved /.test(l) && !/^Saved \d+ new /.test(l));
   const problems: string[] = [];
   let inList = false;
   for (const l of lines) {

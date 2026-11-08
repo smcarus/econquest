@@ -36,7 +36,7 @@ test('weekly tests: due with no run on record or after 7 days', () => {
 });
 
 test('script output: saved files and the not-saved list are picked out', () => {
-  const out = ['Saved SDN.CSV (1.2 MB) from x', 'Not saved (2):', '  ADD.CSV: HTTP 403 (download it by hand)', '  consolidated.xml: timeout', '', 'Folder: y', 'Not saved: data_gpr_export.xls: HTTP 500'].join('\n');
+  const out = ['Saved SDN.CSV (1.2 MB) from x', 'Saved 0 new UCDP file(s) in data/local/ucdp.', 'Not saved (2):', '  ADD.CSV: HTTP 403 (download it by hand)', '  consolidated.xml: timeout', '', 'Folder: y', 'Not saved: data_gpr_export.xls: HTTP 500'].join('\n');
   const got = interestingLines(out);
   assert.deepEqual(got.saved, ['Saved SDN.CSV (1.2 MB) from x']);
   assert.deepEqual(got.problems, ['ADD.CSV: HTTP 403 (download it by hand)', 'consolidated.xml: timeout', 'data_gpr_export.xls: HTTP 500']);
