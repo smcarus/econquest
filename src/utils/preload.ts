@@ -58,6 +58,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:oecd_cpi', kind: 'world', label: 'OECD monthly inflation (via DBnomics)' },
   { id: 'world:national_cpi', kind: 'world', label: 'National inflation (BCB IPCA, Eurostat HICP)' },
   { id: 'world:activity', kind: 'world', label: 'Monthly activity indexes (BCB IBC-Br, Eurostat industrial production)' },
+  { id: 'world:eu_surveys', kind: 'world', label: 'EU business and consumer surveys (Eurostat, not a PMI)' },
   { id: 'world:cftc', kind: 'world', label: 'CFTC futures positioning' },
   { id: 'world:tic', kind: 'world', label: 'US Treasury TIC holdings' },
   { id: 'world:ust_auctions', kind: 'world', label: 'US Treasury auctions (bid-to-cover and yields, Fiscal Data)' },

@@ -34,7 +34,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | New York Fed markets data | Allowed with conditions | Free sharing allowed | Allowed for personal or business purposes; reference rates (SOFR, EFFR and others) must carry the New York Fed's notice. | Allowed for business purposes; no general ban on data. | "© <year> Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org." For SOFR and EFFR also: "The <rate> is subject to the Terms of Use posted at newyorkfed.org. The New York Fed is not responsible for publication of the <rate> by <publisher>, does not sanction or endorse any particular republication, and has no liability for your use." |
 | FRED (St. Louis Fed): 10Y government yields from the OECD; St. Louis Fed and Chicago Fed stress indices; US inflation expectations | Permission needed for client or commercial use | Sharing unclear | The series are labelled "Copyrighted: Citation Required" (owner: OECD). FRED's terms say to contact the data owner before any use beyond personal use, and that FRED cannot give that permission. | Unclear in FRED's own terms (one section allows reports to clients with attribution for citation-required series; others require the owner's permission). | OECD (year), Main Economic Indicators, long-term interest rates, retrieved from FRED, Federal Reserve Bank of St. Louis. With the FRED API key: "This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis." |
 | OECD leading indicators and consumer prices (via DBnomics) | Terms not confirmed | Sharing unclear | DBnomics passes on the OECD's own licence. The OECD terms page could not be read past its navigation, so the OECD data licence is not confirmed here. | Not confirmed. | OECD (year), <dataset name>, <data source>, via DBnomics (citation form quoted on FRED's OECD series notes). |
-| Eurostat HICP and government expenditure by function (COFOG) | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp). |
+| Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2); surveys by the European Commission (DG ECFIN). |
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
 | US Treasury Fiscal Data (Treasury Securities Auctions Data) | Open with attribution | Free sharing allowed | Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute. | Allowed ("for non-commercial or commercial purposes"). | Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data. |
@@ -257,15 +257,15 @@ From the terms:
 >
 > All OECD data should be cited as follows: OECD (year), (dataset name), (data source) DOI or https://data-explorer.oecd.org/. (accessed on (date)).
 
-### Eurostat HICP and government expenditure by function (COFOG)
+### Eurostat HICP, government expenditure by function (COFOG) and EU business and consumer surveys
 
-- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp)
+- **Used for:** Monthly inflation for EU members (Poland on the defaults); government spending by function, % of GDP (gov_10a_exp); the European Commission's business and consumer surveys as Eurostat republishes them (ei_bssi_m_r2, ei_bsee_m_r2)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. Free reuse with Eurostat named.
 - **Terms read:** [Eurostat copyright and reuse](https://ec.europa.eu/eurostat/about-us/policies/copyright) (checked 2026-11-06)
 - **Show to others:** Allowed without a licence if Eurostat is named and any change to the data is stated.
 - **Commercial use:** Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only).
-- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp).
+- **Credit:** Source: Eurostat (prc_hicp_minr, gov_10a_exp, ei_bssi_m_r2, ei_bsee_m_r2); surveys by the European Commission (DG ECFIN).
 
 From the terms:
 

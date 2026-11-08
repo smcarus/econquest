@@ -1,7 +1,8 @@
 import { netInterestPct } from './imfFiscal';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { HC_SPREAD_LABEL, hcSpreadMissing, hcSpreadWhen } from './hardCurrencySpread';
-import type { CouncilAssessmentRun } from '../types/council';
+import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
+import { EU_SURVEY_SOURCE, euSurveyGeo, euSurveyReading, euSurveyValue, NOT_A_PMI } from './euSurveys';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from './dataStatus';
 import { describeOfficialYield, formatPeriod } from './officialYields';
 import { nextOfficialEvent, upcomingOfficialEvents } from '../data/officialCalendar';
@@ -189,7 +190,31 @@ export function missingNote(groups: BriefGroup[], countryName: string): string |
  * Economist: growth, inflation and policy, fiscal path, external position.
  * ------------------------------------------------------------------------------------------ */
 
-export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()): CountryBrief {
+/** Any watchlist row: only the country code and its surveys are read. */
+export type SurveyPeer = Pick<WatchlistItem, 'iso3' | 'euSurveys'>;
+
+/**
+ * EU members only: the latest EU business and consumer surveys, carried on the country's
+ * watchlist row from the daily download, or one Missing line saying the copy is not saved yet.
+ */
+export function euSurveyRows(iso3: string, peers: SurveyPeer[]): BriefRow[] {
+  if (!euSurveyGeo(iso3)) return [];
+  const s = peers.find((p) => p.iso3 === iso3)?.euSurveys;
+  if (!s?.latest.length)
+    return [
+      missingRow(`Business and consumer surveys (${NOT_A_PMI})`, {
+        kind: 'unreachable',
+        short: 'EU business surveys not saved yet',
+        help: 'The surveys come from the European Commission through Eurostat\'s free API and are saved by the daily download (Menu > Offline data > Download all country data, or npm run go -- daily). Nothing is shown until that copy exists.',
+      }),
+    ];
+  return s.latest.map((a) => {
+    const reading = euSurveyReading(a);
+    return { label: `${a.label} (${NOT_A_PMI}), ${a.period}`, value: `${euSurveyValue(a)}${reading ? `; ${reading}` : ''}`, source: EU_SURVEY_SOURCE, verified: true };
+  });
+}
+
+export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date(), peers: SurveyPeer[] = []): CountryBrief {
   const open = run.openData;
   const status = getSnapshotDataStatus(open);
   const L = status.live;
@@ -271,6 +296,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         liveRow(status, 'Real GDP growth', 'imf.realGdpGrowthPct', (v) => pct(v), open),
         liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open),
         liveRow(status, 'Unemployment rate', 'imf.unemploymentPct', (v) => pct(v), open),
+        ...euSurveyRows(run.iso3, peers),
       ],
     },
     {
@@ -434,8 +460,8 @@ export const ECONOMIST_SECTIONS: Record<string, string> = {
   sources: 'Data and sources',
 };
 
-export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: string) => boolean, now: Date = new Date()): NoteSection[] {
-  const b = economistBrief(run, now);
+export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: string) => boolean, now: Date = new Date(), peers: SurveyPeer[] = []): NoteSection[] {
+  const b = economistBrief(run, now, peers);
   const byTitle = (t: string) => b.groups.find((g) => g.title === t)!;
   const out: NoteSection[] = [];
   if (include('summary')) {

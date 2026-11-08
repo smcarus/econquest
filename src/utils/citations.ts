@@ -31,6 +31,7 @@ const SOURCE_PAGES: Array<[RegExp, string]> = [
   [/World Bank|WGI/i, 'https://data.worldbank.org/'],
   [/OECD/i, 'https://db.nomics.world/OECD'],
   [/Banco Central do Brasil|\bBCB\b|IPCA/i, 'https://www3.bcb.gov.br/sgspub/'],
+  [/Business and Consumer Surveys/i, 'https://economy-finance.ec.europa.eu/economic-forecast-and-surveys/business-and-consumer-surveys_en'],
   [/Eurostat|HICP/i, 'https://ec.europa.eu/eurostat/databrowser/view/prc_hicp_minr/default/table'],
   [/FRED/i, 'https://fred.stlouisfed.org/'],
   [/\bACLED\b/i, 'https://acleddata.com/'],

@@ -102,6 +102,7 @@ import { stressWorldSeries } from './src/utils/stressIndices';
 import { spfWorldSeries } from './src/utils/inflationSurveys';
 import { chokepointWorldSeries } from './src/utils/portWatch';
 import { ustAuctionSummary } from './src/utils/treasuryAuctions';
+import { euSurveySummary } from './src/utils/euSurveys';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
@@ -175,7 +176,7 @@ import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
-import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
+import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity, fetchEuSurveyPull, loadEuSurveys } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
 import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchPortWatchChokepoints, fetchPortWatchPorts, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
@@ -511,6 +512,14 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
       return had(await fetchTicPull(), 'US Treasury');
+    case 'world:eu_surveys': {
+      const got = await fetchEuSurveyPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'Eurostat did not answer for the EU business surveys' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const months = Object.values(got.series).flatMap((s) => Object.values(s).map((p) => p[p.length - 1]?.period || ''));
+      const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `Eurostat did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
     case 'world:ust_auctions': {
       const got = await fetchUstAuctionPull({ force: true });
       if (!got) return { outcome: 'failed', note: 'US Treasury Fiscal Data did not answer' };
@@ -1230,6 +1239,11 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const a = catItem.iso3 === 'USA' ? ustAuctionSummary(loadUstAuctions()) : undefined;
             return a ? { ustAuctions: a } : {};
+          })()),
+          // EU members' business and consumer surveys, from the copy the daily run saved.
+          ...((() => {
+            const s = euSurveySummary(catItem.iso3, loadEuSurveys());
+            return s ? { euSurveys: s } : {};
           })()),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
           ...(Object.keys(record).length ? { signalRecord: record } : {}),
@@ -3255,6 +3269,7 @@ async function startServer() {
       inflationSurveys,
       portWatch,
       ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
+      euSurveys: loadEuSurveys(),
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
     // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).

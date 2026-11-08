@@ -152,7 +152,7 @@ export function buildReportSections(
   // Country notes: sourced figures get reference numbers and a References list (src/utils/citations.ts).
   const accessed = p.run.openData?.fetchedAt || new Date().toISOString();
   const cite = (sections: Array<{ heading: string; lines: string[] }>) => (on('references') ? withNoteReferences(sections, accessed) : sections);
-  if (audience === 'economist') return cite(buildEconomistSections(p.run, on));
+  if (audience === 'economist') return cite(buildEconomistSections(p.run, on, undefined, p.peers ?? p.riskLookup));
   if (audience === 'official') return cite(buildOfficialSections(p.run, on));
   if (audience === 'banker') return cite(buildBankerSections(p.run, p.peers ?? p.riskLookup, on));
   if (audience === 'book' || audience === 'client_review') {
