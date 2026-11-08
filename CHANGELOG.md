@@ -34,6 +34,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   and client briefs on screen, the Tools page with every tool and hidden desk, the compare-countries table, research
   notebooks, unit converters, exercises and model sandboxes. Downloaded reviews and notebooks stay English.
   The Spanish now addresses the reader as usted throughout, the usual form for professional and official readers.
+  The Compare countries panels are in Spanish too: story leads, where data and price disagree, growth and inflation,
+  MarketEdge, scenario exposure and the Fed balance sheet, with the sentences the app writes from the data. The
+  "Since your last visit" lines on Workspace now show in Spanish as well.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

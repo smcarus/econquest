@@ -280,3 +280,42 @@ test('Holdings and Tools: tool names, briefs, signals and tool reasons the app b
   const untranslated = s.filter((x) => !keep.has(x) && !/^[\d.%$,mm −-]+$/.test(x) && (tx(x) === x || / the | your | of the /.test(tx(x))));
   assert.deepEqual(untranslated, [], 'tool text with no Spanish');
 });
+
+test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenarios, leads and the Fed balance sheet have Spanish', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { ES, ES_TEXT } = await import('../src/i18n/es');
+  attachLanguage('es', ES, ES_TEXT);
+  const tx = (x: string) => translateText(x, 'es');
+  const { QUALITY_LABEL, rankDivergences } = await import('../src/utils/divergences');
+  const { QUADRANT_NOTE, regimeMap } = await import('../src/utils/regimeQuadrant');
+  const { SCENARIOS, scenarioImpact, priceShock } = await import('../src/utils/scenarioExposure');
+  const { recordLead, revisionLeads } = await import('../src/utils/storyLeads');
+  const { cliTrendText } = await import('../src/utils/marketTrends');
+  const { benchmarkRows } = await import('../src/utils/marketEdgeAnchors');
+  const { FED_SOURCE } = await import('../src/utils/fedBalanceSheet');
+  const s: string[] = [];
+  s.push(...Object.values(QUALITY_LABEL), ...Object.keys(QUADRANT_NOTE), ...Object.values(QUADRANT_NOTE), ...SCENARIOS.flatMap((x) => [x.name, x.shock]));
+  const items = [
+    { iso3: 'BRA', countryName: 'Brazil', policyRatePct: 15, policyRateSource: 'bis', policyRateBank: 'BCB', policyRateDate: '2026-09', cpiInflationPct: 5, cpiSource: 'live', yield10YPct: 13.5, yield10YSource: 'official', yield10YPeriod: '2026-09', reerGapPct: 12, reerPeriod: '2026-09', intlBondsDue1yUsdBn: 9, intlBondsUsdBn: 30, intlBondsAsOf: '2026-Q2' },
+    { iso3: 'TUR', countryName: 'Turkey', policyRatePct: 20, policyRateSource: 'bis', cpiInflationPct: 40, cpiSource: 'live', yield10YPct: 30, yield10YSource: 'official', yield10YPeriod: '2026-09', reerGapPct: -15 },
+    { iso3: 'MEX', countryName: 'Mexico', policyRatePct: 8, policyRateSource: 'bis', cpiInflationPct: 3.8, cpiSource: 'live', yield10YPct: 9, yield10YSource: 'official', yield10YPeriod: '2026-09' },
+  ];
+  for (const c of rankDivergences(items as never, { BRA: { yield10YPct: 13, yieldSource: 'official' } } as never))
+    s.push(...[c.top, ...c.others].flatMap((d) => [d.label, d.headline, d.soWhat, ...d.evidence.flatMap((e) => [e.text, e.source])]), ...(c.change ? [c.change] : []));
+  const rq = regimeMap([{ iso3: 'BRA', countryName: 'Brazil', oecdCli: { change6m: 0.4, month: '2026-09' }, oecdCpi: { change3mPts: -0.3, month: '2026-09', basis: 'national' } }, { iso3: 'X', countryName: 'X' }] as never);
+  s.push(...rq.points.flatMap((p) => [p.quadrant, p.cpiSource]), ...rq.missing.flatMap((m) => m.missing));
+  const trade = { fuelImportsPctMerch: 15, fuelExportsPctMerch: 5, importsPctGdp: 20, exportsPctGdp: 18, wbYear: '2024', witsYear: 2022, brentUsd: 80, pricesAsOf: '2026-09', gulfImportSharePct: 6.2, chinaExportSharePct: 25, russiaExportSharePct: 1, russiaImportSharePct: 2, exportMixPct: { '74': 30, '26': 10 }, exportMixYear: '2023' };
+  for (const id of ['hormuz', 'taiwan', 'russia'] as const) s.push(scenarioImpact(id, trade as never)!.basis);
+  s.push(scenarioImpact('taiwan', { ...trade, taiwanExportSharePct: 3 } as never)!.basis);
+  s.push(priceShock(trade as never, { COPPER: 12, IRON_ORE: -5, CRUDE_BRENT: -8 })!.basis);
+  const series = { id: 'gdp', label: 'Real GDP growth', unit: '%', source: 'IMF WEO', points: Array.from({ length: 15 }, (_, i) => ({ date: String(2011 + i), value: i === 14 ? 9 : 2 })), revisions: [] };
+  const rec = recordLead('BRA', 'Brazil', series as never, new Date('2026-06-01'));
+  if (rec) s.push(rec.text.replace('Real GDP growth', 'Crecimiento'));
+  void revisionLeads;
+  s.push(cliTrendText({ level: 99.5, change1m: -0.12, phase: 'slowdown', month: '2026-08' } as never), cliTrendText({ level: 100.2, month: '2026-08' } as never));
+  for (const b of benchmarkRows([{ iso3: 'CHN', countryName: 'China', noYieldReason: 'No free official source wired in yet', cli: { level: 100.1, month: '2026-08', phase: 'expansion' } }, { iso3: 'RUS', countryName: 'Russia', noYieldReason: 'OECD series stopped in Jun 2018; no free current source', noCdsReason: 'No CDS market since the 2022 credit event and sanctions' }] as never, []))
+    s.push(b.yieldNote, b.cdsNote, b.cliNote);
+  s.push(FED_SOURCE, 'Total assets', 'Bank reserves at the Fed', 'Treasury General Account', 'Overnight reverse repos', 'Wednesday level', 'Week average');
+  const untranslated = s.filter((x) => x !== 'BIS' && (tx(x) === x || / the | your | of the | since /.test(tx(x))));
+  assert.deepEqual(untranslated, [], 'compare text with no Spanish');
+});

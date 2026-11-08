@@ -194,6 +194,12 @@ export function translateText(text: string, lang: Lang): string {
       });
     }
   }
+  // A list joined with "; " that is not known as a whole is translated item by item.
+  if (text.includes('; ')) {
+    const items = text.split('; ');
+    const done = items.map((p) => translateText(p, lang));
+    if (done.some((d, i) => d !== items[i])) return done.join('; ');
+  }
   let out = text;
   for (const [en, tr] of t.parts) if (out.includes(en)) out = out.split(en).join(tr);
   return out;

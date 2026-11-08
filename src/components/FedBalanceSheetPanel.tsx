@@ -4,6 +4,8 @@ import type { FedBalanceSheet, FedLine, Obs } from '../utils/fedBalanceSheet';
 import { formatPeriod } from '../utils/officialYields';
 import { requiredCredit } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
+import { useT, useTx } from '../i18n/useLang';
+import { TOOLS } from '../i18n/messages/tools';
 
 /**
  * Research > Compare countries > Markets & signals: the Federal Reserve balance sheet (H.4.1) from
@@ -29,14 +31,17 @@ const Spark: React.FC<{ points: Obs[]; label: string }> = ({ points, label }) =>
   );
 };
 
-const Row: React.FC<{ line: FedLine }> = ({ line }) => (
+const Row: React.FC<{ line: FedLine }> = ({ line }) => {
+  const t = useT(TOOLS);
+  const tx = useTx();
+  return (
   <tr className="border-t border-slate-100 dark:border-slate-800" data-fed-line={line.id}>
     <th scope="row" className="py-1.5 pr-3 text-left font-normal">
       <a href={line.url} target="_blank" rel="noreferrer" className="hover:underline text-slate-800 dark:text-slate-100">
-        {line.label}
+        {tx(line.label)}
       </a>
       <div className="text-xs text-slate-500 dark:text-slate-400">
-        {line.note}
+        {tx(line.note)}
         {line.latest ? `, ${formatPeriod(line.latest.date)}` : ''}
       </div>
     </th>
@@ -46,18 +51,21 @@ const Row: React.FC<{ line: FedLine }> = ({ line }) => (
         <td className="py-1.5 pr-3 text-right tabular-nums">{line.change4w !== undefined ? sg(line.change4w) : '–'}</td>
         <td className="py-1.5 pr-3 text-right tabular-nums">{line.change52w !== undefined ? sg(line.change52w) : '–'}</td>
         <td className="py-1.5 hidden sm:table-cell">
-          <Spark points={line.points} label={line.label} />
+          <Spark points={line.points} label={tx(line.label)} />
         </td>
       </>
     ) : (
       <td colSpan={4} className="py-1.5 text-sm text-amber-700 dark:text-amber-400" data-missing="true">
-        Missing: {line.missing}
+        {t('fb_missing', { detail: tx(line.missing || '') })}
       </td>
     )}
   </tr>
-);
+  );
+};
 
 export const FedBalanceSheetPanel: React.FC = () => {
+  const t = useT(TOOLS);
+  const tx = useTx();
   const [reply, setReply] = useState<FedBalanceSheet | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,7 +74,7 @@ export const FedBalanceSheetPanel: React.FC = () => {
     fetch('/api/fed-balance-sheet')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: FedBalanceSheet) => live && setReply(b))
-      .catch((e: Error) => live && setError(`The Fed balance sheet could not be read (${e.message}).`));
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
@@ -79,24 +87,24 @@ export const FedBalanceSheetPanel: React.FC = () => {
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Landmark className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Fed balance sheet
+          {t('fb_title')}
         </h2>
-        <p className="ui-label">The dollar liquidity backdrop: the Federal Reserve's weekly H.4.1 figures and overnight reverse repos, with changes over 4 and 52 weeks.</p>
+        <p className="ui-label">{t('fb_intro')}</p>
       </header>
       <div className="p-4 space-y-3">
-        {!reply && !error && <p className="ui-body">Loading…</p>}
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('fb_error', { detail: error })}</p>}
         {reply && (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-xs text-slate-500 dark:text-slate-400">
-                    <th scope="col" className="text-left font-normal pb-1">Series</th>
-                    <th scope="col" className="text-right font-normal pb-1 pr-3">Latest</th>
-                    <th scope="col" className="text-right font-normal pb-1 pr-3">4 weeks</th>
-                    <th scope="col" className="text-right font-normal pb-1 pr-3">52 weeks</th>
-                    <th scope="col" className="text-left font-normal pb-1 hidden sm:table-cell">Two years</th>
+                    <th scope="col" className="text-left font-normal pb-1">{t('fb_series')}</th>
+                    <th scope="col" className="text-right font-normal pb-1 pr-3">{t('fb_latest')}</th>
+                    <th scope="col" className="text-right font-normal pb-1 pr-3">{t('fb_4w')}</th>
+                    <th scope="col" className="text-right font-normal pb-1 pr-3">{t('fb_52w')}</th>
+                    <th scope="col" className="text-left font-normal pb-1 hidden sm:table-cell">{t('fb_2y')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -109,19 +117,19 @@ export const FedBalanceSheetPanel: React.FC = () => {
             <p className="text-sm" data-net-liquidity="true">
               {net && 'value' in net ? (
                 <>
-                  <span className="font-semibold">Net liquidity {bn(net.value)}</span> on {formatPeriod(net.date)}
-                  {net.change4w !== undefined ? ` (${sg(net.change4w)} over 4 weeks)` : ''}.{' '}
+                  <span className="font-semibold">{t('fb_net', { v: bn(net.value) })}</span>{t('fb_on', { date: formatPeriod(net.date) })}
+                  {net.change4w !== undefined ? t('fb_over4w', { v: sg(net.change4w) }) : ''}.{' '}
                 </>
               ) : (
                 <span className="text-amber-700 dark:text-amber-400" data-missing="true">
-                  Net liquidity: Missing. {net && 'missing' in net ? net.missing : ''}.{' '}
+                  {t('fb_netMissing', { detail: net && 'missing' in net ? tx(net.missing) : '' })}{' '}
                 </span>
               )}
               <span className="text-xs text-slate-500 dark:text-slate-400">
-                Total assets less the Treasury General Account less overnight reverse repos, all on the same Wednesday. A market shorthand, not an official Fed series.
+                {t('fb_netHow')}
               </span>
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Source: {reply.source}. Figures in billions of US dollars.</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t('fb_source', { source: tx(reply.source) })}</p>
             <SourceCredits credits={[requiredCredit('fred')]} />
           </>
         )}
