@@ -153,21 +153,21 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   'Needs official 2-year and 10-year yields, which are not connected yet.': 'Necesita los rendimientos oficiales a 2 y 10 años, que todavía no están conectados.',
   'Needs a ratings feed (licensed); AI estimates are not used.': 'Necesita una fuente de calificaciones (con licencia); no se usan estimaciones de IA.',
   'The free World Bank QEDS feed did not answer, or does not cover this country. Press Refresh now under Research > One country.':
-    'La fuente gratuita QEDS del Banco Mundial no respondió o no cubre este país. Pulsa Actualizar ahora en Investigación > Un país.',
+    'La fuente gratuita QEDS del Banco Mundial no respondió o no cubre este país. Pulse Actualizar ahora en Investigación > Un país.',
   'Needs a debt management office feed or your own file; not connected yet.':
-    'Necesita una fuente de la oficina de gestión de la deuda o tu propio archivo; todavía no está conectada.',
+    'Necesita una fuente de la oficina de gestión de la deuda o su propio archivo; todavía no está conectada.',
   'No watchlist country has an official 10Y yield yet.': 'Ningún país de la lista de seguimiento tiene todavía un rendimiento oficial a 10 años.',
   'Needs short-term external debt, which no connected source provides yet.': 'Necesita la deuda externa a corto plazo, que todavía no da ninguna fuente conectada.',
   'The free IMF data API (api.imf.org) did not answer, or the pull has not run yet. Press Refresh now under Research > One country, or run npm run check:data.':
-    'La API gratuita de datos del FMI (api.imf.org) no respondió, o la descarga todavía no se ha hecho. Pulsa Actualizar ahora en Investigación > Un país, o ejecuta npm run check:data.',
+    'La API gratuita de datos del FMI (api.imf.org) no respondió, o la descarga todavía no se ha hecho. Pulse Actualizar ahora en Investigación > Un país, o ejecute npm run check:data.',
   'The free IMF data API (api.imf.org) did not answer, or COFER could not be read. Run npm run check:data for the reason.':
-    'La API gratuita de datos del FMI (api.imf.org) no respondió, o no se pudo leer COFER. Ejecuta npm run check:data para ver el motivo.',
+    'La API gratuita de datos del FMI (api.imf.org) no respondió, o no se pudo leer COFER. Ejecute npm run check:data para ver el motivo.',
   'The free FRED feed did not answer. Press Refresh now under Research > One country, or add a free FRED key under Menu > Settings.':
-    'La fuente gratuita FRED no respondió. Pulsa Actualizar ahora en Investigación > Un país, o añade una clave gratuita de FRED en Menú > Configuración.',
+    'La fuente gratuita FRED no respondió. Pulse Actualizar ahora en Investigación > Un país, o añada una clave gratuita de FRED en Menú > Configuración.',
   'The exchange rate comes from a free daily exchange-rate service, which did not answer this time. This is usually temporary. Press Refresh now under Research > One country to try again.':
-    'El tipo de cambio viene de un servicio diario gratuito de tipos de cambio, que esta vez no respondió. Suele ser algo pasajero. Pulsa Actualizar ahora en Investigación > Un país para volver a intentarlo.',
+    'El tipo de cambio viene de un servicio diario gratuito de tipos de cambio, que esta vez no respondió. Suele ser algo pasajero. Pulse Actualizar ahora en Investigación > Un país para volver a intentarlo.',
   'The free BIS feed did not answer, or does not cover this currency. Press Refresh now under Research > One country.':
-    'La fuente gratuita del BPI no respondió o no cubre esta moneda. Pulsa Actualizar ahora en Investigación > Un país.',
+    'La fuente gratuita del BPI no respondió o no cubre esta moneda. Pulse Actualizar ahora en Investigación > Un país.',
   'The ECB publishes no reference rate for this currency, or the feed did not answer.': 'El BCE no publica un tipo de referencia para esta moneda, o la fuente no respondió.',
   'Worked out from live inflation, which is missing.': 'Se calcula a partir de la inflación en vivo, que falta.',
   'Worked out from a policy rate, which is missing.': 'Se calcula a partir de una tasa de política, que falta.',
@@ -196,7 +196,7 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   'Worked out from two months of the OECD leading indicator, which is missing.': 'Se calcula a partir de dos meses del indicador adelantado de la OCDE, que faltan.',
   'Worked out from FX volatility and fed funds, which is missing.': 'Se calcula a partir de la volatilidad cambiaria y la tasa de fondos federales, que faltan.',
   'A needed figure did not load: World Bank or WITS trade shares, or for commodity prices the UN Comtrade export mix and the World Bank Pink Sheet. Press Refresh now under Research > One country.':
-    'No se cargó una cifra necesaria: las cuotas de comercio del Banco Mundial o de WITS, o, para los precios de materias primas, la composición de exportaciones de UN Comtrade y el Pink Sheet del Banco Mundial. Pulsa Actualizar ahora en Investigación > Un país.',
+    'No se cargó una cifra necesaria: las cuotas de comercio del Banco Mundial o de WITS, o, para los precios de materias primas, la composición de exportaciones de UN Comtrade y el Pink Sheet del Banco Mundial. Pulse Actualizar ahora en Investigación > Un país.',
   'The International Monetary Fund answered, but has not published this figure for this country. This happens for some small economies, for countries in crisis or conflict, and for figures the IMF stopped estimating. The app leaves it Missing rather than fill the gap.':
     'El Fondo Monetario Internacional respondió, pero no ha publicado esta cifra para este país. Pasa con algunas economías pequeñas, con países en crisis o en conflicto y con cifras que el FMI dejó de estimar. La aplicación la deja como Falta en lugar de rellenar el hueco.',
   'The CFTC reports no futures market for this currency, so there is no free weekly positioning figure.':
@@ -228,7 +228,7 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
 
   // Whole sentences.
   '{n} of {total} figures for {country} are missing, because their source is not connected or did not answer. They read Missing, and no built-in or estimated value is shown in their place. Tap "Why missing?" on any of them for the reason and what would fill it.':
-    'Faltan {n} de {total} cifras de {country}, porque su fuente no está conectada o no respondió. Figuran como Falta, y en su lugar no se muestra ningún valor incorporado ni estimado. Pulsa «¿Por qué falta?» en cualquiera de ellas para ver el motivo y qué la completaría.',
+    'Faltan {n} de {total} cifras de {country}, porque su fuente no está conectada o no respondió. Figuran como Falta, y en su lugar no se muestra ningún valor incorporado ni estimado. Pulse «¿Por qué falta?» en cualquiera de ellas para ver el motivo y qué la completaría.',
   '{country}: no live economic figures yet.': '{country}: todavía no hay cifras económicas en vivo.',
   '{country}: not enough live figures for an issuer reading yet.': '{country}: todavía no hay suficientes cifras en vivo para una lectura del emisor.',
   '{country}: no sustainability reading until the missing figures are live.': '{country}: no hay lectura de sostenibilidad hasta que las cifras que faltan estén en vivo.',

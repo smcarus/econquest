@@ -33,6 +33,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
   Holdings and Tools are in Spanish too: the holdings editor, the book table, signals on your holdings, the book
   and client briefs on screen, the Tools page with every tool and hidden desk, the compare-countries table, research
   notebooks, unit converters, exercises and model sandboxes. Downloaded reviews and notebooks stay English.
+  The Spanish now addresses the reader as usted throughout, the usual form for professional and official readers.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store
