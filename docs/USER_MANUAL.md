@@ -27,15 +27,8 @@ The level is kept in this browser.
 **Language.** The *EN* / *ES* / *FR* button beside the help button switches the app between English,
 Spanish (español) and French (français); each press moves to the next language, and the choice is
 kept in this browser. Each language downloads only when you pick it, so English readers download
-neither and a French reader downloads no Spanish. Spanish covers the whole app. French is being added
-a part at a time: so far the header and Menu button, Workspace with its Briefing panel, Council chat
-with its cards (approval pause, snapshot, explanations, what-if, sign-off, policy documents, charts,
-council documents and the agent steps), the reasons shown under a Missing figure, the Research pages
-(scope bar, section names, Sources), one country's briefs with their figure names and reasons, and
-the panels on one country's other tabs, including the sentences the app writes from the data, the
-watchlist (also when popped out), Your data, the small gap model, Your tests, My holdings, the Tools
-page and its tool panels, and Compare countries; anything not yet
-translated shows in English. Both use the formal "you" (usted, vous). The council's agents still read
+neither and a French reader downloads no Spanish. Spanish and French both cover the whole app.
+Both use the formal "you" (usted, vous). The council's agents still read
 questions in English, so in Spanish or French the chat asks you to type questions in English for now,
 and the suggested questions stay in English. Figures, source names, series names and answers written
 by the AI model are never translated: they show as the source or the model wrote them. Neither

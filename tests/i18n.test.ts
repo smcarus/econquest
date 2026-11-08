@@ -5,7 +5,7 @@ import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
 /** Words spelled the same in French and English; anything else left identical is untranslated. */
-const SAME_IN_FRENCH = new Set(['Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
+const SAME_IN_FRENCH = new Set(['Question {n}', 'momentum', 'macro', 'Document', '1 question', '{n} questions', 'Stable', '{n} pts', 'Sections', 'Markdown', 'Bootstrap', 'Notes', 'Communication', 'stable', 'Concentration', 'Options', 'Instrument', 'Type', 'Date', 'Sanctions', 'Question', 'Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
   'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
   'Violence', 'Violence (%)', 'violence', '{n} points', '{n} pt', '{n} pts', '{value} pts', 'Population', 'projection',
   ' · notes', 'Client', 'Duration', 'Inflation, %', 'Instrument', 'Long', 'long', 'Record', 'Source', 'Type', 'taylor', 'CDS (protection)',
@@ -346,7 +346,7 @@ test('Compare countries: divergence lines, quadrants, MarketEdge notes, scenario
   assert.deepEqual(noFrench, [], 'compare text with no French');
 });
 
-test('Menu dialogs: every key and setting in Settings has Spanish, and so do backup and morning brief lines', async () => {
+test('Menu dialogs: every key and setting in Settings has Spanish and French, and so do backup and morning brief lines', async () => {
   const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { ES, ES_TEXT } = await import('../src/i18n/es');
   attachLanguage('es', ES, ES_TEXT);
@@ -364,9 +364,13 @@ test('Menu dialogs: every key and setting in Settings has Spanish, and so do bac
   }
   const untranslated = s.filter((x) => tx(x) === x);
   assert.deepEqual(untranslated, [], 'Settings text with no Spanish');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  attachLanguage('fr', FR, FR_TEXT);
+  const fx = (x: string) => translateText(x, 'fr');
+  assert.deepEqual(s.filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x), [], 'Settings text with no French');
 });
 
-test('help and glossary: every glossary entry, chart guide, panel introduction and the glossary page have Spanish', async () => {
+test('help and glossary: every glossary entry, chart guide, panel introduction and the glossary page have Spanish and French', async () => {
   const { attachLanguage, translateText } = await import('../src/i18n/lang');
   const { ES, ES_TEXT } = await import('../src/i18n/es');
   attachLanguage('es', ES, ES_TEXT);
@@ -378,6 +382,10 @@ test('help and glossary: every glossary entry, chart guide, panel introduction a
   for (const g of Object.values(CHART_GUIDES)) s.push(g.read, g.life);
   const untranslated = s.filter((x) => tx(x) === x);
   assert.deepEqual(untranslated, [], 'help text with no Spanish');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  attachLanguage('fr', FR, FR_TEXT);
+  const fx = (x: string) => translateText(x, 'fr');
+  assert.deepEqual(s.filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x), [], 'help text with no French');
   const page = glossaryMarkdown(tx);
   assert.ok(page.startsWith('# Glosario'), 'the glossary page title is Spanish');
   assert.ok(!page.includes('**Why it matters.**'), 'the glossary page labels are Spanish');
@@ -446,6 +454,10 @@ test('Reports pages: review steps, levers, lenses, memo types and section headin
   const SAME = new Set(['Fiscal']);
   const untranslated = [...new Set(s)].filter((x) => !SAME.has(x) && tx(x) === x);
   assert.deepEqual(untranslated, [], 'Reports text with no Spanish');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  attachLanguage('fr', FR, FR_TEXT);
+  const fx = (x: string) => translateText(x, 'fr');
+  assert.deepEqual([...new Set(s)].filter((x) => !SAME_IN_FRENCH.has(x) && fx(x) === x), [], 'Reports text with no French');
 });
 
 // French (FR1 to FR4). Areas arrive in parts; an area not translated yet shows in English, but
@@ -453,7 +465,7 @@ test('Reports pages: review steps, levers, lenses, memo types and section headin
 test('every French message file is complete, keeps every placeholder and matches an English file', async () => {
   const { FR } = await import('../src/i18n/fr');
   const byArea = new Map(ALL_CATALOGS.map((c) => [c.area, c]));
-  for (const area of ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels', 'watchlist', 'ownData', 'gapModel', 'yourTests', 'tools']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
+  for (const area of ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels', 'watchlist', 'ownData', 'gapModel', 'yourTests', 'tools', 'menu', 'reports']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
   for (const [area, french] of Object.entries(FR)) {
     const c = byArea.get(area);
     assert.ok(c, `French for ${area}, which has no English file in src/i18n/messages/index.ts`);

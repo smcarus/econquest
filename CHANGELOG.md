@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- French, part 4 (the last): the Menu and its dialogs (Settings with every key and setting, backups, morning
+  brief, About, add a country and the rest), the help at Key help and Full help (chart guides, panel introductions
+  and the whole glossary), and Reports (teaching episodes, saved research, policy reviews and the memo builder).
+  French now covers the whole app, like Spanish. The Settings, help and Reports coverage tests check French too.
 - French, part 3: the watchlist (also when popped out), Your data, the small gap model, Your tests, My holdings and
   the book briefs, the Tools page with its groups, descriptions and tool panels, and Compare countries (MarketEdge,
   divergences, growth and inflation quadrant, scenarios, story leads and the Fed balance sheet). The tool, compare

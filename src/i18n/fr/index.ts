@@ -24,6 +24,11 @@ import { TOOLS_FR } from './tools';
 import { TOOL_TEXT_FR } from './toolText';
 import { TOOLS_CATALOG_FR } from './toolsCatalog';
 import { COMPARE_TEXT_FR } from './compareText';
+import { MENU_FR } from './menu';
+import { KEY_FIELDS_FR } from './keyFieldsText';
+import { GLOSSARY_FR } from './glossaryText';
+import { REPORTS_FR } from './reports';
+import { REPORTS_TEXT_FR } from './reportsText';
 
 export const FR: Record<string, Record<string, string>> = {
   shell: SHELL_FR,
@@ -39,7 +44,9 @@ export const FR: Record<string, Record<string, string>> = {
   gapModel: GAP_MODEL_FR,
   yourTests: YOUR_TESTS_FR,
   tools: TOOLS_FR,
+  menu: MENU_FR,
+  reports: REPORTS_FR,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const FR_TEXT: Record<string, string> = { ...COMPARE_TEXT_FR, ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...TOOL_TEXT_FR, ...TOOLS_CATALOG_FR, ...CHAT_TEXT_FR };
+export const FR_TEXT: Record<string, string> = { ...COMPARE_TEXT_FR, ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...TOOL_TEXT_FR, ...TOOLS_CATALOG_FR, ...KEY_FIELDS_FR, ...GLOSSARY_FR, ...CHAT_TEXT_FR, ...REPORTS_TEXT_FR };
