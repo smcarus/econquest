@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Faster start: Council chat's screens now download the first time the chat or the Agents panel is shown, not
+  with the rest of the app, which takes about 13 KB (compressed) off what every visitor downloads at start.
+  The conversation itself still lives above the pages, so a question keeps running while you move.
 - Spanish (español): an EN / ES button in the header switches the app's own words; the header, Menu and help
   switch come first, the rest follows a part at a time. Translations live in keyed message files (src/i18n/messages/).
   Council chat and Your data are now in Spanish too. The Spanish words load only when Spanish is chosen
