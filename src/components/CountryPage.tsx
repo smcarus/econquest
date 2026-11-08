@@ -324,7 +324,7 @@ export const CountryPage: React.FC<{
                 onClick={onAddCountry}
                 className="mt-3 inline-flex items-center gap-1 text-xs text-blue-700 dark:text-blue-300 hover:underline"
               >
-                <Plus className="w-3 h-3" /> Add another country
+                <Plus className="w-3 h-3" /> {t('addAnother')}
               </button>
             </div>
           </section>

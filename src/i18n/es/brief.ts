@@ -1,0 +1,38 @@
+/** Spanish for src/i18n/messages/brief.ts. Not yet checked by a native speaker. */
+import type { Messages } from '../lang';
+import type { BRIEF } from '../messages/brief';
+
+export const BRIEF_ES: Messages<typeof BRIEF> = {
+  view_economist: 'Economía',
+  title_economist: 'Resumen económico',
+  note_economist: 'Crecimiento, inflación y política monetaria, la trayectoria fiscal y la posición externa.',
+  cta_economist: 'Escribir la nota del país',
+  view_banker: 'Emisor',
+  title_banker: 'Resumen del emisor',
+  note_banker: 'Acceso al mercado, necesidad de financiación, cuándo salir al mercado y precio frente a sus pares.',
+  cta_banker: 'Escribir la nota del emisor',
+  view_official: 'Sostenibilidad',
+  title_official: 'Resumen de sostenibilidad de la deuda',
+  note_official: 'Trayectoria de la deuda, una proyección a cinco años con choques estándar, el ajuste que estabilizaría la deuda y la posición externa.',
+  cta_official: 'Escribir la evaluación',
+  viewAria: 'Vista del resumen',
+  whatItMeans: 'Qué significa: ',
+  rulesNote: 'Estas observaciones son reglas sencillas aplicadas a las cifras en vivo de abajo; no son una previsión ni un consejo. Las cifras que faltan quedan fuera.',
+  rulesGuides: ' «¿Qué es esto?» explica una cifra con palabras sencillas, y «¿Por qué falta?» dice por qué no está una cifra y qué la completaría. El botón de ayuda de arriba fija cuánto se explica.',
+  rulesHover: ' Pasa el puntero sobre una cifra que falta para ver el motivo.',
+  whyMissing: '¿Por qué falta?',
+  whatIsThis: '¿Qué es esto?',
+  howToRead: 'Cómo leerla: ',
+  explain: 'Explicar',
+  explainPanelTitle: 'Pregunta al consejo qué muestra este panel y qué significa',
+  explainRowTitle: 'Pregunta al consejo qué significa esta cifra y por qué está donde está',
+  marketEdgeNote: 'Qué está haciendo la economía, qué descuentan los mercados y dónde no coinciden.',
+  sec_economy: 'Economía y política',
+  sec_markets: 'Mercados y posicionamiento',
+  sec_risks: 'Riesgos y vínculos',
+  emptyOne: 'Todavía no disponible: 1 panel no tiene cifras para {country}',
+  emptyMany: 'Todavía no disponible: {n} paneles no tienen cifras para {country}',
+  emptyOpen: '{list}. Ábrelo para ver qué necesita cada uno.',
+  compareLine: '{country} frente al resto de tu lista de seguimiento y a los mercados de referencia está en Investigación › Comparar países.',
+  openCompare: 'Abrir Comparar',
+};
