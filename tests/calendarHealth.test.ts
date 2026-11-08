@@ -52,9 +52,9 @@ test('thresholds sit at the edges stated', () => {
 });
 
 test('the real calendar reads without error and every row names its source', () => {
-  const h = calendarHealth(OFFICIAL_CALENDAR, ['BRA', 'USA'], localDay(new Date(2026, 10, 8)));
+  const h = calendarHealth(OFFICIAL_CALENDAR, ['BRA', 'SAU'], localDay(new Date(2026, 10, 8)));
   assert.ok(h.rows.length > 0);
   assert.ok(h.rows.every((r) => /^https:\/\//.test(r.sourceUrl) && r.sourceName));
-  assert.ok(h.noDecisionDates.includes('USA'));
+  assert.ok(h.noDecisionDates.includes('SAU'));
   assert.ok(!h.noDecisionDates.includes('BRA'));
 });
