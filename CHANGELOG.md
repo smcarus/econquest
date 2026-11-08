@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Small referee (opt-in): Menu > Settings > AI model has a new "Allow a 14B referee" box, off by default. With it
+  ticked, a mid-size model (9B to 29B, for example qwen2.5:14b) can be the referee, which needs about half the memory
+  of the 32B model; every chat summary and debate it judges says "Small referee". With it unticked, a mid-size
+  referee setting is ignored and the 32B model is used. `OLLAMA_ALLOW_SMALL_REFEREE=on npm run go` also downloads
+  the 14B model. 30B and larger models stay full referees; 8B or less stays flagged.
 - Lighter checks on pull requests: a change that only touches writing (Markdown files, docs/, licence files) runs
   the type check and tests but skips the build, size check and browser tests; the app-image check runs only when
   the Dockerfile, deploy files, server code, package files or the checks themselves change; a newer push to the

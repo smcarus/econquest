@@ -6,7 +6,7 @@
 
 import { AIRuntimeConfig, SubAgentReport } from '../types/council.ts';
 import { geminiModel } from '../utils/geminiModel';
-import { DEFAULT_REFEREE_MODEL, isRefereeStep, refereeModelOrDefault } from '../utils/refereeModel';
+import { DEFAULT_REFEREE_MODEL, allowedRefereeModel, isRefereeStep, refereeModelOrDefault } from '../utils/refereeModel';
 import { ThinkingLevel, GoogleGenAI } from '@google/genai';
 import { describeFailures, isLongLocalStep, localStepTimeoutMs, LONG_CHAT_STEPS, type ModelAttempt, ModelWaitError, ollamaHasModel, type StreamWait, streamWaitFor } from '../utils/modelFailure';
 import { ollamaBaseUrlDefault } from '../utils/serverRuntime';
@@ -84,7 +84,9 @@ function resolveStepModelFromGuiConfig(
     );
   }
   if (isDeepCouncilStep) {
-    return deskOverrides.supremeCouncil?.trim() || deepDefault;
+    // L1: a mid-size referee (for example 14B) runs only when "Allow a 14B referee" is on.
+    const allowSmall = cfg.allowSmallReferee ?? serverGuiRuntimeConfig.allowSmallReferee ?? process.env.OLLAMA_ALLOW_SMALL_REFEREE === 'on';
+    return allowedRefereeModel(deskOverrides.supremeCouncil?.trim() || deepDefault, allowSmall);
   }
   return quickDefault;
 }

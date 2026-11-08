@@ -42,6 +42,10 @@ validation), and nothing in it is a recommendation to buy or sell. Every export 
 1. **Start the app** (README: Docker with `start-mac.command`, or `npm run dev`) and open it in the
    browser. Menu > Settings > AI model > *Test* checks the model; the Supreme Council and summaries use
    the referee model (qwen2.5:32b by default, `ollama pull qwen2.5:32b` first).
+   On a smaller computer you can tick *Allow a 14B referee* there instead and pick a 14B model
+   (`ollama pull qwen2.5:14b`). It needs about half the memory of the 32B model, but its judgements
+   are less reliable, so every answer it judges says "Small referee". With the box unticked, a 14B
+   setting is ignored and the 32B model is used. A model of 8B or less is never a good referee.
 2. **Check the data.** Menu > Tools > *Data connections* shows each source as Connected, Needs setup
    or No answer. Add the free keys you want (FRED, EIA, UN Comtrade) under Menu > Settings.
 3. **Save it for offline use.** Menu > Offline data > *Download all country data*. After that the app

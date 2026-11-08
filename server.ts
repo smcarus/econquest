@@ -3774,6 +3774,7 @@ async function startServer() {
         serverGuiRuntimeConfig.ollamaQuickModel || process.env.OLLAMA_QUICK_MODEL || 'qwen2.5:7b',
       ollamaDeepModel:
         refereeModelOrDefault(serverGuiRuntimeConfig.ollamaDeepModel) || refereeModelOrDefault(process.env.OLLAMA_DEEP_MODEL) || DEFAULT_REFEREE_MODEL,
+      allowSmallReferee: serverGuiRuntimeConfig.allowSmallReferee ?? process.env.OLLAMA_ALLOW_SMALL_REFEREE === 'on',
       openAiBaseUrl:
         serverGuiRuntimeConfig.openAiBaseUrl ||
         process.env.OPENAI_COMPATIBLE_BASE_URL ||
@@ -3818,6 +3819,7 @@ async function startServer() {
       if (incoming.ollamaBaseUrl) process.env.OLLAMA_BASE_URL = incoming.ollamaBaseUrl;
       if (incoming.ollamaQuickModel) process.env.OLLAMA_QUICK_MODEL = incoming.ollamaQuickModel;
       if (incoming.ollamaDeepModel) process.env.OLLAMA_DEEP_MODEL = incoming.ollamaDeepModel;
+      if (typeof incoming.allowSmallReferee === 'boolean') process.env.OLLAMA_ALLOW_SMALL_REFEREE = incoming.allowSmallReferee ? 'on' : 'off';
       if (incoming.providerMode) process.env.DEFAULT_AI_PROVIDER = incoming.providerMode;
 
       const dockerCfg = incoming.dockerGuiConfig || {
@@ -3838,6 +3840,7 @@ async function startServer() {
         `OLLAMA_BASE_URL=${incoming.ollamaBaseUrl || 'http://host.docker.internal:11434'}`,
         `OLLAMA_QUICK_MODEL=${incoming.ollamaQuickModel || 'qwen2.5:7b'}`,
         `OLLAMA_DEEP_MODEL=${refereeModelOrDefault(incoming.ollamaDeepModel) || DEFAULT_REFEREE_MODEL}`,
+        `OLLAMA_ALLOW_SMALL_REFEREE=${serverGuiRuntimeConfig.allowSmallReferee ? 'on' : 'off'}`,
         `OLLAMA_KEEP_ALIVE=${dockerCfg.keepAlive || '24h'}`,
         `OLLAMA_ORIGINS=${dockerCfg.corsOrigins || '*'}`,
         `OPENAI_COMPATIBLE_BASE_URL=${incoming.openAiBaseUrl || 'http://localhost:8000/v1'}`,

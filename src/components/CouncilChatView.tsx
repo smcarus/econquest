@@ -302,6 +302,11 @@ export const AskCouncilPanel: React.FC<{
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       {tr('debateFoot', { provider: t.debate.provider ? ` (${t.debate.provider})` : '' })}
                     </p>
+                    {smallRefereeNote(t.debate.provider) && (
+                      <p className="text-xs text-amber-800 dark:text-amber-300" data-council-small-referee="debate">
+                        <SettingsText text={smallRefereeNote(t.debate.provider)!} />
+                      </p>
+                    )}
                   </>
                 ) : (
                   <p className="text-xs text-slate-500 dark:text-slate-400">
