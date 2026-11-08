@@ -18,7 +18,6 @@ import type { PolicyDoc } from '../utils/policyDocs';
 import { findChallenges, type DebateResult } from '../utils/agentDebate';
 import { AgentNetwork, useCouncilProgress } from './AgentNetwork';
 import { ExplainAnswer } from './ExplainAnswer';
-import { WhatIfCard } from './WhatIfCard';
 import { parseWhatIf } from '../utils/fiscalWhatIf';
 import { DocumentCards, DocumentViewer, SaveToReportsButton } from './CouncilDocuments';
 import { toAgentDocuments, toSynthesisDocument, type CouncilDocument } from '../utils/agentDocument';
@@ -55,6 +54,7 @@ import { chatSuggestions, SUGGESTION_KIND_LABEL } from '../utils/chatSuggestions
 import { loadHoldings } from '../utils/holdings';
 // The chart card (recharts) loads only when an answer has a chart.
 const CouncilChartCard = lazyNamed(() => import('./CouncilChart'), 'CouncilChartCard');
+const WhatIfCard = lazyNamed(() => import('./WhatIfCard'), 'WhatIfCard');
 
 const AI_RUNTIME_STORAGE_KEY = 'econquest_ai_runtime_config_v1';
 function runtimeConfig(): Record<string, unknown> {
@@ -542,7 +542,11 @@ export const AskCouncilPanel: React.FC<{
         {(() => {
           const wq = parseWhatIf(t.asked.question);
           return wq
-            ? t.asked.plan.countries.slice(0, 2).map((c) => <WhatIfCard key={`whatif-${t.asked.askedAt}-${c.iso3}`} question={wq} item={c} />)
+            ? t.asked.plan.countries.slice(0, 2).map((c) => (
+                <React.Suspense key={`whatif-${t.asked.askedAt}-${c.iso3}`} fallback={<p className="text-xs text-slate-500 dark:text-slate-400">Working out the scenario…</p>}>
+                  <WhatIfCard question={wq} item={c} />
+                </React.Suspense>
+              ))
             : null;
         })()}
 
