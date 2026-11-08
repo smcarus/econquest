@@ -41,8 +41,9 @@ import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
-import { TNM_CITATION, multiplierView } from './fiscalMultipliers';
-import { parseWhatIf, runWhatIf, whatIfSentence } from './fiscalWhatIf';
+import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
+import { flatPath, parseWhatIf, runWhatIf, whatIfSentence } from './fiscalWhatIf';
+import { BUDGET_SEMI_ELASTICITY, BUDGET_SEMI_ELASTICITY_SOURCE, DEFENCE, PUBLIC_INVESTMENT, type MultiplierPath } from '../data/spendingMultipliers';
 import { sectorLine, sectorsInQuestion, TABLE_LABEL } from './govSpending';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
@@ -634,8 +635,15 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
           : cofog
             ? { pct: cofog.pct, year: cofog.year, source: TABLE_LABEL[cofog.table] }
             : undefined;
+      // Output paths (src/data/spendingMultipliers.ts): a defence cut on Barro and Redlick, money put
+      // into public investment on IMF WP/15/95, anything else on the IMF bucket range held as a level.
+      const bucket = mv ? flatPath(mv.guide.low, mv.guide.high, `IMF bucket range ${mv.guide.low}-${mv.guide.high} (${mv.guide.bucket}, first year, held as a level), ${TNM_CITATION}`) : undefined;
+      const asPath = (p: MultiplierPath) => ({ low: p.low, high: p.high, source: `${p.source}, ${p.scope}; ${p.fill}` });
+      const cutPath = sec.code === 'GF02' ? asPath(DEFENCE) : bucket;
+      const respendPath = whatIf.destination === 'investment' ? asPath(PUBLIC_INVESTMENT) : bucket;
+      const respendLabel = whatIf.destination === 'investment' ? 'public investment' : 'other spending';
       const run =
-        spend && dsa && inputs?.length && mv
+        spend && dsa && inputs?.length && mv && cutPath
           ? runWhatIf({
               spend,
               share: whatIf.share,
@@ -643,21 +651,32 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
               debtNow: dsa.debtNow,
               year: dsa.year,
               baseline: inputs,
-              multiplier: { low: mv.guide.low, high: mv.guide.high, source: `${mv.guide.bucket} bucket, ${TNM_CITATION}` },
+              cut: cutPath,
+              ...(respendPath ? { respend: respendPath } : {}),
+              ...(BUDGET_SEMI_ELASTICITY[it.iso3] !== undefined ? { semiElasticity: { value: BUDGET_SEMI_ELASTICITY[it.iso3], source: BUDGET_SEMI_ELASTICITY_SOURCE } } : {}),
             })
           : null;
       if (run && spend) {
         figures.push({ label: `What-if: ${sec.label.toLowerCase()} spending ${whatIf.said}`, value: `${spend.pct.toFixed(1)}% to ${run.newSpendPct.toFixed(1)}% of GDP (${sgn(-run.cutPp)} pts)`, source: `${spend.source}, ${spend.year}, changed as the question says`, tag: 'model' });
+        const range = (a: number, b: number) => (a === b ? `${sgn(a)}%` : `${sgn(a)}% to ${sgn(b)}%`);
         for (const r of run.runs) {
-          const how = r.use === 'respend' ? 'spent elsewhere' : 'kept to cut the deficit';
+          const how = r.use === 'respend' ? `spent on ${respendLabel}` : 'kept to cut the deficit';
           figures.push(
-            { label: `What-if, money ${how}: first-year growth effect`, value: r.growth.low === r.growth.high ? `${sgn(r.growth.low)}%` : `${sgn(r.growth.low)}% to ${sgn(r.growth.high)}%`, source: `multiplier range x spending change; ${run.method}`, tag: 'model' },
+            { label: `What-if, money ${how}: first-year growth effect`, value: range(r.growth.low, r.growth.high), source: run.method, tag: 'model' },
+            { label: `What-if, money ${how}: output level by ${r.level.year}`, value: range(r.level.low, r.level.high), source: 'spending change x the published output path for each year', tag: 'model' },
+            ...(r.feedback ? [{ label: `What-if, money ${how}: budget response to output in ${r.level.year}`, value: `${range(r.feedback.low, r.feedback.high).replace(/%/g, '')} pts of GDP`, source: BUDGET_SEMI_ELASTICITY_SOURCE, tag: 'model' as const }] : []),
             { label: `What-if, money ${how}: debt in ${r.debtEnd.year}`, value: r.debtEnd.low === r.debtEnd.high ? `${p1(r.debtEnd.low)} of GDP` : `${p1(r.debtEnd.low)} to ${p1(r.debtEnd.high)} of GDP`, source: `against ${p1(r.debtEnd.baseline)} on the IMF baseline; debt identity re-run with the change`, tag: 'model' }
           );
-          parts.push(whatIfSentence(r, run.cutPp));
+          parts.push(whatIfSentence(r, run.cutPp, respendLabel));
         }
-        if (run.runs.some((r) => r.use === 'respend')) {
-          parts.push(`The cited multiplier range does not tell ${sec.label.toLowerCase()} apart from other spending, so respending nets to about zero here; a different multiplier for where the money goes would have to be set and sourced.`);
+        if (run.runs.some((r) => r.use === 'respend') && respendPath === cutPath) {
+          parts.push(`The cited range does not tell ${sec.label.toLowerCase()} apart from other spending, so respending nets to about zero here; saying where the money goes (public investment, for example) uses a different published path.`);
+        }
+        if (whatIf.destination === 'investment' && !IMF_ADVANCED.has(it.iso3)) {
+          parts.push('The public investment path is an advanced-economy estimate.');
+        }
+        if (BUDGET_SEMI_ELASTICITY[it.iso3] === undefined) {
+          missing.push(`${it.countryName}: the what-if leaves out the budget's response to output, as no published semi-elasticity is in the app (European Commission table covers EU members and the UK)`);
         }
       } else {
         const need = [!spend ? `${sec.label.toLowerCase()} spending (${sec.code === 'GF02' ? 'World Bank/SIPRI or ' : ''}Eurostat or IMF COFOG)` : '', !inputs?.length ? 'the IMF baseline inputs for the debt path' : '', !mv ? 'IMF debt for the multiplier range' : ''].filter(Boolean);

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { parseWhatIf, runWhatIf, whatIfSentence } from '../src/utils/fiscalWhatIf.ts';
+import { flatPath, parseWhatIf, runWhatIf, whatIfSentence } from '../src/utils/fiscalWhatIf.ts';
+import { BUDGET_SEMI_ELASTICITY, DEFENCE, PUBLIC_INVESTMENT } from '../src/data/spendingMultipliers.ts';
 import { isExplainQuestion } from '../src/utils/explain.ts';
 import { planCouncil } from '../src/utils/askCouncil.ts';
 
@@ -34,7 +35,8 @@ test('what-if questions are explanations, and "budget" alone no longer means the
 });
 
 const baseline = [2026, 2027, 2028, 2029, 2030].map((y) => ({ year: String(y), g: 2, pi: 2.5, i: 3.5, pb: -3 }));
-const inp = { spend: { pct: 3.1, year: '2025', source: 'World Bank (SIPRI)' }, share: 0.5, debtNow: 120, year: '2025', baseline, multiplier: { low: 0.4, high: 0.6, source: 'medium bucket' } };
+const bucket = flatPath(0.4, 0.6, 'medium bucket');
+const inp = { spend: { pct: 3.1, year: '2025', source: 'World Bank (SIPRI)' }, share: 0.5, debtNow: 120, year: '2025', baseline, cut: bucket };
 
 test('respending at the same multiplier leaves growth and debt on the baseline', () => {
   const r = runWhatIf({ ...inp, uses: ['respend'] })!;
@@ -44,7 +46,7 @@ test('respending at the same multiplier leaves growth and debt on the baseline',
   assert.equal(run.pbChangePp, 0);
   assert.deepEqual(run.growth, { low: 0, high: 0 });
   assert.equal(run.debtEnd.low, run.debtEnd.baseline);
-  assert.match(whatIfSentence(run, r.cutPp), /borrowing is unchanged/);
+  assert.match(whatIfSentence(run, r.cutPp), /spent on other spending, first-year growth moves 0\.0%/);
 });
 
 test('keeping the money lowers debt despite the growth hit, and a higher respend multiplier adds growth', () => {
@@ -53,7 +55,7 @@ test('keeping the money lowers debt despite the growth hit, and a higher respend
   assert.equal(run.pbChangePp, 1.55);
   assert.deepEqual(run.growth, { low: -0.93, high: -0.62 });
   assert.ok(run.debtEnd.high < run.debtEnd.baseline - 5);
-  const up = runWhatIf({ ...inp, uses: ['respend'], respendMultiplier: { low: 1, high: 1.5, source: 'your setting' } })!.runs[0];
+  const up = runWhatIf({ ...inp, uses: ['respend'], respend: flatPath(1, 1.5, 'your setting') })!.runs[0];
   assert.ok(up.growth.low > 0 && up.debtEnd.high < up.debtEnd.baseline);
 });
 
@@ -87,4 +89,24 @@ test('govSpending parses both tables, keeps the newer year, and says Missing pla
   assert.ok('value' in line && line.value === '0.8% of GDP' && /2023 \(3 years old\)/.test(line.source));
   const miss = sectorLine('IND', 'India', 'GF0403', m);
   assert.ok('missing' in miss && /India: no free source has fuel and energy spending/.test(miss.missing));
+});
+
+test('the cited paths: halving US defence into public investment adds output over time; the EU budget responds', () => {
+  assert.equal(parseWhatIf(SAM_Q)!.destination, 'investment');
+  assert.equal(parseWhatIf('What if Turkey halved defence spending?')!.destination, 'other');
+  // Abiad, Furceri and Topalova (2015): 0.4 then 1.5 central; 0.2-0.7 and 0.8-2.6 by efficiency.
+  assert.deepEqual([PUBLIC_INVESTMENT.low[0], PUBLIC_INVESTMENT.low[3], PUBLIC_INVESTMENT.high[0], PUBLIC_INVESTMENT.high[3]], [0.2, 0.7, 0.8, 2.6]);
+  // Barro and Redlick (2011): 0.4-0.5 at once, 0.6-0.7 over two years.
+  assert.deepEqual([DEFENCE.low[0], DEFENCE.high[0], DEFENCE.low[1], DEFENCE.high[1]], [0.4, 0.5, 0.6, 0.7]);
+  const r = runWhatIf({ ...inp, uses: ['respend'], cut: { ...DEFENCE }, respend: { ...PUBLIC_INVESTMENT } })!.runs[0];
+  // Year one: -1.55 x 0.5 + 1.55 x 0.2 at the weak end; -1.55 x 0.4 + 1.55 x 0.8 at the strong end.
+  assert.deepEqual(r.growth, { low: -0.46, high: 0.62 });
+  // Year five: -1.55 x 0.7 + 1.55 x 0.7 = 0 at the weak end; -1.55 x 0.6 + 1.55 x 2.6 = 3.1 at the strong end.
+  assert.deepEqual([r.level.low, r.level.high], [0, 3.1]);
+  assert.equal(r.feedback, undefined);
+  assert.equal(BUDGET_SEMI_ELASTICITY.DEU, 0.504);
+  const eu = runWhatIf({ ...inp, uses: ['deficit'], semiElasticity: { value: 0.504, source: 'EC DP 098' } })!.runs[0];
+  const noFeedback = runWhatIf({ ...inp, uses: ['deficit'] })!.runs[0];
+  // The output loss weakens the budget, so debt ends a little higher with the feedback in.
+  assert.ok(eu.feedback!.low < 0 && eu.debtEnd.low > noFeedback.debtEnd.low);
 });
