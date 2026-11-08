@@ -11,6 +11,11 @@ import { COUNCIL_FR } from './council';
 import { CHAT_FR } from './chat';
 import { MISSING_FR } from './missing';
 import { CHAT_TEXT_FR } from './chatText';
+import { RESEARCH_FR } from './research';
+import { BRIEF_FR } from './brief';
+import { BRIEF_TEXT_FR } from './briefText';
+import { PANELS_FR } from './panels';
+import { PANEL_TEXT_FR } from './panelText';
 
 export const FR: Record<string, Record<string, string>> = {
   shell: SHELL_FR,
@@ -18,7 +23,10 @@ export const FR: Record<string, Record<string, string>> = {
   workspace: WORKSPACE_FR,
   council: COUNCIL_FR,
   chat: CHAT_FR,
+  research: RESEARCH_FR,
+  brief: BRIEF_FR,
+  panels: PANELS_FR,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const FR_TEXT: Record<string, string> = { ...MISSING_FR, ...CHAT_TEXT_FR };
+export const FR_TEXT: Record<string, string> = { ...MISSING_FR, ...BRIEF_TEXT_FR, ...PANEL_TEXT_FR, ...CHAT_TEXT_FR };

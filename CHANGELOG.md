@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- French, part 2: the Research pages (scope bar, section names, Sources), one country's three briefs with their
+  figure names, reasons and meanings, and every panel on one country's other tabs, including the sentences the app
+  writes from the data (debt sustainability, policy rules, event studies, scenarios, track record and the rest).
+  Tests check that every brief and panel sentence the app can build has French, as they already do for Spanish.
 - French, part 1: the language button now goes English, Español, Français. French downloads only when picked
   (its own file, separate from the Spanish) and covers the header, Workspace and its Briefing panel, Council chat
   and its cards, and the reasons a figure shows as Missing, in the formal "vous". Anything not translated yet

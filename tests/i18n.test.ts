@@ -4,6 +4,11 @@ import { attachLanguage, defineMessages, LANGS, nextLang, parseLang, placeholder
 import { ALL_CATALOGS } from '../src/i18n/messages';
 import { ES } from '../src/i18n/es';
 
+/** Words spelled the same in French and English; anything else left identical is untranslated. */
+const SAME_IN_FRENCH = new Set(['Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade',
+  'Articles', 'Coefficient', 'Date', 'Excel', 'Inflation {inf}, {basis}{gap}', 'Option', 'Point', 'Programmes', 'Sanctions', 'Sources',
+  'Violence', 'Violence (%)', 'violence', '{n} points', '{n} pt', '{n} pts', '{value} pts', 'Population', 'projection']);
+
 test('languages: English, Spanish and French; anything else reads as English', () => {
   assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es', 'fr']);
   assert.equal(parseLang('es'), 'es');
@@ -167,6 +172,10 @@ test('the brief panels: every title, figure name, reason and meaning they build 
     }
   const untranslated = [...need].filter((s) => translateText(s, 'es') === s);
   assert.deepEqual(untranslated, [], 'brief text with no Spanish');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  attachLanguage('fr', FR, FR_TEXT);
+  const noFrench = [...need].filter((s) => translateText(s, 'fr') === s && !SAME_IN_FRENCH.has(s));
+  assert.deepEqual(noFrench, [], 'brief text with no French');
 });
 
 test('a pattern swaps a whole sentence and keeps what the app put in it', async () => {
@@ -247,6 +256,10 @@ test('the one-country panels: sentences, labels and reasons the app builds in En
     s.push(grVarSentence('Brazil', { blocks: [{ basis: 'world', stress: { months: 40, var95: 6.1, es95: 8.2 }, all: { months: 300, var95: 4.2, es95: 6 }, scenario }] } as never));
   const untranslated = s.filter((x) => tx(x) === x || / the | weaker | stronger | points? lower| higher than/.test(tx(x)));
   assert.deepEqual(untranslated, [], 'panel text with no Spanish');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr');
+  attachLanguage('fr', FR, FR_TEXT);
+  const noFrench = s.filter((x) => (translateText(x, 'fr') === x && !SAME_IN_FRENCH.has(x)) || / the | weaker | stronger | points? lower| higher than/.test(translateText(x, 'fr')));
+  assert.deepEqual(noFrench, [], 'panel text with no French');
 });
 
 test('Holdings and Tools: tool names, briefs, signals and tool reasons the app builds in English have Spanish', async () => {
@@ -423,12 +436,10 @@ test('Reports pages: review steps, levers, lenses, memo types and section headin
 
 // French (FR1 to FR4). Areas arrive in parts; an area not translated yet shows in English, but
 // every area that is here must be complete, and the parts done so far must stay here.
-/** Words spelled the same in French and English; anything else left identical is untranslated. */
-const SAME_IN_FRENCH = new Set(['Menu', 'Agents', '1 position', '{n} positions', '1 document', '{n} documents', 'Inflation', 'Cycle', 'Question', 'Instructions', '{n} pages, ', '1 page, ', 'Tests', 'Image', 'Documents', '{num} passages', '1 passage', 'Cascade']);
 test('every French message file is complete, keeps every placeholder and matches an English file', async () => {
   const { FR } = await import('../src/i18n/fr');
   const byArea = new Map(ALL_CATALOGS.map((c) => [c.area, c]));
-  for (const area of ['shell', 'common', 'workspace', 'council', 'chat']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
+  for (const area of ['shell', 'common', 'workspace', 'council', 'chat', 'research', 'brief', 'panels']) assert.ok(FR[area], `${area} has no French in src/i18n/fr/index.ts`);
   for (const [area, french] of Object.entries(FR)) {
     const c = byArea.get(area);
     assert.ok(c, `French for ${area}, which has no English file in src/i18n/messages/index.ts`);
@@ -478,6 +489,7 @@ test('French loads on its own: it does not change the Spanish, and English stays
   assert.equal(translateText('Needs setup', 'fr'), 'À configurer');
   assert.equal(translateText('Needs setup', 'es'), 'Por configurar');
   assert.equal(translateText('{num} months of imports'.replace('{num}', '4.2'), 'fr'), "4.2 mois d'importations");
+  assert.equal(translateText('Brazil: inflation 4.6% against a 3.0% target.', 'fr'), 'Brazil : inflation de 4.6% pour une cible de 3.0%.');
   // An area with no French yet falls back to English, never to Spanish or a bare key.
   const later = defineMessages('demo-fr-later', { a: 'Apple' }, { a: 'Manzana' });
   assert.equal(translate(later, 'fr', 'a'), 'Apple');

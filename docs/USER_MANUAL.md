@@ -30,7 +30,9 @@ kept in this browser. Each language downloads only when you pick it, so English 
 neither and a French reader downloads no Spanish. Spanish covers the whole app. French is being added
 a part at a time: so far the header and Menu button, Workspace with its Briefing panel, Council chat
 with its cards (approval pause, snapshot, explanations, what-if, sign-off, policy documents, charts,
-council documents and the agent steps) and the reasons shown under a Missing figure; anything not yet
+council documents and the agent steps), the reasons shown under a Missing figure, the Research pages
+(scope bar, section names, Sources), one country's briefs with their figure names and reasons, and
+the panels on one country's other tabs, including the sentences the app writes from the data; anything not yet
 translated shows in English. Both use the formal "you" (usted, vous). The council's agents still read
 questions in English, so in Spanish or French the chat asks you to type questions in English for now,
 and the suggested questions stay in English. Figures, source names, series names and answers written
