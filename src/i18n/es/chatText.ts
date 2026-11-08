@@ -54,6 +54,7 @@ export const CHAT_TEXT_ES: Record<string, string> = {
   "No AI model answered: {detail}. Set it up or test it under Menu > Settings > AI model.": "Ningún modelo de IA respondió: {detail}. Configúrelo o pruébelo en Menú > Configuración > Modelo de IA.",
   "no model is set up": "no hay ningún modelo configurado",
   "The summary step failed ({detail}).": "El paso de resumen falló ({detail}).",
+  "Small referee: {tag} judged this answer. It needs less memory than the 32B default but its judgements are less reliable. Change it under Menu > Settings > AI model.": "Árbitro pequeño: {tag} juzgó esta respuesta. Necesita menos memoria que el modelo de 32B por defecto, pero sus juicios son menos fiables. Cámbielo en Menú > Configuración > Modelo de IA.",
   "The referee ran on {tag}, a small model. Set your largest model as the Referee model under Menu > Settings > AI model.": "El árbitro se ejecutó con {tag}, un modelo pequeño. Elija su modelo más grande como modelo árbitro en Menú > Configuración > Modelo de IA.",
   "Where it stands": "Dónde se sitúa",
   "Correlation": "Correlación",

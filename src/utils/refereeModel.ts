@@ -9,6 +9,12 @@
  * Picking agents and the desk agents stay on the fast model. A referee model of 8B or less is
  * flagged in Settings and under each answer, so a small model never referees unnoticed.
  *
+ * Small referee (Sam, 2026-11-08, plan item L1): a mid-size referee such as a 14B model needs about
+ * half the memory of the 32B default, so the council can run on smaller computers. It is opt-in:
+ * Menu > Settings > AI model > "Allow a 14B referee" (off by default). With the switch off, a
+ * mid-size referee setting is replaced by the 32B default; with it on, every answer it judges
+ * carries a "small referee" note. 30B and larger count as full referees (gemma4:31b, qwen3:30b).
+ *
  * Browser-safe.
  */
 
@@ -36,11 +42,34 @@ export function largestModel(installed: string[]): string | undefined {
   return [...installed].filter((t) => (modelSizeB(t) ?? 0) > SMALL_REFEREE_MAX_B).sort((a, b) => (modelSizeB(b) ?? 0) - (modelSizeB(a) ?? 0))[0];
 }
 
-/** The note under an answer when its referee ran on a small model; null otherwise. Reads the provider text ("Local Ollama (qwen2.5:7b · Referee)"). */
+/** A referee of this size or larger is a full referee. */
+export const FULL_REFEREE_MIN_B = 30;
+
+export type RefereeTier = 'small' | 'mid' | 'full';
+
+/** small: 8B or less (flagged); mid: 9B to 29B (needs the opt-in, labelled); full: 30B or more, or a tag that does not say its size. */
+export function refereeTier(tag: string | undefined): RefereeTier {
+  const b = modelSizeB(tag);
+  if (b === null) return 'full';
+  if (b <= SMALL_REFEREE_MAX_B) return 'small';
+  return b < FULL_REFEREE_MIN_B ? 'mid' : 'full';
+}
+
+export const isMidModel = (tag: string | undefined) => refereeTier(tag) === 'mid';
+
+/** The referee model actually used: a mid-size model only when the opt-in is on, else the 32B default. */
+export function allowedRefereeModel(tag: string, allowSmallReferee: boolean | undefined): string {
+  return isMidModel(tag) && !allowSmallReferee ? DEFAULT_REFEREE_MODEL : tag;
+}
+
+/** The note under an answer when its referee ran on a small or mid-size model; null otherwise. Reads the provider text ("Local Ollama (qwen2.5:7b · Referee)"). */
 export function smallRefereeNote(provider: string | undefined): string | null {
   const tag = /\(([^\s·)]+)/.exec(provider || '')?.[1];
-  if (!tag || !isSmallModel(tag)) return null;
-  return `The referee ran on ${tag}, a small model. Set your largest model as the Referee model under Menu > Settings > AI model.`;
+  if (!tag) return null;
+  const tier = refereeTier(tag);
+  if (tier === 'small') return `The referee ran on ${tag}, a small model. Set your largest model as the Referee model under Menu > Settings > AI model.`;
+  if (tier === 'mid') return `Small referee: ${tag} judged this answer. It needs less memory than the 32B default but its judgements are less reliable. Change it under Menu > Settings > AI model.`;
+  return null;
 }
 
 /** Sam's referee (2026-11-05): Qwen 2.5, 32B. Pull it once with "ollama pull qwen2.5:32b". */

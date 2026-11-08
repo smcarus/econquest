@@ -685,6 +685,8 @@ export interface AIRuntimeConfig {
   ollamaBaseUrl: string;
   ollamaQuickModel: string;
   ollamaDeepModel: string;
+  /** L1 (Sam, 2026-11-08): lets a mid-size referee (9B to 29B, for example 14B) judge answers, each labelled "small referee". Off by default. */
+  allowSmallReferee?: boolean;
   openAiBaseUrl: string;
   openAiModel: string;
   webhookTargetUrl: string;

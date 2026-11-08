@@ -22,6 +22,10 @@ DOCKER_PORT="${PORT:-3737}"
 DEV_PORT=3000
 QUICK_MODEL="${OLLAMA_QUICK_MODEL:-qwen2.5:7b}"
 DEEP_MODEL="${OLLAMA_DEEP_MODEL:-qwen2.5:32b}"
+# Small referee (opt-in): OLLAMA_ALLOW_SMALL_REFEREE=on npm run go also downloads the 14B model.
+SMALL_REFEREE_MODEL="${OLLAMA_SMALL_REFEREE_MODEL:-qwen2.5:14b}"
+PULL_MODELS=("${QUICK_MODEL}" "${DEEP_MODEL}")
+[ "${OLLAMA_ALLOW_SMALL_REFEREE:-off}" = "on" ] && PULL_MODELS+=("${SMALL_REFEREE_MODEL}")
 LOG_DIR="${ROOT}/data/local/logs"
 DEV_LOG="${LOG_DIR}/dev.log"
 DEV_PID="${LOG_DIR}/dev.pid"
@@ -67,7 +71,7 @@ show_status() {
   if http_ok "${DEV_PORT}"; then echo "Dev server   : up    http://localhost:${DEV_PORT}   (log: ${DEV_LOG})"; else echo "Dev server   : down  (port ${DEV_PORT})"; fi
   if curl -sf -m 3 http://127.0.0.1:11434/api/tags >/dev/null 2>&1; then
     echo "Ollama       : up    port 11434"
-    for m in "${QUICK_MODEL}" "${DEEP_MODEL}"; do
+    for m in "${PULL_MODELS[@]}"; do
       if ollama list 2>/dev/null | awk '{print $1}' | grep -qx "${m}"; then echo "  model      : ${m} ready"; else echo "  model      : ${m} missing"; fi
     done
   else

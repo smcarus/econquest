@@ -1,4 +1,4 @@
-import { isSmallModel, largestModel } from '../utils/refereeModel';
+import { DEFAULT_REFEREE_MODEL, isMidModel, isSmallModel, largestModel } from '../utils/refereeModel';
 import React, { useState } from 'react';
 import { CheckCircle2, Loader2, Search, XCircle } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
@@ -221,6 +221,25 @@ export const AiModelSettings: React.FC<{
                   {t('ai_use', { model: largestModel(installed)! })}
                 </button>
               )}
+            </p>
+          )}
+          <label className="flex items-start gap-2 text-xs text-slate-700 dark:text-slate-300" data-settings-allow-small-referee="true">
+            <input
+              type="checkbox"
+              className="mt-0.5"
+              checked={Boolean(config.allowSmallReferee)}
+              onChange={(e) => update({ allowSmallReferee: e.target.checked })}
+            />
+            <span>
+              <span className="font-semibold">{t('ai_allowSmall')}</span>
+              <span className="block text-slate-500">{t('ai_allowSmallNote')}</span>
+            </span>
+          </label>
+          {isMidModel(config.ollamaDeepModel) && (
+            <p className="text-xs text-amber-800 dark:text-amber-300" data-settings-mid-referee="true">
+              {config.allowSmallReferee
+                ? t('ai_midOn', { model: config.ollamaDeepModel })
+                : t('ai_midOff', { model: config.ollamaDeepModel, fallback: DEFAULT_REFEREE_MODEL })}
             </p>
           )}
           {!installed.length && <p className="text-xs text-slate-500 dark:text-slate-400">{t('ai_pressFind')}</p>}
