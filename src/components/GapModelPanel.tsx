@@ -7,6 +7,8 @@ import { GAP_MODEL } from '../i18n/messages/gapModel';
 import { TOOLS } from '../i18n/messages/tools';
 import { GAP_PARAMS, GAP_START, MAX_QUARTERS, gapPathCsv, runGapModel, type GapParam, type GapShock, type GapStart, type GapVariable } from '../utils/gapModel';
 import { gapStartFromSnapshot, type StartMissing } from '../utils/gapModelStart';
+import { gapRunFocus } from '../utils/gapModelFocus';
+import { explainInChat } from '../utils/explainHandoff';
 
 /**
  * Country Research > History & data > Small gap model (plan item L2b). Four quarterly equations
@@ -271,6 +273,10 @@ export const GapModelPanel: React.FC<{ iso3: string; countryName: string; snapsh
               <button type="button" className="ui-pill" onClick={downloadCsv} data-gap-csv="true">
                 {t('csv')}
               </button>
+              <button type="button" className="ui-pill" onClick={() => explainInChat(gapRunFocus(result, check.shocks, iso3, countryName))} data-gap-explain="true">
+                {t('explain')}
+              </button>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t('explainNote')}</span>
             </div>
           </div>
         )}

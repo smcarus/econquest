@@ -38,6 +38,8 @@ export const GAP_MODEL = defineMessages('gapModel', {
   chartAria: 'Path of the output gap, inflation, policy rate and exchange-rate gap',
   colQuarter: 'Quarter',
   csv: 'Download the path (CSV)',
+  explain: 'Ask the council about this run',
+  explainNote: 'Opens Council chat and asks the council to explain your run, sending your parameters, starting point and path labelled "Your model". It asks your AI model only when you press it.',
   clear: 'Clear everything',
   notForecast: 'Your assumptions played out, not a forecast. Nothing here is advice.',
   p_b1: 'Output gap persistence (b1)',

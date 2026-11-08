@@ -434,7 +434,9 @@ reason, and the exchange-rate gap is always your own judgement. You can add shoc
 +1 point to inflation in quarter 2). Once every box holds a number the chart and table appear, and
 "Download the path (CSV)" saves the path with your settings written at the top. If your settings
 explode (usually a persistence near or above 1) the path stops with a warning. It shows your own
-assumptions played out, not a forecast.
+assumptions played out, not a forecast. "Ask the council about this run" opens Council chat and
+asks the council to explain the run; it sends your numbers labelled "Your model", so the answer treats
+them as your assumptions and not as published figures.
 
 **Event history.** Research > History & data shows protests and violence as a share of the
 country's events each month, from the GDELT 1.0 daily event files (shares, not counts, because

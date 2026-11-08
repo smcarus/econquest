@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Small gap model, part 3 (council link): "Ask the council about this run" sends the run to Council chat as an
+  Explain request labelled "Your model", with every parameter, the starting point, any shocks and the path, so the
+  council treats the numbers as the user's own assumptions, not published figures or a forecast. It asks the AI
+  model only when pressed.
 - Small gap model, part 2 (the screen): Research > One country > History & data now has the small gap model under
   the sandboxes. Every parameter starts blank; a "Fill starting point from latest data" button copies the country's
   latest saved output gap, inflation and policy rate into the starting boxes with each one's source, and names the
