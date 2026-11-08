@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- README rewritten for lay readers to match the app as it is now (three languages, the council and its
+  referee, the research panels, your own data and tests, the data API, the daily download, how figures are
+  tested), and a new docs/ROADMAP.md lists what is done and what comes next, in order.
 - Fresher inflation figures (data plan G3): IMF monthly consumer prices (CPI dataset, found by IMF names,
   `IMF_CPI_KEY` override) join the national and Eurostat series ahead of the stale OECD copy on DBnomics. Each
   country takes the freshest source (same month: national, then IMF, then OECD), always whole from one source.
