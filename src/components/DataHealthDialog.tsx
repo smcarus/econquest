@@ -6,6 +6,7 @@
  * - Figure alerts: watchlist figures that went missing, got old, jumped, left their range or were revised.
  * - Revisions: IMF and World Bank yearly values changed since the app first downloaded them.
  * - Scheduled: jobs the server runs by itself (Download all, the pre-registered tests) and how each run ended.
+ * - Calendar: the hand-typed official calendar against today (old checks, schedules running out).
  *
  * Nothing here changes a figure: it says what to check.
  */
@@ -15,6 +16,7 @@ import type { ConnectionState } from '../utils/connectionCheck';
 import type { SourceHealth } from '../utils/dataHealth';
 import type { FigureEvent, FigureEventKind, OpenIssue } from '../utils/figureWatch';
 import type { HistoryRevision } from '../utils/officialHistory';
+import { CALENDAR_FLAG_TEXT, type CalendarHealth } from '../utils/calendarHealth';
 
 type SourcesReply = {
   sources: SourceHealth[];
@@ -35,7 +37,7 @@ type ScheduledReply = {
   file: string;
 };
 
-export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled';
+export type DataHealthTab = 'sources' | 'figures' | 'revisions' | 'scheduled' | 'calendar';
 
 const when = (iso?: string | null) =>
   iso ? new Date(iso).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -318,6 +320,62 @@ function ScheduledView() {
   );
 }
 
+function CalendarView() {
+  const { data, error } = useJson<CalendarHealth>('/api/data/health/calendar');
+  const short = (d: string | null) => (d ? new Date(`${d}T00:00:00`).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '');
+  return (
+    <div className="space-y-3">
+      {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
+      <p className="text-sm text-slate-600 dark:text-slate-300">
+        Central bank, release, election and budget dates are typed in by hand from each source page (src/data/officialCalendar.ts), so they go out of date unless someone reads the pages again. This lists what to check; it never adds or moves a date.
+      </p>
+      {data && (
+        <p className="text-sm">
+          {data.needsLook ? `${data.needsLook} item${data.needsLook === 1 ? '' : 's'} to check.` : 'Nothing to check: every schedule runs beyond the next two months and was read recently.'}
+        </p>
+      )}
+      {data && data.noDecisionDates.length > 0 && (
+        <p className="text-sm text-amber-700 dark:text-amber-300">No central bank decision dates on file for: {data.noDecisionDates.join(', ')}. Their pages show &quot;no date on file&quot; until someone adds the schedule.</p>
+      )}
+      {data && data.rows.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs text-slate-500 dark:text-slate-400">
+              <tr>
+                <th className="pr-3 font-normal">Country</th>
+                <th className="pr-3 font-normal">Dates</th>
+                <th className="pr-3 font-normal">Next</th>
+                <th className="pr-3 font-normal">Last listed</th>
+                <th className="pr-3 font-normal">Source read</th>
+                <th className="font-normal">Check</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.rows.map((r) => (
+                <tr key={`${r.iso3}-${r.category}`} className="border-t border-slate-100 dark:border-slate-800 align-top">
+                  <td className="pr-3">{r.iso3}</td>
+                  <td className="pr-3">
+                    <a href={r.sourceUrl} target="_blank" rel="noreferrer" className="underline decoration-dotted" title={r.sourceName}>
+                      {r.label}
+                    </a>
+                    <span className="text-xs text-slate-500 dark:text-slate-400"> ({r.upcoming} ahead)</span>
+                  </td>
+                  <td className="pr-3 whitespace-nowrap">{short(r.nextDate) || 'none'}</td>
+                  <td className="pr-3 whitespace-nowrap">{short(r.lastDate)}</td>
+                  <td className="pr-3 whitespace-nowrap">
+                    {short(r.checked)} <span className="text-xs text-slate-500 dark:text-slate-400">({r.ageDays} d)</span>
+                  </td>
+                  <td className={r.flags.length ? 'text-amber-700 dark:text-amber-300' : 'text-slate-500 dark:text-slate-400'}>{r.flags.length ? r.flags.map((f) => CALENDAR_FLAG_TEXT[f]).join('; ') : 'OK'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose: () => void; initialTab?: DataHealthTab }) {
   const [tab, setTab] = useState<DataHealthTab>(initialTab);
   const closeRef = useRef<HTMLButtonElement | null>(null);
@@ -332,6 +390,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
     ['figures', 'Figure alerts'],
     ['revisions', 'Revisions'],
     ['scheduled', 'Scheduled'],
+    ['calendar', 'Calendar'],
   ];
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/60 p-4" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
@@ -363,6 +422,7 @@ export function DataHealthDialog({ onClose, initialTab = 'sources' }: { onClose:
           {tab === 'figures' && <FiguresView />}
           {tab === 'revisions' && <RevisionsView />}
           {tab === 'scheduled' && <ScheduledView />}
+          {tab === 'calendar' && <CalendarView />}
         </div>
       </div>
     </div>

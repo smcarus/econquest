@@ -747,7 +747,7 @@ hold no figures of their own; the handout reads them from the app's series when 
   that matters. Keys, document text and holdings amounts are never logged. The log is not in backups.
 - **Data health**: whether the data is still coming in, and whether any of it changed under you.
   The menu shows how many sources failed at the last check and how many watchlist figures are
-  missing now. Three tabs:
+  missing now. Tabs:
   - *Sources*: every source's state at the last check, failing first, with "No answer since <date>
     (n checks in a row)", how many of its last checks connected, and its last 14 checks as dots. The
     app checks every source once a night after 05:30 (`DATA_CHECK_TIME`, `DATA_CHECK_TZ` in `.env`;
@@ -763,6 +763,13 @@ hold no figures of their own; the handout reads them from the app's series when 
     the old value, the new one and the date the change was seen. Revised IMF projections are hidden
     unless you tick *Include IMF projections* (every WEO revises them). The History tab shows the same
     as "Revised from X on <date>" beside the year.
+  - *Scheduled*: jobs the server runs by itself and how each run ended.
+  - *Calendar*: the official calendar (central bank decisions, CPI releases, elections, budget
+    deadlines) is typed in by hand from each source page, so it goes out of date unless someone
+    reads the pages again. This tab lists, for each country and kind of date, the next date, the last
+    one on file and when the source was last read, and flags a source read more than 30 days ago, a
+    schedule whose last date is within 60 days, and one whose dates have all passed. It also names
+    the countries with no central bank decision dates on file. It never adds or moves a date.
   Kept in `data/local/data-health/` and in `data/history/` (never keys).
 - **Backup** (Settings > Backup): *Download backup* saves one file with your saved research
   (briefs, documents, notebooks, teaching episodes), policy reviews, watch alerts, holdings, watchlists, added
