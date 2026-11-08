@@ -6,6 +6,8 @@ import type { V1Reading, V1Series } from '../utils/gdeltDaily';
 import { GDELT_V1_SHORT, V1_PERCENTILE_RULE, v1Figures } from '../utils/gdeltDaily';
 import type { SpikeMonth } from '../utils/unrestSpikes';
 import { ValidationBadge } from './ValidationBadge';
+import { useT, useTx } from '../i18n/useLang';
+import { PANELS } from '../i18n/messages/panels';
 
 /**
  * Research > History & data > Event history: protests and violence as a share of the country's
@@ -18,6 +20,8 @@ type Reply = { series: V1Series | null; reading: V1Reading | null; spikes?: Spik
 export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3, countryName }) => {
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT(PANELS);
+  const tx = useTx();
   useEffect(() => {
     let live = true;
     setReply(null);
@@ -25,7 +29,7 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
     fetch(`/api/gdelt-daily/${encodeURIComponent(iso3)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: Reply) => live && setReply(b))
-      .catch((e: Error) => live && setError(`The GDELT history could not be read (${e.message}).`));
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
@@ -35,23 +39,23 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
   return (
     <section className="ui-panel" data-gdelt-daily="true">
       <header className="ui-panel-header">
-        <h2 className="ui-section-title flex items-center gap-2">Event history, {countryName} <ValidationBadge id="unrest_onset" /></h2>
-        <p className="ui-label">Protests and violence as a share of the country&apos;s reported events, month by month, from GDELT&apos;s own event files.</p>
+        <h2 className="ui-section-title flex items-center gap-2">{t('gh_title', { country: countryName })} <ValidationBadge id="unrest_onset" /></h2>
+        <p className="ui-label">{t('gh_intro')}</p>
         <ChartGuide id="event_history" className="pt-1" />
       </header>
       <div className="p-4 space-y-3">
-        {!reply && !error && <p className="ui-body">Loading…</p>}
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('gh_what'), error })}</p>}
         {reply && !s && (
           <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
-            Missing: {reply.pull.pulledAt ? `no GDELT 1.0 months on disk name ${countryName}` : 'GDELT 1.0 files not pulled yet'}. Pull them with <code>npm run gdelt:daily</code> (from {reply.from}; add{' '}
-            <code>-- --estimate</code> to see the size first).{reply.pull.note ? ` Last pull: ${reply.pull.note}.` : ''}
+            {t('c_missingReason', { reason: reply.pull.pulledAt ? t('gh_noneOnDisk', { country: countryName }) : t('gh_notPulled') })} {t('gh_pullWith')} <code>npm run gdelt:daily</code> {t('gh_from', { from: reply.from })}{' '}
+            <code>-- --estimate</code> {t('gh_estimate')}{reply.pull.note ? t('gd_lastPull', { note: tx(reply.pull.note) }) : ''}
           </p>
         )}
-        {r && v1Figures(r).sentences.length > 0 && <p className="text-sm text-slate-900 dark:text-white">{v1Figures(r).sentences.join(' ')}</p>}
+        {r && v1Figures(r).sentences.length > 0 && <p className="text-sm text-slate-900 dark:text-white">{v1Figures(r).sentences.map(tx).join(' ')}</p>}
         {s && (
           <>
-            <div className="h-64" role="img" aria-label={`Protests and violence as a share of ${countryName}'s reported events, ${s.points[0]?.month} to ${s.points[s.points.length - 1]?.month}. The numbers are in the table below.`}>
+            <div className="h-64" role="img" aria-label={t('gh_aria', { country: countryName, from: s.points[0]?.month ?? '', to: s.points[s.points.length - 1]?.month ?? '' })}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={s.points} margin={{ top: 8, right: 16, bottom: 8, left: 0 }}>
                   <CartesianGrid stroke="currentColor" strokeOpacity={0.1} vertical={false} />
@@ -59,20 +63,28 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
                   <YAxis tick={{ fontSize: 12 }} width={48} unit="%" />
                   <Tooltip formatter={(v, name) => [`${Number(v).toFixed(2)}%`, name]} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="linear" dataKey="protestPct" name="Protests" stroke="#2563eb" strokeWidth={2} dot={false} isAnimationActive={false} />
-                  <Line type="linear" dataKey="violencePct" name="Violence" stroke="#e11d48" strokeWidth={2} dot={false} isAnimationActive={false} />
+                  <Line type="linear" dataKey="protestPct" name={t('gd_protests')} stroke="#2563eb" strokeWidth={2} dot={false} isAnimationActive={false} />
+                  <Line type="linear" dataKey="violencePct" name={t('gh_violence')} stroke="#e11d48" strokeWidth={2} dot={false} isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
             {r && (
               <p className="text-xs text-slate-600 dark:text-slate-300">
-                {r.month}: protests {r.protestPct}%{r.protestPctile !== null ? ` (${r.protestPctile}th percentile)` : ''}, violence {r.violencePct}%
-                {r.violencePctile !== null ? ` (${r.violencePctile}th percentile)` : ''}, against {r.months} months from {r.from}. {V1_PERCENTILE_RULE}.
+                {t('gh_reading', {
+                  month: r.month,
+                  p: r.protestPct,
+                  pp: r.protestPctile !== null ? t('gh_pctile', { n: r.protestPctile }) : '',
+                  v: r.violencePct,
+                  vp: r.violencePctile !== null ? t('gh_pctile', { n: r.violencePctile }) : '',
+                  n: r.months,
+                  from: r.from,
+                })}{' '}
+                {tx(V1_PERCENTILE_RULE)}.
               </p>
             )}
             {reply?.spikeSentence && (
               <div className="space-y-1" data-unrest-spikes="true">
-                <p className="text-sm text-slate-900 dark:text-white">{reply.spikeSentence}</p>
+                <p className="text-sm text-slate-900 dark:text-white">{tx(reply.spikeSentence)}</p>
                 {(reply.spikes || []).filter((x) => x.episodes.length).length > 0 && (
                   <ul className="text-xs text-slate-600 dark:text-slate-300 list-disc pl-5">
                     {(reply.spikes || [])
@@ -81,22 +93,21 @@ export const GdeltHistoryPanel: React.FC<{ iso3: string; countryName: string }> 
                       .reverse()
                       .map((x) => (
                         <li key={x.month}>
-                          {x.month}: spike in {x.episodes.join(' and ')} (protests {x.protestPct}%, z {x.protestZ}; violence {x.violencePct}%, z {x.violenceZ})
+                          {t('gh_spike', { month: x.month, what: x.episodes.map(tx).join(t('gh_and')), p: x.protestPct, pz: x.protestZ, v: x.violencePct, vz: x.violenceZ })}
                         </li>
                       ))}
                   </ul>
                 )}
-                {reply.spikeMethod && <p className="text-xs text-slate-500 dark:text-slate-400">{reply.spikeMethod} Whether a spike year comes before armed conflict the next year is a pre-registered test (Models &amp; validation).</p>}
+                {reply.spikeMethod && <p className="text-xs text-slate-500 dark:text-slate-400">{reply.spikeMethod} {t('gh_prereg')}</p>}
               </div>
             )}
             <ChartNumbers
-              caption={`Event history, ${countryName}`}
-              columns={['Month', 'Protests (%)', 'Violence (%)']}
+              caption={t('gh_title', { country: countryName })}
+              columns={[t('gh_month'), t('gh_protestsPct'), t('gh_violencePct')]}
               rows={s.points.map((p) => [p.month, p.protestPct, p.violencePct])}
             />
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {s.points.length} months, {s.points[0]?.month} to {s.points[s.points.length - 1]?.month}. Source: {GDELT_V1_SHORT}
-              {s.pulledAt ? `, pulled ${s.pulledAt.slice(0, 10)}` : ''}. An event counts where it took place or when the country is an actor.
+              {t('gh_footer', { n: s.points.length, from: s.points[0]?.month ?? '', to: s.points[s.points.length - 1]?.month ?? '', source: GDELT_V1_SHORT, pulled: s.pulledAt ? t('gh_pulled', { date: s.pulledAt.slice(0, 10) }) : '' })}
             </p>
           </>
         )}

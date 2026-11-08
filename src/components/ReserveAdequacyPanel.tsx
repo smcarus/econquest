@@ -3,6 +3,8 @@ import { ValidationBadge } from './ValidationBadge';
 import { Vault } from 'lucide-react';
 import type { ReserveAdequacyOutcome } from '../utils/reserveAdequacy';
 import { explainInChat } from '../utils/explainHandoff';
+import { useT, useTx } from '../i18n/useLang';
+import { PANELS } from '../i18n/messages/panels';
 
 /**
  * Country Research > History & data > Reserve adequacy (src/utils/reserveAdequacy.ts): traditional
@@ -17,6 +19,8 @@ export const ReserveAdequacyPanel: React.FC<{ iso3: string; countryName: string 
   const [reply, setReply] = useState<Reply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showYears, setShowYears] = useState(false);
+  const t = useT(PANELS);
+  const tx = useTx();
 
   useEffect(() => {
     let live = true;
@@ -25,7 +29,7 @@ export const ReserveAdequacyPanel: React.FC<{ iso3: string; countryName: string 
     fetch(`/api/reserve-adequacy/${encodeURIComponent(iso3)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: Reply) => live && setReply(b))
-      .catch((e: Error) => live && setError(`Reserve adequacy could not be read (${e.message}).`));
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
@@ -36,7 +40,7 @@ export const ReserveAdequacyPanel: React.FC<{ iso3: string; countryName: string 
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Vault className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Reserve adequacy, {countryName}
+          {t('ara_title', { country: countryName })}
           <ValidationBadge id="reserve_adequacy" />
           {reply?.ok && (
             <button
@@ -56,47 +60,47 @@ export const ReserveAdequacyPanel: React.FC<{ iso3: string; countryName: string 
                 })
               }
             >
-              Explain
+              {t('c_explain')}
             </button>
           )}
         </h2>
-        <p className="ui-label">Are reserves enough to cover a sudden stop? Usual ratios and the IMF's reserve adequacy metric, built from World Bank and IMF figures.</p>
+        <p className="ui-label">{t('ara_intro')}</p>
       </header>
       <div className="p-4 space-y-3">
-        {!reply && !error && <p className="ui-body">Loading…</p>}
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('ara_what'), error })}</p>}
         {reply && !reply.ok && (
           <p className="text-sm text-amber-700 dark:text-amber-400" data-missing="true">
-            Missing: {reply.reason}.
+            {t('c_missingReason', { reason: tx(reply.reason) })}
           </p>
         )}
         {reply?.ok && (
           <>
-            <p className={`text-sm ${reply.reading === 'below' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`} data-ara-sentence="true">{reply.sentence}</p>
+            <p className={`text-sm ${reply.reading === 'below' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-900 dark:text-white'}`} data-ara-sentence="true">{tx(reply.sentence || '')}</p>
             <table className="text-sm">
               <tbody>
-                <tr><td className="pr-4 text-slate-500 dark:text-slate-400">IMF ARA, at most (floating / fixed weights)</td><td className="tabular-nums">{f(reply.latest.ratioFloatingMax)}% / {f(reply.latest.ratioFixedMax)}% <span className="text-slate-500">({reply.latest.year}; adequate 100-150%)</span></td></tr>
-                {reply.monthsOfImports && <tr><td className="pr-4 text-slate-500 dark:text-slate-400">Months of imports</td><td className="tabular-nums">{f(reply.monthsOfImports.value)} <span className="text-slate-500">({reply.monthsOfImports.year}; usual floor 3)</span></td></tr>}
-                {reply.reservesToShortTermDebt && <tr><td className="pr-4 text-slate-500 dark:text-slate-400">Reserves / short-term external debt</td><td className="tabular-nums">{f(reply.reservesToShortTermDebt.pct)}% <span className="text-slate-500">({reply.reservesToShortTermDebt.year}; Greenspan-Guidotti 100%)</span></td></tr>}
-                {reply.reservesToBroadMoney && <tr><td className="pr-4 text-slate-500 dark:text-slate-400">Reserves / broad money</td><td className="tabular-nums">{f(reply.reservesToBroadMoney.pct)}% <span className="text-slate-500">({reply.reservesToBroadMoney.year}; usual floor 20%)</span></td></tr>}
+                <tr><td className="pr-4 text-slate-500 dark:text-slate-400">{t('ara_metric')}</td><td className="tabular-nums">{f(reply.latest.ratioFloatingMax)}% / {f(reply.latest.ratioFixedMax)}% <span className="text-slate-500">{t('ara_adequate', { year: reply.latest.year })}</span></td></tr>
+                {reply.monthsOfImports && <tr><td className="pr-4 text-slate-500 dark:text-slate-400">{t('ara_months')}</td><td className="tabular-nums">{f(reply.monthsOfImports.value)} <span className="text-slate-500">{t('ara_monthsFloor', { year: reply.monthsOfImports.year })}</span></td></tr>}
+                {reply.reservesToShortTermDebt && <tr><td className="pr-4 text-slate-500 dark:text-slate-400">{t('ara_std')}</td><td className="tabular-nums">{f(reply.reservesToShortTermDebt.pct)}% <span className="text-slate-500">{t('ara_stdFloor', { year: reply.reservesToShortTermDebt.year })}</span></td></tr>}
+                {reply.reservesToBroadMoney && <tr><td className="pr-4 text-slate-500 dark:text-slate-400">{t('ara_m2')}</td><td className="tabular-nums">{f(reply.reservesToBroadMoney.pct)}% <span className="text-slate-500">{t('ara_m2Floor', { year: reply.reservesToBroadMoney.year })}</span></td></tr>}
               </tbody>
             </table>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Method: {reply.method} The exchange rate regime is not a free feed, so both weightings are shown. Sources: {reply.sources.join('; ')}.
+              {t('c_method', { method: reply.method })} {t('ara_regime')} {t('c_sources', { sources: reply.sources.join('; ') })}
             </p>
             <button type="button" className="ui-pill" aria-pressed={showYears} onClick={() => setShowYears(!showYears)}>
-              {showYears ? 'Hide the years' : 'Show the years'}
+              {showYears ? t('ara_hideYears') : t('ara_showYears')}
             </button>
             {showYears && (
               <table className="w-full text-xs">
                 <thead>
                   <tr className="text-left text-slate-500 dark:text-slate-400">
-                    <th className="py-1 pr-3 font-medium">Year</th>
-                    <th className="py-1 pr-3 font-medium text-right">Reserves, $bn</th>
-                    <th className="py-1 pr-3 font-medium text-right">Short-term debt</th>
-                    <th className="py-1 pr-3 font-medium text-right">Broad money</th>
-                    <th className="py-1 pr-3 font-medium text-right">Exports</th>
-                    <th className="py-1 font-medium text-right">ARA at most, float / fixed</th>
+                    <th className="py-1 pr-3 font-medium">{t('c_year')}</th>
+                    <th className="py-1 pr-3 font-medium text-right">{t('ara_reserves')}</th>
+                    <th className="py-1 pr-3 font-medium text-right">{t('ara_stdCol')}</th>
+                    <th className="py-1 pr-3 font-medium text-right">{t('ara_m2Col')}</th>
+                    <th className="py-1 pr-3 font-medium text-right">{t('ara_exports')}</th>
+                    <th className="py-1 font-medium text-right">{t('ara_araCol')}</th>
                   </tr>
                 </thead>
                 <tbody>

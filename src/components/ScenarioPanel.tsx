@@ -4,6 +4,8 @@ import { Globe2 } from 'lucide-react';
 import { applyScenario, scenarioSentence, type FactorId, type ResponseId, type ScenarioModelOutcome } from '../utils/scenarioEngine';
 import { explainInChat } from '../utils/explainHandoff';
 import type { GrVarOutcome } from '../utils/grVar';
+import { useT, useTx } from '../i18n/useLang';
+import { PANELS } from '../i18n/messages/panels';
 
 /**
  * Country Research > History & data > Global shock scenarios (src/utils/scenarioEngine.ts): the
@@ -34,6 +36,8 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const [preset, setPreset] = useState('tight');
   const [stressKey, setStressKey] = useState('stlfsi');
   const [shock, setShock] = useState<Partial<Record<FactorId, number>>>({ us_rate: 1, dollar: 5 });
+  const t = useT(PANELS);
+  const tx = useTx();
 
   useEffect(() => {
     let live = true;
@@ -42,7 +46,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
     fetch(`/api/scenario/${encodeURIComponent(iso3)}?stress=${encodeURIComponent(stressKey)}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: Reply) => live && setReply(b))
-      .catch((e: Error) => live && setError(`The scenario models could not be read (${e.message}).`));
+      .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
@@ -57,7 +61,7 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <Globe2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          Global shock scenarios, {countryName}
+          {t('scen_title', { country: countryName })}
           <ValidationBadge id="global_scenarios" />
           {results.length > 0 && reply && (
             <button
@@ -76,24 +80,24 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
                 })
               }
             >
-              Explain
+              {t('c_explain')}
             </button>
           )}
         </h2>
-        <p className="ui-label">If the Fed moves, the dollar swings, US financial stress rises or supply chains tighten, how have this country's currency and policy rate moved with it? Fitted on the last 15 years of monthly moves; co-movement, not a forecast.</p>
+        <p className="ui-label">{t('scen_intro')}</p>
       </header>
       <div className="p-4 space-y-3">
-        {!reply && !error && <p className="ui-body">Loading…</p>}
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{error}</p>}
+        {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('scen_what'), error })}</p>}
         {reply && (
           <>
             {reply.stress && (
               <label className="ui-label flex items-center gap-2" data-scenario-stress="true">
-                Financial stress index
+                {t('scen_stressIndex')}
                 <select className="px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value={stressKey} onChange={(e) => setStressKey(e.target.value)}>
                   {reply.stress.choices.map((c) => (
                     <option key={c.key} value={c.key}>
-                      {c.label}
+                      {tx(c.label)}
                     </option>
                   ))}
                 </select>
@@ -111,14 +115,14 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
                     setShock(p.shock);
                   }}
                 >
-                  {p.label}
+                  {tx(p.label)}
                 </button>
               ))}
             </div>
             <div className="flex flex-wrap gap-4 text-sm">
               {reply.factors.map((fa) => (
                 <label key={fa.id} className="flex items-center gap-2">
-                  <span className="text-slate-500 dark:text-slate-400">{fa.label}</span>
+                  <span className="text-slate-500 dark:text-slate-400">{tx(fa.label)}</span>
                   <input
                     type="number"
                     step={fa.unit === 'pts' ? 0.25 : 1}
@@ -133,15 +137,15 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
                 </label>
               ))}
             </div>
-            {results.length > 0 && <p className="text-sm text-slate-900 dark:text-white" data-scenario-sentence="true">{scenarioSentence(countryName, label, results.map((x) => x.r))}</p>}
+            {results.length > 0 && <p className="text-sm text-slate-900 dark:text-white" data-scenario-sentence="true">{tx(scenarioSentence(countryName, label, results.map((x) => x.r)))}</p>}
             <table className="w-full text-xs tabular-nums">
               <thead>
                 <tr className="text-left text-slate-500 dark:text-slate-400">
-                  <th className="py-1 pr-3 font-medium">Response</th>
-                  <th className="py-1 pr-3 font-medium text-right">Implied move</th>
-                  <th className="py-1 pr-3 font-medium text-right">90% band</th>
-                  <th className="py-1 pr-3 font-medium text-right">Typical month (residual s.d.)</th>
-                  <th className="py-1 font-medium">Fit</th>
+                  <th className="py-1 pr-3 font-medium">{t('scen_response')}</th>
+                  <th className="py-1 pr-3 font-medium text-right">{t('scen_implied')}</th>
+                  <th className="py-1 pr-3 font-medium text-right">{t('scen_band')}</th>
+                  <th className="py-1 pr-3 font-medium text-right">{t('scen_typical')}</th>
+                  <th className="py-1 font-medium">{t('scen_fit')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -150,8 +154,8 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
                   if (!m.ok) {
                     return (
                       <tr key={m.response} className="border-t border-slate-100 dark:border-slate-800">
-                        <td className="py-0.5 pr-3">{meta.label}</td>
-                        <td colSpan={4} className="py-0.5 text-amber-700 dark:text-amber-400" data-missing="true">Missing: {m.reason}</td>
+                        <td className="py-0.5 pr-3">{tx(meta.label)}</td>
+                        <td colSpan={4} className="py-0.5 text-amber-700 dark:text-amber-400" data-missing="true">{t('scen_missing', { reason: tx(m.reason) })}</td>
                       </tr>
                     );
                   }
@@ -159,13 +163,13 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
                   const d = m.response === 'fx' ? 1 : 2;
                   return (
                     <tr key={m.response} className="border-t border-slate-100 dark:border-slate-800" data-scenario-response={m.response}>
-                      <td className="py-0.5 pr-3">{meta.label} <span className="text-slate-500">({meta.note})</span></td>
-                      <td className="py-0.5 pr-3 text-right">{sg(r.value, d)} {meta.unit}</td>
-                      <td className="py-0.5 pr-3 text-right">{f(r.lo, d)} to {f(r.hi, d)}</td>
-                      <td className="py-0.5 pr-3 text-right">±{f(m.residualSd, d)} {meta.unit}</td>
+                      <td className="py-0.5 pr-3">{tx(meta.label)} <span className="text-slate-500">({tx(meta.note)})</span></td>
+                      <td className="py-0.5 pr-3 text-right">{sg(r.value, d)} {tx(meta.unit)}</td>
+                      <td className="py-0.5 pr-3 text-right">{t('c_range', { from: f(r.lo, d), to: f(r.hi, d) })}</td>
+                      <td className="py-0.5 pr-3 text-right">±{f(m.residualSd, d)} {tx(meta.unit)}</td>
                       <td className="py-0.5 text-slate-500 dark:text-slate-400">
-                        {m.factors.map((id, k) => `${reply.factors.find((x) => x.id === id)?.label}: ${sg(m.beta[k], 2)} (s.e. ${f(m.se[k], 2)})`).join('; ')}; R² {f(m.r2, 2)}, {m.from} to {m.to}
-                        {r.beyondSample.length > 0 && <span className="text-amber-700 dark:text-amber-400"> Shock larger than any month in the sample: extrapolation.</span>}
+                        {m.factors.map((id, k) => `${tx(reply.factors.find((x) => x.id === id)?.label ?? id)}: ${sg(m.beta[k], 2)} (${t('beer_se')} ${f(m.se[k], 2)})`).join('; ')}; R² {f(m.r2, 2)}, {t('c_range', { from: m.from, to: m.to })}
+                        {r.beyondSample.length > 0 && <span className="text-amber-700 dark:text-amber-400">{t('scen_extrapolation')}</span>}
                       </td>
                     </tr>
                   );
@@ -174,47 +178,47 @@ export const ScenarioPanel: React.FC<{ iso3: string; countryName: string }> = ({
             </table>
             {reply.missingFactors.length > 0 && (
               <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">
-                Missing factors: {reply.missingFactors.join('; ')}.
+                {t('scen_missingFactors', { factors: reply.missingFactors.map(tx).join('; ') })}
               </p>
             )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Method: {reply.method} The dollar factor is euros per dollar, not a trade-weighted index. Oil is not a factor yet: only five years of monthly prices are saved. Financial stress is the index picked above (zero = average, up = more stress or tighter conditions); supply chain pressure is the NY Fed GSCPI (standard deviations, up = more pressure). Each index can also be charted and tested in the Chart Agent. Sources: {reply.sources.join('; ')}.
+              {t('c_method', { method: reply.method })} {t('scen_note')} {t('c_sources', { sources: reply.sources.join('; ') })}
             </p>
             {reply.grVar && (
               <div className="pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2" data-gr-var="true">
                 <h3 className="text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                  Geopolitical risk VaR
+                  {t('gpr_title')}
                   <ValidationBadge id="gr_var" />
                 </h3>
                 {!reply.grVar.ok ? (
-                  <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">Missing: {reply.grVar.reason}.</p>
+                  <p className="text-xs text-amber-700 dark:text-amber-400" data-missing="true">{t('c_missingReason', { reason: tx(reply.grVar.reason) })}</p>
                 ) : (
                   <>
-                    <p className="text-sm text-slate-900 dark:text-white" data-gr-var-sentence="true">{reply.grVar.sentence}</p>
+                    <p className="text-sm text-slate-900 dark:text-white" data-gr-var-sentence="true">{tx(reply.grVar.sentence)}</p>
                     <table className="w-full text-xs">
                       <thead>
                         <tr className="text-left text-slate-500 dark:text-slate-400">
-                          <th className="py-1 pr-3 font-medium">Stress months by</th>
-                          <th className="py-1 pr-3 font-medium text-right">Months</th>
-                          <th className="py-1 pr-3 font-medium text-right">95% VaR, stress / all</th>
-                          <th className="py-1 pr-3 font-medium text-right">Expected shortfall, stress / all</th>
-                          <th className="py-1 font-medium text-right">Global channels imply</th>
+                          <th className="py-1 pr-3 font-medium">{t('gpr_by')}</th>
+                          <th className="py-1 pr-3 font-medium text-right">{t('gpr_months')}</th>
+                          <th className="py-1 pr-3 font-medium text-right">{t('gpr_var')}</th>
+                          <th className="py-1 pr-3 font-medium text-right">{t('gpr_es')}</th>
+                          <th className="py-1 font-medium text-right">{t('gpr_channels')}</th>
                         </tr>
                       </thead>
                       <tbody>
                         {reply.grVar.blocks.map((b) => (
                           <tr key={b.basis} className="border-t border-slate-100 dark:border-slate-800 tabular-nums">
-                            <td className="py-0.5 pr-3">{b.basis === 'world' ? 'World GPR' : 'Country GPR'} ≥ {f(b.threshold, 1)}</td>
-                            <td className="py-0.5 pr-3 text-right">{b.stress.months} of {b.all.months}</td>
+                            <td className="py-0.5 pr-3">{b.basis === 'world' ? t('gpr_world') : t('gpr_country')} ≥ {f(b.threshold, 1)}</td>
+                            <td className="py-0.5 pr-3 text-right">{t('gpr_of', { n: b.stress.months, all: b.all.months })}</td>
                             <td className="py-0.5 pr-3 text-right">{sg(b.stress.var95, 1)}% / {sg(b.all.var95, 1)}%</td>
                             <td className="py-0.5 pr-3 text-right">{sg(b.stress.es95, 1)}% / {sg(b.all.es95, 1)}%</td>
-                            <td className="py-0.5 text-right">{b.scenario ? `${sg(b.scenario.value, 1)}% (${f(b.scenario.lo, 1)} to ${f(b.scenario.hi, 1)})` : '—'}</td>
+                            <td className="py-0.5 text-right">{b.scenario ? `${sg(b.scenario.value, 1)}% (${t('c_range', { from: f(b.scenario.lo, 1), to: f(b.scenario.hi, 1) })})` : '—'}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Positive = weaker currency against the US dollar, monthly. Latest stress months: {reply.grVar.blocks[0].recentStress.join(', ')}.{reply.grVar.notes.length ? ` Not shown: ${reply.grVar.notes.join('; ')}.` : ''} Method: {reply.grVar.method} GPR file: {reply.grVar.file || '—'}. Description, not a tested signal.
+                      {t('gpr_note', { months: reply.grVar.blocks[0].recentStress.join(', ') })}{reply.grVar.notes.length ? t('gpr_notShown', { notes: reply.grVar.notes.map(tx).join('; ') }) : ''} {t('c_method', { method: reply.grVar.method })} {t('gpr_file', { file: reply.grVar.file || '—' })} {t('risk_notSignal')}
                     </p>
                   </>
                 )}

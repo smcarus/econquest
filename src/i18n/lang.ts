@@ -90,6 +90,9 @@ const loaded: Partial<Record<Lang, Record<string, Record<string, string>>>> = {}
 /** Whole sentences that are built in English elsewhere (Missing reasons), keyed by their English. */
 const loadedText: Partial<Record<Lang, { exact: Record<string, string>; patterns: Array<[RegExp, string, string[]]>; parts: Array<[string, string]> }>> = {};
 
+/** Placeholders that may hold commas and semicolons: a source's name, a list, a detail clause. */
+const WIDE = new Set(['source', 'list', 'detail']);
+
 /** "{n} of {total} figures" as a whole-text pattern; each {name} matches what the app put there (no comma). */
 function textPattern(en: string): [RegExp, string[]] {
   const names: string[] = [];
@@ -100,8 +103,8 @@ function textPattern(en: string): [RegExp, string[]] {
       if (m) {
         names.push(m[1]!);
         // Never across a comma or semicolon, so a pattern cannot swallow the next clause of a longer
-        // sentence; only a {source} (a source's own name) may hold commas.
-        return m[1] === 'source' ? '(.+?)' : '([^,;]+?)';
+        // sentence; only {source} (a source's own name), {list} and {detail} may hold commas.
+        return WIDE.has(m[1]!) ? '(.+?)' : '([^,;]+?)';
       }
       return part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     })
@@ -178,7 +181,17 @@ export function translateText(text: string, lang: Lang): string {
   if (exact !== undefined) return exact;
   for (const [re, tr, names] of t.patterns) {
     const m = re.exec(text);
-    if (m) return tr.replace(/\{(\w+)\}/g, (whole, name: string) => (names.includes(name) ? (m[names.indexOf(name) + 1] ?? whole) : whole));
+    // Each filled-in part is itself translated when it is known text (a figure's name, a reason).
+    if (m) {
+      return tr.replace(/\{(\w+)\}/g, (whole, name: string) => {
+        if (!names.includes(name)) return whole;
+        const part = m[names.indexOf(name) + 1] ?? whole;
+        if (part === text) return part;
+        const whole2 = translateText(part, lang);
+        // A list joined with "; " is translated item by item when it is not known as a whole.
+        return whole2 === part && part.includes('; ') ? part.split('; ').map((p) => translateText(p, lang)).join('; ') : whole2;
+      });
+    }
   }
   let out = text;
   for (const [en, tr] of t.parts) if (out.includes(en)) out = out.split(en).join(tr);

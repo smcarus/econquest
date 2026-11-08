@@ -6,6 +6,8 @@
 import React from 'react';
 import { registerEntry, registerForPanel, STATUS_LABEL, type RegisterEntry, type ValidationStatus } from '../data/modelRegister';
 import { effectiveStatus, entryGrade, failsStricterCheck, useValidation } from './useValidation';
+import { useT, useTx } from '../i18n/useLang';
+import { COMMON } from '../i18n/messages/common';
 
 export const OPEN_REGISTER_EVENT = 'econquest:open-model-register';
 
@@ -26,12 +28,14 @@ const TONE: Record<ValidationStatus, string> = {
 
 function Badge({ entry }: { entry: RegisterEntry }) {
   const v = useValidation();
+  const t = useT(COMMON);
+  const tx = useTx();
   const status = effectiveStatus(entry.id, entry.status, v);
   const r = v?.results?.[entry.id];
   const stricter = failsStricterCheck(entry.id, v);
   const verdict = r ? `${r.verdict}${r.robustness && (r.framework ?? 1) === 1 ? ` Stricter check (method 2): ${r.robustness.verdict}` : ''}` : undefined;
   const grade = stricter ? null : entryGrade(entry.id, entry.status, v);
-  const label = stricter ? 'Passed, fails stricter check' : grade ? grade.label : STATUS_LABEL[status];
+  const label = stricter ? t('stricterFail') : tx(grade ? grade.label : STATUS_LABEL[status]);
   const tone = stricter ? 'ui-badge-warning' : grade ? GRADE_CLASS[grade.tone] : TONE[status];
   return (
     <button
@@ -43,7 +47,7 @@ function Badge({ entry }: { entry: RegisterEntry }) {
       data-validation-status={status}
       data-stricter-check={r?.robustness?.status}
       data-evidence-grade={grade?.grade}
-      title={`${entry.name}: ${label}. ${grade ? `${grade.why} ` : ''}${verdict || entry.testPlan} Click for the register.`}
+      title={t('badgeTitle', { name: tx(entry.name), label, more: `${grade ? `${tx(grade.why)} ` : ''}${tx(verdict || entry.testPlan)}` })}
       className={`ui-badge ${tone} whitespace-nowrap font-normal cursor-pointer`}
     >
       {label}

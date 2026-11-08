@@ -22,6 +22,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
   names, the reason under a missing figure, "Why missing?", "What it means" and the missing-figures note) is shown in
   Spanish too, swapped on screen only so notes and the council still read English; observations with figures in
   them, source names and calendar event titles stay English for now.
+  The one-country Research panels (History & data, the output gap, debt sustainability, fiscal reaction, IMF
+  forecast vintages, US data vintages, financing needs, policy rules, event studies, the fair-value exchange rate,
+  local projections, reserve adequacy, the risk scorecard, sanctions, fiscal multipliers, scenarios, forecasts,
+  "as of" history, decision replay, track record and GDELT news) are in Spanish too, including the sentences and
+  reasons the app writes from the data; method notes and references stay English because they cite papers and data
+  sets, and what the council reads stays English. Five of those panels now download only when opened, which takes
+  about 110 KB (compressed) off the start. The app's total size limit is raised from 5 MB to 6 MB to hold the
+  Spanish and French text, which downloads only when someone picks that language.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

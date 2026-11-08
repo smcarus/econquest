@@ -7,5 +7,7 @@ import { WORKSPACE } from './workspace';
 import { WATCHLIST } from './watchlist';
 import { RESEARCH } from './research';
 import { BRIEF } from './brief';
+import { PANELS } from './panels';
+import { COMMON } from './common';
 
-export const ALL_CATALOGS: Catalog[] = [SHELL as Catalog, COUNCIL as Catalog, OWN_DATA as Catalog, WORKSPACE as Catalog, WATCHLIST as Catalog, RESEARCH as Catalog, BRIEF as Catalog];
+export const ALL_CATALOGS: Catalog[] = [SHELL as Catalog, COUNCIL as Catalog, OWN_DATA as Catalog, WORKSPACE as Catalog, WATCHLIST as Catalog, RESEARCH as Catalog, BRIEF as Catalog, PANELS as Catalog, COMMON as Catalog];
