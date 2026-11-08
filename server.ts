@@ -98,6 +98,7 @@ import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, pane
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
 import { stressWorldSeries } from './src/utils/stressIndices';
 import { spfWorldSeries } from './src/utils/inflationSurveys';
+import { chokepointWorldSeries } from './src/utils/portWatch';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
@@ -171,7 +172,7 @@ import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
 import { fetchCliPull, fetchQnaPull, fetchCpiPull, type NationalCpiPull, nationalCpiMemory, fetchNationalCpi, forgetNationalCpi, fetchMonthlyActivity } from './src/server/feeds/oecd';
 import { commodityMemory, fetchCommodities, forgetCommodityPulls } from './src/server/feeds/commodities';
-import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
+import { officialYieldCache, fetchOfficial10YYield, loadOwnCds, hasOfficial10YSource, fetchFredLatest, loadMarketExtras, saveMarketExtras, fredSeriesCache, fetchFredCached, fetchHcSpreadUncached, fetchHcSpread, loadFxHistory, pullFxHistory, fetchFxHistory, fetchFxExtra, loadFxExtra, fetchBisCreditCycle, fetchIdsCreditors, fetchSovereignDefaults, fetchInflationExpectations, fetchInflationSurveys, fetchStressPulls, fetchPortWatchChokepoints, fetchPortWatchPorts, fetchUs10YYield, type FxValuation, fxValuationCache, fetchFxValuationUncached, fetchFxValuation, effrCache, fetchEffr, forgetEffr, forgetHcSpread, forgetOwnCds, fetchFedBalanceSheet } from './src/server/feeds/rates';
 import { fetchTradeExposure } from './src/server/feeds/markets';
 import { serverGuiRuntimeConfig, setServerGuiRuntimeConfig, latestRunsByIso3, sseClients, integrationDeliveryLog, computeHmacSha256, buildTopLevelIntegrationPayload, dispatchTopLevelIntegrationEvent, interpolateIsoTemplate, extractMappedTelemetryFromPayload, DEFAULT_SERVER_API_CONNECTORS, DEFAULT_INTEGRATION_CONFIG } from './src/server/integrations';
 import { fetchLiveOpenDataSnapshotNetwork } from './src/server/snapshot/network';
@@ -3181,7 +3182,7 @@ async function startServer() {
   const quick = <T,>(p: Promise<T | null>): Promise<T | null> =>
     Promise.race([p.catch(() => null), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]);
   async function seriesFor(iso3: string) {
-    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys] = await Promise.all([
+    const [cbpol, cli, cpi, nationalCpi, cftc, tic, official, hcSpreadPull, qna, activity, fxHistory, fxExtra, bisCredit, idsCreditors, sovereignDefaults, inflationExpectations, inflationSurveys, portWatch] = await Promise.all([
       quick(fetchCbpolPull()), quick(fetchCliPull()), quick(fetchCpiPull()), quick(fetchNationalCpi()), quick(fetchCftcPull()), quick(fetchTicPull()),
       // Saved history answers at once; a first download that takes longer than 8 s finishes in the background.
       quick(fetchOfficialHistory(iso3)).then((h) => h ?? loadOfficialHistory(iso3)),
@@ -3196,6 +3197,7 @@ async function startServer() {
       quick(fetchSovereignDefaults()),
       iso3.toUpperCase() === 'USA' ? quick(fetchInflationExpectations()) : Promise.resolve(null),
       iso3.toUpperCase() === 'BRA' ? quick(fetchInflationSurveys()) : Promise.resolve(null),
+      quick(fetchPortWatchPorts(iso3)),
     ]);
     const merged = mergeNationalCpi(cpi?.series, nationalCpi?.series || {});
     const archive: ArchivedSnapshot[] = listArchivedDays(ARCHIVE_DIR, iso3)
@@ -3221,6 +3223,7 @@ async function startServer() {
       sovereignDefaults,
       inflationExpectations,
       inflationSurveys,
+      portWatch,
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
     // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).
@@ -3232,8 +3235,8 @@ async function startServer() {
     const m = commodityMemory;
     const prices = [...Object.values(m?.pink?.series || {}), ...Object.values(m?.eia?.series || {})];
     // Stress and supply chain indices (src/utils/stressIndices.ts), chartable and testable like prices.
-    const [pulls, surveys] = await Promise.all([quick(fetchStressPulls()), quick(fetchInflationSurveys())]);
-    const extra = [...stressWorldSeries(pulls), ...spfWorldSeries(surveys)].filter((x): x is Series => 'points' in x);
+    const [pulls, surveys, chokepoints] = await Promise.all([quick(fetchStressPulls()), quick(fetchInflationSurveys()), quick(fetchPortWatchChokepoints())]);
+    const extra = [...stressWorldSeries(pulls), ...spfWorldSeries(surveys), ...chokepointWorldSeries(chokepoints)].filter((x): x is Series => 'points' in x);
     // Your own series not about one country (Menu > Your data: "Not about one country").
     const own = await ownSeriesViewsFor(enginePlatform, OWN_NO_COUNTRY).catch(() => []);
     return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra, ...own];

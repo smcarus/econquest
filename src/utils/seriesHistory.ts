@@ -28,6 +28,7 @@ import { idsCreditorSeries, type IdsCreditors } from './idsCreditors';
 import { sovereignDefaultSeries, type SovereignDefaults } from './sovereignDefaults';
 import { inflationExpectationSeries, type InflationExpectations } from './inflationExpectations';
 import { focusSeries, type InflationSurveys } from './inflationSurveys';
+import { portActivitySeries, type PortWatchPorts } from './portWatch';
 import { impliedDefaultSeries } from './impliedDefault';
 import { BIS_ISO2 } from './bisDebtSecurities';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
@@ -111,6 +112,8 @@ export interface SeriesInputs {
   inflationExpectations?: InflationExpectations | null;
   /** Survey expectations (src/utils/inflationSurveys.ts): the Focus series on Brazil's page. */
   inflationSurveys?: InflationSurveys | null;
+  /** The country's ports added up, IMF PortWatch (src/utils/portWatch.ts), when pulled. */
+  portWatch?: PortWatchPorts | null;
   /** The country's currency (ISO 4217), for the daily exchange rate. */
   currency?: string;
 }
@@ -365,6 +368,7 @@ export function countrySeries(iso3: string, inputs: SeriesInputs): SeriesSet {
     ...sovereignDefaultSeries(code, inputs.sovereignDefaults),
     ...inflationExpectationSeries(code, inputs.inflationExpectations),
     ...focusSeries(code, inputs.inflationSurveys),
+    ...portActivitySeries(code, inputs.portWatch),
     ...ARCHIVE_FIGURES.map((f) => figureHistory(f, inputs)),
     ...OFFICIAL_FIGURES.filter((o) => !ARCHIVE_FIGURES.some((f) => f.id === o.id)).map((o) => officialSeries(inputs.official, o)),
   ];

@@ -54,6 +54,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Central Bank of Turkey (EVDS), with your key | Permission needed for client or commercial use | Free sharing allowed | May be published with the source cited. | Needs the TCMB's written permission. | Kaynak: TCMB EVDS (Central Bank of the Republic of Türkiye). |
 | ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files | Allowed with conditions | Do not pass on | Free for non-commercial use, including internal research. Anything published must be transformative and must not let the underlying data be rebuilt; ACLED must be named as the source. | Not allowed without a corporate licence from ACLED; governments and multilateral bodies need a public-sector licence. | ACLED (Armed Conflict Location & Event Data), accessed [date], www.acleddata.com; filters and any changes stated. |
 | Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE) | Allowed with conditions | Free sharing allowed | Allowed: the Bank lets anyone use, copy and distribute its website content, crediting the Bank and saying if anything was changed, without suggesting the Bank endorses the use. | Not limited by the terms for the Bank's own content; a paid product that includes it must tell buyers the content is free on the Bank's website. | Source: Bank of Canada and Bank of England, BoC-BoE Sovereign Default Database (<edition>), Bank of Canada Valet API; figures as published, US$ millions. |
+| IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers) | Terms not confirmed | Sharing unclear | The PortWatch terms page did not give its text to an automated reader, and the layers carry no licence or copyright text. | Not confirmed. | Source: IMF PortWatch (portwatch.imf.org), daily port and chokepoint data and preliminary trade volume estimates. |
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
 
 ## Sources
@@ -544,6 +545,17 @@ From the terms:
 >
 > The Bank does not grant You permission to re-use such third-party content unless it expressly indicates that You may do so.
 
+### IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers)
+
+- **Used for:** Ships through eight chokepoints and estimated volume (world series); each country's port calls and estimated seaborne imports and exports, monthly averages of daily data
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Terms not read yet.
+- **Terms read:** [PortWatch terms of use (page could not be read)](https://portwatch.imf.org/pages/terms); [PortWatch data and methodology](https://portwatch.imf.org/pages/data-and-methodology) (checked 2026-11-08)
+- **Show to others:** The PortWatch terms page did not give its text to an automated reader, and the layers carry no licence or copyright text.
+- **Commercial use:** Not confirmed.
+- **Credit:** Source: IMF PortWatch (portwatch.imf.org), daily port and chokepoint data and preliminary trade volume estimates.
+- **Open question:** Read the PortWatch terms in a browser (portwatch.imf.org/pages/terms) and update this row. PortWatch is an IMF site, so the IMF Copyright and Usage terms may apply, but the AIS ship data come from partners and may carry their own terms.
+
 ### Your own paid data (CDS file, LSEG account)
 
 - **Used for:** 5Y sovereign CDS (hidden for now)
@@ -580,4 +592,5 @@ From the terms:
 21. **Central Bank of Turkey (EVDS), with your key** (Permission needed for client or commercial use): These are the TCMB website terms; they do not name EVDS, whose own pages need JavaScript and were not read.
 22. **ACLED (Armed Conflict Location & Event Data), with your account or your downloaded files** (Allowed with conditions): Monthly counts per country may count as "reorganized" data, which the EULA says is not enough to publish. Keep ACLED figures to your own research and leave them out of anything shared until ACLED confirms. API access needs the Research level; Open accounts get aggregated downloads only, which the app reads from data/local/acled/. The same EULA covers the downloaded files: they stay on your computer and are never shipped with the app.
 23. **Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE)** (Allowed with conditions): The database is compiled from published sources (IMF, World Bank, Paris Club and others); the Bank's terms withhold permission for third-party content unless stated, and no database-specific licence was found. The Valet API must not be queried around its request limits: the app reads the file at most once a day.
-24. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+24. **IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers)** (Terms not confirmed): Read the PortWatch terms in a browser (portwatch.imf.org/pages/terms) and update this row. PortWatch is an IMF site, so the IMF Copyright and Usage terms may apply, but the AIS ship data come from partners and may carry their own terms.
+25. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
