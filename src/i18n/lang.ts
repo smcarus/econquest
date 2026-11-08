@@ -87,6 +87,8 @@ export type Messages<C> = C extends Catalog<infer K> ? Record<K, string> : never
 /** Every message file defined so far, so a language loaded later reaches them all. */
 const registry = new Map<string, Catalog>();
 const loaded: Partial<Record<Lang, Record<string, Record<string, string>>>> = {};
+/** Whole sentences that are built in English elsewhere (Missing reasons), keyed by their English. */
+const loadedText: Partial<Record<Lang, { exact: Record<string, string>; parts: Array<[string, string]> }>> = {};
 let version = 0;
 
 /** Defines a message file with its keys taken from the English list. */
@@ -97,8 +99,11 @@ export function defineMessages<K extends string>(area: string, en: Record<K, str
 }
 
 /** Puts a loaded language's words into every message file, now and as later files are defined. */
-export function attachLanguage(lang: Exclude<Lang, 'en'>, dicts: Record<string, Record<string, string>>): void {
+export function attachLanguage(lang: Exclude<Lang, 'en'>, dicts: Record<string, Record<string, string>>, text: Record<string, string> = {}): void {
   loaded[lang] = dicts;
+  // Longest first, so a sentence is swapped before any shorter sentence inside it.
+  const parts = Object.entries(text).filter(([en]) => en.length > 20).sort((a, b) => b[0].length - a[0].length);
+  loadedText[lang] = { exact: text, parts: parts as Array<[string, string]> };
   for (const [area, catalog] of registry) Object.assign(catalog[lang], dicts[area]);
   version += 1;
 }
@@ -112,8 +117,8 @@ export function langVersion(): number {
 export async function ensureLang(lang: Lang): Promise<void> {
   if (lang === 'en' || loaded[lang]) return;
   try {
-    const { ES } = await import('./es/index');
-    attachLanguage('es', ES);
+    const { ES, ES_TEXT } = await import('./es/index');
+    attachLanguage('es', ES, ES_TEXT);
   } catch {
     return; // Could not load (offline build gap): the app stays in English.
   }
@@ -129,6 +134,23 @@ export function translate<K extends string>(catalog: Catalog<K>, lang: Lang, key
   const text = (lang === 'en' ? undefined : catalog[lang][key]) ?? catalog.en[key] ?? key;
   if (!vars) return text;
   return text.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m));
+}
+
+/**
+ * A sentence the app builds in English because it also goes into notes and the council's prompts
+ * (the reasons a figure is Missing), shown in the chosen language. An exact match is swapped
+ * whole; a joined text ("Turkey: ... Egypt: ...") has each known sentence swapped in place; anything
+ * not in the list stays English.
+ */
+export function translateText(text: string, lang: Lang): string {
+  if (lang === 'en' || !text) return text;
+  const t = loadedText[lang];
+  if (!t) return text;
+  const exact = t.exact[text];
+  if (exact !== undefined) return exact;
+  let out = text;
+  for (const [en, tr] of t.parts) if (out.includes(en)) out = out.split(en).join(tr);
+  return out;
 }
 
 /** The {name} placeholders in a message, sorted, for checking translations keep them all. */

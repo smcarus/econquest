@@ -2,7 +2,7 @@ import { SettingsText } from './SettingsText';
 import React, { useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, ChevronRight, Columns3, X } from 'lucide-react';
 import type { LiveWatchlistItem } from '../types/council';
-import { useT } from '../i18n/useLang';
+import { useT, useTx } from '../i18n/useLang';
 import { WATCHLIST } from '../i18n/messages/watchlist';
 
 type WlKey = keyof typeof WATCHLIST.en;
@@ -32,12 +32,13 @@ const GOOD_NOTE = /^(Official|Own|Your|Live|BIS|ECB)/;
 
 function Cell({ col, it, last }: { col: ColumnDef; it: LiveWatchlistItem; last?: LastLook }) {
   const t = useT(WATCHLIST);
+  const tx = useTx();
   const missing = cellMissing(col, it);
   if (missing)
     return (
-      <span title={missing.help} className="inline-block text-left" data-missing={missing.kind}>
+      <span title={tx(missing.help)} className="inline-block text-left" data-missing={missing.kind}>
         <div className="text-slate-400 dark:text-slate-500">{t('missing')}</div>
-        <div className={`text-xs whitespace-nowrap ${missing.kind === 'setup' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>{missing.short}</div>
+        <div className={`text-xs whitespace-nowrap ${missing.kind === 'setup' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}`}>{tx(missing.short)}</div>
       </span>
     );
   const text = col.text(it, last);
@@ -51,7 +52,7 @@ function Cell({ col, it, last }: { col: ColumnDef; it: LiveWatchlistItem; last?:
   return (
     <>
       <div className={col.id === 'data' ? 'text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap' : 'font-medium'}>{text}</div>
-      {note && <div className={`text-xs whitespace-nowrap ${GOOD_NOTE.test(note) ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>{note}</div>}
+      {note && <div className={`text-xs whitespace-nowrap ${GOOD_NOTE.test(note) ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-500 dark:text-slate-400'}`}>{tx(note)}</div>}
     </>
   );
 }
@@ -108,6 +109,7 @@ export const ColumnPicker: React.FC<{ view: WatchlistView; onChange: (v: Watchli
  */
 export const MissingSources: React.FC<{ items: LiveWatchlistItem[]; compact?: boolean }> = ({ items, compact }) => {
   const t = useT(WATCHLIST);
+  const tx = useTx();
   const rows = missingSummary(items).sort((a, b) => Number(b.reason.kind === 'setup') - Number(a.reason.kind === 'setup'));
   if (!rows.length || !items.length) return null;
   return (
@@ -124,7 +126,7 @@ export const MissingSources: React.FC<{ items: LiveWatchlistItem[]; compact?: bo
             <span className={`ml-1 text-xs px-1 border ${r.reason.kind === 'setup' ? 'border-amber-300 text-amber-800 dark:border-amber-800 dark:text-amber-300' : 'border-slate-300 text-slate-600 dark:border-slate-700 dark:text-slate-400'}`}>
               {r.reason.kind === 'setup' ? t('needsSetup') : t('feedNoAnswer')}
             </span>
-            <div className="text-xs text-slate-600 dark:text-slate-400">{r.reason.help}</div>
+            <div className="text-xs text-slate-600 dark:text-slate-400">{tx(r.reason.help)}</div>
           </li>
         ))}
       </ul>
@@ -163,6 +165,7 @@ export const WatchlistTable: React.FC<{
   heldIso3?: ReadonlySet<string>;
 }> = ({ items, view, onChangeView, lastLook, highlightIso3, onOpen, onRemove, compact, heldIso3 }) => {
   const t = useT(WATCHLIST);
+  const tx = useTx();
   const rows = useMemo(() => sortRows(items, view, lastLook), [items, view, lastLook]);
   const allCols = view.columns.map((id) => COLUMN_BY_ID[id]);
   const cols = compact ? allCols.slice(0, COMPACT_COLUMNS) : allCols;
@@ -207,7 +210,7 @@ export const WatchlistTable: React.FC<{
                     // One line per row in the corner card: a missing figure is a dash, with the reason on hover.
                     const miss = cellMissing(c, it);
                     return miss ? (
-                      <span className="text-slate-400 dark:text-slate-500" title={t('missingTitle', { short: miss.short, help: miss.help })} aria-label={t('missingAria', { short: miss.short })}>
+                      <span className="text-slate-400 dark:text-slate-500" title={t('missingTitle', { short: tx(miss.short), help: tx(miss.help) })} aria-label={t('missingAria', { short: tx(miss.short) })}>
                         –
                       </span>
                     ) : (

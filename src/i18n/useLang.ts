@@ -1,6 +1,6 @@
 /** React side of src/i18n/lang.ts: the chosen language, kept in step across every panel and window. */
 import { useCallback, useSyncExternalStore } from 'react';
-import { ensureLang, LANG_EVENT, LANG_KEY, langVersion, readLang, translate, type Catalog, type Lang } from './lang';
+import { ensureLang, LANG_EVENT, LANG_KEY, langVersion, readLang, translate, translateText, type Catalog, type Lang } from './lang';
 
 function subscribe(cb: () => void): () => void {
   const onStorage = (e: StorageEvent) => {
@@ -28,4 +28,11 @@ export function useT<K extends string>(catalog: Catalog<K>): (key: K, vars?: Rec
   const lang = useLang();
   const version = useLangVersion();
   return useCallback((key: K, vars?: Record<string, string | number>) => translate(catalog, lang, key, vars), [catalog, lang, version]);
+}
+
+/** tx(text) for a sentence built in English elsewhere (Missing reasons): see translateText. */
+export function useTx(): (text: string) => string {
+  const lang = useLang();
+  const version = useLangVersion();
+  return useCallback((text: string) => translateText(text, lang), [lang, version]);
 }
