@@ -374,7 +374,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'ucdp',
     name: 'UCDP (Uppsala Conflict Data Program) downloaded files',
-    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (files you put in data/local/ucdp/)',
+    usedFor: 'Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (release shipped in datasets/ucdp/; newer files fetched into data/local/ucdp/ by the daily start-up run or npm run ucdp:pull, or put there by you)',
     terms: [{ label: 'UCDP downloads (licence and citations)', url: 'https://ucdp.uu.se/downloads/' }],
     status: 'open',
     display: 'Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset.',
@@ -421,7 +421,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'gpr',
     name: 'Caldara-Iacoviello Geopolitical Risk index',
-    usedFor: 'Monthly geopolitical risk index, world and 44 countries (file you save in data/local/gpr/), in the country risk scorecard',
+    usedFor: 'Monthly geopolitical risk index, world and 44 countries (file fetched into data/local/gpr/ by the daily start-up run or npm run gpr:pull, or saved there by you), in the country risk scorecard',
     terms: [{ label: 'Geopolitical Risk Index page', url: 'https://www.matteoiacoviello.com/gpr.htm' }],
     status: 'not_verified',
     display: 'Not confirmed: the data page could not be read from where this register was written.',
