@@ -1,7 +1,7 @@
 import { HC_SPREAD_LABEL, HC_SPREAD_LONG, HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hcSpreadWhen } from '../utils/hardCurrencySpread';
 import React, { useEffect, useMemo, useState } from 'react';
 import { noteExamOpened } from '../utils/examMode';
-import { openDataLicences } from './AboutDialog';
+import { openDataLicences } from './aboutOpen';
 import { Plus, RefreshCw } from 'lucide-react';
 import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { DataStatusBadge } from './DataStatusBadge';

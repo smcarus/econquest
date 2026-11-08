@@ -10,12 +10,7 @@ import { DATA_LICENCES, LICENCE_SHARE_LABEL, LICENCE_STATUS_HELP, LICENCE_STATUS
  * with `focusId` from the Sources panel.
  */
 
-export const OPEN_ABOUT_EVENT = 'econquest:open-about';
-
-/** Opens Menu > About & data licences from any panel, optionally on one source's row. */
-export function openDataLicences(id?: string) {
-  window.dispatchEvent(new CustomEvent(OPEN_ABOUT_EVENT, { detail: id ? { id } : undefined }));
-}
+export { OPEN_ABOUT_EVENT, openDataLicences } from './aboutOpen';
 
 const STATUS_CLASS: Record<LicenceStatus, string> = {
   open: 'text-emerald-700 dark:text-emerald-400',
