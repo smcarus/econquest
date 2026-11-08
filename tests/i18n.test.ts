@@ -53,3 +53,15 @@ test('Spanish loads on its own and reaches message files defined before and afte
   assert.equal(translate(after, 'es', 'b'), 'Pera');
   assert.equal(translate(after, 'en', 'b'), 'Pear');
 });
+
+test('watchlist column headers in the message file match the columns the app defines', async () => {
+  const { COLUMN_BY_ID } = await import('../src/utils/watchlistView');
+  const { FIGURE_LABEL } = await import('../src/utils/liveFigures');
+  const { WATCHLIST } = await import('../src/i18n/messages/watchlist');
+  const en = WATCHLIST.en as Record<string, string>;
+  for (const c of Object.values(COLUMN_BY_ID)) {
+    assert.equal(en[`col_${c.id}`], c.label, `column ${c.id} header`);
+    assert.equal(en[`help_${c.id}`], c.help, `column ${c.id} hover text`);
+  }
+  for (const [key, label] of Object.entries(FIGURE_LABEL)) assert.equal(en[`fig_${key}`], label, `figure ${key}`);
+});

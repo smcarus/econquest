@@ -17,6 +17,8 @@ import {
   type WatchlistMessage,
   type WatchlistView,
 } from '../utils/watchlistView';
+import { useT } from '../i18n/useLang';
+import { WATCHLIST } from '../i18n/messages/watchlist';
 import { ColumnPicker, ColumnsButton, MissingSources, WatchlistTable } from './WatchlistTable';
 
 const LAST_VISIT_KEY = 'econquest_today_last_visit_v1';
@@ -38,6 +40,7 @@ function loadLastLook(): { at?: string; rows?: LastLook } {
  * removing a country here changes the same list there. Clicking a country opens it in the main window.
  */
 export const WatchlistWindow: React.FC = () => {
+  const t = useT(WATCHLIST);
   const [groups, setGroups] = useState<WatchlistGroup[]>(() => loadWatchlists());
   const [view, setView] = useState<WatchlistView>(() => loadView());
   const [showColumns, setShowColumns] = useState(false);
@@ -91,16 +94,16 @@ export const WatchlistWindow: React.FC = () => {
       } catch {
         // focus refused by the browser
       }
-      setNotice(`Opened ${item.countryName} in the main window.`);
+      setNotice(t('openedMain', { name: item.countryName }));
     } else {
-      setNotice(sent ? `Opened ${item.countryName} in the main window, if it is open.` : 'Open the main window to read about this country.');
+      setNotice(sent ? t('openedMaybe', { name: item.countryName }) : t('openMain'));
     }
   };
 
   if (!list)
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 text-sm text-slate-700 dark:text-slate-300">
-        No watchlist saved in this browser yet. Open the main app once, then pop the watchlist out again.
+        {t('noSaved')}
       </div>
     );
 
@@ -109,10 +112,10 @@ export const WatchlistWindow: React.FC = () => {
       <section className="ui-panel">
         <header className="flex flex-wrap items-center justify-between gap-2 px-4 pt-3 pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-sm font-semibold text-slate-900 dark:text-white">Watchlist</h1>
+            <h1 className="text-sm font-semibold text-slate-900 dark:text-white">{t('watchlist')}</h1>
             {groups.length > 1 ? (
               <select
-                aria-label="Which list"
+                aria-label={t('whichList')}
                 value={list.id}
                 onChange={(e) => changeView({ ...view, watchlistId: e.target.value })}
                 className="px-1.5 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white max-w-[16rem]"
@@ -141,11 +144,11 @@ export const WatchlistWindow: React.FC = () => {
               if (!item) return;
               changeGroups(addToList(groups, list.id, item));
               setAdding('');
-              setNotice(`Added ${item.countryName}. Its figures show once the main window next fetches them; until then they read Missing.`);
+              setNotice(t('added', { name: item.countryName }));
             }}
           >
-            <select aria-label="Add a country" value={adding} onChange={(e) => setAdding(e.target.value)} className="px-1.5 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white max-w-[16rem]" disabled={addable.length === 0}>
-              <option value="">{addable.length ? 'Add a country…' : 'Every country is on this list'}</option>
+            <select aria-label={t('addCountry')} value={adding} onChange={(e) => setAdding(e.target.value)} className="px-1.5 py-1 text-sm border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white max-w-[16rem]" disabled={addable.length === 0}>
+              <option value="">{addable.length ? t('addCountryOption') : t('everyCountry')}</option>
               {addable.map((c) => (
                 <option key={c.iso3} value={c.iso3}>
                   {c.countryName}
@@ -153,10 +156,10 @@ export const WatchlistWindow: React.FC = () => {
               ))}
             </select>
             <button type="submit" disabled={!adding} className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300 hover:underline disabled:opacity-40">
-              <Plus className="w-3.5 h-3.5" /> Add
+              <Plus className="w-3.5 h-3.5" /> {t('add')}
             </button>
             <span className="text-xs text-slate-500 dark:text-slate-400">
-              {list.items.length} countries · changes since {last.at ? `your visit of ${new Date(last.at).toLocaleString()}` : 'your last visit show from your next visit'}
+              {last.at ? t('countsVisit', { n: list.items.length, when: new Date(last.at).toLocaleString() }) : t('countsNoVisit', { n: list.items.length })}
             </span>
           </form>
           {notice && (
@@ -174,7 +177,7 @@ export const WatchlistWindow: React.FC = () => {
             onRemove={(iso3) => {
               const name = list.items.find((i) => i.iso3 === iso3)?.countryName || iso3;
               changeGroups(removeFromList(groups, list.id, iso3));
-              setNotice(`Removed ${name}.`);
+              setNotice(t('removed', { name }));
             }}
           />
         </div>
