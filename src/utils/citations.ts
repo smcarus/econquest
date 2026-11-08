@@ -39,6 +39,7 @@ const SOURCE_PAGES: Array<[RegExp, string]> = [
   [/EVDS|CBRT/i, 'https://evds3.tcmb.gov.tr/'],
   [/CFTC/i, 'https://publicreporting.cftc.gov/'],
   [/\bTIC\b|Treasury International Capital/i, 'https://home.treasury.gov/data/treasury-international-capital-tic-system'],
+  [/Fiscal Data|Treasury Securities Auctions/i, 'https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/'],
   [/Comtrade/i, 'https://comtradeplus.un.org/'],
   [/\bEIA\b/i, 'https://www.eia.gov/opendata/'],
   [/GDELT/i, 'https://www.gdeltproject.org/'],

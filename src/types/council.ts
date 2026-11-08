@@ -561,6 +561,8 @@ export interface WatchlistItem {
   cftc?: import('../utils/cftcPositioning').CftcPositioning & { pulledAt: string };
   /** TIC holdings of US Treasuries (utils/ticHoldings.ts), with the date the app pulled them. */
   tic?: import('../utils/ticHoldings').TicHolding & { pulledAt: string };
+  /** United States only: the latest US Treasury auctions (utils/treasuryAuctions.ts), with the date the app pulled them. */
+  ustAuctions?: import('../utils/treasuryAuctions').UstAuctionSummary;
   /** IMF official reserves and balance of payments (utils/imfReserves.ts), with the date the app pulled them. */
   imf?: import('../utils/imfReserves').ImfExternal & { pulledAt: string };
   /** OECD composite leading indicator (utils/oecdCli.ts), with the date the app pulled it. */

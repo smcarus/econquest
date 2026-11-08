@@ -5,6 +5,7 @@ import { formatPeriod } from './officialYields';
 import { yieldSourceNote } from './watchlistYield';
 import { upcomingOfficialEvents } from '../data/officialCalendar';
 import { quarterLabel } from './debtSchedule';
+import { UST_AUCTION_SOURCE, ustAuctionValue, ustDemandReading } from './treasuryAuctions';
 import {
   calendarSection,
   joinMeaning,
@@ -58,6 +59,8 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   const band = cds !== undefined ? accessBand(cds) : undefined;
   const events = upcomingOfficialEvents([run.iso3], 60, now);
   const ds = open.debtSchedule;
+  // United States only: the latest Treasury auctions, carried on its watchlist row from the daily download.
+  const ustAuctions = peersIn.find((p) => p.iso3 === run.iso3)?.ustAuctions;
   const qeds = ds?.qeds;
   const qedsPeak = qeds ? qeds.buckets.reduce((a, b) => (b.usdBn > a.usdBn ? b : a), qeds.buckets[0]) : undefined;
   const thisYear = now.getUTCFullYear();
@@ -191,6 +194,30 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
           liveRow(status, 'Policy rate', 'market.policyRatePct', (v) => pct(v, 2), open),
         ],
       },
+      ...(run.iso3 === 'USA'
+        ? [
+            {
+              title: 'Recent US Treasury auctions',
+              rows: ustAuctions?.latest.length
+                ? ustAuctions.latest.map((a) => {
+                    const reading = ustDemandReading(a);
+                    return {
+                      label: `${a.label} auction${a.reopening ? ' (reopening)' : ''}, ${a.date}`,
+                      value: `${ustAuctionValue(a)}${reading ? `; ${reading}` : ''}`,
+                      source: UST_AUCTION_SOURCE,
+                      verified: true,
+                    };
+                  })
+                : [
+                    missingRow('Treasury auctions', {
+                      kind: 'unreachable',
+                      short: 'US Treasury Fiscal Data not saved yet',
+                      help: 'The auctions come from the free US Treasury Fiscal Data API and are saved by the daily download (Menu > Offline data > Download all country data, or npm run go -- daily). Nothing is shown until that copy exists.',
+                    }),
+                  ],
+            },
+          ]
+        : []),
       {
         title: 'Financing need',
         rows: [

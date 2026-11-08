@@ -312,7 +312,12 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
 
 - *Economist*: growth, inflation, debt, reserves and the external position.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
-  IDS, BIS debt securities), distress tests and pricing against peers.
+  IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
+  lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):
+  bid-to-cover, high yield, the indirect bidders' share and whether demand was stronger or weaker
+  than the previous six auctions of the same term, from the copy the daily download saves (US
+  Treasury Fiscal Data). The same auctions chart under History & data as "Treasury auction
+  bid-to-cover" and "Treasury auction high yield" for each term.
 - *Official sector*: debt sustainability. Debt path under a baseline and standard shocks, the
   stabilising primary balance and r minus g. Run only when debt, primary balance, growth, inflation
   and the official 10Y yield are all live; otherwise it lists what is missing.

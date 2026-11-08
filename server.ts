@@ -101,6 +101,7 @@ import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
 import { stressWorldSeries } from './src/utils/stressIndices';
 import { spfWorldSeries } from './src/utils/inflationSurveys';
 import { chokepointWorldSeries } from './src/utils/portWatch';
+import { ustAuctionSummary } from './src/utils/treasuryAuctions';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
@@ -169,7 +170,7 @@ import { sanctionsData, sanctionsDir } from './src/utils/sanctionsStore.ts';
 import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD, WGI_IDS, type ScorecardInputs } from './src/utils/countryRiskScorecard.ts';
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
-import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
+import { fetchCftcPull, fetchTicPull, fetchCbpolPull, fetchUstAuctionPull, loadUstAuctions } from './src/server/feeds/positioning';
 import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
@@ -510,6 +511,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
       return had(await fetchTicPull(), 'US Treasury');
+    case 'world:ust_auctions': {
+      const got = await fetchUstAuctionPull({ force: true });
+      if (!got) return { outcome: 'failed', note: 'US Treasury Fiscal Data did not answer' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${got.auctions.length} auctions to ${got.auctions[got.auctions.length - 1]?.date || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `US Treasury Fiscal Data did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
     case 'world:imf_external':
       return had(await fetchImfPull(), 'IMF');
     case 'world:cofer':
@@ -1218,6 +1226,11 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...(effr ? { usFedFundsPct: effr.pct, usFedFundsDate: effr.date, ...(effr.source ? { usFedFundsSource: effr.source } : {}) } : {}),
           ...(pos && cftc ? { cftc: { ...pos, pulledAt: cftc.pulledAt } } : {}),
           ...(ust && tic ? { tic: { ...ust, pulledAt: tic.pulledAt } } : {}),
+          // The United States' latest Treasury auctions, from the copy the daily run saved (no page waits on Fiscal Data).
+          ...((() => {
+            const a = catItem.iso3 === 'USA' ? ustAuctionSummary(loadUstAuctions()) : undefined;
+            return a ? { ustAuctions: a } : {};
+          })()),
           ...(lead && cli ? { oecdCli: { ...lead, pulledAt: cli.pulledAt } } : cli ? { oecdCliPulledAt: cli.pulledAt } : {}),
           ...(Object.keys(record).length ? { signalRecord: record } : {}),
           ...(snap.gdeltPull && (snap.liveFields || {})['gdelt.averageTone'] ? { gdelt: snap.gdeltPull } : {}),
@@ -3241,6 +3254,7 @@ async function startServer() {
       inflationExpectations,
       inflationSurveys,
       portWatch,
+      ustAuctions: iso3.toUpperCase() === 'USA' ? loadUstAuctions() : null,
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
     // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).

@@ -337,6 +337,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     limits: 'Ratings are licensed data. The app shows them as Missing rather than guessing, because no free feed provides them.',
     match: [/Credit rating/i],
   },
+  {
+    id: 'treasury_auction',
+    term: 'Treasury auction and bid-to-cover',
+    group: 'budget',
+    what: 'The US government sells its bills, notes and bonds at regular auctions. Bid-to-cover is the amount investors bid divided by the amount sold; the high yield is the highest yield accepted, which every winning bidder receives.',
+    why: 'They show how keen investors are to lend to the US government. Weak demand can push up the yield the government pays, and with it borrowing costs across the world, because US Treasuries are the benchmark for most other bonds.',
+    read: 'A bid-to-cover of 2.5 means $2.50 was bid for every $1 sold; higher means more demand. Compare an auction with earlier auctions of the same term, not with other terms. Indirect bidders are mostly foreign central banks and investment funds bidding through dealers.',
+    limits: 'One auction can be weak for passing reasons (a holiday week, a big supply of other bonds). Only the United States has a free auction feed the app can read; other countries\' auctions are not shown.',
+    match: [/bid-to-cover|Treasury auction/i],
+  },
 
   // ---- External ------------------------------------------------------------------------------
   {

@@ -37,6 +37,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Eurostat HICP and government expenditure by function (COFOG) | Open with attribution | Free sharing allowed | Allowed without a licence if Eurostat is named and any change to the data is stated. | Allowed for EU, EFTA and candidate countries (the app reads EU and EFTA members only). | Source: Eurostat (prc_hicp_minr, gov_10a_exp). |
 | CFTC Commitments of Traders | Open with attribution | Free sharing allowed | Public domain. | Allowed. | Source: CFTC Commitments of Traders (acknowledgement requested). |
 | US Treasury TIC (major foreign holders) | Terms not confirmed | Sharing unclear | No terms, licence or copyright statement was found on the TIC or Treasury site-policy pages. | Not stated. | Source: US Treasury, Treasury International Capital (TIC) system. |
+| US Treasury Fiscal Data (Treasury Securities Auctions Data) | Open with attribution | Free sharing allowed | Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute. | Allowed ("for non-commercial or commercial purposes"). | Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data. |
 | US EIA open data | Open with attribution | Free sharing allowed | Public domain. | No restriction stated. | Source: U.S. Energy Information Administration (<publication date>). |
 | GDELT (DOC API, raw GDELT 2.0 files and GDELT 1.0 event files) | Open with attribution | Free sharing allowed | Allowed in any form, with a citation and link. | Allowed, without fee. | Source: The GDELT Project (https://www.gdeltproject.org/). |
 | UCDP (Uppsala Conflict Data Program) downloaded files | Open with attribution | Free sharing allowed | Allowed: free to use and redistribute under CC BY 4.0, citing the publications listed with each dataset. | Allowed (CC BY 4.0 sets no commercial limit). | UCDP, Uppsala University (ucdp.uu.se), CC BY 4.0; cite the dataset publications, e.g. Davies, Pettersson & Öberg (2026), Journal of Peace Research, and Gleditsch et al. (2002), Journal of Peace Research 39(5). |
@@ -296,6 +297,20 @@ From the terms:
 - **Commercial use:** Not stated.
 - **Credit:** Source: US Treasury, Treasury International Capital (TIC) system.
 - **Open question:** Treasury does not state a licence for TIC. Its Fiscal Data site says its data is "free, without restriction" for commercial use, but that page does not cover TIC.
+
+### US Treasury Fiscal Data (Treasury Securities Auctions Data)
+
+- **Used for:** Bid-to-cover, high yield, amounts offered and accepted, and the indirect bidders' share at each auction of US bills, notes and bonds
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. Free, without restriction.
+- **Terms read:** [Fiscal Data about and terms](https://fiscaldata.treasury.gov/about-us/); [Treasury Securities Auctions Data](https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/) (checked 2026-11-08)
+- **Show to others:** Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute.
+- **Commercial use:** Allowed ("for non-commercial or commercial purposes").
+- **Credit:** Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data.
+
+From the terms:
+
+> free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes.
 
 ### US EIA open data
 

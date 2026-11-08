@@ -69,6 +69,7 @@ own-data switch in Settings).
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |
 | US Treasury TIC | Holdings of US Treasuries by country, monthly (Japan, UK, China, Brazil, India and the other ~15 holders Treasury names) | ticdata.treasury.gov | 1 day, on disk |
+| US Treasury Fiscal Data (auctions) | US Treasury auctions: bid-to-cover, high yield (bills: high investment rate), amounts offered and accepted, indirect bidders' share, for 13- and 26-week bills, 2-, 5- and 10-year notes and 30-year bonds, ten years back (TIPS, floating-rate notes and cash management bills left out). United States page, issuer note and council charts | api.fiscaldata.treasury.gov | Daily run, on disk (data/live/ust-auctions.json); pages read the saved copy |
 | World Bank Pink Sheet | Monthly commodity prices: oil (Brent, WTI, Dubai), gas, LNG, coal, copper, iron ore, aluminium, nickel, gold, platinum, silver, soybeans, maize, wheat, palm oil, coffee, cocoa, sugar | www.worldbank.org (page), thedocs.worldbank.org (workbook) | 1 day, on disk |
 | OECD leading indicators (via DBnomics) | Composite leading indicator (amplitude adjusted, 100 = long-term average), monthly, for the countries the OECD covers | api.db.nomics.world | 1 day, on disk |
 | OECD quarterly GDP (via DBnomics) | Real GDP growth, quarter on quarter and year on year, seasonally adjusted, for about 53 OECD and partner areas; feeds the nowcast and forecasts | api.db.nomics.world | 1 day, on disk |
@@ -148,6 +149,21 @@ Notes from the first check on Sam's Mac (2026-11-05):
   after a day. Readings: holdings, change on the month and over 12 months, share of all foreign
   holdings, and a stated rule on the 12-month change (down 10% or more = selling, up 10% or
   more = buying; tagged as the FX Valuation Agent's reading).
+- **US Treasury auctions** come from the Fiscal Data API (`auctions_query`, free, no key; Fiscal
+  Data's terms allow any use). One request reads ten years of auctions. Kept: regular bills, notes
+  and bonds of six terms (13- and 26-week bills; 2-, 5- and 10-year notes; 30-year bonds), by
+  original term so a reopened 10-year counts as a 10-year. Left out: inflation-protected
+  securities, floating-rate notes and cash management bills, whose yields do not compare. Every
+  value arrives as text and an unpublished one is the word "null"; auctions announced but not
+  yet held have no bid-to-cover and are skipped, never filled in. The daily run saves the copy
+  (`data/live/ust-auctions.json`); the United States page, its issuer note and the council charts
+  read only that copy, so no page waits on Fiscal Data. Readings: bid-to-cover (dollars bid per
+  dollar sold), high yield (bills: high investment rate), amounts offered and accepted, the
+  indirect bidders' share of the competitive amount, and a stated rule against the previous six
+  auctions of the same term (more than 0.1 above their average bid-to-cover = stronger demand,
+  more than 0.1 below = weaker, otherwise in line). TreasuryDirect asks robots not to read it and
+  is not used. Germany's, the UK's and Brazil's auctions have no free source the app can read and
+  are not shown.
 - **OECD quarterly GDP** comes from the OECD's dataflow `DSD_NAMAIN1@DF_QNA_EXPENDITURE_GROWTH_OECD`
   through DBnomics: GDP (`B1GQ`), chain-linked volume, calendar and seasonally adjusted (`Y`),
   growth on the previous quarter (`G1`) and on the same quarter a year earlier (`GY`). DBnomics'
