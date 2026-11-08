@@ -60,6 +60,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:activity', kind: 'world', label: 'Monthly activity indexes (BCB IBC-Br, Eurostat industrial production)' },
   { id: 'world:cftc', kind: 'world', label: 'CFTC futures positioning' },
   { id: 'world:tic', kind: 'world', label: 'US Treasury TIC holdings' },
+  { id: 'world:ust_auctions', kind: 'world', label: 'US Treasury auctions (bid-to-cover and yields, Fiscal Data)' },
   { id: 'world:imf_external', kind: 'world', label: 'IMF reserves and balance of payments' },
   { id: 'world:cofer', kind: 'world', label: 'IMF COFER reserve currencies' },
   { id: 'world:commodities', kind: 'world', label: 'Commodity prices (World Bank Pink Sheet, EIA)' },

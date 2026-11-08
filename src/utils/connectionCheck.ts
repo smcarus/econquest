@@ -18,6 +18,7 @@ import { bcrpEmbigUrl, describeBcrpReply, parseBcrpEmbig } from './hardCurrencyS
 import { geminiModel } from './geminiModel';
 import { DEFAULT_REFEREE_MODEL, refereeModelOrDefault } from './refereeModel';
 import { TIC_URL, formatMonth, parseTicTable, ticHoldingFor } from './ticHoldings';
+import { latestUstAuctions, parseUstAuctions, ustAuctionsUrl } from './treasuryAuctions';
 import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from './imfReserves';
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
@@ -279,6 +280,7 @@ export const SOURCE_IDS = [
   'wits',
   'cftc',
   'tic',
+  'ust_auctions',
   'pink_sheet',
   'oecd_cli',
   'oecd_cpi',
@@ -633,6 +635,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       undefined,
       'Treasury answered, but the table was not in the layout the app reads (a Country row with YYYY-MM months). The file may have changed.'
+    )
+  );
+
+  add('ust_auctions', () =>
+    httpCheck(
+      { id: 'ust_auctions', name: 'US Treasury auctions (Fiscal Data)', group: 'free', feeds: 'Bid-to-cover, high yield and amounts at each auction of US bills, notes and bonds (United States page)' },
+      fetchFn,
+      ustAuctionsUrl(now, 1),
+      Math.max(T, 20000),
+      (r) => {
+        const a = parseUstAuctions(parseJson(r.text));
+        const ten = latestUstAuctions(a ? { pulledAt: '', auctions: a } : null).find((x) => x.tenor === '10y');
+        return a?.length ? `${a.length} auctions in the last year${ten ? `; 10-year note on ${ten.date}: bid-to-cover ${ten.bidToCover.toFixed(2)}` : ''}` : null;
+      },
+      undefined,
+      'Fiscal Data answered, but without held auctions in the layout the app reads (auction_date, security_type, original_security_term, bid_to_cover_ratio). The dataset may have changed.'
     )
   );
 

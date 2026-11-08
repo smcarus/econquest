@@ -91,3 +91,40 @@ test('issuer note: all sections in order, toggles respected, and no investment-a
   const some = buildBankerSections(runFor('ZAF'), [], (id) => id !== 'peers', NOW);
   assert.ok(!some.some((s) => s.id === 'peers'));
 });
+
+test('the United States issuer note lists the latest Treasury auctions from its watchlist row, or says they are not saved yet', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang.ts');
+  const { ES, ES_TEXT } = await import('../src/i18n/es/index.ts');
+  const { FR, FR_TEXT } = await import('../src/i18n/fr/index.ts');
+  const none = bankerBrief(runFor('USA'), [], NOW).groups.find((g) => g.title === 'Recent US Treasury auctions')!;
+  assert.equal(none.rows.length, 1);
+  assert.equal(none.rows[0].value, 'Missing');
+  assert.ok(!bankerBrief(runFor('BRA'), [], NOW).groups.some((g) => g.title === 'Recent US Treasury auctions'), 'United States only');
+  const us = {
+    ...peer('USA', 'United States', 4.1),
+    ustAuctions: {
+      pulledAt: '2026-11-04T06:00:00Z',
+      latest: [
+        { date: '2026-10-06', tenor: '13w', label: '13-week bill', reopening: false, bidToCover: 2.9, highYieldPct: 3.845 },
+        { date: '2026-10-08', tenor: '10y', label: '10-year note', reopening: true, bidToCover: 2.31, highYieldPct: 4.112, indirectPct: 70, priorAvgBidToCover: 2.58 },
+      ],
+    },
+  } as WatchlistItem;
+  const rows = bankerBrief(runFor('USA'), [us], NOW).groups.find((g) => g.title === 'Recent US Treasury auctions')!.rows;
+  assert.deepEqual(
+    rows.map((r) => `${r.label} | ${r.value}`),
+    [
+      '13-week bill auction, 2026-10-06 | bid-to-cover 2.90, high yield 3.845%',
+      '10-year note auction (reopening), 2026-10-08 | bid-to-cover 2.31, high yield 4.112%, indirect 70.0%; demand weaker than recent auctions',
+    ]
+  );
+  assert.ok(rows.every((r) => r.verified && /Fiscal Data/.test(r.source)));
+  // Every line reads in Spanish and French too.
+  const lines = [none.title, none.rows[0].label, none.rows[0].source, none.rows[0].help!, ...rows.flatMap((r) => [r.label, r.value])];
+  attachLanguage('es', ES, ES_TEXT);
+  assert.deepEqual(lines.filter((l) => translateText(l, 'es') === l), [], 'no Spanish');
+  assert.equal(translateText(rows[1].label, 'es'), 'subasta de nota a 10 años (reapertura), 2026-10-08');
+  attachLanguage('fr', FR, FR_TEXT);
+  assert.deepEqual(lines.filter((l) => translateText(l, 'fr') === l), [], 'no French');
+  assert.equal(translateText(rows[1].value, 'fr'), 'taux de couverture 2.31, rendement maximal 4.112%, indirects 70.0% ; demande plus faible que lors des adjudications récentes'.replace(' ; ', '; '));
+});

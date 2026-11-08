@@ -1,6 +1,6 @@
 /**
- * Positioning and policy-rate feeds: CFTC futures positioning, TIC Treasury holdings and BIS
- * central bank policy rates. Each pull is kept in memory and in data/live/, and pulled again
+ * Positioning and policy-rate feeds: CFTC futures positioning, TIC Treasury holdings, US Treasury
+ * auctions and BIS central bank policy rates. Each pull is kept in memory and in data/live/, and pulled again
  * when stale; a failed pull keeps the last good one.
  */
 
@@ -13,6 +13,7 @@ import { describeNetworkError } from '../../utils/connectionCheck';
 import { fetchWithTimeout } from '../http';
 import { parseTicTable, TIC_URL, type TicTable } from '../../utils/ticHoldings';
 import { writeFileAtomic } from '../../utils/atomicWrite';
+import { parseUstAuctions, type UstAuction, type UstAuctionPull, ustAuctionsUrl } from '../../utils/treasuryAuctions';
 
 /**
  * CFTC currency futures positioning (src/utils/cftcPositioning.ts). Weekly: positions as of
@@ -188,4 +189,63 @@ export async function fetchCbpolPull(): Promise<CbpolPull | null> {
     cbpolInFlight = null;
   });
   return cbpolInFlight;
+}
+
+/**
+ * US Treasury auctions (src/utils/treasuryAuctions.ts) from the Fiscal Data API. One request
+ * covers ten years of bills, notes and bonds. Saved to data/live/ust-auctions.json with its pull
+ * date and pulled again after a day (the daily run does it); a failed pull keeps the last good
+ * one and is retried after an hour.
+ */
+let ustAuctionMemory: { pull: UstAuctionPull | null; triedAt: number } | null = null;
+let ustAuctionInFlight: Promise<UstAuctionPull | null> | null = null;
+function ustAuctionFile(): string {
+  return path.join(DATA_DIR, 'live', 'ust-auctions.json');
+}
+/** The saved copy only, without asking the Treasury (pages read this; the daily run refreshes it). */
+export function loadUstAuctions(): UstAuctionPull | null {
+  if (!ustAuctionMemory) {
+    try {
+      const saved = JSON.parse(fs.readFileSync(ustAuctionFile(), 'utf8')) as UstAuctionPull;
+      if (saved?.pulledAt && Array.isArray(saved.auctions)) ustAuctionMemory = { pull: saved, triedAt: Date.parse(saved.pulledAt) };
+    } catch {
+      // never pulled
+    }
+  }
+  return ustAuctionMemory?.pull ?? null;
+}
+export async function fetchUstAuctionPull(opts: { force?: boolean } = {}): Promise<UstAuctionPull | null> {
+  const saved = loadUstAuctions();
+  if (!opts.force) {
+    if (saved && Date.now() - Date.parse(saved.pulledAt) < 24 * 60 * 60 * 1000) return saved;
+    if (ustAuctionMemory && Date.now() - ustAuctionMemory.triedAt < 60 * 60 * 1000) return saved;
+  }
+  if (ustAuctionInFlight) return ustAuctionInFlight;
+  ustAuctionInFlight = (async () => {
+    let auctions: UstAuction[] | null = null;
+    try {
+      const res = await fetchWithTimeout(ustAuctionsUrl(), 30000);
+      if (res.ok) auctions = parseUstAuctions(await res.json());
+      else console.warn(`[Fiscal Data] Treasury auctions refused (HTTP ${res.status})`);
+    } catch (e) {
+      console.warn(`[Fiscal Data] Treasury auctions: ${describeNetworkError(e, 30000)}`);
+    }
+    const prev = ustAuctionMemory?.pull ?? null;
+    if (!auctions || auctions.length === 0) {
+      ustAuctionMemory = { pull: prev, triedAt: Date.now() };
+      return prev;
+    }
+    const fresh: UstAuctionPull = { pulledAt: new Date().toISOString(), auctions };
+    ustAuctionMemory = { pull: fresh, triedAt: Date.now() };
+    try {
+      fs.mkdirSync(path.dirname(ustAuctionFile()), { recursive: true });
+      writeFileAtomic(ustAuctionFile(), JSON.stringify(fresh));
+    } catch {
+      // keep the memory copy
+    }
+    return fresh;
+  })().finally(() => {
+    ustAuctionInFlight = null;
+  });
+  return ustAuctionInFlight;
 }

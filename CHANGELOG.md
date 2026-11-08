@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- US Treasury auctions (data plan G1): bid-to-cover, high yield, amounts and the indirect bidders' share for
+  13- and 26-week bills, 2-, 5- and 10-year notes and 30-year bonds, ten years back, from the free US Treasury
+  Fiscal Data API. The daily download saves them (data/live/ust-auctions.json) and pages read only that copy.
+  They show on the United States issuer note ("Recent US Treasury auctions", with a stated rule against the
+  previous six auctions), as chartable series on the United States page and in council charts. New Data health
+  row, licence row (open, any use), glossary entry, and Spanish and French text.
 - French, part 4 (the last): the Menu and its dialogs (Settings with every key and setting, backups, morning
   brief, About, add a country and the rest), the help at Key help and Full help (chart guides, panel introductions
   and the whole glossary), and Reports (teaching episodes, saved research, policy reviews and the memo builder).

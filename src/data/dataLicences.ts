@@ -338,6 +338,23 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: D,
   },
   {
+    id: 'us_fiscal_data',
+    name: 'US Treasury Fiscal Data (Treasury Securities Auctions Data)',
+    usedFor: 'Bid-to-cover, high yield, amounts offered and accepted, and the indirect bidders\' share at each auction of US bills, notes and bonds',
+    terms: [
+      { label: 'Fiscal Data about and terms', url: 'https://fiscaldata.treasury.gov/about-us/' },
+      { label: 'Treasury Securities Auctions Data', url: 'https://fiscaldata.treasury.gov/datasets/treasury-securities-auctions-data/' },
+    ],
+    status: 'open',
+    display: 'Allowed: Fiscal Data says its data are free, without restriction, to copy, adapt and redistribute.',
+    commercial: 'Allowed ("for non-commercial or commercial purposes").',
+    attribution: 'Source: U.S. Department of the Treasury, Fiscal Data, Treasury Securities Auctions Data.',
+    quotes: ['free, without restriction, and available to copy, adapt, redistribute, or otherwise use for non-commercial or commercial purposes.'],
+    share: 'allowed',
+    shareNote: 'Free, without restriction.',
+    checked: '2026-11-08',
+  },
+  {
     id: 'eia',
     name: 'US EIA open data',
     usedFor: 'Daily Brent and WTI spot prices (with your free key)',
