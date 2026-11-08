@@ -17,7 +17,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
   column picker and the pop-out watchlist window. The reasons a figure shows as Missing are in Spanish on screen
   as well; they stay English in notes and in what the council reads. Research's frame is in Spanish too: the scope
   bar, the four section names, the Compare and My holdings headers, the live-data badge, the Sources grid, and one
-  country's header and Sources tab; the panels inside each section follow.
+  country's header and Sources tab; the panels inside each section follow. One country's Summary and Markets & signals
+  now have Spanish headings, buttons and help links; the figures, observations and figure names in them are built
+  from the data and stay English for now.
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

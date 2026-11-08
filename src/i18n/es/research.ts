@@ -63,6 +63,7 @@ export const RESEARCH_ES: Messages<typeof RESEARCH> = {
   excel: 'En Excel',
   licences: 'Licencias de datos',
   termsNote: 'Antes de compartir estas cifras, revisa las condiciones de cada fuente: algunas piden que se las cite y unas pocas exigen el permiso del proveedor para uso con clientes o comercial.',
+  addAnother: 'Añadir otro país',
   comingUp: 'Próximamente',
   comingUpNote: 'Calendario oficial, próximos 120 días',
   nothingScheduled: 'No hay nada previsto en los próximos 120 días.',

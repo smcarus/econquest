@@ -75,6 +75,7 @@ export const RESEARCH = defineMessages('research', {
   excel: 'Excel',
   licences: 'Data licences',
   termsNote: "Before sharing these figures, check each source's terms: some need a credit, a few need the provider's permission for client or commercial use.",
+  addAnother: 'Add another country',
   comingUp: 'Coming up',
   comingUpNote: 'Official schedule, next 120 days',
   nothingScheduled: 'Nothing scheduled in the next 120 days.',
