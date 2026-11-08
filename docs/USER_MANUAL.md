@@ -746,6 +746,16 @@ hold no figures of their own; the handout reads them from the app's series when 
   it reads hiking or cutting, another move the same way within 6 months) and the Timing Agent's one
   call (`timing_agent.json`: crowded and already turning before a further 3-point unwind within 8
   weeks). Until they are run these three read *Not validated*.
+- **Your tests** (in Models & validation): register a test of your own before you see any result.
+  Give it a name, write what you expect to find, pick one of the app's backtest methods (for
+  example the policy rate against a Taylor rule, or crowded currency positioning) and type every
+  threshold, the sample start and the pass mark: the fewest cases, the smallest lift over the base
+  rate and the largest p-value that counts as a pass. Every box starts empty; the value the app's own
+  test uses is shown beside each one only as a reference. *Save and freeze* writes the test to
+  `data/local/validation/user-tests/` with today's date and its SHA-256 fingerprint in the folder's
+  `manifest.json`. It can never be edited or removed, and a file changed by hand is refused; a
+  changed idea is a new test with a new name. Your tests are kept apart from the app's, so neither
+  changes the other's correction for multiple tests. Running them on the saved data comes next.
 - **About & data licences**: the standing research notice and the licence register. One row per
   source: what the app reads from it, what its terms say about showing figures to others and about
   commercial use, the credit to print, quotes from the terms page with links, and the open questions

@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Register your own test, part 1 (the form): Menu > Models & validation > Your tests lets a researcher write a
+  hypothesis, pick one of the app's backtest methods and type every threshold, the sample and the pass mark, then
+  save it. Saving freezes it with the server's date and a SHA-256 fingerprint in its own manifest
+  (data/local/validation/user-tests/); it cannot be edited or removed, and a file changed by hand is refused.
+  Every box starts blank, with the app's own registered value shown only as a reference. Kept apart from the
+  app's tests. Running them comes in the next change. English and Spanish.
 - Data API for scripts: docs/DATA_API.md lists the read-only addresses for series, panels and figure tables
   (the same ones the screens use, with source and date on every value and Missing with its reason), with
   helper files for Python, R and Stata in scripts/data-api/ that need nothing installed. Downloads follow
