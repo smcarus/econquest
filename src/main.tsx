@@ -6,6 +6,10 @@ import './index.css';
 import { forgetOtherAccount, mirrorSavesToDisk, startWorkspaceSync } from './utils/workspaceSync';
 import { fetchAuthStatus, needsSignIn, watchForSignedOut } from './utils/authClient';
 import { SignInPage } from './components/SignInPage';
+import { readLang } from './i18n/lang';
+
+// The page's language for screen readers and spelling (Menu language button; src/i18n).
+document.documentElement.lang = readLang();
 
 // /?view=watchlist is the watchlist popped out into its own window or tab.
 const popOut = new URLSearchParams(window.location.search).get('view') === 'watchlist';

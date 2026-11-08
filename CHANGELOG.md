@@ -5,6 +5,8 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Spanish (español): an EN / ES button in the header switches the app's own words; the header, Menu and help
+  switch come first, the rest follows a part at a time. Translations live in keyed message files (src/i18n/messages/).
 - Your data (Menu > Your data): load your own series from a CSV file, checked line by line, kept exactly as given,
   labelled "Your file" with your source, fingerprinted with SHA-256 and recorded in the audit log.
 - Ready-made app image: each public release publishes the app to GitHub's image store

@@ -1,7 +1,15 @@
 import React, { useSyncExternalStore } from 'react';
 import { HelpCircle } from 'lucide-react';
-import { HELP_LEVELS, HELP_LEVEL_EVENT, HELP_LEVEL_KEY, nextHelpLevel, readHelpLevel, showGuides, writeHelpLevel, type HelpLevel } from '../utils/helpLevel';
+import { HELP_LEVEL_EVENT, HELP_LEVEL_KEY, nextHelpLevel, readHelpLevel, showGuides, writeHelpLevel, type HelpLevel } from '../utils/helpLevel';
 import { chartGuide, type ChartGuideId } from '../data/chartGuides';
+import { useT } from '../i18n/useLang';
+import { SHELL } from '../i18n/messages/shell';
+
+const LEVEL_KEYS = [
+  { label: 'helpOff', note: 'helpOffNote' },
+  { label: 'helpKey', note: 'helpKeyNote' },
+  { label: 'helpFull', note: 'helpFullNote' },
+] as const;
 
 function subscribe(cb: () => void): () => void {
   const onStorage = (e: StorageEvent) => {
@@ -23,19 +31,21 @@ export function useHelpLevel(): HelpLevel {
 /** Header button: shows the level and moves to the next one (Key help, Full help, Off). */
 export const HelpLevelButton: React.FC = () => {
   const level = useHelpLevel();
-  const info = HELP_LEVELS[level];
-  const next = HELP_LEVELS[nextHelpLevel(level)];
+  const t = useT(SHELL);
+  const keys = LEVEL_KEYS[level];
+  const label = t(keys.label);
+  const next = t(LEVEL_KEYS[nextHelpLevel(level)].label).toLowerCase();
   return (
     <button
       type="button"
       onClick={() => writeHelpLevel(nextHelpLevel(level))}
-      title={`${info.label}: ${info.note} Press for ${next.label.toLowerCase()}.`}
-      aria-label={`Explanations: ${info.label}. Press for ${next.label.toLowerCase()}.`}
+      title={t('helpTitle', { label, note: t(keys.note), next })}
+      aria-label={t('helpAria', { label, next })}
       data-help-level={level}
       className="ui-pill inline-flex items-center gap-1.5 whitespace-nowrap"
     >
       <HelpCircle className="w-3.5 h-3.5" />
-      <span className="hidden sm:inline">{info.label}</span>
+      <span className="hidden sm:inline">{label}</span>
     </button>
   );
 };
