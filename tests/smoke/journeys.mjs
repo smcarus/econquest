@@ -136,6 +136,7 @@ try {
     for (const [k, v] of Object.entries(typed)) await gm.locator(`[data-gap-input="${k}"]`).fill(v);
     await gm.locator('[data-gap-result]').waitFor({ timeout: 5000 });
     if (await gm.locator('[data-gap-missing]').count()) throw new Error('the gap model still lists missing inputs');
+    if (!(await gm.locator('[data-gap-explain]').count())) throw new Error('the gap model has no Ask the council button');
     await noCrash(page);
   });
 

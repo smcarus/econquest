@@ -39,6 +39,8 @@ export const GAP_MODEL_ES: Messages<typeof GAP_MODEL> = {
   chartAria: 'Trayectoria de la brecha del producto, la inflación, el tipo oficial y la brecha del tipo de cambio',
   colQuarter: 'Trimestre',
   csv: 'Descargar la trayectoria (CSV)',
+  explain: 'Preguntar al consejo sobre esta simulación',
+  explainNote: 'Abre el chat del Consejo y le pide que explique su simulación, enviando sus parámetros, su punto de partida y su trayectoria con la etiqueta "Su modelo". Solo consulta a su modelo de IA cuando usted lo pulsa.',
   clear: 'Borrarlo todo',
   notForecast: 'Sus supuestos desarrollados, no una previsión. Nada de esto es un consejo.',
   p_b1: 'Persistencia de la brecha del producto (b1)',
