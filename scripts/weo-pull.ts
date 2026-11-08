@@ -5,6 +5,7 @@
  *
  *   npm run weo:pull                 every edition from 2005 not saved yet
  *   npm run weo:pull -- --from 2010  from a later year
+ *   npm run weo:pull -- --weekly     at most once a week (the daily start-up run uses this)
  *
  * Each edition tries every URL layout the IMF has used (src/utils/weoVintages.ts weoEditionUrls)
  * and is kept only if it reads as a WEO table. Files already saved are left alone. If the IMF
@@ -24,6 +25,22 @@ const i = process.argv.indexOf('--from');
 const from = i >= 0 ? Number(process.argv[i + 1]) : 2005;
 const now = new Date();
 fs.mkdirSync(dir, { recursive: true });
+
+// The IMF often refuses automated downloads (HTTP 403); the daily run asks at most once a week.
+const triedFile = path.join(dir, '.last-try');
+if (process.argv.includes('--weekly')) {
+  try {
+    const last = fs.statSync(triedFile).mtimeMs;
+    if (Date.now() - last < 7 * 24 * 60 * 60 * 1000) {
+      console.log(`Last tried ${new Date(last).toISOString().slice(0, 10)}; tried again after a week.`);
+      process.exit(0);
+    }
+  } catch {
+    // never tried
+  }
+}
+fs.writeFileSync(triedFile, now.toISOString());
+const WEO_PAGE = 'https://www.imf.org/en/Publications/SPROLLs/world-economic-outlook-databases';
 
 const editions: string[] = [];
 for (let y = from; y <= now.getUTCFullYear(); y++) for (const m of ['04', '09', '10']) editions.push(`${y}-${m}`);
@@ -60,6 +77,9 @@ for (const v of editions) {
   // Most years have no September edition: only April and October misses are reported.
   if (!ok && !v.endsWith('-09')) missed.push(`${name} (${tried.join('; ')})`);
 }
-console.log(`Saved ${saved} new edition(s) in ${path.relative(root, dir)}.`);
-if (missed.length) console.log(`Not found automatically (download by hand from the IMF WEO database page if needed):\n  ${missed.join('\n  ')}`);
+const refused = missed.filter((m) => m.includes('HTTP 403')).length;
+console.log(`${saved} new edition(s) saved in ${path.relative(root, dir)}.`);
+if (missed.length && refused === missed.length)
+  console.log(`Not saved: ${missed.length} editions: the IMF refused automated downloads (HTTP 403) for every one; download them by hand from ${WEO_PAGE} into ${dir}`);
+else if (missed.length) console.log(`Not found automatically (download by hand from ${WEO_PAGE} if needed):\n  ${missed.join('\n  ')}`);
 console.log('Check with: npm run weo:vintages');

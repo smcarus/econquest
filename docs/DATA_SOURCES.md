@@ -415,7 +415,9 @@ the background once the app is up; the app can be used straight away. It runs at
 1. Every free feed for every country, the same run as Menu > Offline data > Download all (steps
    pulled within the last day are skipped), including government spending by sector (Eurostat and
    IMF COFOG) and defence spending (SIPRI via the World Bank).
-2. Files: past IMF WEO editions (`npm run weo:pull`), the OFAC and UN sanctions lists
+2. Files: past IMF WEO editions (`npm run weo:pull`, tried at most once a week because the IMF
+   often refuses automated downloads with HTTP 403; then they have to be downloaded by hand from the
+   IMF WEO database page into `data/local/weo-vintages/`), the OFAC and UN sanctions lists
    (`sanctions:pull`), the Geopolitical Risk index (`gpr:pull`) and newer UCDP files (`ucdp:pull`).
 3. The long histories behind the nowcasts and forecasts (refreshed weekly), then a nowcast and a
    forecast for every country, listing which are Missing and why.
