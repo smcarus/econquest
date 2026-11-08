@@ -61,11 +61,15 @@ export const DEFENCE: MultiplierPath = {
 
 /**
  * Semi-elasticity of the budget balance to the output gap (change in the balance, % of GDP, for a
- * 1 point change in the output gap): Mourre, Poissonnier and Lausegger (2019), "The Semi-Elasticities
- * Underlying the Cyclically-Adjusted Budget Balance: An Update and Further Analysis", European
- * Commission DG ECFIN Discussion Paper 098, Table IV.3 (p.49), 2018 estimates. The 28 EU members of
- * 2018, including the United Kingdom. Other countries have none in the app until the OECD's own table
- * (Price, Dang and Botev 2015, OECD WP 1275) can be read; their what-ifs say so.
+ * 1 point change in the output gap), from two published tables:
+ * - EU members of 2018 and the UK: Mourre, Poissonnier and Lausegger (2019), European Commission
+ *   DG ECFIN Discussion Paper 098, Table IV.3 (p.49), 2018 estimates. Used first: newer, and the
+ *   figure EU budget rules use.
+ * - Other OECD members: Price, Dang and Botev (2015), "Adjusting fiscal balances for the business
+ *   cycle: new tax and expenditure elasticity estimates for OECD countries", OECD Economics
+ *   Department Working Paper 1275, Table 10 (p.29), column [11] "Total", weights 2002-2011.
+ *   (Chile and Turkey: shares set to the OECD average by the authors, as the table notes.)
+ * Countries in neither table have none; their what-ifs say so.
  */
 export const BUDGET_SEMI_ELASTICITY_SOURCE = 'European Commission DG ECFIN Discussion Paper 098 (Mourre, Poissonnier and Lausegger 2019), Table IV.3, 2018';
 export const BUDGET_SEMI_ELASTICITY: Record<string, number> = {
@@ -74,6 +78,18 @@ export const BUDGET_SEMI_ELASTICITY: Record<string, number> = {
   HUN: 0.453, MLT: 0.479, NLD: 0.605, AUT: 0.571, POL: 0.499, PRT: 0.538, ROU: 0.321, SVN: 0.468,
   SVK: 0.381, FIN: 0.582, SWE: 0.553, GBR: 0.55,
 };
+export const OECD_SEMI_ELASTICITY_SOURCE = 'OECD Economics Department Working Paper 1275 (Price, Dang and Botev 2015), Table 10, column 11';
+export const OECD_SEMI_ELASTICITY: Record<string, number> = {
+  AUS: 0.54, CAN: 0.56, CHL: 0.52, ISL: 0.61, ISR: 0.51, JPN: 0.41, KOR: 0.33, MEX: 0.21, NZL: 0.51,
+  NOR: 0.49, CHE: 0.41, TUR: 0.47, USA: 0.5,
+};
+
+/** The budget semi-elasticity for a country and its table: the European Commission's first, else the OECD's. */
+export function semiElasticityFor(iso3: string): { value: number; source: string } | undefined {
+  if (BUDGET_SEMI_ELASTICITY[iso3] !== undefined) return { value: BUDGET_SEMI_ELASTICITY[iso3], source: BUDGET_SEMI_ELASTICITY_SOURCE };
+  if (OECD_SEMI_ELASTICITY[iso3] !== undefined) return { value: OECD_SEMI_ELASTICITY[iso3], source: OECD_SEMI_ELASTICITY_SOURCE };
+  return undefined;
+}
 
 /** Words that say the freed money goes to public investment. */
 export const INVESTMENT_WORDS = /\b(?:invest\w*|infrastructure|roads?|bridges?|railways?|rail\b|grids?|rebuild\w*|restructur\w*|capital spending|public works)\b/i;

@@ -12,7 +12,8 @@
  *   Topalova (IMF WP/15/95) for money put into public investment, and otherwise the IMF bucket range
  *   (fiscalMultipliers.ts) held as a level. Respending on the same path as the cut nets to zero, and
  *   the answer says so rather than guessing.
- * - Budget feedback: where a published semi-elasticity exists (European Commission, EU members), the
+ * - Budget feedback: where a published semi-elasticity exists (European Commission for EU members,
+ *   else the OECD's table), the
  *   primary balance also moves by semi-elasticity x the output change.
  * - Debt: the debt identity (debtSustainability.nextDebt) on the IMF baseline inputs, with the
  *   primary balance raised by the money kept (and the feedback), and growth moved each year by the
@@ -23,7 +24,7 @@
  */
 import { nextDebt, nominalGrowthPct, type YearAssump } from './debtSustainability';
 import { sectorByCode, sectorsInQuestion, TABLE_LABEL, type CofogSector } from './govSpending';
-import { BUDGET_SEMI_ELASTICITY, BUDGET_SEMI_ELASTICITY_SOURCE, DEFENCE, INVESTMENT_WORDS, PUBLIC_INVESTMENT, type MultiplierPath } from '../data/spendingMultipliers';
+import { DEFENCE, INVESTMENT_WORDS, PUBLIC_INVESTMENT, semiElasticityFor, type MultiplierPath } from '../data/spendingMultipliers';
 import { multiplierView, TNM_CITATION } from './fiscalMultipliers';
 import type { LiveWatchlistItem } from '../types/council';
 
@@ -255,8 +256,7 @@ export function whatIfSetup(it: LiveWatchlistItem, q: WhatIfQuestion, ch: WhatIf
   const respendPublished = destination === 'investment' ? asPath(PUBLIC_INVESTMENT) : bucket;
   const respend = ch.respendOwn ? own(ch.respendOwn) : respendPublished;
   const sameRespend = !ch.respendOwn && !ch.cutOwn && respend === cut;
-  const semi = BUDGET_SEMI_ELASTICITY[it.iso3];
-  const semiElasticity = semi !== undefined ? { value: semi, source: BUDGET_SEMI_ELASTICITY_SOURCE } : undefined;
+  const semiElasticity = semiElasticityFor(it.iso3);
   const baseline = dsa?.inputs;
   const out: WhatIfSetup = { sector, share, uses, destination, spend, cut, respend, sameRespend, respendLabel: destination === 'investment' ? 'public investment' : 'other spending', semiElasticity };
   if (spend && dsa && baseline?.length && cut) {

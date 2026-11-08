@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { flatPath, parseWhatIf, runWhatIf, whatIfSentence } from '../src/utils/fiscalWhatIf.ts';
-import { BUDGET_SEMI_ELASTICITY, DEFENCE, PUBLIC_INVESTMENT } from '../src/data/spendingMultipliers.ts';
+import { BUDGET_SEMI_ELASTICITY, DEFENCE, PUBLIC_INVESTMENT, semiElasticityFor } from '../src/data/spendingMultipliers.ts';
 import { isExplainQuestion } from '../src/utils/explain.ts';
 import { planCouncil } from '../src/utils/askCouncil.ts';
 
@@ -120,7 +120,8 @@ test('whatIfSetup picks the spending figure, the published paths and the semi-el
   assert.equal(s.spend?.source, 'World Bank (SIPRI)');
   assert.match(s.cut!.source, /Barro and Redlick/);
   assert.match(s.respend!.source, /WP\/15\/95/);
-  assert.equal(s.semiElasticity, undefined);
+  // OECD WP 1275, Table 10, column 11: United States 0.50.
+  assert.deepEqual(s.semiElasticity, { value: 0.5, source: 'OECD Economics Department Working Paper 1275 (Price, Dang and Botev 2015), Table 10, column 11' });
   assert.ok(s.inputs && !s.cannotRun);
   // The reader's own multipliers replace the published paths and are labelled.
   const mine = whatIfSetup(usa, q, { cutOwn: { low: 0.3, high: 0.5 }, respendOwn: { low: 1, high: 1.2 } });
@@ -131,4 +132,15 @@ test('whatIfSetup picks the spending figure, the published paths and the semi-el
   assert.match(e.spend!.source, /Eurostat/);
   const ind: any = { iso3: 'IND', countryName: 'India', fiscal: {}, debtSustainability: dsa };
   assert.match(whatIfSetup(ind, parseWhatIf('What if India halved energy spending?')!).cannotRun!, /India: the fuel and energy what-if cannot run, as fuel and energy spending \(Eurostat or IMF COFOG\) and IMF debt for the multiplier range are missing/);
+});
+
+test('budget semi-elasticities: the European Commission table first, the OECD table for other members, none elsewhere', () => {
+  assert.equal(semiElasticityFor('DEU')!.value, 0.504);
+  assert.match(semiElasticityFor('DEU')!.source, /European Commission/);
+  assert.equal(semiElasticityFor('GBR')!.value, 0.55);
+  // OECD WP 1275, Table 10, column 11 (p.29).
+  assert.deepEqual(['USA', 'JPN', 'KOR', 'MEX', 'CAN', 'AUS', 'TUR', 'CHL'].map((c) => semiElasticityFor(c)!.value), [0.5, 0.41, 0.33, 0.21, 0.56, 0.54, 0.47, 0.52]);
+  assert.match(semiElasticityFor('USA')!.source, /OECD/);
+  assert.equal(semiElasticityFor('IND'), undefined);
+  assert.equal(semiElasticityFor('BRA'), undefined);
 });

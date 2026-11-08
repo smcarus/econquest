@@ -43,7 +43,6 @@ import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, fo
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
 import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
-import { BUDGET_SEMI_ELASTICITY, BUDGET_SEMI_ELASTICITY_SOURCE } from '../data/spendingMultipliers';
 import { sectorLine, sectorsInQuestion } from './govSpending';
 import { ISO_NUMERIC_TO_ISO3 } from '../data/worldCountries';
 import type { DebateResult } from './agentDebate';
@@ -637,7 +636,7 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
           figures.push(
             { label: `What-if, money ${how}: first-year growth effect`, value: range(r.growth.low, r.growth.high), source: run.method, tag: 'model' },
             { label: `What-if, money ${how}: output level by ${r.level.year}`, value: range(r.level.low, r.level.high), source: 'spending change x the published output path for each year', tag: 'model' },
-            ...(r.feedback ? [{ label: `What-if, money ${how}: budget response to output in ${r.level.year}`, value: `${range(r.feedback.low, r.feedback.high).replace(/%/g, '')} pts of GDP`, source: BUDGET_SEMI_ELASTICITY_SOURCE, tag: 'model' as const }] : []),
+            ...(r.feedback ? [{ label: `What-if, money ${how}: budget response to output in ${r.level.year}`, value: `${range(r.feedback.low, r.feedback.high).replace(/%/g, '')} pts of GDP`, source: setup.semiElasticity?.source || '', tag: 'model' as const }] : []),
             { label: `What-if, money ${how}: debt in ${r.debtEnd.year}`, value: r.debtEnd.low === r.debtEnd.high ? `${p1(r.debtEnd.low)} of GDP` : `${p1(r.debtEnd.low)} to ${p1(r.debtEnd.high)} of GDP`, source: `against ${p1(r.debtEnd.baseline)} on the IMF baseline; debt identity re-run with the change`, tag: 'model' }
           );
           parts.push(whatIfSentence(r, run.cutPp, respendLabel));
@@ -648,8 +647,8 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
         if (whatIf.destination === 'investment' && !IMF_ADVANCED.has(it.iso3)) {
           parts.push('The public investment path is an advanced-economy estimate.');
         }
-        if (BUDGET_SEMI_ELASTICITY[it.iso3] === undefined) {
-          missing.push(`${it.countryName}: the what-if leaves out the budget's response to output, as no published semi-elasticity is in the app (European Commission table covers EU members and the UK)`);
+        if (!setup.semiElasticity) {
+          missing.push(`${it.countryName}: the what-if leaves out the budget's response to output, as no published semi-elasticity is in the app (European Commission and OECD tables cover EU and OECD members)`);
         }
       } else if (setup.cannotRun) {
         missing.push(setup.cannotRun);
