@@ -59,6 +59,50 @@ export interface AnalysisDeps {
   examOn?: () => boolean;
 }
 
+// Nowcasts (src/utils/nowcast.ts) and forecasts: long histories for the fits come from
+// data/live/model-history.json (src/utils/modelHistory.ts), pulled at most once a week; DBnomics
+// calls go through the OECD queue.
+let modelHistoryInFlight: Promise<ModelHistory | null> | null = null;
+const modelFetcher = async (url: string): Promise<string> => {
+  if (url.includes('db.nomics.world')) {
+    const r = await oecdFetch(url, 60000);
+    if (!r || r.status < 200 || r.status >= 300) throw new Error(r ? `HTTP ${r.status}` : 'paused after a refusal');
+    return r.text;
+  }
+  const r = await fetchWithTimeout(url, 60000);
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  return r.text();
+};
+async function modelHistory(): Promise<ModelHistory | null> {
+  const saved = loadModelHistory(DATA_DIR);
+  if (saved && Date.now() - Date.parse(saved.pulledAt) < MODEL_HISTORY_MAX_AGE_MS) return saved;
+  modelHistoryInFlight ??= pullModelHistory(modelFetcher, saved)
+    .then((h) => {
+      if (h.policyMonthly || h.cli || h.cpi) saveModelHistory(DATA_DIR, h);
+      return h;
+    })
+    .catch(() => saved)
+    .finally(() => {
+      modelHistoryInFlight = null;
+    });
+  // A first pull can take a while: answer with what is saved and let it finish in the background.
+  return saved ?? (await Promise.race([modelHistoryInFlight, new Promise<null>((r) => setTimeout(() => r(null), 20000))]));
+}
+
+/**
+ * The daily start-up run (npm run daily): waits for the long histories behind the nowcasts and
+ * forecasts when they are missing or more than a week old, instead of answering at once.
+ */
+export async function refreshModelHistory(): Promise<{ history: ModelHistory | null; pulled: boolean; problems: string[] }> {
+  const saved = loadModelHistory(DATA_DIR);
+  if (saved && Date.now() - Date.parse(saved.pulledAt) < MODEL_HISTORY_MAX_AGE_MS) return { history: saved, pulled: false, problems: saved.problems || [] };
+  void modelHistory();
+  const got = modelHistoryInFlight ? await modelHistoryInFlight : saved;
+  // A pull where nothing answered is not saved; what was saved before (if anything) stays in use.
+  const usable = got && (got.policyMonthly || got.cli || got.cpi) ? got : saved;
+  return { history: usable, pulled: !!usable && usable !== saved, problems: got?.problems || [] };
+}
+
 export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   const { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom } = deps;
   const examOn = deps.examOn ?? (() => false);
@@ -314,32 +358,6 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
   // Nowcasts (src/utils/nowcast.ts): GDP and inflation for periods whose official figure is not out
   // yet, from published figures only. Long histories for the fits come from data/live/model-history.json
   // (src/utils/modelHistory.ts), pulled at most once a week; DBnomics calls go through the OECD queue.
-  let modelHistoryInFlight: Promise<ModelHistory | null> | null = null;
-  const modelFetcher = async (url: string): Promise<string> => {
-    if (url.includes('db.nomics.world')) {
-      const r = await oecdFetch(url, 60000);
-      if (!r || r.status < 200 || r.status >= 300) throw new Error(r ? `HTTP ${r.status}` : 'paused after a refusal');
-      return r.text;
-    }
-    const r = await fetchWithTimeout(url, 60000);
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    return r.text();
-  };
-  async function modelHistory(): Promise<ModelHistory | null> {
-    const saved = loadModelHistory(DATA_DIR);
-    if (saved && Date.now() - Date.parse(saved.pulledAt) < MODEL_HISTORY_MAX_AGE_MS) return saved;
-    modelHistoryInFlight ??= pullModelHistory(modelFetcher, saved)
-      .then((h) => {
-        if (h.policyMonthly || h.cli || h.cpi) saveModelHistory(DATA_DIR, h);
-        return h;
-      })
-      .catch(() => saved)
-      .finally(() => {
-        modelHistoryInFlight = null;
-      });
-    // A first pull can take a while: answer with what is saved and let it finish in the background.
-    return saved ?? (await Promise.race([modelHistoryInFlight, new Promise<null>((r) => setTimeout(() => r(null), 20000))]));
-  }
   // Scenario engine (src/utils/scenarioEngine.ts): the country's currency and policy rate on the US
   // policy rate and the dollar, monthly; the page applies stated shocks to the fitted coefficients.
   // BEER fair value (src/utils/beer.ts): REER on terms of trade, productivity vs the US and an NFA proxy.

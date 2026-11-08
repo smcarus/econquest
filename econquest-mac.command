@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Double-click in Finder: updates, starts the Docker app (3737) and the dev server (3000), checks both.
+# Double-click in Finder: updates, starts the Docker app (3737) and the dev server (3000), checks both,
+# then starts the daily data run in the background (datasets, nowcasts, weekly tests; once a day).
 DIR="$(cd "$(dirname "$0")" && pwd)"
 bash "${DIR}/scripts/econquest.sh" "$@"
 echo

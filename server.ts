@@ -1,7 +1,9 @@
 // Reads .env and the data folder before anything else (src/server/config.ts).
 import { APP_ROOT, AUDIT_FILES, COUNCIL_TIMING_FILE, SCHEDULED_JOBS_FILE, LAST_ALERT_FILE, DATA_DIR, DATA_HEALTH_FILES, ENV_FILE_KEYS, FIGURE_WATCH_FILES, RESEARCH_FILE, REVIEW_FILE, SETTINGS_FILE, SIGNOFF_FILE, SPEC_DIR, VALIDATION_FILE, WATCH_RULES_FILE, WORKSPACE_FILE, savedSettings, setSavedSettings } from './src/server/config';
 import { geminiModel } from './src/utils/geminiModel';
-import { registerAnalysisRoutes } from './src/server/routes/analysis';
+import { refreshModelHistory, registerAnalysisRoutes } from './src/server/routes/analysis';
+import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, readDaily, sweepNote, testsDue, writeDaily, type DailyRun, type DailyStep } from './src/utils/dailyRun';
+import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
 import { mountEngineRoutes } from './src/server/engineRoutes';
@@ -547,6 +549,12 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const route = keyed ? '' : ' (free preview route; a UN Comtrade key in Menu > Settings is faster)';
       return n ? { outcome: 'done', note: `${n} countries saved${route}` } : { outcome: 'failed', note: `UN Comtrade did not answer${route}` };
     }
+    case 'world:gov_spending': {
+      // Annual tables, kept a week: a pull within the week answers from the saved copy.
+      const got = await fetchGovSpendingPull();
+      const n = Object.keys(got?.byCountry || {}).length;
+      return n ? { outcome: 'done', note: `${n} countries, pulled ${got!.pulledAt.slice(0, 10)}` } : { outcome: 'failed', note: 'Eurostat and DBnomics (IMF COFOG) did not answer' };
+    }
     case 'world:hc_spread': {
       const got = await fetchHcSpreadUncached();
       if (!got) return { outcome: 'failed', note: 'BCRP (central bank of Peru) did not answer' };
@@ -723,6 +731,185 @@ function knownOffline(): boolean {
 }
 
 /** npm run preload: the same run in the terminal, without starting the web server. */
+/**
+ * `npm run daily` (src/utils/dailyRun.ts): the daily start-up run that `npm run go` and the Mac
+ * double-click file start in the background. At most once every 20 hours unless `-- --force`.
+ * Runs as its own process beside the app; everything it fetches is saved in data/, where the app
+ * reads it.
+ */
+function runScript(script: string, args: string[] = [], opts: { quiet?: boolean } = {}): Promise<{ code: number; output: string }> {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, ['--import', 'tsx', path.join(APP_ROOT, 'scripts', script), ...args], {
+      cwd: APP_ROOT,
+      env: { ...process.env, DATA_DIR },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    const take = (b: Buffer) => {
+      const t = b.toString();
+      output += t;
+      if (!opts.quiet) for (const line of t.split(/\r?\n/)) if (line.trim()) console.log(`  ${line}`);
+    };
+    child.stdout.on('data', take);
+    child.stderr.on('data', take);
+    child.on('error', (e) => resolve({ code: 1, output: `${output}\n${e.message}` }));
+    child.on('close', (code) => resolve({ code: code ?? 1, output }));
+  });
+}
+
+async function runDailyCli(): Promise<void> {
+  const file = dailyFilePath(DATA_DIR);
+  const force = process.argv.includes('--force');
+  const due = dailyDue(readDaily(file), new Date(), force);
+  if (!due.due) {
+    console.log(`[daily] Not run: ${due.reason}. (npm run daily -- --force runs it again.)`);
+    process.exit(0);
+  }
+  const run: DailyRun = { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [] };
+  const save = () => writeDaily(file, { last: run });
+  const add = (step: DailyStep) => {
+    run.steps.push(step);
+    save();
+    console.log(`[daily] ${step.outcome === 'done' ? 'OK' : step.outcome === 'failed' ? 'FAILED' : 'SKIPPED'}: ${step.label}${step.note ? `: ${step.note}` : ''}`);
+  };
+  save();
+  console.log(`[daily] Starting (${due.reason}). Safe to stop: the next start carries on.`);
+
+  // 1. Every free feed for every country.
+  console.log('[daily] 1/5 Free feeds for every country (Download all)');
+  const preloadFrom = new Date().toISOString();
+  await startPreload({ log: (line) => console.log(`  ${line}`) });
+  {
+    const sum = downloadSummary(preloadState, preloadFrom);
+    const problems = summarisePreload(preloadPlan(), preloadState).problems.map((p) => `${p.outcome === 'skipped' ? 'Needs setup' : 'Failed'}: ${p.label}${p.note ? `: ${p.note}` : ''}`);
+    add({ id: 'feeds', label: 'Free feeds for every country', outcome: preloadState.endedEarly ? 'failed' : 'done', note: sum.summary, details: problems });
+  }
+  const offline = !!preloadState.endedEarly && /cannot be reached/.test(preloadState.endedEarly);
+  if (offline) run.offline = true;
+
+  // 2. Files that used to be downloaded by hand.
+  console.log('[daily] 2/5 Files: IMF WEO editions, sanctions lists, GPR index, UCDP');
+  for (const f of FILE_PULLS) {
+    if (offline) {
+      add({ id: f.id, label: f.label, outcome: 'skipped', note: 'offline' });
+      continue;
+    }
+    console.log(`  -- ${f.label}`);
+    const r = await runScript(f.script);
+    const got = interestingLines(r.output);
+    add({
+      id: f.id,
+      label: f.label,
+      outcome: r.code === 0 ? 'done' : 'failed',
+      note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
+      details: got.problems,
+    });
+  }
+
+  // 3. Nowcasts and forecasts: the long histories (weekly), then one of each for every country.
+  console.log('[daily] 3/5 Nowcasts and forecasts');
+  try {
+    const mh = await refreshModelHistory();
+    const app = express();
+    const quickLong = <T,>(p: Promise<T | null>): Promise<T | null> => Promise.race([p.catch(() => null), new Promise<null>((r) => setTimeout(() => r(null), 120_000))]);
+    registerAnalysisRoutes(app, {
+      quick: quickLong,
+      seriesFor: () => Promise.reject(new Error('not used by the daily run')),
+      fetchOfficialHistory,
+      loadOfficialHistory,
+      outputGapFrom,
+      dsaFrom,
+    });
+    const server = await new Promise<import('http').Server>((resolve) => {
+      const srv = app.listen(0, '127.0.0.1', () => resolve(srv));
+    });
+    const port = (server.address() as import('net').AddressInfo).port;
+    const countries = preloadCountries();
+    let nowOk = 0;
+    let fcOk = 0;
+    const missing: string[] = [];
+    for (const c of countries) {
+      try {
+        const now = await (await fetch(`http://127.0.0.1:${port}/api/nowcast/${c.iso3}`)).json();
+        const fc = await (await fetch(`http://127.0.0.1:${port}/api/forecast/${c.iso3}`)).json();
+        if (now?.gdp?.ok || now?.cpi?.ok) nowOk++;
+        const fcN = (fc?.forecasts || []).filter((x: any) => x.ok).length;
+        if (fcN) fcOk++;
+        const why = [
+          ...(now?.gdp && !now.gdp.ok ? [`GDP nowcast: ${now.gdp.reason}`] : []),
+          ...(now?.cpi && !now.cpi.ok ? [`inflation nowcast: ${now.cpi.reason}`] : []),
+          ...(fc?.forecasts || []).filter((x: any) => !x.ok).map((x: any) => `${String(x.id).replace(/_/g, ' ')} forecast: ${x.reason}`),
+        ];
+        if (why.length) missing.push(`${c.countryName}: ${why.join('; ')}`);
+      } catch (e: any) {
+        missing.push(`${c.countryName}: ${e?.message || e}`);
+      }
+    }
+    server.close();
+    const hist = mh.history ? `long histories ${mh.pulled ? 'downloaded now' : `from ${mh.history.pulledAt.slice(0, 10)}`}` : 'long histories could not be downloaded (nothing saved yet)';
+    add({
+      id: 'nowcasts',
+      label: 'Nowcasts and forecasts',
+      outcome: mh.history && (nowOk || fcOk) ? 'done' : 'failed',
+      note: `${sweepNote(countries.length, nowOk, 'nowcasts')}, ${sweepNote(countries.length, fcOk, 'forecasts')}; ${hist}`,
+      details: [...mh.problems, ...missing.map((m) => `Missing: ${m}`)],
+    });
+  } catch (e: any) {
+    add({ id: 'nowcasts', label: 'Nowcasts and forecasts', outcome: 'failed', note: String(e?.message || e).slice(0, 200) });
+  }
+
+  // 4. Pre-registered tests, weekly; a missed week is caught up here.
+  console.log('[daily] 4/5 Pre-registered tests (weekly)');
+  {
+    const jobs = readJobs(SCHEDULED_JOBS_FILE);
+    const last = jobs.backtests?.runs.at(-1);
+    if (jobSchedule('backtests').kind === 'off') {
+      add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'switched off (SCHEDULE_BACKTESTS=off)' });
+    } else if (offline) {
+      add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: 'offline' });
+    } else if (!testsDue(last?.startedAt, new Date())) {
+      add({ id: 'tests', label: 'Pre-registered tests', outcome: 'skipped', note: `last run ${last!.startedAt.slice(0, 10)}, less than 7 days ago${last?.summary ? ` (${last.summary})` : ''}` });
+    } else {
+      const now = new Date();
+      writeJobs(SCHEDULED_JOBS_FILE, markStarted(jobs, 'backtests', clockIn(now, SCHEDULE_TZ).day, now.toISOString()));
+      const r = await runScheduledJob('backtests').catch((e: any) => ({ ok: false, summary: `Failed: ${e?.message || String(e)}` }));
+      writeJobs(SCHEDULED_JOBS_FILE, markFinished(readJobs(SCHEDULED_JOBS_FILE), 'backtests', new Date().toISOString(), r.ok, `${r.summary} (daily start-up run)`));
+      add({ id: 'tests', label: 'Pre-registered tests (backtests, forecast evaluations, currency signal tests)', outcome: r.ok ? 'done' : 'failed', note: r.summary });
+    }
+  }
+
+  // 5. Connection check: which sources need a key or a file from you.
+  console.log('[daily] 5/5 Connection check');
+  {
+    const r = await runScript('check-connections.ts', ['--json'], { quiet: true });
+    try {
+      // The JSON report starts with a line that is just "{"; warnings may come before or between.
+      const startAt = r.output.search(/^\{\s*$/m);
+      const rep = JSON.parse(r.output.slice(startAt, r.output.lastIndexOf('}') + 1));
+      const rows: Array<{ name: string; state: string; detail?: string; setup?: string }> = rep.results || [];
+      const by = (st: string[]) => rows.filter((x) => st.includes(x.state));
+      const ok = by(['connected']).length;
+      const setup = by(['needs_setup']);
+      const fail = by(['no_answer', 'refused', 'bad_reply']);
+      add({
+        id: 'check',
+        label: 'Connection check',
+        outcome: fail.length ? 'failed' : 'done',
+        note: `${ok} connected, ${setup.length} need a key or file from you, ${fail.length} did not answer`,
+        details: [...setup.map((x) => `Needs setup: ${x.name}: ${x.detail || ''}${x.setup ? ` (${x.setup})` : ''}`), ...fail.map((x) => `No answer: ${x.name}: ${x.detail || ''}`)],
+      });
+    } catch {
+      add({ id: 'check', label: 'Connection check', outcome: 'failed', note: 'the check did not finish' });
+    }
+  }
+
+  run.finishedAt = new Date().toISOString();
+  save();
+  console.log('');
+  console.log(formatDaily(run, { full: true }));
+  process.exit(0);
+}
+
 async function runPreloadCli(): Promise<void> {
   const fresh = process.argv.includes('--fresh');
   console.log('Downloading every free feed for every country into data/ (live, history, archive).');
@@ -5706,4 +5893,5 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
 }
 
 if (process.argv.includes('--preload')) void runPreloadCli();
+else if (process.argv.includes('--daily')) void runDailyCli();
 else startServer();

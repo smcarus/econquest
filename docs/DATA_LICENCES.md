@@ -329,7 +329,7 @@ From the terms:
 
 ### UCDP (Uppsala Conflict Data Program) downloaded files
 
-- **Used for:** Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (files you put in data/local/ucdp/)
+- **Used for:** Armed conflicts, battle deaths, non-state and one-sided violence per country and year; preliminary monthly Candidate events since the yearly release (release shipped in datasets/ucdp/; newer files fetched into data/local/ucdp/ by the daily start-up run or npm run ucdp:pull, or put there by you)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with a citation of the dataset publications.
 - **Terms read:** [UCDP downloads (licence and citations)](https://ucdp.uu.se/downloads/) (checked 2026-11-06)
@@ -365,7 +365,7 @@ From the terms:
 
 ### Caldara-Iacoviello Geopolitical Risk index
 
-- **Used for:** Monthly geopolitical risk index, world and 44 countries (file you save in data/local/gpr/), in the country risk scorecard
+- **Used for:** Monthly geopolitical risk index, world and 44 countries (file fetched into data/local/gpr/ by the daily start-up run or npm run gpr:pull, or saved there by you), in the country risk scorecard
 - **Status:** Terms not confirmed
 - **Free non-commercial sharing:** Sharing unclear. Terms not read.
 - **Terms read:** [Geopolitical Risk Index page](https://www.matteoiacoviello.com/gpr.htm) (checked 2026-11-06)
