@@ -2,6 +2,20 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { LiveWatchlistItem } from '../types/council';
 import { RESEARCH_SECTIONS, sourcesGrid } from '../utils/researchSections';
 import { useOnlineStatus } from './OfflineData';
+import { useT, useTx } from '../i18n/useLang';
+import { RESEARCH } from '../i18n/messages/research';
+import { WATCHLIST } from '../i18n/messages/watchlist';
+
+// One country's tab ids under the shared section names (old links still use these ids).
+const SECTION_KEY: Record<string, 'sec_summary' | 'sec_markets' | 'sec_history' | 'sec_sources'> = {
+  summary: 'sec_summary',
+  brief: 'sec_summary',
+  markets: 'sec_markets',
+  macro: 'sec_markets',
+  history: 'sec_history',
+  sources: 'sec_sources',
+  overview: 'sec_sources',
+};
 
 /** The section menu, the same on every Research scope. Extra tabs (the specialist desks) follow a divider. */
 export const ResearchSectionNav: React.FC<{
@@ -11,7 +25,8 @@ export const ResearchSectionNav: React.FC<{
   sections?: Array<{ id: string; label: string }>;
   extra?: Array<{ id: string; label: string; className?: string }>;
   ariaLabel?: string;
-}> = ({ active, onChange, sections = RESEARCH_SECTIONS, extra = [], ariaLabel = 'Research sections' }) => {
+}> = ({ active, onChange, sections = RESEARCH_SECTIONS, extra = [], ariaLabel }) => {
+  const t = useT(RESEARCH);
   const ref = useRef<HTMLElement | null>(null);
   // On a phone the menu scrolls sideways: keep the open section in view.
   useEffect(() => {
@@ -38,13 +53,13 @@ export const ResearchSectionNav: React.FC<{
     <nav
       ref={ref}
       className={`mt-3 -mb-3 flex gap-1 ui-scroll-x border-t border-slate-100 dark:border-slate-800 ${moreRight ? '[mask-image:linear-gradient(to_right,black_80%,transparent)]' : ''}`}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('sectionsAria')}
       data-research-sections="true"
       data-more-right={moreRight ? 'true' : undefined}
     >
       {sections.map((s) => (
         <button key={s.id} type="button" onClick={() => onChange(s.id)} aria-current={active === s.id ? 'page' : undefined} className="ui-tab whitespace-nowrap">
-          {s.label}
+          {SECTION_KEY[s.id] ? t(SECTION_KEY[s.id]!) : s.label}
         </button>
       ))}
       {extra.length > 0 && <span aria-hidden="true" className="self-center mx-1 h-4 border-l border-slate-200 dark:border-slate-700" />}
@@ -85,6 +100,7 @@ export const ResearchHeader: React.FC<{
 
 /** "Live data for 3 of 5 countries" ("Offline: saved data for ..." without feeds), or the honest empty state. */
 export const LiveCountBadge: React.FC<{ items: LiveWatchlistItem[] }> = ({ items }) => {
+  const t = useT(RESEARCH);
   const live = items.filter((w) => w.dataMode === 'live' || w.dataMode === 'partial').length;
   const net = useOnlineStatus();
   // Offline the figures are the last saved pull: say so, never "Live data".
@@ -97,18 +113,16 @@ export const LiveCountBadge: React.FC<{ items: LiveWatchlistItem[] }> = ({ items
           : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900'
       }`}
       title={
-        offline
-          ? 'The feeds cannot be reached from this computer. A country counts when at least one public data feed answered on its last saved pull.'
-          : 'A country counts as live when at least one public data feed answered on its last pull.'
+        offline ? t('badgeTitleOffline') : t('badgeTitle')
       }
     >
       {items.length === 0
-        ? 'No countries yet'
+        ? t('badgeNone')
         : live === 0
-          ? 'No live data yet: figures read Missing until a source answers'
+          ? t('badgeNoLive')
           : offline
-            ? `Offline: saved data for ${live} of ${items.length} countries`
-            : `Live data for ${live} of ${items.length} countries`}
+            ? t('badgeOffline', { live, total: items.length })
+            : t('badgeLive', { live, total: items.length })}
     </p>
   );
 };
@@ -120,13 +134,18 @@ export const SourcesGrid: React.FC<{
   empty: string;
   onOpenCountry?: (item: LiveWatchlistItem) => void;
 }> = ({ items, title, empty, onOpenCountry }) => {
+  const t = useT(RESEARCH);
+  const tx = useTx();
+  // Figure names are shared with the watchlist's message file.
+  const tw = useT(WATCHLIST);
+  const figLabel = (key: string, label: string) => tw(`fig_${key}` as keyof typeof WATCHLIST.en) || label;
   const rows = sourcesGrid(items);
   const byIso = new Map(items.map((w) => [w.iso3, w]));
   return (
     <section className="ui-panel" data-sources-grid="true">
       <header className="ui-panel-header">
         <h2 className="ui-section-title">{title}</h2>
-        <p className="ui-label">Live means a feed, an official series or your own file filled it. Anything else reads Missing with the reason; no built-in values are shown. Open a country for every figure and its source.</p>
+        <p className="ui-label">{t('gridNote')}</p>
       </header>
       {rows.length === 0 ? (
         <p className="p-4 ui-body">{empty}</p>
@@ -135,10 +154,10 @@ export const SourcesGrid: React.FC<{
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
-                <th className="px-4 py-2 font-normal">Country</th>
+                <th className="px-4 py-2 font-normal">{t('country')}</th>
                 {rows[0].cells.map((c) => (
                   <th key={c.key} className="px-3 py-2 font-normal whitespace-nowrap">
-                    {c.label}
+                    {figLabel(c.key, c.label)}
                   </th>
                 ))}
               </tr>
@@ -155,17 +174,17 @@ export const SourcesGrid: React.FC<{
                       r.countryName
                     )}
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      {r.liveCount} of {r.cells.length} live
+                      {t('liveCount', { n: r.liveCount, total: r.cells.length })}
                     </div>
                   </td>
                   {r.cells.map((c) => (
-                    <td key={c.key} className="px-3 py-2 text-xs whitespace-nowrap" title={c.help || undefined}>
+                    <td key={c.key} className="px-3 py-2 text-xs whitespace-nowrap" title={c.help ? tx(c.help) : undefined}>
                       {c.live ? (
-                        <span className="text-emerald-700 dark:text-emerald-400">Live</span>
+                        <span className="text-emerald-700 dark:text-emerald-400">{t('live')}</span>
                       ) : (
                         <>
-                          <span className="text-slate-400 dark:text-slate-500">Missing</span>
-                          <div className={c.kind === 'setup' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}>{c.short}</div>
+                          <span className="text-slate-400 dark:text-slate-500">{t('missing')}</span>
+                          <div className={c.kind === 'setup' ? 'text-amber-700 dark:text-amber-400' : 'text-slate-500 dark:text-slate-400'}>{tx(c.short)}</div>
                         </>
                       )}
                     </td>

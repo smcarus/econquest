@@ -7,6 +7,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { HelpLevelButton } from './components/HelpLevel';
 import { LanguageButton } from './components/LanguageButton';
 import { useT } from './i18n/useLang';
+import { RESEARCH } from './i18n/messages/research';
 import { SHELL } from './i18n/messages/shell';
 import {
   AIRuntimeConfig,
@@ -264,6 +265,7 @@ export default function App() {
   const [isIdeasOpen, setIsIdeasOpen] = useState(false);
   // The header and Menu in the chosen language (src/i18n; Spanish added 2026-11-08).
   const t = useT(SHELL);
+  const tr = useT(RESEARCH);
   // Menu > Your data: series loaded from your own CSV files.
   const [isOwnDataOpen, setIsOwnDataOpen] = useState(false);
   useEffect(() => {
@@ -1685,11 +1687,14 @@ export default function App() {
             <PanelBoundary name="My holdings" resetKey={researchSection}>
             <div className="space-y-3" data-research-holdings="true">
               <ResearchHeader
-                title="My holdings"
+                title={tr('scopeHoldings')}
                 subtitle={
                   holdings.length
-                    ? `${holdings.length} ${holdings.length === 1 ? 'position' : 'positions'} in ${heldLive.length} ${heldLive.length === 1 ? 'country' : 'countries'}, from the holdings you imported. Click a country to open it on its own.`
-                    : `No holdings imported yet, so this shows your watchlist, ${watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist'}, at equal weight. Import holdings under History & data.`
+                    ? tr('holdingsSub', {
+                        positions: holdings.length === 1 ? tr('positionOne') : tr('positionMany', { n: holdings.length }),
+                        countries: heldLive.length === 1 ? tr('countryOne') : tr('countryMany', { n: heldLive.length }),
+                      })
+                    : tr('holdingsNone', { name: watchlists.find((w) => w.id === activeWatchlistId)?.name || 'Watchlist' })
                 }
                 badge={<LiveCountBadge items={heldLive.length ? heldLive : liveWatchlistItems} />}
                 section={researchSection}
@@ -1749,8 +1754,8 @@ export default function App() {
                 <PanelBoundary name="Sources across your holdings">
                   <SourcesGrid
                     items={heldLive.length ? heldLive : liveWatchlistItems}
-                    title={heldLive.length ? 'What is live for the countries you hold' : 'What is live across your watchlist (no holdings imported)'}
-                    empty="No countries yet."
+                    title={heldLive.length ? tr('holdingsSourcesHeld') : tr('holdingsSourcesWatch')}
+                    empty={tr('noCountries')}
                     onOpenCountry={(live) => {
                       const item = holdingsRiskLookup.find((w) => w.iso3 === live.iso3);
                       if (item && item.iso3 !== run.iso3) handleSelectSovereign(item);
