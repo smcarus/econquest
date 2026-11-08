@@ -29,6 +29,8 @@ jobs:
         run: npm test
       - name: Build
         run: npm run build
+      - name: Size check (web build may not grow; phone limits once the app build exists)
+        run: npm run size:check
       # The runner image already has Chrome's system libraries. --with-deps also apt-installs
       # font packages, and a slow Ubuntu mirror made that step run past the job limit twice on
       # 6 Nov 2026 before any test ran.

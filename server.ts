@@ -4,6 +4,13 @@ import { geminiModel } from './src/utils/geminiModel';
 import { registerAnalysisRoutes } from './src/server/routes/analysis';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { mountEngineRoutes } from './src/server/engineRoutes';
+import { ENGINE_ROUTES } from './src/engine/routeTable';
+import { createNodePlatform } from './src/platform/node';
+import { secretBoxFromEnv } from './src/utils/secretBox';
+import type { Caller } from './src/engine/routes';
+import { registerOwnSeriesRoutes } from './src/server/routes/ownSeries';
+import { ownSeriesViewsFor, OWN_NO_COUNTRY } from './src/engine/ownSeries';
 import { registerQuestRoutes } from './src/server/routes/quests';
 import { forwardSummary } from './src/utils/forwardRecord';
 import { SPIKE_METHOD, spikeMonths, spikeSentence } from './src/utils/unrestSpikes';
@@ -82,7 +89,6 @@ import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './s
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
-import { loadWatchRules, saveWatchRules } from './src/utils/watchRulesStore';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
 import { tableWorkbook } from './src/utils/xlsxExport';
@@ -92,7 +98,6 @@ import { stressWorldSeries } from './src/utils/stressIndices';
 import { spfWorldSeries } from './src/utils/inflationSurveys';
 import { commoditySeries, countrySeries, seriesSummary, type ArchivedSnapshot, type Series } from './src/utils/seriesHistory';
 import { archiveRoot, archivedDayOnOrBefore, keepDaysFromEnv, listArchivedCountries, listArchivedDays, pruneArchive, readArchivedPull, writeArchivedPull } from './src/utils/pullArchive';
-import { parseRules } from './src/utils/watchRules';
 import { checkDeskText, checkSupremeText, runScores } from './src/utils/runFigureCheck';
 import {
   API_KEY_IDS,
@@ -158,6 +163,7 @@ import { countryRiskScorecard, scorecardSentence, ECONOMY_IDS, SCORECARD_METHOD,
 import { gdeltRawConfig, gdeltRawDir, loadAllDays as loadAllGdeltRawDays, loadPullState as loadGdeltRawPullState, pullGdeltRaw, type PullResult as GdeltRawPullResult } from './src/utils/gdeltRawStore.ts';
 import { US_10Y_SERIES } from './src/utils/officialYields.ts';
 import { fetchCftcPull, fetchTicPull, fetchCbpolPull } from './src/server/feeds/positioning';
+import { fetchGovSpendingPull } from './src/server/feeds/govSpending';
 import { gdeltPausedUntil, gdeltFetch, GDELT_REFRESH_MS } from './src/server/feeds/gdelt';
 import { fetchImfPull, fetchCoferPull } from './src/server/feeds/imf';
 import { type ComtradeFile, comtradeMemory, fetchComtrade } from './src/server/feeds/comtrade';
@@ -192,6 +198,8 @@ async function fetchMarketEdgeAnchors(): Promise<MarketEdgeAnchorsReply> {
 }
 
 const SNAPSHOT_DIR = path.join(DATA_DIR, 'live');
+/** The device services the shared engine uses on this computer (src/platform/node.ts). */
+const enginePlatform = createNodePlatform({ dataDir: DATA_DIR, secretBox: secretBoxFromEnv(process.env).box });
 const SNAPSHOT_REFRESH_MS = 7 * 24 * 60 * 60 * 1000;
 /** A pull that came back short (a feed failed, or nothing answered) is tried again after an hour. */
 const SNAPSHOT_RETRY_MS = 60 * 60 * 1000;
@@ -953,7 +961,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
   }
 
   const hcPull = await fetchHcSpread().catch(() => null);
-  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities] = await Promise.all([
+  const [effr, tradeAll, cftc, tic, cbpol, cli, cpi, nationalCpi, comtrade, imf, cofer, commodities, govSpending] = await Promise.all([
     fetchEffr(),
     Promise.race([fetchTradeExposure(), new Promise<Map<string, TradeExposure>>((resolve) => setTimeout(() => resolve(new Map()), 8000))]),
     // CFTC positioning: don't hold the watchlist for it; the pull fills the cache for next time.
@@ -970,6 +978,8 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
     Promise.race([fetchCoferPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
     // Commodity prices for the spillover scenarios: don't hold the watchlist for the Pink Sheet download.
     Promise.race([fetchCommodities(), new Promise<CommodityReply | null>((resolve) => setTimeout(() => resolve(null), 3000))]),
+    // Government spending by purpose (Eurostat and IMF COFOG): annual; the first pull fills the cache.
+    Promise.race([fetchGovSpendingPull(), new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000))]),
   ]);
   const cftcWeeks = new Map<string, CftcWeek[]>(Object.entries(cftc?.weeks || {}));
   const items = await Promise.all(
@@ -1046,6 +1056,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
                 const est = outputGapFrom(loadOfficialHistory(catItem.iso3));
                 return est.ok ? { outputGap: { pct: est.latest.central, year: est.latest.year, source: 'estimate' as const, low: est.latest.low, high: est.latest.high } } : {};
               })()),
+          ...(govSpending?.byCountry[catItem.iso3] ? { govSpending: govSpending.byCountry[catItem.iso3] } : {}),
           ...((() => {
             const d = dsaFrom(loadOfficialHistory(catItem.iso3));
             return d.ok ? { debtSustainability: dsaSummary(d) } : {};
@@ -2347,6 +2358,15 @@ async function startServer() {
   // Changes that were limited to "the computer running the app" before accounts existed: a signed-in
   // account (whose role the table above has checked) may make them from anywhere.
   const trusted = (req: express.Request, res: express.Response) => Boolean(signedIn(res)) || isLocalRequest(req.socket.remoteAddress, process.env);
+  /** Who is asking, in the shared engine's terms (src/engine/routes.ts). */
+  const callerFor = (req: express.Request, res: express.Response): Caller => {
+    const who = signedIn(res);
+    return {
+      trusted: trusted(req, res),
+      account: who ? { id: who.id, username: who.username, displayName: who.displayName, role: who.role } : null,
+      from: req.socket.remoteAddress || 'an unknown address',
+    };
+  };
   // Each account's own workspace (holdings, watchlists, added countries); the shared file while
   // sign-in is off. The first admin starts from the shared file, which held the single user's lists.
   workspaceFileForAccount = (account: Account | null): string => {
@@ -2995,7 +3015,7 @@ async function startServer() {
       .map((d) => readArchivedPull<ArchivedSnapshot['snapshot']>(ARCHIVE_DIR, iso3, d))
       .filter((x): x is NonNullable<typeof x> => Boolean(x))
       .map((x) => ({ date: x.date, pulledAt: x.pulledAt, snapshot: x.snapshot }));
-    return countrySeries(iso3, {
+    const set = countrySeries(iso3, {
       cbpol,
       cli,
       qna,
@@ -3016,6 +3036,9 @@ async function startServer() {
       inflationSurveys,
       currency: SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3.toUpperCase())?.currencyCode,
     });
+    // Your own series for this country, after the feeds' and labelled "Your file" (Menu > Your data).
+    const own = await ownSeriesViewsFor(enginePlatform, iso3).catch(() => []);
+    return { ...set, series: [...set.series, ...own] };
   }
   async function worldSeries(): Promise<Series[]> {
     await quick(fetchCommodities());
@@ -3024,7 +3047,9 @@ async function startServer() {
     // Stress and supply chain indices (src/utils/stressIndices.ts), chartable and testable like prices.
     const [pulls, surveys] = await Promise.all([quick(fetchStressPulls()), quick(fetchInflationSurveys())]);
     const extra = [...stressWorldSeries(pulls), ...spfWorldSeries(surveys)].filter((x): x is Series => 'points' in x);
-    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra];
+    // Your own series not about one country (Menu > Your data: "Not about one country").
+    const own = await ownSeriesViewsFor(enginePlatform, OWN_NO_COUNTRY).catch(() => []);
+    return [...commoditySeries(prices, { pink_sheet: m?.pink?.pulledAt, eia: m?.eia?.pulledAt }), ...extra, ...own];
   }
   // Fed balance sheet (H.4.1) from FRED: Research > Compare countries > Markets & signals.
   app.get('/api/fed-balance-sheet', async (_req, res) => {
@@ -3070,6 +3095,7 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
   app.get('/api/series/:iso3', async (req, res) => {
@@ -3320,19 +3346,8 @@ async function startServer() {
     });
   });
 
-  app.get('/api/watch-rules', (_req, res) => res.json({ rules: loadWatchRules(WATCH_RULES_FILE), file: 'data/local/watch-rules.json' }));
-  app.put('/api/watch-rules', (req, res) => {
-    if (trusted(req, res) === false) {
-      return res.status(403).json({ error: `Watch alerts can only be changed from the computer running the app (this request came from ${req.socket.remoteAddress || 'an unknown address'}).` });
-    }
-    const rules = parseRules(req.body);
-    try {
-      saveWatchRules(WATCH_RULES_FILE, rules);
-      res.json({ ok: true, rules });
-    } catch (error: any) {
-      res.status(500).json({ error: `Could not save the watch alerts file (${error?.code || error?.message || 'unknown error'}).` });
-    }
-  });
+  // Watch alerts come from the shared engine's route table (same code as the phone app).
+  mountEngineRoutes(app, ENGINE_ROUTES, { platform: enginePlatform }, callerFor);
   app.put('/api/settings/keys/:id', async (req, res) => {
     if (refuseRemote(req, res)) return;
     const next = withKey(savedSettings, req.params.id, req.body?.value);

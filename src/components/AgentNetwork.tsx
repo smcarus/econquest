@@ -1,4 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { agentBadgeTip } from '../utils/agentBadges';
+import { AgentBadge } from './AgentBadge';
+import { useHelpLevel } from './HelpLevel';
 import { AlertTriangle, CheckCircle2, ChevronRight, Circle, Loader2, MinusCircle, XCircle } from 'lucide-react';
 
 export type AgentStatus = 'waiting' | 'running' | 'done' | 'fallback' | 'skipped' | 'failed';
@@ -24,23 +27,6 @@ export interface AgentColumn {
 }
 
 export type ProgressSteps = Record<string, { status: AgentStatus; ms?: number; note?: string }>;
-
-const BORDER: Record<AgentStatus, string> = {
-  waiting: 'border-slate-200 dark:border-slate-700',
-  running: 'border-blue-400 dark:border-blue-500',
-  done: 'border-emerald-300 dark:border-emerald-800',
-  fallback: 'border-amber-300 dark:border-amber-700',
-  skipped: 'border-slate-200 dark:border-slate-700',
-  failed: 'border-rose-300 dark:border-rose-800',
-};
-const DOT: Record<AgentStatus, string> = {
-  waiting: 'bg-slate-300 dark:bg-slate-600',
-  running: 'bg-blue-500 animate-pulse',
-  done: 'bg-emerald-500',
-  fallback: 'bg-amber-500',
-  skipped: 'bg-slate-300 dark:bg-slate-600',
-  failed: 'bg-rose-500',
-};
 
 const secs = (ms: number) => (ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} s`);
 
@@ -101,6 +87,7 @@ export const AgentNetwork: React.FC<{
   stacked?: boolean;
 }> = ({ title, columns, footnote, stacked }) => {
   // Seconds on a running node, counted from when this screen first saw it running.
+  const helpLevel = useHelpLevel();
   const seen = useRef<Record<string, number>>({});
   const [now, setNow] = useState(() => Date.now());
   const anyRunning = columns.some((c) => c.nodes.some((n) => n.status === 'running'));
@@ -136,23 +123,28 @@ export const AgentNetwork: React.FC<{
             <div className="flex-1 min-w-0 space-y-1.5">
               <div className="text-xs text-slate-500 dark:text-slate-400">{col.title}</div>
               {col.nodes.map((n) => (
-                <div key={n.id} className={`border ${BORDER[n.status]} bg-white dark:bg-slate-900 px-2 py-1.5`} data-agent-node={n.id} data-status={n.status} title={n.help}>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full shrink-0 ${DOT[n.status]}`} />
-                    <span className="text-sm font-medium text-slate-900 dark:text-white">{n.label}</span>
+                <div
+                  key={n.id}
+                  className={`flex items-start gap-2 px-1.5 py-1.5 ${n.status === 'skipped' ? 'opacity-70' : ''}`}
+                  data-agent-node={n.id}
+                  data-status={n.status}
+                  title={[agentBadgeTip(n.id, n.label, helpLevel), n.help].filter(Boolean).join('\n')}
+                >
+                  <AgentBadge id={n.id} status={n.status} className="mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-medium text-slate-900 dark:text-white">{n.label}</div>
+                    <div className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2">{n.task}</div>
+                    {n.members && n.members.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {n.members.map((m) => (
+                          <span key={m} className="text-xs px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                            {m}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    <StatusLine node={n} elapsedMs={seen.current[n.id] ? Math.max(0, now - seen.current[n.id]) : undefined} />
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">{n.task}</div>
-                  {n.members && n.members.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {n.members.map((m) => (
-                        <span key={m} className="inline-flex items-center gap-1 text-xs px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
-                          <span className={`w-1.5 h-1.5 rounded-full ${DOT[n.status]}`} />
-                          {m}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <StatusLine node={n} elapsedMs={seen.current[n.id] ? Math.max(0, now - seen.current[n.id]) : undefined} />
                 </div>
               ))}
             </div>

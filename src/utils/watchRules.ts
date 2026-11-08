@@ -4,47 +4,15 @@
  *
  * Saved in data/local/watch-rules.json (DATA_DIR/local when DATA_DIR is set), like Settings and the
  * research library: on this computer only, shared by `npm run dev` and Docker. The functions here
- * are browser-safe; the file is read and written by watchRulesStore.ts on the server.
+ * are browser-safe. What a rule is, how one is checked and where rules are saved are shared with the
+ * phone app and live in src/engine/watchRules.ts (re-exported here).
  */
 import type { LiveWatchlistItem } from '../types/council';
 import { shockWatch } from './shockWatch';
 import { fastestOddsMove } from './oddsMoves';
 
-export type WatchMetric =
-  | 'yield_level'
-  | 'yield_3m_bps'
-  | 'policy_rate'
-  | 'cli_level'
-  | 'cftc_percentile'
-  | 'tone_shift'
-  | 'reserves_12m_pct'
-  | 'shock_alerts'
-  | 'odds_1w_pts';
-
-export const WATCH_METRICS: Record<WatchMetric, { label: string; unit: string; source: string }> = {
-  yield_level: { label: '10Y yield', unit: '%', source: 'official 10Y yield' },
-  yield_3m_bps: { label: '10Y yield change over 3 months', unit: 'bps', source: 'official monthly 10Y yield' },
-  policy_rate: { label: 'Policy rate', unit: '%', source: 'BIS policy rates' },
-  cli_level: { label: 'OECD leading indicator', unit: '', source: 'OECD CLI via DBnomics' },
-  cftc_percentile: { label: 'CFTC positioning percentile (3 years)', unit: 'th percentile', source: 'CFTC TFF' },
-  tone_shift: { label: 'GDELT news tone shift', unit: 'pts', source: 'GDELT tone timeline' },
-  reserves_12m_pct: { label: 'Reserves change over 12 months', unit: '%', source: 'IMF reserves' },
-  shock_alerts: { label: 'Shock early-warning alerts', unit: '', source: 'stated rules (Country tab)' },
-  odds_1w_pts: { label: 'Largest weekly Polymarket odds move (either way)', unit: 'pts', source: 'Polymarket' },
-};
-
-export type WatchOp = '>=' | '<=';
-
-export interface WatchRule {
-  id: string;
-  /** A watchlist country (ISO3), or '*' for every country on screen. */
-  iso3: string;
-  metric: WatchMetric;
-  op: WatchOp;
-  value: number;
-  createdAt: string;
-  note?: string;
-}
+export { MAX_RULES, WATCH_METRICS, parseRule, parseRules, type WatchMetric, type WatchOp, type WatchRule } from '../engine/watchRules';
+import { WATCH_METRICS, type WatchMetric, type WatchRule } from '../engine/watchRules';
 
 export interface WatchHit {
   rule: WatchRule;
@@ -54,7 +22,6 @@ export interface WatchHit {
   text: string;
 }
 
-export const MAX_RULES = 100;
 
 /** The current figure for a metric, or undefined when no source filled it (a missing figure never triggers). */
 export function metricValue(it: LiveWatchlistItem, m: WatchMetric): number | undefined {
@@ -117,28 +84,4 @@ export function evaluateRules(rules: WatchRule[], items: LiveWatchlistItem[]): {
     }
   }
   return { hits, noFigure };
-}
-
-/** A rule as sent by the page, checked. Null when anything is off. */
-export function parseRule(x: unknown): WatchRule | null {
-  const r = x as Partial<WatchRule> | null;
-  if (!r || typeof r !== 'object') return null;
-  if (typeof r.iso3 !== 'string' || !/^(\*|[A-Z]{3})$/.test(r.iso3)) return null;
-  if (typeof r.metric !== 'string' || !(r.metric in WATCH_METRICS)) return null;
-  if (r.op !== '>=' && r.op !== '<=') return null;
-  if (typeof r.value !== 'number' || !Number.isFinite(r.value)) return null;
-  return {
-    id: typeof r.id === 'string' && /^[\w-]{1,40}$/.test(r.id) ? r.id : `w${Date.now().toString(36)}`,
-    iso3: r.iso3,
-    metric: r.metric as WatchMetric,
-    op: r.op,
-    value: r.value,
-    createdAt: typeof r.createdAt === 'string' ? r.createdAt.slice(0, 30) : new Date().toISOString(),
-    ...(typeof r.note === 'string' && r.note.trim() ? { note: r.note.trim().slice(0, 200) } : {}),
-  };
-}
-
-export function parseRules(x: unknown): WatchRule[] {
-  const list = (x as { rules?: unknown })?.rules;
-  return Array.isArray(list) ? list.map(parseRule).filter((r): r is WatchRule => r !== null).slice(0, MAX_RULES) : [];
 }

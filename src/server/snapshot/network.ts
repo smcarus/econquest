@@ -63,6 +63,7 @@ export async function fetchLiveOpenDataSnapshotNetwork(
         'DT.DOD.DECT.GN.ZS', // Total External Debt Stocks (% of GNI)
         'DT.DOD.DSTC.IR.ZS', // Short-Term Debt (% of Total Reserves)
         'PV.EST', // WGI Political Stability & Absence of Violence (-2.5 to +2.5)
+        'MS.MIL.XPND.GD.ZS', // Military expenditure (% of GDP), SIPRI via the World Bank
       ];
       const results = await Promise.allSettled(
         wbIndicators.map(async (ind) => {
@@ -94,6 +95,8 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           baseline.worldBankIndicators.externalDebtPctGni = Number(val.toFixed(1)); markLive('wb.externalDebtPctGni', `World Bank, ${row.date}`);
         } else if (ind === 'DT.DOD.DSTC.IR.ZS' && val > 0) {
           liveShortTermDebtPctReserves = Number(val.toFixed(1));
+        } else if (ind === 'MS.MIL.XPND.GD.ZS' && val > 0) {
+          baseline.worldBankIndicators.militaryExpenditurePctGdp = Number(val.toFixed(2)); markLive('wb.militaryExpenditurePctGdp', `World Bank (SIPRI), ${row.date}`);
         } else if (ind === 'PV.EST') {
           // Convert WGI estimate (-2.5 to +2.5) into 0-100 percentile scale
           const pctl = Math.max(2, Math.min(98, ((val + 2.5) / 5.0) * 100));
