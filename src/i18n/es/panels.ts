@@ -43,6 +43,8 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   h_dlSeries: 'Descargar esta serie (CSV)',
   h_defines: 'Qué mide: {definition}.',
   h_covers: 'De quién es la cifra: {coverage}.',
+  h_seasonal: 'Ajuste estacional: {value}.',
+  h_freqNote: 'Frecuencia: {note}.',
   h_paidHeld: 'De su propia suscripción de datos: estas cifras se quedan en este ordenador, así que esta serie no se puede descargar ni publicar. Las descargas la muestran como "Withheld: your subscription data" (retenido: datos de su suscripción).',
   h_dlAll: 'Descargar todas las series de {country} (CSV)',
   h_showNumbers: 'Mostrar las cifras',

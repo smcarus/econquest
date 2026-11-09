@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { countrySeries, commoditySeries, seriesSummary, type Series } from '../src/utils/seriesHistory';
-import { allTagTexts, COVERAGE, seriesTags, TAG_COLUMNS } from '../src/utils/seriesDefinitions';
+import { allTagTexts, COVERAGE, SEASONAL, seriesTags, TAG_COLUMNS } from '../src/utils/seriesDefinitions';
 import { SERIES_HEADER, seriesRows } from '../src/utils/csvExport';
 import { spfWorldSeries } from '../src/utils/inflationSurveys';
 import { chokepointWorldSeries } from '../src/utils/portWatch';
@@ -37,12 +37,12 @@ test('every series the app builds says what it measures and whose figure it is',
 test('the activity index follows its source; unknown, own and paid series say so honestly', () => {
   assert.equal(seriesTags({ id: 'activity_monthly', source: 'Banco Central do Brasil, IBC-Br economic activity index' }).coverage, COVERAGE.wholeEconomy);
   assert.equal(seriesTags({ id: 'activity_monthly', source: 'Eurostat industrial production index' }).coverage, COVERAGE.industry);
-  assert.deepEqual(seriesTags({ id: 'something_new' }), { definition: 'Not stated yet', coverage: 'Not stated yet' });
+  assert.deepEqual(seriesTags({ id: 'something_new' }), { definition: 'Not stated yet', coverage: 'Not stated yet', seasonalAdjustment: 'Not stated by the source' });
   assert.equal(seriesTags({ id: 'own_x', own: true }).coverage, COVERAGE.own);
   assert.equal(seriesTags({ id: 'paid_macrobond_x_usa', paid: true }).coverage, COVERAGE.paid);
 });
 
-test('list entries and downloads carry the tags; the G7/G8 columns exist but stay empty', () => {
+test('list entries and downloads carry the tags; the G8 columns exist but stay empty', () => {
   const s: Series = { id: 'debt_gdp', label: 'Government debt', unit: '% of GDP', freq: 'annual', source: 'IMF WEO', points: [{ date: '2024', value: 80 }] };
   assert.equal(seriesSummary(s).tags.coverage, COVERAGE.generalGov);
   assert.deepEqual(SERIES_HEADER.slice(-TAG_COLUMNS.length), ['definition', 'coverage', 'seasonal_adjustment', 'measure', 'base_year', 'currency']);
@@ -51,9 +51,30 @@ test('list entries and downloads carry the tags; the G7/G8 columns exist but sta
   const cell = (h: string) => row[SERIES_HEADER.indexOf(h)];
   assert.match(String(cell('definition')), /General government gross debt/);
   assert.equal(cell('coverage'), COVERAGE.generalGov);
-  assert.deepEqual([cell('seasonal_adjustment'), cell('measure'), cell('base_year'), cell('currency')], [null, null, null, null]);
+  assert.equal(cell('seasonal_adjustment'), SEASONAL.yearly);
+  assert.deepEqual([cell('measure'), cell('base_year'), cell('currency')], [null, null, null]);
   const [oil] = commoditySeries([{ source: 'eia', code: 'RBRTE', name: 'Brent', unit: 'USD/bbl', points: [{ period: '2026-01-02', value: 70 }] } as never], { pink_sheet: undefined, eia: undefined });
   assert.equal(seriesTags(oil!).coverage, COVERAGE.world);
+});
+
+test('seasonal adjustment follows how the app asks each source; frequency notes say how points are formed', () => {
+  const sa = (id: string, freq?: string, source?: string) => seriesTags({ id, freq, source }).seasonalAdjustment;
+  assert.equal(sa('gdp_qoq', 'quarterly'), SEASONAL.sca);
+  assert.equal(sa('eu_survey_industry', 'monthly'), SEASONAL.sa);
+  assert.equal(sa('activity_monthly', 'monthly', 'Banco Central do Brasil, IBC-Br'), SEASONAL.sa);
+  assert.equal(sa('activity_monthly', 'monthly', 'Eurostat industrial production index'), SEASONAL.sca);
+  assert.equal(sa('cpi_monthly', 'monthly'), SEASONAL.yoy);
+  assert.equal(sa('policy_rate', 'daily'), SEASONAL.market);
+  assert.equal(sa('debt_gdp', 'annual'), SEASONAL.yearly);
+  assert.equal(sa('debt_gdp', 'per pull'), SEASONAL.yearly);
+  assert.equal(sa('spf_hicp_1y', 'quarterly'), SEASONAL.forecast);
+  assert.equal(sa('credit_gap', 'quarterly'), SEASONAL.notStated);
+  // Every monthly, weekly or quarterly series the app knows has a stated adjustment or says the source does not.
+  for (const id of everyId()) assert.ok(sa(id, 'monthly'), id);
+  assert.match(seriesTags({ id: 'cli', freq: 'monthly' }).frequencyNote!, /averages the three months of each quarter; a month not yet published is forecast/);
+  assert.match(seriesTags({ id: 'debt_gdp', freq: 'per pull' }).frequencyNote!, /One point per saved download/);
+  assert.equal(seriesTags({ id: 'debt_gdp', freq: 'annual' }).frequencyNote, undefined);
+  assert.match(seriesTags({ id: 'portwatch_suez_ships', freq: 'monthly' }).frequencyNote!, /averaged over each month/);
 });
 
 test('every definition and coverage has Spanish and French', async () => {

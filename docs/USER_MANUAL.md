@@ -341,7 +341,11 @@ readings across the watchlist are under Compare countries.
 comes, the pull date and any gaps (named, never filled). Under the title each series says what it
 measures and whose figure it is ("What it measures: General government gross debt...; Whose figure:
 General government"), so two figures with the same name, such as government debt and public external
-debt, are not mistaken for each other. Downloads carry the same two labels as columns. Policy rate (BIS), monthly inflation, the OECD
+debt, are not mistaken for each other. It also says whether the series is seasonally adjusted and,
+where it matters, how its points are formed (for example "Monthly average of daily spreads", or, for
+the monthly activity index and the OECD leading indicator, that the GDP nowcast averages the three
+months of each quarter and flags a month it had to forecast). Downloads carry the same labels as
+columns. Policy rate (BIS), monthly inflation, the OECD
 leading indicator, CFTC positioning and TIC holdings come with their own history. The exchange rate
 per US dollar comes daily from 1999 for the about 30 currencies the ECB publishes (ECB reference rates
 via Frankfurter; first download in the background, also a step in Menu > Offline data); other

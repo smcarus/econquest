@@ -6,8 +6,8 @@
  * The tags come from each source's own definition of the series, written here once per series id.
  * A series the table does not know says so ("Not stated yet") rather than guessing.
  *
- * The other label fields (seasonal adjustment, real or nominal, base year, currency) are added here
- * empty: data plan G7 and G8 fill them, so the series list and the download columns change once.
+ * Seasonal adjustment and how each series' points are formed (data plan G7) are filled here too. The
+ * remaining label fields (real or nominal, base year, currency) stay empty until data plan G8.
  *
  * Browser-safe: no fs, no network.
  */
@@ -51,8 +51,10 @@ export interface SeriesTags {
   definition: string;
   /** Whose figure it is (one of COVERAGE). */
   coverage: string;
-  /** G7: seasonally adjusted, not adjusted, or not applicable. */
+  /** G7: seasonally adjusted, not adjusted, or not applicable (one of SEASONAL). */
   seasonalAdjustment?: string;
+  /** G7: how the observations are formed from more frequent data, and how the app turns months into quarters. */
+  frequencyNote?: string;
   /** G8: real, nominal, ratio, index or rate. */
   measure?: string;
   /** G8: base year of an index or of constant prices. */
@@ -192,12 +194,105 @@ function activityDef(source: string): Def {
 }
 
 /** The tag fields for one series: from the table, or "Not stated yet" where it has no entry. */
-export function seriesTags(s: { id: string; source?: string; own?: boolean; paid?: boolean }): SeriesTags {
-  if (s.own) return { definition: 'As you described it when you loaded the file', coverage: COVERAGE.own };
-  if (s.paid) return { definition: 'As your vendor defines the series code you mapped', coverage: COVERAGE.paid };
+export function seriesTags(s: { id: string; source?: string; freq?: string; own?: boolean; paid?: boolean }): SeriesTags {
+  if (s.own) return { definition: 'As you described it when you loaded the file', coverage: COVERAGE.own, seasonalAdjustment: 'As you described it when you loaded the file' };
+  if (s.paid) return { definition: 'As your vendor defines the series code you mapped', coverage: COVERAGE.paid, seasonalAdjustment: 'As your vendor defines the series code you mapped' };
   const def = s.id === 'activity_monthly' ? activityDef(s.source || '') : BY_ID[s.id] ?? BY_PATTERN.find((p) => p.re.test(s.id))?.def;
-  if (!def) return { definition: COVERAGE.notStated, coverage: COVERAGE.notStated };
-  return { definition: def.definition, coverage: COVERAGE[def.coverage] };
+  const note = frequencyNoteFor(s);
+  const timing = { seasonalAdjustment: seasonalFor(s), ...(note ? { frequencyNote: note } : {}) };
+  if (!def) return { definition: COVERAGE.notStated, coverage: COVERAGE.notStated, ...timing };
+  return { definition: def.definition, coverage: COVERAGE[def.coverage], ...timing };
+}
+
+/**
+ * Seasonal adjustment (data plan G7), from a short fixed list. Taken from how the app asks each source
+ * for the series (for example the OECD's ADJUSTMENT code, Eurostat's s_adj=SA); where the source does
+ * not say, "Not stated by the source".
+ */
+export const SEASONAL = {
+  sa: 'Seasonally adjusted',
+  sca: 'Seasonally and calendar adjusted',
+  nsa: 'Not seasonally adjusted',
+  yoy: 'A change on a year earlier, so seasonal swings largely cancel',
+  yearly: 'Not applicable: one figure per year',
+  market: 'Not applicable: a market price, rate or position on the day',
+  forecast: 'Not applicable: a forecast of inflation a year or more ahead',
+  notStated: 'Not stated by the source',
+} as const;
+type SeasonalKey = keyof typeof SEASONAL;
+
+const SEASONAL_BY_ID: Record<string, SeasonalKey> = {
+  policy_rate: 'market',
+  cpi_monthly: 'yoy',
+  cli: 'sa', // the OECD builds it from seasonally adjusted components (ADJUSTMENT AA = amplitude adjusted)
+  gdp_qoq: 'sca', // OECD ADJUSTMENT Y: calendar and seasonally adjusted
+  gdp_yoy_q: 'sca',
+  cftc_lev_net: 'market',
+  tic_holdings: 'nsa',
+  hc_spread: 'market',
+  implied_pd_5y: 'market',
+  fx_per_usd: 'market',
+  yield_10y: 'market',
+  gdelt_tone: 'nsa',
+  credit_gap: 'notStated',
+  credit_gdp: 'notStated',
+  debt_service_ratio: 'notStated',
+  house_prices_real_yoy: 'yoy',
+  us_breakeven_5y: 'market',
+  us_breakeven_10y: 'market',
+  us_5y5y_forward: 'market',
+  us_expinf_1y: 'nsa', // FRED series page: not seasonally adjusted
+  us_expinf_10y: 'nsa',
+  spf_hicp_1y: 'forecast',
+  spf_hicp_2y: 'forecast',
+  spf_hicp_lt: 'forecast',
+  focus_ipca_12m: 'forecast',
+  portwatch_port_calls: 'nsa',
+  portwatch_imports: 'nsa',
+  portwatch_exports: 'nsa',
+  stress_stlfsi: 'market',
+  stress_nfci: 'market',
+  stress_anfci: 'market',
+  gscpi: 'notStated',
+};
+const SEASONAL_BY_PATTERN: Array<{ re: RegExp; key: SeasonalKey }> = [
+  { re: /^eu_survey_/, key: 'sa' }, // Eurostat s_adj=SA
+  { re: /^ust_auction_/, key: 'market' },
+  { re: /^portwatch_/, key: 'nsa' },
+  { re: /^commodity_/, key: 'market' },
+];
+
+const MONTHS_TO_QUARTERS =
+  'Monthly. Where the app needs quarters (the GDP nowcast), it averages the three months of each quarter; a month not yet published is forecast from the series\' own past and flagged as a forecast';
+/** How each series' points are formed, where that is not plain from its frequency. */
+const FREQUENCY_NOTE_BY_ID: Record<string, string> = {
+  policy_rate: 'Daily rates; for a long history the app shows month-end rates, then the latest daily figures',
+  cli: MONTHS_TO_QUARTERS,
+  activity_monthly: MONTHS_TO_QUARTERS,
+  hc_spread: 'Monthly average of daily spreads',
+  focus_ipca_12m: 'Weekly survey; the app shows the last reading of each month',
+  cftc_lev_net: 'Weekly, positions as of each Tuesday',
+  tic_holdings: 'Monthly, holdings at the end of each month',
+  fx_per_usd: 'Daily reference rates on working days; no figure on weekends and holidays',
+};
+const FREQUENCY_NOTE_BY_PATTERN: Array<{ re: RegExp; note: string }> = [
+  { re: /^portwatch_/, note: 'Daily counts averaged over each month' },
+  { re: /^ust_auction_/, note: 'One point per auction: bills about every week, notes and bonds about once a month' },
+];
+const PER_PULL_NOTE = 'One point per saved download: the figure as the app saw it that day, not a new observation';
+
+function seasonalFor(s: { id: string; source?: string; freq?: string }): string {
+  if (s.id === 'activity_monthly') return /IBC-Br|Banco Central do Brasil/i.test(s.source || '') ? SEASONAL.sa : SEASONAL.sca;
+  const key = SEASONAL_BY_ID[s.id] ?? SEASONAL_BY_PATTERN.find((p) => p.re.test(s.id))?.key;
+  if (key) return SEASONAL[key];
+  // Yearly official figures (IMF, World Bank, BIS yearly, defaults): one figure per year.
+  if (s.freq === 'annual' || (s.freq === 'per pull' && BY_ID[s.id])) return SEASONAL.yearly;
+  return SEASONAL.notStated;
+}
+
+function frequencyNoteFor(s: { id: string; freq?: string }): string | undefined {
+  if (s.freq === 'per pull') return PER_PULL_NOTE;
+  return FREQUENCY_NOTE_BY_ID[s.id] ?? FREQUENCY_NOTE_BY_PATTERN.find((p) => p.re.test(s.id))?.note;
 }
 
 /** Download columns for the tags, after the existing series columns. */
@@ -210,5 +305,6 @@ export function tagCells(t: SeriesTags): Array<string | null> {
 /** Every definition and coverage the table can show, for the translation test. */
 export function allTagTexts(): string[] {
   const defs = [...Object.values(BY_ID), ...BY_PATTERN.map((p) => p.def), activityDef('IBC-Br'), activityDef('Eurostat')].map((x) => x.definition);
-  return [...new Set([...defs, ...Object.values(COVERAGE), 'As you described it when you loaded the file', 'As your vendor defines the series code you mapped'])];
+  const timing = [...Object.values(SEASONAL), MONTHS_TO_QUARTERS, PER_PULL_NOTE, ...Object.values(FREQUENCY_NOTE_BY_ID), ...FREQUENCY_NOTE_BY_PATTERN.map((p) => p.note)];
+  return [...new Set([...defs, ...Object.values(COVERAGE), ...timing, 'As you described it when you loaded the file', 'As your vendor defines the series code you mapped'])];
 }
