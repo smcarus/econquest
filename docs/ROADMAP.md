@@ -48,8 +48,8 @@ makes figures safer to compare and cite.
 | G5 | Macrobond adapter | The first paid vendor plugged into G4: signs in with your own Web API licence and fetches your mapped series in the daily run or with "Fetch now" | Done (still to be tried by a Macrobond licence holder) |
 | G6 | Definition tags | Each figure says what it measures (for example, general or central government) | Done |
 | G7 | Seasonal adjustment and frequency | States whether figures are seasonally adjusted and how monthly figures become quarterly ones | Done |
-| G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Next |
-| G9 | Uncertainty ranges | Forecasts show a range, not just one number | Planned |
+| G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Done |
+| G9 | Uncertainty ranges | Forecasts show a range, not just one number | Next |
 | G10 | Release calendar | When each country's next inflation and growth figures come out | Planned |
 | G11 | "Cite this" | Ready-made citations for every chart, table and answer | Planned |
 | G12 | Euro area figures as first published | Backtests use only what was known at the time | Planned; licence check first |

@@ -6,8 +6,8 @@
  * The tags come from each source's own definition of the series, written here once per series id.
  * A series the table does not know says so ("Not stated yet") rather than guessing.
  *
- * Seasonal adjustment and how each series' points are formed (data plan G7) are filled here too. The
- * remaining label fields (real or nominal, base year, currency) stay empty until data plan G8.
+ * Seasonal adjustment and how each series' points are formed (data plan G7), and real or nominal, base
+ * year and currency (data plan G8), are filled here too.
  *
  * Browser-safe: no fs, no network.
  */
@@ -55,11 +55,11 @@ export interface SeriesTags {
   seasonalAdjustment?: string;
   /** G7: how the observations are formed from more frequent data, and how the app turns months into quarters. */
   frequencyNote?: string;
-  /** G8: real, nominal, ratio, index or rate. */
+  /** G8: real, nominal, share of GDP, index, rate and so on (one of MEASURE). */
   measure?: string;
   /** G8: base year of an index or of constant prices. */
   baseYear?: string;
-  /** G8: currency of an amount. */
+  /** G8: currency of an amount, with market rate or purchasing power parity (one of CURRENCY). */
   currency?: string;
 }
 
@@ -195,11 +195,24 @@ function activityDef(source: string): Def {
 
 /** The tag fields for one series: from the table, or "Not stated yet" where it has no entry. */
 export function seriesTags(s: { id: string; source?: string; freq?: string; own?: boolean; paid?: boolean }): SeriesTags {
-  if (s.own) return { definition: 'As you described it when you loaded the file', coverage: COVERAGE.own, seasonalAdjustment: 'As you described it when you loaded the file' };
-  if (s.paid) return { definition: 'As your vendor defines the series code you mapped', coverage: COVERAGE.paid, seasonalAdjustment: 'As your vendor defines the series code you mapped' };
+  if (s.own) {
+    const said = 'As you described it when you loaded the file';
+    return { definition: said, coverage: COVERAGE.own, seasonalAdjustment: said, measure: said };
+  }
+  if (s.paid) {
+    const said = 'As your vendor defines the series code you mapped';
+    return { definition: said, coverage: COVERAGE.paid, seasonalAdjustment: said, measure: said };
+  }
   const def = s.id === 'activity_monthly' ? activityDef(s.source || '') : BY_ID[s.id] ?? BY_PATTERN.find((p) => p.re.test(s.id))?.def;
   const note = frequencyNoteFor(s);
-  const timing = { seasonalAdjustment: seasonalFor(s), ...(note ? { frequencyNote: note } : {}) };
+  const u = unitsFor(s);
+  const timing = {
+    seasonalAdjustment: seasonalFor(s),
+    ...(note ? { frequencyNote: note } : {}),
+    measure: u ? MEASURE[u[0]] : COVERAGE.notStated,
+    ...(u?.[1] ? { currency: CURRENCY[u[1]] } : {}),
+    ...(u?.[2] ? { baseYear: u[2] } : {}),
+  };
   if (!def) return { definition: COVERAGE.notStated, coverage: COVERAGE.notStated, ...timing };
   return { definition: def.definition, coverage: COVERAGE[def.coverage], ...timing };
 }
@@ -295,6 +308,135 @@ function frequencyNoteFor(s: { id: string; freq?: string }): string | undefined 
   return FREQUENCY_NOTE_BY_ID[s.id] ?? FREQUENCY_NOTE_BY_PATTERN.find((p) => p.re.test(s.id))?.note;
 }
 
+/**
+ * Units (data plan G8): real or nominal, the base year of an index or of constant prices, and the
+ * currency, including whether dollar amounts use market exchange rates or purchasing power parity.
+ * From each source's own description of the series (the IMF and World Bank indicator definitions, the
+ * OECD and Eurostat dimension codes the app asks for). Short fixed lists, so every screen and language
+ * shows the same words.
+ */
+export const MEASURE = {
+  real: 'Real (adjusted for inflation)',
+  realGrowth: 'Real growth rate (volume, adjusted for inflation)',
+  nominal: 'Nominal (current prices)',
+  shareGdp: 'Share of GDP or GNI (nominal over nominal)',
+  inflation: 'Price change (inflation)',
+  rate: 'Interest rate, yield or spread',
+  fx: 'Exchange rate',
+  index: 'Index',
+  balance: 'Balance of survey replies (percentage points)',
+  ratio: 'Ratio or share',
+  probability: 'Probability',
+  count: 'Count or physical quantity',
+  years: 'Time (years)',
+  score: 'Score or rank',
+} as const;
+type MeasureKey = keyof typeof MEASURE;
+
+export const CURRENCY = {
+  usdMarket: 'US dollars at market exchange rates',
+  intlPpp: 'International dollars at purchasing power parity',
+  local: 'The country\'s own currency',
+  localPerUsd: 'Local currency per US dollar (market rate)',
+  localPerIntl: 'Local currency per international dollar (purchasing power parity)',
+  usdBonds: 'US dollar bonds',
+} as const;
+type CurrencyKey = keyof typeof CURRENCY;
+
+type Units = [MeasureKey, CurrencyKey?, string?];
+const UNITS_BY_ID: Record<string, Units> = {
+  policy_rate: ['rate'],
+  cpi_monthly: ['inflation'],
+  cpi_imf: ['inflation'],
+  cpi_index: ['index', undefined, '2010'],
+  broad_money_gdp: ['shareGdp'],
+  cli: ['index'],
+  gdp_qoq: ['realGrowth'],
+  gdp_yoy_q: ['realGrowth'],
+  gdp_growth: ['realGrowth'],
+  gdp_usd: ['nominal', 'usdMarket'],
+  gdp_pc_ppp: ['real', 'intlPpp', '2021'],
+  output_gap: ['real'],
+  unemployment: ['ratio'],
+  population: ['count'],
+  debt_gdp: ['shareGdp'],
+  primary_balance: ['shareGdp'],
+  overall_balance: ['shareGdp'],
+  revenue: ['shareGdp'],
+  expenditure: ['shareGdp'],
+  current_account: ['shareGdp'],
+  current_account_usd: ['nominal', 'usdMarket'],
+  exports_usd: ['nominal', 'usdMarket'],
+  terms_of_trade: ['index', undefined, '2015'],
+  reserves_months: ['ratio'],
+  reserves_usd: ['nominal', 'usdMarket'],
+  external_debt: ['shareGdp'],
+  short_term_debt_reserves: ['ratio'],
+  short_term_debt_usd: ['nominal', 'usdMarket'],
+  fdi_in_gdp: ['shareGdp'],
+  fdi_out_gdp: ['shareGdp'],
+  fdi_net_usd: ['nominal', 'usdMarket'],
+  portfolio_net_usd: ['nominal', 'usdMarket'],
+  financial_account_usd: ['nominal', 'usdMarket'],
+  fx_per_usd: ['fx', 'localPerUsd'],
+  fx_lcu_usd: ['fx', 'localPerUsd'],
+  ppp_factor: ['fx', 'localPerIntl'],
+  yield_10y: ['rate', 'local'],
+  hc_spread: ['rate', 'usdBonds'],
+  implied_pd_5y: ['probability', 'usdBonds'],
+  cftc_lev_net: ['ratio'],
+  tic_holdings: ['nominal', 'usdMarket'],
+  gdelt_tone: ['score'],
+  stability: ['score'],
+  credit_gap: ['shareGdp'],
+  credit_gdp: ['shareGdp'],
+  debt_service_ratio: ['ratio'],
+  house_prices_real_yoy: ['real'],
+  ppg_external_usd: ['nominal', 'usdMarket'],
+  ppg_multilateral_share: ['ratio'],
+  ppg_bilateral_share: ['ratio'],
+  ppg_bonds_share: ['ratio'],
+  ppg_banks_share: ['ratio'],
+  ppg_china_share: ['ratio'],
+  ppg_usd_share: ['ratio'],
+  new_loans_rate_official: ['rate'],
+  new_loans_rate_private: ['rate'],
+  new_loans_maturity_official: ['years'],
+  new_loans_maturity_private: ['years'],
+  us_breakeven_5y: ['inflation'],
+  us_breakeven_10y: ['inflation'],
+  us_5y5y_forward: ['inflation'],
+  us_expinf_1y: ['inflation'],
+  us_expinf_10y: ['inflation'],
+  spf_hicp_1y: ['inflation'],
+  spf_hicp_2y: ['inflation'],
+  spf_hicp_lt: ['inflation'],
+  focus_ipca_12m: ['inflation'],
+  eu_survey_esi: ['index'],
+  eu_survey_employment: ['index'],
+  eu_survey_industry: ['balance'],
+  eu_survey_services: ['balance'],
+  eu_survey_consumer: ['balance'],
+  stress_stlfsi: ['index'],
+  stress_nfci: ['index'],
+  stress_anfci: ['index'],
+  gscpi: ['index'],
+};
+for (const id of ['wgi_voice', 'wgi_stability', 'wgi_effectiveness', 'wgi_regulatory', 'wgi_rule_of_law', 'wgi_corruption']) UNITS_BY_ID[id] = ['score'];
+const UNITS_BY_PATTERN: Array<{ re: RegExp; units: Units }> = [
+  { re: /^default_.+_usd$/, units: ['nominal', 'usdMarket'] },
+  { re: /^ust_auction_btc_/, units: ['ratio'] },
+  { re: /^ust_auction_high_yield_/, units: ['rate', 'usdBonds'] },
+  { re: /^portwatch_/, units: ['count'] },
+  { re: /^commodity_/, units: ['nominal', 'usdMarket'] },
+];
+
+function unitsFor(s: { id: string; source?: string }): Units | undefined {
+  // The activity index: IBC-Br is based 2002 = 100, Eurostat's industrial production 2021 = 100.
+  if (s.id === 'activity_monthly') return ['index', undefined, /IBC-Br|Banco Central do Brasil/i.test(s.source || '') ? '2002' : '2021'];
+  return UNITS_BY_ID[s.id] ?? UNITS_BY_PATTERN.find((p) => p.re.test(s.id))?.units;
+}
+
 /** Download columns for the tags, after the existing series columns. */
 export const TAG_COLUMNS = ['definition', 'coverage', 'seasonal_adjustment', 'measure', 'base_year', 'currency'] as const;
 
@@ -306,5 +448,5 @@ export function tagCells(t: SeriesTags): Array<string | null> {
 export function allTagTexts(): string[] {
   const defs = [...Object.values(BY_ID), ...BY_PATTERN.map((p) => p.def), activityDef('IBC-Br'), activityDef('Eurostat')].map((x) => x.definition);
   const timing = [...Object.values(SEASONAL), MONTHS_TO_QUARTERS, PER_PULL_NOTE, ...Object.values(FREQUENCY_NOTE_BY_ID), ...FREQUENCY_NOTE_BY_PATTERN.map((p) => p.note)];
-  return [...new Set([...defs, ...Object.values(COVERAGE), ...timing, 'As you described it when you loaded the file', 'As your vendor defines the series code you mapped'])];
+  return [...new Set([...defs, ...Object.values(COVERAGE), ...timing, ...Object.values(MEASURE), ...Object.values(CURRENCY), 'As you described it when you loaded the file', 'As your vendor defines the series code you mapped'])];
 }
