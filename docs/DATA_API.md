@@ -67,6 +67,12 @@ Series tables (one row per date) have these columns:
 | `source` | Where the series comes from |
 | `source_that_day` | Set when a date's figure came from a different source than the rest |
 | `pulled_at` | When the app last downloaded it |
+| `definition` | What the series measures, from its source's own definition (for example "General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)") |
+| `coverage` | Whose figure it is: general government, central government, public external debt, households and firms, the whole economy, and so on |
+| `seasonal_adjustment`, `measure`, `base_year`, `currency` | Empty for now; filled by later changes (seasonal adjustment; real or nominal, base year, currency) |
+
+The `/api/series/...` lists carry the same two labels under `tags` (`tags.definition`,
+`tags.coverage`). A series the app has no definition for says "Not stated yet" rather than a guess.
 
 Panel tables in latest mode have `iso3, country, figure_id, figure, value, unit, status, period,
 source, reason_if_missing`. A figure the app does not hold has an empty value, status `Missing` and

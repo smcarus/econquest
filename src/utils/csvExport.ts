@@ -6,6 +6,7 @@
  * Browser-safe; the server builds the files and the browser only links to them.
  */
 import type { OpenDataSnapshot } from '../types/council';
+import { TAG_COLUMNS, seriesTags, tagCells } from './seriesDefinitions';
 import { getSnapshotDataStatus } from './dataStatus';
 import { pathMissing } from './countryNotes';
 import { ARCHIVE_FIGURES, snapshotValue, type Series } from './seriesHistory';
@@ -30,13 +31,15 @@ export function toCsv(header: string[], rows: Cell[][]): string {
 }
 
 /** Long format: one row per observation, every row self-describing. */
-export const SERIES_HEADER = ['iso3', 'series_id', 'series', 'unit', 'frequency', 'date', 'value', 'source', 'source_that_day', 'pulled_at'];
+export const SERIES_HEADER = ['iso3', 'series_id', 'series', 'unit', 'frequency', 'date', 'value', 'source', 'source_that_day', 'pulled_at', ...TAG_COLUMNS];
 
 export function seriesRows(iso3: string, series: Series[]): Cell[][] {
   const rows: Cell[][] = [];
   for (const s of series) {
+    // What the series measures (data plan G6), the same on every row so each row stands alone.
+    const tags = tagCells(seriesTags(s));
     for (const p of s.points) {
-      rows.push([iso3, s.id, s.label, s.unit, s.freq, p.date, p.value, s.source, p.note ?? '', s.pulledAt ?? '']);
+      rows.push([iso3, s.id, s.label, s.unit, s.freq, p.date, p.value, s.source, p.note ?? '', s.pulledAt ?? '', ...tags]);
     }
   }
   return rows;

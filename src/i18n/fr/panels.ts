@@ -38,6 +38,8 @@ export const PANELS_FR: Messages<typeof PANELS> = {
   h_noGaps: "Aucun trou.",
   h_gaps: "Trous (aucune observation, non comblés) : {gaps}.",
   h_dlSeries: "Télécharger cette série (CSV)",
+  h_defines: 'Ce qu\'elle mesure : {definition}.',
+  h_covers: 'À qui se rapporte le chiffre : {coverage}.',
   h_paidHeld: "Issu de votre propre abonnement de données : ces chiffres restent sur cet ordinateur, cette série ne peut donc être ni téléchargée ni publiée. Les téléchargements l'indiquent comme « Withheld: your subscription data » (retenu : données de votre abonnement).",
   h_dlAll: "Télécharger toutes les séries pour {country} (CSV)",
   h_showNumbers: "Afficher les chiffres",

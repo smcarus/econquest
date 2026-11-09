@@ -431,6 +431,21 @@ Not built yet (planned, also own-account only): Bloomberg, EPFR/IIF flows, conse
 Policy rates come from the free BIS dataset (see above); only Egypt, which the BIS does not cover,
 reads Missing.
 
+## What each series measures (data plan G6)
+
+Every series carries two labels, taken from its source's own definition: **what it measures** (for
+example "General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)") and **whose figure it
+is**, from one short list: general government (central, state and local government and social
+security), central government, public and publicly guaranteed debt owed abroad, government debt in
+default, the whole economy, industry, all sectors of the economy, households and non-financial firms,
+households (consumer prices), the central bank, market prices, surveys of forecasters or of firms and
+households, and a few more. They show under the title on the History page and as the `definition` and
+`coverage` columns in every series download. The labels are kept in one table
+(`src/utils/seriesDefinitions.ts`); a series not in it says "Not stated yet", never a guess. Your own
+files say "As you described it when you loaded the file" and your subscription series "As your vendor
+defines the series code you mapped". Columns for seasonal adjustment, real or nominal, base year and
+currency are already in the downloads, empty until data plan changes G7 and G8 fill them.
+
 ## Your data subscription (data plan G4; off unless you switch it on)
 
 For someone who already pays for a data service. **Menu > Settings > Your subscriptions** switches

@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Definition tags (data plan G6): every series now says what it measures and whose figure it is (general
+  government, central government, public external debt, households and firms, the whole economy and so
+  on), from each source's own definition. Shown under the title on the History page, under `tags` in the
+  series lists, and as new `definition` and `coverage` columns in every series download. Empty
+  `seasonal_adjustment`, `measure`, `base_year` and `currency` columns are added now so G7 and G8 only fill
+  them. A series without a definition says "Not stated yet". Spanish and French text.
 - Macrobond adapter (data plan G5): with your subscription set to Macrobond and your Web API client ID
   and secret entered, the app signs in (token held in memory only) and fetches your mapped series, in the
   daily run (new step "Your data subscription") or with the new "Fetch now" button under Settings > Your

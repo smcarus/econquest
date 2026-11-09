@@ -338,7 +338,10 @@ world reserve currency shares (COFER), shock early warning and the signal track 
 readings across the watchlist are under Compare countries.
 
 **History & data.** Every figure that has a run of real observations, as a chart with its source, how often it
-comes, the pull date and any gaps (named, never filled). Policy rate (BIS), monthly inflation, the OECD
+comes, the pull date and any gaps (named, never filled). Under the title each series says what it
+measures and whose figure it is ("What it measures: General government gross debt...; Whose figure:
+General government"), so two figures with the same name, such as government debt and public external
+debt, are not mistaken for each other. Downloads carry the same two labels as columns. Policy rate (BIS), monthly inflation, the OECD
 leading indicator, CFTC positioning and TIC holdings come with their own history. The exchange rate
 per US dollar comes daily from 1999 for the about 30 currencies the ECB publishes (ECB reference rates
 via Frankfurter; first download in the background, also a step in Menu > Offline data); other
