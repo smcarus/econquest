@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ChartGuide } from './HelpLevel';
+import type { SeriesTags } from '../utils/seriesDefinitions';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
 import { historicalContext, type HistoricalContext } from '../utils/historicalContext';
@@ -14,7 +15,7 @@ import { PANELS, type PanelT } from '../i18n/messages/panels';
  * they came: nothing filled in, carried forward or smoothed.
  */
 
-type SeriesListItem = Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number };
+type SeriesListItem = Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; tags?: SeriesTags };
 
 const FREQ_KEY = {
   daily: 'freq_daily',
@@ -132,6 +133,11 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
             <p className="ui-label">
               {tx(current.unit)} · {freqLabel(current.freq)} · {current.source}
               {pulledLabel(current.pulledAt) ? t('h_pulled', { date: pulledLabel(current.pulledAt)! }) : ''}
+            </p>
+          )}
+          {current?.tags && (
+            <p className="ui-label pt-0.5" data-history-definition="true">
+              {t('h_defines', { definition: tx(current.tags.definition) })} {t('h_covers', { coverage: tx(current.tags.coverage) })}
             </p>
           )}
           {current && <ChartGuide id="history" className="pt-1" />}

@@ -1,0 +1,214 @@
+/**
+ * Definition tags (data plan G6): every series says what it measures and whose figure it is, so two
+ * numbers with the same name are not mistaken for each other (general government debt is not
+ * central government debt; consumer prices are not the GDP deflator).
+ *
+ * The tags come from each source's own definition of the series, written here once per series id.
+ * A series the table does not know says so ("Not stated yet") rather than guessing.
+ *
+ * The other label fields (seasonal adjustment, real or nominal, base year, currency) are added here
+ * empty: data plan G7 and G8 fill them, so the series list and the download columns change once.
+ *
+ * Browser-safe: no fs, no network.
+ */
+
+/** Whose figure it is. A short, fixed list, so every screen and language shows the same words. */
+export const COVERAGE = {
+  generalGov: 'General government (central, state and local government and social security)',
+  centralGov: 'Central government',
+  ppg: 'Public and publicly guaranteed debt owed abroad',
+  govDefault: 'Government debt',
+  wholeEconomy: 'Whole economy',
+  industry: 'Industry',
+  allSectors: 'All sectors of the economy, public and private',
+  privateNonFin: 'Households and non-financial firms',
+  households: 'Households (consumer prices)',
+  centralBank: 'Central bank',
+  market: 'Market prices',
+  forecasters: 'Survey of professional forecasters',
+  firmsHouseholds: 'Survey of firms and households',
+  futures: 'Futures market participants',
+  foreignHolders: 'Foreign holders of US Treasury securities',
+  shipping: 'Ships and seaborne trade',
+  country: 'The whole country',
+  governance: 'The country\'s governance, as experts and surveys rate it',
+  world: 'World market',
+  financial: 'Financial markets',
+  model: 'Model estimate by the source',
+  appCalc: 'App calculation from the figures named in the source',
+  own: 'Your own file',
+  paid: 'Your own subscription',
+  notStated: 'Not stated yet',
+} as const;
+export type CoverageKey = keyof typeof COVERAGE;
+
+/**
+ * The label fields a series carries. G6 fills `definition` and `coverage`; the rest stay empty
+ * until G7 (seasonal adjustment) and G8 (real or nominal, base year, currency).
+ */
+export interface SeriesTags {
+  /** What exactly it measures, from the source's own definition. */
+  definition: string;
+  /** Whose figure it is (one of COVERAGE). */
+  coverage: string;
+  /** G7: seasonally adjusted, not adjusted, or not applicable. */
+  seasonalAdjustment?: string;
+  /** G8: real, nominal, ratio, index or rate. */
+  measure?: string;
+  /** G8: base year of an index or of constant prices. */
+  baseYear?: string;
+  /** G8: currency of an amount. */
+  currency?: string;
+}
+
+type Def = { definition: string; coverage: CoverageKey };
+const d = (definition: string, coverage: CoverageKey): Def => ({ definition, coverage });
+
+/** Exact series ids. */
+const BY_ID: Record<string, Def> = {
+  // Monetary and prices
+  policy_rate: d('The central bank\'s main policy interest rate, as collected by the BIS', 'centralBank'),
+  cpi_monthly: d('Consumer price index, change on the same month a year earlier', 'households'),
+  cpi_imf: d('Consumer prices, change in the yearly average (IMF WEO PCPIPCH)', 'households'),
+  cpi_index: d('Consumer price index, yearly average, 2010 = 100 (World Bank FP.CPI.TOTL)', 'households'),
+  broad_money_gdp: d('Broad money: currency, deposits and similar claims held outside banks, as % of GDP (World Bank FM.LBL.BMNY.GD.ZS)', 'allSectors'),
+  // Activity
+  cli: d('OECD composite leading indicator, amplitude adjusted, 100 = long-term trend', 'wholeEconomy'),
+  gdp_qoq: d('Real GDP (volume), change on the previous quarter', 'wholeEconomy'),
+  gdp_yoy_q: d('Real GDP (volume), change on the same quarter a year earlier', 'wholeEconomy'),
+  gdp_growth: d('Real GDP at constant prices, yearly change (IMF WEO NGDP_RPCH)', 'wholeEconomy'),
+  gdp_usd: d('GDP at current prices in US dollars (IMF WEO NGDPD)', 'wholeEconomy'),
+  gdp_pc_ppp: d('GDP per head at purchasing power parity, constant 2021 international dollars (World Bank NY.GDP.PCAP.PP.KD)', 'wholeEconomy'),
+  output_gap: d('Actual GDP minus potential GDP, as % of potential (IMF WEO NGAP_NPGDP, or the app estimate where the IMF has none)', 'wholeEconomy'),
+  unemployment: d('Unemployed people as % of the labour force, national definitions (IMF WEO LUR)', 'country'),
+  population: d('Total population at mid-year (World Bank SP.POP.TOTL)', 'country'),
+  // Public finances
+  debt_gdp: d('General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)', 'generalGov'),
+  primary_balance: d('General government net lending or borrowing excluding interest, as % of GDP (IMF Fiscal Monitor)', 'generalGov'),
+  overall_balance: d('General government net lending or borrowing, interest included, as % of GDP (IMF Fiscal Monitor)', 'generalGov'),
+  revenue: d('General government revenue, as % of GDP (IMF Fiscal Monitor)', 'generalGov'),
+  expenditure: d('General government total expenditure, interest included, as % of GDP (IMF Fiscal Monitor)', 'generalGov'),
+  // External
+  current_account: d('Current account balance, as % of GDP (World Bank BN.CAB.XOKA.GD.ZS)', 'allSectors'),
+  current_account_usd: d('Current account balance in US dollars (IMF WEO BCA)', 'allSectors'),
+  exports_usd: d('Exports of goods and services in current US dollars (World Bank NE.EXP.GNFS.CD)', 'allSectors'),
+  terms_of_trade: d('Net barter terms of trade: export unit values over import unit values, 2015 = 100', 'allSectors'),
+  reserves_months: d('Total reserves including gold, in months of imports (World Bank FI.RES.TOTL.MO)', 'centralBank'),
+  reserves_usd: d('Total reserves including gold, in US dollars (World Bank FI.RES.TOTL.CD)', 'centralBank'),
+  external_debt: d('Total external debt stocks, public and private, as % of GNI (World Bank DT.DOD.DECT.GN.ZS)', 'allSectors'),
+  short_term_debt_reserves: d('External debt due within one year (original maturity), as % of reserves', 'allSectors'),
+  short_term_debt_usd: d('External debt with original maturity of one year or less, in US dollars', 'allSectors'),
+  fdi_in_gdp: d('Direct investment into the country by foreigners, net of disinvestment, as % of GDP', 'allSectors'),
+  fdi_out_gdp: d('Direct investment abroad by residents, net of disinvestment, as % of GDP', 'allSectors'),
+  fdi_net_usd: d('Net direct investment in the balance of payments (BPM6 sign), in US dollars', 'allSectors'),
+  portfolio_net_usd: d('Net portfolio investment in the balance of payments (BPM6 sign), in US dollars', 'allSectors'),
+  financial_account_usd: d('Net financial account of the balance of payments (BPM6 sign), in US dollars', 'allSectors'),
+  // Exchange rates
+  fx_per_usd: d('Units of the country\'s currency per US dollar, reference or official rate', 'market'),
+  fx_lcu_usd: d('Official exchange rate, local currency per US dollar, yearly average (World Bank PA.NUS.FCRF)', 'market'),
+  ppp_factor: d('PPP conversion factor for GDP, local currency per international dollar (World Bank ICP)', 'wholeEconomy'),
+  // Markets
+  yield_10y: d('Yield on the government\'s 10-year bond, in its own currency', 'centralGov'),
+  hc_spread: d('Spread of the government\'s US dollar bonds over US Treasuries (J.P. Morgan EMBI Global, via BCRP); not CDS', 'centralGov'),
+  implied_pd_5y: d('Chance of default over five years implied by the US dollar bond spread, with an assumed recovery', 'appCalc'),
+  cftc_lev_net: d('Leveraged funds\' net long position in the currency future, as % of open interest (CFTC TFF)', 'futures'),
+  tic_holdings: d('US Treasury securities held in the country, as US Treasury TIC reports them (SLT table 5)', 'foreignHolders'),
+  gdelt_tone: d('Average tone of news articles about the country (GDELT)', 'country'),
+  stability: d('World Bank WGI political stability estimate, shown on a 0 to 100 scale', 'governance'),
+  // Credit cycle (BIS)
+  credit_gap: d('Credit to households and non-financial firms as % of GDP, minus its long-run trend (BIS)', 'privateNonFin'),
+  credit_gdp: d('Credit to households and non-financial firms from all lenders, as % of GDP (BIS)', 'privateNonFin'),
+  debt_service_ratio: d('Interest and principal paid by households and non-financial firms, as % of their income (BIS)', 'privateNonFin'),
+  house_prices_real_yoy: d('Residential property prices deflated by consumer prices, change on a year earlier (BIS)', 'households'),
+  // Public external debt (World Bank IDS)
+  ppg_external_usd: d('Public and publicly guaranteed external debt outstanding at year end, in US dollars (World Bank IDS)', 'ppg'),
+  ppg_multilateral_share: d('Share of public external debt owed to multilateral lenders (World Bank IDS)', 'ppg'),
+  ppg_bilateral_share: d('Share of public external debt owed to other governments (World Bank IDS)', 'ppg'),
+  ppg_bonds_share: d('Share of public external debt owed to bondholders (World Bank IDS)', 'ppg'),
+  ppg_banks_share: d('Share of public external debt owed to commercial banks (World Bank IDS)', 'ppg'),
+  ppg_china_share: d('Share of public external debt owed to Chinese lenders (World Bank IDS)', 'ppg'),
+  ppg_usd_share: d('Share of public external debt in US dollars (World Bank IDS)', 'ppg'),
+  new_loans_rate_official: d('Average interest rate on new external loans from official lenders (World Bank IDS)', 'ppg'),
+  new_loans_rate_private: d('Average interest rate on new external loans and bonds from private lenders (World Bank IDS)', 'ppg'),
+  new_loans_maturity_official: d('Average maturity of new external loans from official lenders (World Bank IDS)', 'ppg'),
+  new_loans_maturity_private: d('Average maturity of new external loans and bonds from private lenders (World Bank IDS)', 'ppg'),
+  // Defaults (Bank of Canada and Bank of England database)
+  default_total_usd: d('Government debt in default, all creditors, in US dollars (BoC-BoE database)', 'govDefault'),
+  default_fc_bonds_usd: d('Government foreign-currency bonds in default, in US dollars (BoC-BoE database)', 'govDefault'),
+  default_fc_banks_usd: d('Government foreign-currency bank loans in default, in US dollars (BoC-BoE database)', 'govDefault'),
+  default_paris_club_usd: d('Government debt to Paris Club governments in default, in US dollars (BoC-BoE database)', 'govDefault'),
+  default_china_usd: d('Government debt to Chinese official lenders in default, in US dollars (BoC-BoE database)', 'govDefault'),
+  default_imf_usd: d('Government arrears to the IMF, in US dollars (BoC-BoE database)', 'govDefault'),
+  default_lc_usd: d('Government local-currency debt in default, in US dollars (BoC-BoE database)', 'govDefault'),
+  // Inflation expectations
+  us_breakeven_5y: d('5-year Treasury yield minus the 5-year TIPS yield (FRED T5YIE)', 'market'),
+  us_breakeven_10y: d('10-year Treasury yield minus the 10-year TIPS yield (FRED T10YIE)', 'market'),
+  us_5y5y_forward: d('Expected average inflation over the five years starting five years ahead, from breakevens (FRED T5YIFR)', 'market'),
+  us_expinf_1y: d('Cleveland Fed model estimate of expected inflation over the next year', 'model'),
+  us_expinf_10y: d('Cleveland Fed model estimate of expected average inflation over the next ten years', 'model'),
+  spf_hicp_1y: d('Mean forecast of euro area HICP inflation one year ahead (ECB SPF)', 'forecasters'),
+  spf_hicp_2y: d('Mean forecast of euro area HICP inflation two years ahead (ECB SPF)', 'forecasters'),
+  spf_hicp_lt: d('Mean forecast of euro area HICP inflation about five years ahead (ECB SPF)', 'forecasters'),
+  focus_ipca_12m: d('Median forecast of IPCA inflation over the next 12 months (BCB Focus survey)', 'forecasters'),
+  // Shipping (IMF PortWatch)
+  portwatch_port_calls: d('Ship calls per day at the country\'s ports, monthly average (IMF PortWatch)', 'shipping'),
+  portwatch_imports: d('Estimated cargo unloaded per day at the country\'s ports, monthly average (IMF PortWatch)', 'shipping'),
+  portwatch_exports: d('Estimated cargo loaded per day at the country\'s ports, monthly average (IMF PortWatch)', 'shipping'),
+  // EU business and consumer surveys (European Commission)
+  eu_survey_esi: d('European Commission economic sentiment indicator, 100 = long-term average; not a PMI', 'firmsHouseholds'),
+  eu_survey_industry: d('Balance of positive minus negative replies from manufacturers (European Commission); not a PMI', 'firmsHouseholds'),
+  eu_survey_services: d('Balance of positive minus negative replies from service firms (European Commission); not a PMI', 'firmsHouseholds'),
+  eu_survey_consumer: d('Balance of positive minus negative replies from consumers (European Commission); not a PMI', 'firmsHouseholds'),
+  eu_survey_employment: d('Employment expectations indicator, 100 = long-term average (European Commission); not a PMI', 'firmsHouseholds'),
+  // Stress and supply chain indices
+  stress_stlfsi: d('St. Louis Fed Financial Stress Index (STLFSI4): zero = average stress', 'financial'),
+  stress_nfci: d('Chicago Fed National Financial Conditions Index: zero = average, positive = tighter', 'financial'),
+  stress_anfci: d('Chicago Fed adjusted NFCI: financial conditions with the part explained by the economy taken out', 'financial'),
+  // World Bank Worldwide Governance Indicators: estimates with world mean 0 and standard deviation 1.
+  wgi_voice: d('World Bank WGI estimate of voice and accountability', 'governance'),
+  wgi_stability: d('World Bank WGI estimate of political stability and absence of violence', 'governance'),
+  wgi_effectiveness: d('World Bank WGI estimate of government effectiveness', 'governance'),
+  wgi_regulatory: d('World Bank WGI estimate of regulatory quality', 'governance'),
+  wgi_rule_of_law: d('World Bank WGI estimate of rule of law', 'governance'),
+  wgi_corruption: d('World Bank WGI estimate of control of corruption', 'governance'),
+  gscpi: d('NY Fed Global Supply Chain Pressure Index: standard deviations from average pressure', 'world'),
+};
+
+/** Ids built from a pattern. */
+const BY_PATTERN: Array<{ re: RegExp; def: Def }> = [
+  { re: /^ust_auction_btc_/, def: d('Bids received divided by the amount sold at the US Treasury auction', 'centralGov') },
+  { re: /^ust_auction_high_yield_/, def: d('Highest accepted yield at the US Treasury auction', 'centralGov') },
+  { re: /^portwatch_.+_ships$/, def: d('Ships passing the chokepoint per day, monthly average (IMF PortWatch)', 'shipping') },
+  { re: /^portwatch_.+_volume$/, def: d('Estimated cargo passing the chokepoint per day, monthly average (IMF PortWatch)', 'shipping') },
+  { re: /^commodity_pink_sheet_/, def: d('World Bank Pink Sheet monthly average price for the commodity named', 'world') },
+  { re: /^commodity_eia_/, def: d('US EIA daily spot price for the product named', 'world') },
+];
+
+/** Activity index: Brazil's IBC-Br covers the economy, Eurostat's index covers industry only. */
+function activityDef(source: string): Def {
+  return /IBC-Br|Banco Central do Brasil/i.test(source)
+    ? d('Central Bank of Brazil economic activity index (IBC-Br), a monthly stand-in for GDP', 'wholeEconomy')
+    : d('Industrial production volume index, industry excluding construction (Eurostat)', 'industry');
+}
+
+/** The tag fields for one series: from the table, or "Not stated yet" where it has no entry. */
+export function seriesTags(s: { id: string; source?: string; own?: boolean; paid?: boolean }): SeriesTags {
+  if (s.own) return { definition: 'As you described it when you loaded the file', coverage: COVERAGE.own };
+  if (s.paid) return { definition: 'As your vendor defines the series code you mapped', coverage: COVERAGE.paid };
+  const def = s.id === 'activity_monthly' ? activityDef(s.source || '') : BY_ID[s.id] ?? BY_PATTERN.find((p) => p.re.test(s.id))?.def;
+  if (!def) return { definition: COVERAGE.notStated, coverage: COVERAGE.notStated };
+  return { definition: def.definition, coverage: COVERAGE[def.coverage] };
+}
+
+/** Download columns for the tags, after the existing series columns. */
+export const TAG_COLUMNS = ['definition', 'coverage', 'seasonal_adjustment', 'measure', 'base_year', 'currency'] as const;
+
+export function tagCells(t: SeriesTags): Array<string | null> {
+  return [t.definition, t.coverage, t.seasonalAdjustment ?? null, t.measure ?? null, t.baseYear ?? null, t.currency ?? null];
+}
+
+/** Every definition and coverage the table can show, for the translation test. */
+export function allTagTexts(): string[] {
+  const defs = [...Object.values(BY_ID), ...BY_PATTERN.map((p) => p.def), activityDef('IBC-Br'), activityDef('Eurostat')].map((x) => x.definition);
+  return [...new Set([...defs, ...Object.values(COVERAGE), 'As you described it when you loaded the file', 'As your vendor defines the series code you mapped'])];
+}

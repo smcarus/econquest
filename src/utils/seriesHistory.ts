@@ -33,6 +33,7 @@ import { ustAuctionSeries, type UstAuctionPull } from './treasuryAuctions';
 import { euSurveySeries, type EuSurveyPull } from './euSurveys';
 import { impliedDefaultSeries } from './impliedDefault';
 import { BIS_ISO2 } from './bisDebtSecurities';
+import { seriesTags, type SeriesTags } from './seriesDefinitions';
 import { HC_SPREAD_NOT_CDS, HC_SPREAD_SOURCE, hasHcSpreadSource, type HcSpreadPull } from './hardCurrencySpread';
 
 export type SeriesFreq = 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'annual' | 'per pull';
@@ -410,13 +411,15 @@ export function commoditySeries(prices: PriceSeries[], pulledAt: Record<'pink_sh
 }
 
 /** A series without its points, for lists. */
-export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; projectedTo?: string } {
+export function seriesSummary(s: Series): Omit<Series, 'points'> & { count: number; first?: string; last?: string; latest?: number; projectedTo?: string; tags: SeriesTags } {
   const { points, ...rest } = s;
   // The latest figure is the newest outturn; IMF projection years are counted but never shown as "latest".
   const actual = points.filter((p) => p.note !== 'IMF projection');
   const lastActual = actual[actual.length - 1] ?? points[points.length - 1];
   const projectedTo = actual.length < points.length ? points[points.length - 1]?.date : undefined;
-  return { ...rest, count: points.length, first: points[0]?.date, last: lastActual?.date, latest: lastActual?.value, ...(projectedTo ? { projectedTo } : {}) };
+  // What it measures and whose figure it is (data plan G6).
+  const tags = seriesTags(s as Series & { paid?: boolean });
+  return { ...rest, count: points.length, first: points[0]?.date, last: lastActual?.date, latest: lastActual?.value, ...(projectedTo ? { projectedTo } : {}), tags };
 }
 
 /** Months between two YYYY-MM periods. */
