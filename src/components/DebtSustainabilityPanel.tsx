@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChartGuide } from './HelpLevel';
+import { ChartGuide, RangeNote, useShowRanges } from './HelpLevel';
 import { ValidationBadge } from './ValidationBadge';
 import { Landmark } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
@@ -36,6 +36,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
   const [error, setError] = useState<string | null>(null);
   const [showPast, setShowPast] = useState(false);
   const t = useT(PANELS);
+  const ranges = useShowRanges();
   const tx = useTx();
   const pct = (v: string) => t('c_pctGdp', { value: v });
 
@@ -171,7 +172,7 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
                 )}
                 {reply.fan.ok && (
                   <>
-                    <p className="text-sm text-slate-700 dark:text-slate-200">{tx(reply.fan.sentence || '')}</p>
+                    {ranges ? <p className="text-sm text-slate-700 dark:text-slate-200">{tx(reply.fan.sentence || '')}</p> : <RangeNote />}
                     <div className="h-56">
                       <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={reply.fan.years.map((y) => ({ year: y.year, outer: [y.p10, y.p90], inner: [y.p25, y.p75], p50: y.p50 }))} margin={{ top: 8, right: 12, bottom: 4, left: 0 }}>
@@ -179,8 +180,8 @@ export const DebtSustainabilityPanel: React.FC<{ iso3: string; countryName: stri
                           <XAxis dataKey="year" tick={{ fontSize: 12 }} />
                           <YAxis tick={{ fontSize: 12 }} width={40} unit="%" domain={['auto', 'auto']} />
                           <Tooltip formatter={(v: unknown) => (Array.isArray(v) ? pct(`${f1(v[0])}-${f1(v[1])}`) : pct(f1(v as number)))} />
-                          <Area dataKey="outer" name={t('dsa_p1090')} stroke="none" fill="#2563eb" fillOpacity={0.15} isAnimationActive={false} />
-                          <Area dataKey="inner" name={t('dsa_p2575')} stroke="none" fill="#2563eb" fillOpacity={0.3} isAnimationActive={false} />
+                          {ranges && <Area dataKey="outer" name={t('dsa_p1090')} stroke="none" fill="#2563eb" fillOpacity={0.15} isAnimationActive={false} />}
+                          {ranges && <Area dataKey="inner" name={t('dsa_p2575')} stroke="none" fill="#2563eb" fillOpacity={0.3} isAnimationActive={false} />}
                           <Line dataKey="p50" name={t('dsa_median')} stroke="#2563eb" strokeWidth={2} dot={false} isAnimationActive={false} />
                         </ComposedChart>
                       </ResponsiveContainer>

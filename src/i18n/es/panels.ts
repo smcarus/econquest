@@ -387,6 +387,7 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   fc_b90: 'Banda del 90%',
   fc_b70: 'Banda del 70%',
   fc_b50: 'Banda del 50%',
+  fc_rangeNote: 'Bandas sombreadas: la cifra debería quedar dentro de las bandas del 50%, 70% y 90% aproximadamente con esa frecuencia, según los errores pasados del propio modelo (error típico {sigma}). No incluyen la duda sobre el propio modelo, por lo que los errores reales pueden ser mayores.',
   fc_published: 'Publicado',
   fc_appForecast: 'Pronóstico de la app',
   fc_appForecastFailed: 'Pronóstico de la app (prueba no superada)',

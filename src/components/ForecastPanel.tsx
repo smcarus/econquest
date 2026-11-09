@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChartGuide } from './HelpLevel';
+import { ChartGuide, RangeNote, useShowRanges } from './HelpLevel';
 import { TrendingUp } from 'lucide-react';
 import { Area, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import type { ForecastOutcome, ForecastId } from '../utils/forecasts';
@@ -58,6 +58,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
   // A forecast that failed its pre-registered test is not drawn unless asked for (honest labels).
   const [showFailed, setShowFailed] = useState(false);
   const t = useT(PANELS);
+  const ranges = useShowRanges();
   const tx = useTx();
   const status = (s: Validation['status']) => t(`fc_s_${s}`);
 
@@ -184,7 +185,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                   const b = p.bands.find((x) => x.level === 70);
                   return (
                     <p key={p.period}>
-                      <strong>{t('fc_nowcastFor', { period: p.period, failed: nowcastFailed ? t('fc_failedTest') : '' })}</strong> {f1(p.mean)}%{b ? t('fc_band70', { lo: f1(b.lo), hi: f1(b.hi) }) : ''}. <span className="text-slate-500 dark:text-slate-400">{tx(p.how)}</span>
+                      <strong>{t('fc_nowcastFor', { period: p.period, failed: nowcastFailed ? t('fc_failedTest') : '' })}</strong> {f1(p.mean)}%{b && ranges ? t('fc_band70', { lo: f1(b.lo), hi: f1(b.hi) }) : ''}. <span className="text-slate-500 dark:text-slate-400">{tx(p.how)}</span>
                     </p>
                   );
                 })}
@@ -219,9 +220,9 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                       <Tooltip
                         formatter={(v: unknown, name: unknown) => (Array.isArray(v) ? [t('c_range', { from: f1(v[0]), to: f1(v[1]) }), String(name ?? '')] : [f1(v as number), String(name ?? '')])}
                       />
-                      <Area dataKey="b90" name={t('fc_b90')} stroke="none" fill="#3b82f6" fillOpacity={0.12} isAnimationActive={false} />
-                      <Area dataKey="b70" name={t('fc_b70')} stroke="none" fill="#3b82f6" fillOpacity={0.18} isAnimationActive={false} />
-                      <Area dataKey="b50" name={t('fc_b50')} stroke="none" fill="#3b82f6" fillOpacity={0.25} isAnimationActive={false} />
+                      {ranges && <Area dataKey="b90" name={t('fc_b90')} stroke="none" fill="#3b82f6" fillOpacity={0.12} isAnimationActive={false} />}
+                      {ranges && <Area dataKey="b70" name={t('fc_b70')} stroke="none" fill="#3b82f6" fillOpacity={0.18} isAnimationActive={false} />}
+                      {ranges && <Area dataKey="b50" name={t('fc_b50')} stroke="none" fill="#3b82f6" fillOpacity={0.25} isAnimationActive={false} />}
                       <Line dataKey="actual" name={t('fc_published')} stroke="#64748b" dot={false} strokeWidth={2} isAnimationActive={false} />
                       <Line dataKey="mean" name={forecastFailed ? t('fc_appForecastFailed') : t('fc_appForecast')} stroke="#2563eb" strokeDasharray="5 4" dot={false} strokeWidth={2} isAnimationActive={false} />
                       <Line dataKey="nowcast" name={nowcastFailed ? t('fc_appNowcastFailed') : t('fc_appNowcast')} stroke="none" dot={{ r: 4, fill: '#7c3aed', stroke: '#7c3aed' }} activeDot={false} isAnimationActive={false} />
@@ -229,6 +230,8 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                     </ComposedChart>
                   </ResponsiveContainer>
                 </div>
+                {ranges && drawForecast && <p className="text-xs text-slate-500 dark:text-slate-400" data-range-note="true">{t('fc_rangeNote', { sigma: forecast.fit.sigma })}</p>}
+                <RangeNote />
                 {forecast.imf && (
                   <div className="overflow-x-auto" data-imf-compare="true">
                     <table className="w-full text-sm tabular-nums">
@@ -250,6 +253,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
                       </tbody>
                     </table>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{tx(forecast.imf.note)}</p>
+                    <RangeNote none="noRangeImf" className="text-xs text-slate-500 dark:text-slate-400 mt-1" />
                   </div>
                 )}
                 {forecast.caveats.length > 0 && <p className="text-xs text-slate-500 dark:text-slate-400">{forecast.caveats.map(tx).join(' ')}</p>}

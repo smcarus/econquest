@@ -20,7 +20,8 @@ switch) sets the level, and each press moves to the next:
   *What is this?* on the main figures, about half of them.
 - *Full help*: everything in Key help, plus *What is this?* on every figure and term.
 - *Help off*: figures, sources and observations only; the reason a figure is missing stays as hover
-  text. Explain answers are then written for a reader who knows the terms.
+  text. Explain answers are then written for a reader who knows the terms. Forecast ranges are hidden
+  too (see *Uncertainty ranges* below).
 
 The level is kept in this browser.
 
@@ -387,6 +388,19 @@ and the app's output gap, outturn years only, with Newey-West errors. A positive
 response is Bohn's sufficient condition for sustainability; the panel says "responds", "weak" or
 "no response found", shows the years used and has Explain. A record of past behaviour, not a
 forecast.
+
+**Uncertainty ranges.** Forecasts show a range, not just one number. The nowcast gives its 70% band;
+the forecast chart shades 50, 70 and 90% bands, and a line under it says what they mean: the figure
+should land inside each band about that often, judged by the model's own past misses (its typical miss
+is shown). The bands leave out doubt about the model itself, so real misses can be larger. The debt
+fan chart shades the 10-90 and 25-75 percentile bands of its 2,000 paths. Where a method has no honest
+range the app says *No range available* and why, and never makes one up: IMF projections (the IMF
+publishes one figure per country), projection years in the gross financing need table, and the small
+gap model (it runs on your own numbers). The fiscal what-if gives each result as a range from the
+lowest to the highest published multiplier, which is not a probability band. Ranges show at *Key help*
+and *Full help*; at *Help off* they are hidden from the screen and a short line says so. Downloads,
+the data API and *Explain* keep the ranges at every level. Bands on estimates of the past (inflation
+and the currency after rate changes, the output gap) and on the global shock scenarios always show.
 
 **Nowcast and forecasts.** Research > History & data shows, for GDP growth, inflation, the policy
 rate and government debt, the app's nowcast of periods not published yet and its forecast of the

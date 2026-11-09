@@ -352,6 +352,7 @@ export const PANELS_FR: Messages<typeof PANELS> = {
   fc_b90: "Fourchette à 90 %",
   fc_b70: "Fourchette à 70 %",
   fc_b50: "Fourchette à 50 %",
+  fc_rangeNote: "Bandes ombrées : le chiffre devrait se situer dans les bandes de 50 %, 70 % et 90 % à peu près aussi souvent, d'après les erreurs passées du modèle lui-même (erreur type {sigma}). Elles n'incluent pas le doute sur le modèle lui-même ; les erreurs réelles peuvent donc être plus grandes.",
   fc_published: "Publié",
   fc_appForecast: "Prévision de l'application",
   fc_appForecastFailed: "Prévision de l'application (test échoué)",

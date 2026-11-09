@@ -18,7 +18,7 @@ export const HELP_LEVEL_KEY = 'econquest.helpLevel.v1';
 export const HELP_LEVEL_EVENT = 'econquest:help-level';
 
 export const HELP_LEVELS: Array<{ level: HelpLevel; label: string; note: string }> = [
-  { level: 0, label: 'Help off', note: 'Figures and sources only, no explanations.' },
+  { level: 0, label: 'Help off', note: 'Figures and sources only, no explanations or forecast ranges.' },
   { level: 1, label: 'Key help', note: 'Explains the charts, the main figures, and what each reading means for real life.' },
   { level: 2, label: 'Full help', note: 'Explains every figure and term, and why each missing figure is missing.' },
 ];
@@ -62,3 +62,10 @@ export const showGuides = (level: HelpLevel): boolean => level >= 1;
 
 /** "Why missing?" spelled out under a Missing value: levels 1 and 2 (at 0 it stays hover text). */
 export const showMissingHelp = (level: HelpLevel): boolean => level >= 1;
+
+/**
+ * Uncertainty ranges on forecasts, nowcasts and the debt fan (plan item G9; Sam, 2026-11-08): shown
+ * by default, hidden at Help off. Downloads, the data API and Explain in chat keep the ranges at
+ * every level; only the screen changes.
+ */
+export const showRanges = (level: HelpLevel): boolean => level >= 1;

@@ -50,7 +50,7 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   about: 'Acerca de y licencias de datos',
   manual: 'Manual de usuario',
   helpOff: 'Ayuda desactivada',
-  helpOffNote: 'Solo cifras y fuentes, sin explicaciones.',
+  helpOffNote: 'Solo cifras y fuentes, sin explicaciones ni rangos de previsión.',
   helpKey: 'Ayuda clave',
   helpKeyNote: 'Explica los gráficos, las cifras principales y qué significa cada lectura en la vida real.',
   helpFull: 'Ayuda completa',
@@ -62,4 +62,9 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   langTitle: 'Idioma: {name}. Pulse para pasar a {next}.',
   langNotReviewed: 'Idioma: {name}. Esta traducción aún no ha sido revisada por un hablante nativo; las cifras, las fuentes y las respuestas escritas por la IA se muestran tal como están. Pulse para pasar a {next}.',
   langAria: 'Idioma: {name}. Pulse para pasar a {next}.',
+  rangesHidden: 'Rangos ocultos con la ayuda desactivada. Active la ayuda para ver cuánto podría desviarse la cifra.',
+  noRange: 'Sin rango disponible: {reason}',
+  noRangeImf: 'el FMI publica una sola cifra para cada país, sin rango.',
+  noRangeOwn: 'estos resultados se derivan de sus propias cifras, por lo que no hay errores pasados con los que medir un rango.',
+  noRangeGfn: 'los años de proyección usan proyecciones del FMI, que no incluyen rango.',
 };

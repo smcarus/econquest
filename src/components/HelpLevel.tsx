@@ -1,6 +1,6 @@
 import React, { useSyncExternalStore } from 'react';
 import { HelpCircle } from 'lucide-react';
-import { HELP_LEVEL_EVENT, HELP_LEVEL_KEY, nextHelpLevel, readHelpLevel, showGuides, writeHelpLevel, type HelpLevel } from '../utils/helpLevel';
+import { HELP_LEVEL_EVENT, HELP_LEVEL_KEY, nextHelpLevel, readHelpLevel, showGuides, showRanges, writeHelpLevel, type HelpLevel } from '../utils/helpLevel';
 import { chartGuide, type ChartGuideId } from '../data/chartGuides';
 import { useT, useTx } from '../i18n/useLang';
 import { SHELL } from '../i18n/messages/shell';
@@ -27,6 +27,23 @@ function subscribe(cb: () => void): () => void {
 export function useHelpLevel(): HelpLevel {
   return useSyncExternalStore(subscribe, readHelpLevel, () => 1 as HelpLevel);
 }
+
+/** Whether forecast ranges are drawn: yes, except at Help off (plan item G9). */
+export function useShowRanges(): boolean {
+  return showRanges(useHelpLevel());
+}
+
+/**
+ * The line beside a figure about its range: "hidden at Help off" when the level hides ranges, or
+ * "No range available" with the reason when the method has no honest range (none is ever made up).
+ */
+export const RangeNote: React.FC<{ none?: 'noRangeImf' | 'noRangeOwn' | 'noRangeGfn'; className?: string }> = ({ none, className = 'text-xs text-slate-500 dark:text-slate-400' }) => {
+  const ranges = useShowRanges();
+  const t = useT(SHELL);
+  if (none) return <p className={className} data-no-range={none}>{t('noRange', { reason: t(none) })}</p>;
+  if (ranges) return null;
+  return <p className={className} data-ranges-hidden="true">{t('rangesHidden')}</p>;
+};
 
 /** Header button: shows the level and moves to the next one (Key help, Full help, Off). */
 export const HelpLevelButton: React.FC = () => {

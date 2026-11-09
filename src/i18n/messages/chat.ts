@@ -121,7 +121,7 @@ export const CHAT = defineMessages('chat', {
   wi_debtChange: 'Debt with the change',
   wi_level: 'Output level change (%)',
   wi_how: 'How this is worked out',
-  wi_note: 'The app\'s own calculation on IMF inputs and published ranges, not a forecast.',
+  wi_note: 'The app\'s own calculation on IMF inputs and published ranges, not a forecast. Each range runs from the lowest to the highest published multiplier; it is not a probability band, and the true effect can fall outside it.',
   // Sign-off
   so_draft: 'Draft',
   so_reviewed: 'Reviewed',

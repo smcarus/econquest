@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Uncertainty ranges (data plan G9): forecasts show a range by default, and say what it means. A line
+  under the forecast chart explains the 50, 70 and 90% bands (how often the figure should land inside,
+  judged by the model's own past misses, and that doubt about the model itself is left out). Where a
+  method has no honest range the screen says "No range available" and why: IMF projections, projection
+  years in the gross financing need table, and the small gap model. The fiscal what-if says its range
+  spans the published multipliers and is not a probability band. At Help off the forecast bands, the
+  nowcast band and the debt fan bands are hidden, with a line saying so; downloads, the data API and
+  Explain keep them. Spanish and French text.
 - Units labels (data plan G8): every series now says whether it is real or nominal (or a share of GDP, a
   price change, a rate, an index and so on), its base year where it has one, and for amounts and prices
   its currency, including whether dollar figures use market exchange rates or purchasing power parity.

@@ -9,6 +9,7 @@ import { GAP_PARAMS, GAP_START, MAX_QUARTERS, gapPathCsv, runGapModel, type GapP
 import { gapStartFromSnapshot, type StartMissing } from '../utils/gapModelStart';
 import { gapRunFocus } from '../utils/gapModelFocus';
 import { explainInChat } from '../utils/explainHandoff';
+import { RangeNote } from './HelpLevel';
 
 /**
  * Country Research > History & data > Small gap model (plan item L2b). Four quarterly equations
@@ -269,6 +270,7 @@ export const GapModelPanel: React.FC<{ iso3: string; countryName: string; snapsh
                 </tbody>
               </table>
             </div>
+            <RangeNote none="noRangeOwn" />
             <div className="flex flex-wrap items-center gap-2">
               <button type="button" className="ui-pill" onClick={downloadCsv} data-gap-csv="true">
                 {t('csv')}
