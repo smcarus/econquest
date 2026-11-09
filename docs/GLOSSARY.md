@@ -64,6 +64,12 @@ An estimate of growth for the current quarter, made from monthly figures that co
 
 **Limits.** It is a model estimate, labelled "model" in the app, and its track record is shown under Menu > Models & validation.
 
+### GDP release
+
+The day the statistics office publishes its first estimate of how much the economy grew in the last quarter.
+
+**Why it matters.** The first estimate is the one markets and the central bank react to, even though it is often revised later.
+
 ## Prices and inflation
 
 ### CPI inflation

@@ -5,7 +5,7 @@ import type { CouncilAssessmentRun, WatchlistItem } from '../types/council';
 import { EU_SURVEY_SOURCE, euSurveyGeo, euSurveyReading, euSurveyValue, NOT_A_PMI } from './euSurveys';
 import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataStatus } from './dataStatus';
 import { describeOfficialYield, formatPeriod } from './officialYields';
-import { nextOfficialEvent, upcomingOfficialEvents } from '../data/officialCalendar';
+import { nextOfficialEvent, releaseGap, upcomingOfficialEvents, type ReleaseCategory } from '../data/officialCalendar';
 import { missingReason, type MissingReason } from './liveFigures';
 
 /**
@@ -173,6 +173,9 @@ export function sourceTag(status: SnapshotDataStatus, kind: Kind): { source: str
   }
 }
 
+/** What fills a missing release date. */
+export const RELEASE_HELP = "The date shows here once it has been read from the statistics office's own release calendar.";
+
 export const when = (e: { date: string; daysUntil: number }) =>
   `${formatPeriod(e.date)}, ${e.daysUntil === 0 ? 'today' : e.daysUntil === 1 ? 'tomorrow' : `in ${e.daysUntil} days`}`;
 export const pct = (v: number, d = 1) => `${v.toFixed(d)}%`;
@@ -229,7 +232,13 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
   const realRate = policy !== undefined && cpi !== undefined ? policy - cpi : undefined;
   const debtChange = debt !== undefined && debt27 !== undefined ? debt27 - debt : undefined;
   const nextMeeting = nextOfficialEvent(run.iso3, 'MPC_DECISION', now);
-  const nextCpi = nextOfficialEvent(run.iso3, 'CPI_RELEASE', now);
+  // Next CPI and GDP releases (data plan G10): the date from the office's own calendar, or Missing
+  // with the reason the calendar could not be read. Never estimated from a usual pattern.
+  const releaseRow = (label: string, category: ReleaseCategory): BriefRow => {
+    const next = nextOfficialEvent(run.iso3, category, now);
+    if (next) return { label, value: when(next), source: next.sourceName, verified: true };
+    return { label, value: 'Missing', source: releaseGap(run.iso3, category, now), verified: false, missing: true, help: RELEASE_HELP };
+  };
 
   // Each observation only from live figures; none is written from a missing one. Each adds, in
   // plain words, what the reading usually means: standard economics, no new figures.
@@ -310,7 +319,8 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
           source: nextMeeting ? nextMeeting.sourceName : 'no official schedule loaded',
           verified: Boolean(nextMeeting),
         },
-        ...(nextCpi ? [{ label: 'Next CPI release', value: when(nextCpi), source: nextCpi.sourceName, verified: true }] : []),
+        releaseRow('Next CPI release', 'CPI_RELEASE'),
+        releaseRow('Next GDP release', 'GDP_RELEASE'),
       ],
     },
     {

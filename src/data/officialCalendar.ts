@@ -10,7 +10,8 @@
  *   - Egypt (CBE): 2026-27 MPC schedule not readable from cbe.org.eg; no rows.
  *   - Turkey (CBRT): 2027 H2 dates not yet published.
  *   - Mexico (Banxico), Indonesia (BI): 2027 schedules not yet published.
- *   - CPI release calendars: only Mexico's INPC dates were found (secondary source).
+ *   - CPI release calendars: only Mexico's INPC dates were found (secondary source). Superseded
+ *     2026-11-09 (G10): CPI and GDP dates for the US, Canada, UK, China, Japan and Australia below.
  * Added 2026-11-08 from each bank's own page: Fed, ECB (shown for Germany, France and Italy), Bank
  * of Canada, RBA, Bank of Korea (2027 not yet published) and Bank of Russia. Not added that day:
  *   - India (RBI): the 2026-27 MPC schedule release was not reachable from the press release pages.
@@ -21,7 +22,7 @@
  * Menu > Data health > Calendar flags sources read long ago and schedules running out.
  */
 
-export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'INFLATION_REPORT' | 'ELECTION' | 'BUDGET' | 'IMF_PROGRAMME';
+export type OfficialEventCategory = 'MPC_DECISION' | 'CPI_RELEASE' | 'GDP_RELEASE' | 'INFLATION_REPORT' | 'ELECTION' | 'BUDGET' | 'IMF_PROGRAMME';
 
 /** Elections, budgets and IMF programme dates: the political and fiscal calendar. */
 export const POLITICAL_FISCAL_CATEGORIES: OfficialEventCategory[] = ['ELECTION', 'BUDGET', 'IMF_PROGRAMME'];
@@ -95,6 +96,22 @@ const BOC_SRC = { sourceName: 'Bank of Canada schedule of interest rate announce
 const RBA_SRC = { sourceName: 'RBA Monetary Policy Board meeting schedule (decision on day 2)', sourceUrl: 'https://www.rba.gov.au/schedules-events/board-meeting-schedules.html', primarySource: true, retrieved: R8 };
 const BOK_SRC = { sourceName: 'Bank of Korea Monetary Policy Board meeting dates (2027 not yet published)', sourceUrl: 'https://www.bok.or.kr/eng/main/contents.do?menuNo=400020', primarySource: true, retrieved: R8 };
 const CBR_SRC = { sourceName: 'Bank of Russia calendar of key rate meetings', sourceUrl: 'https://www.cbr.ru/eng/dkp/cal_mp/', primarySource: true, retrieved: R8 };
+
+/*
+ * Statistics release dates (data plan G10), read 2026-11-09 from each office's own calendar. The
+ * GDP rows are each quarter's first estimate (advance, flash or first preliminary). Offices whose
+ * calendar could not be read are in RELEASE_GAPS below with the reason.
+ */
+const R9 = '2026-11-09';
+const STAT = (sourceName: string, sourceUrl: string) => ({ sourceName, sourceUrl, primarySource: true, retrieved: R9 });
+const BLS_SRC = STAT('BLS CPI release schedule', 'https://www.bls.gov/schedule/news_release/cpi.htm');
+const BEA_SRC = STAT('BEA release schedule', 'https://www.bea.gov/news/schedule/full');
+const STATCAN_SRC = STAT('Statistics Canada 2026-2027 release dates', 'https://www150.statcan.gc.ca/release-diffusion/2026-eng.pdf');
+const ONS_SRC = STAT('ONS release calendar', 'https://www.ons.gov.uk/releasecalendar');
+const NBS_SRC = STAT('NBS regular press release calendar 2026 (dates preliminary)', 'https://www.stats.gov.cn/english/PressRelease/ReleaseCalendar/202512/t20251226_1962154.html');
+const SBJ_SRC = STAT('Statistics Bureau of Japan CPI release schedule', 'https://www.stat.go.jp/english/data/cpi/1582.html');
+const ESRI_SRC = STAT('Cabinet Office (ESRI) GDP release schedule', 'https://www.esri.cao.go.jp/en/sna/kouhyou/kouhyou_top.html');
+const ABS_SRC = STAT('ABS release calendar (rolling six months)', 'https://www.abs.gov.au/release-calendar/future-releases');
 
 type Row = [iso3: string, category: OfficialEventCategory, title: string, date: string];
 
@@ -301,6 +318,66 @@ export const OFFICIAL_CALENDAR: OfficialCalendarEvent[] = [
     ['RUS', 'MPC_DECISION', CBR, '2027-10-22'],
     ['RUS', 'MPC_DECISION', CBR, '2027-12-17'],
   ]),
+  ...rows(BLS_SRC, [
+    ['USA', 'CPI_RELEASE', 'BLS CPI, October 2026', '2026-11-10'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, November 2026', '2026-12-10'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, December 2026', '2027-01-13'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, January 2027', '2027-02-11'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, February 2027', '2027-03-10'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, March 2027', '2027-04-13'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, April 2027', '2027-05-12'],
+    ['USA', 'CPI_RELEASE', 'BLS CPI, May 2027', '2027-06-10'],
+  ]),
+  ...rows(BEA_SRC, [
+    ['USA', 'GDP_RELEASE', 'BEA GDP advance estimate, Q4 2026', '2027-01-28'],
+    ['USA', 'GDP_RELEASE', 'BEA GDP advance estimate, Q1 2027', '2027-04-29'],
+  ]),
+  ...rows(STATCAN_SRC, [
+    ['CAN', 'CPI_RELEASE', 'Statistics Canada CPI, October 2026', '2026-11-16'],
+    ['CAN', 'CPI_RELEASE', 'Statistics Canada CPI, November 2026', '2026-12-14'],
+    ['CAN', 'CPI_RELEASE', 'Statistics Canada CPI, December 2026', '2027-01-18'],
+    ['CAN', 'CPI_RELEASE', 'Statistics Canada CPI, January 2027', '2027-02-16'],
+    ['CAN', 'CPI_RELEASE', 'Statistics Canada CPI, February 2027', '2027-03-15'],
+    ['CAN', 'GDP_RELEASE', 'Statistics Canada GDP, income and expenditure, Q3 2026', '2026-11-30'],
+    ['CAN', 'GDP_RELEASE', 'Statistics Canada GDP, income and expenditure, Q4 2026', '2027-03-01'],
+  ]),
+  ...rows(ONS_SRC, [
+    ['GBR', 'GDP_RELEASE', 'ONS GDP first quarterly estimate, Q3 2026', '2026-11-12'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, October 2026', '2026-11-18'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, November 2026', '2026-12-16'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, December 2026', '2027-01-20'],
+    ['GBR', 'GDP_RELEASE', 'ONS GDP first quarterly estimate, Q4 2026', '2027-02-12'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, January 2027', '2027-02-17'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, February 2027', '2027-03-24'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, March 2027', '2027-04-21'],
+    ['GBR', 'GDP_RELEASE', 'ONS GDP first quarterly estimate, Q1 2027', '2027-05-14'],
+    ['GBR', 'CPI_RELEASE', 'ONS consumer price inflation, April 2027', '2027-05-19'],
+  ]),
+  ...rows(NBS_SRC, [
+    ['CHN', 'CPI_RELEASE', 'NBS CPI, October 2026', '2026-11-09'],
+    ['CHN', 'CPI_RELEASE', 'NBS CPI, November 2026', '2026-12-09'],
+  ]),
+  ...rows(SBJ_SRC, [
+    ['JPN', 'CPI_RELEASE', 'Japan CPI, October 2026', '2026-11-20'],
+    ['JPN', 'CPI_RELEASE', 'Japan CPI, November 2026', '2026-12-18'],
+    ['JPN', 'CPI_RELEASE', 'Japan CPI, December 2026', '2027-01-22'],
+    ['JPN', 'CPI_RELEASE', 'Japan CPI, January 2027', '2027-02-19'],
+    ['JPN', 'CPI_RELEASE', 'Japan CPI, February 2027', '2027-03-19'],
+  ]),
+  ...rows(ESRI_SRC, [
+    ['JPN', 'GDP_RELEASE', 'Japan GDP first preliminary estimate, Q3 2026', '2026-11-16'],
+    ['JPN', 'GDP_RELEASE', 'Japan GDP first preliminary estimate, Q4 2026', '2027-02-15'],
+  ]),
+  ...rows(ABS_SRC, [
+    ['AUS', 'CPI_RELEASE', 'ABS monthly CPI, October 2026', '2026-11-26'],
+    ['AUS', 'GDP_RELEASE', 'ABS national accounts, September quarter 2026', '2026-12-02'],
+    ['AUS', 'CPI_RELEASE', 'ABS monthly CPI, November 2026', '2027-01-06'],
+    ['AUS', 'CPI_RELEASE', 'ABS monthly CPI, December 2026', '2027-01-27'],
+    ['AUS', 'CPI_RELEASE', 'ABS monthly CPI, January 2027', '2027-02-25'],
+    ['AUS', 'GDP_RELEASE', 'ABS national accounts, December quarter 2026', '2027-03-04'],
+    ['AUS', 'CPI_RELEASE', 'ABS monthly CPI, February 2027', '2027-03-24'],
+    ['AUS', 'CPI_RELEASE', 'ABS monthly CPI, March 2027', '2027-04-29'],
+  ]),
 ];
 
 /** Whole days from today (local) to an event date; negative once the date has passed. */
@@ -340,6 +417,40 @@ export function upcomingOfficialEvents(
 /** True when central bank or statistics dates are on file (elections and budgets don't count). */
 export function hasOfficialSchedule(iso3: string): boolean {
   return OFFICIAL_CALENDAR.some((e) => e.iso3 === iso3 && !POLITICAL_FISCAL_CATEGORIES.includes(e.category));
+}
+
+/** The two statistics releases the calendar tracks per country (data plan G10). */
+export type ReleaseCategory = 'CPI_RELEASE' | 'GDP_RELEASE';
+
+/**
+ * Why a country has no CPI or GDP release date on file, where the office's calendar was looked
+ * for and could not be read (data plan G10). Read 2026-11-09. A country not listed here simply has
+ * not been checked yet. Nothing is ever estimated from a usual release pattern.
+ */
+export const RELEASE_GAPS: Record<string, Partial<Record<ReleaseCategory, string>>> = {
+  CHN: { GDP_RELEASE: "The NBS 2026 calendar has no more GDP releases this year, and its 2027 calendar is not out yet." },
+  DEU: { CPI_RELEASE: "Destatis's release calendar refused an automated reader.", GDP_RELEASE: "Destatis's release calendar refused an automated reader." },
+  FRA: { CPI_RELEASE: "INSEE's release calendar builds its table in the browser, so its dates could not be read.", GDP_RELEASE: "INSEE's release calendar builds its table in the browser, so its dates could not be read." },
+  ITA: { CPI_RELEASE: "Istat's release calendar gave a server error.", GDP_RELEASE: "Istat's release calendar gave a server error." },
+  KOR: { CPI_RELEASE: "Statistics Korea's calendar now redirects to a new site that has not been checked yet.", GDP_RELEASE: "The Bank of Korea's English site shows no GDP release calendar." },
+  IND: { CPI_RELEASE: "MoSPI's release calendar builds its table in the browser, so its dates could not be read.", GDP_RELEASE: "MoSPI's release calendar builds its table in the browser, so its dates could not be read." },
+  IDN: { CPI_RELEASE: "BPS's release schedule refused an automated reader.", GDP_RELEASE: "BPS's release schedule refused an automated reader." },
+  BRA: { CPI_RELEASE: "IBGE's release calendar refused an automated reader.", GDP_RELEASE: "IBGE's release calendar refused an automated reader." },
+  MEX: { GDP_RELEASE: "INEGI's calendar link no longer works; CPI dates come from a secondary source." },
+  ARG: { CPI_RELEASE: "INDEC's calendar builds its dates in the browser, so they could not be read.", GDP_RELEASE: "INDEC's calendar builds its dates in the browser, so they could not be read." },
+  ZAF: { CPI_RELEASE: "Stats SA's release schedule refused an automated reader.", GDP_RELEASE: "Stats SA's release schedule refused an automated reader." },
+  TUR: { CPI_RELEASE: "TurkStat's site asks automated readers to stay away (robots.txt), so it was not read.", GDP_RELEASE: "TurkStat's site asks automated readers to stay away (robots.txt), so it was not read." },
+  RUS: { CPI_RELEASE: "Rosstat's site asks automated readers to stay away (robots.txt), so it was not read.", GDP_RELEASE: "Rosstat's site asks automated readers to stay away (robots.txt), so it was not read." },
+  SAU: { CPI_RELEASE: "GASTAT's release calendar refused an automated reader.", GDP_RELEASE: "GASTAT's release calendar refused an automated reader." },
+};
+
+const NOT_CHECKED = 'No release dates on file: this statistics office has not been checked yet.';
+
+/** Why there is no upcoming release date for a country, in plain words. */
+export function releaseGap(iso3: string, category: ReleaseCategory, now: Date = new Date()): string {
+  const listed = OFFICIAL_CALENDAR.some((e) => e.iso3 === iso3 && e.category === category);
+  if (listed && !nextOfficialEvent(iso3, category, now)) return 'Every listed date has passed: the next dates still need reading from the office\'s calendar.';
+  return RELEASE_GAPS[iso3]?.[category] ?? NOT_CHECKED;
 }
 
 /** Short label for how firm a date is, for display next to it. */

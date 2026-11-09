@@ -43,6 +43,7 @@ export function accessBand(cdsBps: number): { label: string; open: boolean } {
 const EVENT_SHORT: Record<string, string> = {
   MPC_DECISION: 'rate decision',
   CPI_RELEASE: 'CPI',
+  GDP_RELEASE: 'GDP',
   INFLATION_REPORT: 'inflation report',
 };
 

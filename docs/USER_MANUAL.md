@@ -242,9 +242,19 @@ model is asked or what the checked answers say. See
 or above 90 for any country". There are no built-in thresholds, and a missing figure never
 triggers. Rules are kept in `data/local/watch-rules.json`.
 
-**Next two weeks.** Official rate decisions, CPI releases, elections, budget deadlines and IMF
+**Next two weeks.** Official rate decisions, CPI and GDP releases, elections, budget deadlines and IMF
 reviews, each linked to its source. Below it, the next three elections, budgets and IMF dates in the
 coming year (*Show all* for the rest), with countries where data and price disagree first.
+
+**Release calendar.** Each country's brief shows *Next CPI release* and *Next GDP release*: the date of
+the next inflation figure and of the next first estimate of quarterly growth, from the statistics
+office's own published calendar, with the source. On 9 November 2026 the dates were read for the
+United States, Canada, the United Kingdom, China (inflation only; its 2027 calendar is not out),
+Japan and Australia; Mexico's inflation dates come from a secondary source. For the other G20
+countries the row reads *Missing* with the reason: the office's calendar refused an automated reader,
+builds its dates in the browser, asks readers to stay away (Turkey and Russia), or gave an error. A
+date is never estimated from the usual release pattern. Menu > Data health > Calendar flags these
+schedules too when they are running out.
 
 ---
 
@@ -849,7 +859,7 @@ hold no figures of their own; the handout reads them from the app's series when 
     Eurostat, IMF monthly consumer prices, then the OECD copy on DBnomics, which stopped updating in
     June 2026); a figure more than 90 days old is flagged, and an old OECD copy says a fresher source
     replaces it as soon as one answers. A country's series always comes whole from one source.
-  - *Calendar*: the official calendar (central bank decisions, CPI releases, elections, budget
+  - *Calendar*: the official calendar (central bank decisions, CPI and GDP releases, elections, budget
     deadlines) is typed in by hand from each source page, so it goes out of date unless someone
     reads the pages again. This tab lists, for each country and kind of date, the next date, the last
     one on file and when the source was last read, and flags a source read more than 30 days ago, a
