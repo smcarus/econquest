@@ -132,6 +132,9 @@ import { closeInterrupted, describeSchedule, downloadSummary, jobDue, JOBS, type
 import { appendCheck, readChecks, readState, saveState } from './src/utils/dataHealthStore';
 import express from 'express';
 import fs from 'fs';
+import os from 'os';
+import { pathToFileURL } from 'url';
+import { installDownloadCounter } from './src/utils/downloadCounter';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { ThinkingLevel, Type } from '@google/genai';
@@ -775,11 +778,22 @@ function knownOffline(): boolean {
  * Runs as its own process beside the app; everything it fetches is saved in data/, where the app
  * reads it.
  */
-function runScript(script: string, args: string[] = [], opts: { quiet?: boolean } = {}): Promise<{ code: number; output: string }> {
+function runScript(script: string, args: string[] = [], opts: { quiet?: boolean } = {}): Promise<{ code: number; output: string; bytes?: number }> {
+  // Each script counts what it downloads (scripts/count-downloads.ts) and leaves the figure here.
+  const countFile = path.join(os.tmpdir(), `econquest-download-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.txt`);
+  const readCount = (): number | undefined => {
+    try {
+      const n = Number(fs.readFileSync(countFile, 'utf8'));
+      fs.rmSync(countFile, { force: true });
+      return Number.isFinite(n) ? n : undefined;
+    } catch {
+      return undefined;
+    }
+  };
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, ['--import', 'tsx', path.join(APP_ROOT, 'scripts', script), ...args], {
+    const child = spawn(process.execPath, ['--import', 'tsx', '--import', pathToFileURL(path.join(APP_ROOT, 'scripts', 'count-downloads.ts')).href, path.join(APP_ROOT, 'scripts', script), ...args], {
       cwd: APP_ROOT,
-      env: { ...process.env, DATA_DIR },
+      env: { ...process.env, DATA_DIR, ECONQUEST_DOWNLOAD_COUNT_FILE: countFile },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     let output = '';
@@ -790,8 +804,8 @@ function runScript(script: string, args: string[] = [], opts: { quiet?: boolean 
     };
     child.stdout.on('data', take);
     child.stderr.on('data', take);
-    child.on('error', (e) => resolve({ code: 1, output: `${output}\n${e.message}` }));
-    child.on('close', (code) => resolve({ code: code ?? 1, output }));
+    child.on('error', (e) => resolve({ code: 1, output: `${output}\n${e.message}`, bytes: readCount() }));
+    child.on('close', (code) => resolve({ code: code ?? 1, output, bytes: readCount() }));
   });
 }
 
@@ -803,12 +817,19 @@ async function runDailyCli(): Promise<void> {
     console.log(`[daily] Not run: ${due.reason}. (npm run daily -- --force runs it again.)`);
     process.exit(0);
   }
-  const run: DailyRun = { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [] };
+  const run: DailyRun = { startedAt: new Date().toISOString(), where: process.env.ECONQUEST_WHERE || 'this computer', steps: [], downloadedBytes: 0 };
   const save = () => writeDaily(file, { last: run });
-  const add = (step: DailyStep) => {
+  // What this process downloads (feeds, histories, tests); scripts report their own (runScript).
+  const counter = installDownloadCounter();
+  let countedSoFar = 0;
+  const add = (step: DailyStep, scriptBytes?: number) => {
+    const here = counter.total() - countedSoFar;
+    countedSoFar = counter.total();
+    step.bytes = here + (scriptBytes ?? 0);
+    run.downloadedBytes = (run.downloadedBytes ?? 0) + step.bytes;
     run.steps.push(step);
     save();
-    console.log(`[daily] ${step.outcome === 'done' ? 'OK' : step.outcome === 'failed' ? 'FAILED' : 'SKIPPED'}: ${step.label}${step.note ? `: ${step.note}` : ''}`);
+    console.log(`[daily] ${step.outcome === 'done' ? 'OK' : step.outcome === 'failed' ? 'FAILED' : 'SKIPPED'}: ${step.label}${step.note ? `: ${step.note}` : ''}${step.bytes ? ` (${formatBytes(step.bytes)} downloaded)` : ''}`);
   };
   save();
   console.log(`[daily] Starting (${due.reason}). Safe to stop: the next start carries on.`);
@@ -841,7 +862,7 @@ async function runDailyCli(): Promise<void> {
       outcome: r.code === 0 ? 'done' : 'failed',
       note: got.saved.length ? `${got.saved.length} new file${got.saved.length === 1 ? '' : 's'}${got.problems.length ? `, ${got.problems.length} not saved` : ''}` : got.problems.length ? `${got.problems.length} not saved` : 'up to date',
       details: got.problems,
-    });
+    }, r.bytes);
   }
 
   // 3. Nowcasts and forecasts: the long histories (weekly), then one of each for every country.
@@ -935,9 +956,9 @@ async function runDailyCli(): Promise<void> {
         outcome: fail.length ? 'failed' : 'done',
         note: `${ok} connected, ${setup.length} need a key or file from you, ${fail.length} did not answer`,
         details: [...setup.map((x) => `Needs setup: ${x.name}: ${x.detail || ''}${x.setup ? ` (${x.setup})` : ''}`), ...fail.map((x) => `No answer: ${x.name}: ${x.detail || ''}`)],
-      });
+      }, r.bytes);
     } catch {
-      add({ id: 'check', label: 'Connection check', outcome: 'failed', note: 'the check did not finish' });
+      add({ id: 'check', label: 'Connection check', outcome: 'failed', note: 'the check did not finish' }, r.bytes);
     }
   }
 
