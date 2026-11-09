@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned for EconQuest, in the order it will be built. Last updated 8 November 2026.
+What is planned for EconQuest, in the order it will be built. Last updated 9 November 2026.
 
 ## How the work is done
 
@@ -27,14 +27,20 @@ The same rules hold for every change:
 | Researcher tools | Opt-in 14B referee for smaller computers; a small gap model you fill in yourself, with a council link; the data API with R, Python and Stata helpers; register and run your own tests, with their own Holm correction |
 | Your own data | Load your own CSV series and use them across the app |
 | Fiscal what-ifs | Spending multipliers by type, defence and spending by purpose, OECD and European Commission budget elasticities, an editable what-if card |
+| Figures you can compare and cite | Each series says what it measures and whose figure it is, whether it is seasonally adjusted, real or nominal, its base year and currency; forecasts show a range and say what it means; each country's next CPI and GDP release dates from the statistics office's own calendar |
+| Paid data you already have | A Settings screen for your own subscription (off by default, paid figures never leave your computer) and the first vendor, Macrobond |
 | New data | IMF PortWatch shipping, central bank decision dates, a Calendar tab, US Treasury auctions, EU business and consumer surveys, fresher inflation figures (IMF monthly prices, freshest source per country) |
-| Easier running | `npm run go` (one command to update and start), downloads at start-up and the daily data download, the ready-made app image |
+| Easier running | `npm run go` (one command to update and start), downloads at start-up and the daily data download (which records how much it downloads), the ready-made app image, and the computer and disk space needed, written down in the install guide |
 | Trust and testing | Pre-registered tests with badges, the track record with the Holm correction, agent badges and a sources line on every answer |
 | Learning | Three help levels, a plain-language glossary, teaching episodes and exam mode; Quests built but switched off until checked |
 | Smaller and faster | Council chat and several Research panels load only when opened |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |
 
-## Phase 4: data and economist readiness (in progress)
+## Phase 4: data and economist readiness (paused after G10)
+
+**Paused on 9 November 2026.** G1 to G10 are done and in the main app. Work stops here so the
+changes so far can be reviewed; G11 starts when the maintainer says so. Nothing below G10 has been
+built yet.
 
 This phase fills free data gaps, adds a way to plug in a paid data subscription you already have, and
 makes figures safer to compare and cite.

@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs brought up to date through data plan G10: the roadmap's done list adds figure labels, ranges,
+  the release calendar and the paid-data frame, and marks Phase 4 as paused after G10 for review; the
+  README describes the labels on each series, forecast ranges, the release dates and Your
+  subscriptions.
 - The daily run now records how much it downloaded: each step in `npm run go -- status` shows its
   size, with a total for the run, kept in data/local/daily-run.json. Only replies from other
   computers count; a compressed reply counts the size sent over the network.

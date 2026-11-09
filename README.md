@@ -95,7 +95,9 @@ is labelled as AI-written.
 - **Markets & signals**: bond spreads, currencies, prediction-market odds (Kalshi and Polymarket) and
   the app's tested signals, each with its test result.
 - **History & data**: charts going back years, "as of" views of what was known on a past date, and
-  the research panels described below.
+  the research panels described below. Each series says what it measures and whose figure it is
+  (for example general or central government), whether it is seasonally adjusted, real or nominal,
+  its base year and its currency; the same labels go into every download.
 - **Sources**: which sources answered, when, and why any figure is missing.
 
 The watchlist starts with the 19 member countries of the G20, and you can add any country.
@@ -104,8 +106,9 @@ The watchlist starts with the 19 member countries of the G20, and you can add an
 
 On each country's **History & data**:
 
-- **Nowcasts and forecasts** of growth and inflation, each with its out-of-sample test result. A
-  forecast that failed its test is not drawn by default.
+- **Nowcasts and forecasts** of growth and inflation, each with its out-of-sample test result and a
+  range (50, 70 and 90% bands) that says how far it could be off. A forecast that failed its test is
+  not drawn by default. Where no sound range exists, such as for IMF projections, the app says so.
 - **Output gap**: how far the economy is running above or below its normal capacity.
 - **Debt sustainability**: whether government debt is on a stable path, with fan charts showing the
   range of likely outcomes, gross financing needs, and the fiscal reaction test (does the government
@@ -130,7 +133,7 @@ reviews, policy reviews and council briefs, downloadable as Markdown or PDF with
 
 ### Learn as you go
 
-- **Help levels**: the "?" button in the header switches between **Help off** (figures only), **Key
+- **Help levels**: the "?" button in the header switches between **Help off** (figures only, without forecast ranges), **Key
   help** (the default: explains the charts, the main figures and what each reading means in real life)
   and **Full help** (explains every figure and term, and why each missing figure is missing).
 - **Glossary**: every economic, market and testing term in plain words ([docs/GLOSSARY.md](./docs/GLOSSARY.md)).
@@ -162,7 +165,7 @@ All of these are free. A few need a free key, which you add in Menu > Settings.
 | Interest rates and bonds | BIS (central bank policy rates, debt securities, real exchange rates), FRED (official 10-year yields; free key), New York Fed rates, US Treasury (foreign holders, auctions), Brazil Treasury, Peru's central bank (EMBIG spreads) |
 | Currencies and commodities | Spot exchange rates (open.er-api.com), ECB reference rates, World Bank commodity prices (Pink Sheet), US EIA oil prices (free key) |
 | Surveys and expectations | EU business and consumer surveys (European Commission, via Eurostat; a free stand-in for paid PMIs, labelled as such), ECB Survey of Professional Forecasters, Brazil's Focus survey, NY Fed supply chain pressure index |
-| Central banks and calendar | Banco Central do Brasil, Banco de México (free token), official central bank decision dates, a release calendar |
+| Central banks and calendar | Banco Central do Brasil, Banco de México (free token), official central bank decision dates, CPI and GDP release dates from statistics offices' own calendars |
 | Politics, conflict and shipping | GDELT news events, UCDP and ACLED conflict data (ACLED files are downloaded by hand), OFAC and UN sanctions lists, the Geopolitical Risk index, IMF PortWatch (ships through chokepoints and port calls) |
 | Markets and positioning | Kalshi and Polymarket prediction markets, CFTC Commitments of Traders |
 
@@ -270,7 +273,7 @@ except the keys as one file you can restore on another computer.
 | **Workspace** | Council chat fills the screen; **Briefing** opens your inputs, watchlist, what moved, the next two weeks and watch alerts in a side panel |
 | **Research** | One country, Compare countries and My holdings, each with Summary, Markets & signals, History & data and Sources. CSV and Excel downloads |
 | **Reports** | Notes, reviews, policy reviews, council briefs, saved research and teaching episodes; Markdown or PDF |
-| **Menu** | Settings, Tools and data connections, Data health, Your data, Models & validation (with Your tests), Idea journal, Audit log, Offline data, Sharing mode, Exam mode, User manual, About & data licences, and Quests (greyed out for now) |
+| **Menu** | Settings (including API keys and *Your subscriptions* for a paid data account you already have, off by default), Tools and data connections, Data health, Your data, Models & validation (with Your tests), Idea journal, Audit log, Offline data, Sharing mode, Exam mode, User manual, About & data licences, and Quests (greyed out for now) |
 
 Council chat is the same conversation on every page: on Research and Reports, *Council chat* in the
 header opens it in a side panel.
@@ -292,10 +295,11 @@ with that is welcome.
 
 Planned work, in order (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
-1. **Data and economist readiness** (in progress; US Treasury auctions, EU surveys and fresher
-   inflation figures are done): next, a frame for plugging in a paid data subscription you already own, labels for what each figure measures, its units and
-   seasonal adjustment, uncertainty ranges on forecasts, a release calendar, "Cite this" exports, and
-   euro area and UK figures as first published.
+1. **Data and economist readiness** (paused after its tenth change, for review): done so far are US
+   Treasury auctions, EU surveys, fresher inflation figures, a frame for a paid data subscription you
+   already own (Macrobond first), labels for what each figure measures, its units and seasonal
+   adjustment, ranges on forecasts and a release calendar. Still to come: "Cite this" exports, euro
+   area and UK figures as first published, and two more paid vendors.
 2. **Quests in the classroom**: class accounts, assignments, feedback and a gradebook file for
    professors, then a one-term pilot with two professors.
 3. **The public release** at e-conquest/econquest.
