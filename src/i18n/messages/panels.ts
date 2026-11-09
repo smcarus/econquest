@@ -49,6 +49,8 @@ export const PANELS = defineMessages('panels', {
   h_dlSeries: 'Download this series (CSV)',
   h_defines: 'What it measures: {definition}.',
   h_covers: 'Whose figure: {coverage}.',
+  h_seasonal: 'Seasonal adjustment: {value}.',
+  h_freqNote: 'How often: {note}.',
   h_paidHeld: 'From your own data subscription: these figures stay on this computer, so this series cannot be downloaded or published. Downloads list it as "Withheld: your subscription data".',
   h_dlAll: 'Download every series for {country} (CSV)',
   h_showNumbers: 'Show the numbers',

@@ -69,10 +69,13 @@ Series tables (one row per date) have these columns:
 | `pulled_at` | When the app last downloaded it |
 | `definition` | What the series measures, from its source's own definition (for example "General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)") |
 | `coverage` | Whose figure it is: general government, central government, public external debt, households and firms, the whole economy, and so on |
-| `seasonal_adjustment`, `measure`, `base_year`, `currency` | Empty for now; filled by later changes (seasonal adjustment; real or nominal, base year, currency) |
+| `seasonal_adjustment` | Seasonally adjusted, seasonally and calendar adjusted, not seasonally adjusted, a change on a year earlier (seasons largely cancel), not applicable (yearly figure, market price or forecast), or "Not stated by the source" |
+| `measure`, `base_year`, `currency` | Empty for now; filled by a later change (real or nominal, base year, currency) |
 
-The `/api/series/...` lists carry the same two labels under `tags` (`tags.definition`,
-`tags.coverage`). A series the app has no definition for says "Not stated yet" rather than a guess.
+The `/api/series/...` lists carry the same labels under `tags` (`tags.definition`, `tags.coverage`,
+`tags.seasonalAdjustment`), plus `tags.frequencyNote` where it matters how the points are formed
+(for example month-end rates, a monthly average of daily figures, one point per auction, or how the
+app averages months into quarters for the GDP nowcast). A series the app has no definition for says "Not stated yet" rather than a guess.
 
 Panel tables in latest mode have `iso3, country, figure_id, figure, value, unit, status, period,
 source, reason_if_missing`. A figure the app does not hold has an empty value, status `Missing` and

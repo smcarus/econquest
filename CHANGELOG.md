@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Seasonal adjustment and frequency labels (data plan G7): every series now says whether it is seasonally
+  adjusted (seasonally adjusted; seasonally and calendar adjusted; not adjusted; a change on a year
+  earlier; not applicable for yearly figures, market prices and forecasts; or "Not stated by the source"),
+  taken from how the app asks each source. Where it matters, a note says how the points are formed
+  (month-end rates, monthly averages of daily figures, one point per auction or per saved download) and
+  that the GDP nowcast averages three months into a quarter, flagging a month it had to forecast. Shown on
+  the History page, filled in the `seasonal_adjustment` download column, and under `tags` in the series
+  lists. Spanish and French text.
 - Definition tags (data plan G6): every series now says what it measures and whose figure it is (general
   government, central government, public external debt, households and firms, the whole economy and so
   on), from each source's own definition. Shown under the title on the History page, under `tags` in the

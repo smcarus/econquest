@@ -443,8 +443,22 @@ households, and a few more. They show under the title on the History page and as
 `coverage` columns in every series download. The labels are kept in one table
 (`src/utils/seriesDefinitions.ts`); a series not in it says "Not stated yet", never a guess. Your own
 files say "As you described it when you loaded the file" and your subscription series "As your vendor
-defines the series code you mapped". Columns for seasonal adjustment, real or nominal, base year and
-currency are already in the downloads, empty until data plan changes G7 and G8 fill them.
+defines the series code you mapped". Columns for real or nominal, base year and currency are already in
+the downloads, empty until data plan change G8 fills them.
+
+**Seasonal adjustment and how often (data plan G7).** Each series also says whether it is seasonally
+adjusted, from how the app asks the source for it: OECD quarterly GDP is seasonally and calendar
+adjusted (ADJUSTMENT Y); the EU surveys are seasonally adjusted (s_adj=SA); Eurostat industrial
+production is seasonally and calendar adjusted, Brazil's IBC-Br seasonally adjusted; monthly inflation
+is a change on a year earlier, so seasonal swings largely cancel; yearly figures, market prices and
+inflation forecasts are "not applicable"; where the source does not say (BIS credit series, the NY Fed
+supply chain index), "Not stated by the source". Where it matters, a note says how the points are
+formed: month-end policy rates then the latest daily figures, the bond spread as a monthly average of
+daily spreads, PortWatch daily counts averaged over each month, CFTC positions as of each Tuesday, one
+point per Treasury auction, saved-download series as one point per download. **Months into quarters:**
+the only place the app turns monthly figures into quarterly ones is the GDP nowcast, which averages the
+three months of each quarter of the activity index and the leading indicator; a month not yet published
+is forecast from the series' own past and the nowcast says so.
 
 ## Your data subscription (data plan G4; off unless you switch it on)
 

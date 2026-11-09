@@ -138,6 +138,8 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
           {current?.tags && (
             <p className="ui-label pt-0.5" data-history-definition="true">
               {t('h_defines', { definition: tx(current.tags.definition) })} {t('h_covers', { coverage: tx(current.tags.coverage) })}
+              {current.tags.seasonalAdjustment && <> {t('h_seasonal', { value: tx(current.tags.seasonalAdjustment) })}</>}
+              {current.tags.frequencyNote && <> {t('h_freqNote', { note: tx(current.tags.frequencyNote) })}</>}
             </p>
           )}
           {current && <ChartGuide id="history" className="pt-1" />}
