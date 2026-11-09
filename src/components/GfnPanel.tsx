@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { RangeNote } from './HelpLevel';
 import { ValidationBadge } from './ValidationBadge';
 import { Landmark } from 'lucide-react';
 import type { GfnOutcome } from '../utils/grossFinancingNeed';
@@ -100,6 +101,7 @@ export const GfnPanel: React.FC<{ iso3: string; countryName: string }> = ({ iso3
               </tbody>
             </table>
             <p className="text-xs text-slate-500 dark:text-slate-400">{t('gfn_allPct')}</p>
+            {reply.years.some((y) => y.projection) && <RangeNote none="noRangeGfn" />}
             {reply.next12m && (
               <p className="text-xs text-slate-600 dark:text-slate-300" data-gfn-qeds="true">
                 {t('gfn_qeds', { asOf: reply.next12m.asOf, usd: reply.next12m.usdBn, pct: reply.next12m.pctGdp !== undefined ? t('gfn_qedsPct', { pct: reply.next12m.pctGdp }) : '' })}

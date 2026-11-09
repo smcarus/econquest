@@ -49,8 +49,8 @@ makes figures safer to compare and cite.
 | G6 | Definition tags | Each figure says what it measures (for example, general or central government) | Done |
 | G7 | Seasonal adjustment and frequency | States whether figures are seasonally adjusted and how monthly figures become quarterly ones | Done |
 | G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Done |
-| G9 | Uncertainty ranges | Forecasts show a range, not just one number | Next |
-| G10 | Release calendar | When each country's next inflation and growth figures come out | Planned |
+| G9 | Uncertainty ranges | Forecasts show a range, not just one number; hidden at Help off | Done |
+| G10 | Release calendar | When each country's next inflation and growth figures come out | Next |
 | G11 | "Cite this" | Ready-made citations for every chart, table and answer | Planned |
 | G12 | Euro area figures as first published | Backtests use only what was known at the time | Planned; licence check first |
 | G13 | UK figures as first published | The same for the United Kingdom | Planned; licence check first |

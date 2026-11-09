@@ -119,7 +119,7 @@ export const CHAT_ES: Partial<Record<Keys, string>> = {
   wi_debtChange: 'Deuda con el cambio',
   wi_level: 'Variación del nivel de producción (%)',
   wi_how: 'Cómo se calcula',
-  wi_note: 'Cálculo propio de la app con datos del FMI y rangos publicados, no un pronóstico.',
+  wi_note: 'Cálculo propio de la app con datos del FMI y rangos publicados, no un pronóstico. Cada rango va del multiplicador publicado más bajo al más alto; no es una banda de probabilidad y el efecto real puede quedar fuera de él.',
   // Sign-off
   so_draft: 'Borrador',
   so_reviewed: 'Revisado',

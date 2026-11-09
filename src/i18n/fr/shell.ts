@@ -50,7 +50,7 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   about: 'À propos et licences des données',
   manual: "Manuel d'utilisation",
   helpOff: 'Aide désactivée',
-  helpOffNote: 'Chiffres et sources uniquement, sans explications.',
+  helpOffNote: 'Chiffres et sources uniquement, sans explications ni fourchettes de prévision.',
   helpKey: 'Aide essentielle',
   helpKeyNote: 'Explique les graphiques, les principaux chiffres et ce que chaque lecture signifie dans la vie réelle.',
   helpFull: 'Aide complète',
@@ -62,4 +62,9 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   langTitle: 'Langue : {name}. Appuyez pour {next}.',
   langNotReviewed: "Langue : {name}. Cette traduction n'a pas encore été vérifiée par un locuteur natif ; les chiffres, les sources et les réponses écrites par l'IA restent tels qu'ils ont été écrits. Appuyez pour {next}.",
   langAria: 'Langue : {name}. Appuyez pour {next}.',
+  rangesHidden: "Fourchettes masquées lorsque l'aide est désactivée. Activez l'aide pour voir de combien le chiffre pourrait s'écarter.",
+  noRange: 'Aucune fourchette disponible : {reason}',
+  noRangeImf: 'le FMI publie un seul chiffre pour chaque pays, sans fourchette.',
+  noRangeOwn: "ces résultats découlent de vos propres chiffres ; il n'y a donc pas d'erreurs passées pour mesurer une fourchette.",
+  noRangeGfn: 'les années de projection reposent sur les projections du FMI, qui ne comportent pas de fourchette.',
 };

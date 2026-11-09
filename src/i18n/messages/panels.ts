@@ -393,6 +393,7 @@ export const PANELS = defineMessages('panels', {
   fc_b90: '90% band',
   fc_b70: '70% band',
   fc_b50: '50% band',
+  fc_rangeNote: "Shaded bands: the figure should land inside the 50%, 70% and 90% bands about that often, judged by the model's own past misses (typical miss {sigma}). They leave out doubt about the model itself, so real misses can be larger.",
   fc_published: 'Published',
   fc_appForecast: 'App forecast',
   fc_appForecastFailed: 'App forecast (failed test)',

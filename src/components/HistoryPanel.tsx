@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { ChartGuide } from './HelpLevel';
+import { ChartGuide, RangeNote } from './HelpLevel';
 import type { SeriesTags } from '../utils/seriesDefinitions';
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
@@ -145,6 +145,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
               {current.tags.currency && <> {t('h_currency', { value: tx(current.tags.currency) })}</>}
             </p>
           )}
+          {series?.points.some((p) => p.note === 'IMF projection') && <RangeNote none="noRangeImf" className="ui-label pt-0.5" />}
           {current && <ChartGuide id="history" className="pt-1" />}
         </header>
         <div className="p-4 space-y-3">

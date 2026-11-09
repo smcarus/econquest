@@ -119,7 +119,7 @@ export const CHAT_FR: Messages<typeof CHAT> = {
   wi_debtChange: 'Dette avec le changement',
   wi_level: 'Variation du niveau de production (%)',
   wi_how: 'Comment ce calcul est fait',
-  wi_note: "Le propre calcul de l'application sur les données du FMI et des fourchettes publiées, pas une prévision.",
+  wi_note: "Le propre calcul de l'application sur les données du FMI et des fourchettes publiées, pas une prévision. Chaque fourchette va du multiplicateur publié le plus bas au plus élevé ; ce n'est pas une bande de probabilité, et l'effet réel peut se situer en dehors.",
   // Sign-off
   so_draft: 'Brouillon',
   so_reviewed: 'Relu',
