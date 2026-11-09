@@ -40,7 +40,7 @@ done < scripts/public-exclude.txt
 if grep -rIlE 'AIza[0-9A-Za-z_-]{35}|sk-[A-Za-z0-9]{32,}|gh[pousr]_[A-Za-z0-9]{36}|-----BEGIN [A-Z ]*PRIVATE KEY-----|xox[abp]-[A-Za-z0-9-]{10,}' "$out" --exclude-dir=node_modules; then
   echo "refusing: the files above look like they contain a key" >&2; exit 1
 fi
-for f in .env data/local/settings.json data/local/auth/accounts.json; do
+for f in .env data/local/settings.json data/local/auth/accounts.json data/local/paid; do
   if [[ -e "$out/$f" ]]; then echo "refusing: $f is in the tree" >&2; exit 1; fi
 done
 

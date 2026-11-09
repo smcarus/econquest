@@ -83,6 +83,10 @@ does not allow passing them on for free, and figures from your own files (Menu >
 held back and say why. Turn it off for your own research; turn it on before you hand files to
 someone else.
 
+Figures from your own paid data subscription (Menu > Settings > Your subscriptions) are never sent
+to scripts: a request carrying the API key, or from another computer, gets the series named with
+"Withheld: your subscription data" instead, and table downloads always withhold them.
+
 ## The addresses
 
 Every address answers a plain `GET`. Tables also come as Excel: change `.csv` to `.xlsx`.

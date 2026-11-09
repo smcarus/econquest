@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
 import { historicalContext, type HistoricalContext } from '../utils/historicalContext';
 import { PublishChartButton } from './PublishChartButton';
+import { isPaidSource } from '../engine/paidData';
 import { useT, useTx } from '../i18n/useLang';
 import { PANELS, type PanelT } from '../i18n/messages/panels';
 
@@ -183,13 +184,22 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                     : ''
                   : t('h_gaps', { gaps: gaps.map((g) => t('c_range', { from: g.after, to: g.before })).join('; ') })}
               </p>
+              {isPaidSource(series.source) && (
+                <p className="ui-label" data-paid-held="true">
+                  {t('h_paidHeld')}
+                </p>
+              )}
               <div className="flex flex-wrap gap-1.5">
-                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.csv`} download>
-                  {t('h_dlSeries')}
-                </a>
-                <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.xlsx`} download>
-                  {t('c_excel')}
-                </a>
+                {!isPaidSource(series.source) && (
+                  <>
+                    <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.csv`} download>
+                      {t('h_dlSeries')}
+                    </a>
+                    <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series/${encodeURIComponent(series.id)}.xlsx`} download>
+                      {t('c_excel')}
+                    </a>
+                  </>
+                )}
                 <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.csv`} download>
                   {t('h_dlAll', { country: countryName })}
                 </a>
@@ -197,14 +207,14 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                   {t('c_excel')}
                 </a>
               </div>
-              <PublishChartButton
+              {!isPaidSource(series.source) && <PublishChartButton
                 chartRef={chartRef}
                 title={`${tx(series.label)}, ${countryName}`}
                 subtitle={`${tx(series.unit)}, ${freqLabel(series.freq).toLowerCase()}`}
                 source={series.source || current?.source || ''}
                 period={t('c_range', { from: series.points[0]?.date ?? '', to: series.points[series.points.length - 1]?.date ?? '' })}
                 fileName={`${iso3}-${series.id}`}
-              />
+              />}
               <details>
                 <summary className="text-xs text-blue-700 dark:text-blue-300 cursor-pointer">{t('h_showNumbers')}</summary>
                 <div className="mt-2 max-h-64 overflow-auto">

@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Your data subscription (data plan G4): the frame for a paid data service you already subscribe to.
+  New Settings page "Your subscriptions" (off by default; lazy-loaded series list): pick the vendor
+  (Macrobond; Haver and Moody's planned), enter its sign-in details (stored like the other keys) and map
+  the vendor series codes you want to a country, label, unit and frequency. Nothing is built in. Mapped
+  series show on the History page labelled "Your subscription: <vendor>"; their figures never leave the
+  computer: every table download withholds them ("Withheld: your subscription data"), backups, sharing
+  mode, the public copy and the council leave them out, and other computers and scripts using the data
+  API key are told they are withheld. Data health row `paid_data` (no figures, no sign-in details), audit
+  entries for mapping changes, Spanish and French text. Fetching from Macrobond comes in G5; until then
+  mapped series read Missing with that reason.
 - README rewritten for lay readers to match the app as it is now (three languages, the council and its
   referee, the research panels, your own data and tests, the data API, the daily download, how figures are
   tested), and a new docs/ROADMAP.md lists what is done and what comes next, in order.

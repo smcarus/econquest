@@ -48,6 +48,7 @@ import {
   parseTesouroDiretoLatest,
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
+import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
@@ -120,6 +121,8 @@ export interface CheckOptions {
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
   keySources?: Record<string, 'app' | 'env' | 'none'>;
+  /** The text of data/local/paid/mappings.json (your subscription's mapped series); absent = none. */
+  paidMappingsText?: () => string | null;
   /** Pause between the two OECD checks, ms (default 3000; tests set 0). */
   oecdGapMs?: number;
 }
@@ -309,6 +312,7 @@ export const SOURCE_IDS = [
   'acled_files',
   'eia',
   'own_cds',
+  'paid_data',
   'gemini',
   'ollama',
   'openai_compatible',
@@ -1290,6 +1294,31 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       const first = [...q.values()][0];
       return `${q.size} of ${Object.keys(cfg.lseg!.rics).length} RICs priced; ${first.iso3} ${fmt(first.bps)} bp`;
     }, { headers: { Authorization: `Bearer ${token}` } }, 'LSEG answered but none of the RICs in LSEG_CDS_RICS had a price. Check the RICs against your entitlement.');
+  });
+
+  // Your paid data subscription (src/engine/paidData.ts): never fetches a figure here and never
+  // prints a sign-in detail, only whether it is switched on, set up and how many series are mapped.
+  add('paid_data', async () => {
+    const def: Def = {
+      id: 'paid_data',
+      name: 'Your data subscription (Macrobond, Haver, Moody\'s)',
+      group: 'own_account',
+      feeds: 'Series you map from a paid data service you already subscribe to; never passed on',
+      setup: 'Menu > Settings > Your subscriptions, or PAID_DATA_VENDOR in .env with the vendor\'s sign-in details. Then map the vendor series codes you want there.',
+    };
+    const vendor = paidVendorFromEnv(env);
+    const raw = (env.PAID_DATA_VENDOR || '').trim().toLowerCase();
+    if (!vendor) {
+      if (raw && raw !== 'off') return setRow(def, 'needs_setup', `PAID_DATA_VENDOR is "${raw}"; it must be off, macrobond, haver or moodys.`, 'your subscription');
+      return setRow(def, 'off', 'Off. The app uses free sources only.', 'your subscription');
+    }
+    const mapped = parsePaidMappings(opts.paidMappingsText?.() ?? null).filter((m) => m.vendor === vendor.id).length;
+    const series = `${mapped} series mapped`;
+    const missingCreds = vendor.credentialIds.filter((k) => !(env[k] || '').trim());
+    if (missingCreds.length) return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but ${missingCreds.join(' and ')} ${missingCreds.length > 1 ? 'are' : 'is'} not set.`, 'your subscription');
+    if (!vendor.adapterBuilt)
+      return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but the app cannot fetch from ${vendor.name} yet: that part is planned as data plan change ${vendor.plannedIn}. Nothing is fetched until then.`, 'your subscription');
+    return setRow(def, mapped ? 'connected' : 'needs_setup', mapped ? `Switched on for ${vendor.name}; ${series}.` : `Switched on for ${vendor.name}, but no series are mapped yet.`, 'your subscription');
   });
 
   // ---- AI models ---------------------------------------------------------------------------------

@@ -431,6 +431,39 @@ Not built yet (planned, also own-account only): Bloomberg, EPFR/IIF flows, conse
 Policy rates come from the free BIS dataset (see above); only Egypt, which the BIS does not cover,
 reads Missing.
 
+## Your data subscription (data plan G4; off unless you switch it on)
+
+For someone who already pays for a data service. **Menu > Settings > Your subscriptions** switches
+it on and picks the vendor, takes the vendor's sign-in details, and keeps the list of series you
+want ("Your series"). The same switch can be set in `.env` as `PAID_DATA_VENDOR`.
+
+- **Nothing is built in.** The app ships no vendor series codes and no vendor figures. You type the
+  vendor's own code (for example Macrobond `usgdp`), the country (or WLD), what it is, its unit and
+  how often it comes out. The list (codes and your labels, no figures) is kept in
+  `data/local/paid/mappings.json`; adding and removing go to the audit log, never a figure or a key.
+- **Labelled.** A mapped series shows under Research > One country > History as
+  "<your label> (Your subscription: <vendor>)", with "Your subscription: <vendor>, series <code>" as
+  its source. It sits next to the free series and never replaces or blends with them.
+- **Never passed on.** Every table download, the series download, sharing mode, backups, the public
+  copy and the council leave subscription figures out. Downloads name the series and say
+  "Withheld: your subscription data" where the figures would be. The figures are shown only to
+  screens on the computer running the app: another computer on the network, or a script using the
+  data API key, is told they are withheld. The History page offers no download or "Publish chart"
+  for them.
+- **Sign-in details** are stored like the other keys (encrypted when a master key is set, masked,
+  never in the audit log, a backup or the connection check).
+
+| Vendor | Status | Settings |
+| --- | --- | --- |
+| Macrobond | Frame ready; fetching comes with data plan change G5 | `PAID_DATA_VENDOR="macrobond"`, `MACROBOND_CLIENT_ID`, `MACROBOND_CLIENT_SECRET` (Web API client credentials; the API licence is separate from the desktop app) |
+| Haver Analytics | Planned, G14, once a subscriber shares the API documentation | `PAID_DATA_VENDOR="haver"` |
+| Moody's Analytics | Planned, G15, memory only (figures never saved to disk) | `PAID_DATA_VENDOR="moodys"` |
+
+Until a vendor's fetching part exists, its mapped series read Missing with that reason. The
+connection check (row `paid_data`, also in `npm run check:data`) says whether the subscription is on,
+whether its sign-in details are set and how many series are mapped. It fetches nothing and never
+shows a figure or a sign-in detail.
+
 ## AI model
 
 | Provider | Settings | The check |

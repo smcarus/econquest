@@ -18,7 +18,7 @@ const SETTINGS_CHECK_IDS = new Set(API_KEY_FIELDS.map((f) => f.checkId));
 /** Opens the Settings page that holds this source's key (AI model, free keys or your own paid data). */
 const openSettingsFor = (checkId: string) => {
   const section = API_KEY_FIELDS.find((f) => f.checkId === checkId)?.section;
-  window.dispatchEvent(new CustomEvent('econquest:open-settings', { detail: { tab: section === 'ai' ? 'ai' : section === 'own_account' ? 'paid' : 'keys' } }));
+  window.dispatchEvent(new CustomEvent('econquest:open-settings', { detail: { tab: section === 'ai' ? 'ai' : section === 'own_account' ? 'paid' : section === 'subscription' ? 'subscriptions' : 'keys' } }));
 };
 
 

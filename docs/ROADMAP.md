@@ -44,8 +44,8 @@ makes figures safer to compare and cite.
 | G1 | US Treasury auctions | How much demand there is at each US government debt sale (bid-to-cover, yield, amounts) | Done |
 | G2 | EU business and consumer surveys | A free stand-in for paid PMI surveys for EU members, labelled "not a PMI" | Done |
 | G3 | Fresher inflation figures | Uses the freshest of national, Eurostat or IMF monthly inflation before the stale OECD copy, and shows each figure's age | Done |
-| G4 | Paid-data connector | A Settings screen for your own data subscription; off by default; paid figures never leave your computer or appear in downloads, backups or shared copies | Next |
-| G5 | Macrobond adapter | The first paid vendor plugged into G4 | Planned; needs a Macrobond licence holder to test it |
+| G4 | Paid-data connector | A Settings screen for your own data subscription; off by default; paid figures never leave your computer or appear in downloads, backups or shared copies | Done (the frame; fetching starts with G5) |
+| G5 | Macrobond adapter | The first paid vendor plugged into G4 | Next; needs a Macrobond licence holder to test it |
 | G6 | Definition tags | Each figure says what it measures (for example, general or central government) | Planned |
 | G7 | Seasonal adjustment and frequency | States whether figures are seasonally adjusted and how monthly figures become quarterly ones | Planned |
 | G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Planned |
@@ -79,8 +79,34 @@ professor does.
 | Q12 | Community links on GitHub (publish an entry, class tags, packs), after the public release |
 | Q13 | Teacher guide (English, then Spanish and French) and a Teaching page on the website |
 
+Open groups (clubs and research teams, not only classes) are part of Q12.
+
+Two small follow-ons, added in November 2026:
+
+| # | Change |
+| --- | --- |
+| QL1 | Spanish and French titles and questions in Quest files, shown in the chosen language; community translations of Quests open with it |
+| L3a | Settled Quest forecasts served by the researcher data API and its R, Python and Stata helpers, answering only when Quests are switched on |
+
 After the build comes a one-term pilot with two professors (one in an underserved country), then
 outreach to economics departments.
+
+### Before Quests open to everyone
+
+These join the public Quests go-live checklist (docs/QUESTS.md). They need the public repository and
+ship only when Quests are switched on for everyone, not with the classroom changes:
+
+- Links to Quests from country pages and from Council chat.
+- Sealed public entries: each entry is locked in with a fingerprint before the deadline and revealed
+  after it, so nobody can copy or change a forecast.
+- A dashboard for maintainers.
+- On GitHub: an Ideas category where people vote on suggestions; a contributor, reviewer and steward
+  ladder in GOVERNANCE.md; a Discussion thread opened for each Quest, with the result posted when it
+  settles; a rule-based check of the figures quoted in revealed debate entries (no AI judging); a
+  welcome message for first-time contributors and a "good first Quest" label; badges for taking part,
+  not rankings; a "report a data problem" link on every Quest; debate rules and a report link on every
+  thread, locked a week after the Quest settles; a monthly round-up; and a first replication
+  challenge on a published paper the maintainer picks.
 
 ## The public release
 

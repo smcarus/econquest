@@ -6,6 +6,7 @@
  * talk about it and follow-up questions can ask about the results. Only real series are charted:
  * a series the app does not hold is listed as Missing with the reason.
  */
+import { isPaidSeriesId } from '../engine/paidData';
 import type { LiveWatchlistItem } from '../types/council';
 import { INFLATION_TARGETS } from './marketsMacro';
 import { breaksTest, hacRegression, JOHANSEN_CRIT, johansenTest, lpTest, SUPF_CRIT_5, varTest, type LabStep } from './econometricsLab';
@@ -950,6 +951,8 @@ export function computeChart(req: ChartRequest, fetched: Array<FetchedSeries | {
 /** Fetches each series of a request from the app's own history routes; a missing one comes back with its reason. */
 export async function fetchChartSeries(req: ChartRequest, get: typeof fetch = fetch): Promise<Array<FetchedSeries | { reason: string }>> {
   const one = async (ref: ChartSeriesRef, id: string): Promise<FetchedSeries | { reason: string }> => {
+    // Your subscription's figures stay out of the council: its answers can go to an AI provider and be saved and shared.
+    if (isPaidSeriesId(id)) return { reason: 'figures from your own subscription are kept out of the council' };
     const url = ref.iso3 ? `/api/series/${encodeURIComponent(ref.iso3)}/${encodeURIComponent(id)}` : `/api/series/world/${encodeURIComponent(id)}`;
     const r = await get(url);
     const body = (await r.json().catch(() => ({}))) as Partial<FetchedSeries> & { reason?: string; message?: string };

@@ -651,6 +651,15 @@ hold no figures of their own; the handout reads them from the app's series when 
 - **Settings** (⌘, or Ctrl+,): free keys (FRED, EIA, UN Comtrade, Turkey EVDS), your own paid data
   (CDS source Off, My CSV or My LSEG), and the Gemini key. Each key has a Test button. Keys are
   saved on this computer, shown masked, and can be changed only from this computer.
+- **Your subscriptions** (Settings > Your subscriptions; off unless you switch it on): for a data
+  service you already pay for (Macrobond first; Haver and Moody's later). Pick the service, enter
+  your sign-in details, then under *Your series* map each series you want: the vendor's own code,
+  the country (or WLD), what it is, its unit and how often it comes out. Mapped series show under
+  Research > One country > History labelled "Your subscription: <vendor>", next to the free ones.
+  Their figures stay on this computer: downloads, backups, sharing mode and the public copy say
+  "Withheld: your subscription data", the History page offers no download or Publish chart for them,
+  and the council's AI model is never sent them. The app cannot fetch from Macrobond yet (data plan
+  change G5), so until then mapped series read Missing with that reason.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
 - **Your data**: load your own series from a CSV file, for figures the app does not have (for
   example a series from your country's statistics office or a central bank report). Pick the file,

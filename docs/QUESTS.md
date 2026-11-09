@@ -234,6 +234,22 @@ Documented:
 - [ ] The user manual has a Quests section
 - [ ] The public repository has a Quests category in GitHub Discussions, linked from each approved Quest
 
+Planned, to build before Quests are switched on for everyone (added November 2026; see docs/ROADMAP.md):
+
+- [ ] Links to Quests from country pages and from Council chat
+- [ ] Sealed public entries: each entry locked in with a fingerprint (commit) before the deadline and revealed after it
+- [ ] A maintainer dashboard
+- [ ] An Ideas category in GitHub Discussions with votes
+- [ ] A contributor, reviewer and steward ladder in GOVERNANCE.md
+- [ ] A Discussion thread opened automatically for each Quest, with the result posted when it settles
+- [ ] A rule-based check of the figures quoted in revealed debate entries (no AI judging)
+- [ ] A welcome Action for first-time contributors and a "good first Quest" label
+- [ ] Badges for taking part, not rankings
+- [ ] A "report a data problem" link on every Quest
+- [ ] Debate rules and a report link on every thread, locked a week after the Quest settles
+- [ ] A monthly round-up Action
+- [ ] One first replication challenge, on a paper the maintainer picks
+
 ## Rules Quests keep
 
 - No data figures in a Quest file; every figure is read live from a feed, and a missing one reads Missing with the reason.

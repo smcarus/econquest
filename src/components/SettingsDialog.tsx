@@ -1,6 +1,6 @@
 import { CDS_HIDDEN } from '../utils/cdsHidden';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Archive, Bell, CheckCircle2, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
+import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
+import { Archive, Bell, CheckCircle2, CreditCard, Sunrise, Cpu, ExternalLink, Eye, EyeOff, KeyRound, Lock, Settings2, X, XCircle, Wrench } from 'lucide-react';
 import type { AIRuntimeConfig } from '../types/council';
 import { AiModelSettings } from './AiModelSettings';
 import { BackupSettings } from './BackupSettings';
@@ -9,6 +9,9 @@ import { STATE_LABEL, isFailure, type ConnectionResult } from '../utils/connecti
 import type { ApiKeyStatus } from '../utils/userSettings';
 import { useT, useTx } from '../i18n/useLang';
 import { MENU } from '../i18n/messages/menu';
+
+// Your subscriptions page (data plan G4): its series list loads only when the page is opened.
+const SubscriptionSeries = lazy(() => import('./SubscriptionSeries'));
 
 /**
  * Settings (Menu > Settings, or Cmd/Ctrl + comma). The "Data API keys" section lets you paste your
@@ -19,7 +22,7 @@ import { MENU } from '../i18n/messages/menu';
 
 /**
  * Any part of the app can open Settings with openSettings('ai') (or the raw event, whose detail
- * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'alerts' | 'morning' | 'backup' | 'tools' }).
+ * may name the page: { tab: 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tools' }).
  */
 export const OPEN_SETTINGS_EVENT = 'econquest:open-settings';
 
@@ -40,7 +43,7 @@ interface KeysReply {
 
 type KeySection = ApiKeyStatus['section'];
 
-const SECTIONS: KeySection[] = ['free_key', 'own_account', 'ai', 'alerts'];
+const SECTIONS: KeySection[] = ['free_key', 'own_account', 'subscription', 'ai', 'alerts'];
 
 function CheckLine({ check }: { check: ConnectionResult }) {
   const t = useT(MENU);
@@ -189,7 +192,7 @@ const KeyRow: React.FC<{ k: ApiKeyStatus; canEdit: boolean; onChanged: (r: KeysR
   );
 };
 
-export type SettingsTab = 'ai' | 'keys' | 'paid' | 'alerts' | 'morning' | 'backup' | 'tools';
+export type SettingsTab = 'ai' | 'keys' | 'paid' | 'subscriptions' | 'alerts' | 'morning' | 'backup' | 'tools';
 
 /** The pages of Settings, in order, and which key sections each one shows. */
 const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
@@ -197,6 +200,8 @@ const PAGES: Array<{ id: SettingsTab; sections: KeySection[] }> = [
   { id: 'keys', sections: ['free_key'] },
   // Holds only the own-data CDS switch, hidden for now (src/utils/cdsHidden.ts).
   ...(CDS_HIDDEN ? [] : [{ id: 'paid' as const, sections: ['own_account' as const] }]),
+  // Your paid data subscription (src/engine/paidData.ts): the switch, sign-in details and your series.
+  { id: 'subscriptions', sections: ['subscription'] },
   { id: 'alerts', sections: ['alerts'] },
   { id: 'morning', sections: [] },
   { id: 'backup', sections: [] },
@@ -206,6 +211,7 @@ const PAGE_ICON: Record<SettingsTab, React.ReactNode> = {
   ai: <Cpu className="w-3.5 h-3.5" aria-hidden />,
   keys: <KeyRound className="w-3.5 h-3.5" aria-hidden />,
   paid: <Lock className="w-3.5 h-3.5" aria-hidden />,
+  subscriptions: <CreditCard className="w-3.5 h-3.5" aria-hidden />,
   alerts: <Bell className="w-3.5 h-3.5" aria-hidden />,
   morning: <Sunrise className="w-3.5 h-3.5" aria-hidden />,
   backup: <Archive className="w-3.5 h-3.5" aria-hidden />,
@@ -403,6 +409,11 @@ export const SettingsDialog: React.FC<{
                   </div>
                 );
               })}
+            {reply && page.id === 'subscriptions' && (
+              <Suspense fallback={<p className="mt-3 text-xs text-slate-500">{t('c_loading')}</p>}>
+                <SubscriptionSeries canEdit={reply.canEdit} vendorSetting={reply.keys.find((k) => k.id === 'PAID_DATA_VENDOR')?.masked} />
+              </Suspense>
+            )}
           </section>
           )}
         </div>
