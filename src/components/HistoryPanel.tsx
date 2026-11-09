@@ -140,6 +140,9 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
               {t('h_defines', { definition: tx(current.tags.definition) })} {t('h_covers', { coverage: tx(current.tags.coverage) })}
               {current.tags.seasonalAdjustment && <> {t('h_seasonal', { value: tx(current.tags.seasonalAdjustment) })}</>}
               {current.tags.frequencyNote && <> {t('h_freqNote', { note: tx(current.tags.frequencyNote) })}</>}
+              {current.tags.measure && <> {t('h_measure', { value: tx(current.tags.measure) })}</>}
+              {current.tags.baseYear && <> {t('h_baseYear', { year: current.tags.baseYear })}</>}
+              {current.tags.currency && <> {t('h_currency', { value: tx(current.tags.currency) })}</>}
             </p>
           )}
           {current && <ChartGuide id="history" className="pt-1" />}

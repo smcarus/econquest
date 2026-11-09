@@ -443,8 +443,17 @@ households, and a few more. They show under the title on the History page and as
 `coverage` columns in every series download. The labels are kept in one table
 (`src/utils/seriesDefinitions.ts`); a series not in it says "Not stated yet", never a guess. Your own
 files say "As you described it when you loaded the file" and your subscription series "As your vendor
-defines the series code you mapped". Columns for real or nominal, base year and currency are already in
-the downloads, empty until data plan change G8 fills them.
+defines the series code you mapped".
+
+**Units (data plan G8).** Each series also says whether it is real (adjusted for inflation) or nominal,
+a share of GDP, a price change, a rate, an index and so on; the base year of an index or of constant
+prices where it has one (World Bank CPI 2010 = 100, terms of trade 2015 = 100, GDP per head at PPP in
+constant 2021 international dollars, IBC-Br 2002 = 100, Eurostat industrial production 2021 = 100); and,
+for amounts and prices, the currency, including whether dollar figures use market exchange rates (IMF
+WEO GDP in US dollars, World Bank amounts, debt in default) or purchasing power parity (GDP per head at
+PPP). The unit converters (Research > One country > History & data) turn nominal amounts into real ones, local currency into
+dollars and dollars into PPP terms using the World Bank CPI, exchange rate and PPP factor series these
+labels name.
 
 **Seasonal adjustment and how often (data plan G7).** Each series also says whether it is seasonally
 adjusted, from how the app asks the source for it: OECD quarterly GDP is seasonally and calendar

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { countrySeries, commoditySeries, seriesSummary, type Series } from '../src/utils/seriesHistory';
-import { allTagTexts, COVERAGE, SEASONAL, seriesTags, TAG_COLUMNS } from '../src/utils/seriesDefinitions';
+import { allTagTexts, COVERAGE, CURRENCY, MEASURE, SEASONAL, seriesTags, TAG_COLUMNS } from '../src/utils/seriesDefinitions';
 import { SERIES_HEADER, seriesRows } from '../src/utils/csvExport';
 import { spfWorldSeries } from '../src/utils/inflationSurveys';
 import { chokepointWorldSeries } from '../src/utils/portWatch';
@@ -37,12 +37,12 @@ test('every series the app builds says what it measures and whose figure it is',
 test('the activity index follows its source; unknown, own and paid series say so honestly', () => {
   assert.equal(seriesTags({ id: 'activity_monthly', source: 'Banco Central do Brasil, IBC-Br economic activity index' }).coverage, COVERAGE.wholeEconomy);
   assert.equal(seriesTags({ id: 'activity_monthly', source: 'Eurostat industrial production index' }).coverage, COVERAGE.industry);
-  assert.deepEqual(seriesTags({ id: 'something_new' }), { definition: 'Not stated yet', coverage: 'Not stated yet', seasonalAdjustment: 'Not stated by the source' });
+  assert.deepEqual(seriesTags({ id: 'something_new' }), { definition: 'Not stated yet', coverage: 'Not stated yet', seasonalAdjustment: 'Not stated by the source', measure: 'Not stated yet' });
   assert.equal(seriesTags({ id: 'own_x', own: true }).coverage, COVERAGE.own);
   assert.equal(seriesTags({ id: 'paid_macrobond_x_usa', paid: true }).coverage, COVERAGE.paid);
 });
 
-test('list entries and downloads carry the tags; the G8 columns exist but stay empty', () => {
+test('list entries and downloads carry every tag', () => {
   const s: Series = { id: 'debt_gdp', label: 'Government debt', unit: '% of GDP', freq: 'annual', source: 'IMF WEO', points: [{ date: '2024', value: 80 }] };
   assert.equal(seriesSummary(s).tags.coverage, COVERAGE.generalGov);
   assert.deepEqual(SERIES_HEADER.slice(-TAG_COLUMNS.length), ['definition', 'coverage', 'seasonal_adjustment', 'measure', 'base_year', 'currency']);
@@ -52,7 +52,7 @@ test('list entries and downloads carry the tags; the G8 columns exist but stay e
   assert.match(String(cell('definition')), /General government gross debt/);
   assert.equal(cell('coverage'), COVERAGE.generalGov);
   assert.equal(cell('seasonal_adjustment'), SEASONAL.yearly);
-  assert.deepEqual([cell('measure'), cell('base_year'), cell('currency')], [null, null, null]);
+  assert.deepEqual([cell('measure'), cell('base_year'), cell('currency')], [MEASURE.shareGdp, null, null]);
   const [oil] = commoditySeries([{ source: 'eia', code: 'RBRTE', name: 'Brent', unit: 'USD/bbl', points: [{ period: '2026-01-02', value: 70 }] } as never], { pink_sheet: undefined, eia: undefined });
   assert.equal(seriesTags(oil!).coverage, COVERAGE.world);
 });
@@ -75,6 +75,26 @@ test('seasonal adjustment follows how the app asks each source; frequency notes 
   assert.match(seriesTags({ id: 'debt_gdp', freq: 'per pull' }).frequencyNote!, /One point per saved download/);
   assert.equal(seriesTags({ id: 'debt_gdp', freq: 'annual' }).frequencyNote, undefined);
   assert.match(seriesTags({ id: 'portwatch_suez_ships', freq: 'monthly' }).frequencyNote!, /averaged over each month/);
+});
+
+test('units: real or nominal, base year, and market rate or purchasing power parity', () => {
+  const u = (id: string, source?: string) => {
+    const t = seriesTags({ id, source });
+    return [t.measure, t.baseYear ?? null, t.currency ?? null];
+  };
+  assert.deepEqual(u('gdp_usd'), [MEASURE.nominal, null, CURRENCY.usdMarket]);
+  assert.deepEqual(u('gdp_pc_ppp'), [MEASURE.real, '2021', CURRENCY.intlPpp]);
+  assert.deepEqual(u('gdp_qoq'), [MEASURE.realGrowth, null, null]);
+  assert.deepEqual(u('cpi_index'), [MEASURE.index, '2010', null]);
+  assert.deepEqual(u('terms_of_trade'), [MEASURE.index, '2015', null]);
+  assert.deepEqual(u('ppp_factor'), [MEASURE.fx, null, CURRENCY.localPerIntl]);
+  assert.deepEqual(u('fx_per_usd'), [MEASURE.fx, null, CURRENCY.localPerUsd]);
+  assert.deepEqual(u('yield_10y'), [MEASURE.rate, null, CURRENCY.local]);
+  assert.deepEqual(u('activity_monthly', 'Banco Central do Brasil, IBC-Br'), [MEASURE.index, '2002', null]);
+  assert.deepEqual(u('activity_monthly', 'Eurostat industrial production index'), [MEASURE.index, '2021', null]);
+  assert.deepEqual(u('default_paris_club_usd'), [MEASURE.nominal, null, CURRENCY.usdMarket]);
+  // Every series the app builds has a measure.
+  assert.deepEqual(everyId().filter((id) => seriesTags({ id }).measure === COVERAGE.notStated), []);
 });
 
 test('every definition and coverage has Spanish and French', async () => {

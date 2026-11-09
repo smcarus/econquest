@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Units labels (data plan G8): every series now says whether it is real or nominal (or a share of GDP, a
+  price change, a rate, an index and so on), its base year where it has one, and for amounts and prices
+  its currency, including whether dollar figures use market exchange rates or purchasing power parity.
+  Shown on the History page, filled in the `measure`, `base_year` and `currency` download columns, and
+  under `tags` in the series lists. Spanish and French text.
 - Seasonal adjustment and frequency labels (data plan G7): every series now says whether it is seasonally
   adjusted (seasonally adjusted; seasonally and calendar adjusted; not adjusted; a change on a year
   earlier; not applicable for yearly figures, market prices and forecasts; or "Not stated by the source"),

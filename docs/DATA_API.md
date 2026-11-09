@@ -70,10 +70,12 @@ Series tables (one row per date) have these columns:
 | `definition` | What the series measures, from its source's own definition (for example "General government gross debt, as % of GDP (IMF WEO GGXWDG_NGDP)") |
 | `coverage` | Whose figure it is: general government, central government, public external debt, households and firms, the whole economy, and so on |
 | `seasonal_adjustment` | Seasonally adjusted, seasonally and calendar adjusted, not seasonally adjusted, a change on a year earlier (seasons largely cancel), not applicable (yearly figure, market price or forecast), or "Not stated by the source" |
-| `measure`, `base_year`, `currency` | Empty for now; filled by a later change (real or nominal, base year, currency) |
+| `measure` | Real (adjusted for inflation), real growth rate, nominal (current prices), share of GDP or GNI, price change (inflation), interest rate or spread, exchange rate, index, survey balance, ratio or share, probability, count, years, or score |
+| `base_year` | The base year of an index or of constant prices (for example `2010` for the World Bank CPI index, `2021` for GDP per head at PPP); empty where there is none |
+| `currency` | For amounts and prices: US dollars at market exchange rates, international dollars at purchasing power parity, the country's own currency, local currency per US dollar or per international dollar, or US dollar bonds; empty for ratios and indexes |
 
 The `/api/series/...` lists carry the same labels under `tags` (`tags.definition`, `tags.coverage`,
-`tags.seasonalAdjustment`), plus `tags.frequencyNote` where it matters how the points are formed
+`tags.seasonalAdjustment`, `tags.measure`, `tags.baseYear`, `tags.currency`), plus `tags.frequencyNote` where it matters how the points are formed
 (for example month-end rates, a monthly average of daily figures, one point per auction, or how the
 app averages months into quarters for the GDP nowcast). A series the app has no definition for says "Not stated yet" rather than a guess.
 

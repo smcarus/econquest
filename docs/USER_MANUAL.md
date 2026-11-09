@@ -344,8 +344,9 @@ General government"), so two figures with the same name, such as government debt
 debt, are not mistaken for each other. It also says whether the series is seasonally adjusted and,
 where it matters, how its points are formed (for example "Monthly average of daily spreads", or, for
 the monthly activity index and the OECD leading indicator, that the GDP nowcast averages the three
-months of each quarter and flags a month it had to forecast). Downloads carry the same labels as
-columns. Policy rate (BIS), monthly inflation, the OECD
+months of each quarter and flags a month it had to forecast), whether it is real or nominal, its base
+year where it has one, and its currency, including whether dollar amounts use market exchange rates or
+purchasing power parity. Downloads carry the same labels as columns. Policy rate (BIS), monthly inflation, the OECD
 leading indicator, CFTC positioning and TIC holdings come with their own history. The exchange rate
 per US dollar comes daily from 1999 for the about 30 currencies the ECB publishes (ECB reference rates
 via Frankfurter; first download in the background, also a step in Menu > Offline data); other
