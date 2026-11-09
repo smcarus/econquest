@@ -5,13 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- The daily run now records how much it downloaded: each step in `npm run go -- status` shows its
+  size, with a total for the run, kept in data/local/daily-run.json. Only replies from other
+  computers count; a compressed reply counts the size sent over the network.
 - Docs: minimum and recommended computer (operating system, memory, disk, Node.js 20.19+ or 22.12+,
   internet), disk space part by part, what sits in `data/`, and how much each run downloads (first
   run, daily, weekly, monthly), each figure marked as measured or estimated (INSTALL.md "What you
   need"; short version in the README, home server guide, data sources and user manual). Plainer
   wording in the docs, help text and code comments in English, Spanish and French ("honest",
   "quietly", "silently", "simply", "genuinely" and "ensuring" replaced where they were filler).
-
 - Release calendar (data plan G10): each country's brief now shows the next CPI release and the next
   first GDP estimate, from the statistics office's own calendar, read 9 November 2026 for the United
   States, Canada, the United Kingdom, China (CPI), Japan and Australia. The other G20 countries show

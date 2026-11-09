@@ -18,6 +18,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { formatBytes } from './preload';
 
 export const DAILY_MIN_GAP_MS = 20 * 60 * 60 * 1000;
 export const TESTS_EVERY_MS = 7 * 24 * 60 * 60 * 1000;
@@ -32,6 +33,8 @@ export interface DailyStep {
   note?: string;
   /** Lines worth reading in full (files not saved, sources needing setup). */
   details?: string[];
+  /** Bytes this step downloaded (src/utils/downloadCounter.ts); missing in runs before it was counted. */
+  bytes?: number;
 }
 
 export interface DailyRun {
@@ -40,6 +43,8 @@ export interface DailyRun {
   /** Where it ran: "docker" or "this computer". */
   where?: string;
   steps: DailyStep[];
+  /** Bytes the whole run downloaded so far. */
+  downloadedBytes?: number;
   /** The feeds could not be reached: the next start tries again (after an hour) instead of waiting a day. */
   offline?: boolean;
 }
@@ -149,9 +154,10 @@ export function formatDaily(run: DailyRun, opts: { full?: boolean } = {}): strin
   const when = run.finishedAt ? `finished ${run.finishedAt.slice(0, 16).replace('T', ' ')} UTC` : `started ${run.startedAt.slice(0, 16).replace('T', ' ')} UTC, not finished`;
   out.push(`Daily data run (${when}${run.where ? `, ${run.where}` : ''}):`);
   for (const s of run.steps) {
-    out.push(`  ${MARK[s.outcome]} ${s.label}${s.note ? `: ${s.note}` : ''}`);
+    out.push(`  ${MARK[s.outcome]} ${s.label}${s.note ? `: ${s.note}` : ''}${s.bytes ? ` (${formatBytes(s.bytes)} downloaded)` : ''}`);
     if (opts.full) for (const d of s.details || []) out.push(`         - ${d}`);
   }
+  if (run.downloadedBytes !== undefined) out.push(`  Downloaded in all: ${formatBytes(run.downloadedBytes)}${run.finishedAt ? '' : ' so far'}`);
   if (opts.full) {
     out.push('');
     out.push('Download by hand (the app cannot fetch these):');

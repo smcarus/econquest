@@ -59,6 +59,10 @@ test('report: one line per step, details and the by-hand list in the full form; 
   assert.match(short, /OK {3}GPR: 1 new file/);
   assert.match(short, /SKIP Tests/);
   assert.doesNotMatch(short, /No answer: BIS/);
+  assert.doesNotMatch(short, /Downloaded in all/, 'runs from before the counter show no total');
+  const counted = formatDaily({ ...run, downloadedBytes: 3 * 1024 * 1024, steps: run.steps.map((s, i) => (i === 0 ? { ...s, bytes: 3 * 1024 * 1024 } : s)) });
+  assert.match(counted, /\(3\.0 MB downloaded\)/);
+  assert.match(counted, /Downloaded in all: 3\.0 MB/);
   const full = formatDaily(run, { full: true });
   assert.match(full, /No answer: BIS/);
   assert.match(full, /ACLED/);
@@ -87,6 +91,10 @@ test('npm run daily: runs offline against fixtures, writes the report, and does 
     assert.ok(saved.finishedAt);
     assert.deepEqual(saved.steps.map((s) => s.id), ['feeds', 'weo', 'sanctions', 'gpr', 'ucdp', 'nowcasts', 'tests', 'check']);
     assert.equal(saved.steps.find((s) => s.id === 'tests')!.outcome, 'skipped');
+    // Every step says how much it downloaded (0 when nothing came from another computer).
+    for (const s of saved.steps) assert.equal(typeof s.bytes, 'number', s.id);
+    assert.equal(saved.downloadedBytes, saved.steps.reduce((t, s) => t + (s.bytes || 0), 0));
+    assert.match(first.stdout, /Downloaded in all: /);
     assert.match(first.stdout, /Download by hand/);
     const second = run();
     assert.equal(second.status, 0);
