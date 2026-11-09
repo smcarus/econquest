@@ -49,6 +49,7 @@ import {
 } from './officialYields';
 import { lsegSnapshotUrl, lsegTokenRequest, ownCdsSettings, parseLsegSnapshot, parseOwnCdsCsv } from './ownCds';
 import { paidVendorFromEnv, parsePaidMappings } from '../engine/paidData';
+import { macrobondCredentials, macrobondFetchUrl, macrobondTokenBody, MACROBOND_AUTH_URL, readMacrobondSeries, readMacrobondToken } from '../engine/macrobond';
 import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
@@ -1318,7 +1319,31 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     if (missingCreds.length) return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but ${missingCreds.join(' and ')} ${missingCreds.length > 1 ? 'are' : 'is'} not set.`, 'your subscription');
     if (!vendor.adapterBuilt)
       return setRow(def, 'needs_setup', `Switched on for ${vendor.name} (${series}), but the app cannot fetch from ${vendor.name} yet: that part is planned as data plan change ${vendor.plannedIn}. Nothing is fetched until then.`, 'your subscription');
-    return setRow(def, mapped ? 'connected' : 'needs_setup', mapped ? `Switched on for ${vendor.name}; ${series}.` : `Switched on for ${vendor.name}, but no series are mapped yet.`, 'your subscription');
+    // Macrobond (src/engine/macrobond.ts): sign in, then read the first mapped series. Only counts
+    // and dates are reported: never a figure, the client ID or the secret.
+    const creds = macrobondCredentials(env)!;
+    const host = 'apiauth.macrobondfinancial.com';
+    const disc = await probe(fetchFn, `${MACROBOND_AUTH_URL}.well-known/openid-configuration`, T);
+    if (disc.networkError) return { ...setRow(def, 'no_answer', `Macrobond sign-in: ${disc.networkError}`, host), latencyMs: disc.latencyMs };
+    const tokenUrl = String((parseJson(disc.text) as { token_endpoint?: unknown })?.token_endpoint || '');
+    if (!disc.ok || !/^https:\/\//.test(tokenUrl)) return setRow(def, 'bad_reply', `Macrobond's sign-in address lookup did not give a token address (HTTP ${disc.status}).`, host);
+    const tok = await probe(fetchFn, tokenUrl, T, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: macrobondTokenBody(creds) });
+    if (tok.networkError) return { ...setRow(def, 'no_answer', `Macrobond sign-in: ${tok.networkError}`, host), latencyMs: tok.latencyMs };
+    const signed = readMacrobondToken(tok.status ?? 0, tok.text ?? '', now.getTime());
+    if ('error' in signed) return { ...setRow(def, signed.badCredentials ? 'needs_setup' : 'refused', `${signed.error}.`, host), httpStatus: tok.status };
+    const first = parsePaidMappings(opts.paidMappingsText?.() ?? null).find((m) => m.vendor === vendor.id);
+    if (!first) return setRow(def, 'needs_setup', `Signed in to ${vendor.name}, but no series are mapped yet. Map them under Menu > Settings > Your subscriptions.`, host);
+    const got = await probe(fetchFn, macrobondFetchUrl([first.code]), T, { headers: { Authorization: `Bearer ${signed.token}`, Accept: 'application/json' } });
+    const apiHost = 'api.macrobondfinancial.com';
+    if (got.networkError) return { ...setRow(def, 'no_answer', `Macrobond series: ${got.networkError}`, apiHost), latencyMs: got.latencyMs };
+    if (!got.ok) return { ...setRow(def, got.status === 401 || got.status === 403 ? 'needs_setup' : 'refused', `Signed in, but Macrobond refused series ${first.code} (HTTP ${got.status}).${got.status === 403 ? ' Your licence may not cover it.' : ''}`, apiHost), httpStatus: got.status };
+    const body = parseJson(got.text);
+    const read = readMacrobondSeries(Array.isArray(body) ? body[0] : null, first.freq);
+    if ('error' in read) return setRow(def, 'bad_reply', `Signed in; series ${first.code}: ${read.error}.`, apiHost);
+    return {
+      ...setRow(def, 'connected', `Signed in to ${vendor.name}; ${series}. The figures stay on this computer.`, apiHost),
+      sample: `${first.code}: ${read.points.length} values, ${read.points[0]!.date} to ${read.points[read.points.length - 1]!.date} (figures not shown)`,
+    };
   });
 
   // ---- AI models ---------------------------------------------------------------------------------

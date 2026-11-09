@@ -651,4 +651,17 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "Pick how often it comes out.": "Elija con qué frecuencia se publica.",
   "That series code is already mapped for this country.": "Ese código de serie ya está asignado para este país.",
   "You already map {n} series; remove one first.": "Ya tiene {n} series asignadas; quite una primero.",
+  // Your data subscription: fetching (data plan G5)
+  "Your data subscription is off; nothing to fetch": "Su suscripción de datos está desactivada; no hay nada que descargar",
+  "The app cannot fetch from {name} yet (data plan change {plan}); nothing fetched": "La app todavía no puede descargar de {name} (cambio {plan} del plan de datos); no se descargó nada",
+  "No fetching part for {name} yet; nothing fetched": "Todavía no hay una parte de descarga para {name}; no se descargó nada",
+  "Your subscription is Macrobond, but the client ID and secret are not both set (Menu > Settings > Your subscriptions)": "Su suscripción es Macrobond, pero el ID de cliente y el secreto no están configurados ambos (Menú > Configuración > Sus suscripciones)",
+  "Signed in to Macrobond; {n} of {m} mapped series read": "Sesión iniciada en Macrobond; se leyeron {n} de {m} series asignadas",
+  "Signed in to Macrobond; no series are mapped yet": "Sesión iniciada en Macrobond; todavía no hay series asignadas",
+  "Macrobond refused the client ID and secret (invalid_client). Check both under Menu > Settings > Your subscriptions": "Macrobond rechazó el ID de cliente y el secreto (invalid_client). Revise ambos en Menú > Configuración > Sus suscripciones",
+  "Macrobond said too many sign-ins; try again shortly": "Macrobond indicó demasiados inicios de sesión; inténtelo de nuevo en breve",
+  "Macrobond sign-in answered HTTP {n}": "El inicio de sesión de Macrobond respondió HTTP {n}",
+  "Macrobond refused the sign-in ({detail})": "Macrobond rechazó el inicio de sesión ({detail})",
+  "Macrobond did not answer the sign-in ({detail})": "Macrobond no respondió al inicio de sesión ({detail})",
+  "Macrobond did not answer ({detail})": "Macrobond no respondió ({detail})",
 };

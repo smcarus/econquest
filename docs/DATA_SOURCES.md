@@ -455,14 +455,29 @@ want ("Your series"). The same switch can be set in `.env` as `PAID_DATA_VENDOR`
 
 | Vendor | Status | Settings |
 | --- | --- | --- |
-| Macrobond | Frame ready; fetching comes with data plan change G5 | `PAID_DATA_VENDOR="macrobond"`, `MACROBOND_CLIENT_ID`, `MACROBOND_CLIENT_SECRET` (Web API client credentials; the API licence is separate from the desktop app) |
+| Macrobond | Fetching works (data plan G5); not yet tried against a live licence | `PAID_DATA_VENDOR="macrobond"`, `MACROBOND_CLIENT_ID`, `MACROBOND_CLIENT_SECRET` (Web API client credentials; the API licence is separate from the desktop app) |
 | Haver Analytics | Planned, G14, once a subscriber shares the API documentation | `PAID_DATA_VENDOR="haver"` |
 | Moody's Analytics | Planned, G15, memory only (figures never saved to disk) | `PAID_DATA_VENDOR="moodys"` |
 
-Until a vendor's fetching part exists, its mapped series read Missing with that reason. The
-connection check (row `paid_data`, also in `npm run check:data`) says whether the subscription is on,
-whether its sign-in details are set and how many series are mapped. It fetches nothing and never
-shows a figure or a sign-in detail.
+Until a vendor's fetching part exists, its mapped series read Missing with that reason.
+
+**Macrobond (data plan G5).** The app signs in to the Macrobond Web API with your client ID and
+secret (OAuth2 client credentials, scope `macrobond_web_api.read_mb`, the token address taken from
+`apiauth.macrobondfinancial.com`) and reads your mapped codes from
+`api.macrobondfinancial.com/v1/series/fetchseries`, a few codes per request, a quarter of a second
+apart (Macrobond allows 100 requests per 10 seconds). The sign-in token is held in memory only.
+Each date is turned into the period of the frequency you chose (for example 2026-04-01 becomes
+2026-Q2 for a quarterly series); missing values are skipped, never filled in. A series Macrobond
+cannot give keeps its last saved copy. Figures are saved in `data/local/paid/macrobond/`, which the
+public copy refuses to include. Fetching happens in the daily run (step "Your data subscription",
+`npm run go -- daily`) and with **Fetch now** under Settings > Your subscriptions; both report counts
+and dates, never a figure. Before relying on it, check that your Macrobond licence lets you keep a
+local copy of the series you fetch.
+
+The connection check (row `paid_data`, also in `npm run check:data`) says whether the subscription
+is on, whether its sign-in details are set and how many series are mapped. For Macrobond it also
+signs in and reads the first mapped series, showing only how many values came back and their first
+and last dates. It never shows a figure or a sign-in detail.
 
 ## AI model
 

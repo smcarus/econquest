@@ -16,10 +16,10 @@
  *   would have been. Scripts reading the data addresses and other computers on the network get the
  *   same answer. The council's AI model is never sent them.
  *
- * This file is the frame only. The code that signs in to a vendor and fetches a mapped series (an
- * "adapter") comes in later changes: Macrobond (G5), Haver (G14), Moody's (G15, memory only: its
- * figures are never saved to disk). Until a vendor's adapter exists, its mapped series read Missing
- * with that reason.
+ * This file is the frame. The code that signs in to a vendor and fetches a mapped series (an
+ * "adapter") is per vendor: Macrobond (G5, src/engine/macrobond.ts), then Haver (G14) and Moody's
+ * (G15, memory only: its figures are never saved to disk). Until a vendor's adapter exists, its
+ * mapped series read Missing with that reason.
  *
  * Shared engine: runs on the server, the phone and in tests; reaches files only through Platform.
  */
@@ -45,7 +45,7 @@ export interface PaidVendor {
 }
 
 export const PAID_VENDORS: readonly PaidVendor[] = [
-  { id: 'macrobond', name: 'Macrobond', plannedIn: 'G5', adapterBuilt: false, memoryOnly: false, credentialIds: ['MACROBOND_CLIENT_ID', 'MACROBOND_CLIENT_SECRET'], codeExample: 'usgdp' },
+  { id: 'macrobond', name: 'Macrobond', plannedIn: 'G5', adapterBuilt: true, memoryOnly: false, credentialIds: ['MACROBOND_CLIENT_ID', 'MACROBOND_CLIENT_SECRET'], codeExample: 'usgdp' },
   { id: 'haver', name: 'Haver Analytics', plannedIn: 'G14', adapterBuilt: false, memoryOnly: false, credentialIds: [], codeExample: 'GDPH@USECON' },
   { id: 'moodys', name: "Moody's Analytics", plannedIn: 'G15', adapterBuilt: false, memoryOnly: true, credentialIds: [], codeExample: 'FGDP$.IUSA' },
 ];

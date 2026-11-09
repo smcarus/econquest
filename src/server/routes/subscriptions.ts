@@ -19,6 +19,39 @@ import {
   PAID_VENDORS,
   removePaidMapping,
 } from '../../engine/paidData';
+import { macrobondCredentials, pullMacrobond, type MacrobondStep } from '../../engine/macrobond';
+
+/** What the last fetch from your subscription said: counts and dates, never a figure. */
+export interface SubscriptionFetch {
+  at: string;
+  ok: boolean;
+  note: string;
+  steps: MacrobondStep[];
+}
+let lastFetch: SubscriptionFetch | null = null;
+/** Tests only. */
+export function resetSubscriptionFetch(): void {
+  lastFetch = null;
+}
+
+/**
+ * Fetches every mapped series of the vendor switched on (the daily run and the Fetch now button).
+ * Off, or a vendor with no adapter yet: nothing is fetched and the note says why.
+ */
+export async function fetchSubscription(platform: Platform, env: Record<string, string | undefined>, onlyIds?: string[]): Promise<SubscriptionFetch & { skipped?: boolean }> {
+  const at = new Date(platform.clock.now()).toISOString();
+  const vendor = paidVendorFromEnv(env);
+  if (!vendor) return { at, ok: true, skipped: true, note: 'Your data subscription is off; nothing to fetch', steps: [] };
+  if (!vendor.adapterBuilt) return { at, ok: true, skipped: true, note: `The app cannot fetch from ${vendor.name} yet (data plan change ${vendor.plannedIn}); nothing fetched`, steps: [] };
+  if (vendor.id === 'macrobond') {
+    const creds = macrobondCredentials(env);
+    if (!creds) return { at, ok: false, note: 'Your subscription is Macrobond, but the client ID and secret are not both set (Menu > Settings > Your subscriptions)', steps: [] };
+    const pull = await pullMacrobond(platform, creds, { onlyIds });
+    lastFetch = { at, ok: pull.ok, note: pull.note, steps: pull.steps };
+    return lastFetch;
+  }
+  return { at, ok: true, skipped: true, note: `No fetching part for ${vendor.name} yet; nothing fetched`, steps: [] };
+}
 
 /**
  * Your paid data subscription (src/engine/paidData.ts, data plan G4): the switch and vendor are
@@ -94,6 +127,7 @@ export function registerSubscriptionRoutes(app: express.Express, deps: Subscript
       vendors: PAID_VENDORS.map((v) => ({ id: v.id, name: v.name, plannedIn: v.plannedIn, adapterBuilt: v.adapterBuilt, memoryOnly: v.memoryOnly, codeExample: v.codeExample })),
       mappings: rows,
       thisComputer: paidVisibleTo(req, env),
+      lastFetch,
       savedIn: `data/${PAID_MAPPINGS_FILE}`,
     });
   });
@@ -106,6 +140,14 @@ export function registerSubscriptionRoutes(app: express.Express, deps: Subscript
     const m = made.saved;
     appendAudit(AUDIT_FILES, { kind: 'paid_data', summary: `Mapped your ${paidVendor(m.vendor)?.name} series ${m.code} as "${m.label}" (${m.iso3})`, detail: { id: m.id, vendor: m.vendor, code: m.code } });
     res.json({ saved: m });
+  });
+
+  // Fetch now (Settings > Your subscriptions): this computer only; the reply has counts and dates, no figures.
+  app.post('/api/subscriptions/fetch', async (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    if (viewer(res)) return;
+    if (!paidVisibleTo(req, env)) return res.status(403).json({ error: 'Fetching from your subscription works only on the computer running the app.' });
+    res.json(await fetchSubscription(platform, env));
   });
 
   app.delete('/api/subscriptions/mappings/:id', async (req, res) => {

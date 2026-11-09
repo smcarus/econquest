@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Macrobond adapter (data plan G5): with your subscription set to Macrobond and your Web API client ID
+  and secret entered, the app signs in (token held in memory only) and fetches your mapped series, in the
+  daily run (new step "Your data subscription") or with the new "Fetch now" button under Settings > Your
+  subscriptions. Dates become periods of the frequency you chose; missing values are skipped, never
+  filled; a series Macrobond cannot give keeps its last saved copy. The `paid_data` connection row now
+  signs in and reads the first mapped series, showing only counts and dates. Notes never carry a figure
+  or a sign-in detail. Spanish and French text. Not yet tried against a live licence.
 - Your data subscription (data plan G4): the frame for a paid data service you already subscribe to.
   New Settings page "Your subscriptions" (off by default; lazy-loaded series list): pick the vendor
   (Macrobond; Haver and Moody's planned), enter its sign-in details (stored like the other keys) and map

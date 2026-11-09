@@ -580,4 +580,17 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "Pick how often it comes out.": "Choisissez à quelle fréquence elle paraît.",
   "That series code is already mapped for this country.": "Ce code de série est déjà associé pour ce pays.",
   "You already map {n} series; remove one first.": "Vous associez déjà {n} séries ; retirez-en une d'abord.",
+  // Your data subscription: fetching (data plan G5)
+  "Your data subscription is off; nothing to fetch": "Votre abonnement de données est désactivé ; rien à récupérer",
+  "The app cannot fetch from {name} yet (data plan change {plan}); nothing fetched": "L'application ne peut pas encore récupérer depuis {name} (changement {plan} du plan de données) ; rien n'a été récupéré",
+  "No fetching part for {name} yet; nothing fetched": "Pas encore de partie de récupération pour {name} ; rien n'a été récupéré",
+  "Your subscription is Macrobond, but the client ID and secret are not both set (Menu > Settings > Your subscriptions)": "Votre abonnement est Macrobond, mais l'identifiant client et le secret ne sont pas tous deux renseignés (Menu > Paramètres > Vos abonnements)",
+  "Signed in to Macrobond; {n} of {m} mapped series read": "Connecté à Macrobond ; {n} des {m} séries associées lues",
+  "Signed in to Macrobond; no series are mapped yet": "Connecté à Macrobond ; aucune série n'est encore associée",
+  "Macrobond refused the client ID and secret (invalid_client). Check both under Menu > Settings > Your subscriptions": "Macrobond a refusé l'identifiant client et le secret (invalid_client). Vérifiez-les dans Menu > Paramètres > Vos abonnements",
+  "Macrobond said too many sign-ins; try again shortly": "Macrobond signale trop de connexions ; réessayez dans un instant",
+  "Macrobond sign-in answered HTTP {n}": "La connexion à Macrobond a répondu HTTP {n}",
+  "Macrobond refused the sign-in ({detail})": "Macrobond a refusé la connexion ({detail})",
+  "Macrobond did not answer the sign-in ({detail})": "Macrobond n'a pas répondu à la connexion ({detail})",
+  "Macrobond did not answer ({detail})": "Macrobond n'a pas répondu ({detail})",
 };
