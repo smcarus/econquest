@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Release calendar (data plan G10): each country's brief now shows the next CPI release and the next
+  first GDP estimate, from the statistics office's own calendar, read 9 November 2026 for the United
+  States, Canada, the United Kingdom, China (CPI), Japan and Australia. The other G20 countries show
+  Missing with the reason the office's calendar could not be read (refused an automated reader, built
+  in the browser, robots.txt for Turkey and Russia, or an error); no date is estimated from a pattern.
+  The dates also appear in Next two weeks and in Data health > Calendar. Spanish and French text.
 - Uncertainty ranges (data plan G9): forecasts show a range by default, and say what it means. A line
   under the forecast chart explains the 50, 70 and 90% bands (how often the figure should land inside,
   judged by the model's own past misses, and that doubt about the model itself is left out). Where a

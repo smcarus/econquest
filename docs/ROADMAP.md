@@ -50,8 +50,8 @@ makes figures safer to compare and cite.
 | G7 | Seasonal adjustment and frequency | States whether figures are seasonally adjusted and how monthly figures become quarterly ones | Done |
 | G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Done |
 | G9 | Uncertainty ranges | Forecasts show a range, not just one number; hidden at Help off | Done |
-| G10 | Release calendar | When each country's next inflation and growth figures come out | Next |
-| G11 | "Cite this" | Ready-made citations for every chart, table and answer | Planned |
+| G10 | Release calendar | When each country's next inflation and growth figures come out | Done (six countries read; the rest say why not) |
+| G11 | "Cite this" | Ready-made citations for every chart, table and answer | Next |
 | G12 | Euro area figures as first published | Backtests use only what was known at the time | Planned; licence check first |
 | G13 | UK figures as first published | The same for the United Kingdom | Planned; licence check first |
 | G14 | Haver adapter | The second paid vendor | Planned; needs a subscriber's API documentation |

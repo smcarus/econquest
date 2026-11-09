@@ -141,6 +141,14 @@ export const GLOSSARY: GlossaryEntry[] = [
     why: 'A surprise in either direction can move interest-rate expectations, the currency and bond prices on the day.',
     match: [/^Next CPI release/],
   },
+  {
+    id: 'gdp_release',
+    term: 'GDP release',
+    group: 'economy',
+    what: "The day the statistics office publishes its first estimate of how much the economy grew in the last quarter.",
+    why: 'The first estimate is the one markets and the central bank react to, even though it is often revised later.',
+    match: [/^Next GDP release/],
+  },
 
   // ---- Central banks and interest rates ----------------------------------------------------------
   {
