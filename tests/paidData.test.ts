@@ -33,7 +33,9 @@ import { API_KEY_FIELDS } from '../src/data/apiKeyFields';
 import { isCountryIso3 } from '../src/data/iso3166';
 
 const GDP = { vendor: 'macrobond', code: 'usgdp', iso3: 'USA', label: 'US real GDP', unit: '% y/y', freq: 'quarterly' };
-/** The frame with an adapter, as G5 will make it: tests only. */
+/** Haver: still waiting for its adapter (G14). */
+const HGDP = { vendor: 'haver', code: 'GDPH@USECON', iso3: 'USA', label: 'US real GDP', unit: '% y/y', freq: 'quarterly' };
+/** A vendor with its adapter switched on: tests only. */
 const built = (id: string): PaidVendor => ({ ...paidVendor(id)!, adapterBuilt: true });
 
 test('off by default: no vendor unless the switch names one', () => {
@@ -43,7 +45,7 @@ test('off by default: no vendor unless the switch names one', () => {
   assert.equal(paidVendorFromEnv({ PAID_DATA_VENDOR: 'Macrobond' })?.name, 'Macrobond');
   // The frame ships no adapter: every vendor says which change will add it.
   assert.deepEqual(PAID_VENDORS.map((v) => [v.id, v.adapterBuilt, v.plannedIn]), [
-    ['macrobond', false, 'G5'],
+    ['macrobond', true, 'G5'],
     ['haver', false, 'G14'],
     ['moodys', false, 'G15'],
   ]);
@@ -85,15 +87,15 @@ test('mappings are kept with codes and labels only; adding twice and removing ar
 
 test('until the vendor adapter exists, a mapped series reads Missing with that reason', async () => {
   const platform = createMemoryPlatform();
-  await addPaidMapping(platform, GDP);
+  await addPaidMapping(platform, HGDP);
   assert.deepEqual(await paidSeriesFor(platform, 'USA', null), { series: [], missing: [] });
-  const got = await paidSeriesFor(platform, 'USA', paidVendor('macrobond')!);
+  const got = await paidSeriesFor(platform, 'USA', paidVendor('haver')!);
   assert.equal(got.series.length, 0);
-  assert.equal(got.missing[0].label, 'US real GDP (Your subscription: Macrobond)');
-  assert.match(got.missing[0].reason, /cannot fetch from Macrobond yet: that part is planned as data plan change G5/);
+  assert.equal(got.missing[0].label, 'US real GDP (Your subscription: Haver Analytics)');
+  assert.match(got.missing[0].reason, /cannot fetch from Haver Analytics yet: that part is planned as data plan change G14/);
   // Another country, or another vendor switched on: nothing.
-  assert.equal((await paidSeriesFor(platform, 'BRA', paidVendor('macrobond')!)).missing.length, 0);
-  assert.equal((await paidSeriesFor(platform, 'USA', paidVendor('haver')!)).missing.length, 0);
+  assert.equal((await paidSeriesFor(platform, 'BRA', paidVendor('haver')!)).missing.length, 0);
+  assert.equal((await paidSeriesFor(platform, 'USA', paidVendor('macrobond')!)).missing.length, 0);
 });
 
 test('figures an adapter saves show labelled as your subscription; a memory-only vendor never writes them', async () => {
@@ -152,17 +154,13 @@ test('a series download names each mapped series as withheld, with no figures', 
   assert.deepEqual(paidWithheldRows(SERIES_HEADER, 'BRA', [m.mapping], paidVendor('macrobond')!), []);
 });
 
-test('connection check: off, sign-in missing, adapter not built; never a sign-in detail', async () => {
+test('connection check: off, sign-in missing; never a sign-in detail', async () => {
   const row = async (env: Record<string, string>, text: string | null = null) =>
     (await checkConnections({ env, only: ['paid_data'], paidMappingsText: () => text })).results.find((r) => r.id === 'paid_data')!;
   assert.equal((await row({})).state, 'off');
   assert.equal((await row({ PAID_DATA_VENDOR: 'bloomberg' })).state, 'needs_setup');
   assert.match((await row({ PAID_DATA_VENDOR: 'macrobond' })).detail, /MACROBOND_CLIENT_ID and MACROBOND_CLIENT_SECRET are not set/);
-  const mapped = JSON.stringify({ mappings: [(checkPaidMapping(GDP, new Date()) as { mapping: object }).mapping] });
-  const r = await row({ PAID_DATA_VENDOR: 'macrobond', MACROBOND_CLIENT_ID: 'client-id-1234', MACROBOND_CLIENT_SECRET: 'super-secret-value' }, mapped);
-  assert.equal(r.state, 'needs_setup');
-  assert.match(r.detail, /1 series mapped.*planned as data plan change G5/);
-  assert.doesNotMatch(JSON.stringify(r), /super-secret|client-id-1234/);
+  assert.doesNotMatch(JSON.stringify(await row({ PAID_DATA_VENDOR: 'macrobond', MACROBOND_CLIENT_ID: 'client-id-1234' })), /client-id-1234/);
 });
 
 test('routes: only this computer sees the list status; changes are audited without figures or secrets; viewers refused', async () => {
@@ -171,7 +169,7 @@ test('routes: only this computer sees the list status; changes are audited witho
   const { registerSubscriptionRoutes, paidVisibleTo } = await import('../src/server/routes/subscriptions');
   const platform = createMemoryPlatform();
   let role: 'admin' | 'viewer' = 'admin';
-  const env: Record<string, string | undefined> = { PAID_DATA_VENDOR: 'macrobond', MACROBOND_CLIENT_SECRET: 'super-secret-value' };
+  const env: Record<string, string | undefined> = { PAID_DATA_VENDOR: 'haver', MACROBOND_CLIENT_SECRET: 'super-secret-value' };
   const app = express();
   app.use(express.json());
   registerSubscriptionRoutes(app, { platform, env, refuseRemoteChange: () => false, signedIn: () => ({ id: 'u1', username: 'sam', name: 'Sam', role }) as never });
@@ -182,15 +180,20 @@ test('routes: only this computer sees the list status; changes are audited witho
   const post = (body: unknown) => fetch(`${base}/api/subscriptions/mappings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
   try {
     const empty = await (await fetch(`${base}/api/subscriptions`)).json();
-    assert.deepEqual([empty.on, empty.vendor.name, empty.vendor.adapterBuilt, empty.mappings.length, empty.thisComputer], [true, 'Macrobond', false, 0, true]);
+    assert.deepEqual([empty.on, empty.vendor.name, empty.vendor.adapterBuilt, empty.mappings.length, empty.thisComputer], [true, 'Haver Analytics', false, 0, true]);
     role = 'viewer';
-    assert.equal((await post(GDP)).status, 403);
+    assert.equal((await post(HGDP)).status, 403);
+    assert.equal((await fetch(`${base}/api/subscriptions/fetch`, { method: 'POST' })).status, 403);
     role = 'admin';
-    assert.equal((await post({ ...GDP, code: '' })).status, 400);
-    const saved = (await (await post(GDP)).json()).saved;
+    assert.equal((await post({ ...HGDP, code: '' })).status, 400);
+    const saved = (await (await post(HGDP)).json()).saved;
     const list = await (await fetch(`${base}/api/subscriptions`)).json();
-    assert.equal(list.mappings[0].status.startsWith('The app cannot fetch from Macrobond yet'), true);
+    assert.equal(list.mappings[0].status.startsWith('The app cannot fetch from Haver Analytics yet'), true);
     assert.equal(list.mappings[0].count, 0);
+    // Fetch now with a vendor that has no adapter: nothing fetched, and it says why.
+    const fetched = await (await fetch(`${base}/api/subscriptions/fetch`, { method: 'POST' })).json();
+    assert.deepEqual([fetched.ok, fetched.skipped], [true, true]);
+    assert.match(fetched.note, /cannot fetch from Haver Analytics yet/);
     // A script sending the data API key never counts as this computer's screens.
     assert.equal((await (await fetch(`${base}/visible`)).json()).visible, true);
     assert.equal((await (await fetch(`${base}/visible`, { headers: { 'X-SMCR-API-Key': 'k' } })).json()).visible, false);
@@ -213,8 +216,8 @@ test('reasons, statuses and form problems have Spanish and French', async () => 
   const bad = checkPaidMapping({ vendor: 'x', code: 'a b', iso3: 'XYZ', label: '', unit: '', freq: 'x' }, new Date(), isCountryIso3);
   assert.ok('problems' in bad);
   const platform = createMemoryPlatform();
-  await addPaidMapping(platform, GDP);
-  const reason = (await paidSeriesFor(platform, 'USA', paidVendor('macrobond')!)).missing[0].reason;
+  await addPaidMapping(platform, HGDP);
+  const reason = (await paidSeriesFor(platform, 'USA', paidVendor('haver')!)).missing[0].reason;
   const said = [...bad.problems, reason, PAID_WITHHELD_REASON, 'Not fetched from your Macrobond subscription yet', 'Not in use: your subscription is off', 'Ready'];
   for (const lang of ['es', 'fr'] as const) assert.deepEqual(said.filter((x) => translateText(x, lang) === x), [], lang);
 });

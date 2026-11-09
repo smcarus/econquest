@@ -41,6 +41,14 @@ interface Reply {
   mappings: MappingRow[];
   thisComputer: boolean;
   savedIn: string;
+  lastFetch: FetchReply | null;
+}
+/** What a fetch said: counts and dates, never a figure. */
+interface FetchReply {
+  at: string;
+  ok: boolean;
+  note: string;
+  steps: { id: string; code: string; ok: boolean; note: string }[];
 }
 
 const FREQ_KEY: Record<PaidFreq, 'freq_daily' | 'freq_weekly' | 'freq_monthly' | 'freq_quarterly' | 'freq_annual'> = {
@@ -59,6 +67,8 @@ const SubscriptionSeries: React.FC<{ canEdit: boolean; vendorSetting?: string }>
   const [error, setError] = useState('');
   const [form, setForm] = useState({ vendor: '', code: '', iso3: '', label: '', unit: '', freq: 'monthly' as PaidFreq });
   const [busy, setBusy] = useState(false);
+  const [fetching, setFetching] = useState(false);
+  const [fetched, setFetched] = useState<FetchReply | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -102,6 +112,24 @@ const SubscriptionSeries: React.FC<{ canEdit: boolean; vendorSetting?: string }>
     await load();
   };
 
+  // Fetch now: the same fetch as the daily run, for the vendor switched on.
+  const fetchNow = async () => {
+    setFetching(true);
+    setError('');
+    try {
+      const r = await fetch('/api/subscriptions/fetch', { method: 'POST' });
+      const body = (await r.json().catch(() => ({}))) as FetchReply & { error?: string };
+      if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`);
+      setFetched(body);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setFetching(false);
+    }
+  };
+  const last = fetched ?? reply?.lastFetch ?? null;
+
   const vendorOf = (id: string) => reply?.vendors.find((v) => v.id === id);
   const example = vendorOf(form.vendor)?.codeExample || '';
   const field = 'mt-0.5 w-full px-2 py-1.5 text-sm bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white';
@@ -123,6 +151,24 @@ const SubscriptionSeries: React.FC<{ canEdit: boolean; vendorSetting?: string }>
             <p>{t('sub_off')}</p>
           )}
           {!reply.thisComputer && <p className="text-amber-800 dark:text-amber-300">{t('sub_notThisComputer')}</p>}
+          {canEdit && reply.thisComputer && reply.vendor?.adapterBuilt && (
+            <div className="pt-1" data-subscription-fetch="true">
+              <button type="button" className="ui-btn" onClick={fetchNow} disabled={fetching}>
+                {fetching ? t('sub_fetching') : t('sub_fetch')}
+              </button>
+              <span className="ml-2 text-slate-500 dark:text-slate-400">{t('sub_fetchHint')}</span>
+            </div>
+          )}
+          {last && (
+            <div className={last.ok ? 'text-slate-600 dark:text-slate-400' : 'text-amber-800 dark:text-amber-300'} data-subscription-last-fetch="true">
+              <p>{t('sub_lastFetch', { at: new Date(last.at).toLocaleString(), note: tx(last.note) })}</p>
+              {last.steps
+                .filter((s) => !s.ok)
+                .map((s) => (
+                  <p key={s.id}>{tx(s.note)}</p>
+                ))}
+            </div>
+          )}
         </div>
       )}
       {reply && (

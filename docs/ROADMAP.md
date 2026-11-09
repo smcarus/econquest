@@ -44,9 +44,9 @@ makes figures safer to compare and cite.
 | G1 | US Treasury auctions | How much demand there is at each US government debt sale (bid-to-cover, yield, amounts) | Done |
 | G2 | EU business and consumer surveys | A free stand-in for paid PMI surveys for EU members, labelled "not a PMI" | Done |
 | G3 | Fresher inflation figures | Uses the freshest of national, Eurostat or IMF monthly inflation before the stale OECD copy, and shows each figure's age | Done |
-| G4 | Paid-data connector | A Settings screen for your own data subscription; off by default; paid figures never leave your computer or appear in downloads, backups or shared copies | Done (the frame; fetching starts with G5) |
-| G5 | Macrobond adapter | The first paid vendor plugged into G4 | Next; needs a Macrobond licence holder to test it |
-| G6 | Definition tags | Each figure says what it measures (for example, general or central government) | Planned |
+| G4 | Paid-data connector | A Settings screen for your own data subscription; off by default; paid figures never leave your computer or appear in downloads, backups or shared copies | Done |
+| G5 | Macrobond adapter | The first paid vendor plugged into G4: signs in with your own Web API licence and fetches your mapped series in the daily run or with "Fetch now" | Done (still to be tried by a Macrobond licence holder) |
+| G6 | Definition tags | Each figure says what it measures (for example, general or central government) | Next |
 | G7 | Seasonal adjustment and frequency | States whether figures are seasonally adjusted and how monthly figures become quarterly ones | Planned |
 | G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Planned |
 | G9 | Uncertainty ranges | Forecasts show a range, not just one number | Planned |

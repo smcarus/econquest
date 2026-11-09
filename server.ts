@@ -96,7 +96,7 @@ import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResu
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
 import { isPaidSeriesId, listPaidMappings, paidSeriesFor, paidVendorFromEnv, paidWithheldRows, PAID_MAPPINGS_FILE, PAID_WITHHELD_REASON, withholdPaidRows } from './src/engine/paidData';
-import { paidVisibleTo, registerSubscriptionRoutes } from './src/server/routes/subscriptions';
+import { fetchSubscription, paidVisibleTo, registerSubscriptionRoutes } from './src/server/routes/subscriptions';
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
@@ -515,6 +515,11 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return had(await fetchCftcPull(), 'CFTC');
     case 'world:tic':
       return had(await fetchTicPull(), 'US Treasury');
+    case 'world:paid_data': {
+      // Your data subscription (src/engine/paidData.ts): off, or no adapter yet, counts as done with nothing to fetch.
+      const got = await fetchSubscription(enginePlatform, process.env);
+      return { outcome: got.ok ? 'done' : 'failed', note: got.note };
+    }
     case 'world:imf_cpi': {
       const got = await fetchImfCpiPull({ force: true });
       if (!got) return { outcome: 'failed', note: 'The IMF did not answer for monthly consumer prices (npm run check:imf shows why)' };

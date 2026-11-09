@@ -658,8 +658,11 @@ hold no figures of their own; the handout reads them from the app's series when 
   Research > One country > History labelled "Your subscription: <vendor>", next to the free ones.
   Their figures stay on this computer: downloads, backups, sharing mode and the public copy say
   "Withheld: your subscription data", the History page offers no download or Publish chart for them,
-  and the council's AI model is never sent them. The app cannot fetch from Macrobond yet (data plan
-  change G5), so until then mapped series read Missing with that reason.
+  and the council's AI model is never sent them. For Macrobond the app fetches your mapped series in
+  the daily run, or straight away with *Fetch now*; the note under the switch says when it last
+  fetched, how many series it read, and which ones Macrobond could not give (those keep their last
+  saved copy). Haver and Moody's are not built yet, so their mapped series read Missing with that
+  reason.
 - **AI model**: Ollama (local), Gemini, hybrid, or an OpenAI-compatible server such as LM Studio.
 - **Your data**: load your own series from a CSV file, for figures the app does not have (for
   example a series from your country's statistics office or a central bank report). Pick the file,
