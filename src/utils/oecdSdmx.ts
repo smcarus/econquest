@@ -76,7 +76,7 @@ export function parseOecdReply(text: unknown, keepMonths?: number): SdmxObs[] | 
 /**
  * Headers for every OECD call. The OECD's site sits behind Cloudflare, which answered requests
  * that looked like a bare script (no Accept for CSV, a generic user agent) with a "Just a moment"
- * bot check and HTTP 429 on Sam's Mac (2026-11-05). The app names itself honestly and asks for
+ * bot check and HTTP 429 on Sam's Mac (2026-11-05). The app gives its real name and asks for
  * the SDMX-CSV it reads.
  */
 export const OECD_HEADERS: Record<string, string> = {

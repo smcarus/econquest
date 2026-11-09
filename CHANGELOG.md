@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Docs: minimum and recommended computer (operating system, memory, disk, Node.js 20.19+ or 22.12+,
+  internet), disk space part by part, what sits in `data/`, and how much each run downloads (first
+  run, daily, weekly, monthly), each figure marked as measured or estimated (INSTALL.md "What you
+  need"; short version in the README, home server guide, data sources and user manual). Plainer
+  wording in the docs, help text and code comments in English, Spanish and French ("honest",
+  "quietly", "silently", "simply", "genuinely" and "ensuring" replaced where they were filler).
+
 - Release calendar (data plan G10): each country's brief now shows the next CPI release and the next
   first GDP estimate, from the statistics office's own calendar, read 9 November 2026 for the United
   States, Canada, the United Kingdom, China (CPI), Japan and Australia. The other G20 countries show
@@ -14,7 +21,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
 - Uncertainty ranges (data plan G9): forecasts show a range by default, and say what it means. A line
   under the forecast chart explains the 50, 70 and 90% bands (how often the figure should land inside,
   judged by the model's own past misses, and that doubt about the model itself is left out). Where a
-  method has no honest range the screen says "No range available" and why: IMF projections, projection
+  method has no sound range the screen says "No range available" and why: IMF projections, projection
   years in the gross financing need table, and the small gap model. The fiscal what-if says its range
   spans the published multipliers and is not a probability band. At Help off the forecast bands, the
   nowcast band and the debt fan bands are hidden, with a line saying so; downloads, the data API and

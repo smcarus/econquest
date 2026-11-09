@@ -22,7 +22,7 @@ Every change has to keep these. Pull requests that break them are not merged, ho
 4. **Signals and forecasts are pre-registered.** Add the spec under `docs/validation/` before the
    first run, and do not change it after you have seen a result. A failed test stays failed; a new
    idea is a new version with its own spec. See [docs/METHODS.md](docs/METHODS.md).
-5. **Honest labels.** Say what a panel is ("Description, not a tested signal"), where a figure came
+5. **Accurate labels.** Say what a panel is ("Description, not a tested signal"), where a figure came
    from and how old it is.
 6. **No bypassing bot checks** on data providers' sites (no fake browser user agents).
 

@@ -77,9 +77,9 @@ services:
         /bin/ollama serve &
         SERVER_PID=$$!
         sleep 4
-        echo "[EconQuest Ollama] Ensuring Phase 1-2 Sub-Agent model (${OLLAMA_QUICK_MODEL:-qwen2.5:7b}) is available..."
+        echo "[EconQuest Ollama] Checking Phase 1-2 Sub-Agent model (${OLLAMA_QUICK_MODEL:-qwen2.5:7b}) is available..."
         /bin/ollama pull ${OLLAMA_QUICK_MODEL:-qwen2.5:7b} || true
-        echo "[EconQuest Ollama] Ensuring Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b}) is available..."
+        echo "[EconQuest Ollama] Checking Phase 3 Supreme Council model (${OLLAMA_DEEP_MODEL:-qwen2.5:32b}) is available..."
         /bin/ollama pull ${OLLAMA_DEEP_MODEL:-qwen2.5:32b} || true
         wait $$SERVER_PID
     networks:

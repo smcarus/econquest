@@ -55,7 +55,7 @@ export const ForecastPanel: React.FC<{ iso3: string; countryName: string }> = ({
   const [fc, setFc] = useState<ForecastReply | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [measure, setMeasure] = useState<ForecastId>('gdp_qoq');
-  // A forecast that failed its pre-registered test is not drawn unless asked for (honest labels).
+  // A forecast that failed its pre-registered test is not drawn unless asked for (accurate labels).
   const [showFailed, setShowFailed] = useState(false);
   const t = useT(PANELS);
   const ranges = useShowRanges();

@@ -785,7 +785,7 @@ function Scoreboard() {
   return (
     <div className="space-y-3" data-quest-scoreboard>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        People are ranked on one thing: skill, meaning how much better their probabilities were than simply using the base rate (how often the same thing happened in the past). Plus means better than the base rate, minus means worse, and 0 means no better. The 90% range shows how sure we can be: if two people's ranges overlap, they may not really differ. To be ranked, a person needs at least {data.minimums.skill} settled forecasts, so one lucky call cannot top the table, and a GitHub account that was at least {data.accountDays} days old when the first Quest they entered closed. Nobody is ranked on how many Quests they enter. Everything here is worked out from the public entries and the recorded results, so anyone can check it.
+        People are ranked on one thing: skill, meaning how much better their probabilities were than just using the base rate (how often the same thing happened in the past). Plus means better than the base rate, minus means worse, and 0 means no better. The 90% range shows how sure we can be: if two people's ranges overlap, they may not really differ. To be ranked, a person needs at least {data.minimums.skill} settled forecasts, so one lucky call cannot top the table, and a GitHub account that was at least {data.accountDays} days old when the first Quest they entered closed. Nobody is ranked on how many Quests they enter. Everything here is worked out from the public entries and the recorded results, so anyone can check it.
       </p>
       <label className="text-xs inline-flex items-center gap-1">
         <span>Table</span>
@@ -842,7 +842,7 @@ function Health() {
   return (
     <div className="space-y-4" data-quest-health>
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Is it working? These measures answer that from the public files alone: how many people take part, how many answers each Quest gets, whether results are recorded when they are due, and whether the crowd does better than simply using the base rate. They are looked at together {h.reviewOn ? <>at the six-month review on <strong>{h.reviewOn}</strong> (six months after the first Quest opened on {h.firstOpened})</> : 'six months after the first Quest opens'}, to decide whether to keep going, change things or stop.
+        Is it working? These measures answer that from the public files alone: how many people take part, how many answers each Quest gets, whether results are recorded when they are due, and whether the crowd does better than just using the base rate. They are looked at together {h.reviewOn ? <>at the six-month review on <strong>{h.reviewOn}</strong> (six months after the first Quest opened on {h.firstOpened})</> : 'six months after the first Quest opens'}, to decide whether to keep going, change things or stop.
       </p>
       {!h.approved && <p className="text-sm text-slate-500">No approved Quests yet, so there is nothing to measure.</p>}
       {h.approved > 0 && (
@@ -892,7 +892,7 @@ function Health() {
             )}
           </Box>
           <p className="text-sm">
-            The crowd (the middle answer on each Quest) against the base rate: <G g={h.crowd} show={(v) => fmt(v)} />. Plus means the crowd did better than simply using how often the thing happened in the past.
+            The crowd (the middle answer on each Quest) against the base rate: <G g={h.crowd} show={(v) => fmt(v)} />. Plus means the crowd did better than just using how often the thing happened in the past.
           </p>
         </>
       )}

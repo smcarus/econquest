@@ -34,7 +34,7 @@ test('every series the app builds says what it measures and whose figure it is',
   assert.equal(seriesTags({ id: 'ust_auction_btc_10y' }).coverage, COVERAGE.centralGov);
 });
 
-test('the activity index follows its source; unknown, own and paid series say so honestly', () => {
+test('the activity index follows its source; unknown, own and paid series say so', () => {
   assert.equal(seriesTags({ id: 'activity_monthly', source: 'Banco Central do Brasil, IBC-Br economic activity index' }).coverage, COVERAGE.wholeEconomy);
   assert.equal(seriesTags({ id: 'activity_monthly', source: 'Eurostat industrial production index' }).coverage, COVERAGE.industry);
   assert.deepEqual(seriesTags({ id: 'something_new' }), { definition: 'Not stated yet', coverage: 'Not stated yet', seasonalAdjustment: 'Not stated by the source', measure: 'Not stated yet' });

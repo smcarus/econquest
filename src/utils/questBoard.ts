@@ -123,7 +123,7 @@ ul{padding-left:20px}li{margin:6px 0}footer{margin-top:32px;font-size:.85rem;col
 <p class="muted">Open questions on the economy, settled by stated rules from public data. Built ${esc(stats.asOf.slice(0, 10))} from the files in the Quests repository${repoLink ? ` (<a href="${esc(repoLink)}">${esc(x.repo)}</a>)` : ''}; anyone can rebuild it with <code>npm run quests:board</code> and get the same page.</p>
 
 <h2>How the ranking works</h2>
-<p>People are ranked on one thing: skill, meaning how much better their probabilities were than simply using the base rate (how often the same thing happened in the past). Plus means better than the base rate, minus means worse. The 90% range shows how sure we can be: if two people's ranges overlap, they may not really differ. To be ranked, a person needs at least ${stats.minimums.skill} settled forecasts and a GitHub account at least ${stats.accountDays} days old when the first Quest they entered closed. Nobody is ranked on how many Quests they enter. Debates, replications and proposed tests are listed, never ranked.</p>
+<p>People are ranked on one thing: skill, meaning how much better their probabilities were than just using the base rate (how often the same thing happened in the past). Plus means better than the base rate, minus means worse. The 90% range shows how sure we can be: if two people's ranges overlap, they may not really differ. To be ranked, a person needs at least ${stats.minimums.skill} settled forecasts and a GitHub account at least ${stats.accountDays} days old when the first Quest they entered closed. Nobody is ranked on how many Quests they enter. Debates, replications and proposed tests are listed, never ranked.</p>
 
 <h2>All time</h2>
 ${table(stats.board.allTime)}

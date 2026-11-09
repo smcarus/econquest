@@ -1,6 +1,6 @@
 /**
  * Is the official calendar (src/data/officialCalendar.ts) still fit to use? Gap analysis D13: the
- * calendar is typed by hand from central bank and government pages, so its dates go stale quietly
+ * calendar is typed by hand from central bank and government pages, so its dates go stale without warning
  * and the "Next two weeks" panel thins out without saying why. This reads the calendar against
  * today and says, per country and kind of event, what to check. Stated rules, no model:
  *

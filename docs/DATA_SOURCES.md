@@ -559,6 +559,9 @@ the background once the app is up; the app can be used straight away. It runs at
    need your own key (FRED, Comtrade and the rest under Menu > Settings > API keys) are used only
    when you have set the key.
 
+How much each run downloads (roughly 150 to 200 MB a day, an estimate) and how much space the
+saved data takes is in [INSTALL.md](INSTALL.md#how-much-data-it-downloads).
+
 The log is `data/local/logs/daily.log`; `npm run go -- status` (or `npm run daily:status -- --full`)
 shows what the last run did. `npm run go -- daily` runs it now in the window, `npm run go -- --no-daily`
 starts without it. Nothing is made up: a step that fails says why and the last good figures stay.

@@ -32,7 +32,7 @@ tests whether simple rules built on them say anything useful about what comes ne
 - **Rules are tested before they are trusted.** A signal is a rule that claims to say something
   about the future, for example that currencies paying high interest tend to earn more than they
   lose. Before a rule is tested, its details and pass mark are written down and locked with a digital
-  fingerprint, so they cannot be quietly changed after seeing the result. The test uses only figures
+  fingerprint, so any change made after seeing the result would show. The test uses only figures
   that had been published at the time, counts trading costs, and the rule must beat the simplest
   possible guess.
 - **Luck is counted.** When many rules are tested, some pass by chance. The app applies a standard
@@ -102,7 +102,7 @@ Seven rules govern everything below. They are enforced in code and in tests, not
 5. **Tested before it is trusted.** A rule that turns figures into a call carries a status. A "passed"
    label comes only from a test whose rule, sample and pass mark were written down and hashed before
    the run. A failed rule is shown as failed and never tuned until it passes.
-6. **Honest labels.** Each output says what it is: live figure, official series, the user's document,
+6. **Accurate labels.** Each output says what it is: live figure, official series, the user's document,
    a model reading, a description that makes no forward claim, or an AI-written answer.
 7. **Open and reproducible.** The code, the test specifications, their hashes and the recorded
    verdicts are public. Anyone can rerun the tests.
@@ -397,7 +397,7 @@ The grades follow practices used by model-validation and quantitative research t
 | Hypothetical performance labelled as such, net of costs | SEC Marketing Rule (2020); GIPS standards | Every backtest figure is labelled hypothetical and stated net of the registered costs |
 
 The terminal is not a regulated entity and these frameworks do not apply to it formally. They are
-followed because they are the best available public statements of how to keep model claims honest.
+followed because they are the best available public statements of how to keep model claims accurate and checkable.
 
 ## 10. The forward record
 
@@ -469,7 +469,7 @@ consistent with the wider literature on macroeconomic forecasting, and they are 
 
 ## 13. Limitations and what stays Missing
 
-The terminal is honest about what it cannot do. In particular:
+The terminal states what it cannot do. In particular:
 
 - **No free source, so Missing:** sovereign CDS (hidden; a USD bond spread stands in, labelled as
   such), credit ratings, PMIs, government bond auction results, consensus forecasts, and some

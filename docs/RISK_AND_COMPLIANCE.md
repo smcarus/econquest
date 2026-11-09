@@ -1,6 +1,6 @@
 # Risk and compliance controls
 
-What the app does today to make its answers traceable and its signals honest, what each control
+What the app does today to make its answers traceable and its signals checkable, what each control
 can and cannot show, and what a multi-user (server) version would need. Written 2026-11-05,
 following the change control and model risk policy of the Python econquest program, kept light:
 every control here runs by itself in the app, with no forms to fill in.
@@ -20,7 +20,7 @@ every control here runs by itself in the app, with no forms to fill in.
 
 The app runs for one person on one computer (it answers on localhost only). The same person can
 review and approve a report; the approval then says "self-approved, no second reviewer". This is
-the same position as the Python program's EXC-002: the control is recorded honestly rather than
+the same position as the Python program's EXC-002: the control is recorded as it is, not
 pretended. Nothing in the app treats a self-approved report as independently reviewed.
 
 ## What a multi-user server version would need

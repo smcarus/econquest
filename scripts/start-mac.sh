@@ -48,7 +48,7 @@ if curl -sSf http://localhost:11434/api/tags >/dev/null 2>&1; then
   echo "[OK] Detected native macOS Ollama running on http://localhost:11434 (Apple Metal GPU accelerated)."
   export OLLAMA_BASE_URL="http://host.docker.internal:11434"
   if command -v ollama >/dev/null 2>&1; then
-    echo "[INFO] Ensuring local models (${QUICK_MODEL} & ${DEEP_MODEL}) are pulled..."
+    echo "[INFO] Checking local models (${QUICK_MODEL} & ${DEEP_MODEL}) are pulled..."
     ollama pull "${QUICK_MODEL}" || true
     ollama pull "${DEEP_MODEL}" || true
   fi
