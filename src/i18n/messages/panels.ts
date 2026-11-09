@@ -47,6 +47,7 @@ export const PANELS = defineMessages('panels', {
   h_noGaps: 'No gaps.',
   h_gaps: 'Gaps (no observation, not filled): {gaps}.',
   h_dlSeries: 'Download this series (CSV)',
+  h_paidHeld: 'From your own data subscription: these figures stay on this computer, so this series cannot be downloaded or published. Downloads list it as "Withheld: your subscription data".',
   h_dlAll: 'Download every series for {country} (CSV)',
   h_showNumbers: 'Show the numbers',
   h_sourceThatDay: 'Source that day',

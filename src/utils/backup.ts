@@ -9,7 +9,8 @@
  *  - policy reviews: data/local/reviews.json (a backup made before reviews existed leaves the
  *    reviews on this computer as they are when restored)
  *
- * It never holds your API keys (data/local/settings.json is left out) and any key, secret or
+ * It never holds your API keys (data/local/settings.json is left out), nor anything from your paid
+ * data subscription (data/local/paid/: figures from it never leave this computer, data plan G4), and any key, secret or
  * token inside the AI settings is removed before the file is written. On restore those fields are
  * kept from what is on this computer now, so restoring never wipes a working set-up.
  *

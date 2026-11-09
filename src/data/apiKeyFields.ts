@@ -21,7 +21,7 @@ export interface ApiKeyField {
   /** False for settings that are not secret (a series code, a file path): shown in full. Default true. */
   secret?: boolean;
   /** Where Settings lists it: free sources with your own key (default), or your own paid data. */
-  section?: 'free_key' | 'own_account' | 'ai' | 'alerts';
+  section?: 'free_key' | 'own_account' | 'subscription' | 'ai' | 'alerts';
   /** Hint in the empty box, for settings that are not keys. */
   placeholder?: string;
   /** A pick-one setting (shown as a list) instead of a typed value. */
@@ -227,6 +227,53 @@ export const API_KEY_FIELDS: ApiKeyField[] = [
     secret: false,
     section: 'own_account',
     validate: (v) => (Object.keys(parseRicMap(v)).length ? null : 'List them as ISO3=RIC separated by commas, for example BRA=<ric>,TUR=<ric>.'),
+  },
+  // ---- Your paid data subscription (data plan G4): off unless you switch it on ---------------
+  {
+    id: 'PAID_DATA_VENDOR',
+    label: 'Your data subscription',
+    provider: 'Your own paid subscription',
+    feeds:
+      'Series you map from a data service you already pay for show next to the free ones, labelled "Your subscription". They stay on this computer: downloads, backups and shared copies say "Withheld: your subscription data" instead.',
+    withoutIt: 'Off: the app uses free sources only.',
+    getKeyUrl: 'https://github.com/smcarus/econquest/blob/main/docs/DATA_SOURCES.md',
+    getKeySteps: 'Pick the service you subscribe to, enter your sign-in details below, then map the series you want under "Your series".',
+    checkId: 'paid_data',
+    secret: false,
+    section: 'subscription',
+    choices: [
+      { value: 'off', label: 'Off' },
+      { value: 'macrobond', label: 'Macrobond (your API licence)' },
+      { value: 'haver', label: 'Haver Analytics (planned)' },
+      { value: 'moodys', label: "Moody's Analytics (planned)" },
+    ],
+    validate: (v) => (['off', 'macrobond', 'haver', 'moodys'].includes(v) ? null : "Pick Off, Macrobond, Haver Analytics or Moody's Analytics."),
+  },
+  {
+    id: 'MACROBOND_CLIENT_ID',
+    placeholder: 'Client ID from Macrobond',
+    label: 'Macrobond client ID',
+    provider: 'Macrobond (your API licence)',
+    feeds: 'Used with the client secret below to sign in to the Macrobond Web API. Your API licence is separate from the Macrobond desktop app.',
+    withoutIt: 'Needed when your subscription is Macrobond.',
+    getKeyUrl: 'https://www.macrobond.com/',
+    getKeySteps: 'Ask your Macrobond account manager for Web API client credentials (client ID and client secret).',
+    checkId: 'paid_data',
+    section: 'subscription',
+    validate: (v) => (/^\S{4,200}$/.test(v) ? null : 'A client ID has no spaces. Check it was copied in full.'),
+  },
+  {
+    id: 'MACROBOND_CLIENT_SECRET',
+    placeholder: 'Client secret from Macrobond',
+    label: 'Macrobond client secret',
+    provider: 'Macrobond (your API licence)',
+    feeds: 'Sent only to Macrobond to sign in. Never shown, logged or put in the connection check.',
+    withoutIt: 'Needed when your subscription is Macrobond.',
+    getKeyUrl: 'https://www.macrobond.com/',
+    getKeySteps: 'The client secret that came with the client ID above.',
+    checkId: 'paid_data',
+    section: 'subscription',
+    validate: (v) => (/^\S{8,400}$/.test(v) ? null : 'A client secret has no spaces. Check it was copied in full.'),
   },
   // ---- AI model -------------------------------------------------------------------------------
   {

@@ -95,6 +95,8 @@ import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
+import { isPaidSeriesId, listPaidMappings, paidSeriesFor, paidVendorFromEnv, paidWithheldRows, PAID_MAPPINGS_FILE, PAID_WITHHELD_REASON, withholdPaidRows } from './src/engine/paidData';
+import { paidVisibleTo, registerSubscriptionRoutes } from './src/server/routes/subscriptions';
 import { tableWorkbook } from './src/utils/xlsxExport';
 import { PANEL_FIGURES, PANEL_LATEST_HEADER, panelHistoryRows, panelLatest, panelLatestRows, parseCountries, parseFigureIds, type PanelCountryData } from './src/utils/panelTable';
 import { ISO_NUMERIC_TO_ISO3 } from './src/data/worldCountries';
@@ -1838,10 +1840,20 @@ const NIGHTLY_CHECK_TIME = checkTime(process.env.DATA_CHECK_TIME);
 const NIGHTLY_CHECK_TZ = (process.env.DATA_CHECK_TZ || '').trim() || Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 
 /** One run of the data connection check, saved to the data health history. */
+/** Your subscription's mapped series (src/engine/paidData.ts), for the connection check: codes only, no figures. */
+function paidMappingsText(): string | null {
+  try {
+    return fs.readFileSync(path.join(DATA_DIR, PAID_MAPPINGS_FILE), 'utf8');
+  } catch {
+    return null;
+  }
+}
+
 async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionReport> {
   const report = await checkConnections({
     ucdp: () => ucdpData(DATA_DIR),
     acledFiles: () => acledFileData(DATA_DIR),
+    paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
@@ -2921,6 +2933,7 @@ async function startServer() {
     const report = await checkConnections({
       ucdp: () => ucdpData(DATA_DIR),
       acledFiles: () => acledFileData(DATA_DIR),
+      paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
       keySources: sources,
@@ -3303,11 +3316,19 @@ async function startServer() {
   app.get('/api/fed-balance-sheet', async (_req, res) => {
     res.json(await fetchFedBalanceSheet());
   });
-  app.get('/api/series/world', async (_req, res) => {
-    const series = await worldSeries();
-    res.json({ series: series.map(seriesSummary), missing: series.some((x) => x.id.startsWith('commodity_')) ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }] });
+  app.get('/api/series/world', async (req, res) => {
+    const [series, paid] = await Promise.all([worldSeries(), paidFor(req, 'WLD')]);
+    const missing = series.some((x) => x.id.startsWith('commodity_')) ? [] : [{ id: 'commodities', label: 'Commodity prices', reason: 'The World Bank Pink Sheet has not answered yet' }];
+    res.json({ series: [...series, ...paid.series].map(seriesSummary), missing: [...missing, ...paid.missing] });
   });
   app.get('/api/series/world/:id', async (req, res) => {
+    if (isPaidSeriesId(req.params.id)) {
+      const paid = await paidFor(req, 'WLD');
+      const one = paid.series.find((x) => x.id === req.params.id);
+      if (one) return res.json(one);
+      const miss = paid.missing.find((m) => m.id === req.params.id);
+      return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id} for world prices.`, reason: miss?.reason ?? null });
+    }
     const hit = (await worldSeries()).find((s) => s.id === req.params.id);
     if (!hit) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id} for world prices.` });
     res.json(hit);
@@ -3344,15 +3365,34 @@ async function startServer() {
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
+  // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
+  // own screens, beside (never inside) seriesFor, so nothing built from seriesFor (downloads, the
+  // council, Quests, panels) can carry them.
+  const paidPlatform = registerSubscriptionRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
+  const paidFor = async (req: express.Request, iso3: string) => {
+    const vendor = paidVendorFromEnv(process.env);
+    if (!vendor) return { series: [], missing: [] };
+    const got = await paidSeriesFor(paidPlatform, iso3, vendor).catch(() => ({ series: [], missing: [] }));
+    if (paidVisibleTo(req, process.env)) return got;
+    // Another computer or a script: the series are named, their figures withheld.
+    return { series: [], missing: [...got.series, ...got.missing].map((x) => ({ id: x.id, label: x.label, reason: PAID_WITHHELD_REASON })) };
+  };
   registerQuestRoutes(app, { seriesFor, refuseRemoteChange, signedIn, loadOfficialHistory });
   registerAnalysisRoutes(app, { quick, seriesFor, fetchOfficialHistory, loadOfficialHistory, outputGapFrom, dsaFrom, examOn: () => loadExamMode().on });
   app.get('/api/series/:iso3', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    const set = await seriesFor(iso3);
-    res.json({ iso3, series: set.series.map(seriesSummary), missing: set.missing });
+    const [set, paid] = await Promise.all([seriesFor(iso3), paidFor(req, iso3)]);
+    res.json({ iso3, series: [...set.series, ...paid.series].map(seriesSummary), missing: [...set.missing, ...paid.missing] });
   });
   app.get('/api/series/:iso3/:id', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (isPaidSeriesId(req.params.id)) {
+      const paid = await paidFor(req, iso3);
+      const hit = paid.series.find((x) => x.id === req.params.id);
+      if (hit) return res.json({ iso3, ...hit });
+      const miss = paid.missing.find((m) => m.id === req.params.id);
+      return res.status(miss?.reason === PAID_WITHHELD_REASON ? 403 : 404).json({ error: 'NO_SERIES', message: miss ? `${miss.label}: Missing. ${miss.reason}.` : `No series ${req.params.id}.`, reason: miss?.reason ?? null });
+    }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
     if (hit) return res.json({ iso3, ...hit });
@@ -3366,7 +3406,9 @@ async function startServer() {
   // Sharing mode (Menu > Sharing mode, src/utils/shareMode.ts): values whose source's terms do not let
   // them be passed on for free are held back from every table download.
   const sendTable = (req: express.Request, res: express.Response, name: string, header: string[], allRows: TableCell[][]) => {
-    const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, allRows) : allRows;
+    // Your subscription's figures never leave in a download, sharing mode or not (src/engine/paidData.ts).
+    const safe = withholdPaidRows(header, allRows);
+    const rows = shareModeFromValue(loadWorkspace(workspaceFor(res)).values[SHARE_MODE_KEY]) ? withholdForSharing(header, safe) : safe;
     if (req.params.fmt === 'xlsx') {
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.attachment(name.replace(/\.csv$/, '.xlsx'));
@@ -3382,10 +3424,17 @@ async function startServer() {
   app.get('/api/export/:iso3/series.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
     const set = await seriesFor(iso3);
-    sendTable(req, res, exportFileName(iso3, 'series'), SERIES_HEADER, seriesRows(iso3, set.series));
+    // Your subscription's series are named, with "Withheld: your subscription data" and no figures.
+    const withheld = paidWithheldRows(SERIES_HEADER, iso3, await listPaidMappings(paidPlatform), paidVendorFromEnv(process.env));
+    sendTable(req, res, exportFileName(iso3, 'series'), SERIES_HEADER, [...seriesRows(iso3, set.series), ...withheld]);
   });
   app.get('/api/export/:iso3/series/:id.:fmt(csv|xlsx)', async (req, res) => {
     const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (isPaidSeriesId(req.params.id)) {
+      const withheld = paidWithheldRows(SERIES_HEADER, iso3, await listPaidMappings(paidPlatform), paidVendorFromEnv(process.env)).filter((r) => r[1] === req.params.id);
+      if (!withheld.length) return res.status(404).json({ error: 'NO_SERIES', message: `No series ${req.params.id}.` });
+      return sendTable(req, res, exportFileName(iso3, req.params.id), SERIES_HEADER, withheld);
+    }
     const set = await seriesFor(iso3);
     const hit = set.series.find((s) => s.id === req.params.id);
     if (!hit) {
@@ -5520,6 +5569,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       const report = await checkConnections({
         ucdp: () => ucdpData(DATA_DIR),
         acledFiles: () => acledFileData(DATA_DIR),
+        paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {
