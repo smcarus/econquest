@@ -125,7 +125,7 @@ Under the question box, *Options* holds the rest: the countries to ask about, po
 full council and saved research.
 
 - *Countries*: as named in the question, otherwise the whole watchlist. A country not on the
-  watchlist is named as not covered rather than silently answered for the list; *Add … for this
+  watchlist is named as not covered rather than answered for the list without saying so; *Add … for this
   question* pulls its live figures (any country, up to five at a time) and asks again, without
   changing your watchlist.
 - *Agents*: chosen from the question's topic (or by the AI model, if set up). Each answers with
@@ -403,7 +403,7 @@ forecast.
 the forecast chart shades 50, 70 and 90% bands, and a line under it says what they mean: the figure
 should land inside each band about that often, judged by the model's own past misses (its typical miss
 is shown). The bands leave out doubt about the model itself, so real misses can be larger. The debt
-fan chart shades the 10-90 and 25-75 percentile bands of its 2,000 paths. Where a method has no honest
+fan chart shades the 10-90 and 25-75 percentile bands of its 2,000 paths. Where a method has no sound
 range the app says *No range available* and why, and never makes one up: IMF projections (the IMF
 publishes one figure per country), projection years in the gross financing need table, and the small
 gap model (it runs on your own numbers). The fiscal what-if gives each result as a range from the
@@ -896,6 +896,11 @@ In the app: Menu > Offline data > *Download all country data*. The window shows 
 countries ready, the size on disk and an estimate for what is left (the average of the countries
 already saved; "known after the first country" until then). You can close it; the download carries
 on. *Stop after this step* stops it; *Carry on downloading* picks up where it stopped.
+
+**How big it is.** The first full download is about 3.6 to 3.8 GB, most of it the GDELT news files,
+which are read and then thrown away; what stays on disk is about 150 MB after the first few days. A
+daily run after that downloads roughly 150 to 200 MB (an estimate). The full tables, and how each
+figure was found, are in INSTALL.md under "What you need".
 
 **Offline.** When the free feeds cannot be reached from this computer, an *Offline* pill appears in
 the top bar with the date of the saved data. Pages, History and downloads keep working from disk; the

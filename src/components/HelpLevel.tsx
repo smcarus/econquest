@@ -35,7 +35,7 @@ export function useShowRanges(): boolean {
 
 /**
  * The line beside a figure about its range: "hidden at Help off" when the level hides ranges, or
- * "No range available" with the reason when the method has no honest range (none is ever made up).
+ * "No range available" with the reason when the method has no sound range (none is ever made up).
  */
 export const RangeNote: React.FC<{ none?: 'noRangeImf' | 'noRangeOwn' | 'noRangeGfn'; className?: string }> = ({ none, className = 'text-xs text-slate-500 dark:text-slate-400' }) => {
   const ranges = useShowRanges();

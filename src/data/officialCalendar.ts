@@ -424,7 +424,7 @@ export type ReleaseCategory = 'CPI_RELEASE' | 'GDP_RELEASE';
 
 /**
  * Why a country has no CPI or GDP release date on file, where the office's calendar was looked
- * for and could not be read (data plan G10). Read 2026-11-09. A country not listed here simply has
+ * for and could not be read (data plan G10). Read 2026-11-09. A country not listed here has
  * not been checked yet. Nothing is ever estimated from a usual release pattern.
  */
 export const RELEASE_GAPS: Record<string, Partial<Record<ReleaseCategory, string>>> = {

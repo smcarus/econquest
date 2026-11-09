@@ -1,8 +1,8 @@
 /**
  * Trade idea journal (seven-groups plan, Phase 3): log an idea with its thesis, instrument,
  * direction, horizon and invalidation; the record is fixed and hashed when it is logged, and scored
- * from the same free feeds when the horizon comes. Scoring, not a signal: it keeps the record of
- * calls honest, it does not make them.
+ * from the same free feeds when the horizon comes. Scoring, not a signal: it keeps an accurate record of
+ * calls, it does not make them.
  *
  * Instruments (the ones the app has daily free history for):
  * - fx: a currency against the US dollar (ECB reference rates). Long = expects the currency to

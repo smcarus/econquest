@@ -31,7 +31,7 @@ export const CHART_GUIDES: Record<ChartGuideId, ChartGuide> = {
   },
   forecast: {
     read: 'The solid line is what has been published. Past the last published point, the middle line is the app\'s estimate, and the shaded bands show how uncertain it is: the narrow band should hold the outcome about half the time, the widest about nine times in ten. Where the IMF publishes its own projection it is drawn beside it.',
-    life: 'Wide bands mean the outlook is genuinely unclear. Plans that depend on growth or inflation (wages, budgets, loan payments) should allow for the whole band, not just the middle line. These are the app\'s estimates, not advice.',
+    life: 'Wide bands mean the outlook is unclear. Plans that depend on growth or inflation (wages, budgets, loan payments) should allow for the whole band, not just the middle line. These are the app\'s estimates, not advice.',
   },
   regime: {
     read: 'Each dot is a country. Further right means the economy is picking up (its OECD leading indicator, an early-warning gauge of activity, has risen over six months); further up means inflation has been rising over three months. The four corners are four different situations.',

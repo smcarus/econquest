@@ -7,7 +7,7 @@
  *   - the monthly Candidate Events files (GEDEvent_v<yy>_0_<m>.csv) for the months after the
  *     latest yearly release, which the app shows as preliminary.
  * Files already saved are left alone; a download is kept only if it reads as that UCDP file.
- * Nothing is forced: a month UCDP has not published yet is simply not there.
+ * Nothing is forced: a month UCDP has not published yet is not there.
  *
  * Exit code 1 only when every download that should exist failed for a reason other than "not
  * published yet" (HTTP 404).

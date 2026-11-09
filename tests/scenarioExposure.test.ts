@@ -60,7 +60,7 @@ test('Comtrade replaces WITS shares and adds Taiwan; the source is named', () =>
   assert.match(scenarioImpact('russia', t)!.basis, /UN Comtrade 2024/);
   // Without Comtrade: China only, and it says Taiwan is not available.
   assert.match(scenarioImpact('taiwan', BASE)!.basis, /Taiwan not available, WITS 2023/);
-  // Comtrade without Russia keeps the WITS shares rather than mixing years silently.
+  // Comtrade without Russia keeps the WITS shares rather than mixing years without saying so.
   const partial = enrichTrade(BASE, { year: '2024', exportSharePct: { china: 25 }, importSharePct: {} }, null)!;
   assert.equal(partial.chinaExportSharePct, 30);
   assert.equal(partial.partnerSource, undefined);

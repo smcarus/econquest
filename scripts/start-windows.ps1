@@ -49,7 +49,7 @@ if ($HostOllamaActive) {
     Write-Host "[OK] Detected native Windows Ollama on http://localhost:11434." -ForegroundColor Green
     $env:OLLAMA_BASE_URL = "http://host.docker.internal:11434"
     if (Get-Command ollama -ErrorAction SilentlyContinue) {
-        Write-Host "[INFO] Ensuring local models ($QuickModel & $DeepModel) are pulled..." -ForegroundColor Yellow
+        Write-Host "[INFO] Checking local models ($QuickModel & $DeepModel) are pulled..." -ForegroundColor Yellow
         ollama pull $QuickModel
         ollama pull $DeepModel
     }

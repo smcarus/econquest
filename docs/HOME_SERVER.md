@@ -14,6 +14,10 @@ and `env.example`.
 | Disk | 20 GB free | 60 GB free (the 32B model is about 20 GB; offline data and GDELT files add more) |
 | Processor | any recent 64-bit (x86-64 or ARM64) | same; without a GPU a full council report can take 10 minutes or more |
 
+How much the saved data takes and how much the app downloads each day are in
+[INSTALL.md](INSTALL.md#what-you-need) (about 150 MB of saved data after the first few days; roughly
+150 to 200 MB downloaded a day, an estimate).
+
 The referee steps (Supreme Council, summaries, explanations, debate) always use the 32B model,
 never an 8B one. On a machine without the memory for it, keep Ollama on the Mac or another
 computer and point the server at it (see "Ollama on another computer").

@@ -10,14 +10,79 @@ developer, "From the code" below is the short route.
 
 ## What you need
 
-- **A computer** running macOS, Windows 10 or 11, or Linux, made in roughly the last six years.
-  Apple Silicon Macs (M1 and later) and ordinary Intel or AMD computers both work.
-- **About 5 GB of free disk space** for the app and its saved data. If you also run an AI model on
-  your computer, add 5 GB for the small model and 20 GB for the large one.
-- **An internet connection**, so the app can fetch figures. Nothing has to be opened to the
-  internet: the app only reaches out, nobody can reach in.
-- **Docker Desktop**, a free program that runs ready-made apps in a sealed box so they cannot
-  disturb the rest of your computer. Step 1 below installs it.
+### Minimum and recommended computer
+
+| Part | Minimum | Recommended | Notes |
+| --- | --- | --- | --- |
+| Operating system | macOS (one of the three newest versions), Windows 10 or 11 (64-bit), or 64-bit Linux | The same | Apple Silicon (M1 and later) and Intel or AMD computers all work. Docker Desktop, used by the ready-made app, needs WSL 2 on Windows. |
+| Memory (RAM) | 8 GB | 16 GB | The app itself used about 230 MB of memory when idle in a test on 9 November 2026; Docker Desktop and your web browser use more. Running an AI model on the same computer needs much more (see "Choose your AI"). |
+| Free disk space | 5 GB | 10 GB, plus room for AI models | Breakdown in the next table. |
+| Processor | Any 64-bit processor from roughly the last six years | The same | Only the AI models need a fast processor or a graphics card. |
+| Internet | Any connection that can open ordinary websites | A connection without a small monthly data cap | The app only makes outgoing requests; nothing has to be opened to the internet. See "How much data it downloads" below. |
+| Node.js (only for "From the code") | Node.js 20.19 or later, or 22.12 or later | Node.js 22 (the version the ready-made app uses) | Earlier releases of Node.js 20 and 22 cannot run the build tools. Not needed for the ready-made app. |
+
+### Disk space, part by part
+
+| Part | Size | How the figure was found |
+| --- | --- | --- |
+| Docker Desktop | A few GB | Docker's own requirement; check docker.com for the current figure. |
+| The ready-made app (Docker image) | About 0.6 GB once unpacked; the download is a few hundred MB | Estimate from its parts: runtime packages 410 MB and the built app 6 MB (both measured on 9 November 2026), plus the Node.js base image. |
+| From the code instead | About 0.5 GB | Measured on 9 November 2026: installed packages (`node_modules`) 465 MB, built app (`dist`) 6 MB, source code a few MB. |
+| Saved data (the `data/` folder) | About 150 MB after the first few days, growing by about 40 MB a year, plus the options below | Measured on the developer's Mac on 9 November 2026 (details in the next table). |
+| Past IMF World Economic Outlook editions | 2 to 9 MB per edition; about 100 MB for the 14 editions on that Mac | Measured. Every edition since 2007 would be roughly 300 MB (estimate: about 38 editions at an average of 7 MB). |
+| GDELT long history (optional, `npm run gdelt:daily`) | About 5 MB kept on disk from 2016; the download is much larger (below) | Measured: 41 KB per month of history. |
+| Small AI model (qwen2.5:7b, optional) | About 5 GB | Model size published by Ollama. |
+| Large AI model (qwen2.5:32b, optional) | About 20 GB | Model size published by Ollama. |
+
+What sits in `data/` (developer's Mac, 9 November 2026, 22 countries):
+
+| Folder | Size | What it holds | Grows? |
+| --- | --- | --- | --- |
+| `data/live/` (country and world files) | About 1 MB | Newest figures for each country and each world-wide source | No, each file is replaced |
+| `data/live/gdelt-raw/` | About 8 MB | One summary file per day (about 135 KB each) for the GDELT look-back (8 weeks by default) | No, days older than the look-back are deleted |
+| `data/live/gdelt-daily/` | About 5 MB | GDELT monthly totals since 2016 | About 0.5 MB a year |
+| `data/history/` | About 10 KB per country | Full World Bank and IMF history | No |
+| `data/archive/` | About 5 KB per country per day | A dated copy of each day's figures, so you can see what the data said on a past date | About 40 MB a year for 22 countries, unless you set `ARCHIVE_KEEP_DAYS` |
+| `data/local/weo-vintages/` | About 100 MB | Past IMF forecast editions (see above) | When a new edition is added, twice a year |
+| `data/local/ucdp/` | About 12 MB | UCDP conflict events | About 1.3 MB a month |
+| `data/local/sanctions/` | About 10 MB | OFAC and UN sanctions lists | No, replaced each day |
+| `data/local/gpr/` | About 3 MB | Geopolitical Risk index | No, replaced each month |
+| Everything else in `data/local/` | A few MB | Settings, saved research, audit log, test results | Slowly, with use |
+
+To see the real size on your own computer: on a Mac or Linux, run `du -sh data data/*` inside the
+EconQuest folder; in the ready-made app, Menu > Offline data shows the size of the saved figures.
+
+### How much data it downloads
+
+The figures below come from the code and from recorded replies. The cloud computers used to build
+the app cannot reach the data sources, so each figure is either measured from saved files or an
+estimate, and says which. To check them on your own computer, compare the size of `data/` and your
+network use before and after a run.
+
+| When | What runs | About how much it downloads | How the figure was found |
+| --- | --- | --- | --- |
+| Once, the first time | The ready-made app (Docker image) | A few hundred MB | Estimate from the image's parts (above) |
+| Once, the first time | First full data download: every free source for every country, 8 weeks of GDELT files, past IMF forecast editions, sanctions, conflict and risk files | About 3.6 to 3.8 GB, most of it GDELT | GDELT: about 3.4 GB for 8 weeks (from GDELT's own file sizes, `npm run gdelt:pull -- --estimate`); IMF editions about 100 MB (measured); the rest as in the daily row |
+| Once, if you choose | AI models through Ollama | About 5 GB (small) and 20 GB (large) | Model sizes published by Ollama |
+| Once, if you choose | GDELT long history (`npm run gdelt:daily`) | About 25 GB from 2016; about 35 GB from 1979 | From GDELT's published file sizes; `npm run gdelt:daily -- --estimate` gives the exact figure |
+| Every day | The daily run (`npm run go -- daily`, started by `npm run go`) | Roughly 150 to 200 MB | Estimate, broken down below |
+| Every week | IMF past editions (only editions not yet saved), the Geopolitical Risk index, the weekly tests | Usually nothing to a few MB; up to about 10 MB when a new IMF edition appears | Measured file sizes; the tests use saved data only |
+| Every month | New UCDP conflict file | About 1.3 MB | Measured |
+| While the app is open | Background refresh of the figures on screen | A few MB at a time | Estimate: the same feeds as the daily run, only for the countries you look at |
+
+The daily run, part by part (estimate):
+
+| Part | About | How the figure was found |
+| --- | --- | --- |
+| Every free feed for every country | 70 to 100 MB | Recorded replies from 5 November 2026: 42 MB for one full pull of 10 countries (of which 15 MB is the Brazil Treasury price history and about 21 MB is world-wide sources downloaded once, not per country). Scaled to 22 countries and the sources added since. |
+| GDELT 15-minute news files (only new ones) | About 60 MB | 3.4 GB for 8 weeks, divided by 56 days |
+| OFAC and UN sanctions lists | About 10 MB | Measured: the five files saved on 8 November 2026 |
+| Everything else (risk index, conflict files, forecasts and nowcasts) | Under 5 MB | Measured file sizes; forecasts and nowcasts use saved data |
+
+That is roughly 4.5 to 6 GB a month if the daily run runs every day. A run with no internet changes
+nothing: the last good figures stay, and the next start tries again. To download less, set
+`GDELT_RAW_WEEKS` to fewer weeks (or `GDELT_GKG_EVERY_HOURS` to a larger number) in `.env`, or start
+without the daily run (`npm run go -- --no-daily`).
 
 An AI model is optional. Every figure, chart and signal works without one; the AI is only needed for
 the council chat, summaries, debates and plain-language explanations ("Choose your AI" below).
@@ -172,7 +237,7 @@ as `ECONQUEST_IMAGE=ghcr.io/e-conquest/econquest:0.1.0` to the `.env` file in yo
 | `port is already allocated` | Something else uses port 3737. Create `.env` in your folder with the line `PORT=3740`, run `docker compose up -d`, and open http://localhost:3740. |
 | `manifest unknown` or `not found` when downloading | The ready-made image has not been published yet, or the name is mistyped. Check the line in `.env`, or use "From the code" below. |
 | The page does not open | Wait a minute after starting and reload. `docker compose ps` should show econquest as "healthy". |
-| Many figures say **Missing** | That is honest, not broken: the app never invents a number. Each Missing figure says why (no free source, the source is down, or a key is needed). Data connections shows which sources answer. |
+| Many figures say **Missing** | That is expected, not a fault: the app never invents a number. Each Missing figure says why (no free source, the source is down, or a key is needed). Data connections shows which sources answer. |
 | The council says it cannot reach the AI | Ollama is not running, or the models are not downloaded. Start the Ollama app and run the `ollama pull` lines above, or switch to Gemini or No AI in Settings. |
 | Answers are very slow | The large model on a computer without enough memory or a graphics chip can take 10 minutes or more per full council report. Use Gemini for the referee, or run Ollama on a bigger machine. |
 

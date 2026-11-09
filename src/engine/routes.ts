@@ -100,7 +100,7 @@ export async function dispatch(routes: readonly Route[], ctx: EngineContext, req
   }
 }
 
-/** Refuses duplicate routes, so two moves cannot quietly answer the same address. */
+/** Refuses duplicate routes, so two moves cannot both answer the same address. */
 export function checkRouteTable(routes: readonly Route[]): string[] {
   const seen = new Set<string>();
   const problems: string[] = [];

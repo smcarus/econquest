@@ -11,7 +11,7 @@ import { missingRow, when, type BriefGroup, type BriefRow, type CountryBrief, ty
  * at equal weight when nothing is imported, and say which.
  *
  * Every judgement is a stated rule on the figures shown. Rows come in with built-in figures already
- * removed (toLive), so a country without your own CDS or an official yield simply
+ * removed (toLive), so a country without your own CDS or an official yield
  * has no value for it: averages use only the countries that have one and say what share of the book
  * that is, and nothing is filled in (Sam, 2026-11-04).
  */

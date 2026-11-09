@@ -98,7 +98,7 @@ export const ResearchHeader: React.FC<{
   </div>
 );
 
-/** "Live data for 3 of 5 countries" ("Offline: saved data for ..." without feeds), or the honest empty state. */
+/** "Live data for 3 of 5 countries" ("Offline: saved data for ..." without feeds), or the empty state that says so. */
 export const LiveCountBadge: React.FC<{ items: LiveWatchlistItem[] }> = ({ items }) => {
   const t = useT(RESEARCH);
   const live = items.filter((w) => w.dataMode === 'live' || w.dataMode === 'partial').length;

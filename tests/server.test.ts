@@ -340,7 +340,7 @@ test('council re-run: the same snapshot sent again gives the same answer, and sa
   assert.equal(missing.status, 404);
 });
 
-test('council regression set: each case is checked and reported honestly (stand-in model: only the Turkey summary and the Egypt options read right)', async () => {
+test('council regression set: each case is checked and reported as it is (stand-in model: only the Turkey summary and the Egypt options read right)', async () => {
   const res = await fetch(`${base}/api/council/regression`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -402,7 +402,7 @@ test('council explain: facts apart from interpretation, by lens; invented number
   assert.equal(e.focus.value, '27.5%');
 });
 
-test('council progress: each step reports as it finishes, honestly marked when no model answered', async () => {
+test('council progress: each step reports as it finishes, clearly marked when no model answered', async () => {
   const progressId = 'test-progress-1';
   const run = await fetch(`${base}/api/council/phase1-and-cascade`, {
     method: 'POST',

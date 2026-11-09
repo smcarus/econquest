@@ -225,7 +225,7 @@ ${table('scores.csv')}
 
 ## How to read the scores
 
-The base rate is how often the same thing happened in the past. Skill is the base rate's Brier score minus the entrant's, so plus means the entrant did better than simply using the base rate. One Quest says little; the app ranks nobody before 12 settled forecasts. Scores here can be worked out again from entries.csv and results.csv.
+The base rate is how often the same thing happened in the past. Skill is the base rate's Brier score minus the entrant's, so plus means the entrant did better than just using the base rate. One Quest says little; the app ranks nobody before 12 settled forecasts. Scores here can be worked out again from entries.csv and results.csv.
 
 ## What is left out, and why
 

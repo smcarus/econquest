@@ -633,7 +633,7 @@ export const GLOSSARY: GlossaryEntry[] = [
     term: 'Bootstrap',
     group: 'methods',
     what: 'Re-running a calculation thousands of times on random re-samples of the data to see how much the answer could vary by chance.',
-    why: 'It gives an honest range for a result when the usual textbook formulas do not apply.',
+    why: 'It gives a realistic range for a result when the usual textbook formulas do not apply.',
   },
   {
     id: 'rmse',

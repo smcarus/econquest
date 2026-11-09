@@ -528,7 +528,7 @@ A standard way to raise the bar when many tests are run at once, so that lucky p
 
 Re-running a calculation thousands of times on random re-samples of the data to see how much the answer could vary by chance.
 
-**Why it matters.** It gives an honest range for a result when the usual textbook formulas do not apply.
+**Why it matters.** It gives a realistic range for a result when the usual textbook formulas do not apply.
 
 ### RMSE and relative RMSE
 

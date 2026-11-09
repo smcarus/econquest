@@ -221,7 +221,7 @@ These came out of reading `server.ts` and `src/data/presetsAndBaselines.ts`:
 - **Model output**
 - **Baseline (not live)**
 
-A header indicator should also say "3 of 5 feeds live" honestly. This is Phase 0 below.
+A header indicator should also say "3 of 5 feeds live" plainly. This is Phase 0 below.
 
 ## 5. The new structure
 
@@ -260,7 +260,7 @@ A header indicator should also say "3 of 5 feeds live" honestly. This is Phase 0
 
 | # | PR | What the user sees | Size |
 |---|---|---|---|
-| 0 | **Data truth** | Status badge (Live / AI estimate / Model / Baseline) and as-of time on the country bar and on key figures; an honest "n of 5 feeds live" indicator; baseline never labelled live. | S–M |
+| 0 | **Data truth** | Status badge (Live / AI estimate / Model / Baseline) and as-of time on the country bar and on key figures; an accurate "n of 5 feeds live" indicator; baseline never labelled live. | S–M |
 | 1 | **Frame** | Five control rows become header + one country bar; nav becomes Today · Countries · Portfolio · Reports · Tools; the old pillar menus survive under Tools. | M |
 | 2 | **Today page** | Home with watchlist changes, fired signals, the 7-day calendar and open IC items. | M |
 | 3 | **Country page** | Six tabs reusing existing desk components; Restructuring tab shown only when relevant. | L |

@@ -11,8 +11,8 @@ export const GLOSSARY_ES: Record<string, string> = {
     'Una visión larga muestra si el nivel de hoy es inusual para este país. Una cifra muy alejada de su propio pasado suele señalar un cambio que la gente nota, como préstamos más caros, precios que suben más rápido o una moneda más débil.',
   "The solid line is what has been published. Past the last published point, the middle line is the app's estimate, and the shaded bands show how uncertain it is: the narrow band should hold the outcome about half the time, the widest about nine times in ten. Where the IMF publishes its own projection it is drawn beside it.":
     'La línea continua es lo publicado. Después del último punto publicado, la línea central es la estimación de la app y las bandas sombreadas muestran su incertidumbre: la banda estrecha debería contener el resultado aproximadamente la mitad de las veces, y la más ancha unas nueve de cada diez. Donde el FMI publica su propia proyección, se dibuja al lado.',
-  "Wide bands mean the outlook is genuinely unclear. Plans that depend on growth or inflation (wages, budgets, loan payments) should allow for the whole band, not just the middle line. These are the app's estimates, not advice.":
-    'Unas bandas anchas significan que las perspectivas son realmente inciertas. Los planes que dependen del crecimiento o de la inflación (salarios, presupuestos, cuotas de préstamos) deberían contemplar toda la banda, no solo la línea central. Son estimaciones de la app, no consejos.',
+  "Wide bands mean the outlook is unclear. Plans that depend on growth or inflation (wages, budgets, loan payments) should allow for the whole band, not just the middle line. These are the app's estimates, not advice.":
+    'Unas bandas anchas significan que las perspectivas son inciertas. Los planes que dependen del crecimiento o de la inflación (salarios, presupuestos, cuotas de préstamos) deberían contemplar toda la banda, no solo la línea central. Son estimaciones de la app, no consejos.',
   'Each dot is a country. Further right means the economy is picking up (its OECD leading indicator, an early-warning gauge of activity, has risen over six months); further up means inflation has been rising over three months. The four corners are four different situations.':
     'Cada punto es un país. Más a la derecha significa que la economía se está acelerando (su indicador adelantado de la OCDE, un aviso temprano de la actividad, ha subido en seis meses); más arriba significa que la inflación ha ido subiendo en tres meses. Las cuatro esquinas son cuatro situaciones distintas.',
   'Top right (picking up, prices rising): central banks tend to keep rates high or raise them, so loans stay dear. Bottom left (slowing, prices easing): rate cuts become more likely. Top left (slowing but prices rising) is the hardest case for policy and for households, whose incomes are squeezed.':
@@ -586,8 +586,8 @@ export const GLOSSARY_ES: Record<string, string> = {
     "Remuestreo (bootstrap)",
   "Re-running a calculation thousands of times on random re-samples of the data to see how much the answer could vary by chance.":
     "Repetir un cálculo miles de veces sobre remuestras aleatorias de los datos para ver cuánto podría variar la respuesta por azar.",
-  "It gives an honest range for a result when the usual textbook formulas do not apply.":
-    "Da un rango honesto para un resultado cuando las fórmulas habituales de los manuales no son aplicables.",
+  "It gives a realistic range for a result when the usual textbook formulas do not apply.":
+    "Da un rango realista para un resultado cuando las fórmulas habituales de los manuales no son aplicables.",
   "RMSE and relative RMSE":
     "RMSE y RMSE relativo",
   "Root mean squared error: the typical size of a forecast's miss. Relative RMSE divides a model's RMSE by the naive benchmark's.":

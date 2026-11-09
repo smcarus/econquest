@@ -1,5 +1,5 @@
 /**
- * Size check: fails when a build is bigger than its limit, so the app cannot quietly get heavier.
+ * Size check: fails when a build is bigger than its limit, so the app cannot grow heavier without anyone noticing.
  *
  *   npm run size:check            checks every build that exists (web: dist/, phone: mobile/dist/)
  *   npm run size:check -- --report   prints the sizes without failing

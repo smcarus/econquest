@@ -56,7 +56,7 @@ export function makeSecretBox(secret: string, source: string): SecretBox {
 
 export type SecretKeyResult = { box: SecretBox | null; problem: string | null };
 
-/** Finds the master key. A key that is set but too short is a problem, not silently ignored. */
+/** Finds the master key. A key that is set but too short is reported as a problem, not ignored. */
 export function secretBoxFromEnv(env: Record<string, string | undefined>, readFile: (p: string) => string | null = safeRead): SecretKeyResult {
   const candidates: Array<{ value: string | null; source: string }> = [];
   if (env.ECONQUEST_SECRET_KEY !== undefined && env.ECONQUEST_SECRET_KEY.trim() !== '') {

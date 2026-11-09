@@ -172,10 +172,10 @@ others, commercial use, credit) is in [docs/DATA_LICENCES.md](./docs/DATA_LICENC
 
 ---
 
-## How it stays honest
+## How you can check it
 
 - **Every figure carries its source and date**, and Menu > Data health shows whether each source is
-  still arriving and whether any figure has been quietly revised. Its Inflation tab shows where each
+  still arriving and whether any figure has been revised since it was first shown. Its Inflation tab shows where each
   country's inflation figure comes from and how old it is, and flags any over 90 days old. Where several
   sources publish the same figure, the app uses the freshest one.
 - **Signals and models are tested before they are trusted.** Each test is written down and
@@ -198,7 +198,14 @@ The full method is in [docs/METHODOLOGY.md](./docs/METHODOLOGY.md).
 **New to this?** [docs/INSTALL.md](docs/INSTALL.md) is a plain-language, step-by-step guide: install
 Docker Desktop, download one file, and run the ready-made app. No building and no programming needed.
 
-**From the code** (Node.js 20 or later):
+**What your computer needs.** At least 8 GB of memory (16 GB recommended), 5 GB of free disk space
+(10 GB recommended, plus about 5 GB and 20 GB for the optional small and large AI models) and an
+internet connection. The first full data download is about 3.6 to 3.8 GB, mostly GDELT news files;
+after that the daily run downloads roughly 150 to 200 MB (an estimate; about 4.5 to 6 GB a month).
+The saved data folder is about 150 MB after the first few days and grows by about 40 MB a year.
+[docs/INSTALL.md](docs/INSTALL.md#what-you-need) has the full tables and how each figure was found.
+
+**From the code** (Node.js 20.19 or later, or 22.12 or later):
 
 ```bash
 npm install
