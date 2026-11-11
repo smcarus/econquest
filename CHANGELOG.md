@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- People and living standards (G17): seven World Bank series in the country brief (new group
+  "People"), History & data, downloads and the council: the poverty rate at the lowest international
+  line and the two higher lines (household surveys up to 15 years back, with the dollar amount of each
+  line as the World Bank names it, the survey year and income or consumption), remittances received
+  (% of GDP), labour force participation and youth unemployment (ILO modelled estimates, labelled so)
+  and the age dependency ratio. Each reads Missing with a reason when absent. The Politics & Events
+  Agent quotes the extreme poverty rate and youth unemployment; the FX Valuation Agent quotes remittances. Data
+  health has a row for it; glossary entries at Key and Full help; Spanish and French text.
+
 - Low-income country debt (U1): a new group "Debt relief and lending from China" in the issuer brief
   and note, and in the Fiscal & Debt Agent. It shows the IMF/World Bank risk of debt distress for 67
   low-income countries (typed from the IMF list as of 30 September 2026, with each DSA's date, the

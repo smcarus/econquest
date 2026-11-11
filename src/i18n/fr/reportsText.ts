@@ -104,4 +104,6 @@ export const REPORTS_TEXT_FR: Record<string, string> = {
   "Distribution and taxes": "Répartition et impôts",
   // U1: low-income country debt
   "Debt relief and lending from China": "Allègement de la dette et prêts de la Chine",
+  // G17: people and living standards
+  "People": "Population",
 };

@@ -339,6 +339,17 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   Missing. Tax revenue is central government only, so it is lower than the IMF revenue figure under
   Fiscal and debt. Tariffs are yearly, so changes made since that year are not in them. All seven
   chart under History & data, and the Fiscal & Debt Agent quotes them when they are live.
+  The group *People* shows the share of people below the World Bank's three international poverty
+  lines (the lowest line for extreme poverty, and the higher lines used for lower-middle-income and
+  upper-middle-income countries), with the dollar amount a day as the World Bank names it, the survey
+  year and whether the survey measured income or consumption. Like the Gini, poverty rates come from
+  household surveys: the app looks back 15 years and reads Missing when there is no survey in that
+  time. It also shows remittances received (money sent home by people working abroad, % of GDP),
+  labour force participation and youth unemployment (the International Labour Organization's modelled
+  estimates, which fill years without a survey with a model, and are labelled so), and the age
+  dependency ratio (children and older people per 100 people of working age). All seven chart under
+  History & data. The Politics & Events Agent quotes the extreme poverty rate and youth unemployment;
+  the FX Valuation Agent quotes remittances.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):

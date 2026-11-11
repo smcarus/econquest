@@ -62,6 +62,14 @@ export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> 
   { field: 'wb.taxTradePctRevenue', label: 'Taxes on trade', unit: '% of revenue' },
   { field: 'wb.tariffWeightedPct', label: 'Applied tariff, weighted mean', unit: '%' },
   { field: 'wb.tariffSimplePct', label: 'Applied tariff, simple mean', unit: '%' },
+  // G17 (src/utils/peopleLiving.ts): the year of each sits in the source column; the survey year for poverty.
+  { field: 'wb.povertyLowestPct', label: 'Poverty rate, lowest international line', unit: '% of people' },
+  { field: 'wb.povertyLowerMiddlePct', label: 'Poverty rate, lower-middle-income line', unit: '% of people' },
+  { field: 'wb.povertyUpperMiddlePct', label: 'Poverty rate, upper-middle-income line', unit: '% of people' },
+  { field: 'wb.remittancesPctGdp', label: 'Remittances received', unit: '% of GDP' },
+  { field: 'wb.labourParticipationPct', label: 'Labour force participation (ILO modelled estimate)', unit: '% of people aged 15 and over' },
+  { field: 'wb.youthUnemploymentPct', label: 'Youth unemployment (ILO modelled estimate)', unit: '% of workers aged 15-24' },
+  { field: 'wb.ageDependencyRatio', label: 'Age dependency ratio', unit: 'per 100 people aged 15-64' },
 ];
 
 function periodFor(snapshot: OpenDataSnapshot, field: string): string {
@@ -70,7 +78,7 @@ function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
   // G16 figures carry their year in the source tag ("World Bank, 2022"); the survey year for the Gini.
-  if (/^wb\.(gini|tax|tariff)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
+  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';
 }

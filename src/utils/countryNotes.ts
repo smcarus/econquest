@@ -8,6 +8,7 @@ import { describeOfficialYield, formatPeriod } from './officialYields';
 import { nextOfficialEvent, releaseGap, upcomingOfficialEvents, type ReleaseCategory } from '../data/officialCalendar';
 import { missingReason, type MissingReason } from './liveFigures';
 import { distTaxFromSnapshot, giniValue, GINI_LOOKBACK_YEARS } from './distributionTaxes';
+import { peopleFromSnapshot, povertyValue, POVERTY_FIELDS, POVERTY_LABEL } from './peopleLiving';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -166,6 +167,32 @@ export function distTaxRows(status: SnapshotDataStatus, open: CouncilAssessmentR
     liveRow(status, 'Taxes on trade', 'wb.taxTradePctRevenue', share, open),
     liveRow(status, 'Applied tariff, weighted mean', 'wb.tariffWeightedPct', (v) => pct(v, 2), open),
     liveRow(status, 'Applied tariff, simple mean', 'wb.tariffSimplePct', (v) => pct(v, 2), open),
+  ];
+}
+
+/** Help for a missing poverty rate: surveys are rare, and the app looks back only GINI_LOOKBACK_YEARS. */
+export const POVERTY_MISSING_HELP = `Poverty rates come from household surveys, which many countries run only every few years and some have never published. The app looks back ${GINI_LOOKBACK_YEARS} years and leaves it Missing rather than show an older survey or an estimate.`;
+
+/**
+ * People and living standards (G17, src/utils/peopleLiving.ts): poverty at the three international
+ * lines with survey year and kind, remittances, labour force participation and youth unemployment
+ * (ILO modelled estimates), age dependency. Each row Missing with a reason.
+ */
+export function peopleRows(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData'], now: Date = new Date()): BriefRow[] {
+  const pf = peopleFromSnapshot(open);
+  const poverty = POVERTY_FIELDS.map((f): BriefRow => {
+    const p = pf?.[f];
+    const label = POVERTY_LABEL[f];
+    return p
+      ? { label, value: povertyValue(p, now), source: pathSource(status, `wb.${f}`, open), verified: true }
+      : missingRow(label, { ...pathMissing(status, `wb.${f}`), ...(status.isFeedLive('worldbank') ? { short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help: POVERTY_MISSING_HELP } : {}) });
+  });
+  return [
+    ...poverty,
+    liveRow(status, 'Remittances received', 'wb.remittancesPctGdp', (v) => `${pct(v)} of GDP`, open),
+    liveRow(status, 'Labour force participation', 'wb.labourParticipationPct', (v) => `${pct(v)} of people aged 15 and over`, open),
+    liveRow(status, 'Youth unemployment', 'wb.youthUnemploymentPct', (v) => `${pct(v)} of workers aged 15-24`, open),
+    liveRow(status, 'Age dependency ratio', 'wb.ageDependencyRatio', (v) => `${v.toFixed(0)} per 100 people aged 15-64`, open),
   ];
 }
 
@@ -373,6 +400,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
       ],
     },
     { title: 'Distribution and taxes', rows: distTaxRows(status, open, now) },
+    { title: 'People', rows: peopleRows(status, open, now) },
   ];
   return { headline, judgements: j, sampleWarning: missingNote(groups, run.countryName), groups };
 }
@@ -411,6 +439,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`),
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
         ...distTaxRows(status, open),
+        ...peopleRows(status, open),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
           : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'This comes from QEDS, the World Bank and IMF\'s free quarterly statistics on debt owed abroad. It did not answer, or this country does not report to it. Press Refresh now under Research > One country to try again.' }),
@@ -494,6 +523,7 @@ export const ECONOMIST_SECTIONS: Record<string, string> = {
   fiscal: 'Fiscal and debt',
   external: 'External position',
   distribution: 'Distribution and taxes',
+  people: 'People',
   risks: 'Risks to the outlook',
   calendar: 'Coming up',
   sources: 'Data and sources',
@@ -512,6 +542,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
     ['fiscal', 'Fiscal and debt'],
     ['external', 'External position'],
     ['distribution', 'Distribution and taxes'],
+    ['people', 'People'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: ECONOMIST_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('risks')) {

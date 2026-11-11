@@ -36,6 +36,46 @@ The share of people who want a job and are looking for one but do not have one.
 
 **Limits.** People who have given up looking, or work informally, are not counted, so in many emerging economies the rate understates how many people lack decent work.
 
+### Youth unemployment
+
+The share of young people aged 15 to 24 who want a job and are looking for one but do not have one.
+
+**Why it matters.** Young people are usually the first to lose work and the last to find it. Many young people out of work for a long time has often come before protests and unrest.
+
+**How to read it.** Higher is worse. It is normally about twice the overall unemployment rate, so compare it with the country's own past.
+
+**Limits.** This is the International Labour Organization's modelled estimate: where a country has not run a labour survey for a year, a model fills the gap. Students not looking for work are not counted as unemployed.
+
+### Labour force participation
+
+The share of people aged 15 and over who are working or looking for work.
+
+**Why it matters.** An economy grows faster when more people work. A low or falling rate can mean people have given up looking, or that many women are kept out of paid work.
+
+**How to read it.** Higher means more people take part in paid work. Most countries are between 50% and 75%. Ageing pulls it down, because retired people are counted.
+
+**Limits.** This is the International Labour Organization's modelled estimate, so years without a survey are filled by a model. Unpaid work at home is not counted.
+
+### Poverty rate (international poverty lines)
+
+The share of people living on less than a fixed amount a day, the poverty line. The World Bank uses one line for extreme poverty and two higher lines that fit lower-middle-income and upper-middle-income countries. The amounts are in dollars at purchasing power parity, so a dollar buys the same in every country.
+
+**Why it matters.** It shows how many people a policy change, a price rise or a crisis can push into hardship, which matters most in the poorest countries.
+
+**How to read it.** Higher is worse. The lowest line measures extreme poverty; the higher lines show how many people are still poor by the standards of richer developing countries. The app shows the dollar amount, the survey year and whether the survey measured income or consumption.
+
+**Limits.** It comes from household surveys that many countries run only every few years, so the latest figure can be old. The World Bank moves the lines from time to time when it updates price comparisons, so figures from before and after a change are not directly comparable.
+
+### Age dependency ratio
+
+How many children (under 15) and older people (over 64) there are for every 100 people of working age (15 to 64).
+
+**Why it matters.** Fewer working-age people for each child or retired person means less income to pay for schools, pensions and health care. It changes slowly but shapes budgets for decades.
+
+**How to read it.** Higher means more dependants for each working-age person. Young, fast-growing countries are high because of children; ageing rich countries are rising because of older people.
+
+**Limits.** It counts by age only, so it ignores who actually works: many people aged 15 to 24 are students and many over 64 still work.
+
 ### Gini index (inequality)
 
 One number for how evenly income (or spending) is shared among households, from 0 (everyone has the same) to 100 (one household has everything).
@@ -335,6 +375,16 @@ The US government sells its bills, notes and bonds at regular auctions. Bid-to-c
 **Limits.** One auction can be weak for passing reasons (a holiday week, a big supply of other bonds). Only the United States has a free auction feed the app can read; other countries' auctions are not shown.
 
 ## Trade, the currency and money from abroad
+
+### Remittances received
+
+Money sent home by people working abroad, as a share of GDP.
+
+**Why it matters.** For many poorer countries it is one of the largest sources of foreign currency, larger than aid or foreign investment. It helps households pay for food, school and housing, and it supports the currency because the money is changed into local currency.
+
+**How to read it.** Higher means the country leans more on its workers abroad. Above about 10% of GDP it is a main support of the economy. It tends to be steady, and often rises when the home country is in trouble.
+
+**Limits.** Money sent outside banks and money transfer firms, such as cash carried home, is often not counted, so the true amount can be higher. It falls when the countries where the workers live slow down.
 
 ### Current account
 

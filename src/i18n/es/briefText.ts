@@ -338,4 +338,14 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "AidData file not downloaded": "Archivo de AidData no descargado",
   "AidData file could not be read": "No se pudo leer el archivo de AidData",
   "No published DSA": "Sin ASD publicado",
+  // G17: people and living standards
+  "People": "Población",
+  "Poverty rate, lowest international line": "Tasa de pobreza, línea internacional más baja",
+  "Poverty rate, lower-middle-income line": "Tasa de pobreza, línea de ingreso mediano bajo",
+  "Poverty rate, upper-middle-income line": "Tasa de pobreza, línea de ingreso mediano alto",
+  "Remittances received": "Remesas recibidas",
+  "Labour force participation": "Participación en la fuerza laboral",
+  "Youth unemployment": "Desempleo juvenil",
+  "Age dependency ratio": "Tasa de dependencia por edad",
+  "Poverty rates come from household surveys, which many countries run only every few years and some have never published. The app looks back 15 years and leaves it Missing rather than show an older survey or an estimate.": "Las tasas de pobreza proceden de encuestas de hogares, que muchos países realizan solo cada pocos años y algunos nunca han publicado. La aplicación busca hasta 15 años atrás y la deja como Falta en lugar de mostrar una encuesta más antigua o una estimación.",
 };

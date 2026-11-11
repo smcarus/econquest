@@ -41,6 +41,7 @@ import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURCE, DISTRESS_LABEL, DSSI_SOURCE, dsaSource, dsaValue } from './lowIncomeDebt';
+import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
 import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
@@ -112,7 +113,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   fx: {
     name: 'FX Valuation',
     covers: 'real exchange rate against its 10-year average, FX volatility, CFTC futures positioning, US Treasury holdings (TIC), the currency\'s share of world reserves (IMF COFER)',
-    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|\bcofer\b|reserve currenc|de-?dollari|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil/i,
+    topic: /\bfx\b|currenc|exchange rate|\breer\b|positioning|\bcftc\b|crowded|speculat|hedge funds?|\btic\b|\bcofer\b|reserve currenc|de-?dollari|treasur(?:y|ies) holdings|holdings of (?:us )?treasur|reserve manag|lira|rand|peso|rupiah|zloty|pound|sterling|\byen\b|devalu|deprecia|apprecia|volatil|remittance/i,
   },
   spill: {
     name: 'Global Spillover',
@@ -763,6 +764,10 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
       parts.push(...c.sentences);
       if (c.rising) weight = Math.max(weight, 0.5);
     } else if (p.acledMissing) missing.push(`${it.countryName}: ACLED conflict events ${p.acledMissing.replace(/^Missing: /, 'missing: ')}`);
+    // People (src/utils/peopleLiving.ts): hardship that can feed unrest; World Bank figures with their years, only when live.
+    const pe = it.people;
+    if (pe?.povertyLowestPct) figures.push({ label: 'Poverty rate, lowest international line', value: povertyValue(pe.povertyLowestPct), source: POVERTY_SOURCE, tag: 'official' });
+    if (pe?.youthUnemploymentPct) figures.push({ label: 'Youth unemployment (ages 15-24)', value: p1(pe.youthUnemploymentPct.value), source: `${PEOPLE_SOURCE}, ${pe.youthUnemploymentPct.year}; ${ILO_MODEL_NOTE}`, tag: 'official' });
     for (const h of p.headlines || []) {
       figures.push({ label: 'Headline', value: h.title, source: `${h.source}${h.publishedAt ? `, ${h.publishedAt.slice(0, 10)}` : ''} (GDELT, pulled ${p.headlinesPulledAt || ''})`, tag: 'live' });
     }
@@ -889,6 +894,12 @@ function fxAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
         tag: 'official',
       });
       parts.push(`Central banks hold ${share.pct.toFixed(1)}% of world allocated FX reserves in the ${ccyName(ownCcy)} (IMF COFER, ${formatImfPeriod(it.cofer.period)}).`);
+    }
+    // Remittances (src/utils/peopleLiving.ts): a steady inflow of foreign currency; World Bank, with its year.
+    const rem = it.people?.remittancesPctGdp;
+    if (rem) {
+      figures.push({ label: 'Remittances received', value: `${p1(rem.value)} of GDP`, source: `${PEOPLE_SOURCE}, ${rem.year}; money sent home by people working abroad`, tag: 'official' });
+      parts.push(`Money sent home by people working abroad equals ${p1(rem.value)} of GDP (World Bank, ${rem.year}), a foreign currency inflow that supports the currency.`);
     }
     if (!parts.length) {
       missing.push(`${it.countryName}: no BIS real exchange rate, ECB rate, CFTC positioning or TIC holdings`);

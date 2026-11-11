@@ -405,6 +405,22 @@ export interface OpenDataSnapshot {
     tariffWeightedPct?: number;
     /** Applied tariff, all products, simple mean, % (TM.TAX.MRCH.SM.AR.ZS). */
     tariffSimplePct?: number;
+    /** G17 (src/utils/peopleLiving.ts), each only when the feed answered: poverty rate at the lowest international line, % of people (SI.POV.DDAY; survey year and line in the source tag). */
+    povertyLowestPct?: number;
+    /** Poverty rate at the lower-middle-income line, % of people (SI.POV.LMIC). */
+    povertyLowerMiddlePct?: number;
+    /** Poverty rate at the upper-middle-income line, % of people (SI.POV.UMIC). */
+    povertyUpperMiddlePct?: number;
+    /** Whether the poverty survey measured income or consumption, when the World Bank footnote says. */
+    povertyWelfare?: 'income' | 'consumption';
+    /** Personal remittances received, % of GDP (BX.TRF.PWKR.DT.GD.ZS). */
+    remittancesPctGdp?: number;
+    /** Labour force participation, % of people 15+, ILO modelled estimate (SL.TLF.CACT.ZS). */
+    labourParticipationPct?: number;
+    /** Youth unemployment, % of labour force aged 15-24, ILO modelled estimate (SL.UEM.1524.ZS). */
+    youthUnemploymentPct?: number;
+    /** Age dependency ratio, people under 15 or over 64 per 100 aged 15-64 (SP.POP.DPND). */
+    ageDependencyRatio?: number;
     sourceUrl: string;
   };
   monetaryAndMarket: {
@@ -607,6 +623,8 @@ export interface WatchlistItem {
   fiscal?: import('../utils/fiscalDebt').FiscalFigures;
   /** Gini, tax revenue and its split, applied tariffs (utils/distributionTaxes.ts), each with its year; only live figures. */
   distTax?: import('../utils/distributionTaxes').DistTaxFigures;
+  /** Poverty, remittances, labour force, youth unemployment, age dependency (utils/peopleLiving.ts), each with its year; only live figures. */
+  people?: import('../utils/peopleLiving').PeopleFigures;
   /** Low-income country debt (utils/lowIncomeDebt.ts): debt-distress rating, DSSI, Common Framework, lending from China. */
   licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
