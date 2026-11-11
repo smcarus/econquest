@@ -9,6 +9,8 @@ import { nextOfficialEvent, releaseGap, upcomingOfficialEvents, type ReleaseCate
 import { missingReason, type MissingReason } from './liveFigures';
 import { distTaxFromSnapshot, giniValue, GINI_LOOKBACK_YEARS } from './distributionTaxes';
 import { peopleFromSnapshot, povertyValue, POVERTY_FIELDS, POVERTY_LABEL } from './peopleLiving';
+import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_US_HELP } from './debtStructure';
+import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from './investorBase';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -193,6 +195,44 @@ export function peopleRows(status: SnapshotDataStatus, open: CouncilAssessmentRu
     liveRow(status, 'Labour force participation', 'wb.labourParticipationPct', (v) => `${pct(v)} of people aged 15 and over`, open),
     liveRow(status, 'Youth unemployment', 'wb.youthUnemploymentPct', (v) => `${pct(v)} of workers aged 15-24`, open),
     liveRow(status, 'Age dependency ratio', 'wb.ageDependencyRatio', (v) => `${v.toFixed(0)} per 100 people aged 15-64`, open),
+  ];
+}
+
+/** Missing reason for a part of World Bank IDS: not answered, or the country is not covered. */
+function idsMissing(open: CouncilAssessmentRun['openData']): MissingReason {
+  return open.debtStructure
+    ? { kind: 'unreachable', short: 'Not in World Bank IDS', help: 'The World Bank International Debt Statistics answered but have no figure for this country. They cover low- and middle-income countries only, so richer countries are never in them. The app leaves it Missing rather than fill the gap.' }
+    : { kind: 'unreachable', short: 'World Bank IDS did not answer', help: 'This comes from the World Bank International Debt Statistics, which are free. They did not answer this time. Press Refresh now under Research > One country to try again.' };
+}
+
+/** Who holds government debt: the IMF investor base workbook, or Missing with what to do. */
+export function investorBaseRow(iso3: string, r: CouncilAssessmentRun['openData']['investorBase']): BriefRow {
+  const hold = 'Who holds government debt';
+  if (r?.state === 'found' && r.holders) return { label: hold, value: investorBaseValue(r.holders, r.lastYear ?? 0), source: investorBaseSource(r), verified: true };
+  if (iso3 === 'USA') return missingRow(hold, { kind: 'setup', short: 'Only foreign holders (TIC) connected', help: INVESTOR_BASE_US_HELP });
+  if (r?.state === 'notCovered')
+    return missingRow(hold, { kind: 'unreachable', short: 'Not in the IMF investor base', help: 'The IMF Sovereign Debt Investor Base covers emerging markets and developing economies only, and this country is not among them. The app leaves it Missing rather than estimate it.' });
+  if (r?.state === 'unreadable') return missingRow(hold, { kind: 'setup', short: 'IMF investor base file could not be read', help: `${INVESTOR_BASE_SETUP_HELP} The file there did not read: ${r.reason || 'unknown reason'}.` });
+  return missingRow(hold, { kind: 'setup', short: 'IMF investor base file not downloaded', help: INVESTOR_BASE_SETUP_HELP });
+}
+
+/**
+ * Debt structure (G19, src/utils/debtStructure.ts): interest as % of revenue, the currency mix and
+ * new-loan maturity of public external debt, and who holds government debt (Missing until the IMF
+ * investor base terms are checked). Rows for the Fiscal and debt group.
+ */
+export function debtStructureRows(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData']): BriefRow[] {
+  const ds = open.debtStructure;
+  const cur = 'Public external debt by currency';
+  const mat = 'Maturity of new public external loans';
+  const hold = 'Who holds government debt';
+  return [
+    liveRow(status, 'Interest payments, central government', 'wb.interestPctRevenue', (v) => `${pct(v)} of revenue`, open),
+    ds?.currency ? { label: cur, value: currencyValue(ds.currency), source: IDS_STRUCTURE_SOURCE, verified: true } : missingRow(cur, idsMissing(open)),
+    ds?.newLoanMaturity
+      ? { label: mat, value: `${ds.newLoanMaturity.years.toFixed(1)} years on average (${ds.newLoanMaturity.year})`, source: `${IDS_STRUCTURE_SOURCE}; loans committed that year, all lenders, not the debt already owed`, verified: true }
+      : missingRow(mat, idsMissing(open)),
+    investorBaseRow(status.iso3, open.investorBase),
   ];
 }
 
@@ -386,6 +426,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         netInterestRow(status, open),
         liveRow(status, 'Revenue', 'imf.revenuePct', (v) => `${pct(v)} of GDP`, open),
         liveRow(status, 'Expenditure', 'imf.expenditurePct', (v) => `${pct(v)} of GDP`, open),
+        ...debtStructureRows(status, open),
         noSourceRow('Balance that keeps debt stable', 'Needs the average interest rate on government debt, which no connected source provides yet.'),
         liveRow(status, '10Y government yield', 'market.sovereign10YBondYieldPct', (v) => pct(v, 2), open),
       ],
@@ -440,6 +481,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
         ...distTaxRows(status, open),
         ...peopleRows(status, open),
+        ...debtStructureRows(status, open),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
           : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'This comes from QEDS, the World Bank and IMF\'s free quarterly statistics on debt owed abroad. It did not answer, or this country does not report to it. Press Refresh now under Research > One country to try again.' }),

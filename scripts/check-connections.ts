@@ -21,6 +21,7 @@ import { appendCheck, dataHealthFiles, readChecks } from '../src/utils/dataHealt
 import { ucdpData } from '../src/utils/ucdpStore.ts';
 import { acledFileData } from '../src/utils/acledFileStore.ts';
 import { aiddataData } from '../src/utils/aiddataStore.ts';
+import { investorBaseData } from '../src/utils/investorBaseStore.ts';
 import { applyKeysToEnv, envKeySnapshot, keySources, loadSettings, settingsFilePath } from '../src/utils/userSettings.ts';
 
 dotenv.config();
@@ -36,6 +37,7 @@ const report = await checkConnections({
   ucdp: () => ucdpData(dataDir),
   acledFiles: () => acledFileData(dataDir),
   aiddata: () => aiddataData(dataDir),
+  investorBase: () => investorBaseData(dataDir),
   readFile: (p) => {
     try {
       return { text: fs.readFileSync(p, 'utf8'), modified: fs.statSync(p).mtime };

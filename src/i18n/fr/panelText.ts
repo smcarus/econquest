@@ -615,4 +615,9 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "% of people aged 15 and over": "% des personnes de 15 ans et plus",
   "% of workers aged 15-24": "% des actifs de 15 à 24 ans",
   "per 100 people aged 15-64": "pour 100 personnes de 15 à 64 ans",
+  // G19: debt structure
+  "Interest payments, central government": "Paiements d'intérêts, administration centrale",
+  "Public external debt by currency": "Dette publique extérieure par monnaie",
+  "Maturity of new public external loans": "Échéance des nouveaux prêts publics extérieurs",
+  "Who holds government debt": "Qui détient la dette publique",
 };

@@ -5,6 +5,7 @@
 
 import { DIST_TAX_CODES, GINI_CODE, pickDistTaxRow } from '../../utils/distributionTaxes';
 import { PEOPLE_CODES, peopleTag, pickPeopleRow } from '../../utils/peopleLiving';
+import { INTEREST_REVENUE_CODE, debtStructureUrl, parseDebtStructure } from '../../utils/debtStructure';
 import { BIS_LABEL } from '../../utils/bisDebtSecurities';
 import { HC_SPREAD_FEED_LABEL } from '../../utils/hardCurrencySpread.ts';
 import { IDS_LABEL, QEDS_LABEL } from '../../utils/debtSchedule';
@@ -153,6 +154,24 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           markLive(`wb.${field}`, peopleTag(field, row));
         })
       );
+    })(),
+
+    // 1d. Debt structure (G19, src/utils/debtStructure.ts): interest as % of revenue (WDI, central
+    // government) and the currency mix and new-loan maturity of public external debt (IDS).
+    (async () => {
+      const res = await fetchWithTimeout(`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${INTEREST_REVENUE_CODE}?format=json&per_page=8`);
+      if (!res.ok) return;
+      const data: any = await res.json();
+      const row = pickDistTaxRow(INTEREST_REVENUE_CODE, data?.[1]);
+      if (!row) return;
+      baseline.worldBankIndicators.interestPctRevenue = Number(row.value.toFixed(1));
+      markLive('wb.interestPctRevenue', `World Bank, ${row.year}`);
+    })(),
+    (async () => {
+      const res = await fetchWithTimeout(debtStructureUrl(normalizedIso));
+      if (!res.ok) return;
+      const parsed = parseDebtStructure(await res.json(), new Date().toISOString());
+      if (parsed) baseline.debtStructure = parsed;
     })(),
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)
