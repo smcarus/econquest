@@ -5,6 +5,9 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Size review (K1): the app drops from 5.84 MB to 5.19 MB. jsPDF's helpers for HTML and SVG pages
+  (html2canvas, DOMPurify, canvg), which the app never uses, are left out of the build, and the
+  share-preview logo is stored with 256 colours (336 KB to 41 KB). Start-up size is unchanged.
 - "Cite this" (G11): a Cite button on Chart Agent charts, History series and council answers gives a
   citation in plain text, BibTeX and RIS: the app with its version and the date cited, then each
   data source with the credit its terms ask for and the date read (src/utils/citation.ts).
