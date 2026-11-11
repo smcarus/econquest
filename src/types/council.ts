@@ -423,6 +423,24 @@ export interface OpenDataSnapshot {
     ageDependencyRatio?: number;
     /** G19 (src/utils/debtStructure.ts): interest payments, % of central government revenue (GC.XPN.INTP.RV.ZS); only when the feed answered. */
     interestPctRevenue?: number;
+    /** G18 (src/utils/tradeMix.ts), each only when the feed answered: fuel, % of merchandise exports (TX.VAL.FUEL.ZS.UN). */
+    exportFuelPct?: number;
+    /** Ores and metals, % of merchandise exports (TX.VAL.MMTL.ZS.UN). */
+    exportOresMetalsPct?: number;
+    /** Food, % of merchandise exports (TX.VAL.FOOD.ZS.UN). */
+    exportFoodPct?: number;
+    /** Manufactures, % of merchandise exports (TX.VAL.MANF.ZS.UN). */
+    exportManufPct?: number;
+    /** Fuel, % of merchandise imports (TM.VAL.FUEL.ZS.UN). */
+    importFuelPct?: number;
+    /** Ores and metals, % of merchandise imports (TM.VAL.MMTL.ZS.UN). */
+    importOresMetalsPct?: number;
+    /** Food, % of merchandise imports (TM.VAL.FOOD.ZS.UN). */
+    importFoodPct?: number;
+    /** Manufactures, % of merchandise imports (TM.VAL.MANF.ZS.UN). */
+    importManufPct?: number;
+    /** Net energy imports, % of energy use; negative = net exporter (EG.IMP.CONS.ZS). */
+    netEnergyImportsPct?: number;
     sourceUrl: string;
   };
   monetaryAndMarket: {
@@ -478,6 +496,8 @@ export interface OpenDataSnapshot {
   debtStructure?: import('../utils/debtStructure').DebtStructure;
   /** Who holds government debt, from the IMF investor base workbook in data/local/imf-investor-base/ (utils/investorBase.ts). */
   investorBase?: import('../utils/investorBase').InvestorBaseReading;
+  /** UN Comtrade profile saved for this country, laid over when the snapshot is read (utils/comtradeTrade.ts). */
+  comtrade?: import('../utils/comtradeTrade').ComtradeProfile & { pulledAt: string };
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -637,6 +657,8 @@ export interface WatchlistItem {
   licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** Who holds government debt (utils/investorBase.ts), from the IMF workbook when it is in data/local/imf-investor-base/. */
   investorBase?: import('../utils/investorBase').InvestorBaseReading;
+  /** Shares of goods exports and imports by group and net energy imports (utils/tradeMix.ts), each with its year; only live figures. */
+  tradeMix?: import('../utils/tradeMix').TradeMixFigures;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

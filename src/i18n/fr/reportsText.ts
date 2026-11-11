@@ -106,4 +106,6 @@ export const REPORTS_TEXT_FR: Record<string, string> = {
   "Debt relief and lending from China": "Allègement de la dette et prêts de la Chine",
   // G17: people and living standards
   "People": "Population",
+  // G18: trade and commodity exposure
+  "Trade": "Commerce",
 };

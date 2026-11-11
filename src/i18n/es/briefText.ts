@@ -365,4 +365,13 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "The IMF Sovereign Debt Investor Base covers emerging markets and developing economies only, and this country is not among them. The app leaves it Missing rather than estimate it.": "La base Sovereign Debt Investor Base del FMI solo cubre las economías emergentes y en desarrollo, y este país no está entre ellas. La aplicación la deja como Falta en lugar de estimarla.",
   "IMF investor base file could not be read": "No se pudo leer el archivo de la base de inversores del FMI",
   "IMF investor base file not downloaded": "Archivo de la base de inversores del FMI no descargado",
+  // G18: trade and commodity exposure
+  "Trade": "Comercio",
+  "Goods exports by group": "Exportaciones de bienes por grupo",
+  "Goods imports by group": "Importaciones de bienes por grupo",
+  "Net energy imports": "Importaciones netas de energía",
+  "Export concentration (app calculation)": "Concentración de las exportaciones (cálculo de la aplicación)",
+  "Top five export markets": "Cinco principales mercados de exportación",
+  "Comtrade gave too few product groups": "Comtrade dio muy pocos grupos de productos",
+  "UN Comtrade answered, but the product chapters it listed cover less than 90% of exports, or it gave only the commodity chapters. The app works out the concentration only from (nearly) every chapter, so it leaves it Missing.": "UN Comtrade respondió, pero los capítulos de productos que dio cubren menos del 90% de las exportaciones, o solo dio los capítulos de materias primas. La aplicación calcula la concentración solo a partir de (casi) todos los capítulos, así que la deja como Falta.",
 };

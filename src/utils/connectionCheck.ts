@@ -277,6 +277,7 @@ export const SOURCE_IDS = [
   'worldbank_debt',
   'worldbank_dist',
   'worldbank_people',
+  'worldbank_trade',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
@@ -377,6 +378,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         if (row) return `${SAMPLE_NAME} tax revenue ${fmt(Number(row.value))}% of GDP, central government (${row.date})`;
         return Array.isArray(rows) ? `Answered (no recent tax revenue figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('worldbank_trade', () =>
+    httpCheck(
+      { id: 'worldbank_trade', name: 'World Bank trade and energy', group: 'free', feeds: 'Goods exports and imports by group, net energy imports (country brief, Hormuz scenario)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/TX.VAL.FUEL.ZS.UN?format=json&per_page=8`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} fuel ${fmt(Number(row.value))}% of goods exports (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent fuel export share for ${SAMPLE_NAME})` : null;
       }
     )
   );

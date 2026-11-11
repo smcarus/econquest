@@ -6,6 +6,7 @@
 import { DIST_TAX_CODES, GINI_CODE, pickDistTaxRow } from '../../utils/distributionTaxes';
 import { PEOPLE_CODES, peopleTag, pickPeopleRow } from '../../utils/peopleLiving';
 import { INTEREST_REVENUE_CODE, debtStructureUrl, parseDebtStructure } from '../../utils/debtStructure';
+import { TRADE_MIX_CODES, pickTradeMixRow, tradeMixTag } from '../../utils/tradeMix';
 import { BIS_LABEL } from '../../utils/bisDebtSecurities';
 import { HC_SPREAD_FEED_LABEL } from '../../utils/hardCurrencySpread.ts';
 import { IDS_LABEL, QEDS_LABEL } from '../../utils/debtSchedule';
@@ -172,6 +173,22 @@ export async function fetchLiveOpenDataSnapshotNetwork(
       if (!res.ok) return;
       const parsed = parseDebtStructure(await res.json(), new Date().toISOString());
       if (parsed) baseline.debtStructure = parsed;
+    })(),
+
+    // 1e. Trade and commodity exposure (G18, src/utils/tradeMix.ts): shares of goods exports and
+    // imports in fuel, ores and metals, food and manufactures, and net energy imports. Each only when found.
+    (async () => {
+      await Promise.allSettled(
+        TRADE_MIX_CODES.map(async ({ code, field, perPage }) => {
+          const res = await fetchWithTimeout(`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}`);
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickTradeMixRow(field, data?.[1]);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(1));
+          markLive(`wb.${field}`, tradeMixTag(row));
+        })
+      );
     })(),
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)

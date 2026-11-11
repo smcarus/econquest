@@ -11,6 +11,8 @@ import { distTaxFromSnapshot, giniValue, GINI_LOOKBACK_YEARS } from './distribut
 import { peopleFromSnapshot, povertyValue, POVERTY_FIELDS, POVERTY_LABEL } from './peopleLiving';
 import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_US_HELP } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from './investorBase';
+import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, IMPORT_FIELDS, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue, tradeMixFromSnapshot } from './tradeMix';
+import { comtradeMissing, HHI_MIN_COVERAGE_PCT } from './comtradeTrade';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -236,6 +238,47 @@ export function debtStructureRows(status: SnapshotDataStatus, open: CouncilAsses
   ];
 }
 
+/**
+ * Trade and commodity exposure (G18, src/utils/tradeMix.ts): what the country sells and buys by
+ * group, net energy imports, export concentration (the app's calculation) and the top five export
+ * markets (UN Comtrade). Each row Missing with a reason.
+ */
+export function tradeRows(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData'], now: Date = new Date()): BriefRow[] {
+  const tm = tradeMixFromSnapshot(open);
+  const ct = open.comtrade;
+  const split = (label: string, fields: typeof EXPORT_FIELDS | typeof IMPORT_FIELDS): BriefRow => {
+    const v = tm ? shareSplitValue(tm, fields) : undefined;
+    return v ? { label, value: v, source: `${TRADE_MIX_SOURCE}; ${TRADE_GROUPS_NOTE}`, verified: true } : missingRow(label, pathMissing(status, `wb.${fields[0]}`));
+  };
+  const energy = 'Net energy imports';
+  const conc = 'Export concentration (app calculation)';
+  const top = 'Top five export markets';
+  const ctMissing = comtradeMissing(status.iso3, false);
+  const ctReason: MissingReason = { kind: 'unreachable', short: ctMissing.short, help: ctMissing.help };
+  return [
+    split('Goods exports by group', EXPORT_FIELDS),
+    split('Goods imports by group', IMPORT_FIELDS),
+    tm?.netEnergyImportsPct
+      ? { label: energy, value: netEnergyValue(tm.netEnergyImportsPct, now), source: `${ENERGY_SOURCE}; energy use minus production, as % of use`, verified: true }
+      : missingRow(energy, pathMissing(status, 'wb.netEnergyImportsPct')),
+    ct?.exportHhi
+      ? { label: conc, value: concentrationValue(ct.exportHhi, ct.productYear), source: CONCENTRATION_SOURCE, verified: false }
+      : missingRow(
+          conc,
+          ct
+            ? {
+                kind: 'unreachable',
+                short: 'Comtrade gave too few product groups',
+                help: `UN Comtrade answered, but the product chapters it listed cover less than ${HHI_MIN_COVERAGE_PCT}% of exports, or it gave only the commodity chapters. The app works out the concentration only from (nearly) every chapter, so it leaves it Missing.`,
+              }
+            : ctReason
+        ),
+    ct?.topExportPartners?.length
+      ? { label: top, value: topPartnersValue(ct), source: `official, UN Comtrade ${ct.year} (pulled ${ct.pulledAt.slice(0, 10)}); share of goods exports`, verified: true }
+      : missingRow(top, ctReason),
+  ];
+}
+
 /** A figure worked out here from other figures: shown only when every input is live. */
 export function modelRow(status: SnapshotDataStatus, label: string, inputs: string[], value: () => string, how = 'model, from figures above'): BriefRow {
   const gap = inputs.find((p) => !status.isLive(p));
@@ -442,6 +485,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
     },
     { title: 'Distribution and taxes', rows: distTaxRows(status, open, now) },
     { title: 'People', rows: peopleRows(status, open, now) },
+    { title: 'Trade', rows: tradeRows(status, open, now) },
   ];
   return { headline, judgements: j, sampleWarning: missingNote(groups, run.countryName), groups };
 }
@@ -481,6 +525,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
         ...distTaxRows(status, open),
         ...peopleRows(status, open),
+        ...tradeRows(status, open),
         ...debtStructureRows(status, open),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
@@ -566,6 +611,7 @@ export const ECONOMIST_SECTIONS: Record<string, string> = {
   external: 'External position',
   distribution: 'Distribution and taxes',
   people: 'People',
+  trade: 'Trade',
   risks: 'Risks to the outlook',
   calendar: 'Coming up',
   sources: 'Data and sources',
@@ -585,6 +631,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
     ['external', 'External position'],
     ['distribution', 'Distribution and taxes'],
     ['people', 'People'],
+    ['trade', 'Trade'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: ECONOMIST_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('risks')) {

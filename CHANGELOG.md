@@ -5,6 +5,18 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Trade and commodity exposure (G18): a new "Trade" group in the country brief and note: the shares
+  of goods exports and imports in fuel, ores and metals, food and manufactures (World Bank, from UN
+  Comtrade), net energy imports as % of energy use (World Bank; a net exporter is shown as how many
+  times its own use it produces, and an old year is said to be old), export concentration (the app's
+  Herfindahl calculation across the 97 HS chapters, labelled so, with the rule shown) and the top five
+  export markets (UN Comtrade). Comtrade's product request now asks for every HS chapter; when that is
+  refused the app asks for the commodity chapters as before and leaves the concentration Missing. The
+  Hormuz scenario's working names the energy position, the scenario panel shows the two biggest
+  gainers as well as the three hardest hit, and the Global Spillover Agent quotes the new figures. The
+  nine World Bank series chart under History & data and are in downloads; Data health row; glossary
+  entries; Spanish and French text.
+
 - Debt structure (G19): new rows under Fiscal and debt in the country brief and note, and in the
   Fiscal & Debt Agent: interest payments as % of central government revenue (World Bank), the
   currency mix of public external debt (US dollar, euro, yen, pound, Swiss franc, SDR, several and

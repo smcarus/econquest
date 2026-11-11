@@ -12,8 +12,11 @@
  * Two requests per country, each for the latest year the country has reported:
  * 1. Exports and imports with every partner (cmdCode TOTAL): shares with the scenario
  *    counterparties (China, Taiwan, Russia, the Gulf producers) and the top partners.
- * 2. Exports and imports by HS chapter with the world: the export mix (fuels, ores, metals,
- *    farm goods) that the commodity price moves apply to, and the fuel share of imports.
+ * 2. Exports and imports by HS chapter with the world, every chapter (cmdCode AG2): the export
+ *    mix (fuels, ores, metals, farm goods) that the commodity price moves apply to, the fuel share
+ *    of imports, and how concentrated exports are across chapters (G18, Herfindahl index). When
+ *    Comtrade refuses the every-chapter request, the app asks for the commodity chapters only, as
+ *    before, and leaves the concentration out.
  *
  * Annual figures come one to two years late; every figure carries its year.
  */
@@ -146,13 +149,13 @@ export function comtradeYears(now = new Date()): number[] {
  * a header, never in the address). Breakdown codes are pinned to the totals so each partner or
  * chapter comes back once.
  */
-export function comtradeUrl(reporter: number, year: number, kind: 'partners' | 'products', keyed: boolean): string {
+export function comtradeUrl(reporter: number, year: number, kind: 'partners' | 'products' | 'chapters', keyed: boolean): string {
   const base = keyed ? `https://${COMTRADE_HOST}/data/v1/get/C/A/HS` : `https://${COMTRADE_HOST}/public/v1/preview/C/A/HS`;
   const params = [
     `reporterCode=${reporter}`,
     `period=${year}`,
     'flowCode=X,M',
-    ...(kind === 'partners' ? ['cmdCode=TOTAL'] : [`cmdCode=TOTAL,${Object.keys(HS_CHAPTERS).join(',')}`, 'partnerCode=0']),
+    ...(kind === 'partners' ? ['cmdCode=TOTAL'] : kind === 'products' ? ['cmdCode=TOTAL,AG2', 'partnerCode=0'] : [`cmdCode=TOTAL,${Object.keys(HS_CHAPTERS).join(',')}`, 'partnerCode=0']),
     'partner2Code=0',
     'customsCode=C00',
     'motCode=0',
@@ -211,6 +214,28 @@ export interface ComtradeProfile {
   exportMixPct?: Record<string, number>;
   /** Mineral fuels (HS 27) as a share of imports, percent. */
   fuelImportSharePct?: number;
+  /**
+   * G18: how concentrated goods exports are across HS chapters (the app's calculation, rule in
+   * EXPORT_HHI_RULE). Only when the chapters Comtrade listed add up to at least
+   * HHI_MIN_COVERAGE_PCT of total exports.
+   */
+  exportHhi?: { value: number; chapters: number; coveredPct: number };
+}
+
+/** Least share of total exports the listed chapters must cover before the concentration is worked out. */
+export const HHI_MIN_COVERAGE_PCT = 90;
+export const EXPORT_HHI_RULE =
+  'App calculation: the Herfindahl index, the sum of the squared shares of each of the 97 HS chapters in goods exports (UN Comtrade, the latest year), on a scale from near 0 (spread over many chapters) to 1 (one chapter only). One divided by the index gives the number of equally sized chapters that would be as concentrated.';
+
+/** Herfindahl index of export shares by HS chapter, or undefined when the chapters cover too little of the total. */
+export function exportHerfindahl(rows: ComtradeRow[], totalExports: number): ComtradeProfile['exportHhi'] {
+  const ch = rows.filter((r) => r.flowCode === 'X' && r.partnerCode === 0 && /^\d{2}$/.test(r.cmdCode) && r.value > 0);
+  const sum = ch.reduce((a, r) => a + r.value, 0);
+  if (!(totalExports > 0) || !sum) return undefined;
+  const coveredPct = (sum / totalExports) * 100;
+  if (coveredPct < HHI_MIN_COVERAGE_PCT) return undefined;
+  const hhi = ch.reduce((a, r) => a + (r.value / sum) ** 2, 0);
+  return { value: Number(hhi.toFixed(3)), chapters: ch.length, coveredPct: Number(Math.min(coveredPct, 100).toFixed(0)) };
 }
 
 const r1 = (v: number) => Number(v.toFixed(1));
@@ -257,11 +282,13 @@ export function buildProfile(iso3: string, partnerRows: ComtradeRow[], productRo
   const pYear = prod.map((r) => r.period).sort().pop();
   let mix: Record<string, number> | undefined;
   let fuelImports: number | undefined;
+  let hhi: ComtradeProfile['exportHhi'];
   if (pYear) {
     const p = prod.filter((r) => r.period === pYear);
     const px = p.find((r) => r.flowCode === 'X' && r.cmdCode === 'TOTAL')?.value;
     const pm = p.find((r) => r.flowCode === 'M' && r.cmdCode === 'TOTAL')?.value;
     if (px) {
+      hhi = exportHerfindahl(p, px);
       mix = {};
       for (const ch of Object.keys(HS_CHAPTERS)) {
         const v = p.find((r) => r.flowCode === 'X' && r.cmdCode === ch)?.value;
@@ -282,6 +309,7 @@ export function buildProfile(iso3: string, partnerRows: ComtradeRow[], productRo
     topImportPartners: top('M'),
     ...(pYear && mix ? { productYear: pYear, exportMixPct: mix } : {}),
     ...(fuelImports !== undefined ? { fuelImportSharePct: fuelImports } : {}),
+    ...(hhi ? { exportHhi: hhi } : {}),
   };
 }
 

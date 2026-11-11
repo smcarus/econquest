@@ -13,7 +13,7 @@ import { writeFileAtomic } from '../../utils/atomicWrite';
 /**
  * UN Comtrade partners and export mix (src/utils/comtradeTrade.ts). Annual, so each country is
  * pulled once every 30 days (6 hours after a miss) and saved to data/live/comtrade.json with its
- * pull date. Two requests per country, sent one at a time with a gap, because the free preview
+ * pull date. Two requests per country (three when the every-chapter request is refused), sent one at a time with a gap, because the free preview
  * allows few requests; COMTRADE_API_KEY (free) switches to the keyed route.
  * The preview's HTTP 429 is a short throttle ("Rate limit is exceeded. Try again in 1 seconds."; on
  * Sam's Mac the next request a moment later went through). So a 429 is waited out for the seconds
@@ -72,9 +72,14 @@ async function pullComtradeCountry(iso3: string, key: string): Promise<ComtradeP
     await pause();
     if (partners === null) return 'refused'; // refused or no answer: stop, try again later
     if (!partners.length) continue; // not reported that year yet
-    const products = (await comtradeGet(comtradeUrl(reporter, year, 'products', !!key), key)) || [];
+    // Every HS chapter (for the export concentration); when refused or empty, the commodity chapters only.
+    let products = await comtradeGet(comtradeUrl(reporter, year, 'products', !!key), key);
     await pause();
-    return buildProfile(iso3, partners, products);
+    if (!products?.length) {
+      products = await comtradeGet(comtradeUrl(reporter, year, 'chapters', !!key), key);
+      await pause();
+    }
+    return buildProfile(iso3, partners, products || []);
   }
   return null;
 }

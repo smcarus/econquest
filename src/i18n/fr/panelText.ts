@@ -620,4 +620,18 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "Public external debt by currency": "Dette publique extérieure par monnaie",
   "Maturity of new public external loans": "Échéance des nouveaux prêts publics extérieurs",
   "Who holds government debt": "Qui détient la dette publique",
+  // G18: trade and commodity exposure
+  "Fuel exports": "Exportations de carburants",
+  "Ores and metals exports": "Exportations de minerais et métaux",
+  "Food exports": "Exportations alimentaires",
+  "Manufactures exports": "Exportations de produits manufacturés",
+  "Fuel imports": "Importations de carburants",
+  "Ores and metals imports": "Importations de minerais et métaux",
+  "Food imports": "Importations alimentaires",
+  "Manufactures imports": "Importations de produits manufacturés",
+  "Net energy imports": "Importations nettes d'énergie",
+  "% of goods exports": "% des exportations de biens",
+  "% of goods imports": "% des importations de biens",
+  "% of energy use": "% de la consommation d'énergie",
+  "% of energy use (negative = net exporter)": "% de la consommation d'énergie (négatif = exportateur net)",
 };
