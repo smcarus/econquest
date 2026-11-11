@@ -201,4 +201,6 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   // G20: climate and energy
   "All greenhouse gases excluding land use, tonnes of CO2 equivalent per person (World Bank EN.GHG.ALL.PC.CE.AR5, from EDGAR)": "Todos los gases de efecto invernadero sin contar el uso del suelo, en toneladas de CO2 equivalente por persona (Banco Mundial EN.GHG.ALL.PC.CE.AR5, de EDGAR)",
   "Renewable energy as % of final energy consumption, including traditional biomass (World Bank EG.FEC.RNEW.ZS)": "Energía renovable en % del consumo final de energía, incluida la biomasa tradicional (Banco Mundial EG.FEC.RNEW.ZS)",
+  // G22: wages and house prices
+  "Residential property prices in local currency, change on a year earlier (BIS)": "Precios de la vivienda en moneda local, variación respecto a un año antes (BIS)",
 };

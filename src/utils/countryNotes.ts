@@ -13,6 +13,7 @@ import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_US_HELP } from './de
 import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from './investorBase';
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, IMPORT_FIELDS, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue, tradeMixFromSnapshot } from './tradeMix';
 import { comtradeMissing, HHI_MIN_COVERAGE_PCT } from './comtradeTrade';
+import { HOUSE_PRICES_NOT_COVERED_HELP, HOUSE_PRICES_SETUP_HELP, HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_GROWTH_HELP, WAGES_NOT_COVERED_HELP, WAGES_SETUP_HELP, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { CLIMATE_RISK_HELP, EMISSIONS_SOURCE, ENERGY_MIX_LEGACY_NOTE, ENERGY_MIX_NOT_COVERED_HELP, ENERGY_MIX_SETUP_HELP, ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, RENEWABLE_SOURCE, climateFromSnapshot, energyMixValue } from './climateEnergy';
 
 /**
@@ -312,6 +313,43 @@ export function climateRows(status: SnapshotDataStatus, open: CouncilAssessmentR
   ];
 }
 
+/**
+ * Wages and house prices (G22, src/utils/wagesHousing.ts), under Growth and inflation: nominal and
+ * real wage growth (ILOSTAT, World Bank inflation), real and nominal house prices (BIS). Each with
+ * its year or quarter, or Missing with a reason.
+ */
+export function wagesHousingRows(open: CouncilAssessmentRun['openData']): BriefRow[] {
+  const w = open.wages;
+  const h = open.housePrices;
+  const wageMissing = (label: string) =>
+    !w
+      ? missingRow(label, { kind: 'setup', short: 'ILOSTAT not downloaded yet', help: WAGES_SETUP_HELP })
+      : !w.reading
+        ? missingRow(label, { kind: 'unreachable', short: 'Not in ILOSTAT', help: WAGES_NOT_COVERED_HELP })
+        : missingRow(label, {
+            kind: 'unreachable',
+            short: w.reading.growthNote === 'break' ? 'Break in the series' : w.reading.growthNote === 'no_inflation' ? 'No inflation for that year' : 'No figure for the year before',
+            help: WAGES_GROWTH_HELP[w.reading.growthNote || 'no_previous_year'],
+          });
+  const houseMissing = (label: string) =>
+    !h
+      ? missingRow(label, { kind: 'setup', short: 'BIS file not downloaded yet', help: HOUSE_PRICES_SETUP_HELP })
+      : missingRow(label, { kind: 'unreachable', short: 'Not in the BIS series', help: HOUSE_PRICES_NOT_COVERED_HELP });
+  const pulled = (at: string) => ` (pulled ${at.slice(0, 10)})`;
+  const nominal = w?.reading && wageGrowthValue(w.reading, 'nominal');
+  const real = w?.reading && wageGrowthValue(w.reading, 'real');
+  const hReal = h?.reading && housePriceValue(h.reading, 'real');
+  const hNom = h?.reading && housePriceValue(h.reading, 'nominal');
+  return [
+    nominal ? { label: 'Wage growth, nominal', value: nominal, source: `official, ${WAGES_SOURCE}${pulled(w!.pulledAt)}`, verified: true } : wageMissing('Wage growth, nominal'),
+    real
+      ? { label: 'Wage growth, real', value: `${real}; inflation ${w!.reading!.inflationPct!.toFixed(1)}%`, source: REAL_WAGES_SOURCE, verified: false }
+      : wageMissing('Wage growth, real'),
+    hReal ? { label: 'House prices, real', value: hReal, source: `official, ${HOUSE_PRICES_SOURCE}, after inflation${pulled(h!.pulledAt)}`, verified: true } : houseMissing('House prices, real'),
+    hNom ? { label: 'House prices, nominal', value: hNom, source: `official, ${HOUSE_PRICES_SOURCE}${pulled(h!.pulledAt)}`, verified: true } : houseMissing('House prices, nominal'),
+  ];
+}
+
 /** A figure worked out here from other figures: shown only when every input is live. */
 export function modelRow(status: SnapshotDataStatus, label: string, inputs: string[], value: () => string, how = 'model, from figures above'): BriefRow {
   const gap = inputs.find((p) => !status.isLive(p));
@@ -475,6 +513,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         liveRow(status, 'CPI inflation', 'imf.cpiInflationPct', (v) => pct(v), open),
         liveRow(status, 'Unemployment rate', 'imf.unemploymentPct', (v) => pct(v), open),
         ...euSurveyRows(run.iso3, peers),
+        ...wagesHousingRows(open),
       ],
     },
     {

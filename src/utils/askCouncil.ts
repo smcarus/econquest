@@ -44,6 +44,7 @@ import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURC
 import { foreignShare, investorBaseSource, investorBaseValue } from './investorBase';
 import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
+import { HOUSE_PRICES_SOURCE, REAL_WAGES_SOURCE, WAGES_SOURCE, housePriceValue, wageGrowthValue } from './wagesHousing';
 import { ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, energyMixValue } from './climateEnergy';
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, GROUP_LABEL, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue } from './tradeMix';
 import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
@@ -500,6 +501,11 @@ function cbAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'> {
           : { label: `Output gap ${og.year}`, value: `${sgn(og.pct)}% of potential GDP`, source: 'IMF WEO', tag: 'official' },
       );
     }
+    // Wages and house prices (G22, src/utils/wagesHousing.ts): pressure on prices from pay and housing, with year or quarter.
+    const wg = it.wages?.reading && wageGrowthValue(it.wages.reading, 'nominal');
+    if (wg) figures.push({ label: 'Wage growth, nominal', value: wg, source: WAGES_SOURCE, tag: 'official' });
+    const hp = it.housePrices?.reading && housePriceValue(it.housePrices.reading, 'real');
+    if (hp) figures.push({ label: 'House prices, real', value: hp, source: `${HOUSE_PRICES_SOURCE}, after inflation`, tag: 'official' });
     const stanceText = policyStance(real, gap);
     const ext = imfFigures(it);
     findings.push({
@@ -790,6 +796,9 @@ function politicsAgent(countries: LiveWatchlistItem[]): Omit<AgentAnswer, 'why'>
     const pe = it.people;
     if (pe?.povertyLowestPct) figures.push({ label: 'Poverty rate, lowest international line', value: povertyValue(pe.povertyLowestPct), source: POVERTY_SOURCE, tag: 'official' });
     if (pe?.youthUnemploymentPct) figures.push({ label: 'Youth unemployment (ages 15-24)', value: p1(pe.youthUnemploymentPct.value), source: `${PEOPLE_SOURCE}, ${pe.youthUnemploymentPct.year}; ${ILO_MODEL_NOTE}`, tag: 'official' });
+    // Real wages (G22): falling pay after inflation can feed unrest.
+    const rw = it.wages?.reading && wageGrowthValue(it.wages.reading, 'real');
+    if (rw) figures.push({ label: 'Wage growth, real', value: rw, source: REAL_WAGES_SOURCE, tag: 'model' });
     for (const h of p.headlines || []) {
       figures.push({ label: 'Headline', value: h.title, source: `${h.source}${h.publishedAt ? `, ${h.publishedAt.slice(0, 10)}` : ''} (GDELT, pulled ${p.headlinesPulledAt || ''})`, tag: 'live' });
     }

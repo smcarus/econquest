@@ -66,6 +66,26 @@ The share of people living on less than a fixed amount a day, the poverty line. 
 
 **Limits.** It comes from household surveys that many countries run only every few years, so the latest figure can be old. The World Bank moves the lines from time to time when it updates price comparisons, so figures from before and after a change are not directly comparable.
 
+### Wage growth, nominal and real
+
+How much average monthly pay of employees changed on the year before. Nominal growth is the change in money terms. Real growth takes out inflation: it is how much more (or less) that pay can buy.
+
+**Why it matters.** Real wages tell you whether workers are getting better or worse off. Pay rising faster than prices supports spending; pay falling behind prices squeezes households and can feed strikes and protests. Central banks watch nominal pay because fast pay rises can keep inflation high.
+
+**How to read it.** Nominal 8% with inflation 6% is real growth of about 2%: people can buy a little more. Nominal 5% with inflation 9% is real growth of about -4%: pay buys less than a year ago, even though the number on the payslip went up.
+
+**Limits.** From ILOSTAT, the International Labour Organization's statistics, yearly. Many countries outside the OECD report earnings only every few years, so the latest year may be old, and some have none. The app works out real growth itself, from nominal growth and the World Bank's consumer price inflation for the same year, and leaves growth Missing when the ILO marks a break in the series.
+
+### House prices, real and nominal
+
+How much residential property prices changed on the same quarter a year earlier, from the BIS (Bank for International Settlements), which collects them from central banks and statistics offices. Nominal is the change in local currency; real takes out consumer price inflation.
+
+**Why it matters.** Homes are most households' largest asset and banks' largest group of loans. Fast real rises can signal a credit boom; sharp falls hit household wealth, construction and bank balance sheets. Central banks watch them when setting interest rates.
+
+**How to read it.** Real rises of more than about 10% a year for several years have often come before banking trouble. Nominal prices can rise while real prices fall when inflation is high.
+
+**Limits.** Quarterly, a quarter or two late, and covering about 60 countries. Each country measures prices its own way (some only big cities, some only new homes), so compare changes over time within a country rather than levels across countries.
+
 ### Greenhouse gas emissions per person
 
 All the greenhouse gases a country emits in a year (carbon dioxide, methane, nitrous oxide and others), turned into the amount of carbon dioxide that would warm the planet as much, divided by the number of people.

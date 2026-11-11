@@ -148,6 +148,7 @@ const BY_ID: Record<string, Def> = {
   credit_gdp: d('Credit to households and non-financial firms from all lenders, as % of GDP (BIS)', 'privateNonFin'),
   debt_service_ratio: d('Interest and principal paid by households and non-financial firms, as % of their income (BIS)', 'privateNonFin'),
   house_prices_real_yoy: d('Residential property prices deflated by consumer prices, change on a year earlier (BIS)', 'households'),
+  house_prices_nominal_yoy: d('Residential property prices in local currency, change on a year earlier (BIS)', 'households'),
   // Public external debt (World Bank IDS)
   ppg_external_usd: d('Public and publicly guaranteed external debt outstanding at year end, in US dollars (World Bank IDS)', 'ppg'),
   ppg_multilateral_share: d('Share of public external debt owed to multilateral lenders (World Bank IDS)', 'ppg'),
@@ -277,6 +278,7 @@ const SEASONAL_BY_ID: Record<string, SeasonalKey> = {
   credit_gdp: 'notStated',
   debt_service_ratio: 'notStated',
   house_prices_real_yoy: 'yoy',
+  house_prices_nominal_yoy: 'yoy',
   us_breakeven_5y: 'market',
   us_breakeven_10y: 'market',
   us_5y5y_forward: 'market',
@@ -444,6 +446,7 @@ const UNITS_BY_ID: Record<string, Units> = {
   credit_gdp: ['shareGdp'],
   debt_service_ratio: ['ratio'],
   house_prices_real_yoy: ['real'],
+  house_prices_nominal_yoy: ['nominal', 'local'],
   ppg_external_usd: ['nominal', 'usdMarket'],
   ppg_multilateral_share: ['ratio'],
   ppg_bilateral_share: ['ratio'],

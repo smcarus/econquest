@@ -76,6 +76,8 @@ own-data switch in Settings).
 | ECB rates (Frankfurter) | FX volatility; last year's closing rate for the year-to-date move | api.frankfurter.dev | 12 h |
 | ECB daily history (Frankfurter) | Exchange rate per US dollar, every ECB business day since 1999, one quarter per request; saved to data/live/fx-history.json, finished quarters kept for good | api.frankfurter.dev | 12 h (current quarter) |
 | BIS | Real exchange rates; government debt securities | stats.bis.org | 12 h |
+| ILOSTAT (International Labour Organization) | Average monthly earnings of employees, local currency (EAR_4MTH_SEX_ECO_CUR_NB_A): nominal wage growth, and real wage growth with World Bank inflation (FP.CPI.TOTL.ZG); CC BY 4.0 | rplumber.ilo.org | 1 week, daily run, on disk |
+| BIS residential property prices | Real and nominal house prices, change on a year earlier, all countries in one request (WS_SPP) | stats.bis.org | 20 h, daily run, on disk |
 | BIS central bank policy rates | Policy rate per country with its date and central bank, the 12-month change and the last move | stats.bis.org | 12 h, on disk |
 | WITS | Export and import shares with China and Russia | wits.worldbank.org | 24 h |
 | CFTC Commitments of Traders | Weekly currency futures positioning (leveraged funds, asset managers) for MXN, BRL, ZAR, JPY, GBP, EUR | publicreporting.cftc.gov | Until a newer report can exist (weekly), on disk |

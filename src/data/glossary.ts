@@ -148,6 +148,27 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/^Top (five )?export markets/],
   },
   {
+    id: 'wage_growth',
+    key: true,
+    term: 'Wage growth, nominal and real',
+    group: 'economy',
+    what: 'How much average monthly pay of employees changed on the year before. Nominal growth is the change in money terms. Real growth takes out inflation: it is how much more (or less) that pay can buy.',
+    why: 'Real wages tell you whether workers are getting better or worse off. Pay rising faster than prices supports spending; pay falling behind prices squeezes households and can feed strikes and protests. Central banks watch nominal pay because fast pay rises can keep inflation high.',
+    read: 'Nominal 8% with inflation 6% is real growth of about 2%: people can buy a little more. Nominal 5% with inflation 9% is real growth of about -4%: pay buys less than a year ago, even though the number on the payslip went up.',
+    limits: 'From ILOSTAT, the International Labour Organization\'s statistics, yearly. Many countries outside the OECD report earnings only every few years, so the latest year may be old, and some have none. The app works out real growth itself, from nominal growth and the World Bank\'s consumer price inflation for the same year, and leaves growth Missing when the ILO marks a break in the series.',
+    match: [/^Wage growth/],
+  },
+  {
+    id: 'house_prices',
+    term: 'House prices, real and nominal',
+    group: 'economy',
+    what: 'How much residential property prices changed on the same quarter a year earlier, from the BIS (Bank for International Settlements), which collects them from central banks and statistics offices. Nominal is the change in local currency; real takes out consumer price inflation.',
+    why: 'Homes are most households\' largest asset and banks\' largest group of loans. Fast real rises can signal a credit boom; sharp falls hit household wealth, construction and bank balance sheets. Central banks watch them when setting interest rates.',
+    read: 'Real rises of more than about 10% a year for several years have often come before banking trouble. Nominal prices can rise while real prices fall when inflation is high.',
+    limits: 'Quarterly, a quarter or two late, and covering about 60 countries. Each country measures prices its own way (some only big cities, some only new homes), so compare changes over time within a country rather than levels across countries.',
+    match: [/^House prices/, /house prices \(y\/y\)$/],
+  },
+  {
     id: 'ghg_per_head',
     key: true,
     term: 'Greenhouse gas emissions per person',
@@ -940,7 +961,7 @@ export const GLOSSARY: GlossaryEntry[] = [
 
 /** Plain-words introductions for the panels in the Research briefs, keyed by panel title (prefix match). */
 export const PANEL_INTROS: Array<{ title: RegExp; intro: string }> = [
-  { title: /^Growth and inflation/, intro: 'How fast the economy is growing, how fast prices are rising, and how many people are out of work. Together they show whether ordinary living standards are improving and whether the central bank is likely to act.' },
+  { title: /^Growth and inflation/, intro: 'How fast the economy is growing, how fast prices are rising, how many people are out of work, whether pay keeps up with prices, and how house prices are moving. Together they show whether ordinary living standards are improving and whether the central bank is likely to act.' },
   { title: /^Monetary policy/, intro: 'What the central bank is doing with interest rates, how that compares with inflation, and when it next decides. A rate well above inflation holds the economy back to cool prices; a rate below inflation gives it a push.' },
   { title: /^Fiscal and debt/, intro: 'The government\'s budget and how much it owes. A deficit adds to debt; interest payments take money away from other spending. The question is whether the debt can keep being paid without a crisis.' },
   { title: /^External position/, intro: 'How the country pays its way with the rest of the world: whether it earns more abroad than it spends, how much foreign currency the central bank holds for emergencies, and how much the country owes abroad.' },

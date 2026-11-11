@@ -62,6 +62,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
 | AidData Global Chinese Development Finance Dataset, version 3.0 | Open with attribution | Free sharing allowed | Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By). | ODC-By sets no commercial limit; the pages read do not mention commercial use. | AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0. |
 | IMF list of low-income country debt sustainability analyses | Terms not confirmed | Sharing unclear | Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read. | Not stated. | Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026. |
+| ILOSTAT (International Labour Organization) | Open with attribution | Free sharing allowed | Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Source: ILOSTAT, International Labour Organization (ILO). |
 | Our World in Data energy file (Energy Institute Statistical Review of World Energy) | Permission needed for client or commercial use | Do not pass on | Not allowed without the Energy Institute's permission: its terms allow private, non-commercial use only. Our World in Data's CC BY covers its own work, not the Energy Institute's figures. | Not allowed without the Energy Institute's permission. | Energy Institute - Statistical Review of World Energy (year); Our World in Data energy dataset. |
 | IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
 | DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
@@ -70,7 +71,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 
 ### World Bank indicators and debt statistics (IDS, QEDS)
 
-- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); greenhouse gas emissions per person (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR), renewable share of energy use (EG.FEC.RNEW.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)
+- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); consumer price inflation to work out real wage growth (FP.CPI.TOTL.ZG); greenhouse gas emissions per person (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR), renewable share of energy use (EG.FEC.RNEW.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets) (checked 2026-11-06)
@@ -159,7 +160,7 @@ From the terms:
 
 ### BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)
 
-- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios and residential property prices
+- **Used for:** Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios and residential property prices (real and nominal, country brief and History & data)
 - **Status:** Allowed with conditions
 - **Free non-commercial sharing:** Free sharing allowed. Use is unrestricted with the BIS cited.
 - **Terms read:** [Terms of permitted use of BIS statistics](https://data.bis.org/help/legal); [BIS terms and conditions](https://www.bis.org/terms_conditions.htm) (checked 2026-11-06)
@@ -620,6 +621,23 @@ From the terms:
 - **Credit:** Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026.
 - **Open question:** The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
 
+### ILOSTAT (International Labour Organization)
+
+- **Used for:** Average monthly earnings of employees (EAR_4MTH_SEX_ECO_CUR_NB_A): nominal and real wage growth (country brief, Central Bank and Politics agents), downloaded weekly by the daily run
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit to the ILO.
+- **Terms read:** [ILO rights and permissions](https://www.ilo.org/rights-and-permissions); [ILOSTAT](https://ilostat.ilo.org/) (checked 2026-11-11)
+- **Show to others:** Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** Source: ILOSTAT, International Labour Organization (ILO).
+- **Open question:** Data produced before 3 May 2023 is not automatically CC BY; the app reads the current ILOSTAT release, published after that date. The ILO name and logo may not be used without written permission.
+
+From the terms:
+
+> As of 3 May 2023, databases and datasets together with the accompanying referential metadata are covered by the Creative Commons CC BY 4.0 licence.
+>
+> Databases and datasets together with the accompanying referential metadata produced prior to 3 May 2023 do not automatically benefit from a Creative Commons licence.
+
 ### Our World in Data energy file (Energy Institute Statistical Review of World Energy)
 
 - **Used for:** Energy mix: shares of coal, oil, gas, nuclear and renewables in primary energy (country brief, Global Spillover Agent), downloaded weekly to this computer by the daily run
@@ -683,7 +701,6 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 | Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
 | ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
-| ILOSTAT (International Labour Organization) | G22 Wages and house prices; G17 People | Terms not confirmed | Sharing unclear | Source: ILOSTAT, International Labour Organization. |
 
 ### Penn World Table (Groningen Growth and Development Centre)
 
@@ -801,18 +818,6 @@ From the terms:
 From the terms:
 
 > As a free and open-access tool, ND-GAIN appreciates understanding how the Country Index is used.
-
-### ILOSTAT (International Labour Organization)
-
-- **Planned for:** G22 Wages and house prices; G17 People
-- **Will be used for:** Nominal and real wage growth; labour force figures not in World Bank data
-- **Status:** Terms not confirmed
-- **Free non-commercial sharing:** Sharing unclear. Not read yet.
-- **Terms read:** [ILOSTAT home page](https://ilostat.ilo.org/) (checked 2026-11-11)
-- **Show to others:** Not read: the terms page and the ILO copyright page did not load; the home page states no licence.
-- **Commercial use:** Not read.
-- **Credit:** Source: ILOSTAT, International Labour Organization.
-- **Before building:** Read the ILOSTAT terms of use in a browser on the Mac and update this row before G22.
 
 ## Open questions
 
