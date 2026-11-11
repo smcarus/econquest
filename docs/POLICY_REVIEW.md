@@ -19,6 +19,32 @@ It lives in **Reports > Policy reviews**. A review can also be started from a Co
 | 5. Recommendation memo | Written only from steps 1 to 4. Cites every figure by number with source and as-of. States what to watch and the review date. Draft > Reviewed > Approved sign-off. Download as Markdown or PDF. | The memo text, its hash and the sign-off history. |
 | 6. Track outcomes | On the review date the app sets what happened beside the starting point. **Review again** copies the frame onto newer data and shows what changed. | The figures at review time and the link to the next review. |
 
+## Automatic outcome checks (12 and 24 months)
+
+Every saved review is checked on its own 12 and 24 months after its As of day
+(src/utils/outcomeChecks.ts, rules version `outcome-check-v1`). A check reads the goal from the frame
+and the goal indicator from the Diagnose step, then the same indicator from the saved pull on or
+before the due day. So a check made late, when the app was not running on the day, gives the same
+result.
+
+| Result | When |
+| --- | --- |
+| Hit | The target was met: at or below it for "lower", at or above it for "higher", inside the range or within the stable band for "stable". With no number in the target, the figure moved the way the goal wants from the start. |
+| Miss | Not met, on the same rule. |
+| Too early | The latest figure is still for the period the review started from. |
+| Missing | No Diagnose step, the goal is not a standard indicator, no starting figure, no saved pull in the 45 days before the due day, or no figure in that pull. The reason is saved. |
+
+The target is read as the first number written in it, or a range such as "2-3%". The stable band is
+the larger of 0.5 units and 5% of the reference value. Each check is saved once in
+`data/local/reviews.json` with its review, chained by SHA-256 to the check before it, never changed,
+and written to the audit log. A frame changed later keeps its old checks and gets new ones. Checks
+run 30 seconds after the server starts, every 6 hours, and when the track record is opened.
+
+The results show under step 6 and in Menu > Models & validation > Track record > Policy track record,
+with hits out of the checks that could be judged. They say only whether the goal written in the
+frame was met. The app does not know whether the advice was followed, and what happened afterwards
+is not what the advice caused.
+
 ## Reproducibility
 
 - Each saved step keeps its content, the time, the SHA-256 of the content and the hash of the step
@@ -53,3 +79,4 @@ the questions sent to the AI model you chose in Menu > Settings.
 | `POST /api/reviews/:id/memo` | Step 5: `{ recommended, rationale, watch, reviewDate }`; the memo is assembled from the saved steps with no AI. |
 | `POST /api/signoffs/review/:id` | Sign-off on the memo (Reviewed, Approved, Withdrawn) against the memo step's hash. An approved review cannot be deleted. |
 | `POST /api/reviews/:id/outcomes` | Step 6: the latest saved pull beside the figures the review started from. |
+| `GET /api/reviews/track-record` | Makes any outcome checks now due, then lists every check with its result and reason, the next check of each review, and the tally. |

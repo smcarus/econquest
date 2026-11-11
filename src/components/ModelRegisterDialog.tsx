@@ -20,6 +20,8 @@ import { forecastRegisterStatus, forecastVerdicts } from '../utils/forecastRegis
 
 // Your own registered tests: downloaded the first time the view is opened.
 const YourTests = lazyNamed(() => import('./YourTests'), 'YourTests');
+// Policy outcome checks (roadmap P1): downloaded when the track record is opened.
+const PolicyTrackRecord = lazyNamed(() => import('./PolicyTrackRecord'), 'PolicyTrackRecord');
 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
@@ -138,6 +140,11 @@ export function ModelRegisterDialog({ focusId, onClose }: { focusId?: string | n
           {runError && <p className="text-rose-600 dark:text-rose-400">{runError}</p>}
           {v?.lastRun?.problems?.length ? <p className="text-amber-700 dark:text-amber-300">Last run: {v.lastRun.problems.join(' · ')}</p> : null}
           {view === 'record' && <TestLedgerTable v={v} holmMap={holmMap} />}
+          {view === 'record' && (
+            <React.Suspense fallback={null}>
+              <PolicyTrackRecord />
+            </React.Suspense>
+          )}
           {view === 'mine' && (
             <React.Suspense fallback={null}>
               <YourTests />

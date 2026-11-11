@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Policy outcome check (P1): every saved policy review is checked on its own 12 and 24 months after
+  its As of day. Each check reads Hit, Miss, Too early or Missing with the reason, from the pull saved
+  on or before the due day, is saved once with the review (hash chained, never changed) and written
+  to the audit log. Results show under step 6 and in Menu > Models & validation > Track record >
+  Policy track record (docs/POLICY_REVIEW.md).
+
 - Upkeep routine (M1, docs/MAINTENANCE.md): Data health and `npm run check:data` flag a source that
   has failed every check for 30 days or more; a licence row whose terms were read over 12 months ago
   shows "Licence check due" (About & data licences, Data health); Dependabot runs monthly, minor and
