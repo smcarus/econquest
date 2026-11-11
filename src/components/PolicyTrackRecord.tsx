@@ -5,7 +5,7 @@
  * Loaded only when the track record is opened.
  */
 import React, { useEffect, useState } from 'react';
-import { VERDICT_LABEL, type CheckMonths, type CheckTally, type CheckVerdict, type OutcomeCheck } from '../utils/outcomeChecks';
+import { VERDICT_LABEL, WARNING_LABEL, type CheckMonths, type CheckTally, type CheckVerdict, type OutcomeCheck } from '../utils/outcomeChecks';
 
 interface Row {
   id: string;
@@ -87,6 +87,11 @@ export function PolicyTrackRecord() {
                     <td className={`py-1 pr-2 align-top whitespace-nowrap ${VERDICT_CLASS[c.verdict]}`}>{VERDICT_LABEL[c.verdict]}</td>
                     <td className="py-1 align-top">
                       {c.reason}
+                      {c.warnings?.length ? (
+                        <span className="block" data-policy-warnings>
+                          Early warnings: {c.warnings.map((w) => `${w.label} [${w.ref}] ${WARNING_LABEL[w.result].toLowerCase()} (${w.reason})`).join('; ')}
+                        </span>
+                      ) : null}
                       {c.now?.source ? <span className="block text-slate-400 dark:text-slate-500">Source: {c.now.source}</span> : null}
                     </td>
                   </tr>

@@ -636,6 +636,9 @@ becomes the problem). Six steps, in order:
    time to effect, trade-offs, who bears the cost, what must be true and risks, and one sentence from
    each council lens. Sentences with numbers that are not in the diagnosis are removed and listed. No
    AI model? *Save my options only* keeps yours, marked not assessed.
+   Each option also gets a **pre-mortem**: how it most likely failed, supposing it had, and one to
+   three diagnosis figures that would show that first, each with whether it would rise or fall. An
+   option without one is flagged.
 4. **Evidence.** Charts and tests (Taylor gap, real rate, does the policy rate lead inflation, r minus
    g, leading indicator), past policy-rate moves with inflation a year later, and the validation status
    of each signal the options lean on. Every series is cut at the As of day.
@@ -650,7 +653,9 @@ becomes the problem). Six steps, in order:
 **Automatic outcome checks.** Every saved review is also checked on its own 12 and 24 months after
 its As of day, from the pull saved on or before that day. Each check reads **Hit** (the target was
 met, or with no number in the target, the figure moved the way the goal wants), **Miss**, **Too
-early** (no newer figure than the one the review started from) or **Missing**, with the reason. The
+early** (no newer figure than the one the review started from) or **Missing**, with the reason.
+Each check also looks at the early-warning figures from the recommended option's pre-mortem: warning
+shown, no warning, too early or missing. The
 results show under step 6 and in **Menu > Models & validation > Track record > Policy track record**.
 They record only whether the goal was met, not whether the advice was followed or caused it.
 

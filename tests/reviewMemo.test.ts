@@ -36,3 +36,14 @@ test('the memo is assembled from the steps, cites references with sources, says 
   assert.deepEqual(buildMemo(review, inputs), m);
   assert.equal(memoFileName(m, 'pdf'), 'policy-memo-BRA-lower-Inflation-to-3-as-of-2026-11-01.pdf');
 });
+
+test('pre-mortem: the memo says how the recommendation could fail and its early warnings, pre-filled to watch', () => {
+  const withFailure: OptionsStep = { ...o, options: [{ ...opt(1, 'Hold rates'), failure: { how: 'Expectations drift up.', watch: [{ ref: 1, signal: 'rises' }, { ref: 2, signal: 'falls' }] } }, opt(2, 'Fiscal rule')] };
+  const inputs = defaultMemoInputs(frame, d, withFailure);
+  assert.deepEqual(inputs.watch, [{ indicator: 'Inflation (IMF WEO) [1]', trigger: 'target 3%' }, { indicator: 'Policy rate [2]', trigger: 'early warning if it falls' }]);
+  const m = buildMemo({ ...review, steps: { ...review.steps, options: rec(withFailure, 'o'.repeat(64)) } }, { ...inputs, reviewDate: '2027-05-01' });
+  assert.match(m.markdown, /How it could fail: Expectations drift up\./);
+  assert.match(m.markdown, /Early warning: Inflation \[1\] rises; Policy rate \[2\] falls\. The outcome checks at 12 and 24 months look at these figures\./);
+  const none = buildMemo(review, { ...defaultMemoInputs(frame, d, o) });
+  assert.match(none.markdown, /the council named no figures that would show this option failing/);
+});

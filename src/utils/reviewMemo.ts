@@ -12,10 +12,10 @@
  */
 import type { ReviewFrame, PolicyReview } from './policyReview';
 import { figureText, type Diagnosis } from './reviewDiagnosis';
-import { LENSES, LENS_LABEL, LEVER_LABEL, type OptionsStep } from './reviewOptions';
+import { LENSES, LENS_LABEL, LEVER_LABEL, warningText, type OptionsStep } from './reviewOptions';
 import type { EvidenceStep } from './reviewEvidence';
 
-export const MEMO_TEMPLATE_VERSION = 'review-memo-v1';
+export const MEMO_TEMPLATE_VERSION = 'review-memo-v2';
 
 export interface WatchItem {
   /** What to watch, e.g. "Inflation [1]". */
@@ -71,7 +71,7 @@ export function parseMemoInputs(v: unknown, options: OptionsStep, asOf: string):
   return { inputs: { recommended, rationale, watch, reviewDate } };
 }
 
-/** Defaults for the memo form: top option, the goal indicator to watch, review on the goal date or six months on. */
+/** Defaults for the memo form: top option, the goal indicator and the top option's early warnings to watch, review on the goal date or six months on. */
 export function defaultMemoInputs(frame: ReviewFrame, d: Diagnosis, options: OptionsStep): MemoInputs {
   const goal = frame.goal.indicator.toLowerCase();
   const hit = d.figures.find((x) => x.label.toLowerCase().includes(goal) || goal.includes(x.label.toLowerCase().replace(/ \(.*\)$/, '')));
@@ -82,7 +82,12 @@ export function defaultMemoInputs(frame: ReviewFrame, d: Diagnosis, options: Opt
   return {
     recommended: options.options[0]?.rank ?? 1,
     rationale: '',
-    watch: [{ indicator: hit ? `${hit.label} [${hit.ref}]` : frame.goal.indicator, ...(frame.goal.target ? { trigger: `target ${frame.goal.target}` } : {}) }],
+    watch: [
+      { indicator: hit ? `${hit.label} [${hit.ref}]` : frame.goal.indicator, ...(frame.goal.target ? { trigger: `target ${frame.goal.target}` } : {}) },
+      ...(options.options[0]?.failure?.watch ?? [])
+        .filter((w) => w.ref !== hit?.ref)
+        .map((w) => ({ indicator: `${d.figures.find((f) => f.ref === w.ref)?.label ?? 'Figure'} [${w.ref}]`, trigger: `early warning if it ${w.signal === 'rises' ? 'rises' : 'falls'}` })),
+    ].slice(0, 8),
     reviewDate: by && by > frame.asOf && by < sixMonths ? by : sixMonths,
   };
 }
@@ -119,6 +124,8 @@ export function buildMemo(review: Pick<PolicyReview, 'title' | 'steps'>, inputs:
     ...(rec.whoBears ? [`Who bears the cost: ${rec.whoBears}`] : []),
     ...(rec.mustBeTrue ? [`What must be true: ${rec.mustBeTrue}`] : []),
     ...(rec.risks ? [`Risks: ${rec.risks}`] : []),
+    ...(rec.failure?.how ? [`How it could fail: ${rec.failure.how}`] : []),
+    ...(rec.failure?.watch.length ? [`Early warning: ${warningText(rec.failure.watch, d)}. The outcome checks at 12 and 24 months look at these figures.`] : o.model ? ['Early warning: the council named no figures that would show this option failing.'] : []),
     ...(rec.refs.length ? [`Rests on ${rec.refs.map((n) => `[${n}]`).join(' ')}.`] : []),
   ];
   if (inputs.rationale) recLines.push('', `Reasoning (the principal's own): ${inputs.rationale}`);

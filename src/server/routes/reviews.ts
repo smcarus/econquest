@@ -91,18 +91,22 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       const due = dueChecks(r, today);
       const frame = frameOf(r);
       if (!due.length || !frame) continue;
-      const then = stepStates(r).diagnose === 'done' ? (r.steps.diagnose!.content as Diagnosis) : null;
+      const states = stepStates(r);
+      const then = states.diagnose === 'done' ? (r.steps.diagnose!.content as Diagnosis) : null;
+      // The recommended option's early-warning figures (pre-mortem, G38), once the memo is written.
+      const memoStep = states.memo === 'done' ? (r.steps.memo!.content as MemoStep) : null;
+      const warnings = memoStep ? (r.steps.options!.content as OptionsStep).options.find((o) => o.rank === memoStep.inputs.recommended)?.failure?.watch ?? [] : [];
       let next = r;
       for (const d of due) {
         const past = archivedSnapshot(frame.iso3, d.due);
         const pulledAt = past ? new Date(past.pulledAt).toISOString() : '';
         const nowDiag = past ? withModelFigures(buildDiagnosis(figureRows({ ...past.snapshot, fetchedAt: pulledAt }), { iso3: frame.iso3, asOf: d.due, pullDate: past.date, pulledAt, incomplete: past.incomplete })) : null;
-        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today });
+        const check = judgeCheck({ frame, frameHash: r.steps.frame!.hash, months: d.months, then, now: nowDiag, checkedOn: today, warnings });
         next = appendOutcomeCheck(next, check);
         appendAudit(AUDIT_FILES, {
           kind: 'research',
           summary: `${d.months}-month outcome check of policy review "${r.title}": ${VERDICT_LABEL[check.verdict]}`,
-          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
+          detail: { id: r.id, months: d.months, due: d.due, verdict: check.verdict, reason: check.reason, ...(check.warnings ? { warnings: check.warnings.map((w) => `${w.label} [${w.ref}]: ${w.result}`) } : {}), hash: next.outcomeChecks![next.outcomeChecks!.length - 1].hash, version: check.version },
         });
         made += 1;
       }

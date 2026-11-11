@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Pre-mortem step (G38): in a policy review, the council now says for every option how it could fail
+  and names one to three diagnosis figures that would show it first, rising or falling. An option
+  without one is flagged. The memo carries the recommended option's pre-mortem and pre-fills its
+  figures under What to watch, and the 12- and 24-month outcome checks judge each one (Warning shown,
+  No warning, Too early, Missing). Options template v3, memo template v2, outcome-check rules v2.
+
 - Policy outcome check (P1): every saved policy review is checked on its own 12 and 24 months after
   its As of day. Each check reads Hit, Miss, Too early or Missing with the reason, from the pull saved
   on or before the due day, is saved once with the review (hash chained, never changed) and written

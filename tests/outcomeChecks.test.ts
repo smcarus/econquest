@@ -106,3 +106,14 @@ test('tally: hits out of judged checks, small samples said as such', () => {
   assert.equal(tallySentence(t), '4 outcome checks: 1 hit, 1 miss, 1 too early, 1 missing. The goal was met in 1 of 2 (50%). Fewer than 10 judged checks: too few to read a rate from.');
   assert.match(OUTCOME_CHECK_CAVEAT, /not what the advice caused/);
 });
+
+test('early warnings from the pre-mortem are judged at each check', () => {
+  const two = (pullDate: string, cpi: number | null, rate: number | null, period: string): Diagnosis => ({ ...diag(pullDate, cpi, period), figures: [fig(cpi, period), { ...fig(rate, period), ref: 2, field: 'market.policyRatePct', label: 'Policy rate' }] });
+  const c = judgeCheck({ frame, frameHash: 'h', months: 12, then: two('2026-01-30', 4.4, 13, '2025'), now: two('2027-01-25', 4.8, 12, '2026'), checkedOn: '2027-02-01', warnings: [{ ref: 1, signal: 'rises' }, { ref: 2, signal: 'rises' }, { ref: 7, signal: 'falls' }] });
+  assert.equal(c.version, 'outcome-check-v2');
+  assert.deepEqual(c.warnings!.map((w) => [w.label, w.result]), [['Inflation', 'shown'], ['Policy rate', 'not_shown'], ['Figure [7]', 'missing']]);
+  assert.match(c.warnings![0].reason, /4\.4% \(2025\) to 4\.8% \(2026\); a warning if it rises/);
+  const early = judgeCheck({ frame, frameHash: 'h', months: 12, then: two('2026-01-30', 4.4, 13, '2025'), now: two('2027-01-25', 4.4, 13, '2025'), checkedOn: '2027-02-01', warnings: [{ ref: 2, signal: 'falls' }] });
+  assert.equal(early.warnings![0].result, 'too_early');
+  assert.equal(judge(diag('2027-01-25', 2.9, '2026')).warnings, undefined, 'no pre-mortem, no warnings field');
+});
