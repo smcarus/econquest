@@ -67,4 +67,13 @@ export const SHELL_FR: Messages<typeof SHELL> = {
   noRangeImf: 'le FMI publie un seul chiffre pour chaque pays, sans fourchette.',
   noRangeOwn: "ces résultats découlent de vos propres chiffres ; il n'y a donc pas d'erreurs passées pour mesurer une fourchette.",
   noRangeGfn: 'les années de projection reposent sur les projections du FMI, qui ne comportent pas de fourchette.',
+  cite: 'Citer',
+  citeTitle: 'Obtenez une citation prête à l’emploi, avec chaque source de données et la date de lecture',
+  citeHeading: 'Citer ceci',
+  citePlain: 'Texte brut',
+  citeCopy: 'Copier',
+  citeCopied: 'Copié',
+  citeDownload: 'Télécharger',
+  citeClose: 'Fermer',
+  citeNote: 'Collez le texte brut dans un article, ou chargez BibTeX ou RIS dans un gestionnaire de références comme Zotero. Citez aussi les sources de données : leurs conditions le demandent.',
 };

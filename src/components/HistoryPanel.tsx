@@ -5,6 +5,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHistory';
 import { historicalContext, type HistoricalContext } from '../utils/historicalContext';
 import { PublishChartButton } from './PublishChartButton';
+import { CiteButton } from './CiteButton';
 import { isPaidSource } from '../engine/paidData';
 import { useT, useTx } from '../i18n/useLang';
 import { PANELS, type PanelT } from '../i18n/messages/panels';
@@ -218,6 +219,7 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                 <a className="ui-btn inline-flex" href={`/api/export/${encodeURIComponent(iso3)}/series.xlsx`} download>
                   {t('c_excel')}
                 </a>
+                <CiteButton kind="table" className="ui-btn inline-flex items-center gap-1" title={`${tx(series.label)}, ${countryName}`} sources={[series.source || current?.source]} />
               </div>
               {!isPaidSource(series.source) && <PublishChartButton
                 chartRef={chartRef}

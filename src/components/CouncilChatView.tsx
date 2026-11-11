@@ -1,5 +1,6 @@
 /** Council chat and the Agents panel, drawn from the conversation in CouncilChatState.tsx. Loaded on first show. */
 import { SettingsText } from './SettingsText';
+import { CiteButton } from './CiteButton';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardList, Copy, Download, FileText, NotebookPen, X } from 'lucide-react';
 import { startPolicyReview } from '../utils/reviewHandoff';
@@ -399,6 +400,13 @@ export const AskCouncilPanel: React.FC<{
               >
                 <NotebookPen className="w-3.5 h-3.5" /> {tr('logIdea')}
               </button>
+              <CiteButton
+                kind="answer"
+                title={t.asked.question}
+                sources={t.synthesis?.snapshot?.figures.length ? t.synthesis.snapshot.figures.map((f) => f.source) : t.asked.answers.flatMap((a) => a.findings.flatMap((f) => f.figures.map((g) => g.source)))}
+                asOf={(t.synthesis?.snapshot?.asOf || t.asked.askedAt || '').slice(0, 10) || undefined}
+                disabled={writingNow}
+              />
               <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
                 <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? tr('copied') : tr('copy')}
               </button>

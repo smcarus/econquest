@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { ChartGuide } from './HelpLevel';
 import { ChartNumbers } from './ChartNumbers';
 import { Bar, BarChart, CartesianGrid, LabelList, Legend, Line, LineChart, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
+import { CiteButton } from './CiteButton';
 import { Download, FileArchive, Image as ImageIcon, Maximize2, MessageCircleQuestion, X } from 'lucide-react';
 import { chartFocus, explainInChat } from '../utils/explainHandoff';
 import { computeChart, fetchChartSeries, PAIR_TESTS, TEST_ORDER, TEST_TITLE, type ChartResult, type ChartTest } from '../utils/councilChart';
@@ -372,6 +373,7 @@ export const CouncilChartCard: React.FC<{ result: ChartResult }> = ({ result }) 
           >
             <FileArchive className="w-3.5 h-3.5" /> {t('ch_pack')}
           </button>
+          <CiteButton kind="chart" title={result.title} sources={[...result.lines.map((l) => l.source), ...(result.sources ?? [])]} disabled={!result.lines.length && !result.scatter?.pairs.length} />
         </div>
       </header>
       {blocked && <p className="text-xs text-amber-700 dark:text-amber-400" data-council-chart-blocked="true">{blocked}</p>}
