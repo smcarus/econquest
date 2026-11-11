@@ -169,7 +169,9 @@ full council and saved research.
   (`replicate.do`) with the settings the app used, and a README listing each column with its
   source and credit and the app's own figures to check against. The scripts do the arithmetic by
   hand (OLS, the Granger F test, the ADF lag search, the HP filter), so they match the app rather
-  than a package default. Sharing mode turns it off like the CSV.
+  than a package default. Sharing mode turns it off like the CSV. The pack also holds
+  `data-manifest.csv` (each column's label, unit, dates, source, licence row and the day the pack was
+  made) and a `CITATION.cff` file for citing the pack.
 - *Suggested questions*: the empty chat offers up to four questions picked from your own data, no
   AI: one on your largest holding (asked the way its asset class is judged), up to two on what moved
   on your watchlist (a BIS policy-rate move in the last three months, a 10Y yield change of half a
@@ -441,6 +443,12 @@ and members with no figure are named, since the app cannot rule them out.
 official yearly figures at a record or their highest or lowest in ten years or more, values the IMF
 or World Bank revised by a lot in the last 30 days, and what moved since your last visit. Countries
 with no saved yearly history are named; open their History once to download it.
+
+**Cite this.** A *Cite* button on each Chart Agent chart, each History series and each council
+answer (in its Sources fold) gives a citation ready to paste: the app with its version and the date
+you cite it, then each data source with the credit its terms ask for and the date the figures were
+read. It comes as plain text, BibTeX and RIS (for Zotero, EndNote or Mendeley), to copy or download.
+Figures the app works out itself, such as ratios, are not listed as a source; the citation says so.
 
 **Publish a chart.** Under each History chart, Publish chart downloads it as PNG or SVG with
 the title, source, period, the date and a credit line taken from the licence register (you can edit

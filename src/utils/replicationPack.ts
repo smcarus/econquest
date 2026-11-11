@@ -12,6 +12,9 @@ import { strToU8, zipSync } from 'fflate';
 import type { ChartLine, ChartResult, ChartTest } from './councilChart';
 import { MAX_SAVED_POINTS } from './councilChart';
 import { creditsFor } from './creditLines';
+import { packCitationCff } from './citation';
+import { licenceRowsForSource } from './licenceLookup';
+import { LICENCE_SHARE_LABEL, LICENCE_STATUS_LABEL } from '../data/dataLicences';
 import { EXPORT_NOTICE } from './disclaimer';
 import { hpLambda, periodsPerYear, TRANSFORM_LABEL, type Freq } from './stats';
 
@@ -84,6 +87,26 @@ function dataCsv(result: ChartResult): string {
     }
   const dates = [...byDate.keys()].sort();
   return ['date,' + lines.map((l) => l.key).join(','), ...dates.map((d) => [d, ...lines.map((l) => num(byDate.get(d)!.get(l.key) ?? NaN))].join(','))].join('\n') + '\n';
+}
+
+/** One row per column of data.csv: what it is, its source (with the period it names), the
+ * licence register row behind it and the date the pack was made. */
+function dataManifest(result: ChartResult, made: string): string {
+  const head = 'column,label,unit,first,last,source,register_source,licence_status,free_sharing,retrieved';
+  const reg = (source: string) => {
+    const rows = licenceRowsForSource(source);
+    if (!rows.length) return ['calculated by the app', '', ''];
+    return [rows.map((r) => r.name).join('; '), rows.map((r) => LICENCE_STATUS_LABEL[r.status]).join('; '), rows.map((r) => LICENCE_SHARE_LABEL[r.share]).join('; ')];
+  };
+  if (!result.lines.length && result.scatter) {
+    const src = (result.sources ?? []).join('; ');
+    return [head, ...[['x', result.scatter.xLabel], ['y', result.scatter.yLabel]].map(([k, l]) => [k, l, '', '', '', src, ...reg(src), made].map(esc).join(','))].join('\n') + '\n';
+  }
+  const rows = packLines(result).map((l) => {
+    const pts = l.points.filter((p) => Number.isFinite(p.value));
+    return [l.key, l.label, l.unit, pts[0]?.date ?? '', pts[pts.length - 1]?.date ?? '', l.source, ...reg(l.source), made].map(esc).join(',');
+  });
+  return [head, ...rows].join('\n') + '\n';
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -383,6 +406,8 @@ function readme(result: ChartResult, tests: ChartTest[], s: PackSettings | null,
     '',
     '- `data.csv`: the figures the chart drew' + (cross ? ' (country, x, y).' : ', one row per date, one column per line (blank where a line has no value).'),
     '- `replicate.py` (numpy, pandas, scipy), `replicate.R` (base R), `replicate.do` (Stata): the same tests with the settings the app used. Run each from this folder.',
+    '- `data-manifest.csv`: one row per column: label, unit, first and last date, source, the licence register row behind it and the date the pack was made.',
+    '- `CITATION.cff`: how to cite this pack and the app; cite each data source in `data-manifest.csv` too.',
     '',
     '## Columns',
     '',
@@ -428,6 +453,8 @@ export function replicationPack(result: ChartResult, now: Date = new Date()): Re
       'replicate.py': python(result, tests, s, cols),
       'replicate.R': rScript(result, tests, s, cols),
       'replicate.do': stata(result, tests, s, cols),
+      'data-manifest.csv': dataManifest(result, now.toISOString().slice(0, 10)),
+      'CITATION.cff': packCitationCff(result.title, now.toISOString().slice(0, 10)),
     },
     settings: s,
     tests,

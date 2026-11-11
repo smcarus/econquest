@@ -44,7 +44,13 @@ test('settings match the ones the app used for its tests', () => {
 
 test('the pack holds the data without trend lines, three scripts and the app figures', () => {
   const p = replicationPack(result, new Date('2026-11-07T00:00:00Z'));
-  assert.deepEqual(Object.keys(p.files).sort(), ['README.md', 'data.csv', 'replicate.R', 'replicate.do', 'replicate.py']);
+  assert.deepEqual(Object.keys(p.files).sort(), ['CITATION.cff', 'README.md', 'data-manifest.csv', 'data.csv', 'replicate.R', 'replicate.do', 'replicate.py']);
+  const manifest = p.files['data-manifest.csv'].trim().split('\n');
+  assert.equal(manifest[0], 'column,label,unit,first,last,source,register_source,licence_status,free_sharing,retrieved');
+  assert.equal(manifest.length, 1 + p.files['data.csv'].split('\n')[0].split(',').length - 1, 'one manifest row per data column');
+  assert.match(p.files['data-manifest.csv'], /BIS statistics/);
+  assert.match(p.files['CITATION.cff'], /cff-version: 1\.2\.0/);
+  assert.match(p.files['CITATION.cff'], /EconQuest Terminal/);
   const csv = p.files['data.csv'].trim().split('\n');
   assert.equal(csv[0], 'date,s0,s1');
   assert.equal(csv.length, 181);
@@ -100,7 +106,7 @@ test('across countries: country, x, y and the two cross-section tests', () => {
 test('the zip unpacks to the same files in one folder', () => {
   const files = unzipSync(replicationZip(result));
   const names = Object.keys(files).sort();
-  assert.equal(names.length, 5);
+  assert.equal(names.length, 7);
   assert.ok(names.every((n) => n.startsWith('turkey-policy-rate-vs-turkey-inflation/')));
   assert.match(strFromU8(files[names.find((n) => n.endsWith('data.csv'))!]), /^date,s0,s1\n/);
 });

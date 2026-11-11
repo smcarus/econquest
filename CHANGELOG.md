@@ -5,6 +5,10 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- "Cite this" (G11): a Cite button on Chart Agent charts, History series and council answers gives a
+  citation in plain text, BibTeX and RIS: the app with its version and the date cited, then each
+  data source with the credit its terms ask for and the date read (src/utils/citation.ts).
+  Replication packs add `data-manifest.csv` and `CITATION.cff`.
 - Licence check of every source the planned steps will read (Wave 0): 13 new rows in a "Sources
   planned, not read by the app yet" section of docs/DATA_LICENCES.md. Open with credit: AidData
   (ODC-By), Penn World Table and Our World in Data (CC BY 4.0), IMF GFS and FSI (IMF data terms).

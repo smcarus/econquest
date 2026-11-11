@@ -295,15 +295,19 @@ with that is welcome.
 
 Planned work, in order (details and status in [docs/ROADMAP.md](./docs/ROADMAP.md)):
 
-1. **Data and economist readiness** (paused after its tenth change, for review): done so far are US
-   Treasury auctions, EU surveys, fresher inflation figures, a frame for a paid data subscription you
-   already own (Macrobond first), labels for what each figure measures, its units and seasonal
-   adjustment, ranges on forecasts and a release calendar. Still to come: "Cite this" exports, euro
-   area and UK figures as first published, and two more paid vendors.
-2. **Quests in the classroom**: class accounts, assignments, feedback and a gradebook file for
-   professors, then a one-term pilot with two professors.
-3. **The public release** at e-conquest/econquest.
-4. **A phone app** (paused): a free standalone app that uses your own keys.
+1. **Citations, upkeep and feedback**: "Cite this" on every chart, table and answer (done); a size
+   review, a monthly source check, and checks of past policy reviews against what happened.
+2. **The figures a full terminal needs**: inequality, tax revenue and tariffs, low-income country
+   debt, people, trade and debt structure, climate, wages and house prices, sector balances, monthly
+   activity, and euro area and UK figures as first published.
+3. **The public release** at e-conquest/econquest, after a security and Windows check, with a light
+   mode for modest laptops.
+4. **Analysis and policy tools**: crisis early-warning, external sustainability, the yield curve,
+   inflation drivers, growth accounting, a restructuring calculator, behavioural finance, and a
+   fuller policy review.
+5. **More languages and teaching**: Portuguese, Arabic and Swahili, worked examples, and Quests in
+   the classroom with a one-term pilot.
+6. **A phone app** (paused): a free standalone app that uses your own keys.
 
 ---
 

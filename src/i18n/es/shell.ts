@@ -67,4 +67,13 @@ export const SHELL_ES: Messages<typeof SHELL> = {
   noRangeImf: 'el FMI publica una sola cifra para cada país, sin rango.',
   noRangeOwn: 'estos resultados se derivan de sus propias cifras, por lo que no hay errores pasados con los que medir un rango.',
   noRangeGfn: 'los años de proyección usan proyecciones del FMI, que no incluyen rango.',
+  cite: 'Citar',
+  citeTitle: 'Obtenga una cita lista para usar, con cada fuente de datos y la fecha de lectura',
+  citeHeading: 'Citar esto',
+  citePlain: 'Texto sin formato',
+  citeCopy: 'Copiar',
+  citeCopied: 'Copiado',
+  citeDownload: 'Descargar',
+  citeClose: 'Cerrar',
+  citeNote: 'Pegue el texto sin formato en un artículo, o cargue BibTeX o RIS en un gestor de referencias como Zotero. Cite también las fuentes de datos: sus condiciones lo piden.',
 };

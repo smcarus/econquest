@@ -27,7 +27,7 @@ The same rules hold for every change:
 | Researcher tools | Opt-in 14B referee for smaller computers; a small gap model you fill in yourself, with a council link; the data API with R, Python and Stata helpers; register and run your own tests, with their own Holm correction |
 | Your own data | Load your own CSV series and use them across the app |
 | Fiscal what-ifs | Spending multipliers by type, defence and spending by purpose, OECD and European Commission budget elasticities, an editable what-if card |
-| Figures you can compare and cite | Each series says what it measures and whose figure it is, whether it is seasonally adjusted, real or nominal, its base year and currency; forecasts show a range and say what it means; each country's next CPI and GDP release dates from the statistics office's own calendar |
+| Figures you can compare and cite | A Cite button on every chart, table and answer (plain text, BibTeX, RIS) and a citation file and data manifest in replication packs; each series says what it measures and whose figure it is, whether it is seasonally adjusted, real or nominal, its base year and currency; forecasts show a range and say what it means; each country's next CPI and GDP release dates from the statistics office's own calendar |
 | Paid data you already have | A Settings screen for your own subscription (off by default, paid figures never leave your computer) and the first vendor, Macrobond |
 | New data | IMF PortWatch shipping, central bank decision dates, a Calendar tab, US Treasury auctions, EU business and consumer surveys, fresher inflation figures (IMF monthly prices, freshest source per country) |
 | Easier running | `npm run go` (one command to update and start), downloads at start-up and the daily data download (which records how much it downloads), the ready-made app image, and the computer and disk space needed, written down in the install guide |
@@ -66,7 +66,7 @@ list until checkpoint 1;** new ideas are kept on a parked list and looked at the
 | Wave | Steps | What it means for you |
 | --- | --- | --- |
 | 0 | Licence check of every planned source; tests for G23, G25 and G32 written down and locked before those tools exist | No later step waits on a licence, and building a tool cannot bend its test |
-| 1 | G11 "Cite this"; K1 size review; M1 upkeep routine (monthly source check, yearly licence re-read, monthly library updates) | Citations for every chart and answer; room for more languages; sources that change or vanish are caught |
+| 1 | G11 "Cite this" (done); K1 size review; M1 upkeep routine (monthly source check, yearly licence re-read, monthly library updates) | Citations for every chart and answer; room for more languages; sources that change or vanish are caught |
 | 2 | P1 policy outcome check; G38 "how could this fail" step; P2 flag a figure or answer; P3 rate answers | Policy reviews are checked against what happened after 12 and 24 months; you can report problems |
 | 3 | G16 inequality, tax revenue and tariffs; U1 low-income country debt; G17 people; G19 debt structure; G18 trade exposure; G20 climate and energy; G22 wages and house prices; G40 sector balances and private debt; G41 monthly activity; G42 revenue by level of government; G12/G13 euro area and UK figures as first published | The figures a full economic terminal needs, especially for the poorest countries |
 | 4 | G43 security, privacy and Windows check; S1 success measures; U3 light mode for modest laptops; public release | The app goes public, and runs without a local AI model |
