@@ -228,6 +228,8 @@ export const MENU_FR: Messages<typeof MENU> = {
   ab_fromTerms: "D'après les conditions",
   ab_termsRead: "Conditions lues",
   ab_checked: "vérifié le {date}",
+  ab_checkDue: 'Vérification de licence à faire : lue il y a plus de 12 mois',
+  ab_ended: 'Terminée le {date} : les chiffres gardent leur dernière date',
   ab_questions: "Questions ouvertes ({n})",
   ac_title: "Compte",
   ac_closeAria: "Fermer le compte",

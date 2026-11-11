@@ -319,6 +319,7 @@ Planned work, in order (details and status in [docs/ROADMAP.md](./docs/ROADMAP.m
 - [docs/METHODOLOGY.md](./docs/METHODOLOGY.md): how data is sourced, how the council is checked, and how models and signals are tested and graded
 - [docs/DATA_SOURCES.md](./docs/DATA_SOURCES.md): every source, what it fills, how to set it up
 - [docs/DATA_LICENCES.md](./docs/DATA_LICENCES.md): what each source's terms allow
+- [docs/MAINTENANCE.md](./docs/MAINTENANCE.md): the upkeep routine: daily checks, monthly and yearly tasks, and what happens when a source ends
 - [docs/DATA_API.md](./docs/DATA_API.md): reading the app's figures from R, Python and Stata
 - [docs/METHODS.md](./docs/METHODS.md): a methods note per model and signal, with its pre-registered backtests and recorded verdicts
 - [docs/TRACK_RECORD.md](./docs/TRACK_RECORD.md): every pre-registered test on record, passed or failed, with the Holm correction and the forward record

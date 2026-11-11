@@ -42,6 +42,24 @@ export interface LicenceRow {
   share: LicenceShare;
   shareNote: string;
   checked: string;
+  /** The day the source stopped publishing or answering for good (docs/MAINTENANCE.md). Its figures
+   * keep their last date with an "Ended" note and are never filled from another source without a new
+   * register row. */
+  ended?: string;
+}
+
+/** Terms are re-read at least once a year (upkeep routine M1, docs/MAINTENANCE.md). */
+export const LICENCE_RECHECK_DAYS = 365;
+
+/** True when the row's terms were last read more than a year before `now`. */
+export function licenceCheckDue(row: Pick<LicenceRow, 'checked'>, now: Date = new Date()): boolean {
+  const t = Date.parse(`${row.checked}T00:00:00Z`);
+  return Number.isFinite(t) && now.getTime() - t > LICENCE_RECHECK_DAYS * 86_400_000;
+}
+
+/** Register rows whose terms are due a re-read. */
+export function licencesDue(now: Date = new Date(), rows: LicenceRow[] = DATA_LICENCES): LicenceRow[] {
+  return rows.filter((r) => !r.ended && licenceCheckDue(r, now));
 }
 
 export const LICENCE_STATUS_LABEL: Record<LicenceStatus, string> = {
@@ -956,6 +974,9 @@ export function licencesMarkdown(rows: LicenceRow[] = DATA_LICENCES): string {
     '"Terms not confirmed" rather than guessing. This is a research note, not legal advice: a question that',
     'matters for a client or a sale should go to the provider in writing.',
     '',
+    'Each row\'s terms are read again at least once a year; the app marks a row "Licence check due" when its',
+    'date is more than 12 months old (docs/MAINTENANCE.md).',
+    '',
     'The same register is in the app under **Menu > About & data licences**. Every export (council briefs and',
     'documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backups) ends with the line',
     '"Research, not validated advice." and points here (src/utils/disclaimer.ts).',
@@ -982,6 +1003,7 @@ export function licencesMarkdown(rows: LicenceRow[] = DATA_LICENCES): string {
     out.push(`- **Show to others:** ${r.display}`);
     out.push(`- **Commercial use:** ${r.commercial}`);
     out.push(`- **Credit:** ${r.attribution}`);
+    if (r.ended) out.push(`- **Ended:** ${r.ended}. Figures keep their last date; nothing is filled in from another source.`);
     if (r.flag) out.push(`- **Open question:** ${r.flag}`);
     if (r.quotes.length) {
       out.push('', 'From the terms:', '');

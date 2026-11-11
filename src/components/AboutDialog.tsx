@@ -4,7 +4,7 @@ import { REQUIRED_CREDITS } from '../data/requiredCredits';
 import { SourceCredits } from './SourceCredits';
 import { useT } from '../i18n/useLang';
 import { MENU } from '../i18n/messages/menu';
-import { DATA_LICENCES, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
+import { licenceCheckDue, DATA_LICENCES, LICENCE_STATUS_LABEL, openLicenceQuestions, type LicenceStatus } from '../data/dataLicences';
 
 /**
  * Menu > About & data licences: what the app is, the standing research notice, and the licence
@@ -124,6 +124,8 @@ export function AboutDialog({ focusId, onClose }: { focusId?: string | null; onC
                         </a>
                       ))}
                       <span className="text-slate-400 dark:text-slate-500">{t('ab_checked', { date: r.checked })}</span>
+                      {licenceCheckDue(r) && <span className="text-amber-700 dark:text-amber-400" data-licence-due={r.id}>{t('ab_checkDue')}</span>}
+                      {r.ended && <span className="text-rose-700 dark:text-rose-300" data-licence-ended={r.id}>{t('ab_ended', { date: r.ended })}</span>}
                     </dd>
                   </dl>
                 )}

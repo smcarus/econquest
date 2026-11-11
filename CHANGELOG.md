@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Upkeep routine (M1, docs/MAINTENANCE.md): Data health and `npm run check:data` flag a source that
+  has failed every check for 30 days or more; a licence row whose terms were read over 12 months ago
+  shows "Licence check due" (About & data licences, Data health); Dependabot runs monthly, minor and
+  patch updates grouped; a written rule for a source that ends (figures keep their last date with an
+  "Ended" note, nothing filled in from elsewhere).
 - Size review (K1): the app drops from 5.84 MB to 5.19 MB. jsPDF's helpers for HTML and SVG pages
   (html2canvas, DOMPurify, canvg), which the app never uses, are left out of the build, and the
   share-preview logo is stored with 256 colours (336 KB to 41 KB). Start-up size is unchanged.
