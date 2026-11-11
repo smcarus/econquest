@@ -7,6 +7,7 @@ import { DIST_TAX_CODES, GINI_CODE, pickDistTaxRow } from '../../utils/distribut
 import { PEOPLE_CODES, peopleTag, pickPeopleRow } from '../../utils/peopleLiving';
 import { INTEREST_REVENUE_CODE, debtStructureUrl, parseDebtStructure } from '../../utils/debtStructure';
 import { TRADE_MIX_CODES, pickTradeMixRow, tradeMixTag } from '../../utils/tradeMix';
+import { CLIMATE_CODES, pickClimateRow } from '../../utils/climateEnergy';
 import { BIS_LABEL } from '../../utils/bisDebtSecurities';
 import { HC_SPREAD_FEED_LABEL } from '../../utils/hardCurrencySpread.ts';
 import { IDS_LABEL, QEDS_LABEL } from '../../utils/debtSchedule';
@@ -173,6 +174,22 @@ export async function fetchLiveOpenDataSnapshotNetwork(
       if (!res.ok) return;
       const parsed = parseDebtStructure(await res.json(), new Date().toISOString());
       if (parsed) baseline.debtStructure = parsed;
+    })(),
+
+    // 1f. Climate and energy (G20, src/utils/climateEnergy.ts): greenhouse gas emissions per head and
+    // the renewable share of final energy use. Each only when found.
+    (async () => {
+      await Promise.allSettled(
+        CLIMATE_CODES.map(async ({ code, field, perPage }) => {
+          const res = await fetchWithTimeout(`https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}`);
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickClimateRow(field, data?.[1]);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(field === 'ghgPerHeadT' ? 2 : 1));
+          markLive(`wb.${field}`, `World Bank, ${row.year}`);
+        })
+      );
     })(),
 
     // 1e. Trade and commodity exposure (G18, src/utils/tradeMix.ts): shares of goods exports and

@@ -441,6 +441,10 @@ export interface OpenDataSnapshot {
     importManufPct?: number;
     /** Net energy imports, % of energy use; negative = net exporter (EG.IMP.CONS.ZS). */
     netEnergyImportsPct?: number;
+    /** G20 (src/utils/climateEnergy.ts): greenhouse gas emissions per head excluding land use, tonnes CO2e (EN.GHG.ALL.PC.CE.AR5). */
+    ghgPerHeadT?: number;
+    /** Renewable energy, % of final energy consumption (EG.FEC.RNEW.ZS). */
+    renewableSharePct?: number;
     sourceUrl: string;
   };
   monetaryAndMarket: {
@@ -498,6 +502,8 @@ export interface OpenDataSnapshot {
   investorBase?: import('../utils/investorBase').InvestorBaseReading;
   /** UN Comtrade profile saved for this country, laid over when the snapshot is read (utils/comtradeTrade.ts). */
   comtrade?: import('../utils/comtradeTrade').ComtradeProfile & { pulledAt: string };
+  /** Energy mix from the Our World in Data copy saved on this computer (utils/climateEnergy.ts); mix absent when the file has none for the country. */
+  energyMix?: { pulledAt: string; file: 'current' | 'legacy'; mix?: import('../utils/climateEnergy').EnergyMix };
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -659,6 +665,10 @@ export interface WatchlistItem {
   investorBase?: import('../utils/investorBase').InvestorBaseReading;
   /** Shares of goods exports and imports by group and net energy imports (utils/tradeMix.ts), each with its year; only live figures. */
   tradeMix?: import('../utils/tradeMix').TradeMixFigures;
+  /** Emissions per head and renewable share (utils/climateEnergy.ts), each with its year; only live figures. */
+  climate?: import('../utils/climateEnergy').ClimateFigures;
+  /** Energy mix from the Our World in Data copy saved on this computer (utils/climateEnergy.ts). */
+  energyMix?: { pulledAt: string; file: 'current' | 'legacy'; mix?: import('../utils/climateEnergy').EnergyMix };
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

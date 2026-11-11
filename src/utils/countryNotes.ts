@@ -13,6 +13,7 @@ import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_US_HELP } from './de
 import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from './investorBase';
 import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, IMPORT_FIELDS, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue, tradeMixFromSnapshot } from './tradeMix';
 import { comtradeMissing, HHI_MIN_COVERAGE_PCT } from './comtradeTrade';
+import { CLIMATE_RISK_HELP, EMISSIONS_SOURCE, ENERGY_MIX_LEGACY_NOTE, ENERGY_MIX_NOT_COVERED_HELP, ENERGY_MIX_SETUP_HELP, ENERGY_MIX_SOURCE, ENERGY_MIX_TERMS_NOTE, RENEWABLE_SOURCE, climateFromSnapshot, energyMixValue } from './climateEnergy';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -279,6 +280,38 @@ export function tradeRows(status: SnapshotDataStatus, open: CouncilAssessmentRun
   ];
 }
 
+/**
+ * Climate and energy (G20, src/utils/climateEnergy.ts): greenhouse gas emissions per head and the
+ * renewable share (World Bank), the energy mix (Our World in Data copy on this computer) and
+ * physical climate risk (Missing until ND-GAIN states terms). Each row Missing with a reason.
+ */
+export function climateRows(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData']): BriefRow[] {
+  const cf = climateFromSnapshot(open);
+  const em = open.energyMix;
+  const ghg = 'Greenhouse gas emissions per person';
+  const ren = 'Renewable share of energy use';
+  const mix = 'Energy mix';
+  return [
+    cf?.ghgPerHeadT
+      ? { label: ghg, value: `${cf.ghgPerHeadT.value.toFixed(1)} tonnes of CO2 equivalent (${cf.ghgPerHeadT.year})`, source: EMISSIONS_SOURCE, verified: true }
+      : missingRow(ghg, pathMissing(status, 'wb.ghgPerHeadT')),
+    cf?.renewableSharePct
+      ? { label: ren, value: `${pct(cf.renewableSharePct.value)} of final energy use (${cf.renewableSharePct.year})`, source: RENEWABLE_SOURCE, verified: true }
+      : missingRow(ren, pathMissing(status, 'wb.renewableSharePct')),
+    em?.mix
+      ? {
+          label: mix,
+          value: energyMixValue(em.mix),
+          source: `${ENERGY_MIX_SOURCE}${em.file === 'legacy' ? `; ${ENERGY_MIX_LEGACY_NOTE}` : ''} (downloaded ${em.pulledAt.slice(0, 10)}); ${ENERGY_MIX_TERMS_NOTE}`,
+          verified: true,
+        }
+      : em
+        ? missingRow(mix, { kind: 'unreachable', short: 'Not in the Energy Institute figures', help: ENERGY_MIX_NOT_COVERED_HELP })
+        : missingRow(mix, { kind: 'setup', short: 'Energy file not downloaded yet', help: ENERGY_MIX_SETUP_HELP }),
+    missingRow('Physical climate risk (ND-GAIN)', { kind: 'setup', short: 'ND-GAIN states no licence', help: CLIMATE_RISK_HELP }),
+  ];
+}
+
 /** A figure worked out here from other figures: shown only when every input is live. */
 export function modelRow(status: SnapshotDataStatus, label: string, inputs: string[], value: () => string, how = 'model, from figures above'): BriefRow {
   const gap = inputs.find((p) => !status.isLive(p));
@@ -486,6 +519,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
     { title: 'Distribution and taxes', rows: distTaxRows(status, open, now) },
     { title: 'People', rows: peopleRows(status, open, now) },
     { title: 'Trade', rows: tradeRows(status, open, now) },
+    { title: 'Climate and energy', rows: climateRows(status, open) },
   ];
   return { headline, judgements: j, sampleWarning: missingNote(groups, run.countryName), groups };
 }
@@ -526,6 +560,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         ...distTaxRows(status, open),
         ...peopleRows(status, open),
         ...tradeRows(status, open),
+        ...climateRows(status, open),
         ...debtStructureRows(status, open),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
@@ -612,6 +647,7 @@ export const ECONOMIST_SECTIONS: Record<string, string> = {
   distribution: 'Distribution and taxes',
   people: 'People',
   trade: 'Trade',
+  climate: 'Climate and energy',
   risks: 'Risks to the outlook',
   calendar: 'Coming up',
   sources: 'Data and sources',
@@ -632,6 +668,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
     ['distribution', 'Distribution and taxes'],
     ['people', 'People'],
     ['trade', 'Trade'],
+    ['climate', 'Climate and energy'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: ECONOMIST_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('risks')) {

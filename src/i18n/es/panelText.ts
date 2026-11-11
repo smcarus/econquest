@@ -705,4 +705,9 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "% of goods imports": "% de las importaciones de bienes",
   "% of energy use": "% del consumo de energía",
   "% of energy use (negative = net exporter)": "% del consumo de energía (negativo = exportador neto)",
+  // G20: climate and energy
+  "Greenhouse gas emissions per person": "Emisiones de gases de efecto invernadero por persona",
+  "Renewable share of energy use": "Proporción renovable del consumo de energía",
+  "tonnes CO2 equivalent": "toneladas de CO2 equivalente",
+  "% of final energy consumption": "% del consumo final de energía",
 };
