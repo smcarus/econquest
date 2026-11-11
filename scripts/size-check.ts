@@ -32,8 +32,9 @@ export const TARGETS: Target[] = [
   // when someone picks that language.
   // Size review K1, 11 Nov 2026: 5.84 -> 5.19 MB by leaving out jsPDF's unused HTML and SVG helpers
   // (html2canvas, DOMPurify, canvg; src/vendor/pdfExtrasStub.ts) and storing the share-preview logo
-  // with 256 colours. Each language adds about 0.45 MB (140 KB compressed).
-  { name: 'web', dir: 'dist', limits: { startKB: 1500, startGzipKB: 465, largestJsKB: 1280, totalMB: 6 } },
+  // with 256 colours. Each language adds about 0.45 MB (140 KB compressed). Total raised to 7.5 MB the
+  // same day (Sam) to make room for Portuguese, Arabic and Swahili and the planned screens.
+  { name: 'web', dir: 'dist', limits: { startKB: 1500, startGzipKB: 465, largestJsKB: 1280, totalMB: 7.5 } },
   { name: 'phone', dir: 'mobile/dist', limits: { startKB: 1000, startGzipKB: 300, largestJsKB: 400, totalMB: 20 } },
 ];
 

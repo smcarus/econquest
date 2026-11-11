@@ -355,7 +355,7 @@ in place of the network.
 
 **Size limits.** Every screen added since the start loads only when it is opened, and each language
 downloads only when picked. The start-up download must stay under 465 KB compressed and the whole app
-under 6 MB; `npm run size:check` enforces both.
+under 7.5 MB; `npm run size:check` enforces both.
 
 **Tests on real replies.** The offline fixtures are hand-written. `npm run record:feeds`, run on a
 computer that reaches the feeds, saves what every free feed really sends (gzipped, keys taken out of
