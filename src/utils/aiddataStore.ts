@@ -63,7 +63,7 @@ export function aiddataDir(dataDir: string): string {
 const FILE_RE = /\.(csv|xlsx|zip)$/i;
 
 /** Every worksheet of an .xlsx (unzipped), in workbook order, as rows of text. */
-function* workbookSheets(entries: Record<string, Uint8Array>): Generator<Iterable<string[]>> {
+export function* workbookSheets(entries: Record<string, Uint8Array>): Generator<Iterable<string[]>> {
   const text = (name: string) => (entries[name] ? strFromU8(entries[name]) : null);
   const workbook = text('xl/workbook.xml');
   const rels = text('xl/_rels/workbook.xml.rels');

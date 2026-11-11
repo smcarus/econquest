@@ -75,6 +75,8 @@ import { peopleFromSnapshot } from './src/utils/peopleLiving';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
+import { investorBaseData } from './src/utils/investorBaseStore';
+import { investorBaseReading } from './src/utils/investorBase';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
 import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
@@ -1115,7 +1117,17 @@ function licDebtFor(iso3: string): LicDebtReading {
   return licDebtReading(iso3, aid);
 }
 function withLicDebt(snapshot: OpenDataSnapshot): OpenDataSnapshot {
-  return { ...snapshot, licDebt: licDebtFor(snapshot.iso3) };
+  return withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) });
+}
+/** Who holds government debt (G19): the IMF investor base workbook in data/local/imf-investor-base/. */
+function withInvestorBase(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  let data = null;
+  try {
+    data = investorBaseData(DATA_DIR);
+  } catch (err: any) {
+    console.warn(`[IMF investor base] could not read data/local/imf-investor-base: ${err?.message || err}`);
+  }
+  return { ...snapshot, investorBase: investorBaseReading(snapshot.iso3, data) };
 }
 /** GDELT 1.0 monthly history (data/live/gdelt-daily/), laid over like the 2.0 files. */
 function withGdeltDaily(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -1371,6 +1383,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
             return fiscal ? { fiscal } : {};
           })()),
           licDebt: licDebtFor(snap.iso3),
+          investorBase: withInvestorBase(snap).investorBase,
           ...((() => {
             const distTax = distTaxFromSnapshot(snap);
             return distTax ? { distTax } : {};
@@ -1912,6 +1925,7 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
     ucdp: () => ucdpData(DATA_DIR),
     acledFiles: () => acledFileData(DATA_DIR),
     aiddata: () => aiddataData(DATA_DIR),
+    investorBase: () => investorBaseData(DATA_DIR),
     paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
@@ -2993,6 +3007,7 @@ async function startServer() {
       ucdp: () => ucdpData(DATA_DIR),
       acledFiles: () => acledFileData(DATA_DIR),
       aiddata: () => aiddataData(DATA_DIR),
+      investorBase: () => investorBaseData(DATA_DIR),
       paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
@@ -5631,6 +5646,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         ucdp: () => ucdpData(DATA_DIR),
         acledFiles: () => acledFileData(DATA_DIR),
       aiddata: () => aiddataData(DATA_DIR),
+      investorBase: () => investorBaseData(DATA_DIR),
         paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),

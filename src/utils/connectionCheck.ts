@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
+import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
 import { chokepointsUrl, parsePortWatchStats } from './portWatch';
@@ -121,6 +122,7 @@ export interface CheckOptions {
   /** The ACLED aggregated files in data/local/acled/ (server: acledFileData). */
   acledFiles?: () => AcledFileData | null;
   aiddata?: () => AiddataData | null;
+  investorBase?: () => import('./investorBaseStore').InvestorBaseData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -318,6 +320,7 @@ export const SOURCE_IDS = [
   'acled',
   'acled_files',
   'aiddata_file',
+  'imf_investor_base',
   'eia',
   'own_cds',
   'paid_data',
@@ -1260,6 +1263,33 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     return {
       ...setRow(def, 'connected', `Read ${t.file}: loans to ${t.countries.size} countries, to ${t.fileLastYear}.`, host),
       ...(first ? { sample: `${first[0]}: ${chinaValue(first[1])}` } : {}),
+      ...(skipped ? { warning: skipped } : {}),
+    };
+  });
+
+  add('imf_investor_base', async () => {
+    const def: Def = {
+      id: 'imf_investor_base',
+      name: 'IMF sovereign debt investor base (downloaded)',
+      group: 'free',
+      feeds: 'Who holds government debt (foreign, central bank, banks, others), for the country brief and the Fiscal & Debt Agent',
+      setup: INVESTOR_BASE_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.investorBase) return setRow(def, 'optional', 'The folder data/local/imf-investor-base/ was not checked from here.', host);
+    let data: import('./investorBaseStore').InvestorBaseData | null;
+    try {
+      data = opts.investorBase();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The investor base folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((x) => `${x.file} (${x.reason})`).join('; ')}.` : '';
+    if (!data?.table) return setRow(def, 'optional', `No IMF investor base file in data/local/imf-investor-base/.${skipped ? ` ${skipped}` : ''}`, host);
+    const t = data.table;
+    const sample = t.countries.get('BRA') ?? [...t.countries.values()][0];
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}${t.version ? ` (version of ${t.version})` : ''}: ${t.countries.size} countries, to ${t.lastYear}.`, host),
+      ...(sample ? { sample: `${t.countries.get('BRA') ? 'BRA' : [...t.countries.keys()][0]}: ${investorBaseValue(sample, t.lastYear)}` } : {}),
       ...(skipped ? { warning: skipped } : {}),
     };
   });

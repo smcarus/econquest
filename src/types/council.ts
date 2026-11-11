@@ -476,6 +476,8 @@ export interface OpenDataSnapshot {
   debtSchedule?: import('../utils/debtSchedule').DebtSchedule;
   /** Currency mix and new-loan maturity of public external debt, when World Bank IDS answered (utils/debtStructure.ts). */
   debtStructure?: import('../utils/debtStructure').DebtStructure;
+  /** Who holds government debt, from the IMF investor base workbook in data/local/imf-investor-base/ (utils/investorBase.ts). */
+  investorBase?: import('../utils/investorBase').InvestorBaseReading;
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -633,6 +635,8 @@ export interface WatchlistItem {
   debtStructure?: import('../utils/debtStructure').DebtStructureFigures;
   /** Low-income country debt (utils/lowIncomeDebt.ts): debt-distress rating, DSSI, Common Framework, lending from China. */
   licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
+  /** Who holds government debt (utils/investorBase.ts), from the IMF workbook when it is in data/local/imf-investor-base/. */
+  investorBase?: import('../utils/investorBase').InvestorBaseReading;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

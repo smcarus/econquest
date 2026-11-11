@@ -354,9 +354,15 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   (World Bank, with its year), the currency mix of the government's debt to foreign lenders and the
   average maturity of new loans from abroad (World Bank International Debt Statistics, which cover
   low- and middle-income countries only; the maturity is for loans taken that year, not the debt
-  already owed). *Who holds government debt* reads Missing until the terms of the IMF dataset that
-  has it are checked; for the United States the Treasury's figures on foreign holders (TIC) are in
-  the FX Valuation Agent and History & data.
+  already owed). *Who holds government debt* splits general government debt between foreign official
+  lenders, foreign banks, other foreign investors, the central bank, local banks and other local
+  investors, from the IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies
+  (about 136 countries, yearly, the latest year preliminary). The app does not ship this file:
+  download wp1439.zip from
+  https://www.imf.org/-/media/websites/imf/imported-datasets/external/pubs/ft/wp/2014/data/wp1439.zip
+  and put it in `data/local/imf-investor-base/`; Data health shows whether it was read. For the United
+  States, which it does not cover, the Treasury's figures on foreign holders (TIC) are in the FX
+  Valuation Agent and History & data.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):

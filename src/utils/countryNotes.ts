@@ -9,7 +9,8 @@ import { nextOfficialEvent, releaseGap, upcomingOfficialEvents, type ReleaseCate
 import { missingReason, type MissingReason } from './liveFigures';
 import { distTaxFromSnapshot, giniValue, GINI_LOOKBACK_YEARS } from './distributionTaxes';
 import { peopleFromSnapshot, povertyValue, POVERTY_FIELDS, POVERTY_LABEL } from './peopleLiving';
-import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_HELP, INVESTOR_BASE_SHORT, INVESTOR_BASE_US_HELP } from './debtStructure';
+import { currencyValue, IDS_STRUCTURE_SOURCE, INVESTOR_BASE_US_HELP } from './debtStructure';
+import { INVESTOR_BASE_SETUP_HELP, investorBaseSource, investorBaseValue } from './investorBase';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -204,6 +205,17 @@ function idsMissing(open: CouncilAssessmentRun['openData']): MissingReason {
     : { kind: 'unreachable', short: 'World Bank IDS did not answer', help: 'This comes from the World Bank International Debt Statistics, which are free. They did not answer this time. Press Refresh now under Research > One country to try again.' };
 }
 
+/** Who holds government debt: the IMF investor base workbook, or Missing with what to do. */
+export function investorBaseRow(iso3: string, r: CouncilAssessmentRun['openData']['investorBase']): BriefRow {
+  const hold = 'Who holds government debt';
+  if (r?.state === 'found' && r.holders) return { label: hold, value: investorBaseValue(r.holders, r.lastYear ?? 0), source: investorBaseSource(r), verified: true };
+  if (iso3 === 'USA') return missingRow(hold, { kind: 'setup', short: 'Only foreign holders (TIC) connected', help: INVESTOR_BASE_US_HELP });
+  if (r?.state === 'notCovered')
+    return missingRow(hold, { kind: 'unreachable', short: 'Not in the IMF investor base', help: 'The IMF Sovereign Debt Investor Base covers emerging markets and developing economies only, and this country is not among them. The app leaves it Missing rather than estimate it.' });
+  if (r?.state === 'unreadable') return missingRow(hold, { kind: 'setup', short: 'IMF investor base file could not be read', help: `${INVESTOR_BASE_SETUP_HELP} The file there did not read: ${r.reason || 'unknown reason'}.` });
+  return missingRow(hold, { kind: 'setup', short: 'IMF investor base file not downloaded', help: INVESTOR_BASE_SETUP_HELP });
+}
+
 /**
  * Debt structure (G19, src/utils/debtStructure.ts): interest as % of revenue, the currency mix and
  * new-loan maturity of public external debt, and who holds government debt (Missing until the IMF
@@ -220,9 +232,7 @@ export function debtStructureRows(status: SnapshotDataStatus, open: CouncilAsses
     ds?.newLoanMaturity
       ? { label: mat, value: `${ds.newLoanMaturity.years.toFixed(1)} years on average (${ds.newLoanMaturity.year})`, source: `${IDS_STRUCTURE_SOURCE}; loans committed that year, all lenders, not the debt already owed`, verified: true }
       : missingRow(mat, idsMissing(open)),
-    status.iso3 === 'USA'
-      ? missingRow(hold, { kind: 'setup', short: 'Only foreign holders (TIC) connected', help: INVESTOR_BASE_US_HELP })
-      : missingRow(hold, { kind: 'setup', short: INVESTOR_BASE_SHORT, help: INVESTOR_BASE_HELP }),
+    investorBaseRow(status.iso3, open.investorBase),
   ];
 }
 

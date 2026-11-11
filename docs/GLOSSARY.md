@@ -338,7 +338,7 @@ The split of government debt by who owns it: foreign investors, local banks, the
 
 **How to read it.** A large foreign share means more exposure to global market moods. A large share held by local banks means a debt problem can become a banking problem.
 
-**Limits.** The app does not show it yet: the IMF dataset that has it has not had its terms of use checked, so the row reads Missing.
+**Limits.** These are estimates by two IMF economists, built from many sources; the latest year is preliminary and is revised. They cover emerging and developing economies only, as shares of general government debt. The app reads them from the IMF workbook you download into data/local/imf-investor-base/.
 
 ### Interest rate minus growth (r minus g)
 

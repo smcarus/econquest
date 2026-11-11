@@ -10,10 +10,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
   currency mix of public external debt (US dollar, euro, yen, pound, Swiss franc, SDR, several and
   other currencies) and the average maturity of new public external loans (World Bank International
   Debt Statistics; low- and middle-income countries only; labelled as new loans, not the debt already
-  owed). "Who holds government debt" reads Missing until the terms of the IMF Sovereign Debt Investor
-  Base are checked (planned licence row added); for the United States it points to the Treasury's
+  owed). "Who holds government debt" comes from the IMF Sovereign Debt Investor Base for Emerging
+  Markets and Developing Economies (Arslanalp and Tsuda): shares held by foreign official lenders,
+  foreign banks, other foreign investors, the central bank, local banks and other local investors,
+  for about 136 countries, read from the workbook you put in `data/local/imf-investor-base/` (not
+  shipped; IMF data terms, commercial use needs permission; licence row added). Without the file it
+  reads Missing with the download link; for the United States it points to the Treasury's
   foreign-holder figures. Interest as % of revenue charts under History & data and is in downloads.
-  Data health has a row for it; glossary entries; Spanish and French text.
+  Data health has rows for the World Bank figures and the IMF file; glossary entries; Spanish and
+  French text.
 
 - People and living standards (G17): seven World Bank series in the country brief (new group
   "People"), History & data, downloads and the council: the poverty rate at the lowest international

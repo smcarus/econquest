@@ -41,6 +41,7 @@ import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURCE, DISTRESS_LABEL, DSSI_SOURCE, dsaSource, dsaValue } from './lowIncomeDebt';
+import { foreignShare, investorBaseSource, investorBaseValue } from './investorBase';
 import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
 import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
@@ -629,6 +630,13 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
       figures.push({ label: 'Public external debt by currency', value: currencyValue(dsx.currency), source: IDS_STRUCTURE_SOURCE, tag: 'official' });
       const usd = usdShare(dsx);
       if (usd !== undefined && usd >= 50) parts.push(`${usd.toFixed(0)}% of its public external debt is in US dollars (World Bank IDS, ${dsx.currency.year}), so a weaker currency raises the cost of paying it.`);
+    }
+    // Who holds government debt (src/utils/investorBase.ts): the IMF investor base workbook, when it is on this computer.
+    const ib = it.investorBase;
+    if (ib?.state === 'found' && ib.holders) {
+      figures.push({ label: 'Who holds government debt', value: investorBaseValue(ib.holders, ib.lastYear ?? 0), source: investorBaseSource(ib), tag: 'official' });
+      const fs = foreignShare(ib.holders);
+      parts.push(`Foreign investors hold ${fs.toFixed(0)}% of its government debt (IMF investor base, ${ib.holders.year})${fs >= 30 ? ', so a change in global appetite for its bonds matters' : ''}.`);
     }
     if (dsx?.newLoanMaturity) figures.push({ label: 'Maturity of new public external loans', value: `${dsx.newLoanMaturity.years.toFixed(1)} years (${dsx.newLoanMaturity.year})`, source: `${IDS_STRUCTURE_SOURCE}; new loans that year, all lenders`, tag: 'official' });
     // Distribution and taxes (src/utils/distributionTaxes.ts): World Bank figures, each with its year; only when live.

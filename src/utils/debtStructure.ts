@@ -11,9 +11,9 @@
  * - Average maturity of new PPG external loans, all lenders (DT.MAT.DPPG, years). IDS has no average
  *   maturity of the debt already owed, so the label says "new loans".
  * - Interest payments, % of revenue (World Bank WDI GC.XPN.INTP.RV.ZS): central government only.
- * - Who holds government debt (the IMF Sovereign Debt Investor Base for Emerging Markets): not read
- *   until its terms are checked (the IMF site does not answer from the build computer); the row reads Missing with that reason. For the United States the
- *   app already reads the Treasury's foreign-holder figures (TIC).
+ * - Who holds government debt: the IMF Sovereign Debt Investor Base (utils/investorBase.ts), from the
+ *   workbook you put in data/local/imf-investor-base/. For the United States, which it does not cover,
+ *   the app points to the Treasury's foreign-holder figures (TIC).
  *
  * Only figures a live feed answered are used; nothing built in. Browser-safe, pure.
  */
@@ -81,9 +81,6 @@ export const IDS_STRUCTURE_SOURCE = 'World Bank International Debt Statistics; p
 export const INTEREST_SOURCE = 'World Bank WDI (IMF Government Finance Statistics)';
 export const INTEREST_CENTRAL_NOTE = 'central government only';
 
-export const INVESTOR_BASE_SHORT = 'IMF terms not checked yet';
-export const INVESTOR_BASE_HELP =
-  'Who holds a government\'s debt (foreign investors, local banks, the central bank and others) comes from the IMF Sovereign Debt Investor Base for Emerging Markets. Its terms of use have not been checked yet, so the app does not read it until they are. It shows Missing rather than an estimate.';
 export const INVESTOR_BASE_US_HELP =
   'For the United States, the app reads the US Treasury\'s figures on foreign holders of Treasury securities (TIC); they show in the FX Valuation agent and under History & data. A full split by holder (banks, the Federal Reserve and others) is not connected yet.';
 

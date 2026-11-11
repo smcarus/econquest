@@ -10,7 +10,7 @@ import { seriesTags, COVERAGE } from '../src/utils/seriesDefinitions.ts';
 import { figureHelp } from '../src/data/glossary.ts';
 import { planCouncil, runCouncil } from '../src/utils/askCouncil.ts';
 import { checkConnections } from '../src/utils/connectionCheck.ts';
-import { PLANNED_LICENCES } from '../src/data/dataLicences.ts';
+import { DATA_LICENCES, PLANNED_LICENCES } from '../src/data/dataLicences.ts';
 import type { CouncilAssessmentRun, OpenDataSnapshot, WatchlistItem } from '../src/types/council.ts';
 
 /** An IDS sources answer, shaped like the D6 answers read on 2026-11-07. */
@@ -81,7 +81,7 @@ test('brief rows under Fiscal and debt: figures with their years, or Missing wit
   assert.match(by('Maturity of new public external loans').source, /not the debt already owed/);
   const who = by('Who holds government debt');
   assert.equal(who.missing, true);
-  assert.equal(who.source, 'IMF terms not checked yet');
+  assert.equal(who.source, 'IMF investor base file not downloaded');
   for (const l of ['Interest payments, central government', 'Public external debt by currency', 'Maturity of new public external loans', 'Who holds government debt']) assert.ok(figureHelp(l), l);
 
   const rich = snap('DEU', (s) => { s.debtStructure = { fetchedAt: 't' }; });
@@ -100,7 +100,8 @@ test('downloads, History & data and the licence row', () => {
   assert.equal(fr[col('period')], '2023');
   assert.ok(OFFICIAL_FIGURES.some((f) => f.id === 'interest_revenue' && f.code === 'GC.XPN.INTP.RV.ZS'));
   assert.equal(seriesTags({ id: 'interest_revenue' }).coverage, COVERAGE.centralGov);
-  assert.equal(PLANNED_LICENCES.find((l) => l.id === 'imf_investor_base')?.status, 'not_verified');
+  assert.equal(DATA_LICENCES.find((l) => l.id === 'imf_investor_base')?.status, 'permission');
+  assert.ok(!PLANNED_LICENCES.some((l) => l.id === 'imf_investor_base'));
 });
 
 test('the Fiscal & Debt Agent quotes interest, currency mix and maturity when live; nothing when not', () => {
