@@ -373,6 +373,14 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   added up, from near 0 (spread out) to 1 (one chapter), with the number of equal-sized product groups
   that would be as concentrated. The Hormuz scenario's working names the energy position, and the
   Global Spillover Agent quotes these figures.
+  The *Climate and energy* group shows greenhouse gas emissions per person (World Bank, from the EU's
+  EDGAR database, leaving out land use and forests) and the renewable share of final energy use
+  (World Bank), each with its year, and the energy mix: the shares of coal, oil, gas, nuclear and
+  renewables in the country's energy supply, from Our World in Data's energy file, which uses the
+  Energy Institute's Statistical Review. The Energy Institute allows private, non-commercial use
+  only, so the daily run downloads the file to your computer once a week and the app never ships it;
+  do not pass these figures on or use them commercially without the Energy Institute's permission.
+  *Physical climate risk (ND-GAIN)* reads Missing: ND-GAIN states no licence for its scores.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):

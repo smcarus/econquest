@@ -50,6 +50,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['evds', /\bEVDS\b|\bTCMB\b/],
   ['own', /\byour (own|holdings|connector)\b|\bLSEG\b|\byour \S+ data\b/i],
   ['imf_investor_base', /Investor Base/i],
+  ['owid_energy', /Our World in Data energy|Energy Institute/i],
   ['pinksheet', /Pink Sheet|pink_sheet/i],
   ['worldbank', /World Bank|\bWGI\b|\bWDI\b|\bIDS\b|\bQEDS\b/],
 ];

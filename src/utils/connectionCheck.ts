@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
@@ -278,6 +279,8 @@ export const SOURCE_IDS = [
   'worldbank_dist',
   'worldbank_people',
   'worldbank_trade',
+  'worldbank_climate',
+  'owid_energy',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
@@ -379,6 +382,34 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         if (row) return `${SAMPLE_NAME} tax revenue ${fmt(Number(row.value))}% of GDP, central government (${row.date})`;
         return Array.isArray(rows) ? `Answered (no recent tax revenue figure for ${SAMPLE_NAME})` : null;
       }
+    )
+  );
+
+  add('worldbank_climate', () =>
+    httpCheck(
+      { id: 'worldbank_climate', name: 'World Bank emissions and renewables', group: 'free', feeds: 'Greenhouse gas emissions per person, renewable share of energy use (country brief)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/${EMISSIONS_CODE}?format=json&per_page=10`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} greenhouse gas emissions ${fmt(Number(row.value))} tonnes CO2e per person (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent emissions figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  // The first few kilobytes are enough to see that the file answers and still has the energy mix columns.
+  add('owid_energy', () =>
+    httpCheck(
+      { id: 'owid_energy', name: 'Our World in Data energy file', group: 'free', feeds: 'Energy mix: coal, oil, gas, nuclear and renewables shares (country brief, Global Spillover Agent); downloaded weekly to this computer, not shipped' },
+      fetchFn,
+      OWID_ENERGY_URL,
+      T,
+      (r) => (energyColumns((r.text || '').split('\n')[0] || '') ? 'Energy file answered with the coal, oil, gas, nuclear and renewables share columns' : null),
+      { headers: { Range: 'bytes=0-16383' } },
+      'It answered, but the first line has no coal, oil and gas share columns. Our World in Data may have renamed them again.'
     )
   );
 

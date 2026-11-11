@@ -198,4 +198,7 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   "Food as % of merchandise imports (World Bank TM.VAL.FOOD.ZS.UN)": "Produits alimentaires en % des importations de marchandises (Banque mondiale TM.VAL.FOOD.ZS.UN)",
   "Manufactured goods as % of merchandise imports (World Bank TM.VAL.MANF.ZS.UN)": "Produits manufacturés en % des importations de marchandises (Banque mondiale TM.VAL.MANF.ZS.UN)",
   "Energy use minus production, as % of energy use; negative = net exporter (World Bank EG.IMP.CONS.ZS)": "Consommation d'énergie moins production, en % de la consommation ; négatif = exportateur net (Banque mondiale EG.IMP.CONS.ZS)",
+  // G20: climate and energy
+  "All greenhouse gases excluding land use, tonnes of CO2 equivalent per person (World Bank EN.GHG.ALL.PC.CE.AR5, from EDGAR)": "Tous les gaz à effet de serre hors utilisation des terres, en tonnes d'équivalent CO2 par personne (Banque mondiale EN.GHG.ALL.PC.CE.AR5, d'après EDGAR)",
+  "Renewable energy as % of final energy consumption, including traditional biomass (World Bank EG.FEC.RNEW.ZS)": "Énergie renouvelable en % de la consommation finale d'énergie, biomasse traditionnelle comprise (Banque mondiale EG.FEC.RNEW.ZS)",
 };

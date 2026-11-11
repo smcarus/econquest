@@ -81,6 +81,8 @@ export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> 
   { field: 'wb.importOresMetalsPct', label: 'Ores and metals imports', unit: '% of goods imports' },
   { field: 'wb.importFoodPct', label: 'Food imports', unit: '% of goods imports' },
   { field: 'wb.importManufPct', label: 'Manufactures imports', unit: '% of goods imports' },
+  { field: 'wb.ghgPerHeadT', label: 'Greenhouse gas emissions per person', unit: 'tonnes CO2 equivalent' },
+  { field: 'wb.renewableSharePct', label: 'Renewable share of energy use', unit: '% of final energy consumption' },
   { field: 'wb.netEnergyImportsPct', label: 'Net energy imports', unit: '% of energy use (negative = net exporter)' },
 ];
 
@@ -90,7 +92,7 @@ function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
   // G16 figures carry their year in the source tag ("World Bank, 2022"); the survey year for the Gini.
-  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency|interest|export|import|netEnergy)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
+  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency|interest|export|import|netEnergy|ghg|renewable)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';
 }

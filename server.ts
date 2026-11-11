@@ -73,6 +73,8 @@ import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
 import { peopleFromSnapshot } from './src/utils/peopleLiving';
 import { tradeMixFromSnapshot } from './src/utils/tradeMix';
+import { climateFromSnapshot } from './src/utils/climateEnergy';
+import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
@@ -547,6 +549,13 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const months = Object.values(got.series).flatMap((s) => Object.values(s).map((p) => p[p.length - 1]?.period || ''));
       const note = `${Object.keys(got.series).length} countries to ${months.sort().pop() || '?'}`;
       return fresh ? { outcome: 'done', note } : { outcome: 'failed', note: `Eurostat did not answer; kept the copy from ${got.pulledAt.slice(0, 10)} (${note})` };
+    }
+    case 'world:owid_energy': {
+      const got = await fetchOwidEnergyPull();
+      if (!got) return { outcome: 'failed', note: 'Our World in Data did not answer for the energy file' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${Object.keys(got.countries).length} countries${got.file === 'legacy' ? ' (older file, no longer updated)' : ''}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
     }
     case 'world:ust_auctions': {
       const got = await fetchUstAuctionPull({ force: true });
@@ -1118,7 +1127,14 @@ function licDebtFor(iso3: string): LicDebtReading {
   return licDebtReading(iso3, aid);
 }
 function withLicDebt(snapshot: OpenDataSnapshot): OpenDataSnapshot {
-  return withComtradeProfile(withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) }));
+  return withEnergyMix(withComtradeProfile(withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) })));
+}
+/** The energy mix from the Our World in Data copy the daily run saved on this computer (G20). */
+function withEnergyMix(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const pull = loadOwidEnergy();
+  if (!pull) return snapshot;
+  const mix = pull.countries[snapshot.iso3];
+  return { ...snapshot, energyMix: { pulledAt: pull.pulledAt, file: pull.file, ...(mix ? { mix } : {}) } };
 }
 /** The UN Comtrade profile saved for this country (export concentration, top export markets), when pulled. */
 function withComtradeProfile(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -1404,6 +1420,11 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const tradeMix = tradeMixFromSnapshot(snap);
             return tradeMix ? { tradeMix } : {};
+          })()),
+          ...((() => {
+            const climate = climateFromSnapshot(snap);
+            const e = withEnergyMix(snap).energyMix;
+            return { ...(climate ? { climate } : {}), ...(e?.mix ? { energyMix: e } : {}) };
           })()),
           ...((() => {
             const debtStructure = debtStructureFromSnapshot(snap);

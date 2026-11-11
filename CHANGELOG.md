@@ -5,6 +5,18 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Climate and energy (G20): a new "Climate and energy" group in the country brief and note:
+  greenhouse gas emissions per person (World Bank, from the EU's EDGAR database, excluding land use)
+  and the renewable share of final energy use (World Bank, SDG 7), each with its year; the energy mix
+  (coal, oil, gas, nuclear and renewables shares of primary energy) from Our World in Data's energy
+  file, based on the Energy Institute's Statistical Review. The Energy Institute's terms allow
+  private, non-commercial use only, so the daily run downloads the file to each computer (weekly,
+  new step "Energy mix") and it is never shipped; the licence page and the row's source say so.
+  Physical climate risk (ND-GAIN) reads Missing, since ND-GAIN states no licence. The Global
+  Spillover Agent quotes the energy mix. Emissions and the renewable share chart under History & data
+  and are in downloads; Data health rows for the World Bank figures and the energy file; glossary
+  entries; Spanish and French text.
+
 - Trade and commodity exposure (G18): a new "Trade" group in the country brief and note: the shares
   of goods exports and imports in fuel, ores and metals, food and manufactures (World Bank, from UN
   Comtrade), net energy imports as % of energy use (World Bank; a net exporter is shown as how many

@@ -82,7 +82,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'worldbank',
     name: 'World Bank indicators and debt statistics (IDS, QEDS)',
-    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)',
+    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); greenhouse gas emissions per person (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR), renewable share of energy use (EG.FEC.RNEW.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)',
     terms: [{ label: 'Terms of Use for Datasets', url: 'https://www.worldbank.org/ext/en/legal/terms-conditions/datasets' }],
     status: 'open',
     display: 'Allowed: the data may be shared with third parties under CC BY 4.0.',
@@ -738,6 +738,28 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-11',
   },
   {
+    id: 'owid_energy',
+    name: 'Our World in Data energy file (Energy Institute Statistical Review of World Energy)',
+    usedFor: 'Energy mix: shares of coal, oil, gas, nuclear and renewables in primary energy (country brief, Global Spillover Agent), downloaded weekly to this computer by the daily run',
+    terms: [
+      { label: 'Our World in Data energy data (README)', url: 'https://github.com/owid/energy-data' },
+      { label: 'Energy Institute terms', url: 'https://www.energyinst.org/terms' },
+      { label: 'Energy Institute Statistical Review', url: 'https://www.energyinst.org/statistical-review' },
+    ],
+    status: 'permission',
+    display: 'Not allowed without the Energy Institute\'s permission: its terms allow private, non-commercial use only. Our World in Data\'s CC BY covers its own work, not the Energy Institute\'s figures.',
+    commercial: 'Not allowed without the Energy Institute\'s permission.',
+    attribution: 'Energy Institute - Statistical Review of World Energy (year); Our World in Data energy dataset.',
+    quotes: [
+      'You may only print (or download to disk) the Contents for the purpose of private and personal non-commercial use',
+      'is subject to the license terms from the original third-party authors',
+    ],
+    flag: 'The energy mix shares come from the Energy Institute, whose website terms allow private, non-commercial use only. The maintainer chose (2026-11-11, personal non-commercial use) to have each computer download the file itself and never ship it. Do not show these figures to others or use them commercially without the Energy Institute\'s permission; ask the Energy Institute before any wider use.',
+    share: 'restricted',
+    shareNote: 'Private, non-commercial use only; not shipped with the app.',
+    checked: '2026-11-11',
+  },
+  {
     id: 'imf_investor_base',
     name: 'IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)',
     usedFor: 'Who holds government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (country brief, Fiscal & Debt Agent), from the workbook you put in data/local/imf-investor-base/',
@@ -807,29 +829,7 @@ export const PLANNED_LICENCES: PlannedLicenceRow[] = [
     shareNote: 'CC BY 4.0 allows sharing with credit.',
     checked: P,
   },
-  {
-    id: 'owid',
-    name: 'Our World in Data (CO2 and greenhouse gas data)',
-    plannedFor: 'G20 Climate and energy',
-    usedFor: 'Greenhouse gas and CO2 emissions per country',
-    terms: [
-      { label: 'Our World in Data FAQs (licence)', url: 'https://ourworldindata.org/faqs' },
-      { label: 'owid/co2-data README', url: 'https://github.com/owid/co2-data' },
-    ],
-    status: 'open',
-    display: 'Allowed for data Our World in Data produces (CC BY 4.0); data from third parties keeps its own licence.',
-    commercial: 'Not stated on the pages; CC BY 4.0 itself sets no commercial limit.',
-    attribution: 'Our World in Data and the underlying data provider named on each series.',
-    quotes: [
-      'falls under our permissive CC BY license; you have permission to use, reproduce, and distribute it, provided that you cite us',
-      'completely open access under the Creative Commons BY license',
-      'is subject to the license terms from the original third-party authors',
-    ],
-    flag: 'Each emissions series in the CO2 file names its original provider; check that provider\'s licence for the series G20 uses before building.',
-    share: 'allowed',
-    shareNote: 'CC BY 4.0 for Our World in Data\'s own data; credit the original provider too.',
-    checked: P,
-  },
+
   {
     id: 'imf_gfs_fsi',
     name: 'IMF Government Finance Statistics and Financial Soundness Indicators',

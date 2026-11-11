@@ -68,6 +68,7 @@ export const WORLD_STEPS: PreloadStep[] = [
   { id: 'world:cofer', kind: 'world', label: 'IMF COFER reserve currencies' },
   { id: 'world:commodities', kind: 'world', label: 'Commodity prices (World Bank Pink Sheet, EIA)' },
   { id: 'world:comtrade', kind: 'world', label: 'UN Comtrade trade partners' },
+  { id: 'world:owid_energy', kind: 'world', label: 'Energy mix (Our World in Data energy file, weekly; kept on this computer only)' },
   { id: 'world:gov_spending', kind: 'world', label: 'Government spending by sector (Eurostat and IMF COFOG via DBnomics)' },
   { id: 'world:hc_spread', kind: 'world', label: 'USD bond spreads over Treasuries (central bank of Peru, J.P. Morgan EMBI Global, monthly)' },
   { id: 'world:fx_history', kind: 'world', label: 'Daily exchange rates since 1999 (ECB reference rates via Frankfurter)' },

@@ -108,4 +108,6 @@ export const REPORTS_TEXT_FR: Record<string, string> = {
   "People": "Population",
   // G18: trade and commodity exposure
   "Trade": "Commerce",
+  // G20: climate and energy
+  "Climate and energy": "Climat et énergie",
 };

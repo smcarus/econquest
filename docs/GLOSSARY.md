@@ -66,6 +66,36 @@ The share of people living on less than a fixed amount a day, the poverty line. 
 
 **Limits.** It comes from household surveys that many countries run only every few years, so the latest figure can be old. The World Bank moves the lines from time to time when it updates price comparisons, so figures from before and after a change are not directly comparable.
 
+### Greenhouse gas emissions per person
+
+All the greenhouse gases a country emits in a year (carbon dioxide, methane, nitrous oxide and others), turned into the amount of carbon dioxide that would warm the planet as much, divided by the number of people.
+
+**Why it matters.** It shows how carbon-heavy the economy is. Countries with high emissions per person face larger costs from carbon prices, border carbon taxes such as the EU's, and the move away from coal, oil and gas.
+
+**How to read it.** The world average is about 6 to 7 tonnes. Rich, coal-heavy or oil-producing countries are often 10 to 20 tonnes or more; many poorer countries are under 2.
+
+**Limits.** From the EU's EDGAR database via the World Bank, yearly and a year or two late. It leaves out emissions and removals from land use and forests, which matter a lot for countries such as Brazil and Indonesia. It counts where goods are made, not where they are used.
+
+### Renewable share of energy use
+
+The share of the energy people and businesses finally use (for heat, transport, power and cooking) that comes from renewable sources: hydro, wind, solar, geothermal and wood and other biomass.
+
+**Why it matters.** Countries that rely on their own renewables import less fuel, so they are less exposed to oil and gas price jumps.
+
+**How to read it.** Higher means less reliance on coal, oil and gas. In some poorer countries it is high because many households cook with wood, not because of wind and solar.
+
+**Limits.** The UN figure for Sustainable Development Goal 7, via the World Bank, yearly and two or three years late. It includes traditional wood and charcoal.
+
+### Energy mix
+
+How a country's total energy supply splits between coal, oil, gas, nuclear power and renewables.
+
+**Why it matters.** It shows which fuel prices move the country's costs and how far it has to go to cut emissions. A country running mostly on imported oil and gas is hit hard when their prices jump.
+
+**How to read it.** A large oil and gas share means exposure to their prices; a large coal share means high emissions per unit of energy; a large renewables or nuclear share means less exposure to fuel prices.
+
+**Limits.** From Our World in Data's energy file, based on the Energy Institute's Statistical Review of World Energy, which lists about 80 countries one by one. The Energy Institute allows private, non-commercial use only, so the app downloads the file on your computer and never ships it. Yearly, with the year shown.
+
 ### Age dependency ratio
 
 How many children (under 15) and older people (over 64) there are for every 100 people of working age (15 to 64).
@@ -609,6 +639,16 @@ World prices of raw materials such as oil, gas, copper, wheat and gold, from the
 **Why it matters.** For a country that exports a commodity, a higher price means more export income and tax revenue; for one that imports it, a higher price raises inflation and the import bill.
 
 ## Politics, conflict and news
+
+### Physical climate risk (ND-GAIN)
+
+A score from the University of Notre Dame of how exposed a country is to the effects of climate change, such as floods, droughts and heat, and how ready it is to adapt.
+
+**Why it matters.** Storms, droughts and floods damage farms, roads and homes, cut tax revenue and can force governments to borrow. Investors and rating agencies look at these risks more and more.
+
+**How to read it.** The app does not show it yet: ND-GAIN states no licence for its scores, so the row reads Missing until ND-GAIN says in writing that the scores may be used.
+
+**Limits.** Not read by the app; see above.
 
 ### Political stability (WGI)
 
