@@ -14,7 +14,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, RefreshCw, X } from 'lucide-react';
 import type { ConnectionState } from '../utils/connectionCheck';
-import type { SourceHealth } from '../utils/dataHealth';
+import { ENDED_NOTE, possiblyEnded, type SourceHealth } from '../utils/dataHealth';
+import { licencesDue } from '../data/dataLicences';
 import type { FigureEvent, FigureEventKind, OpenIssue } from '../utils/figureWatch';
 import type { HistoryRevision } from '../utils/officialHistory';
 import { CALENDAR_FLAG_TEXT, type CalendarHealth } from '../utils/calendarHealth';
@@ -121,6 +122,11 @@ function SourcesView() {
             : 'Every source that was asked answered at the last check.'}
         </p>
       )}
+      {licencesDue().length > 0 && (
+        <p className="text-amber-700 dark:text-amber-400" data-health-licence-due="true">
+          Licence check due (terms last read over 12 months ago): {licencesDue().map((r) => r.name).join('; ')}. Read each source&apos;s terms again and update src/data/dataLicences.ts (docs/MAINTENANCE.md).
+        </p>
+      )}
       {data && !data.sources.length && <p>The first check runs tonight after {data.nightly.time}, or press Check now.</p>}
       <ul className="divide-y divide-slate-100 dark:divide-slate-800">
         {[...(data?.sources || [])].sort((a, b) => rank(a.state) - rank(b.state)).map((s) => (
@@ -142,6 +148,11 @@ function SourcesView() {
               {s.asked ? ` · Connected ${s.connected} of its last ${s.asked} checks` : ''}
               {FAILING.has(s.state) && s.lastConnectedAt ? ` · last connected ${day(s.lastConnectedAt)}` : ''}
             </p>
+            {possiblyEnded(s) && (
+              <p className="text-xs text-amber-700 dark:text-amber-400" data-health-ended={s.id}>
+                {ENDED_NOTE}
+              </p>
+            )}
           </li>
         ))}
       </ul>

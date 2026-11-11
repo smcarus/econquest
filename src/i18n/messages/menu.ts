@@ -238,6 +238,8 @@ export const MENU = defineMessages('menu', {
   ab_fromTerms: 'From the terms',
   ab_termsRead: 'Terms read',
   ab_checked: 'checked {date}',
+  ab_checkDue: 'Licence check due: read over 12 months ago',
+  ab_ended: 'Ended {date}: figures keep their last date',
   ab_questions: 'Open questions ({n})',
   // Account and sign-in
   ac_title: 'Account',

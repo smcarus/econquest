@@ -235,6 +235,8 @@ export const MENU_ES: Partial<Record<Keys, string>> = {
   ab_fromTerms: 'De las condiciones',
   ab_termsRead: 'Condiciones leídas',
   ab_checked: 'revisado el {date}',
+  ab_checkDue: 'Revisión de licencia pendiente: leída hace más de 12 meses',
+  ab_ended: 'Finalizada el {date}: las cifras conservan su última fecha',
   ab_questions: 'Preguntas abiertas ({n})',
   // Account and sign-in
   ac_title: 'Cuenta',

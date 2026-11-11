@@ -1,11 +1,13 @@
-# Weekly check for dependency updates (npm, GitHub Actions, the Docker base image).
-# Each update arrives as its own pull request and is merged only after CI passes.
+# Monthly check for dependency updates (npm, GitHub Actions, the Docker base image), handled once a
+# month under the upkeep routine (docs/MAINTENANCE.md). Minor and patch updates arrive together in one
+# pull request per ecosystem; each major update arrives on its own. Merged only after CI passes and on
+# the maintainer's word.
 version: 2
 updates:
   - package-ecosystem: npm
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     open-pull-requests-limit: 5
     groups:
       minor-and-patch:
@@ -13,8 +15,11 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
   - package-ecosystem: docker
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
