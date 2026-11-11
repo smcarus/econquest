@@ -100,6 +100,8 @@ function SourcesView() {
     }
   };
   const failing = data?.sources.filter((s) => FAILING.has(s.state)) || [];
+  // Flags and answer ratings (roadmap P2, P3): counts only, from data/local/feedback.jsonl.
+  const feedback = useJson<{ line: string }>('/api/feedback/summary');
   return (
     <div className="space-y-3">
       {error && <p className="text-rose-600 dark:text-rose-400">{error}</p>}
@@ -125,6 +127,11 @@ function SourcesView() {
       {licencesDue().length > 0 && (
         <p className="text-amber-700 dark:text-amber-400" data-health-licence-due="true">
           Licence check due (terms last read over 12 months ago): {licencesDue().map((r) => r.name).join('; ')}. Read each source&apos;s terms again and update src/data/dataLicences.ts (docs/MAINTENANCE.md).
+        </p>
+      )}
+      {feedback.data && (
+        <p className="text-xs text-slate-500 dark:text-slate-400" data-health-feedback="true">
+          Feedback: {feedback.data.line} `npm run feedback:export` writes the rated questions for the council test set.
         </p>
       )}
       {data && !data.sources.length && <p>The first check runs tonight after {data.nightly.time}, or press Check now.</p>}

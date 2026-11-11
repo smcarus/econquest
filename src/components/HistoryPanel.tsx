@@ -6,6 +6,7 @@ import { seriesGaps, type Series, type SeriesMissing } from '../utils/seriesHist
 import { historicalContext, type HistoricalContext } from '../utils/historicalContext';
 import { PublishChartButton } from './PublishChartButton';
 import { CiteButton } from './CiteButton';
+import { FlagButton } from './FeedbackControls';
 import { isPaidSource } from '../engine/paidData';
 import { useT, useTx } from '../i18n/useLang';
 import { PANELS, type PanelT } from '../i18n/messages/panels';
@@ -220,6 +221,11 @@ export const HistoryPanel: React.FC<{ iso3: string; countryName: string; pick?: 
                   {t('c_excel')}
                 </a>
                 <CiteButton kind="table" className="ui-btn inline-flex items-center gap-1" title={`${tx(series.label)}, ${countryName}`} sources={[series.source || current?.source]} />
+                <FlagButton
+                  target="figure"
+                  className="ui-btn inline-flex items-center gap-1"
+                  figure={{ iso3, label: series.label, value: series.points.length ? `${series.points[series.points.length - 1].value} ${series.unit} (${series.points[series.points.length - 1].date})` : '', source: series.source || current?.source || '' }}
+                />
               </div>
               {!isPaidSource(series.source) && <PublishChartButton
                 chartRef={chartRef}

@@ -3,6 +3,7 @@ import { shortHash, type RunComparison, type SnapshotSummary } from '../utils/an
 import type { SynthesisResult } from '../utils/askCouncil';
 import { useT, useTx } from '../i18n/useLang';
 import { CHAT } from '../i18n/messages/chat';
+import { FlagButton } from './FeedbackControls';
 
 const when = (iso: string) => {
   const d = new Date(iso);
@@ -68,6 +69,7 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
                     <th className="pr-2 font-normal">{t('sn_figure')}</th>
                     <th className="pr-2 font-normal">{t('sn_value')}</th>
                     <th className="font-normal">{t('sn_source')}</th>
+                    <th className="font-normal" aria-hidden />
                   </tr>
                 </thead>
                 <tbody className="text-slate-800 dark:text-slate-200">
@@ -77,6 +79,9 @@ export function AnswerSnapshotDetails({ snapshot, runtimeConfig }: { snapshot: S
                       <td className="pr-2">{f.label}</td>
                       <td className="pr-2 whitespace-nowrap">{f.value}</td>
                       <td>{f.source}</td>
+                      <td className="pl-1">
+                        <FlagButton target="figure" compact className="ui-btn ui-btn-ghost px-1" figure={{ iso3: f.iso3, label: f.label, value: f.value, source: f.source }} />
+                      </td>
                     </tr>
                   ))}
                 </tbody>

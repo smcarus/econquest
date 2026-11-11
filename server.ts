@@ -6,6 +6,7 @@ import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, rea
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
 import { createNodePlatform } from './src/platform/node';
@@ -3390,6 +3391,7 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerFeedbackRoutes(app, { refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
   // own screens, beside (never inside) seriesFor, so nothing built from seriesFor (downloads, the

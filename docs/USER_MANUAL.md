@@ -450,6 +450,17 @@ you cite it, then each data source with the credit its terms ask for and the dat
 read. It comes as plain text, BibTeX and RIS (for Zotero, EndNote or Mendeley), to copy or download.
 Figures the app works out itself, such as ratios, are not listed as a source; the citation says so.
 
+**Flag a figure or an answer.** A *Flag* button on each History series, each figure in a council
+answer's snapshot and each council answer lets you say what looks wrong. The note is saved on this
+computer in `data/local/feedback.jsonl` with the figure, its source and the app version. The app then
+offers *Open a GitHub issue*, filled in for you; nothing is sent until you send it on GitHub, and a
+figure from a paid subscription leaves its value out of the issue.
+
+**Rate an answer.** Thumbs up or down under each council answer, with a reason if you like, saved in
+the same file. A rating never changes an answer. Menu > Data health counts flags and ratings, and
+`npm run feedback:export` writes the rated questions (question, rating, reason; no figures) to
+`data/local/feedback-export.json` for adding to the council test set.
+
 **Publish a chart.** Under each History chart, Publish chart downloads it as PNG or SVG with
 the title, source, period, the date and a credit line taken from the licence register (you can edit
 it). Sources whose terms restrict free sharing, such as Kalshi or OECD yields served through FRED,
