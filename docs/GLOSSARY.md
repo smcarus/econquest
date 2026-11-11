@@ -36,6 +36,16 @@ The share of people who want a job and are looking for one but do not have one.
 
 **Limits.** People who have given up looking, or work informally, are not counted, so in many emerging economies the rate understates how many people lack decent work.
 
+### Gini index (inequality)
+
+One number for how evenly income (or spending) is shared among households, from 0 (everyone has the same) to 100 (one household has everything).
+
+**Why it matters.** Two countries with the same average income can feel very different to live in. High inequality can weaken support for reforms, and the same policy can help or hurt very different numbers of people.
+
+**How to read it.** Higher means more unequal. Most rich European countries are around 25 to 35; parts of Latin America and southern Africa are above 50. The app shows the survey year and whether the survey measured income or consumption.
+
+**Limits.** It comes from household surveys that many countries run only every few years, so the latest figure can be old. A consumption Gini usually reads lower than an income Gini, because spending is shared more evenly than income, so do not compare the two directly. Very rich households are often missed by surveys.
+
 ### Business and consumer surveys (not a PMI)
 
 Each month the European Commission asks thousands of firms and households in every EU country how things are going and how they expect them to go. The answers are turned into confidence measures for industry, services and consumers, an overall Economic Sentiment Indicator and an Employment Expectations Indicator.
@@ -182,6 +192,24 @@ Revenue is what the government takes in (taxes, fees, grants, income from state 
 
 **Why it matters.** Shown as a share of GDP, they reveal the size of the state and where a budget gap comes from.
 
+### Tax revenue (central government)
+
+The taxes the central government collects in a year, as a share of GDP.
+
+**Why it matters.** Taxes pay for public services and debt. A low tax take limits what a government can spend or borrow, and raising it is often the slowest part of a reform.
+
+**How to read it.** Higher means the state collects more. Many low-income countries collect under 15% of GDP; rich countries often 20 to 30% at central level, more once regions and social security are added.
+
+**Limits.** This World Bank figure covers the central government only, so it is lower than the IMF revenue figure, which counts all levels of government and social security contributions. It is yearly and arrives a year or two late.
+
+### Tax split (income, goods and services, trade)
+
+How the central government's revenue is split between taxes on income and profits, taxes on goods and services (VAT, sales and excise taxes), and taxes on trade (mostly import duties).
+
+**Why it matters.** It shows who bears the taxes and how stable they are. Income taxes rise more with income; goods taxes fall on everyone who buys; trade taxes depend on imports and shrink when tariffs are cut.
+
+**How to read it.** Each is a share of central government revenue, so they need not add to 100 (fees, grants and social contributions make up the rest). A large trade share is common in poorer countries and is a risk if imports drop.
+
 ### Net interest paid
 
 How much of the economy's yearly output goes on interest on government debt, after interest the government earns. The app works it out as the primary balance minus the overall balance for the same year.
@@ -293,6 +321,16 @@ Everything the country (government, banks and companies together) owes to lender
 **Why it matters.** Most external debt is in foreign currency, so a fall in the local currency makes it heavier, and it has to be repaid with export earnings or reserves.
 
 **How to read it.** Shown as a share of GNI (gross national income, which is GDP plus net income from abroad). Higher is a heavier burden.
+
+### Applied tariff (weighted and simple mean)
+
+The average tax charged on imported goods, from the tariffs the country applies. The weighted mean counts each product by how much of it is imported; the simple mean counts every product line the same.
+
+**Why it matters.** Tariffs raise prices for buyers and protect local producers. They change what a trade shock or a trade deal does to a country.
+
+**How to read it.** Higher means more protection. The weighted mean is usually lower than the simple mean, because very high tariffs keep imports of those goods small, so they count for little in the weights. A big gap between the two means some goods are heavily protected.
+
+**Limits.** Yearly, from the WITS/TRAINS database, so tariff changes made since the latest year shown are not included. It leaves out quotas, bans and other barriers that are not tariffs.
 
 ### Exchange rate (spot FX)
 

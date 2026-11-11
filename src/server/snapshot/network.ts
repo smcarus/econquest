@@ -3,6 +3,7 @@
  * into one OpenDataSnapshot.
  */
 
+import { DIST_TAX_CODES, GINI_CODE, pickDistTaxRow } from '../../utils/distributionTaxes';
 import { BIS_LABEL } from '../../utils/bisDebtSecurities';
 import { HC_SPREAD_FEED_LABEL } from '../../utils/hardCurrencySpread.ts';
 import { IDS_LABEL, QEDS_LABEL } from '../../utils/debtSchedule';
@@ -106,6 +107,30 @@ export async function fetchLiveOpenDataSnapshotNetwork(
       if (latestWbYear) {
         activeSources.push(`World Bank Open Data v2 (${latestWbYear} Live)`);
       }
+    })(),
+
+    // 1b. Distribution and taxes (G16, src/utils/distributionTaxes.ts): Gini from surveys up to 15
+    // years back, central government tax revenue and its split, applied tariffs. Each only when found.
+    (async () => {
+      const now = new Date();
+      await Promise.allSettled(
+        DIST_TAX_CODES.map(async ({ code, field, perPage }) => {
+          const res = await fetchWithTimeout(
+            `https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}${code === GINI_CODE ? '&footnote=y' : ''}`
+          );
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickDistTaxRow(code, data?.[1], now);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(field.startsWith('tariff') ? 2 : 1));
+          if (code === GINI_CODE) {
+            if (row.welfare) baseline.worldBankIndicators.giniWelfare = row.welfare;
+            markLive('wb.giniIndex', `World Bank (household survey), ${row.year}`);
+          } else {
+            markLive(`wb.${field}`, `World Bank, ${row.year}`);
+          }
+        })
+      );
     })(),
 
     // 2. Expanded IMF DataMapper WEO API (Debt/GDP, 2027F Debt, CPI Inflation, Real GDP Growth, Primary Balance)

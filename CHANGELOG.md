@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Inequality, tax revenue and tariffs (G16): seven World Bank series in the country brief (new
+  group "Distribution and taxes"), History & data, downloads and the Fiscal & Debt Agent: the Gini
+  index (household surveys, up to 15 years back, with the survey year and income or consumption),
+  central government tax revenue (% of GDP, labelled as lower than the IMF general government
+  figure), taxes on income and profits, on goods and services and on trade (% of revenue), and the
+  applied tariff, weighted and simple mean (labelled with its year; later tariff changes are not in
+  it). Each reads Missing with a reason when absent. Data health has a row for it; glossary entries
+  at Key and Full help; Spanish and French text.
+
 - Flag and rate (P2, P3): a Flag button on History series, council answer figures and council
   answers saves a note on this computer (data/local/feedback.jsonl) with the figure, source and app
   version, and offers a filled-in GitHub issue link that you send yourself (paid figures leave their

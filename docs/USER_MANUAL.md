@@ -329,6 +329,16 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   PMI": the indexes are read against their long-term average of 100 and the confidence balances
   against three months earlier, from the copy the daily download saves (via Eurostat). The same
   surveys chart under History & data.
+  The group *Distribution and taxes* shows inequality (the Gini index), central government tax
+  revenue as % of GDP, the split of revenue between taxes on income and profits, on goods and
+  services and on trade, and the applied tariff on all products (weighted by imports, and a simple
+  mean), all from the World Bank. Each shows its year. The Gini comes from household surveys run only
+  every few years: the app looks back 15 years, says whether the survey measured income or
+  consumption when the World Bank states it (a consumption Gini usually reads lower), and adds how
+  old the survey is when it is more than five years old; with no survey in that time it reads
+  Missing. Tax revenue is central government only, so it is lower than the IMF revenue figure under
+  Fiscal and debt. Tariffs are yearly, so changes made since that year are not in them. All seven
+  chart under History & data, and the Fiscal & Debt Agent quotes them when they are live.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):

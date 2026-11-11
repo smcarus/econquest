@@ -170,4 +170,12 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   "Local currency per US dollar (market rate)": "Monnaie locale par dollar américain (taux du marché)",
   "Local currency per international dollar (purchasing power parity)": "Monnaie locale par dollar international (parité de pouvoir d'achat)",
   "US dollar bonds": "Obligations en dollars américains",
+  // G16: distribution and taxes
+  "Gini index of income or consumption from household surveys, 0 = everyone equal, 100 = one person has everything (World Bank SI.POV.GINI)": "Indice de Gini du revenu ou de la consommation d'après des enquêtes auprès des ménages, 0 = tous égaux, 100 = une personne a tout (Banque mondiale SI.POV.GINI)",
+  "Tax revenue of the central government, as % of GDP; states, local government and social security are not included (World Bank GC.TAX.TOTL.GD.ZS)": "Recettes fiscales de l'administration centrale, en % du PIB ; États fédérés, collectivités locales et sécurité sociale non compris (Banque mondiale GC.TAX.TOTL.GD.ZS)",
+  "Taxes on income, profits and capital gains, as % of central government revenue (World Bank GC.TAX.YPKG.RV.ZS)": "Impôts sur le revenu, les bénéfices et les plus-values, en % des recettes de l'administration centrale (Banque mondiale GC.TAX.YPKG.RV.ZS)",
+  "Taxes on goods and services, as % of central government revenue (World Bank GC.TAX.GSRV.RV.ZS)": "Impôts sur les biens et services, en % des recettes de l'administration centrale (Banque mondiale GC.TAX.GSRV.RV.ZS)",
+  "Taxes on international trade, as % of central government revenue (World Bank GC.TAX.INTT.RV.ZS)": "Impôts sur le commerce international, en % des recettes de l'administration centrale (Banque mondiale GC.TAX.INTT.RV.ZS)",
+  "Applied tariff rate on all products, weighted by import shares (World Bank TM.TAX.MRCH.WM.AR.ZS, from WITS/TRAINS)": "Droit de douane appliqué à tous les produits, pondéré par les parts des importations (Banque mondiale TM.TAX.MRCH.WM.AR.ZS, d'après WITS/TRAINS)",
+  "Applied tariff rate on all products, simple mean over product lines (World Bank TM.TAX.MRCH.SM.AR.ZS, from WITS/TRAINS)": "Droit de douane appliqué à tous les produits, moyenne simple par ligne de produit (Banque mondiale TM.TAX.MRCH.SM.AR.ZS, d'après WITS/TRAINS)",
 };

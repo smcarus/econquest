@@ -270,6 +270,7 @@ function setRow(def: Def, state: ConnectionState, detail: string, host: string):
 export const SOURCE_IDS = [
   'worldbank',
   'worldbank_debt',
+  'worldbank_dist',
   'imf',
   'imf_reserves',
   'imf_cofer',
@@ -352,6 +353,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const rows = (parseJson(r.text) as unknown[])?.[1];
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         return row ? `${SAMPLE_NAME} reserves ${fmt(Number(row.value))} months of imports (${row.date})` : null;
+      }
+    )
+  );
+
+  add('worldbank_dist', () =>
+    httpCheck(
+      { id: 'worldbank_dist', name: 'World Bank inequality, taxes and tariffs', group: 'free', feeds: 'Gini index, central government tax revenue and its split, applied tariffs (country brief, Fiscal & Debt Agent)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/GC.TAX.TOTL.GD.ZS?format=json&per_page=8`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} tax revenue ${fmt(Number(row.value))}% of GDP, central government (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent tax revenue figure for ${SAMPLE_NAME})` : null;
       }
     )
   );

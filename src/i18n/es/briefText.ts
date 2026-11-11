@@ -306,4 +306,17 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "TurkStat's site asks automated readers to stay away (robots.txt), so it was not read.": "El sitio de TurkStat pide a los lectores automáticos que no accedan (robots.txt), por lo que no se consultó.",
   "Rosstat's site asks automated readers to stay away (robots.txt), so it was not read.": "El sitio de Rosstat pide a los lectores automáticos que no accedan (robots.txt), por lo que no se consultó.",
   "GASTAT's release calendar refused an automated reader.": "El calendario de publicaciones de GASTAT rechazó la lectura automática.",
+  // G16: distribution and taxes
+  "Distribution and taxes": "Distribución e impuestos",
+  "Inequality (Gini index)": "Desigualdad (índice de Gini)",
+  "Tax revenue, central government": "Ingresos tributarios, gobierno central",
+  "Taxes on income and profits": "Impuestos sobre la renta y los beneficios",
+  "Taxes on goods and services": "Impuestos sobre bienes y servicios",
+  "Taxes on trade": "Impuestos sobre el comercio exterior",
+  "Applied tariff, weighted mean": "Arancel aplicado, media ponderada",
+  "Applied tariff, simple mean": "Arancel aplicado, media simple",
+  "The Gini index comes from household surveys, which many countries run only every few years and some have never published. The app looks back 15 years and leaves it Missing rather than show an older survey or an estimate.": "El índice de Gini procede de encuestas de hogares, que muchos países realizan solo cada pocos años y algunos nunca han publicado. La aplicación busca hasta 15 años atrás y lo deja como Falta en lugar de mostrar una encuesta más antigua o una estimación.",
+  "No survey in the last 15 years": "Ninguna encuesta en los últimos 15 años",
+  "The World Bank answered, but has no recent figure for this country. World Bank figures are yearly and arrive a year or more late, and some countries do not report them. The app leaves it Missing rather than fill the gap.": "El Banco Mundial respondió, pero no tiene una cifra reciente para este país. Las cifras del Banco Mundial son anuales y llegan con un año o más de retraso, y algunos países no las comunican. La aplicación la deja como Falta en lugar de rellenar el hueco.",
+  "Not in World Bank data": "No figura en los datos del Banco Mundial",
 };

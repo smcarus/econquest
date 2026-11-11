@@ -40,6 +40,7 @@ import { claimAnswer } from './claimCheck';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
+import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
 import { parseWhatIf, runWhatIf, whatIfSentence, whatIfSetup } from './fiscalWhatIf';
@@ -616,6 +617,21 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
     if (f.defencePctGdp) {
       figures.push({ label: 'Military spending', value: `${f.defencePctGdp.value.toFixed(1)}% of GDP`, source: `World Bank (SIPRI), ${f.defencePctGdp.year}`, tag: 'official' });
     }
+    // Distribution and taxes (src/utils/distributionTaxes.ts): World Bank figures, each with its year; only when live.
+    const dt = it.distTax;
+    if (dt?.taxRevenuePctGdp) figures.push({ label: 'Tax revenue, central government', value: `${p1(dt.taxRevenuePctGdp.value)} of GDP`, source: `${TAX_SOURCE}, ${dt.taxRevenuePctGdp.year}; ${TAX_CENTRAL_NOTE}`, tag: 'official' });
+    const split: Array<[keyof DistTaxFigures, string]> = [
+      ['taxIncomePctRevenue', 'Taxes on income, profits and capital gains'],
+      ['taxGoodsPctRevenue', 'Taxes on goods and services'],
+      ['taxTradePctRevenue', 'Taxes on international trade'],
+    ];
+    for (const [k, label] of split) {
+      const x = dt?.[k];
+      if (x) figures.push({ label, value: `${p1(x.value)} of central government revenue`, source: `${TAX_SOURCE}, ${x.year}`, tag: 'official' });
+    }
+    if (dt?.tariffWeightedPct) figures.push({ label: 'Applied tariff, weighted by imports', value: p2(dt.tariffWeightedPct.value), source: `${TARIFF_SOURCE}, ${dt.tariffWeightedPct.year}; ${TARIFF_LAG_NOTE}`, tag: 'official' });
+    if (dt?.tariffSimplePct) figures.push({ label: 'Applied tariff, simple mean', value: p2(dt.tariffSimplePct.value), source: `${TARIFF_SOURCE}, ${dt.tariffSimplePct.year}; ${TARIFF_LAG_NOTE}`, tag: 'official' });
+    if (dt?.gini) figures.push({ label: 'Inequality (Gini index, 0 = equal, 100 = one person has all)', value: giniValue(dt.gini), source: `${GINI_SOURCE}; income and consumption Ginis are not directly comparable`, tag: 'official' });
     // Spending on the sectors the question names (src/utils/govSpending.ts: Eurostat or IMF COFOG).
     for (const sec of named) {
       if (sec.code === 'GF02' && f.defencePctGdp) continue;

@@ -664,4 +664,14 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "Macrobond refused the sign-in ({detail})": "Macrobond rechazó el inicio de sesión ({detail})",
   "Macrobond did not answer the sign-in ({detail})": "Macrobond no respondió al inicio de sesión ({detail})",
   "Macrobond did not answer ({detail})": "Macrobond no respondió ({detail})",
+  // G16: distribution and taxes
+  "Inequality (Gini index)": "Desigualdad (índice de Gini)",
+  "Tax revenue, central government": "Ingresos tributarios, gobierno central",
+  "Taxes on income and profits": "Impuestos sobre la renta y los beneficios",
+  "Taxes on goods and services": "Impuestos sobre bienes y servicios",
+  "Taxes on trade": "Impuestos sobre el comercio exterior",
+  "Applied tariff, weighted mean": "Arancel aplicado, media ponderada",
+  "Applied tariff, simple mean": "Arancel aplicado, media simple",
+  "index (0 = equal, 100 = one person has all)": "índice (0 = igualdad, 100 = una persona lo tiene todo)",
+  "% of revenue": "% de los ingresos",
 };
