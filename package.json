@@ -57,7 +57,8 @@
     "forecast:evaluate": "tsx scripts/forecast-evaluate.ts",
     "forecast:worst": "tsx scripts/forecast-worst.ts",
     "mac:validate": "tsx scripts/mac-validate.ts",
-    "public:export": "bash scripts/public-export.sh"
+    "public:export": "bash scripts/public-export.sh",
+    "aiddata:summary": "tsx scripts/aiddata-summary.ts"
   },
   "dependencies": {
     "@google/genai": "^2.32.0",

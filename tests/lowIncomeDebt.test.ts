@@ -58,18 +58,21 @@ test('AidData: loans and export credits added up per country, rows not recommend
 
 test('AidData folder: .csv or a workbook whose data sheet is not the first; none, unreadable and read', () => {
   const dir = mkdtempSync(path.join(tmpdir(), 'aid-'));
-  assert.equal(aiddataData(dir), null, 'no folder, no data');
+  const none = path.join(dir, 'no-summary.json');
+  assert.equal(aiddataData(dir, none), null, 'no folder and no shipped summary, no data');
+  assert.equal(aiddataData(dir)?.table?.countries.get('ZMB')?.lastYear, 2019, 'the shipped summary when you have no file');
   const folder = path.join(dir, 'local', 'aiddata');
   mkdirSync(folder, { recursive: true });
   writeFileSync(path.join(folder, 'notes.csv'), 'hello,world\n1,2\n');
-  const bad = aiddataData(dir)!;
+  const bad = aiddataData(dir, none)!;
   assert.equal(bad.table, null);
   assert.match(bad.skipped[0].reason, /columns/);
   assert.equal(licDebtReading('ZMB', bad).chinaMissing?.short, 'AidData file could not be read');
   const book = makeXlsx('GCDF_3.0', ROWS, { otherSheetFirst: true });
   writeFileSync(path.join(folder, 'AidDatas_GCDF_3.0.xlsx'), book as Uint8Array);
-  const good = aiddataData(dir)!;
-  assert.equal(good.table?.countries.get('ZMB')?.loans, 3);
+  const good = aiddataData(dir, none)!;
+  assert.equal(good.table?.countries.get('ZMB')?.loans, 3, 'your file wins over the shipped summary');
+  assert.match(aiddataData(dir)!.table!.file, /AidDatas_GCDF/);
 });
 
 test('the reading: typed rows, AidData, and Missing with the reason', () => {
@@ -115,7 +118,7 @@ test('the Fiscal & Debt Agent quotes the rating, the Common Framework and China 
   const fig = (l: string) => f.figures.find((x) => x.label === l)!;
   assert.match(fig('Risk of debt distress (IMF/World Bank)').value, /^High/);
   assert.equal(fig('Common Framework').tag, 'official');
-  assert.match(fig('Official lending from China').source, /AidData.*commitments, not money paid out/);
+  assert.match(fig('Official lending from China').source, /AidData.*not money paid out/);
   assert.match(f.reading, /rate its risk of debt distress high/);
   assert.match(f.reading, /Common Framework/);
   const plain = { iso3: 'USA', countryName: 'United States', fiscal: { debtPctGdp: { value: 120, year: '2025' } }, licDebt: licDebtReading('USA', null) } as unknown as WatchlistItem;

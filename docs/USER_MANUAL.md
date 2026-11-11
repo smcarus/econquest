@@ -352,11 +352,13 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   on the IMF low-income list"); whether it took part in the 2020-21 Debt Service Suspension
   Initiative (Missing until the World Bank's country table is typed in); whether it applied for a
   debt treatment under the G20 Common Framework (Chad, Zambia, Ethiopia and Ghana as of 2024); and
-  official loan commitments from China's government and state banks, added up from AidData's free
-  Global Chinese Development Finance file. To fill that row, download the project-level file
-  (version 3.0) from aiddata.org and put it, or its .zip, in `data/local/aiddata/`; the app reads it
-  on this computer. The amounts are commitments when each loan was signed, not money paid out or
-  still owed.
+  official loan commitments from China's government and state banks, 2000-2021, from AidData's free
+  Global Chinese Development Finance Dataset (version 3.0, summed per country and shipped with the
+  app in `datasets/aiddata/`). The amounts are commitments when each loan was signed, not money paid
+  out or still owed; short-term central bank swap drawdowns, refinancing and pledges are left out so
+  a loan is not counted twice. For a newer AidData version, put its file (or .zip) in
+  `data/local/aiddata/`: it is read on this computer and wins over the shipped summary
+  (`npm run aiddata:summary` rewrites the shipped file from it).
 - *Official sector*: debt sustainability. Debt path under a baseline and standard shocks, the
   stabilising primary balance and r minus g. Run only when debt, primary balance, growth, inflation
   and the official 10Y yield are all live; otherwise it lists what is missing.

@@ -1,0 +1,1190 @@
+{
+ "source": "AidData, Global Chinese Development Finance Dataset, Version 3.0 (ODC-By)",
+ "citation": "Custer, S., Dreher, A., Elston, T.B., et al. 2023. Tracking Chinese Development Finance: An Application of AidData's TUFF 3.0 Methodology. Williamsburg, VA: AidData at William & Mary.",
+ "licence": "ODC-By 1.0 (Open Data Commons Attribution License)",
+ "file": "AidDatasGlobalChineseDevelopmentFinanceDataset_v3.0.xlsx",
+ "made": "2026-11-11",
+ "rules": "Loans only (Flow Type \"Loan\" or an export credit), rows AidData recommends for aggregates, firm commitments (pledges, cancelled and suspended loans left out), short-term loans (mostly central bank swap drawdowns recorded again each year) and refinancing left out; Amount (Constant USD 2021); the recent figure is the last five years of the file.",
+ "fileLastYear": 2021,
+ "countries": {
+  "AGO": {
+   "totalUsdBn": 56.668,
+   "recentUsdBn": 7.604,
+   "recentFrom": 2017,
+   "loans": 217,
+   "firstYear": 2001,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ALB": {
+   "totalUsdBn": 0.1,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2001,
+   "lastYear": 2001,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ARG": {
+   "totalUsdBn": 14.662,
+   "recentUsdBn": 4.052,
+   "recentFrom": 2017,
+   "loans": 70,
+   "firstYear": 2007,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ARM": {
+   "totalUsdBn": 0.028,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2015,
+   "lastYear": 2015,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ATG": {
+   "totalUsdBn": 0.32,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2001,
+   "lastYear": 2016,
+   "dollars": "constant 2021 US dollars"
+  },
+  "AZE": {
+   "totalUsdBn": 0.956,
+   "recentUsdBn": 0.295,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2012,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BDI": {
+   "totalUsdBn": 0.085,
+   "recentUsdBn": 0.038,
+   "recentFrom": 2017,
+   "loans": 5,
+   "firstYear": 2004,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BEN": {
+   "totalUsdBn": 2.26,
+   "recentUsdBn": 1.322,
+   "recentFrom": 2017,
+   "loans": 19,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BFA": {
+   "totalUsdBn": 0.242,
+   "recentUsdBn": 0.242,
+   "recentFrom": 2017,
+   "loans": 3,
+   "firstYear": 2019,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BGD": {
+   "totalUsdBn": 20.07,
+   "recentUsdBn": 14.296,
+   "recentFrom": 2017,
+   "loans": 52,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BGR": {
+   "totalUsdBn": 1.197,
+   "recentUsdBn": 0.752,
+   "recentFrom": 2017,
+   "loans": 11,
+   "firstYear": 2001,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BHS": {
+   "totalUsdBn": 3.544,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 4,
+   "firstYear": 2006,
+   "lastYear": 2012,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BIH": {
+   "totalUsdBn": 2.132,
+   "recentUsdBn": 1.265,
+   "recentFrom": 2017,
+   "loans": 5,
+   "firstYear": 2012,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BLR": {
+   "totalUsdBn": 11.064,
+   "recentUsdBn": 1.87,
+   "recentFrom": 2017,
+   "loans": 52,
+   "firstYear": 2005,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BOL": {
+   "totalUsdBn": 2.388,
+   "recentUsdBn": 0.514,
+   "recentFrom": 2017,
+   "loans": 18,
+   "firstYear": 2001,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BRA": {
+   "totalUsdBn": 38.967,
+   "recentUsdBn": 5.311,
+   "recentFrom": 2017,
+   "loans": 106,
+   "firstYear": 2005,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BRB": {
+   "totalUsdBn": 0.216,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 3,
+   "firstYear": 2015,
+   "lastYear": 2015,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BRN": {
+   "totalUsdBn": 2.126,
+   "recentUsdBn": 1.907,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2015,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "BWA": {
+   "totalUsdBn": 1.66,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 12,
+   "firstYear": 2000,
+   "lastYear": 2009,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CAF": {
+   "totalUsdBn": 0.466,
+   "recentUsdBn": 0.2,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2002,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CHL": {
+   "totalUsdBn": 6.075,
+   "recentUsdBn": 4.712,
+   "recentFrom": 2017,
+   "loans": 29,
+   "firstYear": 2006,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CIV": {
+   "totalUsdBn": 6.915,
+   "recentUsdBn": 3.887,
+   "recentFrom": 2017,
+   "loans": 48,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CMR": {
+   "totalUsdBn": 8.433,
+   "recentUsdBn": 1.468,
+   "recentFrom": 2017,
+   "loans": 48,
+   "firstYear": 2007,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "COD": {
+   "totalUsdBn": 13.214,
+   "recentUsdBn": 2.408,
+   "recentFrom": 2017,
+   "loans": 88,
+   "firstYear": 2000,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "COG": {
+   "totalUsdBn": 7.258,
+   "recentUsdBn": 0.434,
+   "recentFrom": 2017,
+   "loans": 47,
+   "firstYear": 2003,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "COK": {
+   "totalUsdBn": 0.038,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 3,
+   "firstYear": 2008,
+   "lastYear": 2012,
+   "dollars": "constant 2021 US dollars"
+  },
+  "COL": {
+   "totalUsdBn": 1.455,
+   "recentUsdBn": 1.097,
+   "recentFrom": 2017,
+   "loans": 15,
+   "firstYear": 2008,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "COM": {
+   "totalUsdBn": 0.138,
+   "recentUsdBn": 0.093,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2010,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CPV": {
+   "totalUsdBn": 0.198,
+   "recentUsdBn": 0.014,
+   "recentFrom": 2017,
+   "loans": 11,
+   "firstYear": 2005,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CRI": {
+   "totalUsdBn": 0.753,
+   "recentUsdBn": 0.056,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2008,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "CUB": {
+   "totalUsdBn": 4.171,
+   "recentUsdBn": 0.301,
+   "recentFrom": 2017,
+   "loans": 25,
+   "firstYear": 2001,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "DJI": {
+   "totalUsdBn": 2.171,
+   "recentUsdBn": 0.443,
+   "recentFrom": 2017,
+   "loans": 15,
+   "firstYear": 2002,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "DMA": {
+   "totalUsdBn": 0.076,
+   "recentUsdBn": 0.002,
+   "recentFrom": 2017,
+   "loans": 18,
+   "firstYear": 2005,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "DOM": {
+   "totalUsdBn": 0.139,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2010,
+   "lastYear": 2010,
+   "dollars": "constant 2021 US dollars"
+  },
+  "DZA": {
+   "totalUsdBn": 0.114,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2003,
+   "lastYear": 2005,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ECU": {
+   "totalUsdBn": 25.464,
+   "recentUsdBn": 1.532,
+   "recentFrom": 2017,
+   "loans": 46,
+   "firstYear": 2001,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "EGY": {
+   "totalUsdBn": 11.827,
+   "recentUsdBn": 8.912,
+   "recentFrom": 2017,
+   "loans": 29,
+   "firstYear": 2005,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ERI": {
+   "totalUsdBn": 2.886,
+   "recentUsdBn": 1.763,
+   "recentFrom": 2017,
+   "loans": 18,
+   "firstYear": 2000,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ETH": {
+   "totalUsdBn": 20.419,
+   "recentUsdBn": 4.042,
+   "recentFrom": 2017,
+   "loans": 79,
+   "firstYear": 2001,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "FJI": {
+   "totalUsdBn": 0.444,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2006,
+   "lastYear": 2012,
+   "dollars": "constant 2021 US dollars"
+  },
+  "FSM": {
+   "totalUsdBn": 0.004,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2007,
+   "lastYear": 2007,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GAB": {
+   "totalUsdBn": 2.88,
+   "recentUsdBn": 0.148,
+   "recentFrom": 2017,
+   "loans": 27,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GEO": {
+   "totalUsdBn": 0.466,
+   "recentUsdBn": 0.094,
+   "recentFrom": 2017,
+   "loans": 10,
+   "firstYear": 2001,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GHA": {
+   "totalUsdBn": 8.743,
+   "recentUsdBn": 2.998,
+   "recentFrom": 2017,
+   "loans": 55,
+   "firstYear": 2000,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GIN": {
+   "totalUsdBn": 4.768,
+   "recentUsdBn": 3.148,
+   "recentFrom": 2017,
+   "loans": 15,
+   "firstYear": 2004,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GMB": {
+   "totalUsdBn": 0.03,
+   "recentUsdBn": 0.03,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2017,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GNB": {
+   "totalUsdBn": 0.027,
+   "recentUsdBn": 0.015,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2009,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GNQ": {
+   "totalUsdBn": 9.009,
+   "recentUsdBn": 1.93,
+   "recentFrom": 2017,
+   "loans": 39,
+   "firstYear": 2001,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GRD": {
+   "totalUsdBn": 0.084,
+   "recentUsdBn": 0.079,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2013,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "GUY": {
+   "totalUsdBn": 0.7,
+   "recentUsdBn": 0.305,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2010,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "HND": {
+   "totalUsdBn": 0.414,
+   "recentUsdBn": 0.005,
+   "recentFrom": 2017,
+   "loans": 4,
+   "firstYear": 2013,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "IDN": {
+   "totalUsdBn": 49.891,
+   "recentUsdBn": 14.163,
+   "recentFrom": 2017,
+   "loans": 239,
+   "firstYear": 2003,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "IND": {
+   "totalUsdBn": 6.558,
+   "recentUsdBn": 0.205,
+   "recentFrom": 2017,
+   "loans": 46,
+   "firstYear": 2004,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "IRN": {
+   "totalUsdBn": 27.871,
+   "recentUsdBn": 10.434,
+   "recentFrom": 2017,
+   "loans": 57,
+   "firstYear": 2000,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "IRQ": {
+   "totalUsdBn": 7.812,
+   "recentUsdBn": 5.667,
+   "recentFrom": 2017,
+   "loans": 15,
+   "firstYear": 2013,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ISR": {
+   "totalUsdBn": 4.539,
+   "recentUsdBn": 0.14,
+   "recentFrom": 2017,
+   "loans": 10,
+   "firstYear": 2011,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "JAM": {
+   "totalUsdBn": 2.422,
+   "recentUsdBn": 0.376,
+   "recentFrom": 2017,
+   "loans": 19,
+   "firstYear": 2000,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "JOR": {
+   "totalUsdBn": 1.984,
+   "recentUsdBn": 1.794,
+   "recentFrom": 2017,
+   "loans": 8,
+   "firstYear": 2003,
+   "lastYear": 2017,
+   "dollars": "constant 2021 US dollars"
+  },
+  "KAZ": {
+   "totalUsdBn": 63.463,
+   "recentUsdBn": 10.294,
+   "recentFrom": 2017,
+   "loans": 86,
+   "firstYear": 2002,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "KEN": {
+   "totalUsdBn": 12.653,
+   "recentUsdBn": 3.138,
+   "recentFrom": 2017,
+   "loans": 60,
+   "firstYear": 2001,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "KGZ": {
+   "totalUsdBn": 3.609,
+   "recentUsdBn": 0.208,
+   "recentFrom": 2017,
+   "loans": 33,
+   "firstYear": 2001,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "KHM": {
+   "totalUsdBn": 15.386,
+   "recentUsdBn": 6.516,
+   "recentFrom": 2017,
+   "loans": 120,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "KIR": {
+   "totalUsdBn": 0.115,
+   "recentUsdBn": 0.115,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2019,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "LAO": {
+   "totalUsdBn": 20.577,
+   "recentUsdBn": 6.3,
+   "recentFrom": 2017,
+   "loans": 96,
+   "firstYear": 2000,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "LBN": {
+   "totalUsdBn": 0.317,
+   "recentUsdBn": 0.29,
+   "recentFrom": 2017,
+   "loans": 4,
+   "firstYear": 2002,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "LBR": {
+   "totalUsdBn": 0.626,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2013,
+   "lastYear": 2016,
+   "dollars": "constant 2021 US dollars"
+  },
+  "LBY": {
+   "totalUsdBn": 0.451,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2009,
+   "lastYear": 2009,
+   "dollars": "constant 2021 US dollars"
+  },
+  "LKA": {
+   "totalUsdBn": 17.922,
+   "recentUsdBn": 6.756,
+   "recentFrom": 2017,
+   "loans": 75,
+   "firstYear": 2001,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "LSO": {
+   "totalUsdBn": 0.317,
+   "recentUsdBn": 0.193,
+   "recentFrom": 2017,
+   "loans": 6,
+   "firstYear": 2005,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MAR": {
+   "totalUsdBn": 2.104,
+   "recentUsdBn": 0.316,
+   "recentFrom": 2017,
+   "loans": 12,
+   "firstYear": 2000,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MDA": {
+   "totalUsdBn": 0.016,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2010,
+   "lastYear": 2010,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MDG": {
+   "totalUsdBn": 0.572,
+   "recentUsdBn": 0.466,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2007,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MDV": {
+   "totalUsdBn": 1.916,
+   "recentUsdBn": 0.98,
+   "recentFrom": 2017,
+   "loans": 14,
+   "firstYear": 2006,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MEX": {
+   "totalUsdBn": 2.903,
+   "recentUsdBn": 0.24,
+   "recentFrom": 2017,
+   "loans": 17,
+   "firstYear": 2004,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MHL": {
+   "totalUsdBn": 4.848,
+   "recentUsdBn": 2.024,
+   "recentFrom": 2017,
+   "loans": 44,
+   "firstYear": 2007,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MKD": {
+   "totalUsdBn": 1.346,
+   "recentUsdBn": 0.229,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2002,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MLI": {
+   "totalUsdBn": 1.257,
+   "recentUsdBn": 0.188,
+   "recentFrom": 2017,
+   "loans": 14,
+   "firstYear": 2000,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MMR": {
+   "totalUsdBn": 13.701,
+   "recentUsdBn": 0.867,
+   "recentFrom": 2017,
+   "loans": 80,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MNE": {
+   "totalUsdBn": 1.233,
+   "recentUsdBn": 0.069,
+   "recentFrom": 2017,
+   "loans": 5,
+   "firstYear": 2010,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MNG": {
+   "totalUsdBn": 3.625,
+   "recentUsdBn": 0.833,
+   "recentFrom": 2017,
+   "loans": 44,
+   "firstYear": 2000,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MOZ": {
+   "totalUsdBn": 5.613,
+   "recentUsdBn": 2.589,
+   "recentFrom": 2017,
+   "loans": 34,
+   "firstYear": 2000,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MRT": {
+   "totalUsdBn": 1.129,
+   "recentUsdBn": 0.162,
+   "recentFrom": 2017,
+   "loans": 13,
+   "firstYear": 2009,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MUS": {
+   "totalUsdBn": 1.098,
+   "recentUsdBn": 0.134,
+   "recentFrom": 2017,
+   "loans": 28,
+   "firstYear": 2000,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MWI": {
+   "totalUsdBn": 0.616,
+   "recentUsdBn": 0.248,
+   "recentFrom": 2017,
+   "loans": 10,
+   "firstYear": 2009,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "MYS": {
+   "totalUsdBn": 13.759,
+   "recentUsdBn": 10.06,
+   "recentFrom": 2017,
+   "loans": 39,
+   "firstYear": 2004,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "NAM": {
+   "totalUsdBn": 2.175,
+   "recentUsdBn": 0.005,
+   "recentFrom": 2017,
+   "loans": 16,
+   "firstYear": 2000,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "NER": {
+   "totalUsdBn": 3.351,
+   "recentUsdBn": 1.169,
+   "recentFrom": 2017,
+   "loans": 8,
+   "firstYear": 2008,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "NGA": {
+   "totalUsdBn": 14.044,
+   "recentUsdBn": 7.594,
+   "recentFrom": 2017,
+   "loans": 48,
+   "firstYear": 2002,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "NIC": {
+   "totalUsdBn": 0.02,
+   "recentUsdBn": 0.015,
+   "recentFrom": 2017,
+   "loans": 2,
+   "firstYear": 2013,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "NPL": {
+   "totalUsdBn": 0.844,
+   "recentUsdBn": 0.21,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2011,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "OMN": {
+   "totalUsdBn": 5.95,
+   "recentUsdBn": 4.904,
+   "recentFrom": 2017,
+   "loans": 14,
+   "firstYear": 2010,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "PAK": {
+   "totalUsdBn": 57.161,
+   "recentUsdBn": 25.108,
+   "recentFrom": 2017,
+   "loans": 132,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "PAN": {
+   "totalUsdBn": 0.64,
+   "recentUsdBn": 0.355,
+   "recentFrom": 2017,
+   "loans": 10,
+   "firstYear": 2002,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "PER": {
+   "totalUsdBn": 10.231,
+   "recentUsdBn": 5.105,
+   "recentFrom": 2017,
+   "loans": 33,
+   "firstYear": 2010,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "PHL": {
+   "totalUsdBn": 6.859,
+   "recentUsdBn": 2.304,
+   "recentFrom": 2017,
+   "loans": 39,
+   "firstYear": 2001,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "PNG": {
+   "totalUsdBn": 6.924,
+   "recentUsdBn": 0.831,
+   "recentFrom": 2017,
+   "loans": 26,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "PRY": {
+   "totalUsdBn": 0.076,
+   "recentUsdBn": 0.003,
+   "recentFrom": 2017,
+   "loans": 4,
+   "firstYear": 2015,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ROU": {
+   "totalUsdBn": 0.722,
+   "recentUsdBn": 0.182,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2004,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "RUS": {
+   "totalUsdBn": 166.022,
+   "recentUsdBn": 20.919,
+   "recentFrom": 2017,
+   "loans": 133,
+   "firstYear": 2002,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "RWA": {
+   "totalUsdBn": 0.745,
+   "recentUsdBn": 0.429,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2009,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SDN": {
+   "totalUsdBn": 17.8,
+   "recentUsdBn": 0.05,
+   "recentFrom": 2017,
+   "loans": 77,
+   "firstYear": 2000,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SEN": {
+   "totalUsdBn": 3.66,
+   "recentUsdBn": 1.404,
+   "recentFrom": 2017,
+   "loans": 28,
+   "firstYear": 2005,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SLE": {
+   "totalUsdBn": 4.533,
+   "recentUsdBn": 2.793,
+   "recentFrom": 2017,
+   "loans": 12,
+   "firstYear": 2004,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SLV": {
+   "totalUsdBn": 0.132,
+   "recentUsdBn": 0.11,
+   "recentFrom": 2017,
+   "loans": 6,
+   "firstYear": 2015,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SRB": {
+   "totalUsdBn": 5.712,
+   "recentUsdBn": 2.882,
+   "recentFrom": 2017,
+   "loans": 20,
+   "firstYear": 2010,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SSD": {
+   "totalUsdBn": 3.733,
+   "recentUsdBn": 1.099,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2013,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SUR": {
+   "totalUsdBn": 1.332,
+   "recentUsdBn": 0.375,
+   "recentFrom": 2017,
+   "loans": 14,
+   "firstYear": 2002,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SYC": {
+   "totalUsdBn": 0.002,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 1,
+   "firstYear": 2005,
+   "lastYear": 2005,
+   "dollars": "constant 2021 US dollars"
+  },
+  "SYR": {
+   "totalUsdBn": 2.427,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2005,
+   "lastYear": 2010,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TCD": {
+   "totalUsdBn": 1.214,
+   "recentUsdBn": 0.215,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2007,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TGO": {
+   "totalUsdBn": 1.185,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 20,
+   "firstYear": 2004,
+   "lastYear": 2016,
+   "dollars": "constant 2021 US dollars"
+  },
+  "THA": {
+   "totalUsdBn": 4.202,
+   "recentUsdBn": 0.246,
+   "recentFrom": 2017,
+   "loans": 17,
+   "firstYear": 2005,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TJK": {
+   "totalUsdBn": 4.987,
+   "recentUsdBn": 0.83,
+   "recentFrom": 2017,
+   "loans": 50,
+   "firstYear": 2006,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TKM": {
+   "totalUsdBn": 12.217,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 18,
+   "firstYear": 2000,
+   "lastYear": 2011,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TON": {
+   "totalUsdBn": 0.193,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 5,
+   "firstYear": 2000,
+   "lastYear": 2010,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TTO": {
+   "totalUsdBn": 0.646,
+   "recentUsdBn": 0.113,
+   "recentFrom": 2017,
+   "loans": 6,
+   "firstYear": 2002,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TUN": {
+   "totalUsdBn": 0.314,
+   "recentUsdBn": 0.037,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2004,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TUR": {
+   "totalUsdBn": 17.231,
+   "recentUsdBn": 9.175,
+   "recentFrom": 2017,
+   "loans": 82,
+   "firstYear": 2007,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "TZA": {
+   "totalUsdBn": 2.859,
+   "recentUsdBn": 0.297,
+   "recentFrom": 2017,
+   "loans": 19,
+   "firstYear": 2004,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "UGA": {
+   "totalUsdBn": 4.438,
+   "recentUsdBn": 0.842,
+   "recentFrom": 2017,
+   "loans": 18,
+   "firstYear": 2007,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "UKR": {
+   "totalUsdBn": 2.414,
+   "recentUsdBn": 0.426,
+   "recentFrom": 2017,
+   "loans": 8,
+   "firstYear": 2006,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "URY": {
+   "totalUsdBn": 0.262,
+   "recentUsdBn": 0.08,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2010,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "UZB": {
+   "totalUsdBn": 17.664,
+   "recentUsdBn": 5.479,
+   "recentFrom": 2017,
+   "loans": 112,
+   "firstYear": 2001,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "VEN": {
+   "totalUsdBn": 93.126,
+   "recentUsdBn": 0.272,
+   "recentFrom": 2017,
+   "loans": 28,
+   "firstYear": 2002,
+   "lastYear": 2018,
+   "dollars": "constant 2021 US dollars"
+  },
+  "VNM": {
+   "totalUsdBn": 28.691,
+   "recentUsdBn": 4.074,
+   "recentFrom": 2017,
+   "loans": 120,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "VUT": {
+   "totalUsdBn": 0.323,
+   "recentUsdBn": 0.098,
+   "recentFrom": 2017,
+   "loans": 7,
+   "firstYear": 2006,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  },
+  "WSM": {
+   "totalUsdBn": 0.288,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 6,
+   "firstYear": 2006,
+   "lastYear": 2014,
+   "dollars": "constant 2021 US dollars"
+  },
+  "YEM": {
+   "totalUsdBn": 0.357,
+   "recentUsdBn": 0,
+   "recentFrom": 2017,
+   "loans": 9,
+   "firstYear": 2003,
+   "lastYear": 2009,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ZAF": {
+   "totalUsdBn": 19.561,
+   "recentUsdBn": 10.678,
+   "recentFrom": 2017,
+   "loans": 139,
+   "firstYear": 2001,
+   "lastYear": 2020,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ZMB": {
+   "totalUsdBn": 13.435,
+   "recentUsdBn": 6.027,
+   "recentFrom": 2017,
+   "loans": 92,
+   "firstYear": 2001,
+   "lastYear": 2019,
+   "dollars": "constant 2021 US dollars"
+  },
+  "ZWE": {
+   "totalUsdBn": 4.704,
+   "recentUsdBn": 0.379,
+   "recentFrom": 2017,
+   "loans": 38,
+   "firstYear": 2000,
+   "lastYear": 2021,
+   "dollars": "constant 2021 US dollars"
+  }
+ }
+}

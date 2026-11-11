@@ -703,7 +703,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'aiddata',
     name: 'AidData Global Chinese Development Finance Dataset, version 3.0',
-    usedFor: 'Official loan commitments from China by borrowing country, added up from the project-level file the user downloads into data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)',
+    usedFor: 'Official loan commitments from China by borrowing country, 2000-2021: per-country sums of version 3.0 shipped in datasets/aiddata/, or a newer file the user puts in data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)',
     terms: [
       { label: 'gcdf-geospatial-data README and LICENSE (AidData, GitHub)', url: 'https://github.com/aiddata/gcdf-geospatial-data' },
       { label: 'Dataset page (citation)', url: 'https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0' },

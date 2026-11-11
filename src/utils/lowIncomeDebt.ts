@@ -203,7 +203,7 @@ export interface AiddataData {
 const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
 /** Finds the columns by their names in the GCDF file; null when a needed one is missing. */
-export function aiddataColumns(header: string[]): { iso3: number; year: number; amount: number; dollars: string; flow: number; recommended: number } | null {
+export function aiddataColumns(header: string[]): { iso3: number; year: number; amount: number; dollars: string; flow: number; recommended: number; shortTerm: number; refinancing: number; status: number } | null {
   const h = header.map(norm);
   const find = (re: RegExp) => h.findIndex((x) => re.test(x));
   const iso3 = find(/^recipient iso-?3$/);
@@ -216,16 +216,21 @@ export function aiddataColumns(header: string[]): { iso3: number; year: number; 
   }
   const flow = find(/^flow type$/);
   if (iso3 < 0 || year < 0 || amount < 0 || flow < 0) return null;
-  return { iso3, year, amount, dollars, flow, recommended: find(/^recommended for aggregates$/) };
+  return { iso3, year, amount, dollars, flow, recommended: find(/^recommended for aggregates$/), shortTerm: find(/^short-term$/), refinancing: find(/^refinancing$/), status: find(/^status$/) };
 }
 
 /** A loan or export credit (not a grant, debt relief, technical help or in-kind support). */
 export const isLoanFlow = (flow: string) => /loan|credit/i.test(flow) && !/forgiv|resched|grant/i.test(flow);
 
+/** Statuses that are not a firm commitment: a pledge only, or a loan cancelled or suspended. */
+export const NOT_COMMITTED = /pledge|cancel|suspend/i;
+
 /**
  * Adds up loan commitments per recipient from the rows of the GCDF table (first row the header).
- * Rows AidData marks as not recommended for aggregates are left out, as AidData advises. Returns
- * null with the reason when the columns are not there.
+ * Left out, so a loan is counted once and only when committed: rows AidData marks as not recommended
+ * for aggregates (as AidData advises), short-term loans (mostly central bank currency swap drawdowns,
+ * which AidData records again each year they are rolled over), refinancing of earlier loans, and
+ * pledges, cancelled and suspended loans. Returns the reason when the columns are not there.
  */
 export function aiddataTable(rows: Iterable<string[]>, file: string, modified: string): { table: AiddataTable } | { reason: string } {
   let cols: ReturnType<typeof aiddataColumns> = null;
@@ -241,6 +246,9 @@ export function aiddataTable(rows: Iterable<string[]>, file: string, modified: s
     }
     if (cols.recommended >= 0 && !/^yes$/i.test(String(r[cols.recommended] ?? '').trim())) continue;
     if (!isLoanFlow(String(r[cols.flow] ?? ''))) continue;
+    const yes = (c: number) => c >= 0 && /^yes$/i.test(String(r[c] ?? '').trim());
+    if (yes(cols.shortTerm) || yes(cols.refinancing)) continue;
+    if (cols.status >= 0 && NOT_COMMITTED.test(String(r[cols.status] ?? ''))) continue;
     const iso = String(r[cols.iso3] ?? '').trim().toUpperCase();
     const year = Number(String(r[cols.year] ?? '').trim());
     const amt = Number(String(r[cols.amount] ?? '').replace(/[,$\s]/g, ''));
@@ -326,4 +334,4 @@ export function chinaValue(c: ChinaLending): string {
   return `${bn(c.totalUsdBn)} committed ${c.firstYear}-${c.lastYear} (${c.loans} loan${c.loans === 1 ? '' : 's'}); ${bn(c.recentUsdBn)} in ${c.recentFrom}-${c.recentFrom + AIDDATA_RECENT_YEARS - 1}`;
 }
 
-export const chinaSource = (c: ChinaLending) => `${AIDDATA_SOURCE}, ${c.dollars}; commitments, not money paid out or still owed`;
+export const chinaSource = (c: ChinaLending) => `${AIDDATA_SOURCE}, ${c.dollars}; loans committed to public and private borrowers, not money paid out or still owed; short-term swap drawdowns, refinancing and pledges left out`;

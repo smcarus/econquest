@@ -590,7 +590,7 @@ From the terms:
 
 ### AidData Global Chinese Development Finance Dataset, version 3.0
 
-- **Used for:** Official loan commitments from China by borrowing country, added up from the project-level file the user downloads into data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)
+- **Used for:** Official loan commitments from China by borrowing country, 2000-2021: per-country sums of version 3.0 shipped in datasets/aiddata/, or a newer file the user puts in data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. ODC-By allows sharing with credit to AidData.
 - **Terms read:** [gcdf-geospatial-data README and LICENSE (AidData, GitHub)](https://github.com/aiddata/gcdf-geospatial-data); [Dataset page (citation)](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0) (checked 2026-11-11)
