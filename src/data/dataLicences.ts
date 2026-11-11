@@ -684,6 +684,259 @@ export const DATA_LICENCES: LicenceRow[] = [
   },
 ];
 
+const P = '2026-11-11';
+
+/** A source a planned roadmap step will read. Not read by the app yet, so not in the in-app register;
+ * the row moves into DATA_LICENCES when its step is built. */
+export interface PlannedLicenceRow extends LicenceRow {
+  plannedFor: string;
+}
+
+/** Licence sweep of 11 November 2026 (Wave 0 of the build order): every source a planned step needs,
+ * read before the step is built so no step waits on a licence. Same rules as the register above. */
+export const PLANNED_LICENCES: PlannedLicenceRow[] = [
+  {
+    id: 'aiddata',
+    name: 'AidData Global Chinese Development Finance Dataset, version 3.0',
+    plannedFor: 'U1 Low-income country debt',
+    usedFor: 'Official lending from China by borrowing country and year',
+    terms: [
+      { label: 'gcdf-geospatial-data README and LICENSE (AidData, GitHub)', url: 'https://github.com/aiddata/gcdf-geospatial-data' },
+      { label: 'Dataset page (citation)', url: 'https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0' },
+    ],
+    status: 'open',
+    display: 'Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By).',
+    commercial: 'ODC-By sets no commercial limit; the pages read do not mention commercial use.',
+    attribution: 'AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0.',
+    quotes: [
+      'The original dataset produced by AidData is licensed using the Open Data Commons Attribution License (ODC-By).',
+      'Any use of the dataset and its content must include appropriate attribution to AidData',
+      'uses incorporating the geospatial features from OSM must also attribute OSM and be made available using ODbL.',
+    ],
+    flag: 'The licence is stated in AidData\'s GitHub repository for the geospatial edition; the dataset page itself states none and aiddata.org/terms did not load. Use the project-level table only (ODC-By), not the OpenStreetMap shapes (ODbL, share-alike).',
+    share: 'allowed',
+    shareNote: 'ODC-By allows sharing with credit to AidData.',
+    checked: P,
+  },
+  {
+    id: 'pwt',
+    name: 'Penn World Table (Groningen Growth and Development Centre)',
+    plannedFor: 'G27 Growth accounting',
+    usedFor: 'Capital stock, hours, human capital and productivity for growth accounting',
+    terms: [{ label: 'Penn World Table page (PWT 11.0, October 2025)', url: 'https://www.rug.nl/ggdc/productivity/pwt/' }],
+    status: 'open',
+    display: 'Allowed under CC BY 4.0.',
+    commercial: 'Allowed (CC BY 4.0 sets no commercial limit).',
+    attribution: 'Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.',
+    quotes: [
+      'is licensed under a Creative Commons Attribution 4.0 International License',
+      'When using these data (for whatever purpose), please make the following reference:',
+    ],
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 allows sharing with credit.',
+    checked: P,
+  },
+  {
+    id: 'owid',
+    name: 'Our World in Data (CO2 and greenhouse gas data)',
+    plannedFor: 'G20 Climate and energy',
+    usedFor: 'Greenhouse gas and CO2 emissions per country',
+    terms: [
+      { label: 'Our World in Data FAQs (licence)', url: 'https://ourworldindata.org/faqs' },
+      { label: 'owid/co2-data README', url: 'https://github.com/owid/co2-data' },
+    ],
+    status: 'open',
+    display: 'Allowed for data Our World in Data produces (CC BY 4.0); data from third parties keeps its own licence.',
+    commercial: 'Not stated on the pages; CC BY 4.0 itself sets no commercial limit.',
+    attribution: 'Our World in Data and the underlying data provider named on each series.',
+    quotes: [
+      'falls under our permissive CC BY license; you have permission to use, reproduce, and distribute it, provided that you cite us',
+      'completely open access under the Creative Commons BY license',
+      'is subject to the license terms from the original third-party authors',
+    ],
+    flag: 'Each emissions series in the CO2 file names its original provider; check that provider\'s licence for the series G20 uses before building.',
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 for Our World in Data\'s own data; credit the original provider too.',
+    checked: P,
+  },
+  {
+    id: 'imf_gfs_fsi',
+    name: 'IMF Government Finance Statistics and Financial Soundness Indicators',
+    plannedFor: 'G28 Bank-sovereign links; G42 Sub-national revenue',
+    usedFor: 'Revenue and spending by level of government; bank capital, asset quality and holdings of government debt',
+    terms: [{ label: 'IMF Copyright and Usage (Special Terms for Statistical Data)', url: 'https://www.imf.org/en/About/copyright-and-terms' }],
+    status: 'permission',
+    display: 'Allowed with attribution: GFS is named in the IMF\'s statistical data terms.',
+    commercial: 'Needs permission: email copyright@imf.org. Bulk automated download also needs permission.',
+    attribution: 'Source: International Monetary Fund, <database name>, <link to the dataset>.',
+    quotes: [
+      'Users may download, extract, copy, create derivative works, publish, distribute, and use Data obtained from IMF Sites subject to these conditions:',
+      'For any potential commercial reuse of IMF Data, email copyright@imf.org to request permission.',
+      'The IMF prohibits bulk download of information by automated technology without explicit permission',
+    ],
+    flag: 'FSI is not named in the terms; it falls under "statistical data ... that explicitly identify the International Monetary Fund as the source". Same commercial and bulk-download limits as the main IMF row.',
+    share: 'allowed',
+    shareNote: 'IMF Data may be published and distributed with attribution.',
+    checked: P,
+  },
+  {
+    id: 'imf_mona',
+    name: 'IMF Monitoring of Fund Arrangements (MONA)',
+    plannedFor: 'G34 Precedent finder',
+    usedFor: 'IMF programmes by country: type, dates, size and conditions',
+    terms: [{ label: 'MONA database page', url: 'https://www.imf.org/external/np/pdr/mona/index.aspx' }],
+    status: 'not_verified',
+    display: 'Not stated on the MONA page.',
+    commercial: 'Not stated on the MONA page.',
+    attribution: 'Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database.',
+    quotes: [],
+    flag: 'The MONA page has no terms. It is probably covered by the general IMF statistical data terms (publish with attribution, commercial use needs permission), but the page does not say so. Ask copyright@imf.org or treat as the main IMF row only after confirming.',
+    share: 'unclear',
+    shareNote: 'No terms on the dataset page.',
+    checked: P,
+  },
+  {
+    id: 'imf_fiscal_rules',
+    name: 'IMF Fiscal Rules Dataset, 1985-2024',
+    plannedFor: 'G35 Fiscal rules check',
+    usedFor: 'National and supranational fiscal rules by country and year (123 economies)',
+    terms: [{ label: 'Fiscal Rules Dataset page (version 1.0 update, 25 September 2025)', url: 'https://www.imf.org/en/topics/fiscal-policies/fiscal-rules-dataset' }],
+    status: 'not_verified',
+    display: 'Not stated on the dataset page.',
+    commercial: 'Not stated on the dataset page.',
+    attribution: '"Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.',
+    quotes: [],
+    flag: 'The page gives a citation but no terms. Probably under the general IMF statistical data terms; confirm before building G35.',
+    share: 'unclear',
+    shareNote: 'No terms on the dataset page.',
+    checked: P,
+  },
+  {
+    id: 'imf_eba',
+    name: 'IMF External Balance Assessment (EBA)',
+    plannedFor: 'G24 External sustainability',
+    usedFor: 'Published current account norm coefficients',
+    terms: [{ label: 'EBA page', url: 'https://www.imf.org/external/np/res/eba/' }],
+    status: 'not_verified',
+    display: 'Not stated on the EBA page.',
+    commercial: 'Not stated on the EBA page.',
+    attribution: 'Source: International Monetary Fund, External Balance Assessment.',
+    quotes: ['Data and estimates from the EBA exercise are available online.'],
+    flag: 'The page says data and estimates are online but does not say whether the coefficients are included or under what terms. Read the methodology paper and data files before G24; if reuse is not allowed, the norm shows "Missing".',
+    share: 'unclear',
+    shareNote: 'No terms on the page.',
+    checked: P,
+  },
+  {
+    id: 'imf_lic_dsa',
+    name: 'IMF list of low-income country debt sustainability analyses',
+    plannedFor: 'U1 Low-income country debt',
+    usedFor: 'Risk of debt distress rating for each low-income country and its date',
+    terms: [{ label: 'LIC DSA list (PDF)', url: 'https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf' }],
+    status: 'not_verified',
+    display: 'Page did not load on 2026-11-11.',
+    commercial: 'Not read.',
+    attribution: 'Source: International Monetary Fund, List of LIC DSAs for PRGT-Eligible Countries.',
+    quotes: [],
+    flag: 'The PDF did not load from the sandbox. Open it in a browser on the Mac, confirm its columns and date, and check whether the general IMF terms apply before building U1.',
+    share: 'unclear',
+    shareNote: 'Not read yet.',
+    checked: P,
+  },
+  {
+    id: 'laeven_valencia',
+    name: 'Laeven and Valencia, Systemic Banking Crises database (2018 update)',
+    plannedFor: 'G23 Crisis early-warning; G34 Precedent finder',
+    usedFor: 'Start and end years of systemic banking, currency and sovereign debt crises',
+    terms: [
+      { label: 'IMF Working Paper 18/206', url: 'https://www.imf.org/en/Publications/WP/Issues/2018/09/14/Systemic-Banking-Crises-Revisited-46232' },
+      { label: 'IMF Copyright and Usage', url: 'https://www.imf.org/en/About/copyright-and-terms' },
+    ],
+    status: 'not_verified',
+    display: 'Not stated: the paper has no licence or data statement.',
+    commercial: 'Not stated.',
+    attribution: 'Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206.',
+    quotes: [],
+    flag: 'No data file or terms found on the IMF page. Whether the IMF statistical data terms cover a working paper\'s crisis dates is not stated. The crisis dates could be typed from the paper\'s tables with citation; confirm with the IMF before G23 runs.',
+    share: 'unclear',
+    shareNote: 'No terms found.',
+    checked: P,
+  },
+  {
+    id: 'dpi',
+    name: 'Database of Political Institutions 2020 (Inter-American Development Bank)',
+    plannedFor: 'G36 Political feasibility',
+    usedFor: 'Checks and balances, government fractionalisation, election timing',
+    terms: [{ label: 'DPI 2020 publication page (IDB)', url: 'https://publications.iadb.org/en/database-political-institutions-2020-dpi2020' }],
+    status: 'not_verified',
+    display: 'Not stated on the publication page.',
+    commercial: 'Not stated.',
+    attribution: 'Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found.',
+    quotes: [],
+    flag: 'The IDB page has no licence or data link, and the DPI was not found on data.iadb.org. Find the download page in a browser and read its licence before G36.',
+    share: 'unclear',
+    shareNote: 'No licence found.',
+    checked: P,
+  },
+  {
+    id: 'ndgain',
+    name: 'ND-GAIN Country Index (University of Notre Dame)',
+    plannedFor: 'G20 Climate and energy',
+    usedFor: 'Climate vulnerability and readiness scores',
+    terms: [
+      { label: 'ND-GAIN download page', url: 'https://gain.nd.edu/our-work/country-index/download-data/' },
+      { label: 'University of Notre Dame copyright page', url: 'https://www.nd.edu/copyright/' },
+    ],
+    status: 'not_verified',
+    display: 'Not stated: the page calls the index "free and open-access" but gives no licence.',
+    commercial: 'Not stated.',
+    attribution: 'Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame.',
+    quotes: ['As a free and open-access tool, ND-GAIN appreciates understanding how the Country Index is used.'],
+    flag: 'No licence stated. Ask ND-GAIN in writing whether the scores may be redistributed inside an open-source app before G20 uses them.',
+    share: 'unclear',
+    shareNote: '"Free and open-access" is not a licence.',
+    checked: P,
+  },
+  {
+    id: 'ilostat',
+    name: 'ILOSTAT (International Labour Organization)',
+    plannedFor: 'G22 Wages and house prices; G17 People',
+    usedFor: 'Nominal and real wage growth; labour force figures not in World Bank data',
+    terms: [{ label: 'ILOSTAT home page', url: 'https://ilostat.ilo.org/' }],
+    status: 'not_verified',
+    display: 'Not read: the terms page and the ILO copyright page did not load; the home page states no licence.',
+    commercial: 'Not read.',
+    attribution: 'Source: ILOSTAT, International Labour Organization.',
+    quotes: [],
+    flag: 'Read the ILOSTAT terms of use in a browser on the Mac and update this row before G22.',
+    share: 'unclear',
+    shareNote: 'Not read yet.',
+    checked: P,
+  },
+  {
+    id: 'dssi_cf',
+    name: 'DSSI and Common Framework status (World Bank, Paris Club)',
+    plannedFor: 'U1 Low-income country debt',
+    usedFor: 'Which countries took part in the Debt Service Suspension Initiative and which applied to the Common Framework, typed by hand with source and date',
+    terms: [
+      { label: 'World Bank DSSI brief', url: 'https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative' },
+      { label: 'Paris Club, Common Framework', url: 'https://clubdeparis.org/en/communications/page/common-framework' },
+    ],
+    status: 'not_verified',
+    display: 'Not stated on either page.',
+    commercial: 'Not stated.',
+    attribution: 'World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.',
+    quotes: [
+      'Forty-eight out of 73 eligible countries participated.',
+      'As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.',
+    ],
+    flag: 'Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.',
+    share: 'unclear',
+    shareNote: 'No terms stated.',
+    checked: P,
+  },
+];
+
 /** The rows with an open question, in register order. */
 export function openLicenceQuestions(rows: LicenceRow[] = DATA_LICENCES): LicenceRow[] {
   return rows.filter((r) => r.flag && r.status !== 'open');
@@ -736,6 +989,31 @@ export function licencesMarkdown(rows: LicenceRow[] = DATA_LICENCES): string {
       out.pop();
     }
     out.push('');
+  }
+  if (rows === DATA_LICENCES) {
+    out.push('## Sources planned, not read by the app yet', '');
+    out.push('Read in the licence sweep of 11 November 2026, before the steps that need them are built. Each row moves into the register above when its step is built. UN Comtrade (G18) and the IMF datasets already read are covered by the rows above.', '');
+    out.push('| Source | Planned for | Status | Free non-commercial sharing | Credit |', '| --- | --- | --- | --- | --- |');
+    for (const r of PLANNED_LICENCES) out.push(`| ${esc(r.name)} | ${esc(r.plannedFor)} | ${LICENCE_STATUS_LABEL[r.status]} | ${LICENCE_SHARE_LABEL[r.share]} | ${esc(r.attribution)} |`);
+    out.push('');
+    for (const r of PLANNED_LICENCES) {
+      out.push(`### ${r.name}`, '');
+      out.push(`- **Planned for:** ${r.plannedFor}`);
+      out.push(`- **Will be used for:** ${r.usedFor}`);
+      out.push(`- **Status:** ${LICENCE_STATUS_LABEL[r.status]}`);
+      out.push(`- **Free non-commercial sharing:** ${LICENCE_SHARE_LABEL[r.share]}. ${r.shareNote}`);
+      out.push(`- **Terms read:** ${r.terms.map((t) => `[${t.label}](${t.url})`).join('; ')} (checked ${r.checked})`);
+      out.push(`- **Show to others:** ${r.display}`);
+      out.push(`- **Commercial use:** ${r.commercial}`);
+      out.push(`- **Credit:** ${r.attribution}`);
+      if (r.flag) out.push(`- **Before building:** ${r.flag}`);
+      if (r.quotes.length) {
+        out.push('', 'From the terms:', '');
+        for (const q of r.quotes) out.push(`> ${q}`, '>');
+        out.pop();
+      }
+      out.push('');
+    }
   }
   const open = openLicenceQuestions(rows);
   out.push('## Open questions', '');

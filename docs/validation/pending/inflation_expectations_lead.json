@@ -1,0 +1,34 @@
+{
+  "id": "inflation_expectations_lead",
+  "version": 1,
+  "registeredOn": "2026-11-11",
+  "registeredBy": "Sam (owner) chose to pre-register G32 before the tool is built (efficient build order, 2026-11-09); registered before any run and before the runner exists",
+  "plannedStep": "G32 Behavioural finance agent",
+  "hypothesis": "In EU countries, when households' expected price trends over the next 12 months (European Commission consumer survey, balance of answers) rose over the past 12 months, headline HICP inflation is higher 12 months later than it is now, and when they fell it is lower, more often than half the time.",
+  "method": "expectations_direction",
+  "framework": 2,
+  "params": {
+    "observationMonth": 12,
+    "changeWindowMonths": 12,
+    "horizonMonths": 12,
+    "minAbsChangeBalancePts": 0,
+    "hitRateBenchmark": 0.5,
+    "resampleBlock": "calendar year",
+    "resamples": 4000,
+    "seed": 20261111
+  },
+  "data": {
+    "signal": "European Commission business and consumer surveys, consumer question on price trends over the next 12 months, seasonally adjusted balance, as published by DG ECFIN or republished by Eurostat (CC BY 4.0)",
+    "outcome": "Eurostat HICP all items, annual rate of change (prc_hicp_manr), as the app already reads it",
+    "universe": "Every EU member with both series; one non-overlapping observation per country per year (December)"
+  },
+  "sample": { "from": "2000", "to": "latest full year" },
+  "passMark": { "minCases": 100, "minHitRate": 0.55, "maxPValue": 0.05, "minYears": 15 },
+  "knownLimits": [
+    "The test checks direction only, not size: it says whether households' expectations point the right way, not how far inflation moves.",
+    "EU members only, because the survey is the European Commission's; other countries' household surveys differ in question and licence.",
+    "Countries move together (common energy and food shocks), so resampling whole years is used; the effective number of independent cases is closer to the number of years than to country-years.",
+    "Survey answers are not revised; HICP rates are final figures, which differ little from first releases.",
+    "The existing cftc_crowding test already covers extreme currency positioning; this test adds the household-expectations claim the G32 agent would make."
+  ]
+}

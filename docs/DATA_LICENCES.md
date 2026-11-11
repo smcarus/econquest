@@ -582,6 +582,225 @@ From the terms:
 - **Credit:** As your vendor contract requires.
 - **Open question:** Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
 
+## Sources planned, not read by the app yet
+
+Read in the licence sweep of 11 November 2026, before the steps that need them are built. Each row moves into the register above when its step is built. UN Comtrade (G18) and the IMF datasets already read are covered by the rows above.
+
+| Source | Planned for | Status | Free non-commercial sharing | Credit |
+| --- | --- | --- | --- | --- |
+| AidData Global Chinese Development Finance Dataset, version 3.0 | U1 Low-income country debt | Open with attribution | Free sharing allowed | AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0. |
+| Penn World Table (Groningen Growth and Development Centre) | G27 Growth accounting | Open with attribution | Free sharing allowed | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
+| Our World in Data (CO2 and greenhouse gas data) | G20 Climate and energy | Open with attribution | Free sharing allowed | Our World in Data and the underlying data provider named on each series. |
+| IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links; G42 Sub-national revenue | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
+| IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
+| IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
+| IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
+| IMF list of low-income country debt sustainability analyses | U1 Low-income country debt | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, List of LIC DSAs for PRGT-Eligible Countries. |
+| Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
+| Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
+| ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
+| ILOSTAT (International Labour Organization) | G22 Wages and house prices; G17 People | Terms not confirmed | Sharing unclear | Source: ILOSTAT, International Labour Organization. |
+| DSSI and Common Framework status (World Bank, Paris Club) | U1 Low-income country debt | Terms not confirmed | Sharing unclear | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
+
+### AidData Global Chinese Development Finance Dataset, version 3.0
+
+- **Planned for:** U1 Low-income country debt
+- **Will be used for:** Official lending from China by borrowing country and year
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. ODC-By allows sharing with credit to AidData.
+- **Terms read:** [gcdf-geospatial-data README and LICENSE (AidData, GitHub)](https://github.com/aiddata/gcdf-geospatial-data); [Dataset page (citation)](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0) (checked 2026-11-11)
+- **Show to others:** Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By).
+- **Commercial use:** ODC-By sets no commercial limit; the pages read do not mention commercial use.
+- **Credit:** AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0.
+- **Before building:** The licence is stated in AidData's GitHub repository for the geospatial edition; the dataset page itself states none and aiddata.org/terms did not load. Use the project-level table only (ODC-By), not the OpenStreetMap shapes (ODbL, share-alike).
+
+From the terms:
+
+> The original dataset produced by AidData is licensed using the Open Data Commons Attribution License (ODC-By).
+>
+> Any use of the dataset and its content must include appropriate attribution to AidData
+>
+> uses incorporating the geospatial features from OSM must also attribute OSM and be made available using ODbL.
+
+### Penn World Table (Groningen Growth and Development Centre)
+
+- **Planned for:** G27 Growth accounting
+- **Will be used for:** Capital stock, hours, human capital and productivity for growth accounting
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
+- **Terms read:** [Penn World Table page (PWT 11.0, October 2025)](https://www.rug.nl/ggdc/productivity/pwt/) (checked 2026-11-11)
+- **Show to others:** Allowed under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.
+
+From the terms:
+
+> is licensed under a Creative Commons Attribution 4.0 International License
+>
+> When using these data (for whatever purpose), please make the following reference:
+
+### Our World in Data (CO2 and greenhouse gas data)
+
+- **Planned for:** G20 Climate and energy
+- **Will be used for:** Greenhouse gas and CO2 emissions per country
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 for Our World in Data's own data; credit the original provider too.
+- **Terms read:** [Our World in Data FAQs (licence)](https://ourworldindata.org/faqs); [owid/co2-data README](https://github.com/owid/co2-data) (checked 2026-11-11)
+- **Show to others:** Allowed for data Our World in Data produces (CC BY 4.0); data from third parties keeps its own licence.
+- **Commercial use:** Not stated on the pages; CC BY 4.0 itself sets no commercial limit.
+- **Credit:** Our World in Data and the underlying data provider named on each series.
+- **Before building:** Each emissions series in the CO2 file names its original provider; check that provider's licence for the series G20 uses before building.
+
+From the terms:
+
+> falls under our permissive CC BY license; you have permission to use, reproduce, and distribute it, provided that you cite us
+>
+> completely open access under the Creative Commons BY license
+>
+> is subject to the license terms from the original third-party authors
+
+### IMF Government Finance Statistics and Financial Soundness Indicators
+
+- **Planned for:** G28 Bank-sovereign links; G42 Sub-national revenue
+- **Will be used for:** Revenue and spending by level of government; bank capital, asset quality and holdings of government debt
+- **Status:** Permission needed for client or commercial use
+- **Free non-commercial sharing:** Free sharing allowed. IMF Data may be published and distributed with attribution.
+- **Terms read:** [IMF Copyright and Usage (Special Terms for Statistical Data)](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-11)
+- **Show to others:** Allowed with attribution: GFS is named in the IMF's statistical data terms.
+- **Commercial use:** Needs permission: email copyright@imf.org. Bulk automated download also needs permission.
+- **Credit:** Source: International Monetary Fund, <database name>, <link to the dataset>.
+- **Before building:** FSI is not named in the terms; it falls under "statistical data ... that explicitly identify the International Monetary Fund as the source". Same commercial and bulk-download limits as the main IMF row.
+
+From the terms:
+
+> Users may download, extract, copy, create derivative works, publish, distribute, and use Data obtained from IMF Sites subject to these conditions:
+>
+> For any potential commercial reuse of IMF Data, email copyright@imf.org to request permission.
+>
+> The IMF prohibits bulk download of information by automated technology without explicit permission
+
+### IMF Monitoring of Fund Arrangements (MONA)
+
+- **Planned for:** G34 Precedent finder
+- **Will be used for:** IMF programmes by country: type, dates, size and conditions
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the dataset page.
+- **Terms read:** [MONA database page](https://www.imf.org/external/np/pdr/mona/index.aspx) (checked 2026-11-11)
+- **Show to others:** Not stated on the MONA page.
+- **Commercial use:** Not stated on the MONA page.
+- **Credit:** Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database.
+- **Before building:** The MONA page has no terms. It is probably covered by the general IMF statistical data terms (publish with attribution, commercial use needs permission), but the page does not say so. Ask copyright@imf.org or treat as the main IMF row only after confirming.
+
+### IMF Fiscal Rules Dataset, 1985-2024
+
+- **Planned for:** G35 Fiscal rules check
+- **Will be used for:** National and supranational fiscal rules by country and year (123 economies)
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the dataset page.
+- **Terms read:** [Fiscal Rules Dataset page (version 1.0 update, 25 September 2025)](https://www.imf.org/en/topics/fiscal-policies/fiscal-rules-dataset) (checked 2026-11-11)
+- **Show to others:** Not stated on the dataset page.
+- **Commercial use:** Not stated on the dataset page.
+- **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
+- **Before building:** The page gives a citation but no terms. Probably under the general IMF statistical data terms; confirm before building G35.
+
+### IMF External Balance Assessment (EBA)
+
+- **Planned for:** G24 External sustainability
+- **Will be used for:** Published current account norm coefficients
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms on the page.
+- **Terms read:** [EBA page](https://www.imf.org/external/np/res/eba/) (checked 2026-11-11)
+- **Show to others:** Not stated on the EBA page.
+- **Commercial use:** Not stated on the EBA page.
+- **Credit:** Source: International Monetary Fund, External Balance Assessment.
+- **Before building:** The page says data and estimates are online but does not say whether the coefficients are included or under what terms. Read the methodology paper and data files before G24; if reuse is not allowed, the norm shows "Missing".
+
+From the terms:
+
+> Data and estimates from the EBA exercise are available online.
+
+### IMF list of low-income country debt sustainability analyses
+
+- **Planned for:** U1 Low-income country debt
+- **Will be used for:** Risk of debt distress rating for each low-income country and its date
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Not read yet.
+- **Terms read:** [LIC DSA list (PDF)](https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf) (checked 2026-11-11)
+- **Show to others:** Page did not load on 2026-11-11.
+- **Commercial use:** Not read.
+- **Credit:** Source: International Monetary Fund, List of LIC DSAs for PRGT-Eligible Countries.
+- **Before building:** The PDF did not load from the sandbox. Open it in a browser on the Mac, confirm its columns and date, and check whether the general IMF terms apply before building U1.
+
+### Laeven and Valencia, Systemic Banking Crises database (2018 update)
+
+- **Planned for:** G23 Crisis early-warning; G34 Precedent finder
+- **Will be used for:** Start and end years of systemic banking, currency and sovereign debt crises
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms found.
+- **Terms read:** [IMF Working Paper 18/206](https://www.imf.org/en/Publications/WP/Issues/2018/09/14/Systemic-Banking-Crises-Revisited-46232); [IMF Copyright and Usage](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-11)
+- **Show to others:** Not stated: the paper has no licence or data statement.
+- **Commercial use:** Not stated.
+- **Credit:** Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206.
+- **Before building:** No data file or terms found on the IMF page. Whether the IMF statistical data terms cover a working paper's crisis dates is not stated. The crisis dates could be typed from the paper's tables with citation; confirm with the IMF before G23 runs.
+
+### Database of Political Institutions 2020 (Inter-American Development Bank)
+
+- **Planned for:** G36 Political feasibility
+- **Will be used for:** Checks and balances, government fractionalisation, election timing
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No licence found.
+- **Terms read:** [DPI 2020 publication page (IDB)](https://publications.iadb.org/en/database-political-institutions-2020-dpi2020) (checked 2026-11-11)
+- **Show to others:** Not stated on the publication page.
+- **Commercial use:** Not stated.
+- **Credit:** Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found.
+- **Before building:** The IDB page has no licence or data link, and the DPI was not found on data.iadb.org. Find the download page in a browser and read its licence before G36.
+
+### ND-GAIN Country Index (University of Notre Dame)
+
+- **Planned for:** G20 Climate and energy
+- **Will be used for:** Climate vulnerability and readiness scores
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. "Free and open-access" is not a licence.
+- **Terms read:** [ND-GAIN download page](https://gain.nd.edu/our-work/country-index/download-data/); [University of Notre Dame copyright page](https://www.nd.edu/copyright/) (checked 2026-11-11)
+- **Show to others:** Not stated: the page calls the index "free and open-access" but gives no licence.
+- **Commercial use:** Not stated.
+- **Credit:** Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame.
+- **Before building:** No licence stated. Ask ND-GAIN in writing whether the scores may be redistributed inside an open-source app before G20 uses them.
+
+From the terms:
+
+> As a free and open-access tool, ND-GAIN appreciates understanding how the Country Index is used.
+
+### ILOSTAT (International Labour Organization)
+
+- **Planned for:** G22 Wages and house prices; G17 People
+- **Will be used for:** Nominal and real wage growth; labour force figures not in World Bank data
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Not read yet.
+- **Terms read:** [ILOSTAT home page](https://ilostat.ilo.org/) (checked 2026-11-11)
+- **Show to others:** Not read: the terms page and the ILO copyright page did not load; the home page states no licence.
+- **Commercial use:** Not read.
+- **Credit:** Source: ILOSTAT, International Labour Organization.
+- **Before building:** Read the ILOSTAT terms of use in a browser on the Mac and update this row before G22.
+
+### DSSI and Common Framework status (World Bank, Paris Club)
+
+- **Planned for:** U1 Low-income country debt
+- **Will be used for:** Which countries took part in the Debt Service Suspension Initiative and which applied to the Common Framework, typed by hand with source and date
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms stated.
+- **Terms read:** [World Bank DSSI brief](https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative); [Paris Club, Common Framework](https://clubdeparis.org/en/communications/page/common-framework) (checked 2026-11-11)
+- **Show to others:** Not stated on either page.
+- **Commercial use:** Not stated.
+- **Credit:** World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.
+- **Before building:** Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+
+From the terms:
+
+> Forty-eight out of 73 eligible countries participated.
+>
+> As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.
+
 ## Open questions
 
 1. **World Bank Pink Sheet (commodity prices)** (Terms not confirmed): Read the Pink Sheet licence field in the World Bank Data Catalog before showing commodity prices to clients. Some prices in it come from third parties.

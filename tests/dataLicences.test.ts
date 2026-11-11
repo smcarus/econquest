@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { DATA_LICENCES, licencesMarkdown, openLicenceQuestions } from '../src/data/dataLicences.ts';
+import { DATA_LICENCES, PLANNED_LICENCES, licencesMarkdown, openLicenceQuestions } from '../src/data/dataLicences.ts';
 
 test('docs/DATA_LICENCES.md is the generated register (run npm run docs:licences after editing the register)', () => {
   const doc = readFileSync(new URL('../docs/DATA_LICENCES.md', import.meta.url), 'utf8');
@@ -43,4 +43,18 @@ test('every row says whether free, non-commercial sharing is allowed, with a rea
   assert.equal(by.kalshi, 'restricted');
   assert.equal(by.erapi, 'restricted');
   assert.equal(by.gdelt, 'allowed');
+});
+
+test('planned sources follow the same rules and do not repeat a register row', () => {
+  const ids = new Set(DATA_LICENCES.map((r) => r.id));
+  for (const r of PLANNED_LICENCES) {
+    assert.ok(!ids.has(r.id), `${r.id} is already in the register`);
+    ids.add(r.id);
+    assert.ok(r.plannedFor.length > 2, `${r.id}: planned step`);
+    assert.ok(r.terms.length && r.terms.every((t) => t.url.startsWith('https://')), `${r.id}: terms link`);
+    if (r.status !== 'not_verified') assert.ok(r.quotes.length > 0, `${r.id}: a confirmed status needs a quote`);
+    if (r.status === 'not_verified' || r.status === 'permission') assert.ok(r.flag, `${r.id}: needs a note on what to do before building`);
+    if (r.status === 'not_verified') assert.notEqual(r.share, 'allowed', `${r.id}: unconfirmed terms cannot be marked allowed`);
+  }
+  assert.ok(licencesMarkdown().includes('## Sources planned, not read by the app yet'));
 });

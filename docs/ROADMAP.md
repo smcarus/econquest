@@ -1,6 +1,6 @@
 # Roadmap
 
-What is planned for EconQuest, in the order it will be built. Last updated 9 November 2026.
+What is planned for EconQuest, in the order it will be built. Last updated 11 November 2026.
 
 ## How the work is done
 
@@ -36,11 +36,7 @@ The same rules hold for every change:
 | Smaller and faster | Council chat and several Research panels load only when opened |
 | Open source | Licences (Apache-2.0, CC BY 4.0, DCO), governance, contributing guide, the methodology and a clean public export |
 
-## Phase 4: data and economist readiness (paused after G10)
-
-**Paused on 9 November 2026.** G1 to G10 are done and in the main app. Work stops here so the
-changes so far can be reviewed; G11 starts when the maintainer says so. Nothing below G10 has been
-built yet.
+## Phase 4: data and economist readiness (G1 to G10 done)
 
 This phase fills free data gaps, adds a way to plug in a paid data subscription you already have, and
 makes figures safer to compare and cite.
@@ -57,13 +53,31 @@ makes figures safer to compare and cite.
 | G8 | Units and conversions | Real or nominal, base year, currency, market rate or purchasing power parity | Done |
 | G9 | Uncertainty ranges | Forecasts show a range, not just one number; hidden at Help off | Done |
 | G10 | Release calendar | When each country's next inflation and growth figures come out | Done (six countries read; the rest say why not) |
-| G11 | "Cite this" | Ready-made citations for every chart, table and answer | Next |
-| G12 | Euro area figures as first published | Backtests use only what was known at the time | Planned; licence check first |
-| G13 | UK figures as first published | The same for the United Kingdom | Planned; licence check first |
-| G14 | Haver adapter | The second paid vendor | Planned; needs a subscriber's API documentation |
-| G15 | Moody's adapter | The third paid vendor, held in memory only | Planned; needs a subscriber's API documentation |
 
-## Phase 5: Quests in the classroom (after Phase 4)
+The rest of Phase 4 (G11 to G15) is now part of the build order below.
+
+## The build order from here
+
+Agreed on 9 November 2026 and started on 11 November. Steps are grouped into waves so that work which
+shares code is done together, the computer runs that only the maintainer can do are batched, and
+outside users can try the app before the larger tools are built. **No new features are added to this
+list until checkpoint 1;** new ideas are kept on a parked list and looked at then.
+
+| Wave | Steps | What it means for you |
+| --- | --- | --- |
+| 0 | Licence check of every planned source; tests for G23, G25 and G32 written down and locked before those tools exist | No later step waits on a licence, and building a tool cannot bend its test |
+| 1 | G11 "Cite this"; K1 size review; M1 upkeep routine (monthly source check, yearly licence re-read, monthly library updates) | Citations for every chart and answer; room for more languages; sources that change or vanish are caught |
+| 2 | P1 policy outcome check; G38 "how could this fail" step; P2 flag a figure or answer; P3 rate answers | Policy reviews are checked against what happened after 12 and 24 months; you can report problems |
+| 3 | G16 inequality, tax revenue and tariffs; U1 low-income country debt; G17 people; G19 debt structure; G18 trade exposure; G20 climate and energy; G22 wages and house prices; G40 sector balances and private debt; G41 monthly activity; G42 revenue by level of government; G12/G13 euro area and UK figures as first published | The figures a full economic terminal needs, especially for the poorest countries |
+| 4 | G43 security, privacy and Windows check; S1 success measures; U3 light mode for modest laptops; public release | The app goes public, and runs without a local AI model |
+| Checkpoint 1 | About four weeks after the public release | Real use decides what comes next |
+| 5 | G23 crisis early-warning; G24 external sustainability; G25 yield curve and financial conditions; G26 inflation drivers; G27 growth accounting; G28 bank and government links; G29 debt restructuring calculator; G30 who pays for a policy; G31 central bank word count; then G32 behavioural finance agent | New analysis tools; each forward-looking one is tested before it gets a badge |
+| 6 | G33 behavioural policy check; G34 precedent finder; G35 fiscal rules check; G36 political feasibility; G37 trade-off chart; G39 one-page policy brief | A fuller policy review |
+| 7 | U2 Portuguese, Arabic and Swahili; W1 worked examples; Phase 5 classroom and pilot, with P4 expert review | More languages once the screens have settled; teaching |
+| Checkpoint 2 | After the pilot term | |
+| When documentation arrives | G14 Haver, G15 Moody's | Paid vendors that need a subscriber's API documentation |
+
+## Phase 5: Quests in the classroom (wave 7)
 
 This phase lets a professor run Quests with a class. It sits behind its own class switch with its own
 go-live checklist, so schools can start before Quests opens to everyone. The app never grades; the
@@ -135,5 +149,6 @@ also tidies how the main app stores data and calls feeds.
 - Budget elasticities for Brazil, India, China and other countries outside the OECD.
 - Council-drafted what-if questions.
 - Wider statistics tools (more than two variables, panels).
+- Bilateral and current tariff rates (WITS, WTO).
 - A dated data snapshot with a DOI, to be decided at the public release.
 - A review of the Spanish and French translations by native speakers.
