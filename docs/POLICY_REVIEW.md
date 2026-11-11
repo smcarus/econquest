@@ -14,7 +14,7 @@ It lives in **Reports > Policy reviews**. A review can also be started from a Co
 | --- | --- | --- |
 | 1. Frame | Country, the problem in one or two sentences, the goal (indicator, lower / higher / stable, optional target and date), constraints (peg, fiscal room, election...), who it is for, and the **As of** day. | The frame as entered. |
 | 2. Diagnose | The app fills a fixed set of indicators for the As of day: inflation vs target, growth and output gap, policy rate and real rate, Taylor gap, government debt, r minus g, primary balance, reserves, current account, leading indicator. Standard charts (Taylor gap, real rate, r minus g, Phillips curve). | Every figure with its value, source, period and the pull it came from; Missing figures with the reason. |
-| 3. Options | The council answers a set question built from the frame. Agents write their standard documents; synthesis ranks the options with trade-offs, who bears the cost and what would need to be true. You can add your own options. | The question template version, the AI model, every agent and synthesis document, your options. |
+| 3. Options | The council answers a set question built from the frame. Agents write their standard documents; synthesis ranks the options with trade-offs, who bears the cost and what would need to be true. Each option carries a pre-mortem: how it could fail and one to three figures that would show it first (required; an option without one is listed under gaps). You can add your own options. | The question template version, the AI model, every agent and synthesis document, your options. |
 | 4. Evidence | For each option: past episodes from the country's own history (Replicate a rate decision), Chart Agent tests (lead/lag, Granger, regression) with their settings, the number check, and the Models & validation status of each signal used. | Each test with its inputs, settings and result. |
 | 5. Recommendation memo | Written only from steps 1 to 4. Cites every figure by number with source and as-of. States what to watch and the review date. Draft > Reviewed > Approved sign-off. Download as Markdown or PDF. | The memo text, its hash and the sign-off history. |
 | 6. Track outcomes | On the review date the app sets what happened beside the starting point. **Review again** copies the frame onto newer data and shows what changed. | The figures at review time and the link to the next review. |
@@ -39,6 +39,11 @@ the larger of 0.5 units and 5% of the reference value. Each check is saved once 
 `data/local/reviews.json` with its review, chained by SHA-256 to the check before it, never changed,
 and written to the audit log. A frame changed later keeps its old checks and gets new ones. Checks
 run 30 seconds after the server starts, every 6 hours, and when the track record is opened.
+
+From rules version `outcome-check-v2`, each check also judges the early-warning figures named in the
+recommended option's pre-mortem (step 3): **Warning shown** when the figure moved the way the
+pre-mortem said would signal failure, **No warning**, **Too early** or **Missing**, on the same pull
+and with the same 45-day rule. The memo lists them and pre-fills them under What to watch.
 
 The results show under step 6 and in Menu > Models & validation > Track record > Policy track record,
 with hits out of the checks that could be judged. They say only whether the goal written in the

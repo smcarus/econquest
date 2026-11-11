@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import type { ReviewFrame } from '../src/utils/policyReview';
 import type { Diagnosis } from '../src/utils/reviewDiagnosis';
-import { checkOptions, optionsPrompt, parseUserOptions, unassessedOptions } from '../src/utils/reviewOptions';
+import { checkOptions, optionsPrompt, parseUserOptions, unassessedOptions, warningText, OPTIONS_INSTRUCTION } from '../src/utils/reviewOptions';
 
 const frame: ReviewFrame = { iso3: 'BRA', problem: 'Inflation is above target and growth is slowing.', goal: { indicator: 'Inflation', direction: 'lower', target: '3%', by: '2027-12' }, constraints: ['Election in October'], asOf: '2026-11-01' };
 const fig = (ref: number, label: string, value: number | null, unit = '%') => ({ ref, field: `f${ref}`, group: 'g', label, unit, value, status: value === null ? ('Missing' as const) : ('Live' as const), period: value === null ? '' : '2026', source: value === null ? '' : 'IMF WEO', reason: value === null ? 'IMF did not answer' : '' });
@@ -49,7 +49,28 @@ test('sentences with numbers not in the diagnosis are removed; unknown refs and 
 
 test('gaps written as one sentence are kept, not dropped', () => {
   const out = checkOptions({ options: [{ title: 'Hold', how: 'Keep the rate [2].' }], ranking: '', gaps: 'Growth and debt are missing.' }, frame, d, []);
-  assert.deepEqual(out.gaps, ['Growth and debt are missing.']);
+  assert.deepEqual(out.gaps, ['Growth and debt are missing.', 'The council did not say how option 1 could fail or which figures would show it first.']);
+});
+
+test('pre-mortem: how it could fail and up to three early-warning figures, unknown refs and signals dropped', () => {
+  const out = checkOptions(
+    {
+      options: [
+        { title: 'Hold the policy rate', how: 'Keep it [2].', failure: { how: 'Inflation stays high because expectations drift.', watch: [{ ref: 1, signal: 'rises' }, { ref: 1, signal: 'falls' }, { ref: 9, signal: 'rises' }, { ref: 2, signal: 'sideways' }, { ref: 3, signal: 'falls' }] } },
+      ],
+      ranking: '',
+      gaps: [],
+    },
+    frame,
+    d,
+    []
+  );
+  assert.equal(out.options[0].failure?.how, 'Inflation stays high because expectations drift.');
+  assert.deepEqual(out.options[0].failure?.watch, [{ ref: 1, signal: 'rises' }, { ref: 3, signal: 'falls' }]);
+  assert.deepEqual(out.gaps, []);
+  assert.equal(warningText(out.options[0].failure!.watch, d), 'Inflation [1] rises; Real GDP growth [3] falls');
+  assert.match(optionsPrompt(frame, d, []), /failure: \{ how/);
+  assert.match(OPTIONS_INSTRUCTION, /pre-mortem/);
 });
 
 test('own options are tidied and, without a model, stand unassessed', () => {

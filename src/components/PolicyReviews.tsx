@@ -213,9 +213,11 @@ const DiagnosisView: React.FC<{ d: Diagnosis }> = ({ d }) => {
 };
 
 
-const OptionCard: React.FC<{ o: PolicyOption }> = ({ o }) => {
+const OptionCard: React.FC<{ o: PolicyOption; d?: Diagnosis; assessed: boolean }> = ({ o, d, assessed }) => {
   const t = useT(REPORTS);
   const tx = useTx();
+  const figure = (ref: number) => `${(d?.figures.find((f) => f.ref === ref)?.label ?? '').replace(/ \(.*\)$/, '')} [${ref}]`.trim();
+  const warn = (o.failure?.watch ?? []).map((w) => t(w.signal === 'rises' ? 'pr_rises' : 'pr_falls', { figure: figure(w.ref) })).join('; ');
   const rows: Array<[string, string]> = [
     [t('pr_how'), o.how],
     [t('pr_effect'), o.effect],
@@ -224,6 +226,8 @@ const OptionCard: React.FC<{ o: PolicyOption }> = ({ o }) => {
     [t('pr_who'), o.whoBears],
     [t('pr_must'), o.mustBeTrue],
     [t('pr_risks'), o.risks],
+    [t('pr_fails'), o.failure?.how ?? ''],
+    [t('pr_warn'), warn],
   ];
   const views = LENSES.filter((l) => o.views[l]);
   return (
@@ -246,6 +250,7 @@ const OptionCard: React.FC<{ o: PolicyOption }> = ({ o }) => {
             </React.Fragment>
           ))}
       </dl>
+      {assessed && !(o.failure?.how && o.failure.watch.length) && <p className="text-xs text-amber-700 dark:text-amber-400" data-review-no-premortem>{t('pr_noPremortem')}</p>}
       {views.length > 0 && (
         <details>
           <summary className="ui-label cursor-pointer">{t('pr_lenses')}</summary>
@@ -262,7 +267,7 @@ const OptionCard: React.FC<{ o: PolicyOption }> = ({ o }) => {
   );
 };
 
-const OptionsView: React.FC<{ s: OptionsStep }> = ({ s }) => {
+const OptionsView: React.FC<{ s: OptionsStep; d?: Diagnosis }> = ({ s, d }) => {
   const t = useT(REPORTS);
   const tx = useTx();
   return (
@@ -271,7 +276,7 @@ const OptionsView: React.FC<{ s: OptionsStep }> = ({ s }) => {
     {!s.model && <p className="text-xs text-amber-700 dark:text-amber-400">{t('pr_ownNotAssessed', { why: tx(s.reason ?? '') })}</p>}
     <ol className="space-y-1.5">
       {s.options.map((o) => (
-        <OptionCard key={o.rank} o={o} />
+        <OptionCard key={o.rank} o={o} d={d} assessed={Boolean(s.model)} />
       ))}
     </ol>
     {s.gaps.length > 0 && (
@@ -865,7 +870,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                   </div>
                 </>
               )}
-              {options && <OptionsView s={options} />}
+              {options && <OptionsView s={options} d={diagnosis} />}
               {r.steps.options && (
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {t('pr_savedLine', { when: r.steps.options.savedAt.slice(0, 16).replace('T', ' ') })}{t('pr_hash')}<span className="font-code">{short(r.steps.options.hash)}</span>
@@ -994,6 +999,7 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                     .map((c) => (
                       <p key={c.hash} data-review-auto-check={c.verdict}>
                         {t('pr_autoRow', { months: String(c.months), date: c.due, verdict: t(`pr_v_${c.verdict}` as 'pr_v_hit') })}. {c.reason}
+                        {c.warnings?.length ? ` ${t('pr_autoWarn', { list: c.warnings.map((w) => `${w.label} [${w.ref}]: ${t(`pr_w_${w.result}` as 'pr_w_shown')}`).join('; ') })}` : ''}
                       </p>
                     ))}
                 </div>

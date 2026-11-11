@@ -10,6 +10,10 @@
  *  - Missing: no starting figure, no saved pull near the check date, or the goal is not one of the
  *    standard indicators.
  *
+ * From v2, each check also looks at the early-warning figures the council named in the pre-mortem of
+ * the recommended option (roadmap G38): Warning shown (the figure moved the way that signals failure),
+ * No warning, Too early or Missing.
+ *
  * Only whether the stated goal was met is recorded. The app does not know whether the advice was
  * followed, and what happened afterwards is not what the advice caused; the track record says so.
  *
@@ -20,9 +24,10 @@
 import type { GoalDirection, PolicyReview, ReviewFrame } from './policyReview';
 import type { Diagnosis, DiagnosisFigure } from './reviewDiagnosis';
 import { goalFigure } from './reviewOutcomes';
+import type { EarlyWarning } from './reviewOptions';
 
 /** Bumped when the rules below change, so each saved check says which rules made it. */
-export const OUTCOME_CHECK_VERSION = 'outcome-check-v1';
+export const OUTCOME_CHECK_VERSION = 'outcome-check-v2';
 export const CHECK_MONTHS = [12, 24] as const;
 export type CheckMonths = (typeof CHECK_MONTHS)[number];
 /** The saved pull a check reads must be from this many days before the due day, or later. */
@@ -46,6 +51,23 @@ export interface CheckSide {
   pullDate: string;
 }
 
+export type WarningResult = 'shown' | 'not_shown' | 'too_early' | 'missing';
+
+export const WARNING_LABEL: Record<WarningResult, string> = {
+  shown: 'Warning shown',
+  not_shown: 'No warning',
+  too_early: 'Too early',
+  missing: 'Missing',
+};
+
+export interface WarningCheck {
+  ref: number;
+  label: string;
+  signal: EarlyWarning['signal'];
+  result: WarningResult;
+  reason: string;
+}
+
 export interface OutcomeCheck {
   version: string;
   months: CheckMonths;
@@ -64,6 +86,8 @@ export interface OutcomeCheck {
   now?: CheckSide;
   /** The target read as a number (or a range), when there is one. */
   targetRange?: [number, number];
+  /** The recommended option's early-warning figures (pre-mortem), each judged the same way (v2 on). */
+  warnings?: WarningCheck[];
   /** Hash of the check before this one in the same review. */
   prevHash?: string;
   hash: string;
@@ -128,7 +152,31 @@ export function nextCheck(review: Pick<PolicyReview, 'steps'> & { outcomeChecks?
  * of date); `now` is the diagnosis built from the saved pull on or before the due day (null when
  * there is none).
  */
-export function judgeCheck(input: { frame: ReviewFrame; frameHash: string; months: CheckMonths; then: Diagnosis | null; now: Diagnosis | null; checkedOn: string }): UnsavedCheck {
+export function judgeCheck(input: { frame: ReviewFrame; frameHash: string; months: CheckMonths; then: Diagnosis | null; now: Diagnosis | null; checkedOn: string; warnings?: EarlyWarning[] }): UnsavedCheck {
+  const core = judgeGoal(input);
+  if (!input.warnings?.length) return core;
+  return { ...core, warnings: judgeWarnings(input.warnings, input.then, input.now, core.due, input.frame.iso3) };
+}
+
+/** Each early-warning figure: did it move the way that signals failure, from the start to the pull read? */
+export function judgeWarnings(warnings: EarlyWarning[], then: Diagnosis | null, now: Diagnosis | null, due: string, iso3: string): WarningCheck[] {
+  const earliest = daysBefore(due, PULL_WINDOW_DAYS);
+  return warnings.map((w) => {
+    const start = then?.figures.find((f) => f.ref === w.ref);
+    const label = (start?.label ?? `Figure [${w.ref}]`).replace(/ \(.*\)$/, '');
+    const base = { ref: w.ref, label, signal: w.signal };
+    if (!start || start.value === null) return { ...base, result: 'missing' as const, reason: `No starting figure${start?.reason ? `: ${start.reason}` : ''}.` };
+    if (!now || now.pullDate < earliest) return { ...base, result: 'missing' as const, reason: `No saved pull for ${iso3} in the ${PULL_WINDOW_DAYS} days before ${due}.` };
+    const end = now.figures.find((f) => f.field === start.field);
+    if (!end || end.value === null) return { ...base, result: 'missing' as const, reason: `No figure on ${now.pullDate}${end?.reason ? `: ${end.reason}` : ''}.` };
+    if (start.period && end.period === start.period) return { ...base, result: 'too_early' as const, reason: `Still the ${start.period} figure.` };
+    const change = Math.round((end.value - start.value) * 100) / 100;
+    const shown = w.signal === 'rises' ? change > 0 : change < 0;
+    return { ...base, result: shown ? ('shown' as const) : ('not_shown' as const), reason: `${fmt(start.value, start.unit)} (${start.period || then!.pullDate}) to ${fmt(end.value, end.unit)} (${end.period || now.pullDate}); a warning if it ${w.signal}.` };
+  });
+}
+
+function judgeGoal(input: { frame: ReviewFrame; frameHash: string; months: CheckMonths; then: Diagnosis | null; now: Diagnosis | null; checkedOn: string }): UnsavedCheck {
   const { frame, frameHash, months, then, now, checkedOn } = input;
   const due = addMonths(frame.asOf, months);
   const goal = { indicator: frame.goal.indicator, direction: frame.goal.direction, ...(frame.goal.target ? { target: frame.goal.target } : {}) };
