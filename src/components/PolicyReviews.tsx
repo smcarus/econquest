@@ -7,6 +7,7 @@ import { defaultMemoInputs, memoFileName, RESEARCH_BANNER, VALIDATED_BANNER, typ
 import { saveFile } from '../utils/briefExport';
 import { SignOffControl, refreshSignOffs } from './SignOffControl';
 import { GOAL_MOVE_LABEL, type OutcomesStep } from '../utils/reviewOutcomes';
+import { addMonths } from '../utils/outcomeChecks';
 import { START_REVIEW_EVENT, takeReviewPrefill } from '../utils/reviewHandoff';
 import { LENSES, LENS_LABEL, LEVER_LABEL, MAX_USER_OPTIONS, type OptionsStep, type PolicyOption, type UserOption } from '../utils/reviewOptions';
 import { withNotice } from '../utils/disclaimer';
@@ -983,6 +984,19 @@ export const PolicyReviews: React.FC<{ countries?: Country[]; defaultIso3?: stri
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   {t('pr_checked', { date: outcomes?.checkedOn ?? '' })}{t('pr_hash')} <span className="font-code">{short(r.steps.outcomes.hash)}</span>
                 </p>
+              )}
+              {frame && r.steps.frame && (
+                <div className="text-xs text-slate-600 dark:text-slate-300 space-y-1" data-review-auto-checks>
+                  <div className="ui-label">{t('pr_autoTitle')}</div>
+                  <p className="text-slate-500 dark:text-slate-400">{t('pr_autoWhen', { d12: addMonths(frame.asOf, 12), d24: addMonths(frame.asOf, 24) })}</p>
+                  {(r.outcomeChecks ?? [])
+                    .filter((c) => c.frameHash === r.steps.frame!.hash)
+                    .map((c) => (
+                      <p key={c.hash} data-review-auto-check={c.verdict}>
+                        {t('pr_autoRow', { months: String(c.months), date: c.due, verdict: t(`pr_v_${c.verdict}` as 'pr_v_hit') })}. {c.reason}
+                      </p>
+                    ))}
+                </div>
               )}
             </section>
           </div>

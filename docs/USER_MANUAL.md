@@ -647,6 +647,13 @@ becomes the problem). Six steps, in order:
    ones the review started from and says whether the goal indicator moved the right way. *Review
    again* starts a new review with the same frame on today's data, linked to this one.
 
+**Automatic outcome checks.** Every saved review is also checked on its own 12 and 24 months after
+its As of day, from the pull saved on or before that day. Each check reads **Hit** (the target was
+met, or with no number in the target, the figure moved the way the goal wants), **Miss**, **Too
+early** (no newer figure than the one the review started from) or **Missing**, with the reason. The
+results show under step 6 and in **Menu > Models & validation > Track record > Policy track record**.
+They record only whether the goal was met, not whether the advice was followed or caused it.
+
 Changing an earlier step marks later ones **Out of date** until they are run again. Every step is
 saved with a hash and written to the audit log. Kept in `data/local/reviews.json`; see
 [POLICY_REVIEW.md](./POLICY_REVIEW.md) for the method.

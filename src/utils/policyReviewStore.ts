@@ -7,6 +7,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import { canonicalJson } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
+import type { OutcomeCheck, UnsavedCheck } from './outcomeChecks';
 import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
 
 export function stepHash(step: ReviewStep, content: unknown, basedOn: string | undefined): string {
@@ -43,6 +44,29 @@ export function verifyReview(review: PolicyReview): ReviewStep[] {
     const rec = review.steps[s];
     return rec ? stepHash(s, rec.content, rec.basedOn) !== rec.hash : false;
   });
+}
+
+export function checkHash(check: UnsavedCheck, prevHash: string | undefined): string {
+  return createHash('sha256').update(canonicalJson({ check, prevHash: prevHash ?? null })).digest('hex');
+}
+
+/** Adds one outcome check, chained to the last one. Earlier checks are never changed; updatedAt stays as it was. */
+export function appendOutcomeCheck(review: PolicyReview, check: UnsavedCheck): PolicyReview {
+  const list = review.outcomeChecks ?? [];
+  const prevHash = list.length ? list[list.length - 1].hash : undefined;
+  const saved: OutcomeCheck = { ...check, ...(prevHash ? { prevHash } : {}), hash: checkHash(check, prevHash) };
+  return { ...review, outcomeChecks: [...list, saved] };
+}
+
+/** Indexes of outcome checks whose hash or link to the check before no longer matches. */
+export function verifyOutcomeChecks(review: PolicyReview): number[] {
+  const bad: number[] = [];
+  (review.outcomeChecks ?? []).forEach((c, i, all) => {
+    const { hash, prevHash, ...rest } = c;
+    const expectedPrev = i ? all[i - 1].hash : undefined;
+    if (prevHash !== expectedPrev || checkHash(rest, prevHash) !== hash) bad.push(i);
+  });
+  return bad;
 }
 
 function isReview(v: unknown): v is PolicyReview {
