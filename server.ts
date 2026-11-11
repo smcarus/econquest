@@ -6,6 +6,7 @@ import { FILE_PULLS, dailyDue, dailyFilePath, formatDaily, interestingLines, rea
 import { spawn } from 'child_process';
 import { registerReviewRoutes } from './src/server/routes/reviews';
 import { registerIdeaRoutes } from './src/server/routes/ideas';
+import { registerFeedbackRoutes } from './src/server/routes/feedback';
 import { mountEngineRoutes } from './src/server/engineRoutes';
 import { ENGINE_ROUTES } from './src/engine/routeTable';
 import { createNodePlatform } from './src/platform/node';
@@ -69,6 +70,7 @@ import { documentsAsText, isCouncilDocument, toAgentDocuments, type AgentDocumen
 import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, answersAsText, sentenceCheck, checkBrief, earlierAsText, synthesisTask, isDocFinding, type AgentAnswer, type AgentChoiceResult, type CouncilBrief, type SynthesisResult, planCouncil, runCouncil, type SavedCouncilBrief } from './src/utils/askCouncil';
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
+import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
 import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
@@ -1350,6 +1352,10 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const fiscal = fiscalFromSnapshot(snap);
             return fiscal ? { fiscal } : {};
+          })()),
+          ...((() => {
+            const distTax = distTaxFromSnapshot(snap);
+            return distTax ? { distTax } : {};
           })()),
           ...((() => {
             const politics = politicsFromSnapshot(snap);
@@ -3390,6 +3396,7 @@ async function startServer() {
     res.send(episodeMarkdown(ep, name, 'error' in replay ? replay : { replay, policySource: policy?.source ?? null }, { teacher }));
   });
   registerIdeaRoutes(app, { quick, seriesFor, refuseRemoteChange, signedIn });
+  registerFeedbackRoutes(app, { refuseRemoteChange });
   registerOwnSeriesRoutes(app, { refuseRemoteChange, signedIn, platform: enginePlatform });
   // Your paid data subscription (src/engine/paidData.ts): its figures show only on this computer's
   // own screens, beside (never inside) seriesFor, so nothing built from seriesFor (downloads, the

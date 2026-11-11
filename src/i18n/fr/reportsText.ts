@@ -100,4 +100,6 @@ export const REPORTS_TEXT_FR: Record<string, string> = {
   "What you hold": "Ce que vous détenez",
   "Council brief": "Synthèse du conseil",
   "The last question you asked the council on Workspace: the agents’ answers with their sources, and the synthesis agent’s summary if a model is set up.": "La dernière question que vous avez posée au conseil dans l'Espace de travail : les réponses des agents avec leurs sources, et le résumé de l'agent de synthèse si un modèle est configuré.",
+  // G16: distribution and taxes
+  "Distribution and taxes": "Répartition et impôts",
 };

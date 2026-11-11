@@ -1,6 +1,7 @@
 /** Council chat and the Agents panel, drawn from the conversation in CouncilChatState.tsx. Loaded on first show. */
 import { SettingsText } from './SettingsText';
 import { CiteButton } from './CiteButton';
+import { FlagButton, RateAnswer } from './FeedbackControls';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ClipboardList, Copy, Download, FileText, NotebookPen, X } from 'lucide-react';
 import { startPolicyReview } from '../utils/reviewHandoff';
@@ -407,6 +408,8 @@ export const AskCouncilPanel: React.FC<{
                 asOf={(t.synthesis?.snapshot?.asOf || t.asked.askedAt || '').slice(0, 10) || undefined}
                 disabled={writingNow}
               />
+              <RateAnswer answer={{ question: t.asked.question, askedAt: t.asked.askedAt, ...(t.synthesis?.snapshot?.id ? { snapshotId: t.synthesis.snapshot.id } : {}) }} disabled={writingNow} />
+              <FlagButton target="answer" answer={{ question: t.asked.question, askedAt: t.asked.askedAt, ...(t.synthesis?.snapshot?.id ? { snapshotId: t.synthesis.snapshot.id } : {}) }} />
               <button type="button" className="ui-btn ui-btn-ghost" onClick={() => void copy(savedT)} disabled={writingNow}>
                 <Copy className="w-3.5 h-3.5" /> {copied === t.asked.askedAt ? tr('copied') : tr('copy')}
               </button>

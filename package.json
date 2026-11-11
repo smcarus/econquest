@@ -33,6 +33,7 @@
     "record:feeds": "tsx scripts/record-feeds.ts && tsx scripts/public-feeds.ts",
     "record:public": "tsx scripts/public-feeds.ts",
     "backtest": "tsx scripts/backtest.ts",
+    "feedback:export": "tsx scripts/feedback-export.ts",
     "council:regress": "tsx scripts/council-regress.ts",
     "council:record": "tsx scripts/council-record.ts",
     "docs:licences": "tsx scripts/docs-licences.ts",

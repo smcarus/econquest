@@ -170,4 +170,12 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   "Local currency per US dollar (market rate)": "Moneda local por dólar estadounidense (tipo de mercado)",
   "Local currency per international dollar (purchasing power parity)": "Moneda local por dólar internacional (paridad de poder adquisitivo)",
   "US dollar bonds": "Bonos en dólares estadounidenses",
+  // G16: distribution and taxes
+  "Gini index of income or consumption from household surveys, 0 = everyone equal, 100 = one person has everything (World Bank SI.POV.GINI)": "Índice de Gini del ingreso o del consumo según encuestas de hogares, 0 = todos iguales, 100 = una persona lo tiene todo (Banco Mundial SI.POV.GINI)",
+  "Tax revenue of the central government, as % of GDP; states, local government and social security are not included (World Bank GC.TAX.TOTL.GD.ZS)": "Ingresos tributarios del gobierno central, en % del PIB; no incluye estados, gobiernos locales ni seguridad social (Banco Mundial GC.TAX.TOTL.GD.ZS)",
+  "Taxes on income, profits and capital gains, as % of central government revenue (World Bank GC.TAX.YPKG.RV.ZS)": "Impuestos sobre la renta, los beneficios y las ganancias de capital, en % de los ingresos del gobierno central (Banco Mundial GC.TAX.YPKG.RV.ZS)",
+  "Taxes on goods and services, as % of central government revenue (World Bank GC.TAX.GSRV.RV.ZS)": "Impuestos sobre bienes y servicios, en % de los ingresos del gobierno central (Banco Mundial GC.TAX.GSRV.RV.ZS)",
+  "Taxes on international trade, as % of central government revenue (World Bank GC.TAX.INTT.RV.ZS)": "Impuestos sobre el comercio internacional, en % de los ingresos del gobierno central (Banco Mundial GC.TAX.INTT.RV.ZS)",
+  "Applied tariff rate on all products, weighted by import shares (World Bank TM.TAX.MRCH.WM.AR.ZS, from WITS/TRAINS)": "Arancel aplicado a todos los productos, ponderado por la parte de las importaciones (Banco Mundial TM.TAX.MRCH.WM.AR.ZS, de WITS/TRAINS)",
+  "Applied tariff rate on all products, simple mean over product lines (World Bank TM.TAX.MRCH.SM.AR.ZS, from WITS/TRAINS)": "Arancel aplicado a todos los productos, media simple por líneas de producto (Banco Mundial TM.TAX.MRCH.SM.AR.ZS, de WITS/TRAINS)",
 };

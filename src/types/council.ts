@@ -389,6 +389,22 @@ export interface OpenDataSnapshot {
     politicalStabilityPercentile: number;
     /** Military expenditure, % of GDP (World Bank MS.MIL.XPND.GD.ZS, from SIPRI); only when the feed answered. */
     militaryExpenditurePctGdp?: number;
+    /** G16 (src/utils/distributionTaxes.ts), each only when the feed answered: Gini index (SI.POV.GINI, survey year in the source tag). */
+    giniIndex?: number;
+    /** Whether the Gini survey measured income or consumption, when the World Bank footnote says. */
+    giniWelfare?: 'income' | 'consumption';
+    /** Tax revenue, central government, % of GDP (GC.TAX.TOTL.GD.ZS). */
+    taxRevenuePctGdp?: number;
+    /** Taxes on income, profits and capital gains, % of revenue (GC.TAX.YPKG.RV.ZS). */
+    taxIncomePctRevenue?: number;
+    /** Taxes on goods and services, % of revenue (GC.TAX.GSRV.RV.ZS). */
+    taxGoodsPctRevenue?: number;
+    /** Taxes on international trade, % of revenue (GC.TAX.INTT.RV.ZS). */
+    taxTradePctRevenue?: number;
+    /** Applied tariff, all products, weighted mean, % (TM.TAX.MRCH.WM.AR.ZS). */
+    tariffWeightedPct?: number;
+    /** Applied tariff, all products, simple mean, % (TM.TAX.MRCH.SM.AR.ZS). */
+    tariffSimplePct?: number;
     sourceUrl: string;
   };
   monetaryAndMarket: {
@@ -587,6 +603,8 @@ export interface WatchlistItem {
   trade?: import('../utils/scenarioExposure').TradeExposure;
   /** Public debt and fiscal figures from live feeds only, each with its year (utils/fiscalDebt.ts). */
   fiscal?: import('../utils/fiscalDebt').FiscalFigures;
+  /** Gini, tax revenue and its split, applied tariffs (utils/distributionTaxes.ts), each with its year; only live figures. */
+  distTax?: import('../utils/distributionTaxes').DistTaxFigures;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

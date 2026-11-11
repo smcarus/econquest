@@ -329,6 +329,16 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   PMI": the indexes are read against their long-term average of 100 and the confidence balances
   against three months earlier, from the copy the daily download saves (via Eurostat). The same
   surveys chart under History & data.
+  The group *Distribution and taxes* shows inequality (the Gini index), central government tax
+  revenue as % of GDP, the split of revenue between taxes on income and profits, on goods and
+  services and on trade, and the applied tariff on all products (weighted by imports, and a simple
+  mean), all from the World Bank. Each shows its year. The Gini comes from household surveys run only
+  every few years: the app looks back 15 years, says whether the survey measured income or
+  consumption when the World Bank states it (a consumption Gini usually reads lower), and adds how
+  old the survey is when it is more than five years old; with no survey in that time it reads
+  Missing. Tax revenue is central government only, so it is lower than the IMF revenue figure under
+  Fiscal and debt. Tariffs are yearly, so changes made since that year are not in them. All seven
+  chart under History & data, and the Fiscal & Debt Agent quotes them when they are live.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):
@@ -449,6 +459,17 @@ answer (in its Sources fold) gives a citation ready to paste: the app with its v
 you cite it, then each data source with the credit its terms ask for and the date the figures were
 read. It comes as plain text, BibTeX and RIS (for Zotero, EndNote or Mendeley), to copy or download.
 Figures the app works out itself, such as ratios, are not listed as a source; the citation says so.
+
+**Flag a figure or an answer.** A *Flag* button on each History series, each figure in a council
+answer's snapshot and each council answer lets you say what looks wrong. The note is saved on this
+computer in `data/local/feedback.jsonl` with the figure, its source and the app version. The app then
+offers *Open a GitHub issue*, filled in for you; nothing is sent until you send it on GitHub, and a
+figure from a paid subscription leaves its value out of the issue.
+
+**Rate an answer.** Thumbs up or down under each council answer, with a reason if you like, saved in
+the same file. A rating never changes an answer. Menu > Data health counts flags and ratings, and
+`npm run feedback:export` writes the rated questions (question, rating, reason; no figures) to
+`data/local/feedback-export.json` for adding to the council test set.
 
 **Publish a chart.** Under each History chart, Publish chart downloads it as PNG or SVG with
 the title, source, period, the date and a credit line taken from the licence register (you can edit

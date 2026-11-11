@@ -5,6 +5,22 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Inequality, tax revenue and tariffs (G16): seven World Bank series in the country brief (new
+  group "Distribution and taxes"), History & data, downloads and the Fiscal & Debt Agent: the Gini
+  index (household surveys, up to 15 years back, with the survey year and income or consumption),
+  central government tax revenue (% of GDP, labelled as lower than the IMF general government
+  figure), taxes on income and profits, on goods and services and on trade (% of revenue), and the
+  applied tariff, weighted and simple mean (labelled with its year; later tariff changes are not in
+  it). Each reads Missing with a reason when absent. Data health has a row for it; glossary entries
+  at Key and Full help; Spanish and French text.
+
+- Flag and rate (P2, P3): a Flag button on History series, council answer figures and council
+  answers saves a note on this computer (data/local/feedback.jsonl) with the figure, source and app
+  version, and offers a filled-in GitHub issue link that you send yourself (paid figures leave their
+  value out). Thumbs up or down on council answers, with an optional reason; ratings never change an
+  answer. Data health counts both; `npm run feedback:export` writes the rated questions for the
+  council test set.
+
 - Pre-mortem step (G38): in a policy review, the council now says for every option how it could fail
   and names one to three diagnosis figures that would show it first, rising or falling. An option
   without one is flagged. The memo carries the recommended option's pre-mortem and pre-fills its

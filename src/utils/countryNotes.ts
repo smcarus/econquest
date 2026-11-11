@@ -7,6 +7,7 @@ import { getSnapshotDataStatus, DATA_MODE_LABEL, formatAsOf, type SnapshotDataSt
 import { describeOfficialYield, formatPeriod } from './officialYields';
 import { nextOfficialEvent, releaseGap, upcomingOfficialEvents, type ReleaseCategory } from '../data/officialCalendar';
 import { missingReason, type MissingReason } from './liveFigures';
+import { distTaxFromSnapshot, giniValue, GINI_LOOKBACK_YEARS } from './distributionTaxes';
 
 /**
  * Role briefs and report templates built from the current country snapshot.
@@ -141,6 +142,31 @@ export function netInterestRow(status: SnapshotDataStatus, open?: CouncilAssessm
   return v === undefined
     ? missingRow('Net interest paid', { kind: 'unreachable', short: 'Balances are for different years', help: `Net interest is worked out as the primary balance minus the overall balance, so both must be for the same year. The IMF figures are for different years (primary balance ${yPrimary}, overall balance ${yOverall}), and mixing years would give a wrong answer.` })
     : { ...row, value: `${pct(v)} of GDP` };
+}
+
+/** Help for a missing Gini: surveys are rare, and the app looks back only GINI_LOOKBACK_YEARS. */
+export const GINI_MISSING_HELP = `The Gini index comes from household surveys, which many countries run only every few years and some have never published. The app looks back ${GINI_LOOKBACK_YEARS} years and leaves it Missing rather than show an older survey or an estimate.`;
+
+/**
+ * Distribution and taxes (G16, src/utils/distributionTaxes.ts): Gini with its survey year and kind,
+ * central government tax revenue and its split, applied tariffs. Each row Missing with a reason.
+ */
+export function distTaxRows(status: SnapshotDataStatus, open: CouncilAssessmentRun['openData'], now: Date = new Date()): BriefRow[] {
+  const giniLabel = 'Inequality (Gini index)';
+  const g = distTaxFromSnapshot(open)?.gini;
+  const gini: BriefRow = g
+    ? { label: giniLabel, value: giniValue(g, now), source: pathSource(status, 'wb.giniIndex', open), verified: true }
+    : missingRow(giniLabel, { ...pathMissing(status, 'wb.giniIndex'), ...(status.isFeedLive('worldbank') ? { short: `No survey in the last ${GINI_LOOKBACK_YEARS} years`, help: GINI_MISSING_HELP } : {}) });
+  const share = (v: number) => `${pct(v)} of revenue`;
+  return [
+    gini,
+    liveRow(status, 'Tax revenue, central government', 'wb.taxRevenuePctGdp', (v) => `${pct(v)} of GDP`, open),
+    liveRow(status, 'Taxes on income and profits', 'wb.taxIncomePctRevenue', share, open),
+    liveRow(status, 'Taxes on goods and services', 'wb.taxGoodsPctRevenue', share, open),
+    liveRow(status, 'Taxes on trade', 'wb.taxTradePctRevenue', share, open),
+    liveRow(status, 'Applied tariff, weighted mean', 'wb.tariffWeightedPct', (v) => pct(v, 2), open),
+    liveRow(status, 'Applied tariff, simple mean', 'wb.tariffSimplePct', (v) => pct(v, 2), open),
+  ];
 }
 
 /** A figure worked out here from other figures: shown only when every input is live. */
@@ -346,6 +372,7 @@ export function economistBrief(run: CouncilAssessmentRun, now: Date = new Date()
         liveRow(status, 'External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`, open),
       ],
     },
+    { title: 'Distribution and taxes', rows: distTaxRows(status, open, now) },
   ];
   return { headline, judgements: j, sampleWarning: missingNote(groups, run.countryName), groups };
 }
@@ -383,6 +410,7 @@ export function countryDataSources(run: CouncilAssessmentRun): BriefGroup[] {
         r('Current account', 'wb.currentAccountPctGdp', (v) => `${pct(v)} of GDP`),
         r('External debt', 'wb.externalDebtPctGni', (v) => `${pct(v, 0)} of GNI`),
         r('Political stability (WGI)', 'wb.politicalStabilityPercentile', (v) => `${v.toFixed(0)}th percentile`),
+        ...distTaxRows(status, open),
         ds?.qeds
           ? { label: 'External debt due, next 12 months (QEDS)', value: `$${ds.qeds.next12mUsdBn.toFixed(1)} bn`, source: 'QEDS (World Bank/IMF)', verified: true }
           : missingRow('External debt due, next 12 months (QEDS)', { kind: 'unreachable', short: 'QEDS did not answer', help: 'This comes from QEDS, the World Bank and IMF\'s free quarterly statistics on debt owed abroad. It did not answer, or this country does not report to it. Press Refresh now under Research > One country to try again.' }),
@@ -465,6 +493,7 @@ export const ECONOMIST_SECTIONS: Record<string, string> = {
   policy: 'Monetary policy',
   fiscal: 'Fiscal and debt',
   external: 'External position',
+  distribution: 'Distribution and taxes',
   risks: 'Risks to the outlook',
   calendar: 'Coming up',
   sources: 'Data and sources',
@@ -482,6 +511,7 @@ export function buildEconomistSections(run: CouncilAssessmentRun, include: (id: 
     ['policy', 'Monetary policy'],
     ['fiscal', 'Fiscal and debt'],
     ['external', 'External position'],
+    ['distribution', 'Distribution and taxes'],
   ];
   for (const [id, title] of groups) if (include(id)) out.push({ id, heading: ECONOMIST_SECTIONS[id], lines: groupLines(byTitle(title)) });
   if (include('risks')) {

@@ -51,6 +51,7 @@ own-data switch in Settings).
 | Source | Fills | Address | Kept for |
 | --- | --- | --- | --- |
 | World Bank indicators | Reserves, current account, external debt, political stability, trade shares, governance (WGI), and for the unit converters CPI, population, the official exchange rate and the ICP PPP factor | api.worldbank.org | 1 week (country snapshot) |
+| World Bank inequality, taxes and tariffs (WDI) | Gini index (SI.POV.GINI, household surveys up to 15 years back), central government tax revenue (GC.TAX.TOTL.GD.ZS) and its split (GC.TAX.YPKG.RV.ZS, GC.TAX.GSRV.RV.ZS, GC.TAX.INTT.RV.ZS), applied tariff weighted and simple mean (TM.TAX.MRCH.WM.AR.ZS, TM.TAX.MRCH.SM.AR.ZS, from WITS/TRAINS) | api.worldbank.org | 1 week (country snapshot) |
 | World Bank debt statistics (IDS, QEDS) | External debt falling due by year and quarter (banker brief) | api.worldbank.org | 12 h |
 | IMF World Economic Outlook | Debt/GDP, inflation, GDP growth, primary balance, output gap (only where the IMF publishes one, mostly advanced economies) | www.imf.org | 1 week (country snapshot) |
 | IMF WEO past editions (your files) | Each figure as a given WEO edition published it (real-time vintages), for fair comparisons against the IMF | data/local/weo-vintages/ (you download them; nothing fetched) | when you add files |

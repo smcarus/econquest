@@ -54,6 +54,14 @@ export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> 
   { field: 'market.hcBondSpreadBps', label: 'USD bond spread over US Treasuries (not CDS)', unit: 'bp' },
   { field: 'imf.debtToGdpForecast2027Pct', label: 'Government debt, 2027 forecast', unit: '% of GDP' },
   { field: 'market.policyRatePct', label: 'Policy rate', unit: '%' },
+  // G16 (src/utils/distributionTaxes.ts): the year of each sits in the source column.
+  { field: 'wb.giniIndex', label: 'Inequality (Gini index)', unit: 'index (0 = equal, 100 = one person has all)' },
+  { field: 'wb.taxRevenuePctGdp', label: 'Tax revenue, central government', unit: '% of GDP' },
+  { field: 'wb.taxIncomePctRevenue', label: 'Taxes on income and profits', unit: '% of revenue' },
+  { field: 'wb.taxGoodsPctRevenue', label: 'Taxes on goods and services', unit: '% of revenue' },
+  { field: 'wb.taxTradePctRevenue', label: 'Taxes on trade', unit: '% of revenue' },
+  { field: 'wb.tariffWeightedPct', label: 'Applied tariff, weighted mean', unit: '%' },
+  { field: 'wb.tariffSimplePct', label: 'Applied tariff, simple mean', unit: '%' },
 ];
 
 function periodFor(snapshot: OpenDataSnapshot, field: string): string {
@@ -61,6 +69,8 @@ function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.cds5YSpreadBps') return snapshot.ownCds5Y?.date ?? '';
   if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
+  // G16 figures carry their year in the source tag ("World Bank, 2022"); the survey year for the Gini.
+  if (/^wb\.(gini|tax|tariff)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';
 }
