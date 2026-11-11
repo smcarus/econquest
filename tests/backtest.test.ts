@@ -386,3 +386,18 @@ test('timingUnwindCases: crowded and already turning is a setup; hit when it unw
   assert.match(cases[0].what, /crowded long and turning/);
   assert.equal(cases[0].hit, true);
 });
+
+test('tests registered ahead of their tool match their hashes and are not yet runnable', () => {
+  const dir = path.join(process.cwd(), 'docs', 'validation', 'pending');
+  const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8')).files as Record<string, string>;
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'manifest.json');
+  assert.ok(files.length >= 3);
+  for (const f of files) {
+    const body = fs.readFileSync(path.join(dir, f));
+    assert.equal(manifest[f], sha256(body.toString('utf8')), `${f}: hash differs from pending/manifest.json`);
+    const spec = JSON.parse(body.toString('utf8'));
+    assert.equal(f, spec.version === 1 ? `${spec.id}.json` : `${spec.id}.v${spec.version}.json`);
+    assert.ok(spec.plannedStep && spec.hypothesis && spec.passMark && spec.knownLimits.length, f);
+    assert.ok(!fs.existsSync(path.join(SPEC_DIR, f)), `${f} is in both pending/ and preregistered/`);
+  }
+});

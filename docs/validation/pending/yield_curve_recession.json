@@ -1,0 +1,33 @@
+{
+  "id": "yield_curve_recession",
+  "version": 1,
+  "registeredOn": "2026-11-11",
+  "registeredBy": "Sam (owner) chose to pre-register G25 before the tool is built (efficient build order, 2026-11-09); registered before any run and before the runner exists",
+  "plannedStep": "G25 Yield curve and financial conditions",
+  "hypothesis": "A calendar year in which a country's average 10-year government bond yield is below its average central bank policy rate (an inverted curve; Estrella and Mishkin 1998) is followed by a fall in real GDP the next calendar year more often than years in general.",
+  "method": "yield_curve_recession",
+  "framework": 2,
+  "params": {
+    "spread": "annual average 10-year yield minus annual average policy rate",
+    "invertedBelowPts": 0,
+    "minMonthsInYear": 10,
+    "outcome": "real GDP growth below 0 in year t+1",
+    "resampleBlock": "calendar year",
+    "resamples": 4000,
+    "seed": 20261111
+  },
+  "data": {
+    "signal": "10-year yields as the app reads them (FRED IRLTLT01 series and national sources already on file) and BIS central bank policy rates",
+    "outcome": "IMF World Economic Outlook real GDP growth (NGDP_RPCH), outturn years only, never projections",
+    "universe": "Every country with at least 15 years of both a 10-year yield and a policy rate"
+  },
+  "sample": { "from": "1990", "to": "last WEO outturn year" },
+  "passMark": { "minCases": 30, "minLiftPts": 10, "maxPValue": 0.05, "minYears": 15 },
+  "knownLimits": [
+    "Annual data: an inversion late in year t and a recession early in t+1 count, but one that leads by more than two years does not. A quarterly test would need quarterly GDP for every country and is not planned.",
+    "A fall in annual real GDP is a stricter test than a dated recession (NBER or CEPR style); short recessions inside a growing year are missed.",
+    "Growth figures are today's WEO vintage, not what was known at the time; the yield and the policy rate are not revised.",
+    "The policy rate stands in for a 3-month bill rate, which the app does not hold for most countries. Where policy rates were capped at zero, the spread reads steeper than market rates would show.",
+    "Only a pass lets the app show a recession probability; that probability is then the historical hit rate of this rule, not a fitted probit."
+  ]
+}

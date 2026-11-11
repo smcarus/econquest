@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Licence check of every source the planned steps will read (Wave 0): 13 new rows in a "Sources
+  planned, not read by the app yet" section of docs/DATA_LICENCES.md. Open with credit: AidData
+  (ODC-By), Penn World Table and Our World in Data (CC BY 4.0), IMF GFS and FSI (IMF data terms).
+  Not confirmed yet, with what to do before building: IMF MONA, Fiscal Rules, EBA and the LIC DSA
+  list, Laeven-Valencia crisis dates, DPI, ND-GAIN, ILOSTAT, DSSI and Common Framework pages.
+- Three tests written down and hashed before their tools exist (docs/validation/pending/): credit
+  gap and banking crises (G23), inverted yield curve and recessions (G25), household inflation
+  expectations and later inflation (G32).
+- The roadmap shows the agreed build order in waves, from Wave 0 to checkpoint 2, and the freeze on
+  new features until checkpoint 1.
 - Docs brought up to date through data plan G10: the roadmap's done list adds figure labels, ranges,
   the release calendar and the paid-data frame, and marks Phase 4 as paused after G10 for review; the
   README describes the labels on each series, forecast ranges, the release dates and Your
