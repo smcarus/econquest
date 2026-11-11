@@ -416,6 +416,36 @@ The US government sells its bills, notes and bonds at regular auctions. Bid-to-c
 
 ## Trade, the currency and money from abroad
 
+### Goods exports and imports by group
+
+How the goods a country sells abroad, and the goods it buys, split between fuel, ores and metals, food and manufactured goods.
+
+**Why it matters.** It shows which world prices move the country's income. A country whose exports are mostly fuel or metals gains when those prices rise and suffers when they fall; one that imports most of its fuel or food pays more when they rise.
+
+**How to read it.** A large share in one raw-material group means the economy rises and falls with that price. A large manufactures share usually means steadier export earnings.
+
+**Limits.** World Bank figures built from UN Comtrade, yearly and a year or more late. Goods only, not services such as tourism. The four groups do not add up to 100%: farm raw materials and goods not classified are left out.
+
+### Net energy imports
+
+How much of the energy a country uses comes from abroad: energy use minus energy produced at home, as a share of use. A negative figure means the country produces more than it uses and sells the rest.
+
+**Why it matters.** Countries that import most of their energy are hit when oil and gas prices jump: the import bill rises, the currency weakens and inflation climbs. Net exporters gain from the same jump.
+
+**How to read it.** Near 100% means almost all energy is imported. Near 0 means the country produces about what it uses. Below 0 means a net exporter; the app turns that into how many times its own use it produces.
+
+**Limits.** From the World Bank's energy balance figures, which are yearly and for some countries stopped years ago. The app shows the year and says when it is old.
+
+### Top export markets
+
+The five countries that buy the largest share of a country's goods exports, from UN Comtrade.
+
+**Why it matters.** A slowdown, a sanction or a trade war in a big buyer hits the seller's exports directly. A country selling a third of its goods to one market is exposed to that market's troubles.
+
+**How to read it.** One buyer above about 25% is a large single dependency. The scenario screens use the same figures for China, Taiwan, Russia and the Gulf.
+
+**Limits.** Yearly, one to two years late, and as reported by the exporting country. Goods sent through a hub such as the Netherlands or Hong Kong are counted for the hub, not the final buyer.
+
 ### Remittances received
 
 Money sent home by people working abroad, as a share of GDP.
@@ -625,6 +655,16 @@ Restrictions a government (such as the US, EU or UK) or the UN places on dealing
 **Limits.** The app reads the official lists you download; it does not decide whether a particular deal is allowed.
 
 ## How the app tests and labels things
+
+### Export concentration (Herfindahl index)
+
+A single number for how much a country's goods exports rely on a few products. The app works it out from UN Comtrade: the share of each of the 97 product chapters in exports is squared and the squares are added up.
+
+**Why it matters.** A country that sells mostly one thing, such as crude oil or copper, has its income swing with that one price. Spreading exports over many products makes earnings steadier.
+
+**How to read it.** From near 0 (spread over many products) to 1 (only one product chapter). Below about 0.1 is spread out; above about 0.4 is highly concentrated. The app also says how many equal-sized product groups would give the same number.
+
+**Limits.** The app's own calculation, not an official figure. It uses broad product chapters, so a country selling many kinds of machinery counts as spread out even if one buyer takes most of it. Only worked out when the chapters cover at least 90% of exports.
 
 ### Percentage point (pt, pts)
 

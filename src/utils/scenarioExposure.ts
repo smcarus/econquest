@@ -89,6 +89,10 @@ export interface TradeExposure {
   pricesAsOf?: string;
   /** Latest monthly Brent price, $/bbl. */
   brentUsd?: number;
+  /** Net energy imports, % of energy use; negative = net exporter (World Bank EG.IMP.CONS.ZS, G18). */
+  netEnergyImportsPct?: number;
+  /** Year of the net energy imports figure. */
+  netEnergyYear?: string;
 }
 
 export type ScenarioId = 'hormuz' | 'taiwan' | 'russia' | 'prices';
@@ -161,6 +165,11 @@ export function scenarioImpact(id: ScenarioId, t: TradeExposure): ScenarioImpact
     const extras = [
       t.brentUsd !== undefined && t.pricesAsOf ? `Brent $${t.brentUsd.toFixed(0)} in ${t.pricesAsOf} would be about $${(t.brentUsd * 1.5).toFixed(0)} (Pink Sheet)` : '',
       t.gulfImportSharePct !== undefined ? `${t.gulfImportSharePct.toFixed(1)}% of imports come from the Gulf producers (${partnerSrc(t)})` : '',
+      t.netEnergyImportsPct !== undefined && t.netEnergyYear
+        ? t.netEnergyImportsPct >= 0
+          ? `imports ${t.netEnergyImportsPct.toFixed(0)}% of the energy it uses (World Bank, ${t.netEnergyYear})`
+          : `produces ${(1 - t.netEnergyImportsPct / 100).toFixed(1)} times the energy it uses (World Bank, ${t.netEnergyYear})`
+        : '',
     ].filter(Boolean);
     return {
       pctGdp: r2(-0.5 * netFuel),

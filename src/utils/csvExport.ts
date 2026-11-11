@@ -72,6 +72,16 @@ export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> 
   { field: 'wb.ageDependencyRatio', label: 'Age dependency ratio', unit: 'per 100 people aged 15-64' },
   // G19 (src/utils/debtStructure.ts).
   { field: 'wb.interestPctRevenue', label: 'Interest payments, central government', unit: '% of revenue' },
+  // G18 (src/utils/tradeMix.ts): the year of each sits in the source column.
+  { field: 'wb.exportFuelPct', label: 'Fuel exports', unit: '% of goods exports' },
+  { field: 'wb.exportOresMetalsPct', label: 'Ores and metals exports', unit: '% of goods exports' },
+  { field: 'wb.exportFoodPct', label: 'Food exports', unit: '% of goods exports' },
+  { field: 'wb.exportManufPct', label: 'Manufactures exports', unit: '% of goods exports' },
+  { field: 'wb.importFuelPct', label: 'Fuel imports', unit: '% of goods imports' },
+  { field: 'wb.importOresMetalsPct', label: 'Ores and metals imports', unit: '% of goods imports' },
+  { field: 'wb.importFoodPct', label: 'Food imports', unit: '% of goods imports' },
+  { field: 'wb.importManufPct', label: 'Manufactures imports', unit: '% of goods imports' },
+  { field: 'wb.netEnergyImportsPct', label: 'Net energy imports', unit: '% of energy use (negative = net exporter)' },
 ];
 
 function periodFor(snapshot: OpenDataSnapshot, field: string): string {
@@ -80,7 +90,7 @@ function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
   // G16 figures carry their year in the source tag ("World Bank, 2022"); the survey year for the Gini.
-  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency|interest)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
+  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency|interest|export|import|netEnergy)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';
 }

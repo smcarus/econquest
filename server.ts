@@ -72,6 +72,7 @@ import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketE
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
 import { peopleFromSnapshot } from './src/utils/peopleLiving';
+import { tradeMixFromSnapshot } from './src/utils/tradeMix';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
@@ -1117,7 +1118,12 @@ function licDebtFor(iso3: string): LicDebtReading {
   return licDebtReading(iso3, aid);
 }
 function withLicDebt(snapshot: OpenDataSnapshot): OpenDataSnapshot {
-  return withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) });
+  return withComtradeProfile(withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) }));
+}
+/** The UN Comtrade profile saved for this country (export concentration, top export markets), when pulled. */
+function withComtradeProfile(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const e = comtradeMemory?.file.countries[snapshot.iso3];
+  return e ? { ...snapshot, comtrade: { ...e.profile, pulledAt: e.pulledAt } } : snapshot;
 }
 /** Who holds government debt (G19): the IMF investor base workbook in data/local/imf-investor-base/. */
 function withInvestorBase(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -1324,6 +1330,9 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const base = tradeAll.get(catItem.iso3);
             const trade = enrichTrade(base && Object.keys(base).length ? base : undefined, comtrade?.countries[catItem.iso3]?.profile, commodities?.moves);
+            // Net energy imports (G18) for the Hormuz scenario's working, when the World Bank answered.
+            const energy = tradeMixFromSnapshot(snap)?.netEnergyImportsPct;
+            if (trade && energy) Object.assign(trade, { netEnergyImportsPct: energy.value, netEnergyYear: energy.year });
             return trade ? { trade } : {};
           })()),
           ...watchlistYieldFields(snap, fetchedOfficial),
@@ -1391,6 +1400,10 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const people = peopleFromSnapshot(snap);
             return people ? { people } : {};
+          })()),
+          ...((() => {
+            const tradeMix = tradeMixFromSnapshot(snap);
+            return tradeMix ? { tradeMix } : {};
           })()),
           ...((() => {
             const debtStructure = debtStructureFromSnapshot(snap);

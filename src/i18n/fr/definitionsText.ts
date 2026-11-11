@@ -188,4 +188,14 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   "People younger than 15 or older than 64 per 100 people aged 15-64 (World Bank SP.POP.DPND)": "Personnes de moins de 15 ans ou de plus de 64 ans pour 100 personnes de 15 à 64 ans (Banque mondiale SP.POP.DPND)",
   // G19: debt structure
   "Interest payments of the central government, as % of its revenue (World Bank GC.XPN.INTP.RV.ZS)": "Paiements d'intérêts de l'administration centrale, en % de ses recettes (Banque mondiale GC.XPN.INTP.RV.ZS)",
+  // G18: trade and commodity exposure
+  "Fuels (oil, gas, coal and refined products) as % of merchandise exports (World Bank TX.VAL.FUEL.ZS.UN)": "Carburants (pétrole, gaz, charbon et produits raffinés) en % des exportations de marchandises (Banque mondiale TX.VAL.FUEL.ZS.UN)",
+  "Ores and metals as % of merchandise exports (World Bank TX.VAL.MMTL.ZS.UN)": "Minerais et métaux en % des exportations de marchandises (Banque mondiale TX.VAL.MMTL.ZS.UN)",
+  "Food as % of merchandise exports (World Bank TX.VAL.FOOD.ZS.UN)": "Produits alimentaires en % des exportations de marchandises (Banque mondiale TX.VAL.FOOD.ZS.UN)",
+  "Manufactured goods as % of merchandise exports (World Bank TX.VAL.MANF.ZS.UN)": "Produits manufacturés en % des exportations de marchandises (Banque mondiale TX.VAL.MANF.ZS.UN)",
+  "Fuels (oil, gas, coal and refined products) as % of merchandise imports (World Bank TM.VAL.FUEL.ZS.UN)": "Carburants (pétrole, gaz, charbon et produits raffinés) en % des importations de marchandises (Banque mondiale TM.VAL.FUEL.ZS.UN)",
+  "Ores and metals as % of merchandise imports (World Bank TM.VAL.MMTL.ZS.UN)": "Minerais et métaux en % des importations de marchandises (Banque mondiale TM.VAL.MMTL.ZS.UN)",
+  "Food as % of merchandise imports (World Bank TM.VAL.FOOD.ZS.UN)": "Produits alimentaires en % des importations de marchandises (Banque mondiale TM.VAL.FOOD.ZS.UN)",
+  "Manufactured goods as % of merchandise imports (World Bank TM.VAL.MANF.ZS.UN)": "Produits manufacturés en % des importations de marchandises (Banque mondiale TM.VAL.MANF.ZS.UN)",
+  "Energy use minus production, as % of energy use; negative = net exporter (World Bank EG.IMP.CONS.ZS)": "Consommation d'énergie moins production, en % de la consommation ; négatif = exportateur net (Banque mondiale EG.IMP.CONS.ZS)",
 };

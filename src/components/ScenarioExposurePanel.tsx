@@ -5,8 +5,8 @@ import { useT, useTx } from '../i18n/useLang';
 import { TOOLS } from '../i18n/messages/tools';
 
 /**
- * Today > Global Spillover Agent: for each scenario, the countries hit hardest and the one that
- * gains most, as a first-round current account effect in % of GDP from official trade shares.
+ * Today > Global Spillover Agent: for each scenario, the countries hit hardest and the two that
+ * gain most, as a first-round current account effect in % of GDP from official trade shares.
  */
 export const ScenarioExposurePanel: React.FC<{
   items: LiveWatchlistItem[];
@@ -32,7 +32,8 @@ export const ScenarioExposurePanel: React.FC<{
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 divide-y xl:divide-y-0 xl:divide-x divide-slate-100 dark:divide-slate-800">
           {ranked.map(({ sc, rows }) => {
             const hit = rows.filter((r) => r.pctGdp < 0).slice(0, 3);
-            const gain = rows.filter((r) => r.pctGdp > 0).slice(-1);
+            // The two that gain most, biggest first (G18: an oil move names who gains as well as who loses).
+            const gain = rows.filter((r) => r.pctGdp > 0).slice(-2).reverse();
             return (
               <div key={sc.id} className="px-4 py-3" data-scenario={sc.id}>
                 <div className="text-sm font-medium text-slate-900 dark:text-white">{tx(sc.name)}</div>

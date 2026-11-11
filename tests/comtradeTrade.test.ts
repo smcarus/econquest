@@ -64,7 +64,8 @@ test('addresses: preview without a key, data route with one; totals pinned; the 
   assert.doesNotMatch(pre, /partnerCode=/, 'every partner');
   const keyed = comtradeUrl(360, 2024, 'products', true);
   assert.match(keyed, /\/data\/v1\/get\/C\/A\/HS\?/);
-  assert.match(keyed, /cmdCode=TOTAL,10,12,15,17,18,26,27,71,72,74,75,76,09&partnerCode=0/);
+  assert.match(keyed, /cmdCode=TOTAL,AG2&partnerCode=0/, 'every HS chapter, for the export concentration');
+  assert.match(comtradeUrl(360, 2024, 'chapters', false), /cmdCode=TOTAL,10,12,15,17,18,26,27,71,72,74,75,76,09&partnerCode=0/, 'the commodity chapters when every chapter is refused');
   assert.deepEqual(comtradeYears(new Date('2026-11-05T00:00:00Z')), [2024, 2023]);
 });
 

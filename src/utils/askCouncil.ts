@@ -44,6 +44,7 @@ import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURC
 import { foreignShare, investorBaseSource, investorBaseValue } from './investorBase';
 import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
+import { CONCENTRATION_SOURCE, ENERGY_SOURCE, EXPORT_FIELDS, GROUP_LABEL, TRADE_GROUPS_NOTE, TRADE_MIX_SOURCE, concentrationValue, netEnergyValue, shareSplitValue, topPartnersValue } from './tradeMix';
 import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
@@ -120,7 +121,7 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
   spill: {
     name: 'Global Spillover',
     covers: 'Hormuz, Taiwan Strait and Russia shocks through trade; growth cycle from the OECD leading indicator',
-    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit|leading indicator|\bcli\b|\boecd\b|growth|cycle|slowdown|recession|downturn|recovery|momentum/i,
+    topic: /hormuz|taiwan|china|russia|ukrain|\boil\b|energy|export|commodit|gulf|iran|shock|spillover|scenario|trade|\bwar\b|sanction|conflict|geopolit|leading indicator|\bcli\b|\boecd\b|growth|cycle|slowdown|recession|downturn|recovery|momentum/i,
   },
   calendar: {
     name: 'Calendar',
@@ -987,6 +988,15 @@ function spillAgent(countries: LiveWatchlistItem[], question: string): Omit<Agen
         });
       }
     }
+    // Trade and commodity exposure (G18, src/utils/tradeMix.ts): which prices and buyers matter; only live figures.
+    const tm = it.tradeMix;
+    const xs = tm ? shareSplitValue(tm, EXPORT_FIELDS) : undefined;
+    if (xs) figures.push({ label: 'Goods exports by group', value: xs, source: `${TRADE_MIX_SOURCE}; ${TRADE_GROUPS_NOTE}`, tag: 'official' });
+    if (tm?.netEnergyImportsPct) figures.push({ label: 'Net energy imports', value: netEnergyValue(tm.netEnergyImportsPct), source: ENERGY_SOURCE, tag: 'official' });
+    const big = tm ? EXPORT_FIELDS.map((k) => ({ k, v: tm[k] })).find((x) => x.k !== 'exportManufPct' && x.v && x.v.value >= 50) : undefined;
+    if (big?.v) parts.push(`${GROUP_LABEL[big.k][0].toUpperCase()}${GROUP_LABEL[big.k].slice(1)}: ${big.v.value.toFixed(0)}% of its goods exports (World Bank, ${big.v.year}), so its export income rises and falls with that price.`);
+    if (it.comtrade?.topExportPartners?.length) figures.push({ label: 'Top five export markets', value: topPartnersValue(it.comtrade), source: `UN Comtrade ${it.comtrade.year}; share of goods exports`, tag: 'official' });
+    if (it.comtrade?.exportHhi) figures.push({ label: 'Export concentration (app calculation)', value: concentrationValue(it.comtrade.exportHhi, it.comtrade.productYear), source: CONCENTRATION_SOURCE, tag: 'model' });
     let cycle = 0;
     if (cli) {
       figures.push({ label: 'OECD leading indicator', value: cli.level.toFixed(2), source: `${CLI_LABEL}, ${formatMonth(cli.month)}`, tag: 'official' });

@@ -176,4 +176,7 @@ export const COMPARE_TEXT_FR: Record<string, string> = {
   "reverse repos": "les prises en pension",
   "Total assets, the Treasury account and reverse repos have no recent Wednesday in common": "L'actif total, le compte du Trésor et les prises en pension n'ont aucun mercredi récent en commun",
   "Federal Reserve H.4.1 and NY Fed, via FRED (St. Louis Fed)": "H.4.1 de la Réserve fédérale et Fed de New York, via FRED (Fed de Saint-Louis)",
+  // G18: trade and commodity exposure
+  "imports {num}% of the energy it uses (World Bank, {year})": "importe {num} % de l'énergie qu'il consomme (Banque mondiale, {year})",
+  "produces {num} times the energy it uses (World Bank, {year})": "produit {num} fois l'énergie qu'il consomme (Banque mondiale, {year})",
 };

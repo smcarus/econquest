@@ -363,6 +363,16 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   and put it in `data/local/imf-investor-base/`; Data health shows whether it was read. For the United
   States, which it does not cover, the Treasury's figures on foreign holders (TIC) are in the FX
   Valuation Agent and History & data.
+  The *Trade* group shows what the country sells and buys abroad: the shares of goods exports and
+  imports in fuel, ores and metals, food and manufactures (World Bank, with the year; the four groups
+  leave out farm raw materials and unclassified goods, so they do not add up to 100%), net energy
+  imports as % of energy use (a net exporter shows how many times its own use it produces; the World
+  Bank stopped updating this for some countries, so an old year is said to be old), export
+  concentration and the top five export markets (UN Comtrade). Export concentration is the app's own
+  calculation, the Herfindahl index: the squared share of each of the 97 HS chapters in exports,
+  added up, from near 0 (spread out) to 1 (one chapter), with the number of equal-sized product groups
+  that would be as concentrated. The Hormuz scenario's working names the energy position, and the
+  Global Spillover Agent quotes these figures.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):
