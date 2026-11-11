@@ -17,7 +17,7 @@ The same rules hold for every change:
   a licence row, plain-language help at each help level, and its words in English, Spanish and French.
 - **New data is fetched by the daily download**, not when a page opens, so no page waits on a website.
 - **New screens load only when opened**, and each language downloads only when picked, so the app
-  stays within its size limits (465 KB compressed at start-up, 6 MB in all).
+  stays within its size limits (465 KB compressed at start-up, 7.5 MB in all).
 
 ## Done so far
 
@@ -66,7 +66,7 @@ list until checkpoint 1;** new ideas are kept on a parked list and looked at the
 | Wave | Steps | What it means for you |
 | --- | --- | --- |
 | 0 | Licence check of every planned source; tests for G23, G25 and G32 written down and locked before those tools exist | No later step waits on a licence, and building a tool cannot bend its test |
-| 1 | G11 "Cite this" (done); K1 size review; M1 upkeep routine (monthly source check, yearly licence re-read, monthly library updates) | Citations for every chart and answer; room for more languages; sources that change or vanish are caught |
+| 1 | G11 "Cite this" (done); K1 size review (done); M1 upkeep routine (monthly source check, yearly licence re-read, monthly library updates) | Citations for every chart and answer; room for more languages; sources that change or vanish are caught |
 | 2 | P1 policy outcome check; G38 "how could this fail" step; P2 flag a figure or answer; P3 rate answers | Policy reviews are checked against what happened after 12 and 24 months; you can report problems |
 | 3 | G16 inequality, tax revenue and tariffs; U1 low-income country debt; G17 people; G19 debt structure; G18 trade exposure; G20 climate and energy; G22 wages and house prices; G40 sector balances and private debt; G41 monthly activity; G42 revenue by level of government; G12/G13 euro area and UK figures as first published | The figures a full economic terminal needs, especially for the poorest countries |
 | 4 | G43 security, privacy and Windows check; S1 success measures; U3 light mode for modest laptops; public release | The app goes public, and runs without a local AI model |
