@@ -68,7 +68,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 
 ### World Bank indicators and debt statistics (IDS, QEDS)
 
-- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); external debt falling due; who holds public external debt and terms of new loans (IDS)
+- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets) (checked 2026-11-06)
@@ -646,6 +646,7 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 | IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links; G42 Sub-national revenue | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
 | IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
 | IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
+| IMF Sovereign Debt Investor Base for Emerging Markets | G19 Debt structure (who holds government debt) | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets (Arslanalp and Tsuda). |
 | IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
 | Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
@@ -732,6 +733,18 @@ From the terms:
 - **Commercial use:** Not stated on the dataset page.
 - **Credit:** "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page.
 - **Before building:** The page gives a citation but no terms. Probably under the general IMF statistical data terms; confirm before building G35.
+
+### IMF Sovereign Debt Investor Base for Emerging Markets
+
+- **Planned for:** G19 Debt structure (who holds government debt)
+- **Will be used for:** Holders of government debt by type: foreign, domestic banks, central bank, other domestic
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. Terms not read.
+- **Terms read:** [IMF Copyright and Usage](https://www.imf.org/en/About/copyright-and-terms) (checked 2026-11-11)
+- **Show to others:** Not checked yet.
+- **Commercial use:** Not checked yet.
+- **Credit:** Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets (Arslanalp and Tsuda).
+- **Before building:** The dataset page did not load from the build computer. Check whether it states terms or falls under the general IMF statistical data terms before the app reads it; until then the brief row "Who holds government debt" reads Missing.
 
 ### IMF External Balance Assessment (EBA)
 

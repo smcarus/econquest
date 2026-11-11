@@ -72,6 +72,7 @@ import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketE
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
 import { peopleFromSnapshot } from './src/utils/peopleLiving';
+import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
@@ -1377,6 +1378,10 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const people = peopleFromSnapshot(snap);
             return people ? { people } : {};
+          })()),
+          ...((() => {
+            const debtStructure = debtStructureFromSnapshot(snap);
+            return debtStructure ? { debtStructure } : {};
           })()),
           ...((() => {
             const politics = politicsFromSnapshot(snap);

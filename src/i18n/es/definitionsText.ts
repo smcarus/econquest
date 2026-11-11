@@ -186,4 +186,6 @@ export const DEFINITIONS_TEXT_ES: Record<string, string> = {
   "People aged 15 and over in work or looking for work, as % of all people aged 15 and over, ILO modelled estimate (World Bank SL.TLF.CACT.ZS)": "Personas de 15 años o más que trabajan o buscan trabajo, en % de todas las personas de 15 años o más, estimación modelizada de la OIT (Banco Mundial SL.TLF.CACT.ZS)",
   "Unemployed people aged 15-24 as % of the labour force aged 15-24, ILO modelled estimate (World Bank SL.UEM.1524.ZS)": "Personas desempleadas de 15 a 24 años en % de la población activa de 15 a 24 años, estimación modelizada de la OIT (Banco Mundial SL.UEM.1524.ZS)",
   "People younger than 15 or older than 64 per 100 people aged 15-64 (World Bank SP.POP.DPND)": "Personas menores de 15 años o mayores de 64 por cada 100 personas de 15 a 64 años (Banco Mundial SP.POP.DPND)",
+  // G19: debt structure
+  "Interest payments of the central government, as % of its revenue (World Bank GC.XPN.INTP.RV.ZS)": "Pagos de intereses del gobierno central, en % de sus ingresos (Banco Mundial GC.XPN.INTP.RV.ZS)",
 };

@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Debt structure (G19): new rows under Fiscal and debt in the country brief and note, and in the
+  Fiscal & Debt Agent: interest payments as % of central government revenue (World Bank), the
+  currency mix of public external debt (US dollar, euro, yen, pound, Swiss franc, SDR, several and
+  other currencies) and the average maturity of new public external loans (World Bank International
+  Debt Statistics; low- and middle-income countries only; labelled as new loans, not the debt already
+  owed). "Who holds government debt" reads Missing until the terms of the IMF Sovereign Debt Investor
+  Base are checked (planned licence row added); for the United States it points to the Treasury's
+  foreign-holder figures. Interest as % of revenue charts under History & data and is in downloads.
+  Data health has a row for it; glossary entries; Spanish and French text.
+
 - People and living standards (G17): seven World Bank series in the country brief (new group
   "People"), History & data, downloads and the council: the poverty rate at the lowest international
   line and the two higher lines (household surveys up to 15 years back, with the dollar amount of each

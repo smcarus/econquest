@@ -478,7 +478,7 @@ test('data connections: every source gets a row; keys are never in the reply', a
   assert.equal(res.status, 200);
   const rep = (await res.json()) as import('../src/utils/connectionCheck.ts').ConnectionReport;
   const row = (id: string) => rep.results.find((r) => r.id === id)!;
-  assert.equal(rep.results.length, 52); // + World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
+  assert.equal(rep.results.length, 53); // + World Bank debt structure (G19), World Bank people and living standards (G17), AidData file (U1), World Bank inequality, taxes and tariffs (G16), ECB SPF, BCB Focus and NY Fed GSCPI layout probes, IMF PortWatch, US Treasury auctions, EU business surveys, IMF monthly CPI, your data subscription
   assert.equal(row('ucdp').state, 'connected', 'the UCDP release shipped in datasets/ucdp/');
   assert.equal(row('bcb_ipca').state, 'connected');
   assert.match(row('bcb_ipca').sample || '', /Brazil IPCA 4\.58% over 12 months \(Sep 2026\)/);

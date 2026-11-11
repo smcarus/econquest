@@ -41,6 +41,7 @@ import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
 import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURCE, DISTRESS_LABEL, DSSI_SOURCE, dsaSource, dsaValue } from './lowIncomeDebt';
+import { IDS_STRUCTURE_SOURCE, INTEREST_CENTRAL_NOTE, INTEREST_SOURCE, currencyValue, usdShare } from './debtStructure';
 import { ILO_MODEL_NOTE, PEOPLE_SOURCE, POVERTY_SOURCE, povertyValue } from './peopleLiving';
 import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
@@ -619,6 +620,17 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
     if (f.defencePctGdp) {
       figures.push({ label: 'Military spending', value: `${f.defencePctGdp.value.toFixed(1)}% of GDP`, source: `World Bank (SIPRI), ${f.defencePctGdp.year}`, tag: 'official' });
     }
+    // Debt structure (src/utils/debtStructure.ts): interest burden and currency mix of external debt; only when live.
+    const dsx = it.debtStructure;
+    if (dsx?.interestPctRevenue) {
+      figures.push({ label: 'Interest payments, central government', value: `${p1(dsx.interestPctRevenue.value)} of revenue`, source: `${INTEREST_SOURCE}, ${dsx.interestPctRevenue.year}; ${INTEREST_CENTRAL_NOTE}`, tag: 'official' });
+    }
+    if (dsx?.currency) {
+      figures.push({ label: 'Public external debt by currency', value: currencyValue(dsx.currency), source: IDS_STRUCTURE_SOURCE, tag: 'official' });
+      const usd = usdShare(dsx);
+      if (usd !== undefined && usd >= 50) parts.push(`${usd.toFixed(0)}% of its public external debt is in US dollars (World Bank IDS, ${dsx.currency.year}), so a weaker currency raises the cost of paying it.`);
+    }
+    if (dsx?.newLoanMaturity) figures.push({ label: 'Maturity of new public external loans', value: `${dsx.newLoanMaturity.years.toFixed(1)} years (${dsx.newLoanMaturity.year})`, source: `${IDS_STRUCTURE_SOURCE}; new loans that year, all lenders`, tag: 'official' });
     // Distribution and taxes (src/utils/distributionTaxes.ts): World Bank figures, each with its year; only when live.
     const dt = it.distTax;
     if (dt?.taxRevenuePctGdp) figures.push({ label: 'Tax revenue, central government', value: `${p1(dt.taxRevenuePctGdp.value)} of GDP`, source: `${TAX_SOURCE}, ${dt.taxRevenuePctGdp.year}; ${TAX_CENTRAL_NOTE}`, tag: 'official' });

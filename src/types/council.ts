@@ -421,6 +421,8 @@ export interface OpenDataSnapshot {
     youthUnemploymentPct?: number;
     /** Age dependency ratio, people under 15 or over 64 per 100 aged 15-64 (SP.POP.DPND). */
     ageDependencyRatio?: number;
+    /** G19 (src/utils/debtStructure.ts): interest payments, % of central government revenue (GC.XPN.INTP.RV.ZS); only when the feed answered. */
+    interestPctRevenue?: number;
     sourceUrl: string;
   };
   monetaryAndMarket: {
@@ -472,6 +474,8 @@ export interface OpenDataSnapshot {
   hcBondSpread?: import('../utils/hardCurrencySpread').HcSpreadObservation;
   /** Government external debt falling due, when QEDS or IDS answered (see utils/debtSchedule.ts). */
   debtSchedule?: import('../utils/debtSchedule').DebtSchedule;
+  /** Currency mix and new-loan maturity of public external debt, when World Bank IDS answered (utils/debtStructure.ts). */
+  debtStructure?: import('../utils/debtStructure').DebtStructure;
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -625,6 +629,8 @@ export interface WatchlistItem {
   distTax?: import('../utils/distributionTaxes').DistTaxFigures;
   /** Poverty, remittances, labour force, youth unemployment, age dependency (utils/peopleLiving.ts), each with its year; only live figures. */
   people?: import('../utils/peopleLiving').PeopleFigures;
+  /** Interest as % of revenue, currency mix and new-loan maturity of public external debt (utils/debtStructure.ts); only live figures. */
+  debtStructure?: import('../utils/debtStructure').DebtStructureFigures;
   /** Low-income country debt (utils/lowIncomeDebt.ts): debt-distress rating, DSSI, Common Framework, lending from China. */
   licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */

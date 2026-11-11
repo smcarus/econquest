@@ -348,4 +348,17 @@ export const BRIEF_TEXT_ES: Record<string, string> = {
   "Youth unemployment": "Desempleo juvenil",
   "Age dependency ratio": "Tasa de dependencia por edad",
   "Poverty rates come from household surveys, which many countries run only every few years and some have never published. The app looks back 15 years and leaves it Missing rather than show an older survey or an estimate.": "Las tasas de pobreza proceden de encuestas de hogares, que muchos países realizan solo cada pocos años y algunos nunca han publicado. La aplicación busca hasta 15 años atrás y la deja como Falta en lugar de mostrar una encuesta más antigua o una estimación.",
+  // G19: debt structure
+  "Interest payments, central government": "Pagos de intereses, gobierno central",
+  "Public external debt by currency": "Deuda pública externa por moneda",
+  "Maturity of new public external loans": "Vencimiento de los nuevos préstamos públicos externos",
+  "Who holds government debt": "Quién tiene la deuda pública",
+  "Not in World Bank IDS": "No figura en las IDS del Banco Mundial",
+  "The World Bank International Debt Statistics answered but have no figure for this country. They cover low- and middle-income countries only, so richer countries are never in them. The app leaves it Missing rather than fill the gap.": "Las Estadísticas de la Deuda Internacional del Banco Mundial respondieron, pero no tienen ninguna cifra para este país. Solo cubren los países de ingreso bajo y mediano, por lo que los países más ricos nunca figuran en ellas. La aplicación la deja como Falta en lugar de rellenar el hueco.",
+  "World Bank IDS did not answer": "Las IDS del Banco Mundial no respondieron",
+  "This comes from the World Bank International Debt Statistics, which are free. They did not answer this time. Press Refresh now under Research > One country to try again.": "Esto procede de las Estadísticas de la Deuda Internacional del Banco Mundial, que son gratuitas. Esta vez no respondieron. Pulse Actualizar ahora en Investigación > Un país para intentarlo de nuevo.",
+  "IMF terms not checked yet": "Condiciones del FMI aún sin revisar",
+  "Who holds a government's debt (foreign investors, local banks, the central bank and others) comes from the IMF Sovereign Debt Investor Base for Emerging Markets. Its terms of use have not been checked yet, so the app does not read it until they are. It shows Missing rather than an estimate.": "Quién tiene la deuda de un gobierno (inversores extranjeros, bancos locales, el banco central y otros) procede de la base Sovereign Debt Investor Base for Emerging Markets del FMI. Sus condiciones de uso aún no se han revisado, por lo que la aplicación no la lee hasta que se revisen. Se muestra Falta en lugar de una estimación.",
+  "Only foreign holders (TIC) connected": "Solo están conectados los tenedores extranjeros (TIC)",
+  "For the United States, the app reads the US Treasury's figures on foreign holders of Treasury securities (TIC); they show in the FX Valuation agent and under History & data. A full split by holder (banks, the Federal Reserve and others) is not connected yet.": "Para Estados Unidos, la aplicación lee las cifras del Tesoro estadounidense sobre los tenedores extranjeros de valores del Tesoro (TIC); aparecen en el Agente de valoración cambiaria y en Historia y datos. Aún no está conectado un desglose completo por tenedor (bancos, la Reserva Federal y otros).",
 };

@@ -300,6 +300,46 @@ How much of the economy's yearly output goes on interest on government debt, aft
 
 **Limits.** Calculated here (labelled "model") and only shown when both IMF balances are for the same year.
 
+### Interest payments (% of revenue)
+
+The interest the central government pays on its debt in a year, as a share of the money it takes in.
+
+**Why it matters.** It shows how much of each unit of revenue is gone before any school, road or salary is paid. When it climbs, governments often have to cut other spending or borrow more.
+
+**How to read it.** Higher is worse. Under 10% is usually comfortable; above about 20% leaves little room and often comes before a debt crisis in emerging economies.
+
+**Limits.** This World Bank figure covers the central government only. It is yearly and arrives a year or two late, so a recent rise in interest rates may not show yet.
+
+### Public external debt by currency
+
+How the government's debt to foreign lenders is split between currencies: US dollars, euros, yen, the IMF's SDR basket and others.
+
+**Why it matters.** Debt owed in a foreign currency gets heavier when the local currency falls, because more local money is needed to pay each dollar. Countries that borrow mostly in dollars are hit hardest when the dollar is strong.
+
+**How to read it.** The larger the share in one foreign currency, the more the debt depends on that exchange rate. SDR and multilateral loans are usually cheaper and longer, so a large SDR share often means much of the debt is owed to the IMF and development banks.
+
+**Limits.** From the World Bank International Debt Statistics, which cover low- and middle-income countries only and arrive a year or more late. It covers public and publicly guaranteed debt owed abroad, not debt owed at home.
+
+### Maturity of new public external loans
+
+How many years, on average, the loans the government and its guaranteed bodies took from foreign lenders that year run before they are fully repaid.
+
+**Why it matters.** Long loans spread repayments out and give time to recover from a bad year. Short loans must be refinanced often, which is risky when markets are nervous.
+
+**How to read it.** Longer is safer. Loans from development banks often run 20 years or more; bonds and bank loans are usually shorter.
+
+**Limits.** It covers only new loans that year, not all the debt already owed, so one large loan can move it a lot. Low- and middle-income countries only.
+
+### Who holds government debt
+
+The split of government debt by who owns it: foreign investors, local banks, the central bank, pension funds and others.
+
+**Why it matters.** Foreign holders can sell quickly and push up borrowing costs; local banks that hold much government debt tie the banks' health to the government's.
+
+**How to read it.** A large foreign share means more exposure to global market moods. A large share held by local banks means a debt problem can become a banking problem.
+
+**Limits.** The app does not show it yet: the IMF dataset that has it has not had its terms of use checked, so the row reads Missing.
+
 ### Interest rate minus growth (r minus g)
 
 The real interest rate the government pays on its debt minus the real growth rate of the economy.

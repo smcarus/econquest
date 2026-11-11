@@ -11,6 +11,7 @@
  * Used by GET /api/data/connections (the Tools page) and by `npm run check:data` in a terminal.
  * Keys and passwords are never put in a row: only whether they are set.
  */
+import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
 import { chokepointsUrl, parsePortWatchStats } from './portWatch';
@@ -274,6 +275,7 @@ export const SOURCE_IDS = [
   'worldbank_debt',
   'worldbank_dist',
   'worldbank_people',
+  'worldbank_debt_structure',
   'imf',
   'imf_reserves',
   'imf_cofer',
@@ -387,6 +389,20 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         if (row) return `${SAMPLE_NAME} remittances received ${fmt(Number(row.value))}% of GDP (${row.date})`;
         return Array.isArray(rows) ? `Answered (no recent remittances figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('worldbank_debt_structure', () =>
+    httpCheck(
+      { id: 'worldbank_debt_structure', name: 'World Bank debt structure (IDS currency mix, interest burden)', group: 'free', feeds: 'Currency mix and maturity of new loans of public external debt, interest as % of revenue (country brief, Fiscal & Debt Agent)' },
+      fetchFn,
+      debtStructureUrl(SAMPLE_ISO3),
+      T,
+      (r) => {
+        const d = parseDebtStructure(parseJson(r.text), '');
+        if (d?.currency) return `${SAMPLE_NAME} public external debt: ${currencyValue(d.currency)}`;
+        return d ? `Answered (no currency split for ${SAMPLE_NAME})` : null;
       }
     )
   );

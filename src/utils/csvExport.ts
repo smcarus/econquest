@@ -70,6 +70,8 @@ export const FIGURE_LIST: Array<{ field: string; label: string; unit: string }> 
   { field: 'wb.labourParticipationPct', label: 'Labour force participation (ILO modelled estimate)', unit: '% of people aged 15 and over' },
   { field: 'wb.youthUnemploymentPct', label: 'Youth unemployment (ILO modelled estimate)', unit: '% of workers aged 15-24' },
   { field: 'wb.ageDependencyRatio', label: 'Age dependency ratio', unit: 'per 100 people aged 15-64' },
+  // G19 (src/utils/debtStructure.ts).
+  { field: 'wb.interestPctRevenue', label: 'Interest payments, central government', unit: '% of revenue' },
 ];
 
 function periodFor(snapshot: OpenDataSnapshot, field: string): string {
@@ -78,7 +80,7 @@ function periodFor(snapshot: OpenDataSnapshot, field: string): string {
   if (field === 'market.hcBondSpreadBps') return snapshot.hcBondSpread?.period ?? '';
   if (field === 'market.policyRatePct') return snapshot.bisPolicyRate?.date ?? '';
   // G16 figures carry their year in the source tag ("World Bank, 2022"); the survey year for the Gini.
-  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
+  if (/^wb\.(gini|tax|tariff|poverty|remittances|labour|youth|ageDependency|interest)/.test(field)) return /(?:19|20)\d{2}/.exec(snapshot.liveFields?.[field] || '')?.[0] ?? '';
   const years = (snapshot.imfIndicators as { years?: Record<string, string> })?.years;
   return years?.[field] ?? '';
 }

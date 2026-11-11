@@ -350,6 +350,13 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   dependency ratio (children and older people per 100 people of working age). All seven chart under
   History & data. The Politics & Events Agent quotes the extreme poverty rate and youth unemployment;
   the FX Valuation Agent quotes remittances.
+  Under *Fiscal and debt* the brief also shows interest payments as % of central government revenue
+  (World Bank, with its year), the currency mix of the government's debt to foreign lenders and the
+  average maturity of new loans from abroad (World Bank International Debt Statistics, which cover
+  low- and middle-income countries only; the maturity is for loans taken that year, not the debt
+  already owed). *Who holds government debt* reads Missing until the terms of the IMF dataset that
+  has it are checked; for the United States the Treasury's figures on foreign holders (TIC) are in
+  the FX Valuation Agent and History & data.
 - *Issuer*: market access, external debt falling due in the next 12 months (World Bank/IMF QEDS and
   IDS, BIS debt securities), distress tests and pricing against peers. For the United States it also
   lists the latest Treasury auctions (13- and 26-week bills, 2-, 5- and 10-year notes, 30-year bond):
