@@ -5,6 +5,15 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Low-income country debt (U1): a new group "Debt relief and lending from China" in the issuer brief
+  and note, and in the Fiscal & Debt Agent. It shows the IMF/World Bank risk of debt distress for 67
+  low-income countries (typed from the IMF list as of 30 September 2026, with each DSA's date, the
+  sustainability judgement and the arrears and restructuring notes), whether the country applied to
+  the G20 Common Framework (Paris Club, as of 2024), and official loan commitments from China added up
+  from AidData's Global Chinese Development Finance file that you download into `data/local/aiddata/`
+  (ODC-By). DSSI participation is set aside for later and reads Missing with the reason. Data
+  health has a row for the AidData file; three licence rows move from planned to in use.
+
 - Inequality, tax revenue and tariffs (G16): seven World Bank series in the country brief (new
   group "Distribution and taxes"), History & data, downloads and the Fiscal & Debt Agent: the Gini
   index (household surveys, up to 15 years back, with the survey year and income or consumption),

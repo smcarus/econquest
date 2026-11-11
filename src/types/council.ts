@@ -425,6 +425,8 @@ export interface OpenDataSnapshot {
   gdeltRaw?: import('../utils/gdeltRaw').GdeltRawReading;
   /** UCDP conflict figures from the downloaded CSV files in data/local/ucdp/; laid over when served (utils/ucdpConflict.ts). */
   ucdp?: import('../utils/ucdpConflict').UcdpReading;
+  /** Low-income country debt (U1): debt-distress rating, DSSI, Common Framework, lending from China (AidData file); laid over when served (utils/lowIncomeDebt.ts). */
+  licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** GDELT 1.0 monthly history: latest complete month against all months on disk; laid over when served (utils/gdeltDaily.ts). */
   gdeltDaily?: import('../utils/gdeltDaily').V1Reading;
   /** ACLED conflict events, monthly counts for twelve months, with your own ACLED account; laid over when served (utils/acled.ts). */
@@ -605,6 +607,8 @@ export interface WatchlistItem {
   fiscal?: import('../utils/fiscalDebt').FiscalFigures;
   /** Gini, tax revenue and its split, applied tariffs (utils/distributionTaxes.ts), each with its year; only live figures. */
   distTax?: import('../utils/distributionTaxes').DistTaxFigures;
+  /** Low-income country debt (utils/lowIncomeDebt.ts): debt-distress rating, DSSI, Common Framework, lending from China. */
+  licDebt?: import('../utils/lowIncomeDebt').LicDebtReading;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

@@ -1,4 +1,17 @@
 import type { CouncilAssessmentRun, LiveWatchlistItem } from '../types/council';
+import {
+  chinaSource,
+  chinaValue,
+  COMMON_FRAMEWORK_AS_OF,
+  COMMON_FRAMEWORK_SOURCE,
+  DSA_NOT_READ,
+  dsaSource,
+  dsaValue,
+  DSSI_NOT_READ,
+  DSSI_SOURCE,
+  licDebtReading,
+  type LicDebtReading,
+} from './lowIncomeDebt';
 import { toLive } from './liveFigures';
 import { getSnapshotDataStatus } from './dataStatus';
 import { formatPeriod } from './officialYields';
@@ -17,6 +30,7 @@ import {
   missingNote,
   noSourceRow,
   missingRow,
+  type BriefRow,
   sourcesSection,
   when,
   type CountryBrief,
@@ -248,6 +262,7 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
           liveRow(status, 'Debt / GDP', 'imf.debtToGdpPct', (v) => pct(v), open),
         ],
       },
+      { title: 'Debt relief and lending from China', rows: licDebtRows(open.licDebt ?? licDebtReading(run.iso3, null)) },
       {
         title: 'Execution window, next 60 days',
         rows: events.length
@@ -266,11 +281,46 @@ export function bankerBrief(run: CouncilAssessmentRun, peersIn: LiveWatchlistIte
   return brief;
 }
 
+/**
+ * Low-income country debt (U1, src/utils/lowIncomeDebt.ts): the debt-distress rating, DSSI, the
+ * Common Framework and lending from China, each with its source and date, or Missing with the reason.
+ */
+export function licDebtRows(r: LicDebtReading): BriefRow[] {
+  const read = (f: { source: string; read: string }) => `${f.source}${f.read ? `, read ${f.read}` : ''}`;
+  const dsaLabel = 'Risk of debt distress (IMF/World Bank)';
+  const dssiLabel = 'Debt Service Suspension Initiative (2020-21)';
+  const china = 'Official lending from China';
+  return [
+    r.dsa
+      ? { label: dsaLabel, value: dsaValue(r.dsa), source: dsaSource(), verified: true }
+      : r.dsaNone
+        ? missingRow(dsaLabel, { kind: 'unreachable', short: 'No published DSA', help: 'The country is on the IMF\'s list of low-income countries but has never published a debt sustainability analysis, so there is no rating.' })
+      : r.dsaListRead
+        ? { label: dsaLabel, value: 'Not on the IMF low-income list', source: dsaSource(), verified: true }
+        : missingRow(dsaLabel, { kind: 'setup', short: 'IMF list not read yet', help: DSA_NOT_READ }),
+    r.dssi !== undefined
+      ? { label: dssiLabel, value: r.dssi ? 'Took part' : 'Did not take part', source: read(DSSI_SOURCE), verified: true }
+      : missingRow(dssiLabel, { kind: 'setup', short: 'Country table not typed yet', help: DSSI_NOT_READ }),
+    {
+      label: 'Common Framework',
+      value: r.commonFramework ? `Applied for a debt treatment (as of ${COMMON_FRAMEWORK_AS_OF})` : `Not among the four countries that applied (as of ${COMMON_FRAMEWORK_AS_OF})`,
+      source: read(COMMON_FRAMEWORK_SOURCE),
+      verified: true,
+    },
+    r.china
+      ? { label: china, value: chinaValue(r.china), source: chinaSource(r.china), verified: true }
+      : r.chinaMissing?.short.startsWith('No loans')
+        ? { label: china, value: 'None recorded', source: `AidData file; ${r.chinaMissing.short.toLowerCase()}`, verified: true, help: r.chinaMissing.help }
+        : missingRow(china, { kind: 'setup', short: r.chinaMissing?.short || 'AidData file not downloaded', help: r.chinaMissing?.help || '' }),
+  ];
+}
+
 /** Section ids and headings for the banker's issuer note, in order. */
 export const BANKER_SECTIONS: Record<string, string> = {
   summary: 'Summary',
   access: 'Market access',
   need: 'Financing need',
+  relief: 'Debt relief and lending from China',
   window: 'Execution window',
   peers: 'Pricing against peers',
   restructuring: 'Restructuring watch',
@@ -297,6 +347,7 @@ export function buildBankerSections(
   const groups: Array<[string, string]> = [
     ['access', 'Market access'],
     ['need', 'Financing need'],
+    ['relief', 'Debt relief and lending from China'],
     ['window', 'Execution window'],
     ['peers', 'Peers by 10Y yield'],
   ];

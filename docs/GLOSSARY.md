@@ -160,6 +160,46 @@ Everything the US Federal Reserve owns (mainly government bonds) and owes (mainl
 
 ## Government budget and debt
 
+### Risk of debt distress (IMF/World Bank rating)
+
+A rating the IMF and World Bank give each low-income country after a debt sustainability analysis: low, moderate, high, or already in debt distress.
+
+**Why it matters.** It decides how much of their help comes as grants rather than loans, and lenders and governments read it as the official view of whether the debt can be paid.
+
+**How to read it.** Low is best. "High" means a serious chance of trouble paying; "in debt distress" means the country is already behind on payments or restructuring. The date shows how old the analysis is.
+
+**Limits.** It covers only countries that can borrow from the IMF's concessional fund, and each rating is only as recent as the latest analysis, which can be a year or more old.
+
+### Debt Service Suspension Initiative (DSSI)
+
+A pause, agreed by the G20 during the pandemic, on debt payments that the poorest countries owed to other governments, from May 2020 to December 2021.
+
+**Why it matters.** Taking part freed money for health and support during the crisis. The paused payments were not cancelled; they fall due later, which still weighs on budgets.
+
+**How to read it.** Shows whether the country took part. Forty-eight of the 73 eligible countries did.
+
+**Limits.** Private lenders such as bondholders were asked to join but almost none did, so it covered only part of what countries owed.
+
+### Common Framework (G20 debt treatment)
+
+The G20's process, set up in 2020, for a low-income country to ask all its government lenders, including China, to restructure its debt together.
+
+**Why it matters.** Applying is a sign the country cannot pay as agreed. Talks can take years, and while they go on the country usually cannot borrow from markets.
+
+**How to read it.** Shows whether the country applied. As of 2024 four had: Chad, Zambia, Ethiopia and Ghana.
+
+**Limits.** Applying says nothing about how far talks have gone or how much relief was given.
+
+### Official lending from China
+
+Loans that China's government and its state banks (such as China Development Bank and China Eximbank) committed to the country, added up from AidData's project records.
+
+**Why it matters.** China became one of the largest lenders to poorer countries. Its loans are often not in other public debt figures, and they shape how a debt restructuring can go.
+
+**How to read it.** The total since the first year in the file, and the amount in the most recent five years of the file, in US dollars.
+
+**Limits.** These are amounts promised when each loan was signed, not money paid out or still owed. AidData builds them from public records, so some loans are missed, and the file stops a few years before today.
+
 ### Government debt to GDP
 
 Everything the government owes, divided by the size of the economy in a year.

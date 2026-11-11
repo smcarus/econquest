@@ -40,6 +40,7 @@ import { claimAnswer } from './claimCheck';
 import { ucdpFigures, ucdpMissing } from './ucdpConflict';
 import { v1Figures, v1Missing } from './gdeltDaily';
 import { GDELT_SHORT, POLYMARKET_SHORT, STABILITY_RULE, TONE_RULE, WGI_SHORT, formatUsd, rawGdeltFigures, acledFigures, stabilityBand, toneBand } from './politicsEvents';
+import { chinaSource, chinaValue, COMMON_FRAMEWORK_AS_OF, COMMON_FRAMEWORK_SOURCE, DISTRESS_LABEL, DSSI_SOURCE, dsaSource, dsaValue } from './lowIncomeDebt';
 import { GINI_SOURCE, TARIFF_LAG_NOTE, TARIFF_SOURCE, TAX_CENTRAL_NOTE, TAX_SOURCE, giniValue, type DistTaxFigures } from './distributionTaxes';
 import { BIS_SECURITIES_SHORT, IDS_SHORT, QEDS_SHORT, WEO_LABEL, coverLabel, debtPath, formatQuarter, stabilisingPrimaryBalance } from './fiscalDebt';
 import { IMF_ADVANCED, TNM_CITATION, multiplierView } from './fiscalMultipliers';
@@ -632,6 +633,20 @@ function fiscalAgent(countries: LiveWatchlistItem[], question = ''): Omit<AgentA
     if (dt?.tariffWeightedPct) figures.push({ label: 'Applied tariff, weighted by imports', value: p2(dt.tariffWeightedPct.value), source: `${TARIFF_SOURCE}, ${dt.tariffWeightedPct.year}; ${TARIFF_LAG_NOTE}`, tag: 'official' });
     if (dt?.tariffSimplePct) figures.push({ label: 'Applied tariff, simple mean', value: p2(dt.tariffSimplePct.value), source: `${TARIFF_SOURCE}, ${dt.tariffSimplePct.year}; ${TARIFF_LAG_NOTE}`, tag: 'official' });
     if (dt?.gini) figures.push({ label: 'Inequality (Gini index, 0 = equal, 100 = one person has all)', value: giniValue(dt.gini), source: `${GINI_SOURCE}; income and consumption Ginis are not directly comparable`, tag: 'official' });
+    // Low-income country debt (src/utils/lowIncomeDebt.ts): typed facts with source and date, AidData sums; only what is on hand.
+    const lic = it.licDebt;
+    if (lic?.dsa) {
+      figures.push({ label: 'Risk of debt distress (IMF/World Bank)', value: dsaValue(lic.dsa), source: dsaSource(), tag: 'official' });
+      parts.push(`The IMF and World Bank rate its risk of debt distress ${DISTRESS_LABEL[lic.dsa.rating].toLowerCase()}.`);
+      if (lic.dsa.rating === 'in_distress') weight = Math.max(weight, 0.9);
+      else if (lic.dsa.rating === 'high') weight = Math.max(weight, 0.7);
+    }
+    if (lic?.dssi) figures.push({ label: 'Debt Service Suspension Initiative (2020-21)', value: 'Took part', source: `${DSSI_SOURCE.source}, read ${DSSI_SOURCE.read}`, tag: 'official' });
+    if (lic?.commonFramework) {
+      figures.push({ label: 'Common Framework', value: `Applied for a debt treatment (as of ${COMMON_FRAMEWORK_AS_OF})`, source: `${COMMON_FRAMEWORK_SOURCE.source}, read ${COMMON_FRAMEWORK_SOURCE.read}`, tag: 'official' });
+      parts.push('It applied for a debt treatment under the G20 Common Framework.');
+    }
+    if (lic?.china) figures.push({ label: 'Official lending from China', value: chinaValue(lic.china), source: chinaSource(lic.china), tag: 'official' });
     // Spending on the sectors the question names (src/utils/govSpending.ts: Eurostat or IMF COFOG).
     for (const sec of named) {
       if (sec.code === 'GF02' && f.defencePctGdp) continue;

@@ -15,6 +15,9 @@ import { DATA_LICENCES, LICENCE_STATUS_LABEL, type LicenceRow, type LicenceShare
 /** Register id and the words in a source text that name it. */
 const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['imf_portwatch', /PortWatch/i],
+  ['imf_lic_dsa', /LIC DSAs/i],
+  ['aiddata', /AidData/i],
+  ['dssi_cf', /Paris Club|Debt Service Suspension/i],
   ['imf', /\bIMF\b(?! PortWatch)|World Economic Outlook|Fiscal Monitor|\bCOFER\b|DataMapper/i],
   ['comtrade', /Comtrade/i],
   ['wits', /\bWITS\b/],

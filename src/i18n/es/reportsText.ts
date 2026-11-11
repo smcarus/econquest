@@ -102,4 +102,6 @@ export const REPORTS_TEXT_ES: Record<string, string> = {
   "The last question you asked the council on Workspace: the agents’ answers with their sources, and the synthesis agent’s summary if a model is set up.": "La última pregunta que usted hizo al consejo en Espacio de trabajo: las respuestas de los agentes con sus fuentes y el resumen del agente de síntesis si hay un modelo configurado.",
   // G16: distribution and taxes
   "Distribution and taxes": "Distribución e impuestos",
+  // U1: low-income country debt
+  "Debt relief and lending from China": "Alivio de la deuda y préstamos de China",
 };
