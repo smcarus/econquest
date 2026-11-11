@@ -82,7 +82,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'worldbank',
     name: 'World Bank indicators and debt statistics (IDS, QEDS)',
-    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); external debt falling due; who holds public external debt and terms of new loans (IDS)',
+    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); external debt falling due; who holds public external debt and terms of new loans (IDS)',
     terms: [{ label: 'Terms of Use for Datasets', url: 'https://www.worldbank.org/ext/en/legal/terms-conditions/datasets' }],
     status: 'open',
     display: 'Allowed: the data may be shared with third parties under CC BY 4.0.',

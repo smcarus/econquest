@@ -273,6 +273,7 @@ export const SOURCE_IDS = [
   'worldbank',
   'worldbank_debt',
   'worldbank_dist',
+  'worldbank_people',
   'imf',
   'imf_reserves',
   'imf_cofer',
@@ -371,6 +372,21 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
         const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
         if (row) return `${SAMPLE_NAME} tax revenue ${fmt(Number(row.value))}% of GDP, central government (${row.date})`;
         return Array.isArray(rows) ? `Answered (no recent tax revenue figure for ${SAMPLE_NAME})` : null;
+      }
+    )
+  );
+
+  add('worldbank_people', () =>
+    httpCheck(
+      { id: 'worldbank_people', name: 'World Bank people and living standards', group: 'free', feeds: 'Poverty rates, remittances, labour force participation, youth unemployment, age dependency (country brief, council)' },
+      fetchFn,
+      `https://api.worldbank.org/v2/country/${SAMPLE_ISO3}/indicator/BX.TRF.PWKR.DT.GD.ZS?format=json&per_page=8`,
+      T,
+      (r) => {
+        const rows = (parseJson(r.text) as unknown[])?.[1];
+        const row = Array.isArray(rows) ? (rows as Array<{ value?: unknown; date?: string }>).find((x) => typeof x?.value === 'number') : undefined;
+        if (row) return `${SAMPLE_NAME} remittances received ${fmt(Number(row.value))}% of GDP (${row.date})`;
+        return Array.isArray(rows) ? `Answered (no recent remittances figure for ${SAMPLE_NAME})` : null;
       }
     )
   );

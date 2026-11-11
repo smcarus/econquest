@@ -674,4 +674,16 @@ export const PANEL_TEXT_ES: Record<string, string> = {
   "Applied tariff, simple mean": "Arancel aplicado, media simple",
   "index (0 = equal, 100 = one person has all)": "índice (0 = igualdad, 100 = una persona lo tiene todo)",
   "% of revenue": "% de los ingresos",
+  // G17: people and living standards
+  "Poverty rate, lowest international line": "Tasa de pobreza, línea internacional más baja",
+  "Poverty rate, lower-middle-income line": "Tasa de pobreza, línea de ingreso mediano bajo",
+  "Poverty rate, upper-middle-income line": "Tasa de pobreza, línea de ingreso mediano alto",
+  "Remittances received": "Remesas recibidas",
+  "Labour force participation": "Participación en la fuerza laboral",
+  "Youth unemployment": "Desempleo juvenil",
+  "Age dependency ratio": "Tasa de dependencia por edad",
+  "% of people": "% de la población",
+  "% of people aged 15 and over": "% de las personas de 15 años o más",
+  "% of workers aged 15-24": "% de la población activa de 15 a 24 años",
+  "per 100 people aged 15-64": "por cada 100 personas de 15 a 64 años",
 };

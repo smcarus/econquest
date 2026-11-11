@@ -603,4 +603,16 @@ export const PANEL_TEXT_FR: Record<string, string> = {
   "Applied tariff, simple mean": "Droit de douane appliqué, moyenne simple",
   "index (0 = equal, 100 = one person has all)": "indice (0 = égalité, 100 = une personne a tout)",
   "% of revenue": "% des recettes",
+  // G17: people and living standards
+  "Poverty rate, lowest international line": "Taux de pauvreté, seuil international le plus bas",
+  "Poverty rate, lower-middle-income line": "Taux de pauvreté, seuil des pays à revenu intermédiaire inférieur",
+  "Poverty rate, upper-middle-income line": "Taux de pauvreté, seuil des pays à revenu intermédiaire supérieur",
+  "Remittances received": "Envois de fonds reçus",
+  "Labour force participation": "Taux d'activité",
+  "Youth unemployment": "Chômage des jeunes",
+  "Age dependency ratio": "Taux de dépendance démographique",
+  "% of people": "% de la population",
+  "% of people aged 15 and over": "% des personnes de 15 ans et plus",
+  "% of workers aged 15-24": "% des actifs de 15 à 24 ans",
+  "per 100 people aged 15-64": "pour 100 personnes de 15 à 64 ans",
 };

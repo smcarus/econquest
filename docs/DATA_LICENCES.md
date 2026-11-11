@@ -68,7 +68,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 
 ### World Bank indicators and debt statistics (IDS, QEDS)
 
-- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); external debt falling due; who holds public external debt and terms of new loans (IDS)
+- **Used for:** Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); external debt falling due; who holds public external debt and terms of new loans (IDS)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
 - **Terms read:** [Terms of Use for Datasets](https://www.worldbank.org/ext/en/legal/terms-conditions/datasets) (checked 2026-11-06)

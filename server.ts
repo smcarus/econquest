@@ -71,6 +71,7 @@ import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, ans
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
+import { peopleFromSnapshot } from './src/utils/peopleLiving';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
@@ -1372,6 +1373,10 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
           ...((() => {
             const distTax = distTaxFromSnapshot(snap);
             return distTax ? { distTax } : {};
+          })()),
+          ...((() => {
+            const people = peopleFromSnapshot(snap);
+            return people ? { people } : {};
           })()),
           ...((() => {
             const politics = politicsFromSnapshot(snap);

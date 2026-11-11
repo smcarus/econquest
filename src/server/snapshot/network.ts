@@ -4,6 +4,7 @@
  */
 
 import { DIST_TAX_CODES, GINI_CODE, pickDistTaxRow } from '../../utils/distributionTaxes';
+import { PEOPLE_CODES, peopleTag, pickPeopleRow } from '../../utils/peopleLiving';
 import { BIS_LABEL } from '../../utils/bisDebtSecurities';
 import { HC_SPREAD_FEED_LABEL } from '../../utils/hardCurrencySpread.ts';
 import { IDS_LABEL, QEDS_LABEL } from '../../utils/debtSchedule';
@@ -129,6 +130,27 @@ export async function fetchLiveOpenDataSnapshotNetwork(
           } else {
             markLive(`wb.${field}`, `World Bank, ${row.year}`);
           }
+        })
+      );
+    })(),
+
+    // 1c. People and living standards (G17, src/utils/peopleLiving.ts): poverty at three lines from
+    // surveys up to 15 years back, remittances, labour force participation, youth unemployment, age
+    // dependency. Each only when found.
+    (async () => {
+      const now = new Date();
+      await Promise.allSettled(
+        PEOPLE_CODES.map(async ({ code, field, perPage, survey }) => {
+          const res = await fetchWithTimeout(
+            `https://api.worldbank.org/v2/country/${normalizedIso}/indicator/${code}?format=json&per_page=${perPage}${survey ? '&footnote=y' : ''}`
+          );
+          if (!res.ok) return;
+          const data: any = await res.json();
+          const row = pickPeopleRow(field, data?.[1], now);
+          if (!row) return;
+          baseline.worldBankIndicators[field] = Number(row.value.toFixed(1));
+          if (field === 'povertyLowestPct' && row.welfare) baseline.worldBankIndicators.povertyWelfare = row.welfare;
+          markLive(`wb.${field}`, peopleTag(field, row));
         })
       );
     })(),
