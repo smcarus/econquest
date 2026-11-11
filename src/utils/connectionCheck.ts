@@ -54,6 +54,7 @@ import { parseWitsShare, witsUrl } from './scenarioExposure';
 import { PINK_SHEET_PAGE, PINK_SHEET_SHEET, eiaSpotUrl, findPinkSheetUrl, moveSentence, parseEiaSpot, parsePinkSheet, priceMove } from './commodityPrices';
 import { readXlsxSheet } from './xlsxRead';
 import { GDELT_V1_SIZES_URL, parseFileSizes } from './gdeltDaily';
+import { AIDDATA_SETUP_HELP, chinaValue, type AiddataData } from './lowIncomeDebt';
 import { ACLED_AGGREGATED_PAGE, ACLED_FOLDER, acledFileReading, type AcledFileData } from './acledFiles';
 import { UCDP_DATASETS, UCDP_DATASET_IDS, UCDP_DOWNLOADS_PAGE, UCDP_FOLDER, ucdpReading, type UcdpData } from './ucdpConflict';
 import { COMTRADE_REPORTERS, buildProfile, comtradeUrl, comtradeYears, parseComtrade, partnerSentence } from './comtradeTrade';
@@ -118,6 +119,7 @@ export interface CheckOptions {
   ucdp?: () => UcdpData | null;
   /** The ACLED aggregated files in data/local/acled/ (server: acledFileData). */
   acledFiles?: () => AcledFileData | null;
+  aiddata?: () => AiddataData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -312,6 +314,7 @@ export const SOURCE_IDS = [
   'ucdp',
   'acled',
   'acled_files',
+  'aiddata_file',
   'eia',
   'own_cds',
   'paid_data',
@@ -1200,6 +1203,33 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
     const r = first ? acledFileReading(data, first.name, now) : null;
     const sample = r ? `${r.country}: ${r.total.events} events, ${r.total.fatalities} fatalities, ${r.total.from} to ${r.total.to}` : undefined;
     return { ...setRow(def, 'connected', `Read ${read.join('; ')}.`, host), ...(sample ? { sample } : {}), ...(skipped ? { warning: skipped } : {}) };
+  });
+
+  add('aiddata_file', async () => {
+    const def: Def = {
+      id: 'aiddata_file',
+      name: 'AidData China lending file (downloaded)',
+      group: 'free',
+      feeds: 'Official loan commitments from China by borrowing country, for the issuer brief and the Fiscal & Debt Agent',
+      setup: AIDDATA_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.aiddata) return setRow(def, 'optional', 'The folder data/local/aiddata/ was not checked from here.', host);
+    let data: AiddataData | null;
+    try {
+      data = opts.aiddata();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The AidData folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((s) => `${s.file} (${s.reason})`).join('; ')}.` : '';
+    if (!data?.table) return setRow(def, 'optional', `No AidData file in data/local/aiddata/.${skipped ? ` ${skipped}` : ''}`, host);
+    const t = data.table;
+    const first = [...t.countries.entries()].sort((a, b) => b[1].totalUsdBn - a[1].totalUsdBn)[0];
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}: loans to ${t.countries.size} countries, to ${t.fileLastYear}.`, host),
+      ...(first ? { sample: `${first[0]}: ${chinaValue(first[1])}` } : {}),
+      ...(skipped ? { warning: skipped } : {}),
+    };
   });
 
   add('eia', async () => {

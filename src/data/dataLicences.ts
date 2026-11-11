@@ -700,24 +700,10 @@ export const DATA_LICENCES: LicenceRow[] = [
     shareNote: 'Set by your vendor contract; treated as restricted unless it says otherwise.',
     checked: D,
   },
-];
-
-const P = '2026-11-11';
-
-/** A source a planned roadmap step will read. Not read by the app yet, so not in the in-app register;
- * the row moves into DATA_LICENCES when its step is built. */
-export interface PlannedLicenceRow extends LicenceRow {
-  plannedFor: string;
-}
-
-/** Licence sweep of 11 November 2026 (Wave 0 of the build order): every source a planned step needs,
- * read before the step is built so no step waits on a licence. Same rules as the register above. */
-export const PLANNED_LICENCES: PlannedLicenceRow[] = [
   {
     id: 'aiddata',
     name: 'AidData Global Chinese Development Finance Dataset, version 3.0',
-    plannedFor: 'U1 Low-income country debt',
-    usedFor: 'Official lending from China by borrowing country and year',
+    usedFor: 'Official loan commitments from China by borrowing country, 2000-2021: per-country sums of version 3.0 shipped in datasets/aiddata/, or a newer file the user puts in data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)',
     terms: [
       { label: 'gcdf-geospatial-data README and LICENSE (AidData, GitHub)', url: 'https://github.com/aiddata/gcdf-geospatial-data' },
       { label: 'Dataset page (citation)', url: 'https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0' },
@@ -734,8 +720,57 @@ export const PLANNED_LICENCES: PlannedLicenceRow[] = [
     flag: 'The licence is stated in AidData\'s GitHub repository for the geospatial edition; the dataset page itself states none and aiddata.org/terms did not load. Use the project-level table only (ODC-By), not the OpenStreetMap shapes (ODbL, share-alike).',
     share: 'allowed',
     shareNote: 'ODC-By allows sharing with credit to AidData.',
-    checked: P,
+    checked: '2026-11-11',
   },
+  {
+    id: 'imf_lic_dsa',
+    name: 'IMF list of low-income country debt sustainability analyses',
+    usedFor: 'Risk of external debt distress for each low-income country, with the date of its latest DSA (issuer brief, Fiscal & Debt Agent), typed by hand from the list as of 30 September 2026',
+    terms: [{ label: 'LIC DSA list (PDF)', url: 'https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf' }],
+    status: 'not_verified',
+    display: 'Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read.',
+    commercial: 'Not stated.',
+    attribution: 'Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026.',
+    quotes: [],
+    flag: 'The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.',
+    share: 'unclear',
+    shareNote: 'No terms stated on the list; facts quoted with source and date.',
+    checked: '2026-11-11',
+  },
+  {
+    id: 'dssi_cf',
+    name: 'DSSI and Common Framework status (World Bank, Paris Club)',
+    usedFor: 'Which countries applied to the Common Framework (and, once typed, which took part in the Debt Service Suspension Initiative), typed by hand with source and date (issuer brief, Fiscal & Debt Agent)',
+    terms: [
+      { label: 'World Bank DSSI brief', url: 'https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative' },
+      { label: 'Paris Club, Common Framework', url: 'https://clubdeparis.org/en/communications/page/common-framework' },
+    ],
+    status: 'not_verified',
+    display: 'Not stated on either page.',
+    commercial: 'Not stated.',
+    attribution: 'World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.',
+    quotes: [
+      'Forty-eight out of 73 eligible countries participated.',
+      'As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.',
+    ],
+    flag: 'Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.',
+    share: 'unclear',
+    shareNote: 'No terms stated.',
+    checked: '2026-11-11',
+  },
+];
+
+const P = '2026-11-11';
+
+/** A source a planned roadmap step will read. Not read by the app yet, so not in the in-app register;
+ * the row moves into DATA_LICENCES when its step is built. */
+export interface PlannedLicenceRow extends LicenceRow {
+  plannedFor: string;
+}
+
+/** Licence sweep of 11 November 2026 (Wave 0 of the build order): every source a planned step needs,
+ * read before the step is built so no step waits on a licence. Same rules as the register above. */
+export const PLANNED_LICENCES: PlannedLicenceRow[] = [
   {
     id: 'pwt',
     name: 'Penn World Table (Groningen Growth and Development Centre)',
@@ -846,22 +881,6 @@ export const PLANNED_LICENCES: PlannedLicenceRow[] = [
     checked: P,
   },
   {
-    id: 'imf_lic_dsa',
-    name: 'IMF list of low-income country debt sustainability analyses',
-    plannedFor: 'U1 Low-income country debt',
-    usedFor: 'Risk of debt distress rating for each low-income country and its date',
-    terms: [{ label: 'LIC DSA list (PDF)', url: 'https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf' }],
-    status: 'not_verified',
-    display: 'Page did not load on 2026-11-11.',
-    commercial: 'Not read.',
-    attribution: 'Source: International Monetary Fund, List of LIC DSAs for PRGT-Eligible Countries.',
-    quotes: [],
-    flag: 'The PDF did not load from the sandbox. Open it in a browser on the Mac, confirm its columns and date, and check whether the general IMF terms apply before building U1.',
-    share: 'unclear',
-    shareNote: 'Not read yet.',
-    checked: P,
-  },
-  {
     id: 'laeven_valencia',
     name: 'Laeven and Valencia, Systemic Banking Crises database (2018 update)',
     plannedFor: 'G23 Crisis early-warning; G34 Precedent finder',
@@ -929,28 +948,6 @@ export const PLANNED_LICENCES: PlannedLicenceRow[] = [
     flag: 'Read the ILOSTAT terms of use in a browser on the Mac and update this row before G22.',
     share: 'unclear',
     shareNote: 'Not read yet.',
-    checked: P,
-  },
-  {
-    id: 'dssi_cf',
-    name: 'DSSI and Common Framework status (World Bank, Paris Club)',
-    plannedFor: 'U1 Low-income country debt',
-    usedFor: 'Which countries took part in the Debt Service Suspension Initiative and which applied to the Common Framework, typed by hand with source and date',
-    terms: [
-      { label: 'World Bank DSSI brief', url: 'https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative' },
-      { label: 'Paris Club, Common Framework', url: 'https://clubdeparis.org/en/communications/page/common-framework' },
-    ],
-    status: 'not_verified',
-    display: 'Not stated on either page.',
-    commercial: 'Not stated.',
-    attribution: 'World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.',
-    quotes: [
-      'Forty-eight out of 73 eligible countries participated.',
-      'As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.',
-    ],
-    flag: 'Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.',
-    share: 'unclear',
-    shareNote: 'No terms stated.',
     checked: P,
   },
 ];

@@ -60,6 +60,9 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE) | Allowed with conditions | Free sharing allowed | Allowed: the Bank lets anyone use, copy and distribute its website content, crediting the Bank and saying if anything was changed, without suggesting the Bank endorses the use. | Not limited by the terms for the Bank's own content; a paid product that includes it must tell buyers the content is free on the Bank's website. | Source: Bank of Canada and Bank of England, BoC-BoE Sovereign Default Database (<edition>), Bank of Canada Valet API; figures as published, US$ millions. |
 | IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers) | Terms not confirmed | Sharing unclear | The PortWatch terms page did not give its text to an automated reader, and the layers carry no licence or copyright text. | Not confirmed. | Source: IMF PortWatch (portwatch.imf.org), daily port and chokepoint data and preliminary trade volume estimates. |
 | Your own paid data (CDS file, LSEG account) | Terms not confirmed | Do not pass on | Set by your own licence with the vendor. Market data licences usually limit display to licensed users. | Set by your own licence. | As your vendor contract requires. |
+| AidData Global Chinese Development Finance Dataset, version 3.0 | Open with attribution | Free sharing allowed | Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By). | ODC-By sets no commercial limit; the pages read do not mention commercial use. | AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0. |
+| IMF list of low-income country debt sustainability analyses | Terms not confirmed | Sharing unclear | Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read. | Not stated. | Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026. |
+| DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
 
 ## Sources
 
@@ -585,37 +588,16 @@ From the terms:
 - **Credit:** As your vendor contract requires.
 - **Open question:** Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
 
-## Sources planned, not read by the app yet
-
-Read in the licence sweep of 11 November 2026, before the steps that need them are built. Each row moves into the register above when its step is built. UN Comtrade (G18) and the IMF datasets already read are covered by the rows above.
-
-| Source | Planned for | Status | Free non-commercial sharing | Credit |
-| --- | --- | --- | --- | --- |
-| AidData Global Chinese Development Finance Dataset, version 3.0 | U1 Low-income country debt | Open with attribution | Free sharing allowed | AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0. |
-| Penn World Table (Groningen Growth and Development Centre) | G27 Growth accounting | Open with attribution | Free sharing allowed | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
-| Our World in Data (CO2 and greenhouse gas data) | G20 Climate and energy | Open with attribution | Free sharing allowed | Our World in Data and the underlying data provider named on each series. |
-| IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links; G42 Sub-national revenue | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
-| IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
-| IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
-| IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
-| IMF list of low-income country debt sustainability analyses | U1 Low-income country debt | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, List of LIC DSAs for PRGT-Eligible Countries. |
-| Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
-| Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
-| ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
-| ILOSTAT (International Labour Organization) | G22 Wages and house prices; G17 People | Terms not confirmed | Sharing unclear | Source: ILOSTAT, International Labour Organization. |
-| DSSI and Common Framework status (World Bank, Paris Club) | U1 Low-income country debt | Terms not confirmed | Sharing unclear | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
-
 ### AidData Global Chinese Development Finance Dataset, version 3.0
 
-- **Planned for:** U1 Low-income country debt
-- **Will be used for:** Official lending from China by borrowing country and year
+- **Used for:** Official loan commitments from China by borrowing country, 2000-2021: per-country sums of version 3.0 shipped in datasets/aiddata/, or a newer file the user puts in data/local/aiddata/ (issuer brief, Fiscal & Debt Agent)
 - **Status:** Open with attribution
 - **Free non-commercial sharing:** Free sharing allowed. ODC-By allows sharing with credit to AidData.
 - **Terms read:** [gcdf-geospatial-data README and LICENSE (AidData, GitHub)](https://github.com/aiddata/gcdf-geospatial-data); [Dataset page (citation)](https://www.aiddata.org/data/aiddatas-global-chinese-development-finance-dataset-version-3-0) (checked 2026-11-11)
 - **Show to others:** Allowed: the AidData dataset is under the Open Data Commons Attribution License (ODC-By).
 - **Commercial use:** ODC-By sets no commercial limit; the pages read do not mention commercial use.
 - **Credit:** AidData. 2023. Global Chinese Development Finance Dataset, Version 3.0.
-- **Before building:** The licence is stated in AidData's GitHub repository for the geospatial edition; the dataset page itself states none and aiddata.org/terms did not load. Use the project-level table only (ODC-By), not the OpenStreetMap shapes (ODbL, share-alike).
+- **Open question:** The licence is stated in AidData's GitHub repository for the geospatial edition; the dataset page itself states none and aiddata.org/terms did not load. Use the project-level table only (ODC-By), not the OpenStreetMap shapes (ODbL, share-alike).
 
 From the terms:
 
@@ -624,6 +606,51 @@ From the terms:
 > Any use of the dataset and its content must include appropriate attribution to AidData
 >
 > uses incorporating the geospatial features from OSM must also attribute OSM and be made available using ODbL.
+
+### IMF list of low-income country debt sustainability analyses
+
+- **Used for:** Risk of external debt distress for each low-income country, with the date of its latest DSA (issuer brief, Fiscal & Debt Agent), typed by hand from the list as of 30 September 2026
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms stated on the list; facts quoted with source and date.
+- **Terms read:** [LIC DSA list (PDF)](https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf) (checked 2026-11-11)
+- **Show to others:** Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read.
+- **Commercial use:** Not stated.
+- **Credit:** Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026.
+- **Open question:** The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
+
+### DSSI and Common Framework status (World Bank, Paris Club)
+
+- **Used for:** Which countries applied to the Common Framework (and, once typed, which took part in the Debt Service Suspension Initiative), typed by hand with source and date (issuer brief, Fiscal & Debt Agent)
+- **Status:** Terms not confirmed
+- **Free non-commercial sharing:** Sharing unclear. No terms stated.
+- **Terms read:** [World Bank DSSI brief](https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative); [Paris Club, Common Framework](https://clubdeparis.org/en/communications/page/common-framework) (checked 2026-11-11)
+- **Show to others:** Not stated on either page.
+- **Commercial use:** Not stated.
+- **Credit:** World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.
+- **Open question:** Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
+
+From the terms:
+
+> Forty-eight out of 73 eligible countries participated.
+>
+> As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.
+
+## Sources planned, not read by the app yet
+
+Read in the licence sweep of 11 November 2026, before the steps that need them are built. Each row moves into the register above when its step is built. UN Comtrade (G18) and the IMF datasets already read are covered by the rows above.
+
+| Source | Planned for | Status | Free non-commercial sharing | Credit |
+| --- | --- | --- | --- | --- |
+| Penn World Table (Groningen Growth and Development Centre) | G27 Growth accounting | Open with attribution | Free sharing allowed | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
+| Our World in Data (CO2 and greenhouse gas data) | G20 Climate and energy | Open with attribution | Free sharing allowed | Our World in Data and the underlying data provider named on each series. |
+| IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links; G42 Sub-national revenue | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
+| IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
+| IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
+| IMF External Balance Assessment (EBA) | G24 External sustainability | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, External Balance Assessment. |
+| Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
+| Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
+| ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
+| ILOSTAT (International Labour Organization) | G22 Wages and house prices; G17 People | Terms not confirmed | Sharing unclear | Source: ILOSTAT, International Labour Organization. |
 
 ### Penn World Table (Groningen Growth and Development Centre)
 
@@ -722,18 +749,6 @@ From the terms:
 
 > Data and estimates from the EBA exercise are available online.
 
-### IMF list of low-income country debt sustainability analyses
-
-- **Planned for:** U1 Low-income country debt
-- **Will be used for:** Risk of debt distress rating for each low-income country and its date
-- **Status:** Terms not confirmed
-- **Free non-commercial sharing:** Sharing unclear. Not read yet.
-- **Terms read:** [LIC DSA list (PDF)](https://www.imf.org/external/Pubs/ft/dsa/DSAlist.pdf) (checked 2026-11-11)
-- **Show to others:** Page did not load on 2026-11-11.
-- **Commercial use:** Not read.
-- **Credit:** Source: International Monetary Fund, List of LIC DSAs for PRGT-Eligible Countries.
-- **Before building:** The PDF did not load from the sandbox. Open it in a browser on the Mac, confirm its columns and date, and check whether the general IMF terms apply before building U1.
-
 ### Laeven and Valencia, Systemic Banking Crises database (2018 update)
 
 - **Planned for:** G23 Crisis early-warning; G34 Precedent finder
@@ -786,24 +801,6 @@ From the terms:
 - **Credit:** Source: ILOSTAT, International Labour Organization.
 - **Before building:** Read the ILOSTAT terms of use in a browser on the Mac and update this row before G22.
 
-### DSSI and Common Framework status (World Bank, Paris Club)
-
-- **Planned for:** U1 Low-income country debt
-- **Will be used for:** Which countries took part in the Debt Service Suspension Initiative and which applied to the Common Framework, typed by hand with source and date
-- **Status:** Terms not confirmed
-- **Free non-commercial sharing:** Sharing unclear. No terms stated.
-- **Terms read:** [World Bank DSSI brief](https://www.worldbank.org/en/brief/2022/03/10/covid-19-debt-service-suspension-initiative); [Paris Club, Common Framework](https://clubdeparis.org/en/communications/page/common-framework) (checked 2026-11-11)
-- **Show to others:** Not stated on either page.
-- **Commercial use:** Not stated.
-- **Credit:** World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework.
-- **Before building:** Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.
-
-From the terms:
-
-> Forty-eight out of 73 eligible countries participated.
->
-> As of 2024, four countries have applied to the Common Framework for a debt treatment: Tchad, Zambia, Ethiopia and Ghana.
-
 ## Open questions
 
 1. **World Bank Pink Sheet (commodity prices)** (Terms not confirmed): Read the Pink Sheet licence field in the World Bank Data Catalog before showing commodity prices to clients. Some prices in it come from third parties.
@@ -831,3 +828,5 @@ From the terms:
 23. **Bank of Canada and Bank of England Sovereign Default Database (BoC-BoE)** (Allowed with conditions): The database is compiled from published sources (IMF, World Bank, Paris Club and others); the Bank's terms withhold permission for third-party content unless stated, and no database-specific licence was found. The Valet API must not be queried around its request limits: the app reads the file at most once a day.
 24. **IMF PortWatch (daily chokepoint transits and port activity, ArcGIS feature layers)** (Terms not confirmed): Read the PortWatch terms in a browser (portwatch.imf.org/pages/terms) and update this row. PortWatch is an IMF site, so the IMF Copyright and Usage terms may apply, but the AIS ship data come from partners and may carry their own terms.
 25. **Your own paid data (CDS file, LSEG account)** (Terms not confirmed): Check your vendor contract before CDS figures go into anything shared. The app never ships paid data and never stores the password in exports, backups or the audit log.
+26. **IMF list of low-income country debt sustainability analyses** (Terms not confirmed): The list itself states no terms (copy read 2026-11-11, given by the maintainer). The general IMF copyright and usage page did not load from the build computer; the question is in the email to copyright@imf.org.
+27. **DSSI and Common Framework status (World Bank, Paris Club)** (Terms not confirmed): Neither page states terms. The rows would be facts typed by hand with a link and date, like the official calendar; the World Bank country table did not load and needs reading in a browser.

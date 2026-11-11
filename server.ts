@@ -71,6 +71,8 @@ import { AGENT_CHOICE_INSTRUCTION, SYNTHESIS_INSTRUCTION, agentChoicePrompt, ans
 import { MARKET_EDGE_ANCHORS, MARKET_EDGE_ANCHOR_ISO3, buildAnchor, type MarketEdgeAnchorsReply } from './src/utils/marketEdgeAnchors';
 import { fiscalFromSnapshot } from './src/utils/fiscalDebt';
 import { distTaxFromSnapshot } from './src/utils/distributionTaxes';
+import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
+import { aiddataData } from './src/utils/aiddataStore';
 import { politicsFromSnapshot } from './src/utils/politicsEvents';
 import { acledReadingFor, forgetAcled } from './src/server/feeds/acled';
 import { ACLED_SHORT, acledCountryName } from './src/utils/acled';
@@ -1096,9 +1098,22 @@ function withUcdp(snapshot: OpenDataSnapshot): OpenDataSnapshot {
   } catch (err: any) {
     console.warn(`[UCDP] could not read data/local/ucdp: ${err?.message || err}`);
   }
-  if (reading) return withGdeltDaily({ ...snapshot, ucdp: reading });
+  if (reading) return withGdeltDaily(withLicDebt({ ...snapshot, ucdp: reading }));
   const { ucdp: _drop, ...rest } = snapshot;
-  return withGdeltDaily(rest as OpenDataSnapshot);
+  return withGdeltDaily(withLicDebt(rest as OpenDataSnapshot));
+}
+/** Low-income country debt (U1): typed rows and the AidData file in data/local/aiddata/. */
+function licDebtFor(iso3: string): LicDebtReading {
+  let aid = null;
+  try {
+    aid = aiddataData(DATA_DIR);
+  } catch (err: any) {
+    console.warn(`[AidData] could not read data/local/aiddata: ${err?.message || err}`);
+  }
+  return licDebtReading(iso3, aid);
+}
+function withLicDebt(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  return { ...snapshot, licDebt: licDebtFor(snapshot.iso3) };
 }
 /** GDELT 1.0 monthly history (data/live/gdelt-daily/), laid over like the 2.0 files. */
 function withGdeltDaily(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -1353,6 +1368,7 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
             const fiscal = fiscalFromSnapshot(snap);
             return fiscal ? { fiscal } : {};
           })()),
+          licDebt: licDebtFor(snap.iso3),
           ...((() => {
             const distTax = distTaxFromSnapshot(snap);
             return distTax ? { distTax } : {};
@@ -1885,6 +1901,7 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
   const report = await checkConnections({
     ucdp: () => ucdpData(DATA_DIR),
     acledFiles: () => acledFileData(DATA_DIR),
+    aiddata: () => aiddataData(DATA_DIR),
     paidMappingsText: paidMappingsText,
     env: process.env,
     keySources: keySources(ENV_FILE_KEYS, savedSettings),
@@ -2965,6 +2982,7 @@ async function startServer() {
     const report = await checkConnections({
       ucdp: () => ucdpData(DATA_DIR),
       acledFiles: () => acledFileData(DATA_DIR),
+      aiddata: () => aiddataData(DATA_DIR),
       paidMappingsText: paidMappingsText,
       env,
       only: [field.checkId],
@@ -5602,6 +5620,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
       const report = await checkConnections({
         ucdp: () => ucdpData(DATA_DIR),
         acledFiles: () => acledFileData(DATA_DIR),
+      aiddata: () => aiddataData(DATA_DIR),
         paidMappingsText: paidMappingsText,
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),

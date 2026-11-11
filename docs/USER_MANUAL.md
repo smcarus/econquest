@@ -346,6 +346,19 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   than the previous six auctions of the same term, from the copy the daily download saves (US
   Treasury Fiscal Data). The same auctions chart under History & data as "Treasury auction
   bid-to-cover" and "Treasury auction high yield" for each term.
+  The group *Debt relief and lending from China* shows, for every country: the IMF/World Bank risk
+  of debt distress (low, moderate, high or in debt distress) with the date of the latest debt
+  sustainability analysis, typed from the IMF's list (low-income countries only; others read "Not
+  on the IMF low-income list"); whether it took part in the 2020-21 Debt Service Suspension
+  Initiative (Missing until the World Bank's country table is typed in); whether it applied for a
+  debt treatment under the G20 Common Framework (Chad, Zambia, Ethiopia and Ghana as of 2024); and
+  official loan commitments from China's government and state banks, 2000-2021, from AidData's free
+  Global Chinese Development Finance Dataset (version 3.0, summed per country and shipped with the
+  app in `datasets/aiddata/`). The amounts are commitments when each loan was signed, not money paid
+  out or still owed; short-term central bank swap drawdowns, refinancing and pledges are left out so
+  a loan is not counted twice. For a newer AidData version, put its file (or .zip) in
+  `data/local/aiddata/`: it is read on this computer and wins over the shipped summary
+  (`npm run aiddata:summary` rewrites the shipped file from it).
 - *Official sector*: debt sustainability. Debt path under a baseline and standard shocks, the
   stabilising primary balance and r minus g. Run only when debt, primary balance, growth, inflation
   and the official 10Y yield are all live; otherwise it lists what is missing.

@@ -173,7 +173,7 @@ export function* csvRows(buf: Uint8Array): Generator<string[]> {
 }
 
 /** Worksheet rows, piece by piece. Row numbers are dropped (empty rows do not matter here). */
-function* sheetRows(sheet: Uint8Array, shared: string[]): Generator<string[]> {
+export function* sheetRows(sheet: Uint8Array, shared: string[]): Generator<string[]> {
   for (const piece of textPieces(sheet, '</row>')) yield* parseSheetRows(piece.replace(/<row\b[^>]*>/g, '<row>'), shared);
 }
 
