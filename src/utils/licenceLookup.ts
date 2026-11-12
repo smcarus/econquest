@@ -51,6 +51,7 @@ const SOURCE_PATTERNS: Array<[string, RegExp]> = [
   ['evds', /\bEVDS\b|\bTCMB\b/],
   ['own', /\byour (own|holdings|connector)\b|\bLSEG\b|\byour \S+ data\b/i],
   ['imf_investor_base', /Investor Base/i],
+  ['imf_fiscal_rules', /Fiscal Rules Dataset/i],
   ['owid_energy', /Our World in Data energy|Energy Institute/i],
   ['pwt', /Penn World Table/i],
   ['ilostat', /ILOSTAT/i],

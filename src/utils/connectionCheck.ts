@@ -20,6 +20,7 @@ import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBal
 import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
+import { FISCAL_RULES_SETUP_HELP, RULE_KINDS, RULE_KIND_NAME } from './fiscalRules';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
 import { gscpiFromBytes, GSCPI_URLS } from './stressIndices';
 import { chokepointsUrl, parsePortWatchStats } from './portWatch';
@@ -132,6 +133,7 @@ export interface CheckOptions {
   acledFiles?: () => AcledFileData | null;
   aiddata?: () => AiddataData | null;
   investorBase?: () => import('./investorBaseStore').InvestorBaseData | null;
+  fiscalRules?: () => import('./fiscalRulesStore').FiscalRulesData | null;
   /** Only these source ids. */
   only?: string[];
   /** Where each key in `env` came from: 'app' = saved in Menu > Settings > API keys, 'env' = .env. */
@@ -345,6 +347,7 @@ export const SOURCE_IDS = [
   'acled_files',
   'aiddata_file',
   'imf_investor_base',
+  'imf_fiscal_rules',
   'eia',
   'own_cds',
   'paid_data',
@@ -1538,6 +1541,36 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       ...setRow(def, 'connected', `Read ${t.file}${t.version ? ` (version of ${t.version})` : ''}: ${t.countries.size} countries, to ${t.lastYear}.`, host),
       ...(sample ? { sample: `${t.countries.get('BRA') ? 'BRA' : [...t.countries.keys()][0]}: ${investorBaseValue(sample, t.lastYear)}` } : {}),
       ...(skipped ? { warning: skipped } : {}),
+    };
+  });
+
+  add('imf_fiscal_rules', async () => {
+    const def: Def = {
+      id: 'imf_fiscal_rules',
+      name: 'IMF Fiscal Rules Dataset (downloaded)',
+      group: 'free',
+      feeds: 'National fiscal rules (expenditure, revenue, budget balance, debt) and since when, for the Fiscal rules check',
+      setup: FISCAL_RULES_SETUP_HELP,
+    };
+    const host = 'your files';
+    if (!opts.fiscalRules) return setRow(def, 'optional', 'The folder data/local/imf-fiscal-rules/ was not checked from here.', host);
+    let data: import('./fiscalRulesStore').FiscalRulesData | null;
+    try {
+      data = opts.fiscalRules();
+    } catch (err: any) {
+      return setRow(def, 'bad_reply', `The fiscal rules folder could not be read (${err?.message || err}).`, host);
+    }
+    const skipped = data?.skipped.length ? `Not read: ${data.skipped.map((x) => `${x.file} (${x.reason})`).join('; ')}.` : '';
+    if (!data?.table) return setRow(def, 'optional', `No IMF Fiscal Rules Dataset in data/local/imf-fiscal-rules/.${skipped ? ` ${skipped}` : ''}`, host);
+    const t = data.table;
+    const code = t.countries.has('CHL') ? 'CHL' : [...t.countries.keys()][0];
+    const c = t.countries.get(code);
+    const unmatched = t.unmatched.length ? `Names not matched to a country: ${t.unmatched.slice(0, 12).join(', ')}${t.unmatched.length > 12 ? ` and ${t.unmatched.length - 12} more` : ''}.` : '';
+    const warning = [skipped, unmatched].filter(Boolean).join(' ');
+    return {
+      ...setRow(def, 'connected', `Read ${t.file}: ${t.countries.size} countries, ${t.firstYear}-${t.lastYear}.`, host),
+      ...(c ? { sample: `${code} ${c.year}: ${RULE_KINDS.filter((k) => c.has[k]).map((k) => RULE_KIND_NAME[k]).join(', ') || 'no rule'}` } : {}),
+      ...(warning ? { warning } : {}),
     };
   });
 

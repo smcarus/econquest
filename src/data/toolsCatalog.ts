@@ -253,6 +253,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-restructuring' },
   },
   {
+    id: 'fiscal_rules',
+    category: 'history',
+    title: "Fiscal rules check",
+    what: "Which fiscal rules bind the open country: EU, WAEMU or CEMAC treaty limits checked against the latest saved IMF debt and balance, with the room left, and the national rules (expenditure, revenue, budget balance, debt) and since when, from the IMF Fiscal Rules Dataset you save in data/local/imf-fiscal-rules/.",
+    sources: "Treaty texts (TFEU Protocol 12, WAEMU, CEMAC); IMF WEO and Fiscal Monitor; your IMF Fiscal Rules Dataset file",
+    target: { area: 'country', tab: 'history', anchor: 'tool-fiscal-rules' },
+  },
+  {
     id: 'policy_incidence',
     category: 'history',
     title: 'Who pays for a policy',

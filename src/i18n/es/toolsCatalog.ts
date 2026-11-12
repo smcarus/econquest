@@ -173,4 +173,7 @@ export const TOOLS_CATALOG_ES: Record<string, string> = {
   'Covered by Reports.': 'Lo cubre Informes.',
   'LaTeX and CSV export': 'Exportación a LaTeX y CSV',
   'Covered by the Markdown export in Reports.': 'Lo cubre la exportación a Markdown de Informes.',
+  "Fiscal rules check": "Comprobación de reglas fiscales",
+  "Which fiscal rules bind the open country: EU, WAEMU or CEMAC treaty limits checked against the latest saved IMF debt and balance, with the room left, and the national rules (expenditure, revenue, budget balance, debt) and since when, from the IMF Fiscal Rules Dataset you save in data/local/imf-fiscal-rules/.": "Qué reglas fiscales rigen para el país abierto: los límites de tratado de la UE, la UEMOA o la CEMAC comparados con la última deuda y el último saldo del FMI guardados, con el margen que queda, y las reglas nacionales (gasto, ingresos, saldo presupuestario, deuda) y desde cuándo, del Fiscal Rules Dataset del FMI que usted guarda en data/local/imf-fiscal-rules/.",
+  "Treaty texts (TFEU Protocol 12, WAEMU, CEMAC); IMF WEO and Fiscal Monitor; your IMF Fiscal Rules Dataset file": "Textos de tratados (Protocolo 12 del TFUE, UEMOA, CEMAC); Perspectivas de la Economía Mundial y Monitor Fiscal del FMI; su archivo del Fiscal Rules Dataset del FMI",
 };
