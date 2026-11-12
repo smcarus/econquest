@@ -19,6 +19,7 @@
     "test:journeys": "node tests/smoke/journeys.mjs",
     "check:data": "tsx scripts/check-connections.ts",
     "check:imf": "tsx scripts/imf-codes.ts",
+    "check:vintages": "tsx scripts/vintage-probe.ts",
     "weo:vintages": "tsx scripts/weo-vintages.ts",
     "weo:pull": "tsx scripts/weo-pull.ts",
     "sanctions:pull": "tsx scripts/sanctions-pull.ts",
