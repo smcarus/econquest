@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Debt restructuring calculator (G29, Research > History & data, also in Tools): type an old bond
+  and the new bond offered for it (face value, coupon, years, grace years) and one to three discount
+  rates; the panel shows what each bond is worth, the NPV haircut (Sturzenegger and Zettelmeyer
+  2008), the market haircut, the payments year by year and a CSV. Every field starts blank. The
+  smaller calculator in Model sandboxes now points here. The hidden desks "Haircut and exit yield"
+  and "Investor base and banks" now link to this calculator and to Banks and the government.
+  English, Spanish and French.
 - Banks and the government (G28, Research > History & data, also in Tools): how tied a country's
   banks and government are, each figure with its source and year: bank assets, bank claims on the
   central government (also as a share of bank assets), domestic banks' share of government debt
