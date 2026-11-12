@@ -11,7 +11,7 @@
  * docs/GLOSSARY.md is written from this file (npm run docs:glossary); a test checks it is current.
  */
 
-export type GlossaryGroup = 'economy' | 'prices' | 'policy' | 'budget' | 'external' | 'markets' | 'risk' | 'methods';
+export type GlossaryGroup = 'economy' | 'prices' | 'policy' | 'budget' | 'external' | 'markets' | 'risk' | 'behaviour' | 'methods';
 
 export const GLOSSARY_GROUPS: Record<GlossaryGroup, string> = {
   economy: 'Growth and jobs',
@@ -21,6 +21,7 @@ export const GLOSSARY_GROUPS: Record<GlossaryGroup, string> = {
   external: 'Trade, the currency and money from abroad',
   markets: 'Financial markets',
   risk: 'Politics, conflict and news',
+  behaviour: 'Behavioural economics',
   methods: 'How the app tests and labels things',
 };
 
@@ -912,6 +913,52 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/sanction/i],
   },
 
+  // ---- Behavioural economics ----------------------------------------------------------------
+  {
+    id: 'present_bias',
+    term: 'Present bias',
+    group: 'behaviour',
+    what: 'The habit of giving much more weight to what happens now than to what happens later, even when the later payoff is larger. People plan to save, diet or apply for something "next month", then put it off again when next month comes.',
+    why: 'Policies that ask people to act now for a gain later (saving for retirement, signing up for a benefit, paying a tax early) reach fewer people than a simple cost-and-benefit sum would suggest.',
+    read: 'In a policy review, an option is flagged for present bias when it relies on people paying a cost now for a gain later. The flag names published studies, such as Laibson (1997) and Thaler and Benartzi (2004), that describe the habit and ways around it.',
+    limits: 'How strong the habit is differs between people, places and choices. The app holds no built-in size for it; a size appears only if you enter one with its source.',
+  },
+  {
+    id: 'defaults',
+    term: 'Defaults',
+    group: 'behaviour',
+    what: 'What happens when a person does nothing: the pension plan they are put in, the box already ticked, the tariff they stay on. Many people stay with the default, even when switching is easy.',
+    why: 'Changing the default can change what most people end up with, at little cost. Automatic enrolment in workplace pensions is the best-known case.',
+    read: 'In a policy review, an option is flagged for defaults when it depends on people opting in or opting out. The flag points to studies such as Madrian and Shea (2001) on automatic enrolment.',
+    limits: 'People who stay with a default have not chosen it, and a default that suits most people can suit some badly. Results from one country or scheme may not carry over to another.',
+  },
+  {
+    id: 'framing',
+    term: 'Framing',
+    group: 'behaviour',
+    what: 'The way the same choice is described changes what people pick. "Saves 200 jobs out of 600" and "400 of 600 jobs are lost" describe one outcome, yet people react to them differently.',
+    why: 'How a reform is announced (a cut or a reform, a subsidy removed or a cash transfer added) can change how much support it gets and how people respond to it.',
+    read: 'In a policy review, an option is flagged for framing when its success depends on how the public hears it, such as a subsidy reform or a new tax. The flag points to Tversky and Kahneman (1981).',
+    limits: 'Framing changes how people react to a choice, not the facts of it. A different description does not make a costly policy cheaper.',
+  },
+  {
+    id: 'anchoring',
+    term: 'Anchoring',
+    group: 'behaviour',
+    what: 'When people guess a number, they lean towards the first number they saw, even when it has nothing to do with the question. Past prices, an announced target or last year\'s pay rise can all act as anchors.',
+    why: 'Inflation targets, wage guidelines and announced prices can work partly as anchors for what households and firms expect. If people trust the anchor, they set prices and wages near it.',
+    read: 'In a policy review, an option is flagged for anchoring and expectations when it depends on people believing an announced target or path. The flag points to Tversky and Kahneman (1974) and to studies of how firms form inflation expectations, such as Coibion, Gorodnichenko and Kumar (2018).',
+    limits: 'An anchor works only while it is believed. After a long run of missed targets, people may anchor on recent inflation instead.',
+  },
+  {
+    id: 'loss_aversion',
+    term: 'Loss aversion',
+    group: 'behaviour',
+    what: 'A loss feels worse than a gain of the same size feels good. Losing something people already have hurts more than not getting the same thing in the first place.',
+    why: 'Removing a benefit, a subsidy or a tax break tends to meet much stronger resistance than never having given it. This shapes which reforms survive and how they should be phased in.',
+    read: 'In a policy review, an option is flagged for loss aversion when it takes away something people already receive. The flag points to Kahneman and Tversky (1979).',
+    limits: 'Loss aversion explains resistance; it does not say a reform is wrong. How strong it is varies, and the app shows no built-in size for it.',
+  },
   // ---- Methods ----------------------------------------------------------------------------
   {
     id: 'missing',

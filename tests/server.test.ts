@@ -970,6 +970,17 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     assert.equal(o.states.options, 'done');
     assert.equal(o.review.steps.options.content.model, null);
     assert.equal(o.review.steps.options.content.temperature, 0);
+    // Behavioural check (G33): sizes only with a source, saved beside the steps without touching the chain.
+    const bc = (effects: unknown) => fetch(`${base}/api/reviews/${review.id}/behaviour`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ effects }) });
+    const noSource = await bc([{ rank: 1, channel: 'expectations', effect: 'a size', source: '' }]);
+    assert.equal(noSource.status, 400);
+    assert.match((await noSource.json()).error, /source/);
+    const sized = await bc([{ rank: 1, channel: 'expectations', effect: 'expectations moved towards the target', source: 'Coibion et al. (2018), AER 108(9), Table 5' }]);
+    assert.equal(sized.status, 200);
+    const sj = await sized.json();
+    assert.equal(sj.review.behaviour.optionsHash, o.review.steps.options.hash);
+    assert.match(sj.review.behaviour.hash, /^[0-9a-f]{64}$/);
+    assert.equal(sj.states.options, 'done');
     const ev = await fetch(`${base}/api/reviews/${review.id}/evidence`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(ev.status, 200);
     const e = await ev.json();

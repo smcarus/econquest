@@ -17,6 +17,7 @@
  */
 
 import type { OutcomeCheck } from './outcomeChecks';
+import type { BehaviourRecord } from './behaviouralCheck';
 
 /** Bumped when the steps or their content change shape, so old reviews say which version made them. */
 export const REVIEW_TEMPLATE_VERSION = 'policy-review-v1';
@@ -98,6 +99,8 @@ export interface PolicyReview {
   runs: ReviewRun[];
   /** The automatic 12- and 24-month outcome checks (src/utils/outcomeChecks.ts), oldest first, hash chained, never edited. */
   outcomeChecks?: OutcomeCheck[];
+  /** Behavioural check (G33, src/utils/behaviouralCheck.ts): effect sizes the user entered with a source, kept beside the steps. */
+  behaviour?: BehaviourRecord;
 }
 
 export type StepState = 'not_started' | 'done' | 'out_of_date';

@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Behavioural check in Policy review (G33, under Evidence): for each saved option, where it depends
+  on how people behave (take-up of a benefit, the response to a tax change, trust in an inflation
+  target, defaults, removing something people have, acting now for a gain later), found by fixed word
+  rules, each with published studies and official reviews from a fixed list with full citations
+  (World Bank WDR 2015, OECD 2017 and twelve papers). No AI-written evidence and no built-in effect
+  sizes: sizes appear only when you enter them with a source; they are hashed, audited and read Out
+  of date when the options change. Description, not a tested signal. New glossary group Behavioural
+  economics (present bias, defaults, framing, anchoring, loss aversion). English, Spanish and French.
 - Central bank word count (G31, Research > History & data, also in Tools): hawkish and dovish
   phrases ("higher inflation", "weaker growth") counted with the fixed, published dictionary of
   Apel and Blix Grimaldi (2012, Sveriges Riksbank Working Paper 261), in central bank statements
