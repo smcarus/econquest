@@ -33,5 +33,6 @@ jobs:
       - run: npm ci
       - run: npm run lint
       # The recorded council replay check fails on main until a new recording is made on a Mac;
-      # that one failure is expected here too.
-      - run: npm test
+      # that one failure is expected here too. The spec reporter lists every failing test again at
+      # the end of the log, where the log viewer shows it.
+      - run: npx tsx --test --test-reporter=spec "tests/*.test.ts"
