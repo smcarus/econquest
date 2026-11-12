@@ -5,6 +5,7 @@
     "cftc_crowding.v2.json": "f7d9a4599a2f16df6a78b7c9e90531e7a9f05af6778f263360b5ad4e3c66f9c5",
     "cli_turn_policy.json": "a991477f71db05920b83b6e67d00fac77262a7a7a04932eeb20ef22505557108",
     "cycle_clock.json": "75fe942928029a51272144c95936f2c4b10d3c58a5e91ccb423842209318ef84",
+    "inflation_expectations_lead.json": "b2b4b504765c4e2b232f56748de207e9b6a636d3cb08059703a0b6ebf03afdf0",
     "regime_quadrant.json": "28f7aab1c7eb0634f70b50d3a6ddc044c608decae4a08e5aa488298421a0c983",
     "rule_family.json": "1fffb8f01b619ff91960d3dd1abdd2933be8fe8937689d4aefc75355a6d28c2d",
     "taylor_gap.json": "0dcd2ef9ac2917a3fcd434f00b1ec8bff888787e1193369bb37ed897cb8eba75",

@@ -489,7 +489,7 @@ export function euSurveyRows(iso3: string, peers: SurveyPeer[]): BriefRow[] {
     ];
   return s.latest.map((a) => {
     const reading = euSurveyReading(a);
-    return { label: `${a.label} (${NOT_A_PMI}), ${a.period}`, value: `${euSurveyValue(a)}${reading ? `; ${reading}` : ''}`, source: EU_SURVEY_SOURCE, verified: true };
+    return { label: `${a.label} (${a.id === 'prices' ? 'EU consumer survey' : NOT_A_PMI}), ${a.period}`, value: `${euSurveyValue(a)}${reading ? `; ${reading}` : ''}`, source: EU_SURVEY_SOURCE, verified: true };
   });
 }
 

@@ -32,7 +32,7 @@ import { IMF_MEASURES, IMF_SDMX_HOST, formatImfPeriod, pullImfExternal } from '.
 import { cliFor, cliUrl, parseCli } from './oecdCli';
 import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
-import { EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey } from './euSurveys';
+import { EU_PRICE_EXPECTATIONS, EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey } from './euSurveys';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
@@ -325,6 +325,7 @@ export const SOURCE_IDS = [
   'bcb_ibcbr',
   'eurostat_ip',
   'eu_surveys',
+  'eu_price_expectations',
   'comtrade',
   'fred_csv',
   'fred_api',
@@ -1134,6 +1135,22 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       {},
       'Eurostat answered, but not with the ei_bssi_m_r2 sentiment index the app reads (BS-ESI-I, SA).'
+    )
+  );
+
+  add('eu_price_expectations', () =>
+    httpCheck(
+      { id: 'eu_price_expectations', name: "EU households' price expectations (Eurostat)", group: 'free', feeds: "Households' expected price trends over the next 12 months for EU members (Behavioural Finance Agent and the inflation_expectations_lead test)" },
+      fetchFn,
+      euSurveyUrl(EU_PRICE_EXPECTATIONS, ['DE'], `${year - 1}-01`),
+      T,
+      (r) => {
+        const s = parseEuSurvey(parseJson(r.text), ['DEU']).DEU;
+        const last = s?.[s.length - 1];
+        return last ? `Germany households' expected price trends balance ${fmt(last.value, 1)} (${formatMonth(last.period)})` : null;
+      },
+      {},
+      'Eurostat answered, but not with the ei_bsco_m series the app reads (BS-PT-NY, SA, balance).'
     )
   );
 

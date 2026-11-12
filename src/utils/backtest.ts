@@ -26,7 +26,7 @@ import { ruleFamily } from './ruleFamily';
 import type { CftcWeek } from './cftcPositioning';
 import type { ValidationStatus } from '../data/modelRegister';
 
-export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset';
+export type BacktestMethod = 'cli_turn_policy' | 'cftc_crowding' | 'taylor_gap' | 'regime_quadrant' | 'cycle_clock' | 'timing_unwind' | 'rule_family' | 'unrest_onset' | 'expectations_direction';
 
 export interface BacktestSpec {
   id: string;
@@ -37,7 +37,8 @@ export interface BacktestSpec {
   method: BacktestMethod;
   params: Record<string, number>;
   sample: { from: string; to?: string };
-  passMark: { minCases: number; minLiftPts: number; maxPValue: number; minSeriesShare?: number; minYears?: number };
+  /** minHitRate (a hit-rate test against params.hitRateBenchmark) stands in for minLiftPts: see hitRateSpec. */
+  passMark: { minCases: number; minLiftPts: number; maxPValue: number; minSeriesShare?: number; minYears?: number; minHitRate?: number };
   knownLimits: string[];
   /** Which method judges the verdict: 1 (cases independent, binomial p) unless set to 2. */
   framework?: 1 | 2;
@@ -183,7 +184,9 @@ export function robustness(spec: BacktestSpec, cases: BacktestCase[], resamples 
   }
   const blocks = [...byYear.values()];
   const all = liftOf(cases);
-  const rand = seededRandom(20261105);
+  // A spec may fix its own seed and number of redraws (params.seed, params.resamples); otherwise the 2026-11-05 defaults.
+  const rand = seededRandom(Number.isFinite(spec.params?.seed) ? spec.params.seed : 20261105);
+  if (Number.isFinite(spec.params?.resamples) && spec.params.resamples > 0) resamples = spec.params.resamples;
   const draws: number[] = [];
   if (blocks.length) {
     for (let b = 0; b < resamples; b++) {
@@ -230,7 +233,8 @@ export function robustness(spec: BacktestSpec, cases: BacktestCase[], resamples 
   const why: string[] = [];
   if (all.liftPts < m.minLiftPts) why.push(`the lift is below ${m.minLiftPts} points`);
   if (pValue > m.maxPValue) why.push(`p is above ${m.maxPValue} once cases in the same year are not counted as independent`);
-  if (!tested.length || positive < Math.ceil(share * tested.length)) why.push(`it holds in fewer than ${Math.round(share * 100)}% of the series`);
+  // A share of 0 means the spec set no rule on how many series must agree (hit-rate tests).
+  if (share > 0 && (!tested.length || positive < Math.ceil(share * tested.length))) why.push(`it holds in fewer than ${Math.round(share * 100)}% of the series`);
   return why.length
     ? { ...out, status: 'failed', verdict: `Fails the stricter check: ${why.join('; ')}. ${reading}` }
     : { ...out, status: 'passed', verdict: `Passes the stricter check. ${reading}` };
@@ -839,4 +843,68 @@ export function sampleCases(cases: BacktestCase[], max = 300): BacktestCase[] {
 export function spanOf(cases: BacktestCase[]): { from: string; to: string } {
   const w = cases.map((c) => c.when).sort();
   return { from: w[0] ?? '', to: w[w.length - 1] ?? '' };
+}
+
+/* ------------------------------------------------------------------ household expectations -> inflation (G32) */
+
+/**
+ * A hit-rate test (passMark.minHitRate against params.hitRateBenchmark) judged by the same machinery:
+ * each case's base is the benchmark, so the lift is the hit rate minus the benchmark and the pass
+ * mark is minHitRate minus the benchmark. The spec names no rule on how many series must agree, so
+ * none is applied (minSeriesShare 0).
+ */
+export function hitRateSpec(spec: BacktestSpec): BacktestSpec {
+  const bench = Number(spec.params?.hitRateBenchmark ?? 0.5);
+  const minHit = Number(spec.passMark.minHitRate ?? bench);
+  return { ...spec, passMark: { ...spec.passMark, minLiftPts: r1((minHit - bench) * 100), minSeriesShare: spec.passMark.minSeriesShare ?? 0 } };
+}
+
+/**
+ * inflation_expectations_lead (docs/validation/preregistered/inflation_expectations_lead.json): each
+ * December from the sample start, did households' expected price trends (EC consumer survey,
+ * balance) change over the past 12 months, and was HICP inflation 12 months later higher (after a
+ * rise) or lower (after a fall) than in that December? One observation per country per year; an
+ * unchanged balance (change not above minAbsChangeBalancePts) makes no call, and unchanged inflation
+ * counts as a miss. Observations whose outcome month is not published yet are open calls.
+ */
+export function expectationsDirectionCases(
+  spec: BacktestSpec,
+  where: string,
+  survey: Array<{ period: string; value: number }>,
+  hicp: Array<{ period: string; value: number }>,
+  lastFullYear: number,
+  open?: OpenCall[],
+): BacktestCase[] {
+  const p = spec.params;
+  const obsMonth = String(p.observationMonth ?? 12).padStart(2, '0');
+  const win = Number(p.changeWindowMonths ?? 12);
+  const horizon = Number(p.horizonMonths ?? 12);
+  const minAbs = Number(p.minAbsChangeBalancePts ?? 0);
+  const base = Number(p.hitRateBenchmark ?? 0.5);
+  const S = new Map(survey.map((x) => [x.period, x.value]));
+  const H = new Map(hicp.map((x) => [x.period, x.value]));
+  const lastH = hicp.length ? hicp[hicp.length - 1].period : '';
+  const fromYear = Number(String(spec.sample.from).slice(0, 4));
+  const toYear = spec.sample.to && /^\d{4}/.test(spec.sample.to) ? Math.min(Number(spec.sample.to.slice(0, 4)), lastFullYear) : lastFullYear;
+  const out: BacktestCase[] = [];
+  for (let y = fromYear; y <= toYear; y++) {
+    const obs = `${y}-${obsMonth}`;
+    const s1 = S.get(obs);
+    const s0 = S.get(addMonths(obs, -win));
+    const h0 = H.get(obs);
+    if (s1 === undefined || s0 === undefined || h0 === undefined) continue;
+    const dE = s1 - s0;
+    if (Math.abs(dE) <= minAbs) continue;
+    const dir = dE > 0 ? 'rose' : 'fell';
+    const due = addMonths(obs, horizon);
+    const h1 = H.get(due);
+    const what = `households' expected price trends ${dir} ${dE > 0 ? '+' : '−'}${Math.abs(dE).toFixed(1)} pts over 12 months; inflation ${h0.toFixed(1)}%`;
+    if (h1 === undefined) {
+      if (!lastH || due > lastH) open?.push({ where, when: obs, what: `${what}, so the call is inflation ${dE > 0 ? 'higher' : 'lower'} in ${due}`, due });
+      continue;
+    }
+    const hit = dE > 0 ? h1 > h0 : h1 < h0;
+    out.push({ where, when: obs, what: `${what} then ${h1.toFixed(1)}% in ${due}`, hit, base });
+  }
+  return out;
 }

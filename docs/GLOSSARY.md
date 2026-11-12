@@ -202,6 +202,16 @@ The day the statistics office publishes its first estimate of how much the econo
 
 ## Prices and inflation
 
+### Households' expected prices (EU consumer survey)
+
+In the same monthly European Commission survey, households are asked whether they expect prices to rise faster, at the same pace, more slowly, stay the same or fall over the next 12 months. The answer is a balance: the share expecting faster rises minus the share expecting slower rises or falls.
+
+**Why it matters.** If people expect prices to keep rising, they may ask for higher pay and spend sooner, which can keep inflation up. Central banks watch these expectations closely.
+
+**How to read it.** A higher balance means more households expect prices to rise faster. The app places the latest reading against the country's own history (a percentile) and shows the change over 12 months.
+
+**Limits.** It is a balance of answers, not an inflation rate in percent, so it cannot be compared directly with market-implied inflation. Whether a rise comes before higher inflation is tested by the pre-registered inflation_expectations_lead test; until that test passes the app only describes the figure. Only EU members are covered.
+
 ### CPI inflation
 
 How fast the prices people pay for a typical basket of goods and services (food, rent, fuel, transport and so on) are rising, compared with a year earlier.
@@ -607,6 +617,16 @@ Money moving into or out of the country to buy or sell shares, bonds, companies 
 **Why it matters.** Inflows can fund growth; sudden outflows can force the currency down and rates up. "Hot money" in bonds and shares can leave faster than direct investment in factories.
 
 ## Financial markets
+
+### Herding and market sentiment
+
+Herding is when many investors or households act the same way at the same time, often because others are doing it. Sentiment is the general mood: how confident or worried people are.
+
+**Why it matters.** When nearly everyone has made the same bet, there are few buyers or sellers left on the other side, so a surprise can make prices move sharply as people rush to change course.
+
+**How to read it.** The Behavioural Finance Agent describes herding with a few figures: how stretched speculators' currency futures bets are against the last three years, how sure prediction-market traders are about an event, and how far survey confidence is from its own normal range.
+
+**Limits.** These are descriptions, not forecasts. Only the crowding-unwind rule for currency futures has its own pre-registered test; the other readings are labelled "Description, not a tested signal".
 
 ### Bond yield (10-year government yield)
 

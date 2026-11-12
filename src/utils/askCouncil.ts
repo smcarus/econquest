@@ -17,6 +17,7 @@ import { CDS_HIDDEN } from './cdsHidden';
 import { isCitable, References } from './citations';
 import { taylorCheck, taylorMethod, taylorSentence } from './taylorRule';
 import { TIMING_AGENT_NAME, timingAgent } from './timingAgent';
+import { BEHAVIOUR_AGENT_NAME, behaviourAgent } from './behaviourAgent';
 import { oddsMoveText } from './oddsMoves';
 import type { LiveWatchlistItem } from '../types/council';
 import { upcomingOfficialEvents, dateKindLabel } from '../data/officialCalendar';
@@ -61,7 +62,7 @@ import { changeLines } from './whatChanged';
 import { carryChart, chartFinding, chartFollowUps, chartRequest, seriesInQuestion, testsInQuestion, type ChartRequest, type ChartResult } from './councilChart';
 
 /** Desk agents the planner (or the AI model) can pick. */
-export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing';
+export type CoreAgentId = 'cb' | 'fiscal' | 'politics' | 'rv' | 'fx' | 'spill' | 'calendar' | 'timing' | 'behaviour';
 /** 'doc' = the Policy Document Agent, asked whenever you have added documents; 'chart' = the Chart Agent, when a chart or test is asked for; 'forecast' = the app's nowcasts and forecasts (src/utils/forecastAgent.ts). */
 export type AgentId = CoreAgentId | 'doc' | 'chart' | 'forecast' | 'claim';
 export type FigureTag = Quality | 'official' | 'model' | 'document';
@@ -138,9 +139,14 @@ export const COUNCIL_AGENTS: Record<CoreAgentId, { name: string; covers: string;
     covers: 'when a trend or shock could play out: dated catalysts, policy and business cycle turns, crowded positioning starting to unwind (CFTC), news tone shifts (GDELT), Treasury flows (TIC), 3-month yield moves',
     topic: /timing|how soon|\bwhen (?:could|will|would|might|does|do|is)\b|turning point|\bturn(?:s|ed|ing)?\b|shocks?\b|trigger|unwind|crowded|momentum|\btrend|\bcycle|what could (?:change|move)|catalyst/i,
   },
+  behaviour: {
+    name: BEHAVIOUR_AGENT_NAME,
+    covers: "herding and sentiment, described against each series' own history and not forecast: crowded futures positioning (CFTC, with its tested badge), prediction-market crowd odds (Polymarket), EU consumer confidence, economic sentiment and households' expected prices (European Commission surveys), and the Timing Agent's reading",
+    topic: /behaviou?r|herd|sentiment|crowd|euphori|panic|\bfear\b|greed|bubble|mania|confidence|animal spirits|overreact|households?'? (?:price |inflation )?expectations|inflation expectations|expected prices/i,
+  },
 };
 
-export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar', 'timing'];
+export const AGENT_ORDER: CoreAgentId[] = ['cb', 'fiscal', 'politics', 'rv', 'fx', 'spill', 'calendar', 'timing', 'behaviour'];
 export const TAG_LABEL: Record<Exclude<FigureTag, 'model'>, string> = {
   live: 'Live data',
   official: 'Official',
@@ -314,6 +320,7 @@ const FOLLOW_UP: Record<CoreAgentId, string> = {
   spill: 'How exposed are they to a Hormuz closure?',
   calendar: 'What dates are coming up?',
   timing: 'What could change soon, and when?',
+  behaviour: 'Are traders and households herding, and how far is sentiment from normal?',
 };
 
 export function suggestFollowUps(plan: CouncilPlan, answers: AgentAnswer[]): string[] {
@@ -1208,7 +1215,9 @@ export function runCouncil(question: string, plan: CouncilPlan, all: LiveWatchli
               ? spillAgent(plan.countries, question)
               : id === 'timing'
                 ? timingAgent(plan.countries, now)
-                : calendarAgent(plan.countries, now);
+                : id === 'behaviour'
+                  ? behaviourAgent(plan.countries, now)
+                  : calendarAgent(plan.countries, now);
     const sourced = keepSourcedFindings(a.findings);
     const sorted = [...sourced.findings].sort((x, y) => y.weight - x.weight);
     const kept = sorted.slice(0, MAX_FINDINGS);
@@ -1251,6 +1260,7 @@ const AGENT_DATED: Partial<Record<AgentId, string[]>> = {
   rv: ['yield'],
   fx: ['reer', 'cpi'],
   timing: ['policy', 'cli', 'cftc', 'tic', 'yield'],
+  behaviour: ['cftc'],
 };
 
 /** For each country an agent answered on, the figures it used that are older than their source usually runs. */

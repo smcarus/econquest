@@ -5,6 +5,16 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Behavioural Finance Agent (G32) in Council chat: describes herding and sentiment, never forecasts.
+  Crowded CFTC positioning (pointing to the crowding rule's own badge), Polymarket crowd odds as
+  market prices, and for EU members the European Commission's consumer confidence, economic
+  sentiment and households' expected price trends (new: Eurostat ei_bsco_m, balance), each placed
+  against its own history with a percentile, plus the 12-month change in expectations and the Timing
+  Agent's reading. Survey against market inflation expectations and Kalshi read Missing with the
+  reason. The pre-registered `inflation_expectations_lead` test (written 11 November, hash
+  unchanged) is now runnable: December survey changes against Eurostat HICP inflation 12 months
+  later, judged with its own seed and bootstrap. New connection check row `eu_price_expectations`;
+  glossary entries for herding and households' expected prices (EN/ES/FR).
 - Worked examples (W1, Menu > Worked examples): four guided case studies for the open country, from
   a question to a memo draft using the app's own screens: debt sustainability, inflation and
   interest rates, the currency, and a policy review. Figures are the ones saved on the computer,

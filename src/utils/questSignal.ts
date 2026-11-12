@@ -21,7 +21,9 @@
 import type { BacktestMethod, BacktestSpec } from './backtest';
 
 /** The test methods an entry can use, with the settings each reads (from the app's registered tests). */
-export const SIGNAL_METHODS: Record<BacktestMethod, { label: string; params: string[]; /** Reads files on the owner's computer (GDELT, UCDP), not a feed. */ local?: boolean }> = {
+/** expectations_direction (G32) is a hit-rate test with its own pass mark, so Quest entries cannot use it yet. */
+export type QuestMethod = Exclude<BacktestMethod, 'expectations_direction'>;
+export const SIGNAL_METHODS: Record<QuestMethod, { label: string; params: string[]; /** Reads files on the owner's computer (GDELT, UCDP), not a feed. */ local?: boolean }> = {
   cli_turn_policy: { label: 'OECD leading-indicator turns before policy-rate moves', params: ['confirmMonths', 'publicationLagMonths', 'windowMonths'] },
   cftc_crowding: { label: 'Crowded futures positioning that unwinds', params: ['lookbackWeeks', 'minLookbackWeeks', 'highPct', 'lowPct', 'windowWeeks', 'unwindPts', 'minGapWeeks'] },
   taylor_gap: { label: 'Policy rate far from a Taylor-rule rate, then moving towards it', params: ['publicationLagMonths', 'windowMonths', 'bandPts', 'rStar', 'inflationWeight', 'outputWeight', 'gapPublishMonth'] },
@@ -31,7 +33,7 @@ export const SIGNAL_METHODS: Record<BacktestMethod, { label: string; params: str
   rule_family: { label: 'A family of policy rules agreeing before moves', params: ['publicationLagMonths', 'windowMonths', 'rStar', 'gapPublishMonth'] },
   unrest_onset: { label: 'Protest spikes before armed conflict starts', params: ['baselineMonths', 'zSpike', 'sdFloorPts', 'minMonthsInYear'], local: true },
 };
-export const SIGNAL_METHOD_IDS = Object.keys(SIGNAL_METHODS) as BacktestMethod[];
+export const SIGNAL_METHOD_IDS = Object.keys(SIGNAL_METHODS) as QuestMethod[];
 
 /** The app's floor for a Quest test's pass mark. */
 export const SIGNAL_FLOOR = { minCases: 30, minYears: 6, maxPValue: 0.05, minLiftPts: 1 };
@@ -42,7 +44,7 @@ export const LIMIT_MAX = 400;
 /** What an entrant writes: the parts of a pre-registered test that are theirs to choose. */
 export interface SignalTest {
   hypothesis: string;
-  method: BacktestMethod;
+  method: QuestMethod;
   params: Record<string, number>;
   sample: { from: string; to?: string };
   passMark: { minCases: number; minLiftPts: number; maxPValue: number; minSeriesShare?: number; minYears: number };
@@ -60,7 +62,7 @@ export function signalTestProblems(raw: unknown, allowed?: string[]): string[] {
   for (const k of Object.keys(t)) if (!known.has(k)) out.push(`test.${k}: not part of a test`);
   if (typeof t.hypothesis !== 'string' || t.hypothesis.trim().length < HYPOTHESIS_MIN || t.hypothesis.length > HYPOTHESIS_MAX)
     out.push(`test.hypothesis: what the test expects to find, in ${HYPOTHESIS_MIN} to ${HYPOTHESIS_MAX} characters`);
-  const def = typeof t.method === 'string' ? SIGNAL_METHODS[t.method as BacktestMethod] : undefined;
+  const def = typeof t.method === 'string' ? SIGNAL_METHODS[t.method as QuestMethod] : undefined;
   if (!def) out.push(`test.method: one of ${SIGNAL_METHOD_IDS.join(', ')}`);
   else if (allowed?.length && !allowed.includes(t.method as string)) out.push(`test.method: this Quest takes ${allowed.join(', ')}`);
   if (!t.params || typeof t.params !== 'object' || Array.isArray(t.params)) out.push('test.params: the settings, as names and numbers');

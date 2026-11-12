@@ -122,8 +122,13 @@ test('runBacktests pulls the histories once, judges each registered test and sav
       throw new Error('HTTP 503');
     },
   });
-  const core = urls.filter((u) => !u.includes('NGDP_RPCH'));
+  const core = urls.filter((u) => !u.includes('NGDP_RPCH') && !u.includes('ec.europa.eu'));
   assert.equal(core.length, 4, 'BIS, leading indicator, CFTC and consumer prices, each once');
+  // inflation_expectations_lead (G32): the EC price-expectations survey and HICP, each once; no successor HICP pull when the first fails.
+  const eurostat = urls.filter((u) => u.includes('ec.europa.eu'));
+  assert.deepEqual(eurostat.map((u) => u.match(/data\/(\w+)\?/)![1]), ['ei_bsco_m', 'prc_hicp_manr']);
+  assert.ok(out.problems.some((p) => /consumer survey \(ei_bsco_m, BS-PT-NY\) did not answer/.test(p)));
+  assert.equal(out.results.inflation_expectations_lead, undefined, 'no verdict without the survey and HICP');
   const growth = urls.filter((u) => u.includes('NGDP_RPCH'));
   assert.equal(new Set(growth).size, growth.length, 'IMF real growth once per country (Taylor gap v2 output gap)');
   assert.ok(out.problems.some((p) => /IMF real GDP growth did not answer/.test(p)));
@@ -391,7 +396,7 @@ test('tests registered ahead of their tool match their hashes and are not yet ru
   const dir = path.join(process.cwd(), 'docs', 'validation', 'pending');
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, 'manifest.json'), 'utf8')).files as Record<string, string>;
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json') && f !== 'manifest.json');
-  assert.ok(files.length >= 3);
+  assert.ok(files.length >= 1);
   for (const f of files) {
     const body = fs.readFileSync(path.join(dir, f));
     assert.equal(manifest[f], sha256(body.toString('utf8')), `${f}: hash differs from pending/manifest.json`);
