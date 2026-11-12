@@ -491,6 +491,25 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   pi_reading_proportional_gain: "Aproximadamente proporcional: el quinto más pobre recibe {q1} veces su parte del ingreso y el más rico {q5} veces.",
   pi_yourSource: "Partes del cambio: las suyas, de {source}.",
 
+  // Central bank word count (G31)
+  cbw_title: "Recuento de palabras del banco central, {country}",
+  cbw_what: "El recuento de palabras",
+  cbw_intro: "Cuán restrictivos (inclinados a subir los tipos) o expansivos (inclinados a bajarlos) suenan los comunicados de un banco central, contando expresiones como \"higher inflation\" o \"weaker growth\" de un diccionario fijo y publicado. El mismo texto da siempre el mismo recuento; sin puntuación por IA. Los comunicados son los que usted guarda; la aplicación no descarga ninguno.",
+  cbw_none: "No hay comunicados guardados para este país. Guarde cada comunicado como archivo de texto o página web con su fecha en el nombre (por ejemplo 2026-10-29.txt) en {dir}, o pegue uno abajo.",
+  cbw_last: "Último comunicado, {date}: índice neto {net} ({h} expresiones restrictivas, {d} expansivas). 1 es equilibrado; por encima de 1 se inclina a restrictivo, por debajo a expansivo.",
+  cbw_lastNone: "Último comunicado, {date}: ninguna expresión del diccionario.",
+  cbw_chartLabel: "Índice neto de cada comunicado guardado a lo largo del tiempo: 0 todo expansivo, 1 equilibrado, 2 todo restrictivo.",
+  cbw_hawk: "Restrictivas",
+  cbw_dove: "Expansivas",
+  cbw_net: "Índice neto",
+  cbw_words: "Palabras",
+  cbw_phrases: "Expresiones más frecuentes",
+  cbw_where: "Leído de {dir}. Añada un archivo allí para añadir un comunicado.",
+  cbw_skipped: "No leído: {file} ({reason}).",
+  cbw_paste: "O pegue aquí cualquier comunicado para contarlo (no se guarda ni se envía nada):",
+  cbw_pasteOut: "{h} expresiones restrictivas y {d} expansivas en {words} palabras: índice neto {net}. {list}",
+  cbw_pasteNone: "Ninguna expresión del diccionario en {words} palabras.",
+
   // Country risk scorecard
   risk_title: 'Ficha de riesgo país, {country}',
   risk_what: 'la ficha',

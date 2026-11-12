@@ -20,6 +20,8 @@ import { fetchInflationDrivers } from '../feeds/inflationDrivers';
 import { fetchPwt } from '../feeds/pwt';
 import { bankSovereign, bsSentence, type YearValue } from '../../utils/bankSovereign';
 import { incidenceContext } from '../../utils/policyIncidence';
+import { cbwSentence, CBW_METHOD, CBW_REFERENCE } from '../../utils/cbWords';
+import { readCbStatements } from '../feeds/cbStatements';
 import { investorBaseData } from '../../utils/investorBaseStore';
 import { investorBaseReading } from '../../utils/investorBase';
 import { gaSentence, growthAccounting } from '../../utils/growthAccounting';
@@ -411,6 +413,13 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     const ids = ['gini', 'tax_revenue', 'tax_income', 'tax_goods', 'tax_trade', 'poverty_lowest', 'poverty_lower_middle', 'poverty_upper_middle', 'income_share_q1', 'income_share_q2', 'income_share_q3', 'income_share_q4', 'income_share_q5'] as const;
     const ctx = incidenceContext(Object.fromEntries(ids.map((id) => [id, pick(id)])));
     res.json({ iso3, ...ctx });
+  });
+  // Central bank word count (src/utils/cbWords.ts): statements the user saved in data/local/cb-statements/<ISO3>/.
+  app.get('/api/cb-words/:iso3', (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const got = readCbStatements(iso3);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...got, method: CBW_METHOD, reference: CBW_REFERENCE, ...(got.statements.length ? { sentence: cbwSentence(got.statements, name) } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {

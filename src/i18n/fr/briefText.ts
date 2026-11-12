@@ -286,6 +286,9 @@ export const BRIEF_TEXT_FR: Record<string, string> = {
   "Income shares by fifth of people: the World Bank has no household survey with all five shares for this country, or they are not saved yet, so the share ratios cannot be worked out": "Parts du revenu par cinquième de la population : la Banque mondiale n’a aucune enquête auprès des ménages avec les cinq parts pour ce pays, ou elles ne sont pas encore enregistrées, donc les rapports ne peuvent pas être calculés",
   "Tax revenue and its split: the World Bank publishes none for this country, or they are not saved yet": "Recettes fiscales et leur répartition : la Banque mondiale n’en publie aucune pour ce pays, ou elles ne sont pas encore enregistrées",
   "Poverty rates: the World Bank has no household survey for this country, or they are not saved yet": "Taux de pauvreté : la Banque mondiale n’a aucune enquête auprès des ménages pour ce pays, ou ils ne sont pas encore enregistrés",
+  // G31: central bank word count
+  "no date in the file name (use 2026-10-29.txt)": "pas de date dans le nom du fichier (utilisez 2026-10-29.txt)",
+  "larger than 2 MB": "plus de 2 Mo",
   "{v} (long-term average = 100)": "{v} (moyenne de long terme = 100)",
   "balance {v}": "solde {v}",
   "at its long-term average": "à sa moyenne de long terme",

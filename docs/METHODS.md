@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Central bank word count | Research | Description, not a tested signal | None |
 | Who pays for a policy | Research | Description, not a tested signal | None |
 | Debt restructuring calculator | Research | Description, not a tested signal | None |
 | Banks and the government | Research | Description, not a tested signal | None |
@@ -484,6 +485,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Central bank word count
+
+- **Says:** How hawkish or dovish a central bank statement reads, counted with a fixed, published dictionary.
+- **Rule:** Two-word phrases: a hawkish adjective (increasing, increased, faster, stronger, higher, fast, strong, high) or a dovish one (decreasing, decreased, slower, weaker, lower, slow, weak, low) directly followed by inflation, cyclical position, growth, price, wage, oil price or development, any ending. Net index = (hawkish − dovish) ÷ (hawkish + dovish) + 1. Apel and Blix Grimaldi (2012).
+- **Reads:** Central bank statements the user saves in data/local/cb-statements/<ISO3>/, or pastes
+- **Shows in:** Country Research > History & data (Central bank word count)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal. Whether the net index moves before policy rate changes would need its own pre-registered test before any badge.
+- **Limits:** The dictionary was built for Riksbank minutes translated from Swedish; English only; counts wording, not meaning (negation and context are not read); the app downloads no statements.
+- **Code:** `src/utils/cbWords.ts, src/server/feeds/cbStatements.ts`
 
 ### Who pays for a policy
 

@@ -503,6 +503,25 @@ export const PANELS = defineMessages('panels', {
   pi_reading_proportional_gain: "About proportional: the poorest fifth gets {q1} times its share of income and the richest fifth {q5} times.",
   pi_yourSource: "Shares of the change: yours, from {source}.",
 
+  // Central bank word count (G31)
+  cbw_title: "Central bank word count, {country}",
+  cbw_what: "The word count",
+  cbw_intro: "How hawkish (leaning to higher rates) or dovish (leaning to lower rates) a central bank's statements read, by counting phrases such as \"higher inflation\" or \"weaker growth\" from a fixed, published dictionary. The same text always gives the same count; no AI scoring. Statements are the ones you save; the app downloads none.",
+  cbw_none: "No saved statements for this country. Save each statement as a text or web page file named with its date (for example 2026-10-29.txt) in {dir}, or paste one below.",
+  cbw_last: "Latest statement, {date}: net index {net} ({h} hawkish, {d} dovish phrases). 1 is balanced; above 1 leans hawkish, below 1 dovish.",
+  cbw_lastNone: "Latest statement, {date}: no phrase from the dictionary.",
+  cbw_chartLabel: "Net index of each saved statement over time: 0 all dovish, 1 balanced, 2 all hawkish.",
+  cbw_hawk: "Hawkish",
+  cbw_dove: "Dovish",
+  cbw_net: "Net index",
+  cbw_words: "Words",
+  cbw_phrases: "Most frequent phrases",
+  cbw_where: "Read from {dir}. Add a file there to add a statement.",
+  cbw_skipped: "Not read: {file} ({reason}).",
+  cbw_paste: "Or paste any statement here to count it (nothing is saved or sent):",
+  cbw_pasteOut: "{h} hawkish and {d} dovish phrases in {words} words: net index {net}. {list}",
+  cbw_pasteNone: "No phrase from the dictionary in {words} words.",
+
   // Country risk scorecard
   risk_title: 'Country risk scorecard, {country}',
   risk_what: 'The scorecard',
