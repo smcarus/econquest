@@ -110,4 +110,6 @@ export const REPORTS_TEXT_FR: Record<string, string> = {
   "Trade": "Commerce",
   // G20: climate and energy
   "Climate and energy": "Climat et énergie",
+  // G40: sector balances and private debt
+  "Sector balances and private debt": "Soldes sectoriels et dette privée",
 };

@@ -66,6 +66,46 @@ The share of people living on less than a fixed amount a day, the poverty line. 
 
 **Limits.** It comes from household surveys that many countries run only every few years, so the latest figure can be old. The World Bank moves the lines from time to time when it updates price comparisons, so figures from before and after a change are not directly comparable.
 
+### Wage growth, nominal and real
+
+How much average monthly pay of employees changed on the year before. Nominal growth is the change in money terms. Real growth takes out inflation: it is how much more (or less) that pay can buy.
+
+**Why it matters.** Real wages tell you whether workers are getting better or worse off. Pay rising faster than prices supports spending; pay falling behind prices squeezes households and can feed strikes and protests. Central banks watch nominal pay because fast pay rises can keep inflation high.
+
+**How to read it.** Nominal 8% with inflation 6% is real growth of about 2%: people can buy a little more. Nominal 5% with inflation 9% is real growth of about -4%: pay buys less than a year ago, even though the number on the payslip went up.
+
+**Limits.** From ILOSTAT, the International Labour Organization's statistics, yearly. Many countries outside the OECD report earnings only every few years, so the latest year may be old, and some have none. The app works out real growth itself, from nominal growth and the World Bank's consumer price inflation for the same year, and leaves growth Missing when the ILO marks a break in the series.
+
+### House prices, real and nominal
+
+How much residential property prices changed on the same quarter a year earlier, from the BIS (Bank for International Settlements), which collects them from central banks and statistics offices. Nominal is the change in local currency; real takes out consumer price inflation.
+
+**Why it matters.** Homes are most households' largest asset and banks' largest group of loans. Fast real rises can signal a credit boom; sharp falls hit household wealth, construction and bank balance sheets. Central banks watch them when setting interest rates.
+
+**How to read it.** Real rises of more than about 10% a year for several years have often come before banking trouble. Nominal prices can rise while real prices fall when inflation is high.
+
+**Limits.** Quarterly, a quarter or two late, and covering about 60 countries. Each country measures prices its own way (some only big cities, some only new homes), so compare changes over time within a country rather than levels across countries.
+
+### Sector balances
+
+How much each part of the economy saves minus what it spends on investment, as % of GDP: the government, the private sector (households and firms together) and the rest of the world. By accounting they add up: the government balance plus the private balance equals the current account, and the rest of the world lends the country whatever the current account is short.
+
+**Why it matters.** They show who is borrowing. If the government runs a deficit, someone has to lend to it: either the private sector saves more, or foreigners lend. A private sector that borrows heavily for years, as before many housing crashes, or a country that relies on foreign lending, can be a warning sign.
+
+**How to read it.** A private balance below zero means households and firms together invest more than they save, so they are borrowing. A foreign balance above zero means the rest of the world is lending to the country (a current account deficit).
+
+**Limits.** The app reads the government balance (IMF Fiscal Monitor) and the current account (IMF WEO) for the same year and works out the private balance as what is left, so it also takes in measurement errors and differences between the two datasets. It is a rough reading, not a measured figure. Recent years can be IMF estimates or projections.
+
+### Household and company debt
+
+Everything households and non-financial companies owe to all lenders (banks, bond investors, lenders abroad and others), as % of GDP, from the BIS (Bank for International Settlements) total credit statistics.
+
+**Why it matters.** High or fast-rising private debt makes an economy fragile: when rates rise or incomes fall, borrowers cut spending to keep up payments, and loan losses can hit banks. Many banking crises followed years of fast growth in private debt.
+
+**How to read it.** Household debt above about 80% of GDP and company debt above about 90% are often treated as high. A rise of 10 points or more in a few years matters more than the level alone.
+
+**Limits.** Quarterly, a quarter or two late, and for about 40 economies. It includes loans and debt securities at market value, adjusted for breaks in the series; it does not net off what borrowers hold in savings.
+
 ### Greenhouse gas emissions per person
 
 All the greenhouse gases a country emits in a year (carbon dioxide, methane, nitrous oxide and others), turned into the amount of carbon dioxide that would warm the planet as much, divided by the number of people.

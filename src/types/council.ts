@@ -504,6 +504,12 @@ export interface OpenDataSnapshot {
   comtrade?: import('../utils/comtradeTrade').ComtradeProfile & { pulledAt: string };
   /** Energy mix from the Our World in Data copy saved on this computer (utils/climateEnergy.ts); mix absent when the file has none for the country. */
   energyMix?: { pulledAt: string; file: 'current' | 'legacy'; mix?: import('../utils/climateEnergy').EnergyMix };
+  /** Wages from the ILOSTAT copy the daily run saved (utils/wagesHousing.ts); reading absent when ILOSTAT has none for the country. */
+  wages?: { pulledAt: string; reading?: import('../utils/wagesHousing').WageReading };
+  /** House prices from the BIS copy the daily run saved (utils/wagesHousing.ts); reading absent when the BIS has none. */
+  housePrices?: { pulledAt: string; reading?: import('../utils/wagesHousing').HousePriceReading };
+  /** Household and company debt from the BIS copy the daily run saved (utils/sectorBalances.ts); reading absent when the BIS has none. */
+  privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
   livePlumbingOverrides?: {
     usSofrRatePct?: number;
     usEffrRatePct?: number;
@@ -669,6 +675,14 @@ export interface WatchlistItem {
   climate?: import('../utils/climateEnergy').ClimateFigures;
   /** Energy mix from the Our World in Data copy saved on this computer (utils/climateEnergy.ts). */
   energyMix?: { pulledAt: string; file: 'current' | 'legacy'; mix?: import('../utils/climateEnergy').EnergyMix };
+  /** Wages (ILOSTAT, utils/wagesHousing.ts), only when the copy has the country. */
+  wages?: { pulledAt: string; reading?: import('../utils/wagesHousing').WageReading };
+  /** House prices (BIS, utils/wagesHousing.ts), only when the copy has the country. */
+  housePrices?: { pulledAt: string; reading?: import('../utils/wagesHousing').HousePriceReading };
+  /** Household and company debt (BIS, utils/sectorBalances.ts), only when the copy has the country. */
+  privateDebt?: { pulledAt: string; reading?: import('../utils/sectorBalances').PrivateDebtReading };
+  /** Government, private and foreign balances for one year (utils/sectorBalances.ts), only from live IMF figures. */
+  sectorBalances?: import('../utils/sectorBalances').SectorBalances;
   /** GDELT tone and headlines, WGI political stability and Polymarket odds, live only (utils/politicsEvents.ts). */
   politics?: import('../utils/politicsEvents').PoliticsFigures;
 }

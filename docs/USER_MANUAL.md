@@ -373,6 +373,27 @@ The sections are Summary (the brief), Markets & signals (MarketEdge), History & 
   added up, from near 0 (spread out) to 1 (one chapter), with the number of equal-sized product groups
   that would be as concentrated. The Hormuz scenario's working names the energy position, and the
   Global Spillover Agent quotes these figures.
+  Under *Growth and inflation*, four rows show how pay and house prices are moving. *Wage growth,
+  nominal* is the change in average monthly earnings of employees on the year before (ILOSTAT, the
+  International Labour Organization's statistics); *Wage growth, real* takes out consumer price
+  inflation for the same year (World Bank), so it shows whether pay buys more or less than a year
+  earlier. The real figure is the app's own calculation and is labelled so. Many countries outside
+  the OECD publish earnings only every few years, so the year can be old; growth reads Missing when
+  the year before is not published or the ILO marks a break in the series. *House prices, real* and
+  *nominal* are the BIS residential property price series, change on the same quarter a year
+  earlier, for about 60 countries.
+
+  The group *Sector balances and private debt* shows who in the economy is borrowing. Each part
+  of the economy either saves more than it invests (a surplus) or the reverse (a deficit), as % of
+  GDP. By accounting the three always add up: government balance + private balance = current
+  account, and the rest of the world lends the country minus the current account. *Government
+  balance* is the IMF figure for general government. *Private sector balance (remainder)* is
+  households and firms together, worked out as the current account minus the government balance;
+  because it is what is left over, it also takes in statistical errors, so read it as a rough guide.
+  *Foreign balance* is the current account with its sign turned: positive means the rest of the
+  world is lending to the country. All three use the same IMF year, or read Missing. *Household
+  debt* and *Company debt* are credit from all lenders as % of GDP from the BIS (Bank for
+  International Settlements), for about 40 economies, with the quarter.
   The *Climate and energy* group shows greenhouse gas emissions per person (World Bank, from the EU's
   EDGAR database, leaving out land use and forests) and the renewable share of final energy use
   (World Bank), each with its year, and the energy mix: the shares of coal, oil, gas, nuclear and

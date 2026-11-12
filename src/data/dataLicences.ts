@@ -82,7 +82,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'worldbank',
     name: 'World Bank indicators and debt statistics (IDS, QEDS)',
-    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); greenhouse gas emissions per person (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR), renewable share of energy use (EG.FEC.RNEW.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)',
+    usedFor: 'Reserves, current account, external debt, political stability, trade shares, military spending (SIPRI, MS.MIL.XPND.GD.ZS); inequality (Gini, SI.POV.GINI), central government tax revenue and its split (GC.TAX.*), applied tariffs (TM.TAX.MRCH.*, WITS/TRAINS); poverty rates (SI.POV.DDAY, SI.POV.LMIC, SI.POV.UMIC), remittances (BX.TRF.PWKR.DT.GD.ZS), labour force participation and youth unemployment (ILO modelled estimates), age dependency (SP.POP.DPND); interest as % of revenue (GC.XPN.INTP.RV.ZS); goods exports and imports by group (TX.VAL.*, TM.VAL.*), net energy imports (EG.IMP.CONS.ZS); consumer price inflation to work out real wage growth (FP.CPI.TOTL.ZG); greenhouse gas emissions per person (EN.GHG.ALL.PC.CE.AR5, from EU EDGAR), renewable share of energy use (EG.FEC.RNEW.ZS); currency mix and maturity of new loans of public external debt (IDS DT.CUR.*, DT.MAT.DPPG); external debt falling due; who holds public external debt and terms of new loans (IDS)',
     terms: [{ label: 'Terms of Use for Datasets', url: 'https://www.worldbank.org/ext/en/legal/terms-conditions/datasets' }],
     status: 'open',
     display: 'Allowed: the data may be shared with third parties under CC BY 4.0.',
@@ -180,7 +180,7 @@ export const DATA_LICENCES: LicenceRow[] = [
   {
     id: 'bis',
     name: 'BIS statistics (policy rates, real exchange rates, debt securities, credit cycle)',
-    usedFor: 'Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios and residential property prices',
+    usedFor: 'Central bank policy rates and their history, real exchange rates, government debt securities, credit-to-GDP gaps, debt service ratios, residential property prices (real and nominal, country brief and History & data) and household and company debt (total credit)',
     terms: [
       { label: 'Terms of permitted use of BIS statistics', url: 'https://data.bis.org/help/legal' },
       { label: 'BIS terms and conditions', url: 'https://www.bis.org/terms_conditions.htm' },
@@ -738,6 +738,27 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-11',
   },
   {
+    id: 'ilostat',
+    name: 'ILOSTAT (International Labour Organization)',
+    usedFor: 'Average monthly earnings of employees (EAR_4MTH_SEX_ECO_CUR_NB_A): nominal and real wage growth (country brief, Central Bank and Politics agents), downloaded weekly by the daily run',
+    terms: [
+      { label: 'ILO rights and permissions', url: 'https://www.ilo.org/rights-and-permissions' },
+      { label: 'ILOSTAT', url: 'https://ilostat.ilo.org/' },
+    ],
+    status: 'open',
+    display: 'Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0.',
+    commercial: 'Allowed (CC BY 4.0 sets no commercial limit).',
+    attribution: 'Source: ILOSTAT, International Labour Organization (ILO).',
+    quotes: [
+      'As of 3 May 2023, databases and datasets together with the accompanying referential metadata are covered by the Creative Commons CC BY 4.0 licence.',
+      'Databases and datasets together with the accompanying referential metadata produced prior to 3 May 2023 do not automatically benefit from a Creative Commons licence.',
+    ],
+    flag: 'Data produced before 3 May 2023 is not automatically CC BY; the app reads the current ILOSTAT release, published after that date. The ILO name and logo may not be used without written permission.',
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 allows sharing with credit to the ILO.',
+    checked: '2026-11-11',
+  },
+  {
     id: 'owid_energy',
     name: 'Our World in Data energy file (Energy Institute Statistical Review of World Energy)',
     usedFor: 'Energy mix: shares of coal, oil, gas, nuclear and renewables in primary energy (country brief, Global Spillover Agent), downloaded weekly to this computer by the daily run',
@@ -950,22 +971,6 @@ export const PLANNED_LICENCES: PlannedLicenceRow[] = [
     flag: 'No licence stated. Ask ND-GAIN in writing whether the scores may be redistributed inside an open-source app before G20 uses them.',
     share: 'unclear',
     shareNote: '"Free and open-access" is not a licence.',
-    checked: P,
-  },
-  {
-    id: 'ilostat',
-    name: 'ILOSTAT (International Labour Organization)',
-    plannedFor: 'G22 Wages and house prices; G17 People',
-    usedFor: 'Nominal and real wage growth; labour force figures not in World Bank data',
-    terms: [{ label: 'ILOSTAT home page', url: 'https://ilostat.ilo.org/' }],
-    status: 'not_verified',
-    display: 'Not read: the terms page and the ILO copyright page did not load; the home page states no licence.',
-    commercial: 'Not read.',
-    attribution: 'Source: ILOSTAT, International Labour Organization.',
-    quotes: [],
-    flag: 'Read the ILOSTAT terms of use in a browser on the Mac and update this row before G22.',
-    share: 'unclear',
-    shareNote: 'Not read yet.',
     checked: P,
   },
 ];

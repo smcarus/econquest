@@ -8,7 +8,7 @@
  *    C 1.78, so C = A - B.
  * 2. WS_DSR: debt service ratio of the private non-financial sector (DSR_BORROWERS P), % of income.
  * 3. WS_SPP: selected residential property prices; VALUE R real / N nominal, UNIT_MEASURE 628 index
- *    (2010 = 100) / 771 year-on-year change in per cent. Real y/y change is used.
+ *    (2010 = 100) / 771 year-on-year change in per cent. Real and nominal y/y changes are used.
  *
  * Header names and codes were checked against live answers on 2026-11-07. The BIS host does not
  * answer from this project's cloud session, so the parsers are tested on rows copied from those
@@ -27,6 +27,10 @@ export interface BisCreditCycle {
   creditToGdp?: Record<string, number>;
   dsr?: Record<string, number>;
   realHousePricesYoy?: Record<string, number>;
+  nominalHousePricesYoy?: Record<string, number>;
+  /** G40 (src/utils/sectorBalances.ts): household and company debt, % of GDP (BIS total credit). */
+  householdDebt?: Record<string, number>;
+  corporateDebt?: Record<string, number>;
 }
 
 export function bisCreditGapUrl(iso2: string): string {
@@ -63,9 +67,11 @@ export function parseBisDsr(text: unknown): Pick<BisCreditCycle, 'dsr'> {
   return dsr ? { dsr } : {};
 }
 
-export function parseBisProperty(text: unknown): Pick<BisCreditCycle, 'realHousePricesYoy'> {
-  const realHousePricesYoy = quarters(parseBisCsv(text), (r) => r.VALUE === 'R' && r.UNIT_MEASURE === '771');
-  return realHousePricesYoy ? { realHousePricesYoy } : {};
+export function parseBisProperty(text: unknown): Pick<BisCreditCycle, 'realHousePricesYoy' | 'nominalHousePricesYoy'> {
+  const rows = parseBisCsv(text);
+  const realHousePricesYoy = quarters(rows, (r) => r.VALUE === 'R' && r.UNIT_MEASURE === '771');
+  const nominalHousePricesYoy = quarters(rows, (r) => r.VALUE === 'N' && r.UNIT_MEASURE === '771');
+  return { ...(realHousePricesYoy ? { realHousePricesYoy } : {}), ...(nominalHousePricesYoy ? { nominalHousePricesYoy } : {}) };
 }
 
 export const BIS_CREDIT_DEFS = [
@@ -101,6 +107,14 @@ export const BIS_CREDIT_DEFS = [
     unit: '%',
     source: 'BIS selected residential property prices',
     about: 'Residential property prices after inflation, change on the same quarter a year earlier.',
+  },
+  {
+    id: 'house_prices_nominal_yoy',
+    key: 'nominalHousePricesYoy',
+    label: 'Nominal house prices (y/y)',
+    unit: '%',
+    source: 'BIS selected residential property prices',
+    about: 'Residential property prices in local currency, before taking out inflation, change on the same quarter a year earlier.',
   },
 ] as const;
 

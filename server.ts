@@ -75,6 +75,8 @@ import { peopleFromSnapshot } from './src/utils/peopleLiving';
 import { tradeMixFromSnapshot } from './src/utils/tradeMix';
 import { climateFromSnapshot } from './src/utils/climateEnergy';
 import { loadOwidEnergy, fetchOwidEnergyPull } from './src/server/feeds/owidEnergy';
+import { loadWages, fetchWagesPull, loadHousePrices, fetchHousePricesPull, loadPrivateDebt, fetchPrivateDebtPull } from './src/server/feeds/wagesHousing';
+import { sectorBalances } from './src/utils/sectorBalances';
 import { debtStructureFromSnapshot } from './src/utils/debtStructure';
 import { licDebtReading, type LicDebtReading } from './src/utils/lowIncomeDebt';
 import { aiddataData } from './src/utils/aiddataStore';
@@ -556,6 +558,29 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
       const note = `${Object.keys(got.countries).length} countries${got.file === 'legacy' ? ' (older file, no longer updated)' : ''}`;
       return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:ilostat_wages': {
+      const got = await fetchWagesPull();
+      if (!got) return { outcome: 'failed', note: 'ILOSTAT did not answer for average monthly earnings' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const note = `${Object.keys(got.countries).length} countries`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}, downloaded again after a week` };
+    }
+    case 'world:bis_property': {
+      const got = await fetchHousePricesPull();
+      if (!got) return { outcome: 'failed', note: 'The BIS did not answer for residential property prices' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const quarters = Object.values(got.countries).map((c) => c.quarter).sort();
+      const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
+      return fresh ? { outcome: 'done', note } : { outcome: 'done', note: `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
+    }
+    case 'world:bis_private_debt': {
+      const got = await fetchPrivateDebtPull();
+      if (!got) return { outcome: 'failed', note: 'The BIS did not answer for household and company debt' };
+      const fresh = Date.now() - Date.parse(got.pulledAt) < 60 * 60 * 1000;
+      const quarters = Object.values(got.countries).map((c) => c.quarter).sort();
+      const note = `${Object.keys(got.countries).length} countries to ${quarters.pop() || '?'}`;
+      return { outcome: 'done', note: fresh ? note : `${note}; copy from ${got.pulledAt.slice(0, 10)}` };
     }
     case 'world:ust_auctions': {
       const got = await fetchUstAuctionPull({ force: true });
@@ -1127,7 +1152,22 @@ function licDebtFor(iso3: string): LicDebtReading {
   return licDebtReading(iso3, aid);
 }
 function withLicDebt(snapshot: OpenDataSnapshot): OpenDataSnapshot {
-  return withEnergyMix(withComtradeProfile(withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) })));
+  return withWagesHousing(withEnergyMix(withComtradeProfile(withInvestorBase({ ...snapshot, licDebt: licDebtFor(snapshot.iso3) }))));
+}
+/** Wages (ILOSTAT), house prices (BIS, G22) and household and company debt (BIS, G40) from the copies the daily run saved. */
+function withWagesHousing(snapshot: OpenDataSnapshot): OpenDataSnapshot {
+  const w = loadWages();
+  const h = loadHousePrices();
+  const d = loadPrivateDebt();
+  const wr = w?.countries[snapshot.iso3];
+  const hr = h?.countries[snapshot.iso3];
+  const dr = d?.countries[snapshot.iso3];
+  return {
+    ...snapshot,
+    ...(d ? { privateDebt: { pulledAt: d.pulledAt, ...(dr ? { reading: dr } : {}) } } : {}),
+    ...(w ? { wages: { pulledAt: w.pulledAt, ...(wr ? { reading: wr } : {}) } } : {}),
+    ...(h ? { housePrices: { pulledAt: h.pulledAt, ...(hr ? { reading: hr } : {}) } } : {}),
+  };
 }
 /** The energy mix from the Our World in Data copy the daily run saved on this computer (G20). */
 function withEnergyMix(snapshot: OpenDataSnapshot): OpenDataSnapshot {
@@ -1425,6 +1465,22 @@ async function fetchLiveWatchlistCatalog(extra: WatchlistItem[] = [], force = fa
             const climate = climateFromSnapshot(snap);
             const e = withEnergyMix(snap).energyMix;
             return { ...(climate ? { climate } : {}), ...(e?.mix ? { energyMix: e } : {}) };
+          })()),
+          ...((() => {
+            const x = withWagesHousing(snap);
+            // Sector balances (G40): government, private (remainder) and foreign, only when both IMF figures are live for the same year.
+            const lf = snap.liveFields || {};
+            const yrs = snap.imfIndicators?.years || {};
+            const sb =
+              lf['imf.overallBalancePct'] && lf['imf.currentAccountImfPct'] && lf['imf.overallBalancePct'] !== 'AI estimate' && lf['imf.currentAccountImfPct'] !== 'AI estimate'
+                ? sectorBalances(snap.imfIndicators?.overallBalancePct, snap.imfIndicators?.currentAccountImfPct, yrs['imf.overallBalancePct'], yrs['imf.currentAccountImfPct'])
+                : undefined;
+            return {
+              ...(x.wages?.reading ? { wages: x.wages } : {}),
+              ...(x.housePrices?.reading ? { housePrices: x.housePrices } : {}),
+              ...(x.privateDebt?.reading ? { privateDebt: x.privateDebt } : {}),
+              ...(sb ? { sectorBalances: sb } : {}),
+            };
           })()),
           ...((() => {
             const debtStructure = debtStructureFromSnapshot(snap);

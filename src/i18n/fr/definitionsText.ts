@@ -111,6 +111,8 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   "Industry": "Industrie",
   "All sectors of the economy, public and private": "Tous les secteurs de l'économie, publics et privés",
   "Households and non-financial firms": "Ménages et entreprises non financières",
+  "Households and the non-profit bodies that serve them": "Ménages et institutions sans but lucratif à leur service",
+  "Non-financial companies": "Sociétés non financières",
   "Households (consumer prices)": "Ménages (prix à la consommation)",
   "Central bank": "Banque centrale",
   "Market prices": "Prix de marché",
@@ -201,4 +203,12 @@ export const DEFINITIONS_TEXT_FR: Record<string, string> = {
   // G20: climate and energy
   "All greenhouse gases excluding land use, tonnes of CO2 equivalent per person (World Bank EN.GHG.ALL.PC.CE.AR5, from EDGAR)": "Tous les gaz à effet de serre hors utilisation des terres, en tonnes d'équivalent CO2 par personne (Banque mondiale EN.GHG.ALL.PC.CE.AR5, d'après EDGAR)",
   "Renewable energy as % of final energy consumption, including traditional biomass (World Bank EG.FEC.RNEW.ZS)": "Énergie renouvelable en % de la consommation finale d'énergie, biomasse traditionnelle comprise (Banque mondiale EG.FEC.RNEW.ZS)",
+  // G22: wages and house prices
+  "Residential property prices in local currency, change on a year earlier (BIS)": "Prix des logements en monnaie locale, variation sur un an (BRI)",
+  // G40: sector balances and private debt
+  "Credit to households from all lenders, % of GDP, market value, break-adjusted (BIS total credit)": "Crédit aux ménages de tous les prêteurs, en % du PIB, valeur de marché, corrigé des ruptures (crédit total de la BRI)",
+  "Credit to non-financial companies from all lenders, % of GDP, market value, break-adjusted (BIS total credit)": "Crédit aux entreprises non financières de tous les prêteurs, en % du PIB, valeur de marché, corrigé des ruptures (crédit total de la BRI)",
+  "Current account balance, % of GDP (IMF WEO BCA_NGDPD)": "Solde du compte courant, en % du PIB (FMI WEO BCA_NGDPD)",
+  "Households and firms: saving minus investment, % of GDP, worked out as current account minus government balance (remainder of the identity)": "Ménages et entreprises : épargne moins investissement, en % du PIB, calculé comme le compte courant moins le solde public (reste de l'identité)",
+  "Rest of the world lending to the country, % of GDP: minus the current account": "Prêts du reste du monde au pays, en % du PIB : le compte courant avec le signe inversé",
 };

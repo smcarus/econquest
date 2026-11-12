@@ -12,6 +12,8 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
+import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
+import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
 import { debtStructureUrl, parseDebtStructure, currencyValue } from './debtStructure';
 import { INVESTOR_BASE_SETUP_HELP, investorBaseValue } from './investorBase';
 import { ECB_SPF_SERIES, ecbSpfUrl, FOCUS_URL, parseEcbCsv, parseFocus12m } from './inflationSurveys';
@@ -281,6 +283,9 @@ export const SOURCE_IDS = [
   'worldbank_trade',
   'worldbank_climate',
   'owid_energy',
+  'ilostat_wages',
+  'bis_property',
+  'bis_private_debt',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
@@ -410,6 +415,58 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       (r) => (energyColumns((r.text || '').split('\n')[0] || '') ? 'Energy file answered with the coal, oil, gas, nuclear and renewables share columns' : null),
       { headers: { Range: 'bytes=0-16383' } },
       'It answered, but the first line has no coal, oil and gas share columns. Our World in Data may have renamed them again.'
+    )
+  );
+
+  add('ilostat_wages', () =>
+    httpCheck(
+      { id: 'ilostat_wages', name: 'ILOSTAT earnings', group: 'free', feeds: 'Nominal and real wage growth (country brief, Central Bank and Politics agents)' },
+      fetchFn,
+      iloEarningsSampleUrl(SAMPLE_ISO3, new Date().getUTCFullYear() - 8),
+      T,
+      (r) => {
+        const parsed = parseIloEarnings(r.text || '');
+        if (!parsed) return null;
+        const w = parsed[SAMPLE_ISO3] && wageReading(parsed[SAMPLE_ISO3], undefined);
+        if (!w) return `Answered (no earnings for ${SAMPLE_NAME} in local currency, all activities)`;
+        return `${SAMPLE_NAME} average monthly earnings ${fmt(w.monthly, 0)} in local currency (${w.year})${w.nominalGrowthPct !== undefined ? `, ${w.nominalGrowthPct > 0 ? '+' : ''}${fmt(w.nominalGrowthPct)}% on a year earlier` : ''}`;
+      },
+      undefined,
+      'It answered, but not with the ILOSTAT columns the app reads (ref_area, classif1, time, obs_value). ILOSTAT may have changed its layout, or the indicator id.'
+    )
+  );
+
+  add('bis_property', () =>
+    httpCheck(
+      { id: 'bis_property', name: 'BIS residential property prices', group: 'free', feeds: 'Real and nominal house prices (country brief, History & data, Central Bank agent)' },
+      fetchFn,
+      BIS_PROPERTY_SAMPLE_URL,
+      T,
+      (r) => {
+        const all = parseBisPropertyAll(r.text || '');
+        const h = all[SAMPLE_ISO3];
+        if (!h) return Object.keys(all).length ? 'Answered (no row for the sample country)' : null;
+        const v = (x?: number) => (x === undefined ? 'n/a' : `${x > 0 ? '+' : ''}${fmt(x)}%`);
+        return `${SAMPLE_NAME} house prices ${v(h.realYoyPct)} real, ${v(h.nominalYoyPct)} nominal on a year earlier (${quarterLabel(h.quarter)})`;
+      }
+    )
+  );
+
+  add('bis_private_debt', () =>
+    httpCheck(
+      { id: 'bis_private_debt', name: 'BIS total credit (household and company debt)', group: 'free', feeds: 'Household and company debt, % of GDP (country brief, History & data, Fiscal Agent)' },
+      fetchFn,
+      BIS_PRIVATE_DEBT_SAMPLE_URL,
+      T,
+      (r) => {
+        const all = parseBisPrivateDebtAll(r.text || '');
+        const d = all[SAMPLE_ISO3];
+        if (!d) return Object.keys(all).length ? 'Answered (no row for the sample country)' : null;
+        const v = (x?: number) => (x === undefined ? 'n/a' : `${fmt(x)}% of GDP`);
+        return `${SAMPLE_NAME} household debt ${v(d.householdPct)}, company debt ${v(d.corporatePct)} (${d.quarter.replace(/^(\d{4})Q/, '$1 Q')})`;
+      },
+      undefined,
+      'It answered, but not with the BIS total credit columns the app reads (BORROWERS_CTY, TC_BORROWERS, TC_LENDERS, TIME_PERIOD, OBS_VALUE). The BIS may have changed the series key.'
     )
   );
 

@@ -5,6 +5,31 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Sector balances and private debt (G40): a new group "Sector balances and private debt" in the
+  country brief and note. The government balance (IMF Fiscal Monitor), the private sector balance
+  and the foreign balance sit side by side for the same year. The private balance is worked out as
+  the current account minus the government balance, the remainder of an accounting identity, and is
+  labelled so; the foreign balance is minus the IMF WEO current account. When the two IMF figures are
+  for different years the rows read Missing rather than mixing years. Household and company debt
+  (credit from all lenders, % of GDP, BIS total credit statistics) show with their quarter. A new
+  daily-run step downloads all BIS countries at once; the per-country History & data download adds
+  the full quarterly history. History & data gains five charts with CSV: household debt, company
+  debt, the IMF current account (% of GDP), and the private and foreign balances by year, with IMF
+  projection years kept as projections. The Fiscal & Debt Agent quotes the private balance and both
+  debt figures. A Data health row for BIS total credit; glossary entries; Spanish and French text.
+
+- Wages and house prices (G22): four new rows under "Growth and inflation" in the country brief and
+  note: nominal wage growth (average monthly earnings of employees in local currency from ILOSTAT,
+  the International Labour Organization's statistics, CC BY 4.0), real wage growth (the app's own
+  figure: nominal growth deflated by World Bank consumer price inflation for the same year, labelled
+  so), and real and nominal house prices (BIS residential property prices, change on a year
+  earlier), each with its year or quarter. Wage growth is left Missing when the ILO marks a break in
+  the series or the year before is not published. Two new daily-run steps download all countries at
+  once (wages weekly, house prices daily). Nominal house prices also chart under History & data. The
+  Central Bank Agent quotes nominal pay and real house prices; the Politics Agent quotes real pay.
+  Data health rows for ILOSTAT and the BIS house price series; the ILOSTAT licence row moves from
+  planned to in use; glossary entries explain real against nominal; Spanish and French text.
+
 - Climate and energy (G20): a new "Climate and energy" group in the country brief and note:
   greenhouse gas emissions per person (World Bank, from the EU's EDGAR database, excluding land use)
   and the renewable share of final energy use (World Bank, SDG 7), each with its year; the energy mix
