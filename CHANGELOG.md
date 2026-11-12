@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Central bank word count (G31, Research > History & data, also in Tools): hawkish and dovish
+  phrases ("higher inflation", "weaker growth") counted with the fixed, published dictionary of
+  Apel and Blix Grimaldi (2012, Sveriges Riksbank Working Paper 261), in central bank statements
+  you save in data/local/cb-statements/<ISO3>/ (text, Markdown or saved web pages named by date),
+  with a net index by statement and a box to count any pasted text. The same text always gives the
+  same count; no AI scoring; the app downloads no statements. Description, not a tested signal.
+  English, Spanish and French.
 - Who pays for a policy (G30, Research > History & data, also in Tools): you type a tax or spending
   change (households pay or gain), its size in % of GDP, the share each fifth of people carries and
   the study those shares come from; the panel shows each fifth's amount, its share of income, the

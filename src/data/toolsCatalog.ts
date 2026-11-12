@@ -261,6 +261,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-policy-incidence' },
   },
   {
+    id: 'cb_word_count',
+    category: 'history',
+    title: 'Central bank word count',
+    what: "How hawkish or dovish the open country's central bank statements read: phrases such as \"higher inflation\" or \"weaker growth\" counted with a fixed, published dictionary (Apel and Blix Grimaldi 2012), statement by statement, with a net index over time and a box to count any text you paste. The statements are the ones you save in data/local/cb-statements/; no AI scoring.",
+    sources: 'Statements you save; dictionary from Apel and Blix Grimaldi (2012), Sveriges Riksbank',
+    target: { area: 'country', tab: 'history', anchor: 'tool-cb-words' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',
