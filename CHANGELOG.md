@@ -5,6 +5,19 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Revenue and spending by level of government (G42, step 1): two new rows under "Fiscal and debt"
+  in the country brief and note show central, state, local and social security revenue and
+  spending as % of GDP, with the share done by state and local governments, for the latest year.
+  The sources are Eurostat (gov_10a_main) for EU members and the IMF Government Finance Statistics
+  (main aggregates by sub-sector, read through DBnomics) for other countries. Each level is counted
+  before transfers between levels are netted out, so the share is worked out from the sum of the
+  levels and labelled so. Countries that publish only central government figures read Missing
+  with the reason. A new weekly daily-run step saves one copy. The Fiscal & Debt Agent quotes
+  spending by level. A Data health row also counts how many countries publish state or local
+  figures, which decides whether step 2 (a per-state screen) is built. Licence check: IMF GFS falls
+  under the IMF statistical data terms (attribution; personal use). Glossary entry; Spanish and
+  French text.
+
 - Monthly activity (G41): a new group "Monthly activity" in the country brief and note with
   industrial production, retail sales and the monthly unemployment rate, each for the latest month
   with the change on a year earlier (and on the month for the indexes). Sources: Eurostat for EU

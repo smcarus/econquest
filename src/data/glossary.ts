@@ -148,6 +148,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/^Top (five )?export markets/],
   },
   {
+    id: 'gov_levels',
+    term: 'Revenue and spending by level of government',
+    group: 'budget',
+    what: 'How much of the money the state raises and spends goes through each level: central government, state or regional governments, local governments (cities, towns, districts) and social security funds, each as % of GDP.',
+    why: 'In federal countries such as the United States, Germany, Brazil or India, states and cities spend a large part of the budget and can borrow on their own. A national budget cut or a debt problem can look very different once the other levels are counted, and policies such as schools or health are often run locally.',
+    read: 'Central 18%, state 10%, local 5% of GDP with "state and local 30% of the levels\' total" means nearly a third of spending is done below central government. A country with no state or local figures is usually run from the centre, or only reports central government.',
+    limits: 'From Eurostat (EU members) and the IMF Government Finance Statistics, yearly and usually two or three years behind. Each level is counted before money passed between levels (grants to states, for example) is netted out, so the levels add up to more than general government; the share below central government is worked out from that sum and labelled so. Many countries report only central government to the IMF.',
+    match: [/^Spending by level of government/, /^Revenue by level of government/],
+  },
+  {
     id: 'monthly_activity',
     key: true,
     term: 'Industrial production, retail sales and the monthly unemployment rate',

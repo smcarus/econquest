@@ -12,6 +12,7 @@
  * Keys and passwords are never put in a row: only whether they are set.
  */
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
+import { dbnomicsLevelsUrl, imfLevelSeriesId } from './govLevels';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
 import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
@@ -287,6 +288,7 @@ export const SOURCE_IDS = [
   'ilostat_wages',
   'bis_property',
   'bis_private_debt',
+  'imf_gov_levels',
   'eurostat_activity',
   'ons_activity',
   'bcb_activity',
@@ -455,6 +457,27 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       }
     )
   );
+
+  // Levels of government (G42 step 1): state and local spending for every BIS country, which also
+  // says how many publish them (the coverage that decides the per-state screen).
+  add('imf_gov_levels', () => {
+    const iso2s = Object.values(BIS_ISO2);
+    const ids = iso2s.flatMap((i) => [imfLevelSeriesId(i, 'state', 'spending'), imfLevelSeriesId(i, 'local', 'spending'), imfLevelSeriesId(i, 'central', 'spending')]);
+    return httpCheck(
+      { id: 'imf_gov_levels', name: 'IMF GFS by level of government (via DBnomics)', group: 'free', feeds: 'Revenue and spending by level of government (country brief, Fiscal Agent)' },
+      fetchFn,
+      dbnomicsLevelsUrl(ids),
+      T,
+      (r) => {
+        const docs = (JSON.parse(r.text || '') as { series?: { docs?: Array<{ series_code?: string; value?: unknown[] }> } })?.series?.docs;
+        if (!Array.isArray(docs)) return null;
+        const has = (d: { value?: unknown[] }) => Array.isArray(d.value) && d.value.some((v) => typeof v === 'number');
+        const sub = new Set(docs.filter((d) => /\.S131[23]\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+        const central = new Set(docs.filter((d) => /\.S1311\./.test(String(d.series_code)) && has(d)).map((d) => String(d.series_code).split('.')[1]));
+        return `Central government spending for ${central.size} of ${iso2s.length} countries; state or local spending for ${sub.size}${sub.size ? ` (${[...sub].sort().join(', ')})` : ''}`;
+      }
+    );
+  });
 
   // Monthly activity (G41): one sample per source the daily run reads (FRED has its own row).
   const actSample = (s: { points: { period: string; value: number }[] } | null | undefined, what: string, unit = '') => {
