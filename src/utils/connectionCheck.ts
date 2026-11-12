@@ -13,6 +13,8 @@
  */
 import { EMISSIONS_CODE, OWID_ENERGY_URL, energyColumns } from './climateEnergy';
 import { dbnomicsLevelsUrl, imfLevelSeriesId } from './govLevels';
+import { ECB_RTD_SERIES, ecbRtdUrl, parseEcbHistory } from './ecbRealTime';
+import { latestEditionUri, ONS_TRIANGLE_PAGE } from './onsTriangles';
 import { bcbActivityUrl, eurostatActivityUrl, monthText, onsActivityUrl, parseBcbActivity, parseEurostatActivity, parseOnsSeries } from './monthlyIndicators';
 import { BIS_PRIVATE_DEBT_SAMPLE_URL, parseBisPrivateDebtAll } from './sectorBalances';
 import { BIS_PROPERTY_SAMPLE_URL, iloEarningsSampleUrl, parseBisPropertyAll, parseIloEarnings, quarterLabel, wageReading } from './wagesHousing';
@@ -292,6 +294,8 @@ export const SOURCE_IDS = [
   'eurostat_activity',
   'ons_activity',
   'bcb_activity',
+  'ecb_rtd',
+  'ons_triangle',
   'worldbank_debt_structure',
   'imf',
   'imf_reserves',
@@ -509,6 +513,36 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       bcbActivityUrl('unemp'),
       T,
       (r) => actSample(parseBcbActivity('unemp', JSON.parse(r.text || '')), 'Brazil unemployment rate', '%')
+    )
+  );
+
+  // Figures as first published (G12, G13). The ECB row reads euro area GDP with its revision
+  // history; the ONS row checks the GDP revision triangle's page lists a file (the file itself can be
+  // refused to programs, in which case a copy saved by hand in data/local/ons-triangles is read).
+  add('ecb_rtd', () =>
+    httpCheck(
+      { id: 'ecb_rtd', name: 'ECB Euro Area Real-Time Database (figures as first published)', group: 'free', feeds: 'Euro area figures as first published (History & data on euro members\' pages)' },
+      fetchFn,
+      ecbRtdUrl(ECB_RTD_SERIES[0].id, '2023'),
+      T,
+      (r) => {
+        const rows = parseEcbHistory(r.text || '');
+        if (!rows.length) return null;
+        const periods = new Set(rows.map((x) => x.date));
+        return `Euro area GDP: ${rows.length} published values for ${periods.size} quarters since 2023, first change recorded ${rows.map((x) => x.from).sort()[0]}`;
+      }
+    )
+  );
+  add('ons_triangle', () =>
+    httpCheck(
+      { id: 'ons_triangle', name: 'ONS GDP revision triangle (UK GDP as first published)', group: 'free', feeds: 'UK GDP as first published (History & data on the UK page)' },
+      fetchFn,
+      `${ONS_TRIANGLE_PAGE}/data`,
+      T,
+      (r) => {
+        const edition = latestEditionUri(JSON.parse(r.text || ''));
+        return edition ? `Latest edition listed: ${edition.split('/').pop()}` : null;
+      }
     )
   );
 

@@ -36,7 +36,8 @@ export interface AlfredDef {
   id: string;
   label: string;
   unit: string;
-  transform: 'qoq_ann' | 'yoy' | 'level';
+  /** qoq_ann: % q/q annualised (US convention); qoq: % q/q (euro area and UK convention). */
+  transform: 'qoq_ann' | 'qoq' | 'yoy' | 'level';
   freq: 'quarterly' | 'monthly';
 }
 
@@ -87,13 +88,13 @@ export function figureOn(def: AlfredDef, rows: AlfredRow[], date: string, day: s
   const back = def.transform === 'yoy' ? 12 : 3;
   const p = rawOn(rows, shift(date, -back), day);
   if (p === undefined || p === 0) return undefined;
-  const r = def.transform === 'yoy' ? (v / p - 1) * 100 : (Math.pow(v / p, 4) - 1) * 100;
+  const r = def.transform === 'qoq_ann' ? (Math.pow(v / p, 4) - 1) * 100 : (v / p - 1) * 100;
   return Number(r.toFixed(2));
 }
 
 /** Every release of a period's figure: the days a new value came out and the figure from then. */
 export function releasesOf(def: AlfredDef, rows: AlfredRow[], date: string): Array<{ day: string; value: number }> {
-  const back = def.transform === 'yoy' ? 12 : def.transform === 'qoq_ann' ? 3 : 0;
+  const back = def.transform === 'yoy' ? 12 : def.transform === 'level' ? 0 : 3;
   const days = new Set<string>();
   for (const r of rows) if (r.date === date || (back && r.date === shift(date, -back))) days.add(r.from);
   const out: Array<{ day: string; value: number }> = [];
@@ -124,6 +125,7 @@ export interface AlfredReply {
   periods?: string[];
   period?: string;
   periodLabel?: string;
+  freq?: AlfredDef['freq'];
   releases?: Array<{ day: string; value: number }>;
   asOf?: { day: string; value: number | null };
   sentence?: string;
@@ -131,13 +133,13 @@ export interface AlfredReply {
 }
 
 /** What the panel shows: every release of one period, and its value as known on a chosen day. */
-export function alfredReply(def: AlfredDef, s: AlfredSeries | null, period?: string, asOfDay?: string): AlfredReply {
-  if (!s || !s.rows.length) return { ok: false, series: def.id, reason: 'No ALFRED vintages for this series yet', source: ALFRED_SOURCE };
+export function alfredReply(def: AlfredDef, s: AlfredSeries | null, period?: string, asOfDay?: string, source = ALFRED_SOURCE, sourceName = 'ALFRED'): AlfredReply {
+  if (!s || !s.rows.length) return { ok: false, series: def.id, reason: `No ${sourceName} vintages for this series yet`, source };
   const all = periodsOf(s.rows);
   // Periods with a figure (growth and inflation need the earlier period too).
   const usable = all.filter((d) => releasesOf(def, s.rows, d).length);
   const pick = period && usable.includes(period) ? period : usable[usable.length - 1];
-  if (!pick) return { ok: false, series: def.id, reason: 'ALFRED answered, but no period has a figure yet', source: ALFRED_SOURCE };
+  if (!pick) return { ok: false, series: def.id, reason: `${sourceName} answered, but no period has a figure yet`, source };
   const releases = releasesOf(def, s.rows, pick);
   const label = periodLabel(def, pick);
   let sentence: string | undefined;
@@ -156,9 +158,10 @@ export function alfredReply(def: AlfredDef, s: AlfredSeries | null, period?: str
     periods: usable,
     period: pick,
     periodLabel: label,
+    freq: def.freq,
     releases,
     ...(day ? { asOf: { day, value: figureOn(def, s.rows, pick, day) ?? null } } : {}),
     ...(sentence ? { sentence } : {}),
-    source: ALFRED_SOURCE,
+    source,
   };
 }

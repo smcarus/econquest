@@ -183,6 +183,14 @@ export const PANELS = defineMessages('panels', {
   usv_was: 'On {day} the published figure for {period} was {value}.',
   usv_publishedFrom: 'Published from',
   usv_note: 'Growth and inflation are worked out inside each release (this period against the earlier one as that release stood). Source: {source}.',
+  fpv_title: 'Euro area figures as first published',
+  fpv_intro: "Every release of a euro area figure since the ECB began recording revisions, and what was known on a past day (ECB real-time database). The other screens show today's revised numbers.",
+  fpv_what: 'euro area vintages',
+  fpv_note: 'Growth is worked out inside each release (this quarter against the one before as that release stood). The euro area counts the members it had at each release. Source: {source}.',
+  fpu_title: 'UK GDP as first published',
+  fpu_intro: "Every publication of UK quarterly GDP growth since 1992, and what was known on a past day (ONS revision triangle). The other screens show today's revised numbers.",
+  fpu_what: 'UK GDP vintages',
+  fpu_note: 'Quarter-on-quarter growth as each monthly ONS publication printed it. The ONS file gives the month of each publication, not the day, so each is dated the last day of its month. Source: {source}.',
 
   // Gross financing need
   gfn_title: 'Gross financing need, {country}',

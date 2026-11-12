@@ -467,6 +467,26 @@ export const CountryPage: React.FC<{
               </PanelBoundary>
             </>
           )}
+          {run.iso3 === 'GBR' && (
+            <>
+              <div id="tool-first-published" className="scroll-mt-4" />
+              <PanelBoundary name="UK GDP as first published">
+                <React.Suspense fallback={<DeskLoading />}>
+                  <UsVintagesPanel area="uk" />
+                </React.Suspense>
+              </PanelBoundary>
+            </>
+          )}
+          {run.openData?.currencyCode === 'EUR' && (
+            <>
+              <div id="tool-first-published" className="scroll-mt-4" />
+              <PanelBoundary name="Euro area figures as first published">
+                <React.Suspense fallback={<DeskLoading />}>
+                  <UsVintagesPanel area="ea" />
+                </React.Suspense>
+              </PanelBoundary>
+            </>
+          )}
           <div id="tool-as-of" className="scroll-mt-4" />
           <PanelBoundary name="As of a past day">
             <React.Suspense fallback={<DeskLoading />}>

@@ -8,13 +8,25 @@ import type { AlfredReply } from '../utils/alfredVintages';
  * Country Research > History & data > US data as first published (United States only): every
  * release of one month's or quarter's figure from ALFRED (src/utils/alfredVintages.ts), and the
  * figure as it was known on a chosen day. Needs the user's free FRED API key.
+ *
+ * With area="ea" the same panel shows euro area figures as first published (G12, euro members'
+ * pages) from the ECB real-time database (src/utils/ecbRealTime.ts), and with area="uk" UK GDP
+ * as first published (G13, the UK page) from the ONS revision triangle (src/utils/onsTriangles.ts).
+ * Neither needs a key.
  */
 
 type Reply = AlfredReply & { choices?: Array<{ id: string; label: string }> };
 const SELECT = 'px-1.5 py-1 text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white';
 
-export const UsVintagesPanel: React.FC = () => {
-  const [series, setSeries] = useState('GDPC1');
+const AREA = {
+  us: { url: '/api/us-vintages?', first: 'GDPC1', title: 'usv_title', intro: 'usv_intro', what: 'usv_what', note: 'usv_note' },
+  ea: { url: '/api/first-published?', first: 'Q.S0.S.G_GDPM_TO_C.E', title: 'fpv_title', intro: 'fpv_intro', what: 'fpv_what', note: 'fpv_note' },
+  uk: { url: '/api/first-published?area=uk&', first: 'ABMI', title: 'fpu_title', intro: 'fpu_intro', what: 'fpu_what', note: 'fpu_note' },
+} as const;
+
+export const UsVintagesPanel: React.FC<{ area?: keyof typeof AREA }> = ({ area = 'us' }) => {
+  const a = AREA[area];
+  const [series, setSeries] = useState<string>(a.first);
   const [period, setPeriod] = useState('');
   const [asOf, setAsOf] = useState('');
   const [reply, setReply] = useState<Reply | null>(null);
@@ -26,28 +38,28 @@ export const UsVintagesPanel: React.FC = () => {
     let live = true;
     setError(null);
     const q = new URLSearchParams({ series, ...(period ? { period } : {}), ...(asOf ? { asOf } : {}) });
-    fetch(`/api/us-vintages?${q}`)
+    fetch(`${a.url}${q}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
       .then((b: Reply) => live && setReply(b))
       .catch((e: Error) => live && setError(e.message));
     return () => {
       live = false;
     };
-  }, [series, period, asOf]);
+  }, [a.url, series, period, asOf]);
 
-  const label = (d: string) => (series === 'GDPC1' ? `${d.slice(0, 4)} Q${Math.floor((Number(d.slice(5, 7)) - 1) / 3) + 1}` : d.slice(0, 7));
+  const label = (d: string) => (reply?.freq === 'quarterly' ? `${d.slice(0, 4)} Q${Math.floor((Number(d.slice(5, 7)) - 1) / 3) + 1}` : d.slice(0, 7));
 
   return (
-    <section className="ui-panel" data-us-vintages="true">
+    <section className="ui-panel" data-us-vintages={area === 'us' ? 'true' : undefined} data-first-published={area}>
       <header className="ui-panel-header">
         <h2 className="ui-section-title flex items-center gap-2">
           <History className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-          {t('usv_title')}
+          {t(a.title)}
         </h2>
-        <p className="ui-label">{t('usv_intro')}</p>
+        <p className="ui-label">{t(a.intro)}</p>
       </header>
       <div className="p-4 space-y-3">
-        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t('usv_what'), error })}</p>}
+        {error && <p className="text-sm text-amber-700 dark:text-amber-400">{t('c_couldNotRead', { what: t(a.what), error })}</p>}
         {!reply && !error && <p className="ui-body">{t('c_loading')}</p>}
         {reply && (
           <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -102,7 +114,7 @@ export const UsVintagesPanel: React.FC = () => {
                 ))}
               </tbody>
             </table>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{t('usv_note', { source: reply.source ?? '' })}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{t(a.note, { source: reply.source ?? '' })}</p>
           </>
         )}
       </div>

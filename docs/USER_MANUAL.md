@@ -668,6 +668,19 @@ forecast:evaluate`): at each past October edition the fan is rebuilt as the pane
 on that edition's actual years and projections, and the test checks that later debt outturns fall
 inside the 10-90 band between 70% and 90% of the time at every horizon from 1 to 5 years.
 
+**Figures as first published.** Research > History & data shows, for the United States (with your
+FRED key), every release of real GDP growth, CPI inflation and unemployment from ALFRED. Euro
+members' pages show the same for the euro area (GDP growth on the quarter, HICP inflation,
+unemployment) from the ECB real-time database, with revisions as far back as the ECB recorded
+them; the euro area counts the members it had at each release. The UK page shows quarterly GDP
+growth as each ONS publication since 1992 printed it, from the ONS revision triangle. Pick a figure
+and a period to see every release, or a day to see what was known then. The ONS file gives the
+month of each publication, not the day, so each is dated the last day of its month. If the ONS
+refuses the download (it sometimes turns programs away), open
+https://www.ons.gov.uk/economy/grossdomesticproductgdp/datasets/revisionstrianglesforukgdpabmi in
+your browser, download the latest abmi.zip and save it in `data/local/ons-triangles/`; the app
+reads it from there. Both are downloaded weekly by the daily run.
+
 **Sources.** Every figure the country pages use, with its source and date, or why it is missing and
 what would fill it. *Download these figures* saves them as CSV: value, unit, period and source for each live
 figure; "Missing" and the reason for the rest, never a number.

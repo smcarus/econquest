@@ -177,6 +177,14 @@ export const PANELS_ES: Partial<Record<Keys, string>> = {
   usv_was: 'El {day} la cifra publicada para {period} era {value}.',
   usv_publishedFrom: 'Publicada desde',
   usv_note: 'El crecimiento y la inflación se calculan dentro de cada publicación (este periodo frente al anterior tal como estaba en esa publicación). Fuente: {source}.',
+  fpv_title: 'Cifras de la zona del euro tal como se publicaron por primera vez',
+  fpv_intro: 'Cada publicación de una cifra de la zona del euro desde que el BCE empezó a registrar las revisiones, y lo que se sabía en un día pasado (base de datos en tiempo real del BCE). Las demás pantallas muestran las cifras revisadas de hoy.',
+  fpv_what: 'las versiones históricas de la zona del euro',
+  fpv_note: 'El crecimiento se calcula dentro de cada publicación (este trimestre frente al anterior tal como estaba en esa publicación). La zona del euro cuenta los miembros que tenía en cada publicación. Fuente: {source}.',
+  fpu_title: 'PIB del Reino Unido tal como se publicó por primera vez',
+  fpu_intro: 'Cada publicación del crecimiento trimestral del PIB del Reino Unido desde 1992, y lo que se sabía en un día pasado (triángulo de revisiones de la ONS). Las demás pantallas muestran las cifras revisadas de hoy.',
+  fpu_what: 'las versiones históricas del PIB del Reino Unido',
+  fpu_note: 'Crecimiento trimestral tal como lo publicó cada publicación mensual de la ONS. El archivo de la ONS indica el mes de cada publicación, no el día, por lo que cada una se fecha el último día de su mes. Fuente: {source}.',
 
   // Gross financing need
   gfn_title: 'Necesidad bruta de financiamiento, {country}',
