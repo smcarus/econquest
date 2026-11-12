@@ -24,6 +24,13 @@ import { TOOLS_PT } from './tools';
 import { TOOL_TEXT_PT } from './toolText';
 import { TOOLS_CATALOG_PT } from './toolsCatalog';
 import { COMPARE_TEXT_PT } from './compareText';
+import { MENU_PT } from './menu';
+import { KEY_FIELDS_PT } from './keyFieldsText';
+import { GLOSSARY_PT } from './glossaryText';
+import { REPORTS_PT } from './reports';
+import { REPORTS_TEXT_PT } from './reportsText';
+import { DEFINITIONS_TEXT_PT } from './definitionsText';
+import { WORKED_TEXT_PT } from './workedText';
 
 export const PT: Record<string, Record<string, string>> = {
   shell: SHELL_PT,
@@ -39,7 +46,9 @@ export const PT: Record<string, Record<string, string>> = {
   gapModel: GAP_MODEL_PT,
   yourTests: YOUR_TESTS_PT,
   tools: TOOLS_PT,
+  menu: MENU_PT,
+  reports: REPORTS_PT,
 };
 
 /** Sentences built in English elsewhere and swapped at display time (translateText in ../lang.ts). */
-export const PT_TEXT: Record<string, string> = { ...COMPARE_TEXT_PT, ...MISSING_PT, ...BRIEF_TEXT_PT, ...PANEL_TEXT_PT, ...TOOL_TEXT_PT, ...TOOLS_CATALOG_PT, ...CHAT_TEXT_PT };
+export const PT_TEXT: Record<string, string> = { ...WORKED_TEXT_PT, ...DEFINITIONS_TEXT_PT, ...COMPARE_TEXT_PT, ...MISSING_PT, ...BRIEF_TEXT_PT, ...PANEL_TEXT_PT, ...TOOL_TEXT_PT, ...TOOLS_CATALOG_PT, ...KEY_FIELDS_PT, ...GLOSSARY_PT, ...CHAT_TEXT_PT, ...REPORTS_TEXT_PT };
