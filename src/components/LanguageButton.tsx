@@ -1,4 +1,4 @@
-/** Header button: the app's language (English, Español, Français), pressed to move to the next one. */
+/** Header button: the app's language (English, Español, Français, Português), pressed to move to the next one. */
 import React from 'react';
 import { Languages } from 'lucide-react';
 import { langInfo, nextLang, writeLang } from '../i18n/lang';

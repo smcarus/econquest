@@ -11,14 +11,17 @@ const SAME_IN_FRENCH = new Set(['Question {n}', 'momentum', 'macro', 'Document',
   ' · notes', 'Client', 'Duration', 'Inflation, %', 'Instrument', 'Long', 'long', 'Record', 'Source', 'Type', 'taylor', 'CDS (protection)',
   'Expansion', 'expansion', 'Expansion ({date})', 'Expansion, {detail} ({date})', '{num} points']);
 
-test('languages: English, Spanish and French; anything else reads as English', () => {
-  assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es', 'fr']);
+test('languages: English, Spanish, French and Portuguese; anything else reads as English', () => {
+  assert.deepEqual(LANGS.map((l) => l.code), ['en', 'es', 'fr', 'pt']);
+  assert.equal(parseLang('pt'), 'pt');
   assert.equal(parseLang('es'), 'es');
   assert.equal(parseLang('fr'), 'fr');
-  for (const bad of [undefined, null, '', 'ES', 'FR', 'de', 'xx']) assert.equal(parseLang(bad), 'en');
+  for (const bad of [undefined, null, '', 'ES', 'FR', 'PT', 'pt-BR', 'de', 'xx']) assert.equal(parseLang(bad), 'en');
   assert.equal(nextLang('en'), 'es');
   assert.equal(nextLang('es'), 'fr');
-  assert.equal(nextLang('fr'), 'en');
+  assert.equal(nextLang('fr'), 'pt');
+  assert.equal(nextLang('pt'), 'en');
+  assert.equal(LANGS.find((l) => l.code === 'pt')?.reviewed, false);
   // Neither translation has been checked by a native speaker yet, so the app says so beside the switch.
   assert.equal(LANGS.find((l) => l.code === 'es')?.reviewed, false);
   assert.equal(LANGS.find((l) => l.code === 'fr')?.reviewed, false);
@@ -524,4 +527,83 @@ test('French loads on its own: it does not change the Spanish, and English stays
 test('the French file is its own download: it imports nothing from the Spanish', async () => {
   const { readFileSync, readdirSync } = await import('node:fs');
   for (const f of readdirSync('src/i18n/fr')) assert.doesNotMatch(readFileSync(`src/i18n/fr/${f}`, 'utf8'), /from '\.\.\/es/, `${f} imports Spanish`);
+});
+
+// Portuguese (U2, Brazilian, polite "você"). Areas arrive in parts like the French; an area not
+// translated yet shows in English, but every area that is here must be complete.
+const SAME_IN_PORTUGUESE = new Set(['Menu', 'Offline', 'Quests', 'Markdown', 'Bootstrap', 'Cascade', 'Instrument', 'AI: Gemini']);
+const PT_AREAS = ['shell', 'common', 'workspace', 'council', 'chat'];
+
+test('every Portuguese message file is complete, keeps every placeholder and matches an English file', async () => {
+  const { PT } = await import('../src/i18n/pt');
+  const byArea = new Map(ALL_CATALOGS.map((c) => [c.area, c]));
+  for (const area of PT_AREAS) assert.ok(PT[area], `${area} has no Portuguese in src/i18n/pt/index.ts`);
+  for (const [area, pt] of Object.entries(PT)) {
+    const c = byArea.get(area);
+    assert.ok(c, `Portuguese for ${area}, which has no English file in src/i18n/messages/index.ts`);
+    for (const [key, en] of Object.entries(c!.en)) {
+      const tr = pt[key];
+      if (en === '') continue;
+      assert.ok(tr && tr.trim(), `${area}.${key} has no Portuguese`);
+      assert.deepEqual(placeholders(tr), placeholders(en), `${area}.${key} changes the placeholders`);
+      if (en.length > 3 && !SAME_IN_PORTUGUESE.has(en) && !/^AI: /.test(en)) assert.notEqual(tr, en, `${area}.${key} is still English`);
+    }
+    for (const key of Object.keys(pt)) assert.ok(key in c!.en, `${area}.${key} is in Portuguese only`);
+  }
+});
+
+test('Portuguese sentences swapped at display time are known English sentences, and every Missing reason has Portuguese', async () => {
+  const { PT_TEXT } = await import('../src/i18n/pt');
+  const { ES_TEXT } = await import('../src/i18n/es');
+  const { MISSING_ES } = await import('../src/i18n/es/missing');
+  const { MISSING_PT } = await import('../src/i18n/pt/missing');
+  for (const en of Object.keys(MISSING_ES)) assert.ok(en in MISSING_PT, `no Portuguese for: ${en}`);
+  for (const [en, pt] of Object.entries(PT_TEXT)) {
+    assert.ok(en in ES_TEXT, `Portuguese for a sentence the app does not build: ${en}`);
+    assert.deepEqual(placeholders(pt), placeholders(en), `placeholders changed in: ${en}`);
+    if (en.length > 3 && !SAME_IN_PORTUGUESE.has(en)) assert.notEqual(pt, en, `not translated: ${en}`);
+  }
+});
+
+test('Portuguese Council chat cards and reasons swap, and the Settings link still opens its page', async () => {
+  const { attachLanguage, translateText } = await import('../src/i18n/lang');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  attachLanguage('pt', PT, PT_TEXT);
+  const px = (x: string) => translateText(x, 'pt');
+  const { APPROVAL_ASSUMPTIONS } = await import('../src/components/CouncilApprovalCard');
+  const s: string[] = APPROVAL_ASSUMPTIONS.map((a) => a.label);
+  s.push(
+    APPROVAL_ASSUMPTIONS.find((a) => a.id === 'fxReserveAdequacyMonths')!.fmt(4.5),
+    'Same answer, word for word.',
+    'Different answer: the headline changed, 2 sentence(s) new, 1 gone.',
+    '3 figure(s) differ between the two runs.',
+    'Fiscal Agent had no figures',
+    'No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.',
+    'Needs setup',
+  );
+  assert.deepEqual(s.filter((x) => px(x) === x), [], 'chat card text with no Portuguese');
+  const { splitSettingsLinks } = await import('../src/utils/settingsLinks');
+  const parts = splitSettingsLinks(px('No AI model answered: no model is set up. Set it up or test it under Menu > Settings > AI model.'));
+  assert.ok(parts.some((p) => typeof p !== 'string' && p.page === 'ai'), 'the Portuguese Settings link still opens the AI model page');
+  assert.equal(px('Needs setup'), 'Precisa de configuração');
+});
+
+test('Portuguese uses "você", never "tu" or "o senhor"', async () => {
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  const all = [...Object.values(PT).flatMap((d) => Object.values(d)), ...Object.values(PT_TEXT)];
+  const informal = /(^|[\s(“"-])(tu|teu|tua|teus|tuas|contigo|o senhor|a senhora|vós)(?=[\s,.;:!?”")]|$)/i;
+  assert.deepEqual(all.filter((x) => informal.test(x)), [], 'Portuguese not in the "você" register');
+});
+
+test('the Portuguese file is its own download: it imports nothing from the Spanish or French, and English stays English', async () => {
+  const { readFileSync, readdirSync } = await import('node:fs');
+  for (const f of readdirSync('src/i18n/pt')) assert.doesNotMatch(readFileSync(`src/i18n/pt/${f}`, 'utf8'), /from '\.\.\/(es|fr)/, `${f} imports another language`);
+  const { attachLanguage } = await import('../src/i18n/lang');
+  const { PT, PT_TEXT } = await import('../src/i18n/pt');
+  const { SHELL } = await import('../src/i18n/messages/shell');
+  attachLanguage('pt', PT, PT_TEXT);
+  assert.equal(translate(SHELL, 'pt', 'research'), 'Pesquisa');
+  assert.equal(translate(SHELL, 'en', 'research'), 'Research');
+  const later = defineMessages('demo-pt-later', { a: 'Apple' }, { a: 'Manzana' });
+  assert.equal(translate(later, 'pt', 'a'), 'Apple', 'an area with no Portuguese yet falls back to English, never Spanish');
 });

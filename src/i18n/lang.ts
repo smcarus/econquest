@@ -1,5 +1,6 @@
 /**
- * Languages (Sam, 2026-11-08: Spanish first, then French; both use the formal "you": usted, vous). The app's own words are kept in keyed
+ * Languages (Sam, 2026-11-08: Spanish first, then French; both use the formal "you": usted, vous.
+ * 2026-11-12, roadmap U2: Brazilian Portuguese with the polite "você"; Arabic and Swahili follow). The app's own words are kept in keyed
  * message files (src/i18n/messages/), one file per area, so a new screen adds its own file
  * instead of editing a shared list. English is the source; a word missing in another language
  * falls back to English rather than showing a key.
@@ -11,7 +12,9 @@
  * if storage is blocked. Browser-safe; no React import here so the rules can be tested.
  */
 
-export type Lang = 'en' | 'es' | 'fr';
+export type Lang = 'en' | 'es' | 'fr' | 'pt';
+/** Languages other than English, each its own download. */
+export type OtherLang = Exclude<Lang, 'en'>;
 export const DEFAULT_LANG: Lang = 'en';
 export const LANG_KEY = 'econquest.lang.v1';
 export const LANG_EVENT = 'econquest:lang';
@@ -30,6 +33,7 @@ export const LANGS: readonly LangInfo[] = [
   { code: 'en', name: 'English', short: 'EN', reviewed: true },
   { code: 'es', name: 'Español', short: 'ES', reviewed: false },
   { code: 'fr', name: 'Français', short: 'FR', reviewed: false },
+  { code: 'pt', name: 'Português', short: 'PT', reviewed: false },
 ];
 
 export function parseLang(v: unknown): Lang {
@@ -82,6 +86,7 @@ export interface Catalog<K extends string = string> {
   en: Record<K, string>;
   es: Partial<Record<K, string>>;
   fr: Partial<Record<K, string>>;
+  pt: Partial<Record<K, string>>;
 }
 
 /** The Spanish or French for one message file: every key of its English. */
@@ -124,13 +129,14 @@ export function defineMessages<K extends string>(area: string, en: Record<K, str
     en,
     es: { ...es, ...(loaded.es?.[area] as Partial<Record<K, string>> | undefined) },
     fr: { ...(loaded.fr?.[area] as Partial<Record<K, string>> | undefined) },
+    pt: { ...(loaded.pt?.[area] as Partial<Record<K, string>> | undefined) },
   };
   registry.set(area, catalog as Catalog);
   return catalog;
 }
 
 /** Puts a loaded language's words into every message file, now and as later files are defined. */
-export function attachLanguage(lang: Exclude<Lang, 'en'>, dicts: Record<string, Record<string, string>>, text: Record<string, string> = {}): void {
+export function attachLanguage(lang: OtherLang, dicts: Record<string, Record<string, string>>, text: Record<string, string> = {}): void {
   loaded[lang] = dicts;
   const exact: Record<string, string> = {};
   const patterns: Array<[RegExp, string, string[]]> = [];
@@ -161,9 +167,12 @@ export async function ensureLang(lang: Lang): Promise<void> {
     if (lang === 'es') {
       const { ES, ES_TEXT } = await import('./es/index');
       attachLanguage('es', ES, ES_TEXT);
-    } else {
+    } else if (lang === 'fr') {
       const { FR, FR_TEXT } = await import('./fr/index');
       attachLanguage('fr', FR, FR_TEXT);
+    } else {
+      const { PT, PT_TEXT } = await import('./pt/index');
+      attachLanguage('pt', PT, PT_TEXT);
     }
   } catch {
     return; // Could not load (offline build gap): the app stays in English.

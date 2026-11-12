@@ -25,15 +25,18 @@ switch) sets the level, and each press moves to the next:
 
 The level is kept in this browser.
 
-**Language.** The *EN* / *ES* / *FR* button beside the help button switches the app between English,
-Spanish (español) and French (français); each press moves to the next language, and the choice is
-kept in this browser. Each language downloads only when you pick it, so English readers download
-neither and a French reader downloads no Spanish. Spanish and French both cover the whole app.
-Both use the formal "you" (usted, vous). The council's agents still read
-questions in English, so in Spanish or French the chat asks you to type questions in English for now,
-and the suggested questions stay in English. Figures, source names, series names and answers written
-by the AI model are never translated: they show as the source or the model wrote them. Neither
-translation has yet been checked by a native speaker, and the button's hover text says so.
+**Language.** The *EN* / *ES* / *FR* / *PT* button beside the help button switches the app between
+English, Spanish (español), French (français) and Brazilian Portuguese (português); each press moves
+to the next language, and the choice is kept in this browser. Each language downloads only when you
+pick it, so English readers download none of them and a reader of one language downloads no other.
+Spanish and French cover the whole app. Portuguese arrives in parts: so far the app frame, Workspace,
+Council chat and the reasons a figure is Missing; screens not yet translated show in English. Spanish
+and French use the formal "you" (usted, vous); Portuguese uses the polite "você", as Brazilian
+software and official sites do. The council's agents still read questions in English, so in the other
+languages the chat asks you to type questions in English for now, and the suggested questions stay in
+English. Figures, source names, series names and answers written by the AI model are never
+translated: they show as the source or the model wrote them. No translation has yet been checked by
+a native speaker, and the button's hover text says so.
 
 **Research, not validated advice.** The app is a research workspace. No model in it has been
 independently validated, each signal shows its pre-registered backtest verdict (Menu > Models &

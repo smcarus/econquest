@@ -5,6 +5,11 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Portuguese, part 1 (U2): Brazilian Portuguese with the polite "você" joins the language button
+  (EN / ES / FR / PT), downloaded only when picked. This part covers the app frame, Workspace,
+  Council chat and the reasons a figure is Missing; other screens show in English until their parts
+  arrive. Settings links in Portuguese help text open their Settings page. Not yet checked by a native
+  speaker.
 - Expert review round (P4, Policy review > Expert review): a short form a pilot economist or
   professor fills for a memo: clarity and use of evidence (1 to 5), whether the sources are correct,
   whether they would act on it, and a comment. Saved with the policy review on this computer, tied to
