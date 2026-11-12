@@ -61,7 +61,7 @@ const env: Record<string, string> = {};
 for (const [k, v] of Object.entries(process.env)) if (v !== undefined) env[k] = v;
 Object.assign(env, {
   // RECORD_PRELOAD: a module loaded first (the self-check in CI records a stand-in model this way).
-  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${process.env.RECORD_PRELOAD} ` : ''}--import ${pathToFileURL(path.join(root, 'tests/helpers/model-record-fetch.mjs')).href}`,
+  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${pathToFileURL(path.resolve(process.env.RECORD_PRELOAD)).href} ` : ''}--import ${pathToFileURL(path.join(root, 'tests/helpers/model-record-fetch.mjs')).href}`,
   MODEL_RECORD_DIR: recordDir,
   DATA_DIR: dataDir,
   PORT: String(port),

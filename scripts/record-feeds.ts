@@ -54,7 +54,7 @@ for (const f of API_KEY_FIELDS) delete childEnv[f.id];
 for (const id of FREE_KEYS) if (env[id]) childEnv[id] = env[id]!;
 Object.assign(childEnv, {
   // RECORD_PRELOAD: another module to load first (the self-check runs the recorder over the offline fixtures).
-  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${process.env.RECORD_PRELOAD} ` : ''}--import ${pathToFileURL(path.join(root, 'tests/helpers/record-fetch.mjs')).href}`,
+  NODE_OPTIONS: `${process.env.RECORD_PRELOAD ? `--import ${pathToFileURL(path.resolve(process.env.RECORD_PRELOAD)).href} ` : ''}--import ${pathToFileURL(path.join(root, 'tests/helpers/record-fetch.mjs')).href}`,
   RECORD_DIR: recordDir,
   DATA_DIR: dataDir,
   PORT: String(port),

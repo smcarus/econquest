@@ -52,7 +52,7 @@ test('Windows check: a helper loaded with --import is given as a file URL, never
     for (const f of fs.readdirSync(path.join(root, d))) {
       if (!/\.(ts|mjs)$/.test(f)) continue;
       const text = read(`${d}/${f}`);
-      assert.doesNotMatch(text, /--import \$\{path\.join/, `${d}/${f} passes a bare path to --import`);
+      assert.doesNotMatch(text, /--import \$\{(path\.join|process\.env)/, `${d}/${f} passes a bare path to --import`);
     }
   }
 });
