@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Expert review round (P4, Policy review > Expert review): a short form a pilot economist or
+  professor fills for a memo: clarity and use of evidence (1 to 5), whether the sources are correct,
+  whether they would act on it, and a comment. Saved with the policy review on this computer, tied to
+  the memo's hash, hash chained and audited; CSV download. Each reviewer chooses whether the review may
+  be published (no, without their name, or with it) and can change that later; `npm run
+  reviews:summary` writes docs/validation/expert-reviews.md from consenting reviews only.
+  `npm run check:success` now counts them. English, Spanish and French.
 - Behavioural check in Policy review (G33, under Evidence): for each saved option, where it depends
   on how people behave (take-up of a benefit, the response to a tax change, trust in an inflation
   target, defaults, removing something people have, acting now for a gain later), found by fixed word

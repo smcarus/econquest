@@ -18,6 +18,7 @@
 
 import type { OutcomeCheck } from './outcomeChecks';
 import type { BehaviourRecord } from './behaviouralCheck';
+import type { ExpertReview } from './expertReview';
 
 /** Bumped when the steps or their content change shape, so old reviews say which version made them. */
 export const REVIEW_TEMPLATE_VERSION = 'policy-review-v1';
@@ -101,6 +102,8 @@ export interface PolicyReview {
   outcomeChecks?: OutcomeCheck[];
   /** Behavioural check (G33, src/utils/behaviouralCheck.ts): effect sizes the user entered with a source, kept beside the steps. */
   behaviour?: BehaviourRecord;
+  /** Expert review round (P4, src/utils/expertReview.ts): forms filled by pilot economists and professors for the memo, oldest first, hash chained. */
+  expertReviews?: ExpertReview[];
 }
 
 export type StepState = 'not_started' | 'done' | 'out_of_date';

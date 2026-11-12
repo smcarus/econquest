@@ -8,8 +8,9 @@ import { createHash } from 'crypto';
 import { canonicalJson } from './auditLog';
 import { writeFileAtomic } from './atomicWrite';
 import type { OutcomeCheck, UnsavedCheck } from './outcomeChecks';
+import { EXPERT_TEMPLATE_VERSION, MAX_EXPERT_REVIEWS, type Consent, type ExpertAnswers, type ExpertReview, type UnsavedExpertReview } from './expertReview';
 import { BEHAVIOUR_TEMPLATE_VERSION, type BehaviourEffect, type BehaviourRecord } from './behaviouralCheck';
-import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
+import { MAX_REVIEWS, MAX_RUNS, REVIEW_STEPS, REVIEW_TEMPLATE_VERSION, canSaveStep, frameTitle, prevStep, stepStates, type PolicyReview, type ReviewFile, type ReviewFrame, type ReviewRun, type ReviewStep, type ReviewStepRecord } from './policyReview';
 
 export function stepHash(step: ReviewStep, content: unknown, basedOn: string | undefined): string {
   return createHash('sha256').update(canonicalJson({ step, content, basedOn: basedOn ?? null })).digest('hex');
@@ -93,6 +94,46 @@ export function saveBehaviour(review: PolicyReview, effects: BehaviourEffect[], 
 /** True when the saved entries no longer match their hash (edited outside the app). */
 export function behaviourChanged(review: PolicyReview): boolean {
   return Boolean(review.behaviour && behaviourHash(review.behaviour) !== review.behaviour.hash);
+}
+
+/** Expert review (P4): hash of the answers, the memo read and the review before (consent is not hashed). */
+export function expertHash(r: UnsavedExpertReview, prevHash: string | undefined): string {
+  return createHash('sha256').update(canonicalJson({ review: r, prevHash: prevHash ?? null })).digest('hex');
+}
+
+/** Adds one expert review of the memo saved now, chained to the last one. Needs a memo that is done. */
+export function appendExpertReview(review: PolicyReview, answers: ExpertAnswers, consent: Consent, now: Date = new Date(), account?: string): { review: PolicyReview; saved: ExpertReview } | { error: string } {
+  if (stepStates(review).memo !== 'done') return { error: 'Write the memo first (and run it again if it is out of date).' };
+  const list = review.expertReviews ?? [];
+  if (list.length >= MAX_EXPERT_REVIEWS) return { error: `This review already has ${MAX_EXPERT_REVIEWS} expert reviews.` };
+  const unsaved: UnsavedExpertReview = { ...answers, version: EXPERT_TEMPLATE_VERSION, memoHash: review.steps.memo!.hash, savedAt: now.toISOString(), ...(account ? { account } : {}) };
+  const prevHash = list.length ? list[list.length - 1].hash : undefined;
+  let id = `x${list.length + 1}`;
+  while (list.some((x) => x.id === id)) id += 'x';
+  const saved: ExpertReview = { ...unsaved, id, consent, ...(prevHash ? { prevHash } : {}), hash: expertHash(unsaved, prevHash) };
+  return { review: { ...review, expertReviews: [...list, saved] }, saved };
+}
+
+/** Changes whether one expert review may be published. The answers and their hash stay as they were. */
+export function setExpertConsent(review: PolicyReview, id: string, consent: Consent, now: Date = new Date()): { review: PolicyReview; saved: ExpertReview } | { error: string } {
+  const list = review.expertReviews ?? [];
+  const i = list.findIndex((x) => x.id === id);
+  if (i < 0) return { error: 'No expert review with that id.' };
+  const saved: ExpertReview = { ...list[i], consent, consentChangedAt: now.toISOString() };
+  return { review: { ...review, expertReviews: list.map((x, j) => (j === i ? saved : x)) }, saved };
+}
+
+/** Ids of expert reviews whose hash or link to the one before no longer matches. */
+export function verifyExpertReviews(review: PolicyReview): string[] {
+  const bad: string[] = [];
+  (review.expertReviews ?? []).forEach((x, i, all) => {
+    const { id, consent, consentChangedAt, prevHash, hash, ...rest } = x;
+    void consent;
+    void consentChangedAt;
+    const expectedPrev = i ? all[i - 1].hash : undefined;
+    if (prevHash !== expectedPrev || expertHash(rest, prevHash) !== hash) bad.push(id);
+  });
+  return bad;
 }
 
 export function reviewFilePath(dataDir: string): string {

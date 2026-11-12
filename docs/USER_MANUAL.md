@@ -822,6 +822,18 @@ becomes the problem). Six steps, in order:
    ones the review started from and says whether the goal indicator moved the right way. *Review
    again* starts a new review with the same frame on today's data, linked to this one.
 
+**Expert review** (P4). At the bottom of a review whose memo is written, *Fill in an expert review*
+gives a pilot economist or professor a short form on the memo: how clear it is and how well it uses
+evidence (each 1 to 5), whether the sources are correct (yes, some are wrong, or not checked), whether
+they would act on it (as written, with changes, or not), and an optional comment. They also choose
+whether it may go in the published summary: not at all, without their name, or with their name and
+role; the choice can be changed later. Each review is saved with the policy review on this computer
+(data/local/reviews.json), tied to the hash of the memo it read (it says so if the memo has changed
+since), hash chained and written to the audit log. It does not change the review or its sign-off.
+*Download all expert reviews (CSV)* gives every review saved here. `npm run reviews:summary` writes
+docs/validation/expert-reviews.md with only the reviews whose reviewer agreed, the means and the
+counts. The app does not score reviewers or reviews.
+
 **Automatic outcome checks.** Every saved review is also checked on its own 12 and 24 months after
 its As of day, from the pull saved on or before that day. Each check reads **Hit** (the target was
 met, or with no number in the target, the figure moved the way the goal wants), **Miss**, **Too

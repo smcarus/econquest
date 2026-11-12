@@ -9,6 +9,7 @@
  * run in data/local/success-measures.jsonl, so the counts can be compared at Checkpoint 1.
  */
 import type { CheckTally } from './outcomeChecks';
+import type { ExpertTally } from './expertReview';
 import type { FeedbackSummary } from './feedback';
 
 export const PUBLIC_REPO = 'e-conquest/econquest';
@@ -40,7 +41,7 @@ export const SUCCESS_MEASURES: SuccessMeasure[] = [
   { id: 'release_downloads', name: 'Release downloads', why: 'How often files attached to a release are downloaded. Like image pulls, it counts downloads, not people.', where: `github.com/${PUBLIC_REPO}/releases (read by npm run check:success)`, source: 'github_api' },
   { id: 'outcome_checks', name: 'Outcome-check hit rate (P1)', why: 'How often the goal of a saved policy review was met 12 and 24 months later. Fewer than 10 judged checks is too few to read a rate from.', where: 'Menu > Research > Policy track record, from data/local/reviews.json on this computer', source: 'this_computer' },
   { id: 'ratings', name: 'Answer ratings (P3)', why: 'Thumbs up and down on council answers. Counted on this computer; other people\'s ratings count only when they choose to send them.', where: 'Data health, from data/local/feedback.jsonl on this computer', source: 'this_computer' },
-  { id: 'pilot', name: 'Pilot feedback scores (P4)', why: 'What the pilot professors and outside reviewers score the app, from the forms they fill in and send.', where: 'The pilot feedback forms (Phase 5), once the pilot runs', source: 'sent_by_people' },
+  { id: 'pilot', name: 'Expert review scores (P4)', why: 'What pilot economists and professors score policy review memos for clarity and use of evidence, whether the sources are correct and whether they would act on them.', where: 'Reports > Policy reviews > Expert review, saved on the computer where they fill it in; published only with consent in docs/validation/expert-reviews.md (npm run reviews:summary)', source: 'sent_by_people' },
 ];
 
 /** What the app never does for these measures; shown in the report and the roadmap. */
@@ -103,9 +104,11 @@ export interface SuccessRecord {
   githubReason?: string;
   outcomeChecks: CheckTally;
   ratings: { ratings: number; up: number; down: number; flags: number };
+  /** Expert reviews (P4) saved with the policy reviews on this computer. */
+  expert?: ExpertTally;
 }
 
-export function successRecord(at: string, github: GithubCounts | null, githubReason: string | undefined, tally: CheckTally, feedback: FeedbackSummary): SuccessRecord {
+export function successRecord(at: string, github: GithubCounts | null, githubReason: string | undefined, tally: CheckTally, feedback: FeedbackSummary, expert?: ExpertTally): SuccessRecord {
   return {
     version: SUCCESS_VERSION,
     at,
@@ -113,6 +116,7 @@ export function successRecord(at: string, github: GithubCounts | null, githubRea
     ...(github ? {} : { githubReason: githubReason || 'not read' }),
     outcomeChecks: tally,
     ratings: { ratings: feedback.ratings, up: feedback.up, down: feedback.down, flags: feedback.flags },
+    ...(expert ? { expert } : {}),
   };
 }
 
@@ -153,7 +157,12 @@ export function formatSuccessReport(rec: SuccessRecord, prev?: SuccessRecord | n
   );
   const r = rec.ratings;
   lines.push(`  Answer ratings (P3): ${r.ratings ? `${r.ratings} (${r.up} up, ${r.down} down)` : 'none yet'}; flags saved here: ${r.flags}`);
-  lines.push('', 'Sent by people:', '  Pilot feedback scores (P4): from the pilot forms, once the pilot runs.');
+  const x = rec.expert;
+  lines.push(
+    '',
+    'Sent by people:',
+    `  Expert reviews (P4): ${x && x.reviews ? `${x.reviews} saved here (${x.consenting} may be published); mean clarity ${x.meanClarity} of 5, use of evidence ${x.meanEvidence} of 5; would act ${x.wouldAct.yes} as written, ${x.wouldAct.with_changes} with changes, ${x.wouldAct.no} not${x.reviews < 5 ? ' (fewer than 5: individual views, not a rate)' : ''}` : 'none yet'}`
+  );
   lines.push('', `Review: ${SUCCESS_REVIEW}`);
   return lines.join('\n');
 }
