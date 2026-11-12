@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Growth accounting | Research | Description, not a tested signal | None |
 | Inflation drivers | Research | Description, not a tested signal | None |
 | Yield curve and financial conditions | Research | Not validated | None |
 | Crisis early-warning (credit gap) | Research | Not validated | None |
@@ -480,6 +481,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Growth accounting
+
+- **Says:** Where growth came from in each ten-year period: more capital, more hours worked, a better-educated workforce, and the rest (productivity).
+- **Rule:** Average annual log changes: GDP growth = α × capital + (1 − α) × (hours + human capital) + TFP, with α = 1 − the labour share averaged over the period; TFP is the residual.
+- **Reads:** Penn World Table (rgdpna, rnna, emp, avh, hc, labsh), read once per edition
+- **Shows in:** Country Research > History & data (Growth accounting)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: an accounting split of past growth, no forward call.
+- **Limits:** TFP holds measurement error as well as productivity; the labour share and capital stock are PWT estimates; yearly, ending at the edition's last year.
+- **Code:** `src/utils/growthAccounting.ts, src/server/feeds/pwt.ts`
 
 ### Inflation drivers
 

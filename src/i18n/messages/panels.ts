@@ -402,6 +402,23 @@ export const PANELS = defineMessages('panels', {
   inf_showMonths: "Show the last 24 months",
   inf_hideMonths: "Hide the months",
 
+  // Growth accounting (G27)
+  ga_title: "Growth accounting, {country}",
+  ga_what: "Growth accounting",
+  ga_intro: "Where growth came from: more machines and buildings (capital), more hours worked, a better-educated workforce (human capital), and the rest, how well all of these are used (productivity, TFP). From the Penn World Table, yearly; a description of the past, not a forecast.",
+  ga_sentence: "{country}: from {from} to {to} real GDP grew {gdp}% a year on average. Capital added {k} points, hours worked {l}, human capital {h}, and productivity (TFP, what is left) {tfp}.",
+  ga_period: "Period",
+  ga_gdp: "GDP growth, % a year",
+  ga_capital: "Physical capital",
+  ga_labour: "Hours worked",
+  ga_human: "Human capital",
+  ga_tfp: "Productivity (TFP)",
+  ga_share: "Capital share",
+  ga_chartLabel: "Stacked bars: points of growth a year from capital, hours, human capital and productivity in each period; the dot is GDP growth.",
+  ga_csv: "Download CSV",
+  ga_edition: "Edition: {edition}, last year {year}.",
+  ga_persons: "persons only",
+
   // Country risk scorecard
   risk_title: 'Country risk scorecard, {country}',
   risk_what: 'The scorecard',

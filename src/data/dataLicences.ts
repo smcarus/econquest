@@ -802,6 +802,22 @@ export const DATA_LICENCES: LicenceRow[] = [
     checked: '2026-11-11',
   },
   {
+    id: 'pwt',
+    name: 'Penn World Table (Groningen Growth and Development Centre)',
+    usedFor: 'Real GDP, capital stock, persons engaged, hours, human capital and labour share for growth accounting (Research > History & data), read once per edition into data/local/pwt/',
+    terms: [{ label: 'Penn World Table page (PWT 11.0, October 2025)', url: 'https://www.rug.nl/ggdc/productivity/pwt/' }],
+    status: 'open',
+    display: 'Allowed under CC BY 4.0.',
+    commercial: 'Allowed (CC BY 4.0 sets no commercial limit).',
+    attribution: 'Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.',
+    quotes: [
+      'is licensed under a Creative Commons Attribution 4.0 International License',
+      'When using these data (for whatever purpose), please make the following reference:',
+    ],
+    share: 'allowed',
+    shareNote: 'CC BY 4.0 allows sharing with credit.',
+    checked: '2026-11-11',
+  },  {
     id: 'imf_investor_base',
     name: 'IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)',
     usedFor: 'Who holds government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (country brief, Fiscal & Debt Agent), from the workbook you put in data/local/imf-investor-base/',
@@ -853,24 +869,7 @@ export interface PlannedLicenceRow extends LicenceRow {
 /** Licence sweep of 11 November 2026 (Wave 0 of the build order): every source a planned step needs,
  * read before the step is built so no step waits on a licence. Same rules as the register above. */
 export const PLANNED_LICENCES: PlannedLicenceRow[] = [
-  {
-    id: 'pwt',
-    name: 'Penn World Table (Groningen Growth and Development Centre)',
-    plannedFor: 'G27 Growth accounting',
-    usedFor: 'Capital stock, hours, human capital and productivity for growth accounting',
-    terms: [{ label: 'Penn World Table page (PWT 11.0, October 2025)', url: 'https://www.rug.nl/ggdc/productivity/pwt/' }],
-    status: 'open',
-    display: 'Allowed under CC BY 4.0.',
-    commercial: 'Allowed (CC BY 4.0 sets no commercial limit).',
-    attribution: 'Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.',
-    quotes: [
-      'is licensed under a Creative Commons Attribution 4.0 International License',
-      'When using these data (for whatever purpose), please make the following reference:',
-    ],
-    share: 'allowed',
-    shareNote: 'CC BY 4.0 allows sharing with credit.',
-    checked: P,
-  },
+
 
   {
     id: 'imf_gfs_fsi',

@@ -34,6 +34,7 @@ import { formatQuarter, parseQna, qnaReading, qnaUrl } from './oecdQna';
 import { BCB_IBCBR_SA, bcbSgsSinceUrl, eurostatIpUrl, parseEurostatIp, parseIbcBr } from './monthlyActivity';
 import { EU_PRICE_EXPECTATIONS, EU_SURVEY_INDICATORS, euSurveyUrl, parseEuSurvey } from './euSurveys';
 import { driversMinrUrl } from './inflationDrivers';
+import { PWT_EDITION, PWT_URL } from './growthAccounting';
 import { OECD_HEADERS, isBotCheck } from './oecdSdmx';
 import { cpiFor, cpiUrl, parseCpi } from './oecdInflation';
 import { ACLED_TOKEN_URL, acledReadUrl, acledTokenBody, parseAcledPage } from './acled';
@@ -328,6 +329,7 @@ export const SOURCE_IDS = [
   'eu_surveys',
   'eu_price_expectations',
   'eurostat_hicp_parts',
+  'pwt',
   'comtrade',
   'fred_csv',
   'fred_api',
@@ -1169,6 +1171,18 @@ export async function checkConnections(opts: CheckOptions): Promise<ConnectionRe
       },
       {},
       'Eurostat answered, but prc_hicp_minr has no coicop18 TOT_X_NRG_FOOD series; the panel falls back to prc_hicp_manr, which stopped at December 2025.'
+    )
+  );
+
+  add('pwt', () =>
+    httpCheck(
+      { id: 'pwt', name: 'Penn World Table (GGDC)', group: 'free', feeds: 'Capital, hours, human capital and labour share for growth accounting (read once per edition into data/local/pwt/)' },
+      fetchFn,
+      PWT_URL,
+      T,
+      (r) => (r.text?.startsWith('PK') ? `${PWT_EDITION} workbook answered (${Math.round(r.text.length / 1e5) / 10} MB)` : null),
+      {},
+      'The GGDC answered, but not with an Excel workbook at the PWT address; download the edition from www.ggdc.net/pwt and put the .xlsx in data/local/pwt/.'
     )
   );
 
