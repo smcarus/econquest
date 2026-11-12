@@ -997,6 +997,20 @@ test('policy reviews: a frame starts a review, a bad one is refused, and both ar
     const approved = await (await sign('approved')).json();
     assert.equal(approved.status, 'approved');
     assert.equal(approved.selfApproved, true);
+    // Expert review (P4): the form is checked, saved with the memo's hash, and listed in the CSV.
+    const xr = (body: unknown) => fetch(`${base}/api/reviews/${review.id}/expert-reviews`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const badXr = await xr({ reviewer: 'A' });
+    assert.equal(badXr.status, 400);
+    assert.match((await badXr.json()).error, /1 to 5/);
+    const goodXr = await xr({ reviewer: 'Ana Ruiz', role: 'Professor of economics', clarity: 4, evidence: 3, sources: 'all_correct', wouldAct: 'with_changes', comment: 'Clear.', consent: 'anonymous' });
+    assert.equal(goodXr.status, 200);
+    const xj = await goodXr.json();
+    assert.equal(xj.review.expertReviews[0].memoHash, m.review.steps.memo.hash);
+    const consentRes = await fetch(`${base}/api/reviews/${review.id}/expert-reviews/x1/consent`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ consent: 'none' }) });
+    assert.equal(consentRes.status, 200);
+    const csv = await (await fetch(`${base}/api/expert-reviews.csv`)).text();
+    assert.match(csv, /Ana Ruiz,Professor of economics,4,3,all_correct,with_changes,Clear\.,none/);
+    assert.match((await (await fetch(`${base}/api/expert-reviews/summary`)).json()).markdown, /No reviews with consent to publish yet/);
     const oc = await fetch(`${base}/api/reviews/${review.id}/outcomes`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(oc.status, 200);
     const ocj = await oc.json();

@@ -19,11 +19,12 @@ import { buildOutcomes } from '../../utils/reviewOutcomes';
 import { cutAt, EPISODE_METHOD, EVIDENCE_TEMPLATE_VERSION, isResearchOnly, packRequests, pastEpisodes, perOption, runAnalysis, signalsFor, type EvidenceStep } from '../../utils/reviewEvidence';
 import { OPTIONS_INSTRUCTION, OPTIONS_TEMPLATE_VERSION, optionsPrompt, parseUserOptions, unassessedOptions, type OptionsStep } from '../../utils/reviewOptions';
 import { frameOf, parseFrame, summarise as summariseReview, stepStates, REVIEW_TEMPLATE_VERSION } from '../../utils/policyReview';
-import { appendOutcomeCheck, behaviourChanged, saveBehaviour, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
+import { appendOutcomeCheck, appendExpertReview, setExpertConsent, verifyExpertReviews, behaviourChanged, saveBehaviour, deleteReview, loadReviews, newReview, putReview, saveStep, verifyOutcomeChecks, verifyReview } from '../../utils/policyReviewStore';
 import { dueChecks, judgeCheck, nextCheck, tallyChecks, tallySentence, OUTCOME_CHECK_CAVEAT, VERDICT_LABEL } from '../../utils/outcomeChecks';
 import { figureRows } from '../../utils/csvExport';
 import { listArchivedDays } from '../../utils/pullArchive';
 import { parseEffects } from '../../utils/behaviouralCheck';
+import { CONSENTS, expertCsv, expertSummaryMarkdown, parseExpertForm } from '../../utils/expertReview';
 import express from 'express';
 
 type FetchedSeriesLike = { id: string; label: string; unit: string; freq: string; source: string; points: Array<{ date: string; value: number }> };
@@ -157,7 +158,7 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
   app.get('/api/reviews/:id', (req, res) => {
     const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
     if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
-    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), changedBehaviour: behaviourChanged(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
+    res.json({ review: r, states: stepStates(r), changed: verifyReview(r), changedChecks: verifyOutcomeChecks(r), changedBehaviour: behaviourChanged(r), changedExpert: verifyExpertReviews(r), nextCheck: nextCheck(r, new Date().toISOString().slice(0, 10)) });
   });
   const writeReview = (res: express.Response, review: Parameters<typeof putReview>[1]): boolean => {
     try {
@@ -365,6 +366,48 @@ export function registerReviewRoutes(app: express.Express, deps: ReviewDeps): vo
       kind: 'research',
       summary: `Checked outcomes of policy review "${out.review.title}" (${content.goal.move.replace(/_/g, ' ')})`,
       detail: { id: r.id, step: 'outcomes', hash: out.review.steps.outcomes?.hash, pullDate: past.date, early: content.early, goal: content.goal },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  // Expert review round (P4): a pilot economist or professor fills a short form for the memo.
+  const expertRows = () => loadReviews(REVIEW_FILE).reviews.flatMap((r) => (r.expertReviews ?? []).map((x) => ({ reviewId: r.id, title: r.title, r: x })));
+  app.get('/api/expert-reviews.csv', (_req, res) => {
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="expert-reviews.csv"');
+    res.send(expertCsv(expertRows()));
+  });
+  app.get('/api/expert-reviews/summary', (_req, res) => {
+    res.json({ markdown: expertSummaryMarkdown(expertRows(), new Date().toISOString().slice(0, 10)), file: 'docs/validation/expert-reviews.md' });
+  });
+  app.post('/api/reviews/:id/expert-reviews', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const parsed = parseExpertForm(req.body);
+    if ('errors' in parsed) return res.status(400).json({ error: parsed.errors.join(' ') });
+    const out = appendExpertReview(r, parsed.answers, parsed.consent, new Date(), signedIn(res)?.displayName);
+    if ('error' in out) return res.status(400).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Expert review of policy review "${out.review.title}" by ${out.saved.reviewer}`,
+      detail: { id: r.id, expertReview: out.saved.id, memoHash: out.saved.memoHash, clarity: out.saved.clarity, evidence: out.saved.evidence, sources: out.saved.sources, wouldAct: out.saved.wouldAct, consent: out.saved.consent, hash: out.saved.hash },
+    });
+    res.json({ review: out.review, states: stepStates(out.review) });
+  });
+  app.put('/api/reviews/:id/expert-reviews/:xid/consent', (req, res) => {
+    if (refuseRemoteChange(req, res)) return;
+    const r = loadReviews(REVIEW_FILE).reviews.find((x) => x.id === req.params.id);
+    if (!r) return res.status(404).json({ error: 'No policy review with that id.' });
+    const consent = CONSENTS.find((c) => c === req.body?.consent);
+    if (!consent) return res.status(400).json({ error: 'Choose none, anonymous or named.' });
+    const out = setExpertConsent(r, req.params.xid, consent);
+    if ('error' in out) return res.status(404).json({ error: out.error });
+    if (!writeReview(res, out.review)) return;
+    appendAudit(AUDIT_FILES, {
+      kind: 'research',
+      summary: `Publication consent for an expert review of "${out.review.title}" set to ${consent}`,
+      detail: { id: r.id, expertReview: out.saved.id, consent, hash: out.saved.hash },
     });
     res.json({ review: out.review, states: stepStates(out.review) });
   });
