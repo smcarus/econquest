@@ -38,6 +38,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Sanctions lists | Research | Description, not a tested signal | None |
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
+| External sustainability | Research | Description, not a tested signal | None |
 | Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
 | Policy rule family | Research | Backtest too few cases | v1, 2026-11-07, method 2 |
@@ -465,6 +466,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: a ratio against a published metric, no forward call.
 - **Limits:** Upper bound; FX regime not chosen, both weightings shown; annual data.
 - **Code:** `src/utils/reserveAdequacy.ts`
+
+### External sustainability
+
+- **Says:** Whether the country can keep paying what it owes abroad: how big its foreign debt is, how much of its reserves and export earnings a year of debt payments takes, and the current account that would hold its foreign debt steady.
+- **Rule:** External debt over GDP in dollars; debt service over reserves and exports; debt-stabilising non-interest current account d × (i − g) ÷ (1 + g) on 5-year averages of the effective interest rate and growth of GDP in dollars.
+- **Reads:** World Bank International Debt Statistics (external debt, debt service, interest paid), World Bank reserves and exports, IMF WEO current account and GDP in dollars
+- **Shows in:** Country Research > History & data (External sustainability)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
+- **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
+- **Code:** `src/utils/externalSustainability.ts`
 
 ### Crisis early-warning (credit gap)
 

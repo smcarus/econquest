@@ -267,6 +267,25 @@ export const PANELS_FR: Messages<typeof PANELS> = {
   ara_exports: "Exportations",
   ara_araCol: "ARA au plus, flottant / fixe",
 
+  // External sustainability (G24)
+  es_title: "Soutenabilité extérieure, {country}",
+  es_what: "La soutenabilité extérieure",
+  es_intro: "Le pays peut-il continuer à payer ce qu’il doit à l’étranger ? Sa dette extérieure, la part de ses réserves et de ses recettes d’exportation qu’absorbe une année de paiements de la dette, et le solde courant qui maintiendrait sa dette extérieure stable.",
+  es_debt: "Dette extérieure",
+  es_dsReserves: "Service de la dette / réserves",
+  es_dsReservesNote: "({year} ; au-dessus de 100 %, une année de paiements épuiserait les réserves)",
+  es_dsExports: "Service de la dette / exportations",
+  es_ca: "Solde courant",
+  es_required: "Solde courant hors intérêts qui maintient la dette extérieure stable",
+  es_requiredNote: "(moyennes sur {n} ans : intérêt {i} %, croissance du PIB en dollars {g} % ; dette {d} % du PIB)",
+  es_actual: "Solde courant hors intérêts, effectif",
+  es_holds: "({year} ; {gap} pts par rapport au niveau nécessaire : le ratio de dette se maintiendrait ou baisserait)",
+  es_rises: "({year} ; {gap} pts par rapport au niveau nécessaire : le ratio de dette augmenterait)",
+  es_colCa: "Solde courant, % PIB",
+  es_colDebt: "Dette extérieure, % PIB",
+  es_colReserves: "Service de la dette, % réserves",
+  es_colExports: "Service de la dette, % exportations",
+
   // Crisis early-warning (G23)
   cw_title: "Alerte précoce de crise, {country}",
   cw_what: "L’alerte précoce de crise",

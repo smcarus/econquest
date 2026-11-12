@@ -298,6 +298,25 @@ export const PANELS = defineMessages('panels', {
   ara_exports: 'Exports',
   ara_araCol: 'ARA at most, float / fixed',
 
+  // External sustainability (G24)
+  es_title: "External sustainability, {country}",
+  es_what: "External sustainability",
+  es_intro: "Can the country keep paying what it owes abroad? Its foreign debt, how much of its reserves and export earnings a year of debt payments takes, and the current account that would hold its foreign debt steady.",
+  es_debt: "External debt",
+  es_dsReserves: "Debt service / reserves",
+  es_dsReservesNote: "({year}; above 100% a year of payments would use up the reserves)",
+  es_dsExports: "Debt service / exports",
+  es_ca: "Current account",
+  es_required: "Non-interest current account that holds external debt steady",
+  es_requiredNote: "({n}-year averages: interest {i}%, growth of GDP in dollars {g}%; debt {d}% of GDP)",
+  es_actual: "Non-interest current account, actual",
+  es_holds: "({year}; {gap} pts against the level needed: the debt ratio would hold or fall)",
+  es_rises: "({year}; {gap} pts against the level needed: the debt ratio would rise)",
+  es_colCa: "Current account, % GDP",
+  es_colDebt: "External debt, % GDP",
+  es_colReserves: "Debt service, % reserves",
+  es_colExports: "Debt service, % exports",
+
   // Crisis early-warning (G23)
   cw_title: "Crisis early-warning, {country}",
   cw_what: "The crisis early-warning",
