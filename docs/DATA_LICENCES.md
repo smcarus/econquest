@@ -65,6 +65,7 @@ documents, policy memos, reports, notebooks, chart CSVs, Excel downloads, backup
 | IMF list of low-income country debt sustainability analyses | Terms not confirmed | Sharing unclear | Not stated: the one-page list has no terms of use. The ratings are shown as facts with the source, the list date and the day it was read. | Not stated. | Source: International Monetary Fund, List of IMF/WBG LIC DSAs for PRGT-Eligible Countries, as of September 30, 2026. |
 | ILOSTAT (International Labour Organization) | Open with attribution | Free sharing allowed | Allowed: ILO databases and datasets published from 3 May 2023 are under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Source: ILOSTAT, International Labour Organization (ILO). |
 | Our World in Data energy file (Energy Institute Statistical Review of World Energy) | Permission needed for client or commercial use | Do not pass on | Not allowed without the Energy Institute's permission: its terms allow private, non-commercial use only. Our World in Data's CC BY covers its own work, not the Energy Institute's figures. | Not allowed without the Energy Institute's permission. | Energy Institute - Statistical Review of World Energy (year); Our World in Data energy dataset. |
+| Penn World Table (Groningen Growth and Development Centre) | Open with attribution | Free sharing allowed | Allowed under CC BY 4.0. | Allowed (CC BY 4.0 sets no commercial limit). | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
 | IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda) | Permission needed for client or commercial use | Free sharing allowed | Allowed with credit under the IMF data terms; the workbook itself states no terms. | Needs permission: email copyright@imf.org. | Source: International Monetary Fund, Sovereign Debt Investor Base for Emerging Markets and Developing Economies; Arslanalp and Tsuda (2014), IMF Working Paper WP/14/39. |
 | DSSI and Common Framework status (World Bank, Paris Club) | Terms not confirmed | Sharing unclear | Not stated on either page. | Not stated. | World Bank, COVID-19 Debt Service Suspension Initiative; Paris Club, Common Framework. |
 
@@ -674,6 +675,22 @@ From the terms:
 >
 > is subject to the license terms from the original third-party authors
 
+### Penn World Table (Groningen Growth and Development Centre)
+
+- **Used for:** Real GDP, capital stock, persons engaged, hours, human capital and labour share for growth accounting (Research > History & data), read once per edition into data/local/pwt/
+- **Status:** Open with attribution
+- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
+- **Terms read:** [Penn World Table page (PWT 11.0, October 2025)](https://www.rug.nl/ggdc/productivity/pwt/) (checked 2026-11-11)
+- **Show to others:** Allowed under CC BY 4.0.
+- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
+- **Credit:** Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.
+
+From the terms:
+
+> is licensed under a Creative Commons Attribution 4.0 International License
+>
+> When using these data (for whatever purpose), please make the following reference:
+
 ### IMF Sovereign Debt Investor Base for Emerging Markets and Developing Economies (Arslanalp and Tsuda)
 
 - **Used for:** Who holds government debt: foreign official, foreign banks, foreign other investors, domestic central bank, domestic banks, domestic other investors (country brief, Fiscal & Debt Agent), from the workbook you put in data/local/imf-investor-base/
@@ -712,7 +729,6 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 
 | Source | Planned for | Status | Free non-commercial sharing | Credit |
 | --- | --- | --- | --- | --- |
-| Penn World Table (Groningen Growth and Development Centre) | G27 Growth accounting | Open with attribution | Free sharing allowed | Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182. |
 | IMF Government Finance Statistics and Financial Soundness Indicators | G28 Bank-sovereign links (GFS by level of government is in use since G42, under the IMF row) | Permission needed for client or commercial use | Free sharing allowed | Source: International Monetary Fund, <database name>, <link to the dataset>. |
 | IMF Monitoring of Fund Arrangements (MONA) | G34 Precedent finder | Terms not confirmed | Sharing unclear | Source: International Monetary Fund, Monitoring of Fund Arrangements (MONA) database. |
 | IMF Fiscal Rules Dataset, 1985-2024 | G35 Fiscal rules check | Terms not confirmed | Sharing unclear | "Fiscal Rules Dataset: 1985-2024", International Monetary Fund, Washington, DC (2025), with the authors listed on the page. |
@@ -720,23 +736,6 @@ Read in the licence sweep of 11 November 2026, before the steps that need them a
 | Laeven and Valencia, Systemic Banking Crises database (2018 update) | G23 Crisis early-warning; G34 Precedent finder | Terms not confirmed | Sharing unclear | Laeven, Luc and Fabian Valencia (2018), "Systemic Banking Crises Revisited", IMF Working Paper 18/206. |
 | Database of Political Institutions 2020 (Inter-American Development Bank) | G36 Political feasibility | Terms not confirmed | Sharing unclear | Database of Political Institutions 2020 (DPI2020), Inter-American Development Bank; take the full citation from the download page when it is found. |
 | ND-GAIN Country Index (University of Notre Dame) | G20 Climate and energy | Terms not confirmed | Sharing unclear | Notre Dame Global Adaptation Initiative Country Index (ND-GAIN). (Year). University of Notre Dame. |
-
-### Penn World Table (Groningen Growth and Development Centre)
-
-- **Planned for:** G27 Growth accounting
-- **Will be used for:** Capital stock, hours, human capital and productivity for growth accounting
-- **Status:** Open with attribution
-- **Free non-commercial sharing:** Free sharing allowed. CC BY 4.0 allows sharing with credit.
-- **Terms read:** [Penn World Table page (PWT 11.0, October 2025)](https://www.rug.nl/ggdc/productivity/pwt/) (checked 2026-11-11)
-- **Show to others:** Allowed under CC BY 4.0.
-- **Commercial use:** Allowed (CC BY 4.0 sets no commercial limit).
-- **Credit:** Feenstra, Robert C., Robert Inklaar and Marcel P. Timmer (2015), "The Next Generation of the Penn World Table", American Economic Review, 105(10), 3150-3182.
-
-From the terms:
-
-> is licensed under a Creative Commons Attribution 4.0 International License
->
-> When using these data (for whatever purpose), please make the following reference:
 
 ### IMF Government Finance Statistics and Financial Soundness Indicators
 

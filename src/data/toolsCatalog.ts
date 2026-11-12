@@ -229,6 +229,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-inflation-drivers' },
   },
   {
+    id: 'growth_accounting',
+    category: 'history',
+    title: 'Growth accounting',
+    what: "Where the open country's growth came from over each ten-year period: capital, hours worked, human capital and productivity (TFP), as a stacked chart and a table you can download as CSV. From the Penn World Table, read once per edition.",
+    sources: 'Penn World Table (Groningen Growth and Development Centre)',
+    target: { area: 'country', tab: 'history', anchor: 'tool-growth-accounting' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',

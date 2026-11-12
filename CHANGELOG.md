@@ -5,6 +5,12 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Growth accounting (G27, Research > History & data, also in Tools): growth in each ten-year period
+  split into capital, hours worked, human capital and productivity (TFP) from the Penn World Table
+  (CC BY 4.0), as a stacked chart, a table and a CSV download. The edition's workbook is read once
+  into data/local/pwt/ (downloaded, or your own copy put there); only the columns used are kept.
+  Connection check row pwt. The licence row moves from planned to in use. English, Spanish and
+  French.
 - Inflation drivers (G26, Research > History & data, also in Tools): headline against core inflation
   (excluding food and energy), food and energy price changes, the core trend over 3 months, and for
   EU members the approximate points food, energy and the rest add to headline (Eurostat item

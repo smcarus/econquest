@@ -17,6 +17,8 @@ import { crisisSentence, crisisWarning, CRISIS_NOT_RUN } from '../../utils/crisi
 import { esSentence, externalSustainability } from '../../utils/externalSustainability';
 import { driversSentence, inflationDrivers, NO_DRIVER_SOURCE } from '../../utils/inflationDrivers';
 import { fetchInflationDrivers } from '../feeds/inflationDrivers';
+import { fetchPwt } from '../feeds/pwt';
+import { gaSentence, growthAccounting } from '../../utils/growthAccounting';
 import { EUROSTAT_GEO } from '../../utils/nationalCpi';
 import { curveSentence, yieldCurve, CURVE_NOT_RUN, CURVE_TEST_ID } from '../../utils/yieldCurve';
 import { FRED_10Y_SERIES, US_10Y_SERIES } from '../../utils/officialYields';
@@ -355,6 +357,14 @@ export function registerAnalysisRoutes(app: Express, deps: AnalysisDeps): void {
     if (!inputs) return res.json({ iso3, ok: false, reason: 'The consumer price sources have not answered yet' });
     const r = inflationDrivers(inputs);
     res.json({ iso3, ...r, ...(r.ok ? { sentence: driversSentence(r, name) } : {}) });
+  });
+  // Growth accounting (G27, src/utils/growthAccounting.ts): capital, hours, human capital and TFP from the Penn World Table.
+  app.get('/api/growth-accounting/:iso3', async (req, res) => {
+    const iso3 = String(req.params.iso3 || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const file = await quick(fetchPwt());
+    const r = growthAccounting(file, iso3);
+    const name = SOVEREIGN_CATALOG.find((c) => c.iso3 === iso3)?.countryName || iso3;
+    res.json({ iso3, ...r, ...(r.ok ? { sentence: gaSentence(r, name) } : {}) });
   });
   // Local projections (src/utils/localProjections.ts): inflation after a policy rate change, reduced form.
   app.get('/api/local-projections/:iso3', async (req, res) => {
