@@ -5,6 +5,14 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Light mode for a modest laptop (U3, `LIGHT_MODE=on`, docs/INSTALL.md "On a modest laptop"): no
+  AI model on the computer (the council uses your own Gemini key, or stays off and says so; the
+  referee rule is unchanged), no GDELT 15-minute news files unless `GDELT_RAW_WEEKS` is set (about
+  3.4 GB of the first download), and the start-up download and daily run fetch only the countries
+  on your first watchlist and those you added, unless `PRELOAD_COUNTRIES` is set. The Mac start
+  script takes `--light`, the Windows one `-Light`, and `scripts\start-windows-light.bat` starts it
+  with one double-click. Settings > AI model says when light mode is on. The memory and disk
+  figures for light mode are targets until measured on a real run.
 - Success measures for after the public release (S1, docs/ROADMAP.md "How we will know it works"):
   GitHub stars, forks, issues, pull requests, flags sent as issues, discussions, app image and release
   downloads, the outcome-check hit rate, answer ratings and pilot feedback scores, with checkpoint 1 as

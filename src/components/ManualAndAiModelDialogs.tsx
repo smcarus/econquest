@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { toDisplayCase } from '../utils/displayCase';
 import { GLOSSARY_GROUPS, glossaryMarkdown } from '../data/glossary';
 import { useLang, useT, useTx } from '../i18n/useLang';
+import { LIGHT_AI_NOTE } from '../utils/lightMode';
 import { MENU } from '../i18n/messages/menu';
 import {
   AIRuntimeConfig,
@@ -518,6 +519,8 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
     | 'api_connectors_gui'
     | 'top_level_integration_gui'
   >('global_gui');
+  const txLight = useTx();
+  const [lightMode, setLightMode] = useState(false);
   const [activeDockerFile, setActiveDockerFile] = useState<
     'envCustom' | 'dockerCompose' | 'startMac' | 'startWindowsPs1' | 'dockerfile'
   >('envCustom');
@@ -735,6 +738,10 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
     if (!isOpen) return;
     probeOllamaEndpoint();
     void fetchIntegrationDeliveries();
+    fetch('/api/ai/runtime-defaults')
+      .then((r) => r.json())
+      .then((d) => setLightMode(Boolean(d?.lightMode)))
+      .catch(() => setLightMode(false));
     fetch('/api/docs/self-host-bundle')
       .then((r) => r.json())
       .then((data) => {
@@ -1034,6 +1041,11 @@ export const SelfHostAndOllamaRuntimeModal: React.FC<SelfHostAndOllamaRuntimeMod
           {/* TAB 1: GLOBAL MODELS, ENDPOINTS & INFERENCE PARAMETERS GUI */}
           {activeTab === 'global_gui' && (
             <>
+              {lightMode && (
+                <div className="border border-sky-300 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 p-3 text-xs text-sky-900 dark:text-sky-200" data-testid="light-mode-note">
+                  {txLight(LIGHT_AI_NOTE)}
+                </div>
+              )}
               {/* Step 1: AI Runtime Provider Selector */}
               <div className="border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/70 dark:bg-slate-950/60">
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-2.5">

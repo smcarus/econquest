@@ -8,6 +8,9 @@
 # "Continue", not "Stop": Windows PowerShell 5.1 turns a program's progress messages (docker
 # writes them to stderr) into errors when they are redirected, and "Stop" would end the script on
 # them. Each step's exit code is checked instead (Stop-IfFailed below).
+# -Light (or LIGHT_MODE=on in .env): light mode for a modest laptop. No AI model on this computer,
+# no GDELT news files, only the watchlist countries downloaded (docs/INSTALL.md).
+param([switch]$Light)
 $ErrorActionPreference = "Continue"
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -44,6 +47,11 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+$LightMode = [bool]$Light -or ($env:LIGHT_MODE -match '^(on|true|1|yes)$')
+if (-not $LightMode -and (Test-Path ".env")) {
+    if (Select-String -Path ".env" -Pattern '^\s*LIGHT_MODE\s*=\s*"?(on|true|1|yes)"?\s*$' -Quiet) { $LightMode = $true }
+}
+
 # 2. Check if Native Windows Ollama is running on localhost:11434
 $HostOllamaActive = $false
 try {
@@ -62,7 +70,13 @@ docker compose build econquest
 Stop-IfFailed "Building the app image"
 docker compose run --rm --no-deps --user root --entrypoint chown econquest -R 1000:1000 /app/data *> $null
 
-if ($HostOllamaActive) {
+if ($LightMode) {
+    Write-Host "[INFO] Light mode: no AI model on this computer, no GDELT news files, only your watchlist countries." -ForegroundColor Cyan
+    Write-Host "[INFO] Add your own Google Gemini key in Menu > Settings > API keys to use the council." -ForegroundColor Cyan
+    $env:LIGHT_MODE = "on"
+    docker compose up -d --build econquest
+    Stop-IfFailed "Starting the app"
+} elseif ($HostOllamaActive) {
     Write-Host "[OK] Detected native Windows Ollama on http://localhost:11434." -ForegroundColor Green
     $env:OLLAMA_BASE_URL = "http://host.docker.internal:11434"
     if (Get-Command ollama -ErrorAction SilentlyContinue) {
@@ -95,7 +109,11 @@ if ($HostOllamaActive) {
 
 Write-Host "==============================================================================" -ForegroundColor Green
 Write-Host "  EconQuest is live at : http://localhost:$Port" -ForegroundColor Green
-Write-Host "  Ollama Endpoint      : $($env:OLLAMA_BASE_URL)" -ForegroundColor Green
+if ($LightMode) {
+    Write-Host "  Light mode           : on (no AI model on this computer)" -ForegroundColor Green
+} else {
+    Write-Host "  Ollama Endpoint      : $($env:OLLAMA_BASE_URL)" -ForegroundColor Green
+}
 Write-Host "==============================================================================" -ForegroundColor Green
 
 Start-Process "http://localhost:$Port"

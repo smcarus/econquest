@@ -109,6 +109,7 @@ import { toLive } from './src/utils/liveFigures';
 import { EVENT_LABEL, openIssues, watchFigures, type FigureEventKind } from './src/utils/figureWatch';
 import { readEvents, readLedger, saveWatch } from './src/utils/figureWatchStore';
 import { DEFAULT_WATCHLISTS } from './src/data/presetsAndBaselines';
+import { defaultProvider, isLightMode, LIGHT_GDELT_NOTE, lightModeCountries, skipGdeltRaw } from './src/utils/lightMode';
 import { isModelPlaceholder, MODEL_FIELD_MISSING } from './src/utils/councilResult';
 import { FIGURE_LIST, FIGURES_HEADER, SERIES_HEADER, exportFileName, figureRows, seriesRows, toCsv } from './src/utils/csvExport';
 import { SHARE_MODE_KEY, shareModeFromValue, withholdForSharing } from './src/utils/shareMode';
@@ -477,15 +478,29 @@ function savePreloadState(): void {
 }
 /**
  * Every country the app covers, or only those named with --countries=BRA,TUR (terminal) or
- * PRELOAD_COUNTRIES in .env.
+ * PRELOAD_COUNTRIES in .env. In light mode (LIGHT_MODE=on) without either, only the countries on
+ * the watchlist (src/utils/lightMode.ts).
  */
 function preloadCountries(): Array<{ iso3: string; countryName: string }> {
   const arg = process.argv.find((a) => a.startsWith('--countries='))?.slice('--countries='.length) || process.env.PRELOAD_COUNTRIES || '';
   const only = new Set(arg.split(',').map((x) => x.trim().toUpperCase()).filter(Boolean));
+  if (!only.size && isLightMode(process.env)) for (const iso3 of lightModeCountries(workspaceValuesOnDisk(), DEFAULT_WATCHLISTS, new Set(SOVEREIGN_CATALOG.map((c) => c.iso3)))) only.add(iso3);
   return SOVEREIGN_CATALOG.filter((c) => !only.size || only.has(c.iso3)).map((c) => ({ iso3: c.iso3, countryName: c.countryName }));
 }
+/** The shared workspace and every account's own, for the light-mode country list. */
+function workspaceValuesOnDisk(): Array<Record<string, string | undefined>> {
+  const files = [WORKSPACE_FILE];
+  try {
+    const users = path.join(DATA_DIR, 'local', 'users');
+    for (const id of fs.readdirSync(users)) files.push(path.join(users, id, 'workspace.json'));
+  } catch {
+    // no accounts
+  }
+  return files.filter((f) => fs.existsSync(f)).map((f) => loadWorkspace(f).values);
+}
 function preloadPlan(): PreloadStep[] {
-  return planPreload(preloadCountries());
+  const plan = planPreload(preloadCountries());
+  return skipGdeltRaw(process.env) ? plan.filter((s) => s.id !== 'world:gdelt_raw') : plan;
 }
 
 /**
@@ -635,6 +650,7 @@ async function runPreloadStep(step: PreloadStep): Promise<Omit<PreloadStepResult
       return { outcome: 'done', note: m?.eia ? undefined : 'EIA needs a key in Settings; Pink Sheet saved' };
     }
     case 'world:gdelt_raw': {
+      if (skipGdeltRaw(process.env)) return { outcome: 'skipped', note: LIGHT_GDELT_NOTE };
       const cfg = gdeltRawConfig(process.env);
       const label = preloadState.current?.label || step.label;
       let lastSave = 0;
@@ -2064,7 +2080,7 @@ async function runConnectionCheck(trigger: CheckTrigger): Promise<ConnectionRepo
     // GDELT goes through the same 5-second queue as the app, so the check cannot trip its limit.
     fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
     ai: {
-      provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+      provider: serverGuiRuntimeConfig.providerMode || defaultProvider(process.env),
       ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
       ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
       ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
@@ -3145,7 +3161,7 @@ async function startServer() {
       only: [field.checkId],
       keySources: sources,
       ai: {
-        provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+        provider: serverGuiRuntimeConfig.providerMode || defaultProvider(process.env),
         ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
         ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
         ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,
@@ -4084,9 +4100,8 @@ async function startServer() {
         process.env.OLLAMA_BASE_URL?.includes('http://ollama')
     );
     res.json({
-      providerMode: (serverGuiRuntimeConfig.providerMode ||
-        process.env.DEFAULT_AI_PROVIDER ||
-        'gemini') as AIRuntimeConfig['providerMode'],
+      providerMode: (serverGuiRuntimeConfig.providerMode || defaultProvider(process.env)) as AIRuntimeConfig['providerMode'],
+      lightMode: isLightMode(process.env),
       ollamaBaseUrl:
         serverGuiRuntimeConfig.ollamaBaseUrl ||
         process.env.OLLAMA_BASE_URL ||
@@ -5785,7 +5800,7 @@ Compute the post-cascade risk scores and exact transmission mechanisms for Step 
         env: process.env,
         fetchFn: (u, i) => (u.includes('api.gdeltproject.org') ? gdeltFetch(u, i) : fetch(u, i)),
         ai: {
-          provider: serverGuiRuntimeConfig.providerMode || process.env.DEFAULT_AI_PROVIDER,
+          provider: serverGuiRuntimeConfig.providerMode || defaultProvider(process.env),
           ollamaBaseUrl: serverGuiRuntimeConfig.ollamaBaseUrl,
           ollamaQuickModel: serverGuiRuntimeConfig.ollamaQuickModel,
           ollamaDeepModel: serverGuiRuntimeConfig.ollamaDeepModel,

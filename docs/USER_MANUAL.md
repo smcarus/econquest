@@ -48,6 +48,10 @@ validation), and nothing in it is a recommendation to buy or sell. Every export 
    (`ollama pull qwen2.5:14b`). It needs about half the memory of the 32B model, but its judgements
    are less reliable, so every answer it judges says "Small referee". With the box unticked, a 14B
    setting is ignored and the 32B model is used. A model of 8B or less is never a good referee.
+   On a modest laptop, light mode (`LIGHT_MODE=on`, docs/INSTALL.md "On a modest laptop") runs no
+   model on the computer: the council uses your own Gemini key or stays off, Settings > AI model
+   says light mode is on, the GDELT news files are not downloaded, and only your watchlist countries
+   are fetched.
 2. **Check the data.** Menu > Tools > *Data connections* shows each source as Connected, Needs setup
    or No answer. Add the free keys you want (FRED, EIA, UN Comtrade) under Menu > Settings.
 3. **Save it for offline use.** Menu > Offline data > *Download all country data*. After that the app
