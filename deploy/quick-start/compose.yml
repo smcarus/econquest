@@ -27,6 +27,8 @@ services:
       # The port above is published on this computer only, so Settings may accept key changes.
       SETTINGS_ALLOW_REMOTE: "true"
       DEFAULT_AI_PROVIDER: ${DEFAULT_AI_PROVIDER:-ollama}
+      # Light mode for a modest laptop: LIGHT_MODE=on in .env (docs/INSTALL.md, "On a modest laptop").
+      LIGHT_MODE: ${LIGHT_MODE:-off}
       # Default: the Ollama app on this computer (best on a Mac, where it can use the graphics chip).
       # With the bundled Ollama below, set OLLAMA_BASE_URL=http://ollama:11434 in .env.
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}

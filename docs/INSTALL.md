@@ -92,6 +92,7 @@ the council chat, summaries, debates and plain-language explanations ("Choose yo
 | Way | Best for | What it takes |
 | --- | --- | --- |
 | **Ready-made app** (this page, steps 1-4) | Almost everyone | Install Docker Desktop, download one file, type two commands |
+| **Modest laptop** ("On a modest laptop" below) | A computer with 4 GB of memory or little free disk space | The ready-made app with one setting, light mode |
 | **From the code** | Developers who want to change the app | Node.js 20 or later and the source code |
 | **Home server** ([HOME_SERVER.md](HOME_SERVER.md)) | A household, team or class sharing one always-on machine | A Linux box or NAS with Docker; 32 GB of memory if it also runs the large AI model |
 | **Your own cloud server** (below) | People with no spare hardware who want it reachable anywhere | A rented server, from about $5-12 a month, kept behind a sign-in |
@@ -152,6 +153,40 @@ not on the internet, only on your machine.
 
 The first screen shows a **Getting started** card that ticks itself off as you go. A new install
 shows dashes until each source has answered, which can take a minute.
+
+## On a modest laptop
+
+Light mode is a lighter way to run EconQuest, chosen when you install it:
+
+- **No AI model on your computer.** The council uses your own Google Gemini key if you add one
+  (free up to Google's daily limits; Menu > Settings > API keys). Without a key it stays off and
+  says so. Every figure, chart and signal works without it. The council never falls back to a
+  smaller, less reliable model: a step that needs the large referee says so instead.
+- **A smaller first download.** The GDELT 15-minute news files, about 3.4 GB of the 3.6 to 3.8 GB
+  first download, are left out. The GDELT readings built from them (events and news themes) read
+  Missing, with the reason. You can still download them later from Menu > Offline data.
+- **Only your countries.** The download at start-up and the daily run fetch only the countries on
+  your first watchlist (the one the app opens with) and any countries you added, not every country
+  the app covers.
+
+To turn it on with the ready-made app, create a file called `.env` in your `econquest` folder (next
+to `compose.yml`) containing the line `LIGHT_MODE=on`, then start the app as in step 3. If you start
+it from the code instead, use `scripts/start-mac.sh --light` on a Mac, or double-click
+`scripts\start-windows-light.bat` on Windows. To turn it off again, remove the line and run
+`docker compose up -d`.
+
+Settings you can still change in `.env`: `PRELOAD_COUNTRIES=BRA,MEX` chooses exactly which countries
+are downloaded; `GDELT_RAW_WEEKS=2` downloads two weeks of GDELT news files after all.
+
+| | Target in light mode | Measured |
+| --- | --- | --- |
+| Memory (RAM) | 4 GB in all, with Docker Desktop and a web browser open | Not yet measured. It will be measured on a light-mode run before the public release and written here. |
+| Disk space for EconQuest | 2 GB: the app image and its saved data (Docker Desktop itself is not counted) | Not yet measured, as above. |
+| First download | Well under 1 GB | Not yet measured, as above. |
+
+How the figures will be measured: after a first light-mode run, `docker stats --no-stream` shows
+the app's memory use, `docker system df -v` and Menu > Offline data show the space used, and the
+daily run's report (`npm run go -- status` on the developer's Mac) shows how much it downloaded.
 
 ## Choose your AI
 
