@@ -305,6 +305,16 @@ export const GLOSSARY: GlossaryEntry[] = [
     match: [/expected price trends/i],
   },
   {
+    id: 'core_inflation',
+    term: "Core inflation",
+    group: 'prices',
+    what: "Inflation without the prices that jump around the most: food and energy. Statistics offices publish it beside the headline rate, which covers everything people buy.",
+    why: "Food and energy prices swing with harvests, weather and world oil prices, which a central bank cannot steer. Core inflation shows the slower trend underneath, which is what interest rates can affect.",
+    read: "If core is close to headline, price rises are broad. If headline is well above core, food or energy are pushing it up and may fall back; if core is above headline, cheaper food or energy are hiding a firmer trend. The app shows both, how core moved over 3 months, and for EU members how many points food and energy add.",
+    limits: "Definitions differ: Eurostat also leaves out alcohol and tobacco, BLS and the OECD do not. Food and energy still matter to households, so core is not a measure of the cost of living.",
+    match: [/core inflation/i],
+  },
+  {
     id: 'herding',
     term: 'Herding and market sentiment',
     group: 'markets',

@@ -5,6 +5,13 @@ and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+- Inflation drivers (G26, Research > History & data, also in Tools): headline against core inflation
+  (excluding food and energy), food and energy price changes, the core trend over 3 months, and for
+  EU members the approximate points food, energy and the rest add to headline (Eurostat item
+  weights for the same year only, residual shown). Sources: Eurostat HICP for EU members, BLS CPI-U
+  via FRED for the United States, OECD consumer prices for other OECD members; elsewhere Missing
+  with the reason. New glossary entry on core inflation and connection check row
+  eurostat_hicp_parts. English, Spanish and French.
 - Yield curve and financial conditions (G25, Research > History & data, also in Tools): the 10-year
   government bond yield minus the policy rate each month, past spells with the curve inverted,
   calendar-year averages, and a financial conditions index (policy rate, 10-year yield, spread over

@@ -39,6 +39,7 @@ half the series with five or more cases. A p-value of 0.00025 is the smallest 4,
 | Geopolitical risk VaR | Research | Description, not a tested signal | None |
 | Reserve adequacy (IMF ARA, partial) | Research | Description, not a tested signal | None |
 | External sustainability | Research | Description, not a tested signal | None |
+| Inflation drivers | Research | Description, not a tested signal | None |
 | Yield curve and financial conditions | Research | Not validated | None |
 | Crisis early-warning (credit gap) | Research | Not validated | None |
 | Inflation after rate changes (local projections) | Research | Description, not a tested signal | None |
@@ -479,6 +480,18 @@ The grades follow the practice of model-validation teams: pre-registration and n
 - **How it is tested:** Description, not a tested signal: ratios and an accounting identity, no forward call. The current account norm (IMF EBA) and the net international investment position read Missing until a usable source is confirmed.
 - **Limits:** IDS covers low- and middle-income countries only; yearly; averages of past interest and growth stand in for the future; no current account norm.
 - **Code:** `src/utils/externalSustainability.ts`
+
+### Inflation drivers
+
+- **Says:** How much of inflation is food and energy, which swing with harvests and world oil prices, and how much is the slower-moving rest (core inflation), which central banks watch for the underlying trend.
+- **Rule:** Annual rates of headline, core (excluding food and energy), food and energy prices from official sub-indices; core trend over 3 months (±0.5 points); for EU members, contribution = Eurostat item weight ÷ 1000 × annual rate, an approximation with its residual shown.
+- **Reads:** Eurostat HICP and item weights (EU members), BLS CPI-U via FRED (United States), OECD consumer prices via DBnomics (other OECD members)
+- **Shows in:** Country Research > History & data (Inflation drivers)
+- **Use:** Research
+- **Status:** Description, not a tested signal
+- **How it is tested:** Description, not a tested signal: published price changes split into parts, no forward call.
+- **Limits:** Core definitions differ by source (Eurostat also leaves out alcohol and tobacco); contributions only for EU members and approximate; countries outside the EU and the OECD read Missing.
+- **Code:** `src/utils/inflationDrivers.ts, src/server/feeds/inflationDrivers.ts`
 
 ### Yield curve and financial conditions
 

@@ -221,6 +221,14 @@ export const READY_TOOLS: ReadyTool[] = [
     target: { area: 'country', tab: 'history', anchor: 'tool-yield-curve' },
   },
   {
+    id: 'inflation_drivers',
+    category: 'history',
+    title: 'Inflation drivers',
+    what: "Headline against core inflation (prices without food and energy) for the open country, how food and energy prices moved, and for EU members how many points each adds to headline. From Eurostat, BLS or OECD consumer price sub-indices; where none is published the row reads Missing.",
+    sources: 'Eurostat HICP, BLS CPI via FRED, OECD consumer prices',
+    target: { area: 'country', tab: 'history', anchor: 'tool-inflation-drivers' },
+  },
+  {
     id: 'book',
     category: 'portfolio',
     title: 'Book and client briefs',
